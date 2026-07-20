@@ -1,0 +1,12 @@
+import Link from "next/link";
+import { requireUser } from "@/modules/auth/session";
+import { db } from "@/lib/db";
+import { getGoldPrice } from "@/modules/gold/gold-price.service";
+import { calculateProductPrice } from "@/modules/products/pricing";
+import { formatMoney } from "@/lib/format";
+import { CheckoutForm } from "@/components/checkout-form";
+import type { Prisma } from "@generated/prisma/client";
+
+type CartItemRow = Prisma.CartItemGetPayload<{include:{product:true}}>;
+export const dynamic="force-dynamic";
+export default async function CartPage(){const user=await requireUser();const[cart,gold]=await Promise.all([db.cart.findUnique({where:{userId:user.id},include:{items:{include:{product:true}}}}),getGoldPrice()]);const items=(cart?.items??[]) as CartItemRow[];const rate=Number(gold.pricePerGram18);const total=items.reduce((sum,item)=>{const p=item.product;const amount=p.fixedPrice?Number(p.fixedPrice):calculateProductPrice({goldPricePerGram18:rate,weightGrams:Number(p.weightGrams),purity:p.purity,makingFeeType:p.makingFeeType,makingFeeValue:Number(p.makingFeeValue),profitPercent:Number(p.profitPercent),taxPercent:Number(p.taxPercent)}).total;return sum+amount*item.quantity},0);return <main className="section container"><div className="panel-head"><div><span className="eyebrow">خرید امن</span><h1>سبد خرید</h1></div><span className="badge">نرخ مبنا: {formatMoney(rate)}</span></div>{!items.length?<div className="card empty">سبد خرید خالی است.<br/><Link href="/products" className="btn" style={{marginTop:16}}>مشاهده محصولات</Link></div>:<div className="dashboard" style={{gridTemplateColumns:"1fr 420px",padding:0}}><div className="table-wrap"><table><thead><tr><th>محصول</th><th>تعداد</th><th>وزن</th><th>مبلغ</th></tr></thead><tbody>{items.map(item=>{const p=item.product;const amount=p.fixedPrice?Number(p.fixedPrice):calculateProductPrice({goldPricePerGram18:rate,weightGrams:Number(p.weightGrams),purity:p.purity,makingFeeType:p.makingFeeType,makingFeeValue:Number(p.makingFeeValue),profitPercent:Number(p.profitPercent),taxPercent:Number(p.taxPercent)}).total;return <tr key={p.id}><td><strong>{p.name}</strong><br/><span className="meta">{p.sku}</span></td><td>{item.quantity}</td><td>{Number(p.weightGrams)} گرم</td><td>{formatMoney(amount*item.quantity)}</td></tr>})}<tr><td colSpan={3}><strong>جمع کل</strong></td><td><strong>{formatMoney(total)}</strong></td></tr></tbody></table></div><CheckoutForm/></div>}</main>}
