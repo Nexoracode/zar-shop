@@ -1,0 +1,4 @@
+"use client";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+export function AddToCart({productId,disabled}:{productId:string;disabled:boolean}){const router=useRouter();const[msg,setMsg]=useState("");const[loading,setLoading]=useState(false);async function add(){setLoading(true);setMsg("");const r=await fetch("/api/cart",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({productId,quantity:1})});const data=await r.json();setLoading(false);if(r.status===401){router.push("/login?next=/cart");return}setMsg(data.message??"");if(r.ok)router.refresh()}return <div><button className="btn btn-gold" disabled={disabled||loading} onClick={add}>{disabled?"ناموجود":loading?"در حال افزودن...":"افزودن به سبد"}</button>{msg&&<small style={{display:"block",marginTop:8,color:"var(--gold-dark)"}}>{msg}</small>}</div>}

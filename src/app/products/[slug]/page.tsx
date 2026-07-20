@@ -1,0 +1,11 @@
+import { notFound } from "next/navigation";
+import { db } from "@/lib/db";
+import { formatMoney } from "@/lib/format";
+import { getGoldPrice } from "@/modules/gold/gold-price.service";
+import { calculateProductPrice } from "@/modules/products/pricing";
+import Image from "next/image";
+import { AddToCart } from "@/components/add-to-cart";
+
+export const dynamic = "force-dynamic";
+
+export default async function ProductPage({params}:{params:Promise<{slug:string}>}){const {slug}=await params;const [product,gold]=await Promise.all([db.product.findFirst({where:{slug,status:"ACTIVE"},include:{category:true,media:{include:{media:true},orderBy:{position:"asc"}}}}),getGoldPrice()]);if(!product)notFound();const parts=calculateProductPrice({goldPricePerGram18:Number(gold.pricePerGram18),weightGrams:Number(product.weightGrams),purity:product.purity,makingFeeType:product.makingFeeType,makingFeeValue:Number(product.makingFeeValue),profitPercent:Number(product.profitPercent),taxPercent:Number(product.taxPercent)});const total=product.fixedPrice?Number(product.fixedPrice):parts.total;return <main className="section container"><div className="hero" style={{minHeight:"auto",padding:0}}><div>{product.media[0]?.media.type==="IMAGE"?<Image className="card" width={700} height={700} style={{width:"100%",aspectRatio:"1/1",objectFit:"cover"}} src={product.media[0].media.url} alt={product.name}/>:<div className="hero-art" style={{minHeight:480}}/>}</div><div><span className="eyebrow">{product.category?.name??"مجموعه طلا"}</span><h1 style={{fontSize:"3.2rem"}}>{product.name}</h1><p>{product.description??"طراحی اصیل و ظریف، همراه با فاکتور رسمی و تضمین اصالت زر گالری."}</p><div className="stats" style={{gridTemplateColumns:"1fr 1fr"}}><div className="stat"><span>وزن</span><strong>{Number(product.weightGrams)} گرم</strong></div><div className="stat"><span>عیار</span><strong>{product.purity}</strong></div></div><div className="card-body card" style={{marginTop:18}}><span className="meta">قیمت نهایی بر اساس نرخ {formatMoney(Number(gold.pricePerGram18))}</span><div className="product-row"><strong style={{fontSize:"1.35rem"}}>{formatMoney(total)}</strong><AddToCart productId={product.id} disabled={product.stock<1}/></div></div></div></div></main>}
