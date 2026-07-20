@@ -1,36 +1,23 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# زر گالری
 
-## Getting Started
+فروشگاه آنلاین طلا با Next.js 16، Prisma 7 و MySQL. پروژه شامل فروشگاه فارسی، احراز هویت مبتنی بر نشست امن، پروفایل مشتری، سبد خرید، سفارش و پرداخت، فاکتور رسمی، گالری رسانه و پنل مدیریت است.
 
-First, run the development server:
+## راه‌اندازی
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+1. فایل `.env.example` را با نام `.env` کپی و اطلاعات MySQL و `AUTH_SECRET` را تنظیم کنید.
+2. وابستگی‌ها را با `npm install` نصب کنید.
+3. دیتابیس را با `npm run db:migrate -- --name init` ایجاد کنید.
+4. داده اولیه را با `npm run db:seed` ثبت کنید.
+5. برنامه را با `npm run dev` اجرا کنید.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+حساب مدیر اولیه از `ADMIN_EMAIL` و `ADMIN_PASSWORD` در فایل محیطی ساخته می‌شود. رمز نمونه را در محیط واقعی حتماً تغییر دهید.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## اتصال سرویس‌های واقعی
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- نرخ طلا: `GOLD_PRICE_PROVIDER=http` و آدرس ارائه‌دهنده در `GOLD_PRICE_ENDPOINT`. پاسخ استاندارد سرویس باید شامل `pricePerGram18` باشد.
+- پرداخت: قرارداد `PaymentProvider` در `src/modules/payments` برای افزودن زرین‌پال، سامان یا سرویس دیگر آماده است؛ جریان کامل درخواست، callback، تأیید و صدور فاکتور وجود دارد اما ارائه‌دهنده فعلی آزمایشی است.
+- فایل: نسخه فعلی فایل‌ها را در `public/uploads` نگهداری می‌کند. برای محیط عملیاتی باید پیاده‌سازی فضای ابری/S3 جایگزین شود.
 
-## Learn More
+## قواعد مالی
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+مقادیر مالی در دیتابیس از نوع `Decimal` هستند. نرخ طلا و اجزای محاسبه قیمت در زمان ایجاد سفارش Snapshot می‌شوند تا تغییرات بعدی نرخ روی فاکتور قبلی اثر نگذارد.
