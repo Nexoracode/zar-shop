@@ -9,7 +9,7 @@ const schema = z.object({
   DATABASE_NAME: z.string().default("zar_store"),
   AUTH_SECRET: z.string().min(32).default("development-only-secret-change-me-now"),
   APP_URL: z.url().default("http://localhost:3000"),
-  GOLD_PRICE_PROVIDER: z.enum(["mock", "http"]).default("mock"),
+  GOLD_PRICE_PROVIDER: z.enum(["mock", "tgju", "http"]).default("tgju"),
   GOLD_PRICE_ENDPOINT: z.string().default(""),
   GOLD_PRICE_API_KEY: z.string().default(""),
   PAYMENT_PROVIDER: z.enum(["mock"]).default("mock"),

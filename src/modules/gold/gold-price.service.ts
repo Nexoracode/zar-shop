@@ -1,11 +1,16 @@
 import { db } from "@/lib/db";
 import { env } from "@/lib/env";
+import { fetchTgjuGoldPrice } from "@/modules/gold/tgju-gold-price.provider";
 
 const MAX_AGE_MS = 2 * 60 * 1000;
+const MAX_STALE_AGE_MS = 24 * 60 * 60 * 1000;
 
 async function fetchProviderPrice() {
   if (env.GOLD_PRICE_PROVIDER === "mock") {
     return { pricePerGram18: 48_500_000, source: "mock" };
+  }
+  if (env.GOLD_PRICE_PROVIDER === "tgju") {
+    return fetchTgjuGoldPrice(env.GOLD_PRICE_ENDPOINT || undefined);
   }
   if (!env.GOLD_PRICE_ENDPOINT) throw new Error("GOLD_PRICE_ENDPOINT is required");
   const response = await fetch(env.GOLD_PRICE_ENDPOINT, {
@@ -21,12 +26,17 @@ async function fetchProviderPrice() {
 
 export async function getGoldPrice(options?: { force?: boolean }) {
   const cached = await db.goldPrice.findFirst({ orderBy: { fetchedAt: "desc" } });
-  if (!options?.force && cached && Date.now() - cached.fetchedAt.getTime() < MAX_AGE_MS) return cached;
+  const cacheAge = cached ? Date.now() - cached.fetchedAt.getTime() : Number.POSITIVE_INFINITY;
+  const cachedIsReal = cached && !["mock", "seed"].includes(cached.source);
+
+  if (!options?.force && cached && cacheAge < MAX_AGE_MS && (env.GOLD_PRICE_PROVIDER === "mock" || cachedIsReal)) {
+    return cached;
+  }
   try {
     const fresh = await fetchProviderPrice();
     return await db.goldPrice.create({ data: { ...fresh, fetchedAt: new Date() } });
   } catch (error) {
-    if (cached) return cached;
+    if (cachedIsReal && cacheAge < MAX_STALE_AGE_MS) return cached;
     throw error;
   }
 }

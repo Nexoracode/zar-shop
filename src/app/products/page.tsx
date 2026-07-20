@@ -1,19 +1,40 @@
-import Link from "next/link";
+import type { Prisma } from "@generated/prisma/client";
+import { ProductCard } from "@/components/product-card";
 import { db } from "@/lib/db";
 import { formatMoney } from "@/lib/format";
 import { getGoldPrice } from "@/modules/gold/gold-price.service";
 import { calculateProductPrice } from "@/modules/products/pricing";
-import type { Prisma } from "@generated/prisma/client";
-import Image from "next/image";
 
-type ProductWithRelations = Prisma.ProductGetPayload<{ include: { category: true; media: { include: { media: true } } } }>;
+type ProductWithRelations = Prisma.ProductGetPayload<{
+  include: { category: true; media: { include: { media: true } } };
+}>;
+
 export const dynamic = "force-dynamic";
-
 export const metadata = { title: "محصولات" };
-export default async function ProductsPage(){
-  const [products,gold]=await Promise.all([db.product.findMany({where:{status:"ACTIVE"},include:{category:true,media:{include:{media:true},orderBy:{position:"asc"}}},orderBy:{createdAt:"desc"}}),getGoldPrice()]); const rate=Number(gold.pricePerGram18);
-  return <main className="section container"><div className="section-head"><div><span className="eyebrow">مجموعه زر</span><h1>محصولات طلا</h1><p>قیمت‌ها بر اساس نرخ لحظه‌ای محاسبه شده‌اند.</p></div><div className="badge">نرخ: {formatMoney(rate)}</div></div><div className="grid">
-    {products.map((p: ProductWithRelations)=>{const amount=p.fixedPrice?Number(p.fixedPrice):calculateProductPrice({goldPricePerGram18:rate,weightGrams:Number(p.weightGrams),purity:p.purity,makingFeeType:p.makingFeeType,makingFeeValue:Number(p.makingFeeValue),profitPercent:Number(p.profitPercent),taxPercent:Number(p.taxPercent)}).total;return <Link className="card" href={`/products/${p.slug}`} key={p.id}>{p.media[0]?.media.type==="IMAGE"?<Image className="product-image" style={{width:"100%",objectFit:"cover"}} width={500} height={260} src={p.media[0].media.url} alt={p.media[0].media.alt??p.name}/>:<div className="product-image">طلای {p.purity}</div>}<div className="card-body"><span className="meta">{p.category?.name??"طلا"} · {Number(p.weightGrams)} گرم</span><div className="product-row"><h3>{p.name}</h3><strong>{formatMoney(amount)}</strong></div></div></Link>})}
-    {!products.length&&<div className="card empty" style={{gridColumn:"1/-1"}}>هنوز محصولی منتشر نشده است.</div>}
-  </div></main>
+
+export default async function ProductsPage() {
+  const [products, gold] = await Promise.all([
+    db.product.findMany({ where: { status: "ACTIVE" }, include: { category: true, media: { include: { media: true }, orderBy: { position: "asc" } } }, orderBy: { createdAt: "desc" } }),
+    getGoldPrice(),
+  ]);
+  const rate = Number(gold.pricePerGram18);
+
+  return (
+    <main>
+      <section className="catalog-hero">
+        <div className="container"><span>کالکشن زر گالری</span><h1>طلا برای هر لحظه</h1><p>مجموعه‌ای از طراحی‌های مینیمال و ماندگار با قیمت‌گذاری شفاف.</p><div className="catalog-rate">نرخ امروز: <strong>{formatMoney(rate)}</strong></div></div>
+      </section>
+      <section className="section container">
+        <div className="catalog-toolbar"><span>{products.length.toLocaleString("fa-IR")} محصول</span><span>مرتب‌سازی: تازه‌ترین‌ها</span></div>
+        <div className="product-grid">
+          {products.map((product: ProductWithRelations) => {
+            const amount = product.fixedPrice ? Number(product.fixedPrice) : calculateProductPrice({ goldPricePerGram18: rate, weightGrams: Number(product.weightGrams), purity: product.purity, makingFeeType: product.makingFeeType, makingFeeValue: Number(product.makingFeeValue), profitPercent: Number(product.profitPercent), taxPercent: Number(product.taxPercent) }).total;
+            const media = product.media[0]?.media;
+            return <ProductCard key={product.id} href={`/products/${product.slug}`} name={product.name} category={product.category?.name ?? "طلا"} weight={Number(product.weightGrams)} purity={product.purity} price={formatMoney(amount)} image={media?.type === "IMAGE" ? { src: media.url, alt: media.alt ?? product.name } : undefined} />;
+          })}
+          {!products.length && <div className="empty catalog-empty">هنوز محصولی منتشر نشده است.</div>}
+        </div>
+      </section>
+    </main>
+  );
 }
