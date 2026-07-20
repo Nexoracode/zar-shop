@@ -1,0 +1,5 @@
+import { db } from "@/lib/db";
+import { formatDate, formatMoney } from "@/lib/format";
+import type { Prisma } from "@generated/prisma/client";
+type OrderRow = Prisma.OrderGetPayload<{include:{user:true;_count:{select:{items:true}}}}>;
+export default async function OrdersPage(){const orders=await db.order.findMany({include:{user:true,_count:{select:{items:true}}},orderBy:{createdAt:"desc"},take:100});return <><div className="panel-head"><div><h1>سفارش‌ها</h1><span className="meta">پیگیری پرداخت و اجرای سفارش</span></div></div><div className="table-wrap"><table><thead><tr><th>شماره</th><th>مشتری</th><th>اقلام</th><th>مبلغ</th><th>وضعیت</th><th>تاریخ</th></tr></thead><tbody>{orders.map((o: OrderRow)=><tr key={o.id}><td>{o.orderNumber}</td><td>{o.user.firstName} {o.user.lastName}</td><td>{o._count.items}</td><td>{formatMoney(o.total.toString())}</td><td><span className="badge">{o.status}</span></td><td>{formatDate(o.createdAt)}</td></tr>)}</tbody></table>{!orders.length&&<div className="empty">هنوز سفارشی ثبت نشده است.</div>}</div></>}

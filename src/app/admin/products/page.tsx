@@ -1,0 +1,5 @@
+import Link from "next/link";
+import { db } from "@/lib/db";
+import type { Prisma } from "@generated/prisma/client";
+type ProductRow = Prisma.ProductGetPayload<{include:{category:true}}>;
+export default async function AdminProducts(){const products=await db.product.findMany({orderBy:{updatedAt:"desc"},include:{category:true}});return <><div className="panel-head"><div><h1>محصولات</h1><span className="meta">ثبت، انتشار و کنترل موجودی</span></div><Link className="btn btn-primary" href="/admin/products/new">محصول جدید</Link></div><div className="table-wrap"><table><thead><tr><th>محصول</th><th>کد</th><th>وزن</th><th>موجودی</th><th>وضعیت</th></tr></thead><tbody>{products.map((p: ProductRow)=><tr key={p.id}><td><strong>{p.name}</strong><br/><span className="meta">{p.category?.name??"بدون دسته"}</span></td><td dir="ltr">{p.sku}</td><td>{Number(p.weightGrams)} گرم</td><td>{p.stock}</td><td><span className="badge">{p.status}</span></td></tr>)}</tbody></table>{!products.length&&<div className="empty">محصولی ثبت نشده است.</div>}</div></>}

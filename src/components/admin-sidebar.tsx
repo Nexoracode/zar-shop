@@ -1,0 +1,2 @@
+import Link from "next/link";
+export function AdminSidebar(){return <aside className="sidebar"><div className="sidebar-title"><strong>مدیریت زر</strong><br/><small style={{opacity:.6}}>مرکز عملیات فروشگاه</small></div><nav><Link href="/admin">نمای کلی</Link><Link href="/admin/products">محصولات</Link><Link href="/admin/media">گالری رسانه</Link><Link href="/admin/orders">سفارش‌ها</Link><Link href="/admin/users">کاربران</Link><Link href="/">مشاهده فروشگاه</Link></nav></aside>}
