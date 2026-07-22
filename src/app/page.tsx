@@ -45,7 +45,7 @@ export default async function Home() {
     <main className="home-page">
       <section className="campaign-hero" aria-labelledby="hero-title">
         <Image
-          src="/images/zar-hero-campaign.png"
+          src="/images/slider.png"
           alt="مدل با گردنبند، گوشواره و دستبند طلای زر گالری"
           fill
           priority
@@ -53,7 +53,7 @@ export default async function Home() {
         />
         <div className="campaign-shade" />
         <div className="container campaign-content">
-          <div className="campaign-copy">
+          {/* <div className="campaign-copy">
             <span className="hero-kicker"><i /> کالکشن امضای زر · ۱۴۰۵</span>
             <h1 id="hero-title">طلا، روایتِ<br /><em>ماندگارِ شما</em></h1>
             <p>زیورآلاتی برای لحظه‌هایی که می‌مانند؛ با طراحی اصیل، قیمت‌گذاری شفاف و تضمین همیشگی اصالت.</p>
@@ -61,7 +61,7 @@ export default async function Home() {
               <Link className="btn btn-primary" href="/products">مشاهده کالکشن <ArrowLeft size={17} /></Link>
               <Link className="hero-secondary-link" href="#about">قصه زر گالری</Link>
             </div>
-          </div>
+          </div> */}
         </div>
         <div className="live-price-card">
           <span><span className="live-dot" /> نرخ لحظه‌ای هر گرم طلای ۱۸ عیار</span>
