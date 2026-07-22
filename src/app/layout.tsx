@@ -1,12 +1,35 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import Link from "next/link";
 import { SiteHeader } from "@/components/site-header";
 import "./globals.css";
 
-export const metadata: Metadata = {
-  title: { default: "زر گالری", template: "%s | زر گالری" },
-  description: "فروشگاه آنلاین طلا با قیمت لحظه‌ای",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const requestHeaders = await headers();
+  const host = requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host") ?? "localhost:3000";
+  const protocol = requestHeaders.get("x-forwarded-proto") ?? (host.startsWith("localhost") ? "http" : "https");
+  const baseUrl = new URL(`${protocol}://${host}`);
+  const description = "زر گالری؛ زیورآلات طلای ۱۸ عیار با قیمت لحظه‌ای، تضمین اصالت و فاکتور رسمی.";
+
+  return {
+    metadataBase: baseUrl,
+    title: { default: "زر گالری", template: "%s | زر گالری" },
+    description,
+    openGraph: {
+      title: "زر گالری | طلا، روایت ماندگار شما",
+      description,
+      type: "website",
+      locale: "fa_IR",
+      images: [{ url: new URL("/og.png", baseUrl), width: 1792, height: 1024, alt: "زر گالری؛ طلا، روایت ماندگار شما" }],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: "زر گالری | طلا، روایت ماندگار شما",
+      description,
+      images: [new URL("/og.png", baseUrl)],
+    },
+  };
+}
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
