@@ -2,6 +2,7 @@ import Image from "next/image";
 import { notFound } from "next/navigation";
 import { BadgeCheck, PackageCheck, ShieldCheck } from "lucide-react";
 import { AddToCart } from "@/components/add-to-cart";
+import { PriceTooltip } from "@/components/price-tooltip";
 import { db } from "@/lib/db";
 import { formatMoney } from "@/lib/format";
 import { getGoldPrice } from "@/modules/gold/gold-price.service";
@@ -33,6 +34,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
         <div className="product-specs"><div><span>وزن</span><strong>{Number(product.weightGrams)} گرم</strong></div><div><span>عیار</span><strong>{product.purity}</strong></div><div><span>موجودی</span><strong>{product.stock > 0 ? "موجود" : "ناموجود"}</strong></div></div>
         <div className="purchase-card">
           <span className="meta">قیمت نهایی بر اساس نرخ {formatMoney(Number(gold.pricePerGram18))}</span>
+          <PriceTooltip />
           <strong className="product-final-price">{formatMoney(total)}</strong>
           <AddToCart productId={product.id} disabled={product.stock < 1} />
         </div>
