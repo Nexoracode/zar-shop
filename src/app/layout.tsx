@@ -10,24 +10,12 @@ export async function generateMetadata(): Promise<Metadata> {
   const protocol = requestHeaders.get("x-forwarded-proto") ?? (host.startsWith("localhost") ? "http" : "https");
   const baseUrl = new URL(`${protocol}://${host}`);
   const description = "زر گالری؛ زیورآلات طلای ۱۸ عیار با قیمت لحظه‌ای، تضمین اصالت و فاکتور رسمی.";
-
   return {
     metadataBase: baseUrl,
     title: { default: "زر گالری", template: "%s | زر گالری" },
     description,
-    openGraph: {
-      title: "زر گالری | طلا، روایت ماندگار شما",
-      description,
-      type: "website",
-      locale: "fa_IR",
-      images: [{ url: new URL("/og.png", baseUrl), width: 1792, height: 1024, alt: "زر گالری؛ طلا، روایت ماندگار شما" }],
-    },
-    twitter: {
-      card: "summary_large_image",
-      title: "زر گالری | طلا، روایت ماندگار شما",
-      description,
-      images: [new URL("/og.png", baseUrl)],
-    },
+    openGraph: { title: "زر گالری | طلا، روایت ماندگار شما", description, type: "website", locale: "fa_IR", images: [{ url: new URL("/og.png", baseUrl), width: 1792, height: 1024, alt: "زر گالری؛ طلا، روایت ماندگار شما" }] },
+    twitter: { card: "summary_large_image", title: "زر گالری | طلا، روایت ماندگار شما", description, images: [new URL("/og.png", baseUrl)] },
   };
 }
 
@@ -37,14 +25,46 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       <body>
         <SiteHeader />
         {children}
-        <footer className="footer">
-          <div className="container footer-grid">
-            <div className="footer-about"><span className="brand-emblem footer-emblem">زر</span><h3>زر گالری</h3><p>تجربه‌ای شفاف و امن برای انتخاب طلای ماندگار؛ همراه با قیمت روز، تضمین اصالت و فاکتور رسمی.</p></div>
-            <div><h4>زر گالری</h4><Link href="/#about">درباره ما</Link><Link href="/products">محصولات</Link><Link href="/#guide">خدمات فروشگاه</Link></div>
-            <div><h4>راهنمای خرید</h4><Link href="/account">پیگیری سفارش</Link><Link href="/cart">سبد خرید</Link><Link href="/login">حساب کاربری</Link></div>
-            <div><h4>تماس با ما</h4><a href="tel:+982100000000">۰۲۱-۰۰۰۰۰۰۰۰</a><a href="mailto:info@zargallery.ir">info@zargallery.ir</a><span>شنبه تا پنجشنبه، ۹ تا ۱۸</span></div>
+
+        {/* Footer */}
+        <footer className="pt-16 pb-0 text-white/75 bg-[#101d33]">
+          <div className="w-[min(1240px,calc(100%-40px))] mx-auto grid grid-cols-[1.5fr_repeat(3,1fr)] gap-[54px] max-[760px]:grid-cols-2 max-[480px]:grid-cols-1 max-[480px]:gap-8">
+            {/* Brand */}
+            <div>
+              <span className="inline-grid place-items-center w-11 h-11 border border-[#d8bd83] text-[#d8bd83] rotate-45 text-xl mb-5">
+                <span className="-rotate-45 text-sm font-bold">زر</span>
+              </span>
+              <h3 className="text-white mt-0 mb-3 text-base">زر گالری</h3>
+              <p className="text-[0.82rem] max-w-[350px]">
+                تجربه‌ای شفاف و امن برای انتخاب طلای ماندگار؛ همراه با قیمت روز، تضمین اصالت و فاکتور رسمی.
+              </p>
+            </div>
+
+            <div className="flex flex-col items-start gap-2 text-[0.8rem]">
+              <h4 className="text-white mt-0 mb-3 text-sm">زر گالری</h4>
+              <Link href="/#about" className="hover:text-white transition-colors">درباره ما</Link>
+              <Link href="/products" className="hover:text-white transition-colors">محصولات</Link>
+              <Link href="/#guide" className="hover:text-white transition-colors">خدمات فروشگاه</Link>
+            </div>
+
+            <div className="flex flex-col items-start gap-2 text-[0.8rem]">
+              <h4 className="text-white mt-0 mb-3 text-sm">راهنمای خرید</h4>
+              <Link href="/account" className="hover:text-white transition-colors">پیگیری سفارش</Link>
+              <Link href="/cart" className="hover:text-white transition-colors">سبد خرید</Link>
+              <Link href="/login" className="hover:text-white transition-colors">حساب کاربری</Link>
+            </div>
+
+            <div className="flex flex-col items-start gap-2 text-[0.8rem]">
+              <h4 className="text-white mt-0 mb-3 text-sm">تماس با ما</h4>
+              <a href="tel:+982100000000" className="hover:text-white transition-colors">۰۲۱-۰۰۰۰۰۰۰۰</a>
+              <a href="mailto:info@zargallery.ir" className="hover:text-white transition-colors">info@zargallery.ir</a>
+              <span>شنبه تا پنجشنبه، ۹ تا ۱۸</span>
+            </div>
           </div>
-          <div className="container footer-bottom">© ۱۴۰۵ زر گالری — تمامی حقوق محفوظ است.</div>
+
+          <div className="w-[min(1240px,calc(100%-40px))] mx-auto mt-[52px] py-[17px] border-t border-white/10 text-center text-[0.72rem]">
+            © ۱۴۰۵ زر گالری — تمامی حقوق محفوظ است.
+          </div>
         </footer>
       </body>
     </html>
