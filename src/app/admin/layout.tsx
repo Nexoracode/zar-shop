@@ -2,11 +2,13 @@ import { AdminSidebar } from "@/components/admin-sidebar";
 import { requireRole } from "@/modules/auth/session";
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
-  await requireRole(["ADMIN", "OPERATOR"]);
+  const user = await requireRole(["ADMIN", "OPERATOR"]);
   return (
-    <main className="mx-auto grid w-full max-w-[1240px] grid-cols-1 gap-6 px-5 py-8 sm:px-6 lg:grid-cols-[240px_minmax(0,1fr)] lg:gap-[30px] lg:py-10 lg:pb-20">
-      <AdminSidebar />
-      <section className="min-w-0">{children}</section>
+    <main className="bg-[#f6f7f9] py-5 sm:py-7 lg:min-h-[calc(100vh-130px)]">
+      <div className="mx-auto grid w-full max-w-[1440px] grid-cols-1 gap-5 px-4 sm:px-6 lg:grid-cols-[260px_minmax(0,1fr)] lg:gap-7">
+      <AdminSidebar user={{ firstName: user.firstName, lastName: user.lastName, email: user.email, role: user.role as "ADMIN" | "OPERATOR" }} />
+      <section className="min-w-0 rounded-[24px] lg:py-2">{children}</section>
+      </div>
     </main>
   );
 }

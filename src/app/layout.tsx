@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { headers } from "next/headers";
 import Link from "next/link";
 import { SiteHeader } from "@/components/site-header";
+import { AppChrome } from "@/components/app-chrome";
 import "./globals.css";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -23,11 +24,9 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="fa" dir="rtl">
       <body>
-        <SiteHeader />
-        {children}
-
-        {/* Footer */}
-        <footer className="bg-[#101d33] pt-14 text-white/75 sm:pt-16">
+        <AppChrome
+          header={<SiteHeader />}
+          footer={<footer className="bg-[#101d33] pt-14 text-white/75 sm:pt-16">
           <div className="mx-auto grid w-full max-w-[1240px] grid-cols-1 gap-10 px-5 sm:grid-cols-2 sm:px-6 lg:grid-cols-[1.5fr_repeat(3,1fr)] lg:gap-[54px]">
             {/* Brand */}
             <div>
@@ -65,7 +64,10 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
           <div className="mx-auto mt-12 w-[calc(100%-40px)] max-w-[1240px] border-t border-white/10 py-4 text-center text-[0.72rem]">
             © ۱۴۰۵ زر گالری — تمامی حقوق محفوظ است.
           </div>
-        </footer>
+          </footer>}
+        >
+          {children}
+        </AppChrome>
       </body>
     </html>
   );
