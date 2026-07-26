@@ -1,10 +1,23 @@
-import Link from "next/link";
 import type { Prisma } from "@generated/prisma/client";
+import Link from "next/link";
 import { OrderStatus } from "@generated/prisma/enums";
 import { AdminEmptyState, AdminPageHeader, AdminPanel, AdminStatusBadge, adminFieldClass } from "@/components/admin-ui";
 import { db } from "@/lib/db";
 import { formatDate, formatMoney } from "@/lib/format";
 import { orderStatusLabels, orderStatusTones } from "@/modules/admin/labels";
+import { HeroSelectField } from "@/components/hero-select-field";
+import {
+  Button,
+  Input,
+  Table,
+  TableBody,
+  TableCell,
+  TableColumn,
+  TableContent,
+  TableHeader,
+  TableRow,
+  TableScrollContainer,
+} from "@/components/hero";
 
 type OrderRow = Prisma.OrderGetPayload<{ include: { user: true; _count: { select: { items: true } } } }>;
 type SearchParams = Promise<{ q?: string; status?: string }>;
@@ -45,17 +58,11 @@ export default async function OrdersPage({ searchParams }: { searchParams: Searc
         <form method="get" action="/admin/orders" className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_220px_auto] sm:items-end">
           <label className="grid gap-1.5 text-xs font-bold text-slate-600">
             جست‌وجوی سفارش
-            <input name="q" defaultValue={query} className={adminFieldClass} placeholder="شماره سفارش، نام، ایمیل یا موبایل" />
+            <Input name="q" defaultValue={query} fullWidth variant="secondary" className={adminFieldClass} placeholder="شماره سفارش، نام، ایمیل یا موبایل" />
           </label>
-          <label className="grid gap-1.5 text-xs font-bold text-slate-600">
-            وضعیت سفارش
-            <select name="status" defaultValue={status ?? ""} className={adminFieldClass}>
-              <option value="">همه وضعیت‌ها</option>
-              {statuses.map((item) => <option key={item} value={item}>{orderStatusLabels[item]}</option>)}
-            </select>
-          </label>
+          <HeroSelectField name="status" label="وضعیت سفارش" defaultValue={status ?? ""} options={[{ value: "", label: "همه وضعیت‌ها" }, ...statuses.map((item) => ({ value: item, label: orderStatusLabels[item] }))]} />
           <div className="flex gap-2">
-            <button type="submit" className="min-h-12 flex-1 rounded-xl bg-[#172b4d] px-5 text-sm font-bold text-white transition hover:bg-[#203b66] sm:flex-none">اعمال فیلتر</button>
+            <Button type="submit" variant="primary" className="min-h-12 flex-1 bg-[#172b4d] px-5 text-sm font-bold text-white sm:flex-none">اعمال فیلتر</Button>
             {(query || status) && <Link href="/admin/orders" className="inline-flex min-h-12 items-center justify-center rounded-xl border border-slate-200 px-4 text-sm font-bold text-slate-500 hover:bg-slate-50">پاک‌کردن</Link>}
           </div>
         </form>
@@ -86,24 +93,19 @@ export default async function OrdersPage({ searchParams }: { searchParams: Searc
               })}
             </div>
 
-            <div className="hidden overflow-x-auto md:block">
-              <table className="w-full min-w-[780px] border-collapse">
-                <thead><tr>{["شماره سفارش", "مشتری", "اقلام", "مبلغ", "وضعیت", "تاریخ"].map((head) => <th className="border-b border-slate-100 bg-slate-50/70 px-5 py-4 text-right text-xs font-bold text-slate-500" key={head}>{head}</th>)}</tr></thead>
-                <tbody>{orders.map((order: OrderRow) => {
+            <Table className="hidden md:block"><TableScrollContainer><TableContent aria-label="فهرست سفارش‌ها" className="w-full min-w-[780px]"><TableHeader>{["شماره سفارش", "مشتری", "اقلام", "مبلغ", "وضعیت", "تاریخ"].map((head, index) => <TableColumn id={head} isRowHeader={index === 0} className="bg-slate-50/70 px-5 py-4 text-right text-xs font-bold text-slate-500" key={head}>{head}</TableColumn>)}</TableHeader><TableBody>{orders.map((order: OrderRow) => {
                   const customerName = `${order.user.firstName ?? ""} ${order.user.lastName ?? ""}`.trim() || "کاربر بدون نام";
                   return (
-                    <tr key={order.id} className="transition hover:bg-slate-50/60">
-                      <td className={cell}><strong className="text-[#17233b]" dir="ltr">{order.orderNumber}</strong></td>
-                      <td className={cell}><strong className="block text-slate-700">{customerName}</strong><span className="text-xs text-slate-400">{order.user.email}</span></td>
-                      <td className={cell}>{order._count.items.toLocaleString("fa-IR")}</td>
-                      <td className={cell}><strong className="text-slate-700">{formatMoney(order.total.toString())}</strong></td>
-                      <td className={cell}><AdminStatusBadge tone={orderStatusTones[order.status]}>{orderStatusLabels[order.status]}</AdminStatusBadge></td>
-                      <td className={cell}>{formatDate(order.createdAt)}</td>
-                    </tr>
+                    <TableRow id={order.id} key={order.id} className="transition hover:bg-slate-50/60">
+                      <TableCell className={cell}><strong className="text-[#17233b]" dir="ltr">{order.orderNumber}</strong></TableCell>
+                      <TableCell className={cell}><strong className="block text-slate-700">{customerName}</strong><span className="text-xs text-slate-400">{order.user.email}</span></TableCell>
+                      <TableCell className={cell}>{order._count.items.toLocaleString("fa-IR")}</TableCell>
+                      <TableCell className={cell}><strong className="text-slate-700">{formatMoney(order.total.toString())}</strong></TableCell>
+                      <TableCell className={cell}><AdminStatusBadge tone={orderStatusTones[order.status]}>{orderStatusLabels[order.status]}</AdminStatusBadge></TableCell>
+                      <TableCell className={cell}>{formatDate(order.createdAt)}</TableCell>
+                    </TableRow>
                   );
-                })}</tbody>
-              </table>
-            </div>
+                })}</TableBody></TableContent></TableScrollContainer></Table>
           </>
         )}
       </AdminPanel>

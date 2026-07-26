@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { AlertDescription, AlertRoot, Card, ChipLabel, ChipRoot, Table, TableBody, TableCell, TableColumn, TableContent, TableHeader, TableRow, TableScrollContainer } from "@/components/hero";
 import { requireUser } from "@/modules/auth/session";
 import { db } from "@/lib/db";
 import { getGoldPriceForDisplay } from "@/modules/gold/gold-price.service";
@@ -39,59 +40,45 @@ export default async function CartPage() {
             <span className="inline-block text-[#785b27] text-[0.78rem] font-bold tracking-[0.03em] mb-[5px]">خرید امن</span>
             <h1 className="mt-0 mb-0">سبد خرید</h1>
           </div>
-          <span className="inline-block px-[11px] py-[5px] bg-[#efe5d1] text-[#785b27] text-[0.78rem] rounded-sm">
-            نرخ مبنا: {rate === null ? "موقتاً در دسترس نیست" : formatMoney(rate)}
-          </span>
+          <ChipRoot variant="soft" className="bg-[#efe5d1] text-[#785b27]"><ChipLabel>نرخ مبنا: {rate === null ? "موقتاً در دسترس نیست" : formatMoney(rate)}</ChipLabel></ChipRoot>
         </div>
 
         {!items.length ? (
-          <div className="py-12 text-center border border-[#e7e6e2] bg-white text-[#747982]">
+          <Card variant="secondary" className="py-12 text-center border border-[#e7e6e2] bg-white text-[#747982]">
             سبد خرید خالی است.
             <br />
             <Link href="/products" className="min-h-[46px] mt-4 px-6 py-[9px] inline-flex items-center justify-center border border-[#17233b] rounded-sm transition-all hover:-translate-y-[2px]">
               مشاهده محصولات
             </Link>
-          </div>
+          </Card>
         ) : (
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_380px] xl:grid-cols-[minmax(0,1fr)_420px] xl:gap-[30px]">
             {/* Table */}
-            <div className="border border-[#e7e6e2] bg-white overflow-x-auto">
-              <table className="w-full border-collapse min-w-[700px]">
-                <thead>
-                  <tr>
-                    {["محصول", "تعداد", "وزن", "مبلغ"].map((h) => (
-                      <th key={h} className="px-4 py-[14px] text-right border-b border-[#e7e6e2] text-[#747982] text-[0.82rem] bg-[#f8f7f4]">{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
+            <Table><TableScrollContainer><TableContent aria-label="اقلام سبد خرید" className="w-full min-w-[700px]"><TableHeader>{["محصول", "تعداد", "وزن", "مبلغ"].map((h, index) => <TableColumn id={h} key={h} isRowHeader={index === 0} className="bg-[#f8f7f4] px-4 py-[14px] text-right text-[0.82rem] text-[#747982]">{h}</TableColumn>)}</TableHeader><TableBody>
                   {items.map((item) => {
                     const p = item.product;
                     const amount = getItemAmount(item);
                     return (
-                      <tr key={p.id}>
-                        <td className="px-4 py-[14px] border-b border-[#e7e6e2]"><strong>{p.name}</strong><br /><span className="text-[#747982] text-[0.82rem]">{p.sku}</span></td>
-                        <td className="px-4 py-[14px] border-b border-[#e7e6e2]">{item.quantity}</td>
-                        <td className="px-4 py-[14px] border-b border-[#e7e6e2]">{Number(p.weightGrams)} گرم</td>
-                        <td className="px-4 py-[14px] border-b border-[#e7e6e2]">
+                      <TableRow id={p.id} key={p.id}>
+                        <TableCell className="px-4 py-[14px]"><strong>{p.name}</strong><br /><span className="text-[#747982] text-[0.82rem]">{p.sku}</span></TableCell>
+                        <TableCell className="px-4 py-[14px]">{item.quantity}</TableCell>
+                        <TableCell className="px-4 py-[14px]">{Number(p.weightGrams)} گرم</TableCell>
+                        <TableCell className="px-4 py-[14px]">
                           {amount === null ? "قیمت موقتاً نامشخص" : formatMoney(amount * item.quantity)}
-                        </td>
-                      </tr>
+                        </TableCell>
+                      </TableRow>
                     );
                   })}
-                  <tr>
-                    <td colSpan={3} className="px-4 py-[14px] border-b border-[#e7e6e2]"><strong>جمع کل</strong></td>
-                    <td className="px-4 py-[14px] border-b border-[#e7e6e2]"><strong>
+                  <TableRow id="total">
+                    <TableCell className="px-4 py-[14px]"><strong>جمع کل</strong></TableCell>
+                    <TableCell className="px-4 py-[14px]">—</TableCell><TableCell className="px-4 py-[14px]">—</TableCell>
+                    <TableCell className="px-4 py-[14px]"><strong>
                       {total === null ? "قابل محاسبه نیست" : formatMoney(total)}
-                    </strong></td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
+                    </strong></TableCell>
+                  </TableRow>
+                </TableBody></TableContent></TableScrollContainer></Table>
             {rate === null ? (
-              <div className="self-start border border-[#e7c9a8] bg-[#fff8ed] p-[22px] text-[#785b27] text-[0.88rem] leading-8">
-                نرخ لحظه‌ای طلا موقتاً در دسترس نیست. سبد خرید شما حفظ شده است و پس از برقراری سرویس می‌توانید پرداخت را ادامه دهید.
-              </div>
+              <AlertRoot status="warning" className="self-start"><AlertDescription>نرخ لحظه‌ای طلا موقتاً در دسترس نیست. سبد خرید شما حفظ شده است و پس از برقراری سرویس می‌توانید پرداخت را ادامه دهید.</AlertDescription></AlertRoot>
             ) : (
               <CheckoutForm />
             )}

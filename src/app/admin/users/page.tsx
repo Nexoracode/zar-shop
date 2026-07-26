@@ -1,10 +1,23 @@
-import Link from "next/link";
 import type { Prisma } from "@generated/prisma/client";
+import Link from "next/link";
 import { UserRole, UserStatus } from "@generated/prisma/enums";
 import { AdminEmptyState, AdminPageHeader, AdminPanel, AdminStatusBadge, adminFieldClass } from "@/components/admin-ui";
 import { db } from "@/lib/db";
 import { formatDate } from "@/lib/format";
 import { userRoleLabels, userStatusLabels, userStatusTones } from "@/modules/admin/labels";
+import { HeroSelectField } from "@/components/hero-select-field";
+import {
+  Button,
+  Input,
+  Table,
+  TableBody,
+  TableCell,
+  TableColumn,
+  TableContent,
+  TableHeader,
+  TableRow,
+  TableScrollContainer,
+} from "@/components/hero";
 
 type UserRow = Prisma.UserGetPayload<{ include: { _count: { select: { orders: true } } } }>;
 type SearchParams = Promise<{ q?: string; status?: string; role?: string }>;
@@ -43,24 +56,12 @@ export default async function UsersPage({ searchParams }: { searchParams: Search
         <form method="get" action="/admin/users" className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_180px_180px_auto] lg:items-end">
           <label className="grid gap-1.5 text-xs font-bold text-slate-600">
             جست‌وجوی کاربر
-            <input name="q" defaultValue={query} className={adminFieldClass} placeholder="نام، ایمیل یا شماره موبایل" />
+            <Input name="q" defaultValue={query} fullWidth variant="secondary" className={adminFieldClass} placeholder="نام، ایمیل یا شماره موبایل" />
           </label>
-          <label className="grid gap-1.5 text-xs font-bold text-slate-600">
-            نقش کاربر
-            <select name="role" defaultValue={role ?? ""} className={adminFieldClass}>
-              <option value="">همه نقش‌ها</option>
-              {roles.map((item) => <option key={item} value={item}>{userRoleLabels[item]}</option>)}
-            </select>
-          </label>
-          <label className="grid gap-1.5 text-xs font-bold text-slate-600">
-            وضعیت حساب
-            <select name="status" defaultValue={status ?? ""} className={adminFieldClass}>
-              <option value="">همه وضعیت‌ها</option>
-              {statuses.map((item) => <option key={item} value={item}>{userStatusLabels[item]}</option>)}
-            </select>
-          </label>
+          <HeroSelectField name="role" label="نقش کاربر" defaultValue={role ?? ""} options={[{ value: "", label: "همه نقش‌ها" }, ...roles.map((item) => ({ value: item, label: userRoleLabels[item] }))]} />
+          <HeroSelectField name="status" label="وضعیت حساب" defaultValue={status ?? ""} options={[{ value: "", label: "همه وضعیت‌ها" }, ...statuses.map((item) => ({ value: item, label: userStatusLabels[item] }))]} />
           <div className="flex gap-2">
-            <button type="submit" className="min-h-12 flex-1 rounded-xl bg-[#172b4d] px-5 text-sm font-bold text-white transition hover:bg-[#203b66] lg:flex-none">اعمال فیلتر</button>
+            <Button type="submit" variant="primary" className="min-h-12 flex-1 bg-[#172b4d] px-5 text-sm font-bold text-white lg:flex-none">اعمال فیلتر</Button>
             {(query || role || status) && <Link href="/admin/users" className="inline-flex min-h-12 items-center justify-center rounded-xl border border-slate-200 px-4 text-sm font-bold text-slate-500 hover:bg-slate-50">پاک‌کردن</Link>}
           </div>
         </form>
@@ -90,24 +91,19 @@ export default async function UsersPage({ searchParams }: { searchParams: Search
               })}
             </div>
 
-            <div className="hidden overflow-x-auto md:block">
-              <table className="w-full min-w-[820px] border-collapse">
-                <thead><tr>{["کاربر", "تماس", "نقش", "سفارش‌ها", "وضعیت", "عضویت"].map((head) => <th className="border-b border-slate-100 bg-slate-50/70 px-5 py-4 text-right text-xs font-bold text-slate-500" key={head}>{head}</th>)}</tr></thead>
-                <tbody>{users.map((user: UserRow) => {
+            <Table className="hidden md:block"><TableScrollContainer><TableContent aria-label="فهرست کاربران" className="w-full min-w-[820px]"><TableHeader>{["کاربر", "تماس", "نقش", "سفارش‌ها", "وضعیت", "عضویت"].map((head, index) => <TableColumn id={head} isRowHeader={index === 0} className="bg-slate-50/70 px-5 py-4 text-right text-xs font-bold text-slate-500" key={head}>{head}</TableColumn>)}</TableHeader><TableBody>{users.map((user: UserRow) => {
                   const fullName = `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim() || "کاربر بدون نام";
                   return (
-                    <tr key={user.id} className="transition hover:bg-slate-50/60">
-                      <td className={cell}><strong className="block text-slate-700">{fullName}</strong><span className="text-xs text-slate-400">{user.email}</span></td>
-                      <td className={cell}><span dir="ltr">{user.phone ?? "—"}</span></td>
-                      <td className={cell}><AdminStatusBadge tone={user.role === "ADMIN" ? "gold" : user.role === "OPERATOR" ? "info" : "neutral"}>{userRoleLabels[user.role]}</AdminStatusBadge></td>
-                      <td className={cell}>{user._count.orders.toLocaleString("fa-IR")}</td>
-                      <td className={cell}><AdminStatusBadge tone={userStatusTones[user.status]}>{userStatusLabels[user.status]}</AdminStatusBadge></td>
-                      <td className={cell}>{formatDate(user.createdAt)}</td>
-                    </tr>
+                    <TableRow id={user.id} key={user.id} className="transition hover:bg-slate-50/60">
+                      <TableCell className={cell}><strong className="block text-slate-700">{fullName}</strong><span className="text-xs text-slate-400">{user.email}</span></TableCell>
+                      <TableCell className={cell}><span dir="ltr">{user.phone ?? "—"}</span></TableCell>
+                      <TableCell className={cell}><AdminStatusBadge tone={user.role === "ADMIN" ? "gold" : user.role === "OPERATOR" ? "info" : "neutral"}>{userRoleLabels[user.role]}</AdminStatusBadge></TableCell>
+                      <TableCell className={cell}>{user._count.orders.toLocaleString("fa-IR")}</TableCell>
+                      <TableCell className={cell}><AdminStatusBadge tone={userStatusTones[user.status]}>{userStatusLabels[user.status]}</AdminStatusBadge></TableCell>
+                      <TableCell className={cell}>{formatDate(user.createdAt)}</TableCell>
+                    </TableRow>
                   );
-                })}</tbody>
-              </table>
-            </div>
+                })}</TableBody></TableContent></TableScrollContainer></Table>
           </>
         )}
       </AdminPanel>

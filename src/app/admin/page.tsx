@@ -1,4 +1,3 @@
-import Link from "next/link";
 import {
   ArrowLeft,
   Boxes,
@@ -10,6 +9,7 @@ import {
   TriangleAlert,
   Users,
 } from "lucide-react";
+import Link from "next/link";
 import { db } from "@/lib/db";
 import { formatDate, formatMoney } from "@/lib/format";
 import {
@@ -19,6 +19,17 @@ import {
   AdminStatusBadge,
 } from "@/components/admin-ui";
 import { orderStatusLabels, orderStatusTones } from "@/modules/admin/labels";
+import {
+  Card,
+  Table,
+  TableBody,
+  TableCell,
+  TableColumn,
+  TableContent,
+  TableHeader,
+  TableRow,
+  TableScrollContainer,
+} from "@/components/hero";
 
 export default async function AdminPage() {
   const [activeProducts, customers, actionableOrders, revenue, recentOrders, lowStockProducts] = await Promise.all([
@@ -91,7 +102,7 @@ export default async function AdminPage() {
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {stats.map(({ label, value, hint, icon: Icon, tone, compact }) => (
-          <article key={label} className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-[0_8px_30px_rgba(15,23,42,0.035)] sm:p-5">
+          <Card key={label} variant="secondary" className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-[0_8px_30px_rgba(15,23,42,0.035)] sm:p-5">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
                 <span className="text-xs font-bold text-slate-500">{label}</span>
@@ -100,7 +111,7 @@ export default async function AdminPage() {
               <span className={`grid h-11 w-11 shrink-0 place-items-center rounded-xl ${tone}`}><Icon size={21} /></span>
             </div>
             <p className="mb-0 mt-3 truncate text-[0.7rem] text-slate-400">{hint}</p>
-          </article>
+          </Card>
         ))}
       </div>
 
@@ -112,22 +123,17 @@ export default async function AdminPage() {
           </div>
           {recentOrders.length ? (
             <>
-              <div className="hidden overflow-x-auto md:block">
-                <table className="w-full min-w-[620px] border-collapse">
-                  <thead><tr>{["شماره سفارش", "مشتری", "اقلام", "مبلغ", "وضعیت", "تاریخ"].map((title) => <th key={title} className="bg-slate-50/70 px-4 py-3 text-right text-[0.7rem] font-bold text-slate-400">{title}</th>)}</tr></thead>
-                  <tbody>{recentOrders.map((order) => {
+              <Table className="hidden md:block"><TableScrollContainer><TableContent aria-label="آخرین سفارش‌ها" className="w-full min-w-[620px]"><TableHeader>{["شماره سفارش", "مشتری", "اقلام", "مبلغ", "وضعیت", "تاریخ"].map((title, index) => <TableColumn id={title} key={title} isRowHeader={index === 0} className="bg-slate-50/70 px-4 py-3 text-right text-[0.7rem] font-bold text-slate-500">{title}</TableColumn>)}</TableHeader><TableBody>{recentOrders.map((order) => {
                     const customerName = [order.user.firstName, order.user.lastName].filter(Boolean).join(" ") || order.user.email;
-                    return <tr key={order.id} className="border-t border-slate-100 transition hover:bg-slate-50/60">
-                      <td className="px-4 py-3 text-xs font-bold text-slate-700" dir="ltr">{order.orderNumber}</td>
-                      <td className="max-w-40 truncate px-4 py-3 text-xs text-slate-600">{customerName}</td>
-                      <td className="px-4 py-3 text-xs text-slate-500">{order._count.items.toLocaleString("fa-IR")}</td>
-                      <td className="px-4 py-3 text-xs font-bold text-slate-700">{formatMoney(order.total.toString())}</td>
-                      <td className="px-4 py-3"><AdminStatusBadge tone={orderStatusTones[order.status]}>{orderStatusLabels[order.status]}</AdminStatusBadge></td>
-                      <td className="whitespace-nowrap px-4 py-3 text-xs text-slate-400">{formatDate(order.createdAt)}</td>
-                    </tr>;
-                  })}</tbody>
-                </table>
-              </div>
+                    return <TableRow id={order.id} key={order.id} className="transition hover:bg-slate-50/60">
+                      <TableCell className="px-4 py-3 text-xs font-bold text-slate-700">{order.orderNumber}</TableCell>
+                      <TableCell className="max-w-40 truncate px-4 py-3 text-xs text-slate-600">{customerName}</TableCell>
+                      <TableCell className="px-4 py-3 text-xs text-slate-500">{order._count.items.toLocaleString("fa-IR")}</TableCell>
+                      <TableCell className="px-4 py-3 text-xs font-bold text-slate-700">{formatMoney(order.total.toString())}</TableCell>
+                      <TableCell className="px-4 py-3"><AdminStatusBadge tone={orderStatusTones[order.status]}>{orderStatusLabels[order.status]}</AdminStatusBadge></TableCell>
+                      <TableCell className="whitespace-nowrap px-4 py-3 text-xs text-slate-400">{formatDate(order.createdAt)}</TableCell>
+                    </TableRow>;
+                  })}</TableBody></TableContent></TableScrollContainer></Table>
               <div className="divide-y divide-slate-100 md:hidden">
                 {recentOrders.map((order) => {
                   const customerName = [order.user.firstName, order.user.lastName].filter(Boolean).join(" ") || order.user.email;

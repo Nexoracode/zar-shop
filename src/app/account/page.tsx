@@ -2,6 +2,9 @@ import { requireUser } from "@/modules/auth/session";
 import { db } from "@/lib/db";
 import { formatDate, formatMoney } from "@/lib/format";
 import type { Order } from "@generated/prisma/client";
+import { Button, Card, Table, TableBody, TableCell, TableColumn, TableContent, TableHeader, TableRow, TableScrollContainer } from "@/components/hero";
+import { AdminStatusBadge } from "@/components/admin-ui";
+import { orderStatusLabels, orderStatusTones } from "@/modules/admin/labels";
 
 export default async function AccountPage() {
   const user = await requireUser();
@@ -18,9 +21,9 @@ export default async function AccountPage() {
             <h1 className="mt-0 mb-0">{displayName}</h1>
           </div>
           <form action="/api/auth/logout" method="post">
-            <button className="min-h-[46px] px-6 py-[9px] inline-flex items-center justify-center border border-[#17233b] rounded-sm transition-all hover:-translate-y-[2px] hover:shadow-[0_8px_20px_rgba(20,35,61,0.12)]">
+            <Button type="submit" variant="outline" className="min-h-[46px] px-6">
               خروج
-            </button>
+            </Button>
           </form>
         </div>
 
@@ -32,10 +35,10 @@ export default async function AccountPage() {
             { val: user.phone ?? "—", label: "شماره تماس" },
             { val: user.email, label: "ایمیل حساب", small: true },
           ].map(({ val, label, small }) => (
-            <div key={label} className="p-[21px] border border-[#e7e6e2] bg-white rounded-[4px]">
+            <Card key={label} variant="secondary" className="rounded-2xl border border-[#e7e6e2] bg-white p-[21px]">
               <strong className={`block font-bold ${small ? "text-[1rem]" : "text-2xl"}`}>{val}</strong>
               <span className="text-[#747982] text-[0.85rem]">{label}</span>
-            </div>
+            </Card>
           ))}
         </div>
 
@@ -44,32 +47,16 @@ export default async function AccountPage() {
           <h2 className="m-0">سفارش‌های من</h2>
         </div>
 
-        <div className="border border-[#e7e6e2] bg-white overflow-x-auto">
-          <table className="w-full border-collapse min-w-[700px]">
-            <thead>
-              <tr>
-                {["شماره سفارش", "مبلغ", "وضعیت", "تاریخ"].map((h) => (
-                  <th key={h} className="px-4 py-[14px] text-right border-b border-[#e7e6e2] text-[#747982] text-[0.82rem] bg-[#f8f7f4]">{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
+        <Table><TableScrollContainer><TableContent aria-label="سفارش‌های من" className="w-full min-w-[700px]"><TableHeader>{["شماره سفارش", "مبلغ", "وضعیت", "تاریخ"].map((h, index) => <TableColumn id={h} key={h} isRowHeader={index === 0} className="bg-[#f8f7f4] px-4 py-[14px] text-right text-[0.82rem] text-[#747982]">{h}</TableColumn>)}</TableHeader><TableBody>
               {orders.map((o: Order) => (
-                <tr key={o.id}>
-                  <td className="px-4 py-[14px] border-b border-[#e7e6e2]">{o.orderNumber}</td>
-                  <td className="px-4 py-[14px] border-b border-[#e7e6e2]">{formatMoney(o.total.toString())}</td>
-                  <td className="px-4 py-[14px] border-b border-[#e7e6e2]">
-                    <span className="inline-block px-[11px] py-[5px] bg-[#efe5d1] text-[#785b27] text-[0.78rem] rounded-sm">{o.status}</span>
-                  </td>
-                  <td className="px-4 py-[14px] border-b border-[#e7e6e2]">{formatDate(o.createdAt)}</td>
-                </tr>
+                <TableRow id={o.id} key={o.id}>
+                  <TableCell className="px-4 py-[14px]">{o.orderNumber}</TableCell>
+                  <TableCell className="px-4 py-[14px]">{formatMoney(o.total.toString())}</TableCell>
+                  <TableCell className="px-4 py-[14px]"><AdminStatusBadge tone={orderStatusTones[o.status]}>{orderStatusLabels[o.status]}</AdminStatusBadge></TableCell>
+                  <TableCell className="px-4 py-[14px]">{formatDate(o.createdAt)}</TableCell>
+                </TableRow>
               ))}
-              {!orders.length && (
-                <tr><td colSpan={4} className="py-12 text-center text-[#747982]">هنوز سفارشی ندارید.</td></tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+            </TableBody></TableContent></TableScrollContainer></Table>
       </div>
     </main>
   );

@@ -143,7 +143,7 @@ export default async function Home() {
           </div>
 
           {products.length > 0 ? (
-            <div className="grid grid-cols-4 gap-[28px_16px] max-[1000px]:grid-cols-3 max-[760px]:grid-cols-2 max-[760px]:gap-[18px_10px]">
+            <div className="grid grid-cols-2 justify-start gap-[18px_10px] sm:grid-cols-[repeat(auto-fit,minmax(190px,230px))] sm:gap-[24px_16px]">
               {products.map((product: HomeProduct) => {
                 const calculated = price === null ? null : calculateProductPrice({
                   goldPricePerGram18: price, weightGrams: Number(product.weightGrams), purity: product.purity,

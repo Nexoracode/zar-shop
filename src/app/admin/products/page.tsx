@@ -1,10 +1,12 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Pencil, Plus, Search, Star } from "lucide-react";
+import { Button, Card, Input, Table, TableBody, TableCell, TableColumn, TableContent, TableHeader, TableRow, TableScrollContainer } from "@/components/hero";
 import type { Prisma, ProductStatus } from "@generated/prisma/client";
 import { db } from "@/lib/db";
 import { AdminEmptyState, AdminPageHeader, AdminPanel, AdminPrimaryLink, AdminStatusBadge, adminFieldClass } from "@/components/admin-ui";
 import { productStatusLabels, productStatusTones } from "@/modules/admin/labels";
+import { HeroSelectField } from "@/components/hero-select-field";
 
 type Context = { searchParams: Promise<{ q?: string; status?: string; category?: string }> };
 type ProductRow = Prisma.ProductGetPayload<{ include: { category: true; media: { include: { media: true } } } }>;
@@ -30,20 +32,20 @@ export default async function AdminProducts({ searchParams }: Context) {
       <AdminPageHeader eyebrow="مدیریت کاتالوگ" title="محصولات" description="محصولات، موجودی، قیمت‌گذاری و وضعیت انتشار را از یک‌جا مدیریت کنید." action={<AdminPrimaryLink href="/admin/products/new"><Plus size={17} />محصول جدید</AdminPrimaryLink>} />
 
       <div className="mb-5 grid grid-cols-3 gap-3">
-        {[{ label: "همه محصولات", value: total }, { label: "منتشرشده", value: active }, { label: "پیش‌نویس", value: drafts }].map((item) => <div key={item.label} className="rounded-2xl border border-slate-200/80 bg-white p-3.5 sm:p-4"><strong className="block text-xl font-black text-[#172b4d]">{item.value.toLocaleString("fa-IR")}</strong><span className="text-[11px] text-slate-500 sm:text-xs">{item.label}</span></div>)}
+        {[{ label: "همه محصولات", value: total }, { label: "منتشرشده", value: active }, { label: "پیش‌نویس", value: drafts }].map((item) => <Card key={item.label} variant="secondary" className="rounded-2xl border border-slate-200/80 bg-white p-3.5 sm:p-4"><strong className="block text-xl font-black text-[#172b4d]">{item.value.toLocaleString("fa-IR")}</strong><span className="text-[11px] text-slate-500 sm:text-xs">{item.label}</span></Card>)}
       </div>
 
       <AdminPanel>
         <form className="grid gap-3 border-b border-slate-100 bg-slate-50/70 p-4 md:grid-cols-[minmax(220px,1fr)_180px_180px_auto]">
-          <label className="relative"><Search className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={17} /><input name="q" defaultValue={params.q} placeholder="جست‌وجوی نام، کد یا نشانی..." className={`${adminFieldClass} pr-10`} /></label>
-          <select name="status" defaultValue={status ?? ""} className={adminFieldClass}><option value="">همه وضعیت‌ها</option>{Object.entries(productStatusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select>
-          <select name="category" defaultValue={params.category ?? ""} className={adminFieldClass}><option value="">همه دسته‌ها</option>{categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}</select>
-          <button className="min-h-11 rounded-xl bg-[#172b4d] px-5 text-sm font-bold text-white">اعمال فیلتر</button>
+          <div className="relative"><Search className="pointer-events-none absolute right-3.5 top-1/2 z-10 -translate-y-1/2 text-slate-400" size={17} /><Input name="q" defaultValue={params.q} fullWidth variant="secondary" placeholder="جست‌وجوی نام، کد یا نشانی..." className={`${adminFieldClass} pr-10`} /></div>
+          <HeroSelectField name="status" ariaLabel="وضعیت محصول" defaultValue={status ?? ""} options={[{ value: "", label: "همه وضعیت‌ها" }, ...Object.entries(productStatusLabels).map(([value, label]) => ({ value, label }))]} />
+          <HeroSelectField name="category" ariaLabel="دسته‌بندی" defaultValue={params.category ?? ""} options={[{ value: "", label: "همه دسته‌ها" }, ...categories.map((category) => ({ value: category.id, label: category.name }))]} />
+          <Button type="submit" variant="primary" className="min-h-11 bg-[#172b4d] px-5 text-sm font-bold text-white">اعمال فیلتر</Button>
         </form>
 
         {products.length ? <>
           <div className="grid gap-3 p-3 md:hidden">{products.map((product: ProductRow) => <ProductMobileCard key={product.id} product={product} />)}</div>
-          <div className="hidden overflow-x-auto md:block"><table className="w-full min-w-[820px] border-collapse"><thead><tr>{["محصول", "کد کالا", "وزن", "موجودی", "وضعیت", "عملیات"].map((head) => <th key={head} className="border-b border-slate-100 bg-white px-5 py-4 text-right text-xs font-bold text-slate-400">{head}</th>)}</tr></thead><tbody>{products.map((product: ProductRow) => <ProductTableRow key={product.id} product={product} />)}</tbody></table></div>
+          <Table className="hidden md:block"><TableScrollContainer><TableContent aria-label="فهرست محصولات" className="w-full min-w-[820px]"><TableHeader>{["محصول", "کد کالا", "وزن", "موجودی", "وضعیت", "عملیات"].map((head, index) => <TableColumn id={head} key={head} isRowHeader={index === 0} className="bg-white px-5 py-4 text-right text-xs font-bold text-slate-500">{head}</TableColumn>)}</TableHeader><TableBody>{products.map((product: ProductRow) => <ProductTableRow key={product.id} product={product} />)}</TableBody></TableContent></TableScrollContainer></Table>
         </> : <AdminEmptyState title="محصولی پیدا نشد" description="فیلترها را تغییر دهید یا اولین محصول را ثبت کنید." />}
       </AdminPanel>
     </>
@@ -56,10 +58,10 @@ function ProductThumb({ product }: { product: ProductRow }) {
 }
 
 function ProductMobileCard({ product }: { product: ProductRow }) {
-  return <article className="rounded-2xl border border-slate-100 p-4"><div className="flex gap-3"><ProductThumb product={product} /><div className="min-w-0 flex-1"><div className="flex items-start justify-between gap-2"><div><strong className="block truncate text-sm text-slate-800">{product.name}</strong><span className="text-xs text-slate-400">{product.category?.name ?? "بدون دسته‌بندی"}</span></div>{product.featured && <Star size={16} className="shrink-0 fill-[#b5904c] text-[#b5904c]" />}</div><div className="mt-3 flex flex-wrap items-center gap-2"><AdminStatusBadge tone={productStatusTones[product.status]}>{productStatusLabels[product.status]}</AdminStatusBadge><span className="text-xs text-slate-500">موجودی: {product.stock.toLocaleString("fa-IR")}</span></div></div></div><Link href={`/admin/products/${product.id}/edit`} className="mt-4 flex min-h-10 items-center justify-center gap-2 rounded-xl bg-slate-100 text-sm font-bold text-[#172b4d]"><Pencil size={15} />ویرایش محصول</Link></article>;
+  return <Card variant="secondary" className="rounded-2xl border border-slate-100 p-4"><div className="flex gap-3"><ProductThumb product={product} /><div className="min-w-0 flex-1"><div className="flex items-start justify-between gap-2"><div><strong className="block truncate text-sm text-slate-800">{product.name}</strong><span className="text-xs text-slate-400">{product.category?.name ?? "بدون دسته‌بندی"}</span></div>{product.featured && <Star size={16} className="shrink-0 fill-[#b5904c] text-[#b5904c]" />}</div><div className="mt-3 flex flex-wrap items-center gap-2"><AdminStatusBadge tone={productStatusTones[product.status]}>{productStatusLabels[product.status]}</AdminStatusBadge><span className="text-xs text-slate-500">موجودی: {product.stock.toLocaleString("fa-IR")}</span></div></div></div><Link href={`/admin/products/${product.id}/edit`} className="mt-4 flex min-h-10 items-center justify-center gap-2 rounded-xl bg-slate-100 text-sm font-bold text-[#172b4d]"><Pencil size={15} />ویرایش محصول</Link></Card>;
 }
 
 function ProductTableRow({ product }: { product: ProductRow }) {
-  const cell = "border-b border-slate-100 px-5 py-4 text-sm";
-  return <tr className="transition hover:bg-slate-50/70"><td className={cell}><div className="flex items-center gap-3"><ProductThumb product={product} /><div className="min-w-0"><div className="flex items-center gap-2"><strong className="truncate text-slate-800">{product.name}</strong>{product.featured && <Star size={14} className="fill-[#b5904c] text-[#b5904c]" />}</div><span className="text-xs text-slate-400">{product.category?.name ?? "بدون دسته‌بندی"}</span></div></div></td><td dir="ltr" className={`${cell} text-right font-mono text-xs text-slate-500`}>{product.sku}</td><td className={`${cell} text-slate-600`}>{Number(product.weightGrams).toLocaleString("fa-IR", { maximumFractionDigits: 3 })} گرم</td><td className={cell}><span className={product.stock <= 2 ? "font-bold text-rose-600" : "text-slate-600"}>{product.stock.toLocaleString("fa-IR")}</span></td><td className={cell}><AdminStatusBadge tone={productStatusTones[product.status]}>{productStatusLabels[product.status]}</AdminStatusBadge></td><td className={cell}><Link href={`/admin/products/${product.id}/edit`} className="inline-flex min-h-9 items-center gap-2 rounded-xl border border-slate-200 px-3 text-xs font-bold text-[#172b4d] hover:border-[#b5904c]"><Pencil size={14} />ویرایش</Link></td></tr>;
+  const cell = "px-5 py-4 text-sm";
+  return <TableRow id={product.id} className="transition hover:bg-slate-50/70"><TableCell className={cell}><div className="flex items-center gap-3"><ProductThumb product={product} /><div className="min-w-0"><div className="flex items-center gap-2"><strong className="truncate text-slate-800">{product.name}</strong>{product.featured && <Star size={14} className="fill-[#b5904c] text-[#b5904c]" />}</div><span className="text-xs text-slate-400">{product.category?.name ?? "بدون دسته‌بندی"}</span></div></div></TableCell><TableCell className={`${cell} text-right font-mono text-xs text-slate-500`}>{product.sku}</TableCell><TableCell className={`${cell} text-slate-600`}>{Number(product.weightGrams).toLocaleString("fa-IR", { maximumFractionDigits: 3 })} گرم</TableCell><TableCell className={cell}><span className={product.stock <= 2 ? "font-bold text-rose-600" : "text-slate-600"}>{product.stock.toLocaleString("fa-IR")}</span></TableCell><TableCell className={cell}><AdminStatusBadge tone={productStatusTones[product.status]}>{productStatusLabels[product.status]}</AdminStatusBadge></TableCell><TableCell className={cell}><Link href={`/admin/products/${product.id}/edit`} className="inline-flex min-h-9 items-center gap-2 rounded-xl border border-slate-200 px-3 text-xs font-bold text-[#172b4d] hover:border-[#b5904c]"><Pencil size={14} />ویرایش</Link></TableCell></TableRow>;
 }
