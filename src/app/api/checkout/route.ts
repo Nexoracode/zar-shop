@@ -27,11 +27,18 @@ export async function POST(request: Request) {
     const user = await getCurrentUser();
     if (!user) return NextResponse.json({ message: "ابتدا وارد حساب شوید." }, { status: 401 });
     const address = addressSchema.parse(await request.json());
-    const [cart, gold] = await Promise.all([
-      db.cart.findUnique({ where: { userId: user.id }, include: { items: { include: { product: true } } } }),
-      getGoldPrice({ force: true }),
-    ]);
+    const cart = await db.cart.findUnique({ where: { userId: user.id }, include: { items: { include: { product: true } } } });
     if (!cart?.items.length) return NextResponse.json({ message: "سبد خرید خالی است." }, { status: 409 });
+    let gold;
+    try {
+      gold = await getGoldPrice({ force: true });
+    } catch (error) {
+      console.error("[checkout] Gold price is unavailable; checkout was stopped.", error);
+      return NextResponse.json(
+        { message: "نرخ لحظه‌ای طلا موقتاً در دسترس نیست. سبد خرید شما حفظ شده؛ لطفاً کمی بعد دوباره تلاش کنید." },
+        { status: 503 },
+      );
+    }
     const rate = Number(gold.pricePerGram18);
     const lines: CheckoutLine[] = cart.items.map((item: ItemWithProduct) => {
       const p = item.product;

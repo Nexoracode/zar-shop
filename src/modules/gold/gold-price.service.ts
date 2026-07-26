@@ -1,3 +1,4 @@
+import { unstable_rethrow } from "next/navigation";
 import { db } from "@/lib/db";
 import { env } from "@/lib/env";
 import { fetchTgjuGoldPrice } from "@/modules/gold/tgju-gold-price.provider";
@@ -36,7 +37,25 @@ export async function getGoldPrice(options?: { force?: boolean }) {
     const fresh = await fetchProviderPrice();
     return await db.goldPrice.create({ data: { ...fresh, fetchedAt: new Date() } });
   } catch (error) {
-    if (cachedIsReal && cacheAge < MAX_STALE_AGE_MS) return cached;
+    if (!options?.force && cachedIsReal && cacheAge < MAX_STALE_AGE_MS) return cached;
     throw error;
   }
+}
+
+type GoldPrice = Awaited<ReturnType<typeof getGoldPrice>>;
+
+export async function safelyLoadGoldPriceForDisplay(
+  loadPrice: () => Promise<GoldPrice>,
+): Promise<GoldPrice | null> {
+  try {
+    return await loadPrice();
+  } catch (error) {
+    unstable_rethrow(error);
+    console.error("[gold-price] Price is unavailable for storefront display.", error);
+    return null;
+  }
+}
+
+export function getGoldPriceForDisplay() {
+  return safelyLoadGoldPriceForDisplay(() => getGoldPrice());
 }
