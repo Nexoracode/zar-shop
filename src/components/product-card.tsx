@@ -39,10 +39,10 @@ export function ProductCard({ href, name, category, weight, purity, price, image
       </div>
 
       {/* Content */}
-      <div className="px-[15px] pt-[17px] pb-5 text-center">
+      <div className="px-2.5 pb-4 pt-3 text-center sm:px-[15px] sm:pb-5 sm:pt-[17px]">
         <span className="text-[#747982] text-[0.74rem]">{category} · {weight} گرم</span>
-        <h3 className="min-h-8 mt-[5px] mb-[7px] text-[0.95rem] font-medium">{name}</h3>
-        <strong className="text-[#1c3155] text-[0.92rem]">{price}</strong>
+        <h3 className="mb-[7px] mt-[5px] min-h-8 text-[0.82rem] font-medium sm:text-[0.95rem]">{name}</h3>
+        <strong className="text-[0.76rem] text-[#1c3155] sm:text-[0.92rem]">{price}</strong>
       </div>
     </Link>
   );

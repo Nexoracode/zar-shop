@@ -9,10 +9,10 @@ export default async function AccountPage() {
   const displayName = user.firstName ? `${user.firstName} ${user.lastName ?? ""}` : user.email;
 
   return (
-    <main className="py-[86px]">
-      <div className="w-[min(1240px,calc(100%-40px))] mx-auto">
+    <main className="px-5 py-12 sm:px-6 sm:py-[86px]">
+      <div className="mx-auto w-full max-w-[1240px]">
         {/* Panel head */}
-        <div className="flex justify-between items-center gap-5 mb-6">
+        <div className="mb-6 flex flex-col items-start justify-between gap-5 sm:flex-row sm:items-center">
           <div>
             <span className="inline-block text-[#785b27] text-[0.78rem] font-bold tracking-[0.03em] mb-[5px]">حساب مشتری</span>
             <h1 className="mt-0 mb-0">{displayName}</h1>
@@ -25,7 +25,7 @@ export default async function AccountPage() {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-4 gap-[14px] mt-[22px] max-[760px]:grid-cols-2">
+        <div className="mt-[22px] grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-[14px]">
           {[
             { val: orders.length.toLocaleString("fa-IR"), label: "سفارش ثبت‌شده" },
             { val: orders.filter((o: Order) => o.status === "DELIVERED").length.toLocaleString("fa-IR"), label: "تحویل‌شده" },

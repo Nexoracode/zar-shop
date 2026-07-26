@@ -5,7 +5,7 @@ import { AddToCart } from "@/components/add-to-cart";
 import { PriceTooltip } from "@/components/price-tooltip";
 import { db } from "@/lib/db";
 import { formatMoney } from "@/lib/format";
-import { getGoldPrice } from "@/modules/gold/gold-price.service";
+import { getGoldPriceForDisplay } from "@/modules/gold/gold-price.service";
 import { calculateProductPrice } from "@/modules/products/pricing";
 
 export const dynamic = "force-dynamic";
@@ -14,17 +14,18 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   const { slug } = await params;
   const [product, gold] = await Promise.all([
     db.product.findFirst({ where: { slug, status: "ACTIVE" }, include: { category: true, media: { include: { media: true }, orderBy: { position: "asc" } } } }),
-    getGoldPrice(),
+    getGoldPriceForDisplay(),
   ]);
   if (!product) notFound();
 
-  const parts = calculateProductPrice({ goldPricePerGram18: Number(gold.pricePerGram18), weightGrams: Number(product.weightGrams), purity: product.purity, makingFeeType: product.makingFeeType, makingFeeValue: Number(product.makingFeeValue), profitPercent: Number(product.profitPercent), taxPercent: Number(product.taxPercent) });
-  const total = product.fixedPrice ? Number(product.fixedPrice) : parts.total;
+  const rate = gold ? Number(gold.pricePerGram18) : null;
+  const parts = rate === null ? null : calculateProductPrice({ goldPricePerGram18: rate, weightGrams: Number(product.weightGrams), purity: product.purity, makingFeeType: product.makingFeeType, makingFeeValue: Number(product.makingFeeValue), profitPercent: Number(product.profitPercent), taxPercent: Number(product.taxPercent) });
+  const total = product.fixedPrice ? Number(product.fixedPrice) : parts?.total ?? null;
   const media = product.media[0]?.media;
 
   return (
-    <main className="py-[86px]">
-      <div className="w-[min(1240px,calc(100%-40px))] mx-auto grid grid-cols-[1.08fr_0.92fr] gap-[clamp(38px,6vw,86px)] items-start max-[760px]:grid-cols-1">
+    <main className="px-5 py-12 sm:px-6 sm:py-[86px]">
+      <div className="mx-auto grid w-full max-w-[1240px] grid-cols-1 items-start gap-9 md:grid-cols-[1.08fr_0.92fr] md:gap-[clamp(38px,6vw,86px)]">
 
         {/* Gallery */}
         <div className="aspect-square overflow-hidden bg-[#f5f5f3]">
@@ -39,7 +40,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
         </div>
 
         {/* Info */}
-        <div className="pt-7 max-[760px]:pt-0">
+        <div className="pt-0 md:pt-7">
           <span className="inline-block text-[#785b27] text-[0.78rem] font-bold tracking-[0.03em] mb-[5px]">
             {product.category?.name ?? "مجموعه طلا"}
           </span>
@@ -58,10 +59,22 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
 
           {/* Purchase card */}
           <div className="p-6 grid gap-[15px] bg-[#f5f5f3] border-r-[3px] border-[#b5904c]">
-            <span className="text-[#747982] text-[0.82rem]">قیمت نهایی بر اساس نرخ {formatMoney(Number(gold.pricePerGram18))}</span>
-            <PriceTooltip />
-            <strong className="text-[#1c3155] text-[1.55rem]">{formatMoney(total)}</strong>
-            <AddToCart productId={product.id} disabled={product.stock < 1} />
+            <span className="text-[#747982] text-[0.82rem]">
+              {product.fixedPrice
+                ? "قیمت ثابت محصول"
+                : rate === null
+                  ? "نرخ لحظه‌ای طلا موقتاً در دسترس نیست."
+                  : `قیمت نهایی بر اساس نرخ ${formatMoney(rate)}`}
+            </span>
+            {rate !== null && <PriceTooltip />}
+            <strong className="text-[#1c3155] text-[1.55rem]">
+              {total === null ? "امکان محاسبه قیمت وجود ندارد" : formatMoney(total)}
+            </strong>
+            <AddToCart
+              productId={product.id}
+              disabled={product.stock < 1 || total === null}
+              disabledLabel={product.stock < 1 ? "ناموجود" : "قیمت موقتاً نامشخص"}
+            />
           </div>
 
           {/* Assurances */}

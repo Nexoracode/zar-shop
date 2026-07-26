@@ -30,7 +30,7 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
   return (
     <form className="grid gap-4" onSubmit={submit}>
       {mode === "register" && (
-        <div className="grid grid-cols-2 gap-[14px]">
+        <div className="grid grid-cols-1 gap-[14px] sm:grid-cols-2">
           <div className="grid gap-[7px]">
             <label htmlFor="firstName" className={labelClass}>نام</label>
             <input id="firstName" name="firstName" required minLength={2} className={fieldClass} />
