@@ -9,18 +9,12 @@ import { getGoldPriceForDisplay } from "@/modules/gold/gold-price.service";
 import { calculateProductPrice } from "@/modules/products/pricing";
 
 type HomeProduct = Prisma.ProductGetPayload<{ include: { category: true; media: { include: { media: true } } } }>;
-
-const categories = [
-  ["انگشتر", "جزئیاتی برای هر روز", "ring", "۰۱"],
-  ["گردنبند", "درخشش نزدیک به قلب", "necklace", "۰۲"],
-  ["دستبند", "امضای ظریف دستان شما", "bracelet", "۰۳"],
-  ["گوشواره", "قاب درخشان چهره", "earring", "۰۴"],
-] as const;
+type HomeCategory = Prisma.CategoryGetPayload<{ include: { image: true; children: true; _count: { select: { products: true } } } }>;
 
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
-  const [gold, products] = await Promise.all([
+  const [gold, products, rootCategories] = await Promise.all([
     getGoldPriceForDisplay(),
     db.product.findMany({
       where: { status: "ACTIVE" },
@@ -28,8 +22,20 @@ export default async function Home() {
       orderBy: [{ featured: "desc" }, { createdAt: "desc" }],
       take: 4,
     }),
+    db.category.findMany({
+      where: { isActive: true, parentId: null },
+      include: {
+        image: true,
+        children: { where: { isActive: true }, orderBy: [{ sortOrder: "asc" }, { name: "asc" }] },
+        _count: { select: { products: true } },
+      },
+      orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
+      take: 8,
+    }),
   ]);
   const price = gold ? Number(gold.pricePerGram18) : null;
+  const featuredCategories = rootCategories.filter((category) => category.featured);
+  const homeCategories = (featuredCategories.length ? featuredCategories : rootCategories).slice(0, 4);
 
   return (
     <main className="overflow-hidden">
@@ -88,31 +94,35 @@ export default async function Home() {
             <p className="w-[min(340px,100%)] m-0 text-[#7d7a74] text-[0.84rem]">هر قطعه، ترکیبی از ظرافت معاصر و ارزش ماندگار طلاست.</p>
           </div>
 
-          <div className="grid grid-cols-4 gap-4 max-[1000px]:grid-cols-2 max-[1000px]:gap-[30px_16px] max-[760px]:gap-[25px_10px]">
-            {categories.map(([title, subtitle, kind, number]) => {
-              const bgMap: Record<string, string> = {
-                ring: "bg-[linear-gradient(155deg,#e4d1bc,#f1eae1)]",
-                necklace: "bg-[linear-gradient(155deg,#e4d1bc,#f1eae1)]",
-                bracelet: "bg-[linear-gradient(155deg,#d7dfda,#eef1ed)]",
-                earring: "bg-[linear-gradient(155deg,#d8dce0,#f0f1f2)]",
-              };
+          {homeCategories.length ? (
+          <div className="grid grid-cols-2 gap-x-3 gap-y-7 lg:grid-cols-4 lg:gap-4">
+            {homeCategories.map((category: HomeCategory, index) => {
+              const subtitle = category.description || category.children.slice(0, 3).map((child) => child.name).join(" · ") || `${category._count.products.toLocaleString("fa-IR")} محصول`;
               return (
-                <Link href="/products" className="group grid gap-[18px] text-right" key={kind}>
-                  <span className={`block aspect-[0.82/1] relative overflow-hidden ${bgMap[kind] ?? "bg-[#e8dfd2]"} text-[#8d672f]`}>
-                    <span className="absolute top-5 right-5 text-[rgba(21,39,64,0.52)] text-[0.72rem] font-[Georgia,serif] tracking-[0.12em]">{number}</span>
-                    <span className="absolute top-[46%] left-1/2 -translate-x-1/2 -translate-y-1/2 z-[2] opacity-[0.62]"><Gem size={35} strokeWidth={1} /></span>
+                <Link href={`/products?category=${category.slug}`} className="group grid gap-3 text-right sm:gap-[18px]" key={category.id}>
+                  <span className="relative block aspect-[0.82/1] overflow-hidden bg-[linear-gradient(155deg,#dfd4c7,#f2ece5)] text-[#8d672f]">
+                    {category.image?.type === "IMAGE" ? (
+                      <Image src={category.image.url} alt={category.image.alt ?? category.name} fill sizes="(max-width: 1024px) 50vw, 25vw" className="object-cover transition-transform duration-500 group-hover:scale-[1.035]" />
+                    ) : (
+                      <span className="absolute left-1/2 top-[46%] z-[2] -translate-x-1/2 -translate-y-1/2 opacity-[0.62]"><Gem size={35} strokeWidth={1} /></span>
+                    )}
+                    <span className="absolute right-3 top-3 z-[3] text-[0.68rem] tracking-[0.12em] text-[#152740]/55 sm:right-5 sm:top-5">{(index + 1).toLocaleString("fa-IR", { minimumIntegerDigits: 2 })}</span>
+                    <span className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-[#101d33]/35 to-transparent" />
                     <span className="absolute left-[18px] bottom-[18px] w-[39px] h-[39px] grid place-items-center rounded-full bg-white/78 text-[#142640] translate-x-2 opacity-0 transition-all duration-[250ms] group-hover:translate-x-0 group-hover:opacity-100 max-[760px]:opacity-100 max-[760px]:translate-x-0">
                       <ArrowLeft size={18} />
                     </span>
                   </span>
                   <span className="grid gap-[2px] px-1">
-                    <strong className="text-[#172840] text-[1.02rem] font-semibold max-[480px]:text-[0.9rem]">{title}</strong>
+                    <strong className="text-[#172840] text-[1.02rem] font-semibold max-[480px]:text-[0.9rem]">{category.name}</strong>
                     <small className="text-[#8b8780] text-[0.69rem] max-[480px]:hidden">{subtitle}</small>
                   </span>
                 </Link>
               );
             })}
           </div>
+          ) : (
+            <div className="border border-dashed border-[#d9d4cb] py-12 text-center text-sm text-[#747982]">دسته‌بندی‌های فروشگاه به‌زودی نمایش داده می‌شوند.</div>
+          )}
         </div>
       </section>
 

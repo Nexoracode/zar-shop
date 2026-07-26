@@ -3,6 +3,7 @@ import Link from "next/link";
 const navLinks = [
   { href: "/admin", label: "نمای کلی" },
   { href: "/admin/products", label: "محصولات" },
+  { href: "/admin/categories", label: "دسته‌بندی‌ها" },
   { href: "/admin/media", label: "گالری رسانه" },
   { href: "/admin/orders", label: "سفارش‌ها" },
   { href: "/admin/users", label: "کاربران" },

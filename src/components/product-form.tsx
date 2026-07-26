@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-export function ProductForm() {
+export function ProductForm({ categories = [] }: { categories?: Array<{ id: string; name: string; parentName: string | null }> }) {
   const router = useRouter();
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -13,7 +13,7 @@ export function ProductForm() {
     setError("");
     const f = new FormData(e.currentTarget);
     const body = {
-      sku: f.get("sku"), name: f.get("name"), slug: f.get("slug"), description: f.get("description"),
+      sku: f.get("sku"), name: f.get("name"), slug: f.get("slug"), description: f.get("description"), categoryId: f.get("categoryId") || null,
       purity: Number(f.get("purity")), weightGrams: Number(f.get("weightGrams")),
       makingFeeType: f.get("makingFeeType"), makingFeeValue: Number(f.get("makingFeeValue")),
       profitPercent: Number(f.get("profitPercent")), taxPercent: Number(f.get("taxPercent")),
@@ -50,6 +50,16 @@ export function ProductForm() {
       <div className="grid gap-[7px]">
         <label htmlFor="productDescription" className={labelClass}>توضیحات</label>
         <textarea id="productDescription" name="description" rows={4} className={fieldClass} />
+      </div>
+
+      <div className="grid gap-[7px]">
+        <label htmlFor="productCategory" className={labelClass}>دسته‌بندی</label>
+        <select id="productCategory" name="categoryId" className={fieldClass} defaultValue="">
+          <option value="">بدون دسته‌بندی</option>
+          {categories.map((category) => (
+            <option key={category.id} value={category.id}>{category.parentName ? `${category.parentName} ← ` : ""}{category.name}</option>
+          ))}
+        </select>
       </div>
 
       <div className="grid grid-cols-1 gap-[14px] sm:grid-cols-2">

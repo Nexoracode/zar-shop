@@ -1,11 +1,21 @@
 import Link from "next/link";
 import { Headphones, LayoutDashboard, Search, ShoppingBag, UserRound } from "lucide-react";
+import { db } from "@/lib/db";
 import { formatMoney } from "@/lib/format";
 import { getCurrentUser } from "@/modules/auth/session";
 import { getGoldPriceForDisplay } from "@/modules/gold/gold-price.service";
 
 export async function SiteHeader() {
-  const [user, gold] = await Promise.all([getCurrentUser(), getGoldPriceForDisplay()]);
+  const [user, gold, categories] = await Promise.all([
+    getCurrentUser(),
+    getGoldPriceForDisplay(),
+    db.category.findMany({
+      where: { isActive: true, parentId: null },
+      include: { children: { where: { isActive: true }, orderBy: [{ sortOrder: "asc" }, { name: "asc" }] } },
+      orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
+      take: 7,
+    }),
+  ]);
 
   return (
     <header className="relative z-50 bg-white shadow-[0_5px_24px_rgba(20,35,61,0.06)] lg:sticky lg:top-0">
@@ -75,12 +85,23 @@ export async function SiteHeader() {
       </div>
 
       {/* Category nav */}
-      <nav className="overflow-x-auto border-b border-[#e7e6e2] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" aria-label="دسته‌بندی محصولات">
+      <nav className="overflow-x-auto border-b border-[#e7e6e2] [scrollbar-width:none] lg:overflow-visible [&::-webkit-scrollbar]:hidden" aria-label="دسته‌بندی محصولات">
         <div className="mx-auto flex min-h-11 min-w-max items-center justify-start gap-7 px-4 sm:min-h-12 sm:px-6 lg:max-w-[1240px] lg:justify-center lg:gap-[clamp(22px,3vw,48px)]">
-          {["زنانه", "مردانه", "انگشتر", "گردنبند", "دستبند", "گوشواره", "کالکشن‌ها"].map((item) => (
-            <Link key={item} href="/products" className="text-[0.88rem] transition-colors hover:text-[#785b27]">
-              {item}
-            </Link>
+          {categories.map((category) => (
+            <div key={category.id} className="group relative flex min-h-11 items-center sm:min-h-12">
+              <Link href={`/products?category=${category.slug}`} className="text-[0.88rem] transition-colors hover:text-[#785b27]">
+                {category.name}
+              </Link>
+              {category.children.length > 0 && (
+                <div className="invisible absolute right-0 top-full z-50 hidden min-w-52 translate-y-2 border border-[#e7e6e2] bg-white p-2 opacity-0 shadow-[0_16px_40px_rgba(20,35,61,0.12)] transition-all group-hover:visible group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:visible group-focus-within:translate-y-0 group-focus-within:opacity-100 lg:block">
+                  {category.children.map((child) => (
+                    <Link key={child.id} href={`/products?category=${child.slug}`} className="block px-3 py-2 text-sm text-[#4b5160] transition-colors hover:bg-[#f8f5ef] hover:text-[#785b27]">
+                      {child.name}
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
           ))}
           <Link href="/products" className="text-[0.88rem] text-[#785b27] transition-colors before:content-['✦'] before:ml-[5px] before:text-[#b5904c]">
             پیشنهاد ویژه
