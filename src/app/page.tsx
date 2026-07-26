@@ -5,7 +5,7 @@ import type { Prisma } from "@generated/prisma/client";
 import { ProductCard } from "@/components/product-card";
 import { db } from "@/lib/db";
 import { formatMoney } from "@/lib/format";
-import { getGoldPrice } from "@/modules/gold/gold-price.service";
+import { getGoldPriceForDisplay } from "@/modules/gold/gold-price.service";
 import { calculateProductPrice } from "@/modules/products/pricing";
 
 type HomeProduct = Prisma.ProductGetPayload<{ include: { category: true; media: { include: { media: true } } } }>;
@@ -21,7 +21,7 @@ export const dynamic = "force-dynamic";
 
 export default async function Home() {
   const [gold, products] = await Promise.all([
-    getGoldPrice(),
+    getGoldPriceForDisplay(),
     db.product.findMany({
       where: { status: "ACTIVE" },
       include: { category: true, media: { include: { media: true }, orderBy: { position: "asc" } } },
@@ -29,32 +29,33 @@ export default async function Home() {
       take: 4,
     }),
   ]);
-  const price = Number(gold.pricePerGram18);
+  const price = gold ? Number(gold.pricePerGram18) : null;
 
   return (
-    <main className="home-page">
-      <section className="campaign-hero" aria-labelledby="hero-title">
+    <main className="overflow-hidden">
+      <section className="relative isolate flex min-h-[620px] items-center overflow-hidden bg-[#c8b39f] sm:min-h-[680px] lg:min-h-[calc(100svh-160px)] lg:max-h-[820px]" aria-labelledby="hero-title">
         <Image
           src="/images/zar-hero-campaign.png"
           alt="مدل با گردنبند، گوشواره و دستبند طلای زر گالری"
           fill
           priority
           sizes="100vw"
+          className="object-cover object-[63%_center] sm:object-[60%_center] lg:object-center"
         />
-        <div className="campaign-shade" />
-        <div className="container campaign-content">
-          <div className="campaign-copy">
-            <span className="hero-kicker"><i /> کالکشن امضای زر · ۱۴۰۵</span>
-            <h1 id="hero-title">طلا، روایتِ<br /><em>ماندگارِ شما</em></h1>
-            <p>زیورآلاتی برای لحظه‌هایی که می‌مانند؛ با طراحی اصیل، قیمت‌گذاری شفاف و تضمین همیشگی اصالت.</p>
-            <div className="hero-actions">
-              <Link className="btn btn-primary" href="/products">مشاهده کالکشن <ArrowLeft size={17} /></Link>
-              <Link className="hero-secondary-link" href="#about">قصه زر گالری</Link>
+        <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(16,29,51,0.88)_0%,rgba(16,29,51,0.58)_48%,rgba(16,29,51,0.08)_80%)] max-lg:bg-[linear-gradient(0deg,rgba(16,29,51,0.92)_0%,rgba(16,29,51,0.5)_52%,rgba(16,29,51,0.08)_100%)]" />
+        <div className="relative z-10 mx-auto flex w-full max-w-[1240px] items-end px-5 pb-14 pt-56 sm:px-8 sm:pb-20 lg:items-center lg:px-6 lg:py-20">
+          <div className="max-w-[610px] text-white">
+            <span className="mb-4 inline-flex items-center gap-2 text-xs font-bold tracking-[0.08em] text-[#ead39f] sm:text-sm"><i className="h-px w-8 bg-[#d7b66e]" /> کالکشن امضای زر · ۱۴۰۵</span>
+            <h1 id="hero-title" className="m-0 text-[clamp(2.55rem,7vw,5.5rem)] font-normal leading-[1.25] tracking-[-0.04em]">طلا، روایتِ<br /><em className="font-normal text-[#efd79f]">ماندگارِ شما</em></h1>
+            <p className="mb-0 mt-5 max-w-[540px] text-sm leading-8 text-white/80 sm:text-base sm:leading-9">زیورآلاتی برای لحظه‌هایی که می‌مانند؛ با طراحی اصیل، قیمت‌گذاری شفاف و تضمین همیشگی اصالت.</p>
+            <div className="mt-8 flex flex-wrap items-center gap-5 sm:mt-10">
+              <Link className="inline-flex min-h-12 items-center justify-center gap-2 bg-[#b5904c] px-6 text-sm text-white transition hover:-translate-y-0.5 hover:bg-[#9f7938]" href="/products">مشاهده کالکشن <ArrowLeft size={17} /></Link>
+              <Link className="border-b border-white/50 pb-1 text-sm text-white transition hover:border-white" href="#about">قصه زر گالری</Link>
             </div>
           </div>
         </div>
 
-        <div className="absolute z-[2] right-[28px] bottom-[34px] text-[rgba(19,38,64,0.65)] text-[0.65rem] tracking-[0.24em] [writing-mode:vertical-rl] rotate-180 font-[Georgia,serif] max-[760px]:hidden" aria-hidden="true">ZAR · FINE GOLD</div>
+        <div className="absolute bottom-8 right-7 z-10 hidden rotate-180 text-[0.65rem] tracking-[0.24em] text-white/55 [writing-mode:vertical-rl] lg:block" aria-hidden="true">ZAR · FINE GOLD</div>
       </section>
 
       {/* Promises */}
@@ -134,7 +135,7 @@ export default async function Home() {
           {products.length > 0 ? (
             <div className="grid grid-cols-4 gap-[28px_16px] max-[1000px]:grid-cols-3 max-[760px]:grid-cols-2 max-[760px]:gap-[18px_10px]">
               {products.map((product: HomeProduct) => {
-                const calculated = calculateProductPrice({
+                const calculated = price === null ? null : calculateProductPrice({
                   goldPricePerGram18: price, weightGrams: Number(product.weightGrams), purity: product.purity,
                   makingFeeType: product.makingFeeType, makingFeeValue: Number(product.makingFeeValue),
                   profitPercent: Number(product.profitPercent), taxPercent: Number(product.taxPercent),
@@ -148,7 +149,11 @@ export default async function Home() {
                     category={product.category?.name ?? "طلا"}
                     weight={Number(product.weightGrams)}
                     purity={product.purity}
-                    price={formatMoney(product.fixedPrice?.toString() ?? calculated.total)}
+                    price={product.fixedPrice
+                      ? formatMoney(product.fixedPrice.toString())
+                      : calculated
+                        ? formatMoney(calculated.total)
+                        : "قیمت موقتاً در دسترس نیست"}
                     image={media?.type === "IMAGE" ? { src: media.url, alt: media.alt ?? product.name } : undefined}
                   />
                 );

@@ -27,8 +27,8 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         {children}
 
         {/* Footer */}
-        <footer className="pt-16 pb-0 text-white/75 bg-[#101d33]">
-          <div className="w-[min(1240px,calc(100%-40px))] mx-auto grid grid-cols-[1.5fr_repeat(3,1fr)] gap-[54px] max-[760px]:grid-cols-2 max-[480px]:grid-cols-1 max-[480px]:gap-8">
+        <footer className="bg-[#101d33] pt-14 text-white/75 sm:pt-16">
+          <div className="mx-auto grid w-full max-w-[1240px] grid-cols-1 gap-10 px-5 sm:grid-cols-2 sm:px-6 lg:grid-cols-[1.5fr_repeat(3,1fr)] lg:gap-[54px]">
             {/* Brand */}
             <div>
               <span className="inline-grid place-items-center w-11 h-11 border border-[#d8bd83] text-[#d8bd83] rotate-45 text-xl mb-5">
@@ -62,7 +62,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
             </div>
           </div>
 
-          <div className="w-[min(1240px,calc(100%-40px))] mx-auto mt-[52px] py-[17px] border-t border-white/10 text-center text-[0.72rem]">
+          <div className="mx-auto mt-12 w-[calc(100%-40px)] max-w-[1240px] border-t border-white/10 py-4 text-center text-[0.72rem]">
             © ۱۴۰۵ زر گالری — تمامی حقوق محفوظ است.
           </div>
         </footer>
