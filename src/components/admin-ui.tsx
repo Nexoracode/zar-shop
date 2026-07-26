@@ -1,5 +1,8 @@
+"use client";
+
 import type { ReactNode } from "react";
 import Link from "next/link";
+import { Card, Chip, buttonVariants } from "@heroui/react";
 import { ChevronLeft, PackageOpen } from "lucide-react";
 import type { AdminTone } from "@/modules/admin/labels";
 
@@ -13,7 +16,7 @@ const tones: Record<AdminTone, string> = {
 };
 
 export function AdminStatusBadge({ children, tone = "neutral" }: { children: ReactNode; tone?: AdminTone }) {
-  return <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-bold ring-1 ring-inset ${tones[tone]}`}>{children}</span>;
+  return <Chip size="sm" variant="soft" className={`font-bold ring-1 ring-inset ${tones[tone]}`}><Chip.Label>{children}</Chip.Label></Chip>;
 }
 
 export function AdminPageHeader({ eyebrow, title, description, action }: { eyebrow?: string; title: string; description: string; action?: ReactNode }) {
@@ -30,11 +33,11 @@ export function AdminPageHeader({ eyebrow, title, description, action }: { eyebr
 }
 
 export function AdminPrimaryLink({ href, children }: { href: string; children: ReactNode }) {
-  return <Link href={href} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[#172b4d] px-5 text-sm font-bold text-white shadow-[0_8px_20px_rgba(23,43,77,0.14)] transition hover:-translate-y-0.5 hover:bg-[#203b66]">{children}<ChevronLeft size={16} /></Link>;
+  return <Link href={href} className={buttonVariants({ variant: "primary", size: "md", className: "min-h-11 gap-2 rounded-xl bg-[#172b4d] px-5 text-sm font-bold text-white shadow-[0_8px_20px_rgba(23,43,77,0.14)] hover:bg-[#203b66]" })}>{children}<ChevronLeft size={16} /></Link>;
 }
 
 export function AdminPanel({ children, className = "" }: { children: ReactNode; className?: string }) {
-  return <section className={`overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-[0_8px_30px_rgba(15,23,42,0.035)] ${className}`}>{children}</section>;
+  return <Card variant="secondary" className={`overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-[0_8px_30px_rgba(15,23,42,0.035)] ${className}`}>{children}</Card>;
 }
 
 export function AdminEmptyState({ title, description }: { title: string; description: string }) {

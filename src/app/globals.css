@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "@heroui/styles";
 
 @font-face {
   font-family: "Vazir";
@@ -42,6 +43,43 @@ body {
 }
 
 @layer base {
+  [data-theme="zar"] {
+    color-scheme: light;
+    --radius: 0.75rem;
+    --background: #f7f6f3;
+    --foreground: #17233b;
+    --surface: #ffffff;
+    --surface-foreground: #17233b;
+    --surface-secondary: #faf9f6;
+    --surface-secondary-foreground: #17233b;
+    --surface-tertiary: #f1eee8;
+    --surface-tertiary-foreground: #17233b;
+    --overlay: #ffffff;
+    --overlay-foreground: #17233b;
+    --muted: #747982;
+    --default: #f1f0ed;
+    --default-foreground: #17233b;
+    --accent: #1c3155;
+    --accent-foreground: #ffffff;
+    --accent-hover: #132542;
+    --focus: #b5904c;
+    --link: #785b27;
+    --border: #e7e6e2;
+    --separator: #e7e6e2;
+    --field-background: #ffffff;
+    --field-foreground: #17233b;
+    --field-placeholder: #8b8f97;
+    --field-border: #dedbd4;
+    --field-border-width: 1px;
+    --field-border-focus: #b5904c;
+    --warning: #b5904c;
+    --warning-foreground: #17233b;
+    --danger: #b8423a;
+    --danger-foreground: #ffffff;
+    --success: #2f855a;
+    --success-foreground: #ffffff;
+  }
+
   a {
     color: inherit;
     text-decoration: none;
