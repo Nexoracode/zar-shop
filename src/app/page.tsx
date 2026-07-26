@@ -32,22 +32,26 @@ export default async function Home() {
   const price = Number(gold.pricePerGram18);
 
   return (
-    <main className="overflow-clip bg-[#fbfaf7]">
-
-      {/* Hero */}
-      <section className="relative h-[min(760px,calc(100vh-162px))] min-h-[620px] overflow-hidden bg-[#d7ad83] max-[760px]:h-[680px] max-[760px]:min-h-[680px]" aria-labelledby="hero-title">
-        <Image src="/images/slider.png" alt="مدل با گردنبند، گوشواره و دستبند طلای زر گالری" fill priority sizes="100vw" className="object-cover object-top" />
-        <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(11,24,42,0.08)_0_32%,rgba(242,224,199,0.04)_45%,rgba(244,225,200,0.16)_100%)] max-[760px]:bg-[linear-gradient(0deg,rgba(11,24,42,0.94)_0,rgba(11,24,42,0.62)_42%,rgba(11,24,42,0)_75%)]" />
-        <div className="w-[min(1240px,calc(100%-40px))] mx-auto h-full flex items-center justify-center px-[3%] pl-[31%] max-[1000px]:pl-[20%] max-[760px]:items-end max-[760px]:px-5 max-[760px]:pb-[50px]" />
-
-        {/* Live price */}
-        <div className="absolute z-[3] left-[34px] bottom-[31px] min-w-[245px] px-5 py-[17px] grid gap-[2px] bg-[rgba(15,31,53,0.88)] text-white border border-white/44 shadow-[0_16px_50px_rgba(15,31,53,0.16)] backdrop-blur-[10px] max-[760px]:left-[14px] max-[760px]:bottom-4 max-[760px]:min-w-[218px] max-[760px]:px-[15px] max-[760px]:py-3">
-          <span className="flex items-center gap-[5px] text-white/68 text-[0.74rem]">
-            <span className="w-[6px] h-[6px] rounded-full bg-[#78c9a0] shadow-[0_0_0_4px_rgba(120,201,160,0.12)]" />
-            نرخ لحظه‌ای هر گرم طلای ۱۸ عیار
-          </span>
-          <strong className="text-[#f1d5a3] text-[1.12rem]">{formatMoney(price)}</strong>
-          <small className="text-white/45 text-[0.62rem] max-[480px]:hidden">به‌روزرسانی خودکار قیمت‌ها</small>
+    <main className="home-page">
+      <section className="campaign-hero" aria-labelledby="hero-title">
+        <Image
+          src="/images/zar-hero-campaign.png"
+          alt="مدل با گردنبند، گوشواره و دستبند طلای زر گالری"
+          fill
+          priority
+          sizes="100vw"
+        />
+        <div className="campaign-shade" />
+        <div className="container campaign-content">
+          <div className="campaign-copy">
+            <span className="hero-kicker"><i /> کالکشن امضای زر · ۱۴۰۵</span>
+            <h1 id="hero-title">طلا، روایتِ<br /><em>ماندگارِ شما</em></h1>
+            <p>زیورآلاتی برای لحظه‌هایی که می‌مانند؛ با طراحی اصیل، قیمت‌گذاری شفاف و تضمین همیشگی اصالت.</p>
+            <div className="hero-actions">
+              <Link className="btn btn-primary" href="/products">مشاهده کالکشن <ArrowLeft size={17} /></Link>
+              <Link className="hero-secondary-link" href="#about">قصه زر گالری</Link>
+            </div>
+          </div>
         </div>
 
         <div className="absolute z-[2] right-[28px] bottom-[34px] text-[rgba(19,38,64,0.65)] text-[0.65rem] tracking-[0.24em] [writing-mode:vertical-rl] rotate-180 font-[Georgia,serif] max-[760px]:hidden" aria-hidden="true">ZAR · FINE GOLD</div>
