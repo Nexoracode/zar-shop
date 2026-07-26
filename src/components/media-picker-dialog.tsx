@@ -1,19 +1,13 @@
 "use client";
 
 import Image from "next/image";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
+import { Alert, Button, Card, Input, Modal } from "@heroui/react";
+import { Check, Film, ImageIcon, RefreshCw, Search, Trash2, Upload, X } from "lucide-react";
 import type { MediaChoice, MediaScope } from "@/components/media-library";
 
 type PickerItem = MediaChoice & { _count: { products: number; categories: number } };
-
-type Props = {
-  open: boolean;
-  scope: MediaScope;
-  multiple?: boolean;
-  selected: MediaChoice[];
-  onClose: () => void;
-  onConfirm: (items: MediaChoice[]) => void;
-};
+type Props = { open: boolean; scope: MediaScope; multiple?: boolean; selected: MediaChoice[]; onClose: () => void; onConfirm: (items: MediaChoice[]) => void };
 
 export function MediaPickerDialog({ open, scope, multiple = false, selected, onClose, onConfirm }: Props) {
   const [items, setItems] = useState<PickerItem[]>([]);
@@ -23,7 +17,10 @@ export function MediaPickerDialog({ open, scope, multiple = false, selected, onC
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [error, setError] = useState("");
-  const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const [uploadFileName, setUploadFileName] = useState("");
+
+  const scopeLabel = scope === "CATEGORY" ? "دسته‌بندی" : "محصول";
+  const acceptedFiles = scope === "CATEGORY" ? "image/jpeg,image/png,image/webp" : "image/jpeg,image/png,image/webp,video/mp4,video/webm";
 
   const load = useCallback(async (signal?: AbortSignal) => {
     setLoading(true);
@@ -32,7 +29,7 @@ export function MediaPickerDialog({ open, scope, multiple = false, selected, onC
       const response = await fetch(`/api/media?scope=${scope}&limit=200`, { cache: "no-store", signal });
       const result = await response.json().catch(() => null);
       if (!response.ok) throw new Error(result?.message ?? "دریافت گالری ناموفق بود.");
-      setItems(result.items.map((item: PickerItem) => ({ ...item, title: item.title || "رسانه" })));
+      setItems(result.items.map((item: PickerItem) => ({ ...item, title: item.title || "رسانه بدون عنوان" })));
     } catch (reason) {
       if (reason instanceof DOMException && reason.name === "AbortError") return;
       setError(reason instanceof Error ? reason.message : "ارتباط با گالری برقرار نشد.");
@@ -45,30 +42,25 @@ export function MediaPickerDialog({ open, scope, multiple = false, selected, onC
     if (!open) return;
     const controller = new AbortController();
     queueMicrotask(() => {
-      if (controller.signal.aborted) return;
-      setDraft(selected);
-      setQuery("");
-      void load(controller.signal);
+      if (!controller.signal.aborted) {
+        setDraft(selected);
+        setQuery("");
+        setUploadFileName("");
+        void load(controller.signal);
+      }
     });
-    requestAnimationFrame(() => closeButtonRef.current?.focus());
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => { controller.abort(); document.body.style.overflow = previousOverflow; };
+    return () => controller.abort();
   }, [open, selected, load]);
 
-  useEffect(() => {
-    if (!open) return;
-    const closeWithEscape = (event: KeyboardEvent) => { if (event.key === "Escape") onClose(); };
-    document.addEventListener("keydown", closeWithEscape);
-    return () => document.removeEventListener("keydown", closeWithEscape);
-  }, [open, onClose]);
-
   function toggle(item: MediaChoice) {
-    if (!multiple) { setDraft([item]); return; }
+    if (!multiple) {
+      setDraft((current) => current[0]?.id === item.id ? [] : [item]);
+      return;
+    }
     setDraft((current) => current.some((chosen) => chosen.id === item.id) ? current.filter((chosen) => chosen.id !== item.id) : [...current, item]);
   }
 
-  async function upload(event: React.FormEvent<HTMLFormElement>) {
+  async function upload(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setUploading(true);
     setError("");
@@ -80,6 +72,7 @@ export function MediaPickerDialog({ open, scope, multiple = false, selected, onC
       const result = await response.json().catch(() => null);
       if (!response.ok) throw new Error(result?.message ?? "بارگذاری فایل ناموفق بود.");
       form.reset();
+      setUploadFileName("");
       await load();
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "بارگذاری فایل ناموفق بود.");
@@ -90,7 +83,10 @@ export function MediaPickerDialog({ open, scope, multiple = false, selected, onC
 
   async function remove(item: PickerItem) {
     const usage = item._count.products + item._count.categories;
-    if (usage) { setError("این رسانه در حال استفاده است؛ ابتدا آن را از محصول یا دسته‌بندی مربوط جدا کنید."); return; }
+    if (usage) {
+      setError("این رسانه در حال استفاده است؛ ابتدا آن را از محصول یا دسته‌بندی مربوط جدا کنید.");
+      return;
+    }
     if (!window.confirm(`فایل «${item.title}» از گالری و FTP حذف شود؟`)) return;
     setDeletingId(item.id);
     setError("");
@@ -112,44 +108,77 @@ export function MediaPickerDialog({ open, scope, multiple = false, selected, onC
     return normalized ? items.filter((item) => item.title.toLocaleLowerCase("fa-IR").includes(normalized)) : items;
   }, [items, query]);
 
-  if (!open) return null;
+  function confirm() {
+    onConfirm(draft);
+    onClose();
+  }
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-end justify-center bg-[#0d1728]/65 p-0 sm:items-center sm:p-5" role="dialog" aria-modal="true" aria-labelledby="media-picker-title" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
-      <div className="flex max-h-[92vh] w-full max-w-5xl flex-col overflow-hidden rounded-t-xl bg-white shadow-2xl sm:rounded-sm">
-        <div className="flex items-center justify-between border-b border-[#e7e6e2] px-4 py-4 sm:px-6">
-          <div><h2 id="media-picker-title" className="m-0 text-lg">انتخاب از گالری {scope === "CATEGORY" ? "دسته‌بندی" : "محصول"}</h2><span className="text-xs text-[#747982]">{multiple ? "می‌توانید چند رسانه انتخاب کنید؛ اولین مورد تصویر اصلی است." : "یک تصویر را انتخاب کنید."}</span></div>
-          <button ref={closeButtonRef} type="button" onClick={onClose} aria-label="بستن گالری" className="h-10 w-10 text-2xl text-[#747982]">×</button>
-        </div>
-        <div className="min-h-56 flex-1 overflow-y-auto p-4 sm:p-6">
-          <form onSubmit={upload} className="mb-4 grid gap-3 rounded-sm border border-[#e7e6e2] bg-[#faf9f6] p-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
-            <label className="grid gap-1 text-xs font-bold text-[#4b5160]">بارگذاری مستقیم در همین گالری<input name="file" type="file" required accept={scope === "CATEGORY" ? "image/jpeg,image/png,image/webp" : "image/jpeg,image/png,image/webp,video/mp4,video/webm"} className="w-full border border-[#d9d4cb] bg-white px-3 py-2 text-xs" /></label>
-            <button disabled={uploading} className="min-h-10 bg-[#b5904c] px-5 text-sm text-white disabled:opacity-60">{uploading ? "در حال بارگذاری..." : "بارگذاری"}</button>
-          </form>
-          <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="جست‌وجو در عنوان فایل‌ها..." className="mb-4 w-full border border-[#e7e6e2] px-3 py-2.5 text-sm outline-none focus:border-[#b5904c]" />
-          {error && <div className="mb-4 rounded-sm bg-[#fff0ed] px-3 py-2 text-sm text-[#a33b32]">{error}</div>}
-          {loading ? <div className="py-16 text-center text-sm text-[#747982]">در حال دریافت تصاویر...</div> : visibleItems.length ? (
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
-              {visibleItems.map((item) => {
-                const chosenIndex = draft.findIndex((chosen) => chosen.id === item.id);
-                const usage = item._count.products + item._count.categories;
-                return <div key={item.id} className={`relative overflow-hidden border-2 ${chosenIndex >= 0 ? "border-[#b5904c]" : "border-transparent"}`}>
-                  <button type="button" onClick={() => toggle(item)} className="block w-full text-right focus-visible:outline-2 focus-visible:outline-[#1c3155]" aria-pressed={chosenIndex >= 0}>
-                  <div className="relative aspect-square bg-[#f5f3ee]">{item.type === "IMAGE" ? <Image src={item.url} alt={item.title} fill sizes="(max-width:640px) 50vw, 25vw" className="object-cover" /> : <video src={item.url} muted className="h-full w-full bg-black object-cover" />}</div>
-                  <span className="block truncate px-2 py-2 text-xs">{item.title}</span>
-                  {chosenIndex >= 0 && <span className="absolute right-2 top-2 flex h-7 min-w-7 items-center justify-center rounded-full bg-[#b5904c] px-2 text-xs text-white">{multiple ? (chosenIndex + 1).toLocaleString("fa-IR") : "✓"}</span>}
-                  </button>
-                  <button type="button" disabled={deletingId === item.id || usage > 0} onClick={() => void remove(item)} className="w-full border-t border-[#eeeae2] bg-white px-2 py-2 text-xs text-[#a33b32] disabled:cursor-not-allowed disabled:text-[#aaa]">{usage ? `${usage.toLocaleString("fa-IR")} مورد استفاده` : deletingId === item.id ? "در حال حذف..." : "حذف از گالری"}</button>
-                </div>;
-              })}
-            </div>
-          ) : <div className="py-16 text-center text-sm text-[#747982]">{query ? "رسانه‌ای با این عنوان پیدا نشد." : "این بخش از گالری هنوز خالی است؛ از فرم بالا بارگذاری کنید."}</div>}
-        </div>
-        <div className="flex flex-col-reverse gap-2 border-t border-[#e7e6e2] p-4 sm:flex-row sm:justify-end sm:px-6">
-          <button type="button" onClick={onClose} className="min-h-11 border border-[#d9d4cb] px-6 text-sm">انصراف</button>
-          <button type="button" onClick={() => { onConfirm(draft); onClose(); }} className="min-h-11 bg-[#1c3155] px-6 text-sm text-white">تأیید انتخاب ({draft.length.toLocaleString("fa-IR")})</button>
-        </div>
-      </div>
-    </div>
+    <Modal.Backdrop isOpen={open} onOpenChange={(isOpen) => { if (!isOpen) onClose(); }} variant="blur">
+      <Modal.Container size="lg" placement="center" scroll="inside">
+          <Modal.Dialog aria-label={`انتخاب از گالری ${scopeLabel}`} className="mx-2 max-h-[calc(100dvh-20px)] w-[calc(100%-16px)] max-w-6xl overflow-hidden bg-slate-50 sm:mx-5 sm:max-h-[calc(100dvh-40px)] sm:w-[calc(100%-40px)]">
+            <Modal.Header className="flex-row items-center justify-between border-b border-slate-200 bg-white px-4 py-4 sm:px-6">
+              <div className="flex min-w-0 flex-1 items-center gap-3">
+                <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-[#fbf7ef] text-[#9a7434]"><ImageIcon size={21} /></span>
+                <div className="min-w-0"><Modal.Heading className="truncate text-base font-black text-slate-900 sm:text-lg">گالری {scopeLabel}</Modal.Heading><p className="mt-1 truncate text-xs text-slate-500">{multiple ? "چند رسانه انتخاب کنید؛ مورد اول تصویر اصلی خواهد بود." : "یک تصویر را به‌عنوان تصویر شاخص انتخاب کنید."}</p></div>
+              </div>
+              <Modal.CloseTrigger aria-label="بستن گالری" className="grid h-10 w-10 shrink-0 place-items-center rounded-xl text-slate-500 transition hover:bg-slate-100 hover:text-slate-800"><X size={19} /></Modal.CloseTrigger>
+            </Modal.Header>
+
+            <Modal.Body className="min-h-[440px] p-0">
+              <div className="sticky top-0 z-20 border-b border-slate-200 bg-white/95 p-3 backdrop-blur sm:p-4">
+                <div className="grid gap-3 lg:grid-cols-[minmax(0,1.2fr)_minmax(260px,0.8fr)]">
+                  <form onSubmit={upload} className="grid gap-3 rounded-2xl border border-dashed border-[#d8c59f] bg-[#fffcf6] p-3 sm:grid-cols-[auto_minmax(0,1fr)_auto] sm:items-center">
+                    <span className="hidden h-10 w-10 place-items-center rounded-xl bg-[#f4ead8] text-[#8b682b] sm:grid"><Upload size={19} /></span>
+                    <label className="grid min-w-0 cursor-pointer gap-1 rounded-xl border border-slate-200 bg-white px-3 py-2 transition hover:border-[#c8a867]">
+                      <span className="text-xs font-bold text-slate-700">بارگذاری فایل جدید</span>
+                      <span className="truncate text-[11px] text-slate-400">{uploadFileName || (scope === "CATEGORY" ? "انتخاب تصویر JPG، PNG یا WebP" : "انتخاب تصویر یا ویدیوی محصول")}</span>
+                      <input name="file" type="file" required accept={acceptedFiles} className="sr-only" onChange={(event) => setUploadFileName(event.target.files?.[0]?.name ?? "")} />
+                    </label>
+                    <Button type="submit" isDisabled={uploading} variant="primary" className="min-h-10 gap-2 bg-[#b5904c] px-4 text-xs font-bold text-white"><Upload size={15} />{uploading ? "در حال بارگذاری" : "بارگذاری"}</Button>
+                  </form>
+                  <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+                    <div className="relative"><Search className="pointer-events-none absolute right-3.5 top-1/2 z-10 -translate-y-1/2 text-slate-400" size={17} /><Input value={query} onChange={(event) => setQuery(event.target.value)} fullWidth variant="secondary" placeholder="جست‌وجوی عنوان فایل..." className="pr-10" /></div>
+                    <Button type="button" variant="secondary" isIconOnly aria-label="به‌روزرسانی گالری" onPress={() => void load()} isDisabled={loading} className="hidden h-10 w-10 min-w-10 border border-slate-200 sm:inline-flex"><RefreshCw size={16} className={loading ? "animate-spin" : ""} /></Button>
+                  </div>
+                </div>
+                {error && <Alert status="danger" className="mt-3"><Alert.Description>{error}</Alert.Description></Alert>}
+              </div>
+
+              <div className="p-3 sm:p-5">
+                <div className="mb-3 flex items-center justify-between gap-3"><span className="text-xs font-bold text-slate-600">{loading ? "در حال دریافت رسانه‌ها..." : `${visibleItems.length.toLocaleString("fa-IR")} رسانه`}</span>{draft.length > 0 && <span className="rounded-full bg-[#f4ead8] px-3 py-1 text-[11px] font-bold text-[#785b27]">{draft.length.toLocaleString("fa-IR")} انتخاب</span>}</div>
+                {loading ? (
+                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">{Array.from({ length: 10 }, (_, index) => <div key={index} className="aspect-[4/5] animate-pulse rounded-2xl bg-slate-200" />)}</div>
+                ) : visibleItems.length ? (
+                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+                    {visibleItems.map((item) => {
+                      const chosenIndex = draft.findIndex((chosen) => chosen.id === item.id);
+                      const usage = item._count.products + item._count.categories;
+                      const chosen = chosenIndex >= 0;
+                      return (
+                        <Card key={item.id} variant="secondary" className={`group relative min-w-0 overflow-hidden rounded-2xl border-2 bg-white shadow-sm transition ${chosen ? "border-[#b5904c] ring-2 ring-[#b5904c]/15" : "border-transparent hover:border-slate-300 hover:shadow-md"}`}>
+                          <Button type="button" variant="ghost" onPress={() => toggle(item)} aria-label={`انتخاب ${item.title}`} aria-pressed={chosen} className="relative flex h-auto w-full flex-col items-stretch justify-start overflow-hidden rounded-none p-0 text-right">
+                            <div className="relative aspect-square w-full overflow-hidden bg-[#f1eee8]">{item.type === "IMAGE" ? <Image src={item.url} alt={item.title} fill sizes="(max-width:640px) 50vw, 20vw" className="object-cover transition duration-300 group-hover:scale-[1.025]" /> : <><video src={item.url} muted className="h-full w-full bg-black object-cover" /><span className="absolute left-2 top-2 grid h-7 w-7 place-items-center rounded-full bg-black/65 text-white"><Film size={14} /></span></>}</div>
+                            <span className="flex w-full items-center gap-2 px-3 py-2.5"><span className="min-w-0 flex-1 truncate text-xs font-bold text-slate-700">{item.title}</span>{usage > 0 && <small className="shrink-0 text-[10px] text-slate-400">{usage.toLocaleString("fa-IR")} استفاده</small>}</span>
+                            {chosen && <span className="absolute right-2.5 top-2.5 grid h-8 min-w-8 place-items-center rounded-full bg-[#b5904c] px-2 text-xs font-black text-white shadow-lg">{multiple ? (chosenIndex + 1).toLocaleString("fa-IR") : <Check size={16} />}</span>}
+                          </Button>
+                          <Button type="button" size="sm" variant="danger-soft" fullWidth isDisabled={deletingId === item.id || usage > 0} onPress={() => void remove(item)} className="min-h-9 rounded-none border-t border-slate-100 text-[11px] font-bold"><Trash2 size={13} />{usage > 0 ? "در حال استفاده" : deletingId === item.id ? "در حال حذف..." : "حذف از گالری"}</Button>
+                        </Card>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="grid min-h-64 place-items-center rounded-2xl border-2 border-dashed border-slate-200 bg-white p-8 text-center"><div><ImageIcon className="mx-auto mb-3 text-slate-300" size={38} /><strong className="block text-sm text-slate-600">{query ? "رسانه‌ای پیدا نشد" : "گالری این بخش خالی است"}</strong><p className="mt-1 text-xs text-slate-400">{query ? "عبارت جست‌وجو را تغییر دهید." : "از بخش بالای صفحه اولین فایل را بارگذاری کنید."}</p></div></div>
+                )}
+              </div>
+            </Modal.Body>
+
+            <Modal.Footer className="flex flex-col-reverse gap-2 border-t border-slate-200 bg-white p-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+              <span className="hidden text-xs text-slate-500 sm:block">{draft.length ? `${draft.length.toLocaleString("fa-IR")} رسانه برای ثبت انتخاب شده است.` : "هنوز رسانه‌ای انتخاب نشده است."}</span>
+              <div className="grid grid-cols-2 gap-2 sm:flex"><Button type="button" variant="secondary" onPress={onClose} className="min-h-10 border border-slate-200 bg-white px-5 text-sm font-bold text-slate-600">انصراف</Button><Button type="button" variant="primary" onPress={confirm} isDisabled={!draft.length} className="min-h-10 gap-2 bg-[#1c3155] px-5 font-bold text-white"><Check size={16} />تأیید انتخاب ({draft.length.toLocaleString("fa-IR")})</Button></div>
+            </Modal.Footer>
+          </Modal.Dialog>
+      </Modal.Container>
+    </Modal.Backdrop>
   );
 }
