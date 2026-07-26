@@ -2,13 +2,10 @@ import { CategoryManager } from "@/components/category-manager";
 import { db } from "@/lib/db";
 
 export default async function CategoriesPage() {
-  const [categories, images] = await Promise.all([
-    db.category.findMany({
+  const categories = await db.category.findMany({
       include: { image: true, parent: { select: { name: true } }, _count: { select: { products: true, children: true } } },
       orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
-    }),
-    db.mediaAsset.findMany({ where: { type: "IMAGE" }, orderBy: { createdAt: "desc" }, take: 100 }),
-  ]);
+    });
 
   return (
     <>
@@ -32,7 +29,6 @@ export default async function CategoriesPage() {
           productsCount: category._count.products,
           childrenCount: category._count.children,
         }))}
-        images={images.map((image) => ({ id: image.id, title: image.title ?? image.storageKey, url: image.url }))}
       />
     </>
   );

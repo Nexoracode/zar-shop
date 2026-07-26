@@ -19,9 +19,15 @@ export async function POST(request: Request) {
     if (!actor || !["ADMIN", "OPERATOR"].includes(actor.role)) {
       return NextResponse.json({ message: "دسترسی غیرمجاز است." }, { status: 403 });
     }
-    const input = productSchema.parse(await request.json());
-    const product = await db.product.create({ data: input });
-    await db.auditLog.create({ data: { actorId: actor.id, action: "PRODUCT_CREATE", entityType: "Product", entityId: product.id } });
+    const { mediaIds, ...input } = productSchema.parse(await request.json());
+    const media = mediaIds.length ? await db.mediaAsset.findMany({ where: { id: { in: mediaIds }, scope: "PRODUCT" }, select: { id: true } }) : [];
+    if (media.length !== new Set(mediaIds).size) return NextResponse.json({ message: "یک یا چند رسانه محصول معتبر نیست." }, { status: 422 });
+    const product = await db.$transaction(async (tx) => {
+      const created = await tx.product.create({ data: input });
+      if (mediaIds.length) await tx.productMedia.createMany({ data: mediaIds.map((mediaId, position) => ({ productId: created.id, mediaId, position, isCover: position === 0 })) });
+      await tx.auditLog.create({ data: { actorId: actor.id, action: "PRODUCT_CREATE", entityType: "Product", entityId: created.id } });
+      return tx.product.findUniqueOrThrow({ where: { id: created.id }, include: { media: { include: { media: true }, orderBy: { position: "asc" } }, category: true } });
+    });
     return NextResponse.json(product, { status: 201 });
   } catch (error) { return apiError(error); }
 }

@@ -29,6 +29,11 @@ enum MediaType {
   VIDEO
 }
 
+enum MediaScope {
+  CATEGORY
+  PRODUCT
+}
+
 enum OrderStatus {
   PENDING_PAYMENT
   PAID
@@ -155,6 +160,7 @@ model Product {
 model MediaAsset {
   id          String      @id @default(cuid())
   type        MediaType
+  scope       MediaScope  @default(PRODUCT)
   url         String      @db.Text
   storageKey  String      @unique @db.VarChar(191)
   title       String?     @db.VarChar(191)
@@ -167,6 +173,7 @@ model MediaAsset {
   createdAt   DateTime    @default(now())
   products    ProductMedia[]
   categories  Category[]     @relation("CategoryImage")
+  @@index([scope, createdAt])
 }
 
 model ProductMedia {

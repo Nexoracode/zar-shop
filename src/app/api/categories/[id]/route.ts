@@ -55,8 +55,8 @@ export async function PATCH(request: Request, context: Context) {
     }
 
     if (input.imageId) {
-      const image = await db.mediaAsset.findUnique({ where: { id: input.imageId }, select: { type: true } });
-      if (!image || image.type !== "IMAGE") return NextResponse.json({ message: "تصویر شاخص معتبر نیست." }, { status: 422 });
+      const image = await db.mediaAsset.findUnique({ where: { id: input.imageId }, select: { type: true, scope: true } });
+      if (!image || image.type !== "IMAGE" || image.scope !== "CATEGORY") return NextResponse.json({ message: "تصویر شاخص معتبر نیست." }, { status: 422 });
     }
 
     const category = await db.$transaction(async (tx) => {

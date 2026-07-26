@@ -23,7 +23,7 @@ export default async function AdminProducts() {
         <table className="w-full border-collapse min-w-[700px]">
           <thead>
             <tr>
-              {["محصول", "کد", "وزن", "موجودی", "وضعیت"].map((h) => (
+              {["محصول", "کد", "وزن", "موجودی", "وضعیت", "عملیات"].map((h) => (
                 <th key={h} className="px-4 py-[14px] text-right border-b border-[#e7e6e2] text-[#747982] text-[0.82rem] bg-[#f8f7f4]">{h}</th>
               ))}
             </tr>
@@ -41,10 +41,11 @@ export default async function AdminProducts() {
                 <td className="px-4 py-[14px] border-b border-[#e7e6e2]">
                   <span className="inline-block px-[11px] py-[5px] bg-[#efe5d1] text-[#785b27] text-[0.78rem] rounded-sm">{p.status}</span>
                 </td>
+                <td className="px-4 py-[14px] border-b border-[#e7e6e2]"><Link href={`/admin/products/${p.id}/edit`} className="text-sm text-[#1c3155]">ویرایش</Link></td>
               </tr>
             ))}
             {!products.length && (
-              <tr><td colSpan={5} className="py-12 text-center text-[#747982]">محصولی ثبت نشده است.</td></tr>
+              <tr><td colSpan={6} className="py-12 text-center text-[#747982]">محصولی ثبت نشده است.</td></tr>
             )}
           </tbody>
         </table>

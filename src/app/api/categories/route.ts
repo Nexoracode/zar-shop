@@ -20,8 +20,8 @@ async function validateRelations(parentId?: string | null, imageId?: string | nu
     if (!parent) return "دسته والد پیدا نشد.";
   }
   if (imageId) {
-    const image = await db.mediaAsset.findUnique({ where: { id: imageId }, select: { type: true } });
-    if (!image || image.type !== "IMAGE") return "تصویر شاخص معتبر نیست.";
+    const image = await db.mediaAsset.findUnique({ where: { id: imageId }, select: { type: true, scope: true } });
+    if (!image || image.type !== "IMAGE" || image.scope !== "CATEGORY") return "تصویر شاخص معتبر نیست.";
   }
   return null;
 }

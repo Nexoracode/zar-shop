@@ -17,6 +17,12 @@ const schema = z.object({
   ARZHAAM_API_KEY: z.string().default(""),
   ARZHAAM_API_ENDPOINT: z.string().default(""),
   GOLD_PRICE_MAX_SOURCE_AGE_MINUTES: z.coerce.number().int().positive().default(180),
+  FTP_HOST: z.string().default(""),
+  FTP_PORT: z.coerce.number().int().positive().default(21),
+  FTP_USERNAME: z.string().default(""),
+  FTP_PASSWORD: z.string().default(""),
+  FTP_SECURE: z.enum(["true", "false"]).default("false").transform((value) => value === "true"),
+  FTP_PUBLIC_BASE_URL: z.string().default(""),
   PAYMENT_PROVIDER: z.enum(["mock"]).default("mock"),
 });
 
