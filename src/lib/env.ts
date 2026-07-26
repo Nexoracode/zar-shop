@@ -12,6 +12,11 @@ const schema = z.object({
   GOLD_PRICE_PROVIDER: z.enum(["mock", "tgju", "http"]).default("tgju"),
   GOLD_PRICE_ENDPOINT: z.string().default(""),
   GOLD_PRICE_API_KEY: z.string().default(""),
+  NAVASAN_API_KEY: z.string().default(""),
+  NAVASAN_API_ENDPOINT: z.string().default(""),
+  ARZHAAM_API_KEY: z.string().default(""),
+  ARZHAAM_API_ENDPOINT: z.string().default(""),
+  GOLD_PRICE_MAX_SOURCE_AGE_MINUTES: z.coerce.number().int().positive().default(180),
   PAYMENT_PROVIDER: z.enum(["mock"]).default("mock"),
 });
 
