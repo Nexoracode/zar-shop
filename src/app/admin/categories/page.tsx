@@ -1,5 +1,6 @@
 import { CategoryManager } from "@/components/category-manager";
 import { db } from "@/lib/db";
+import { AdminPageHeader } from "@/components/admin-ui";
 
 export default async function CategoriesPage() {
   const categories = await db.category.findMany({
@@ -9,10 +10,7 @@ export default async function CategoriesPage() {
 
   return (
     <>
-      <div className="mb-6">
-        <h1 className="m-0 text-2xl sm:text-3xl">دسته‌بندی‌ها</h1>
-        <span className="text-sm text-[#747982]">مدیریت دسته‌های اصلی، زیردسته‌ها و تصویر شاخص صفحه اصلی</span>
-      </div>
+      <AdminPageHeader eyebrow="ساختار فروشگاه" title="دسته‌بندی‌ها" description="دسته‌های اصلی، زیردسته‌ها، ترتیب نمایش و تصویر شاخص را مدیریت کنید." />
       <CategoryManager
         initialCategories={categories.map((category) => ({
           id: category.id,

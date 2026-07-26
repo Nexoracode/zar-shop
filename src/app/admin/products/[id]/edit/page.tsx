@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { ProductForm } from "@/components/product-form";
 import { db } from "@/lib/db";
+import { AdminPageHeader } from "@/components/admin-ui";
 
 type Context = { params: Promise<{ id: string }> };
 
@@ -21,10 +22,7 @@ export default async function EditProductPage({ params }: Context) {
 
   return (
     <>
-      <div className="mb-6">
-        <h1 className="m-0 text-2xl sm:text-3xl">ویرایش محصول</h1>
-        <span className="text-sm text-[#747982]">اطلاعات و گالری «{product.name}» را مدیریت کنید.</span>
-      </div>
+      <AdminPageHeader eyebrow="مدیریت کاتالوگ" title={`ویرایش «${product.name}»`} description="اطلاعات، قیمت‌گذاری، موجودی و گالری این محصول را به‌روزرسانی کنید." />
       <ProductForm
         categories={categories.map((category) => ({ id: category.id, name: category.name, parentName: category.parent?.name ?? null }))}
         product={{
