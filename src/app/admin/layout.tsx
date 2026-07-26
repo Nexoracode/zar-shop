@@ -4,9 +4,9 @@ import { requireRole } from "@/modules/auth/session";
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   await requireRole(["ADMIN", "OPERATOR"]);
   return (
-    <main className="w-[min(1240px,calc(100%-40px))] mx-auto grid grid-cols-[240px_1fr] gap-[30px] py-10 pb-20 max-[760px]:grid-cols-1">
+    <main className="mx-auto grid w-full max-w-[1240px] grid-cols-1 gap-6 px-5 py-8 sm:px-6 lg:grid-cols-[240px_minmax(0,1fr)] lg:gap-[30px] lg:py-10 lg:pb-20">
       <AdminSidebar />
-      <section>{children}</section>
+      <section className="min-w-0">{children}</section>
     </main>
   );
 }

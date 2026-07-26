@@ -18,15 +18,15 @@ export default async function AdminPage() {
 
   return (
     <>
-      <div className="flex justify-between items-center gap-5 mb-6">
+      <div className="mb-6 flex items-center justify-between gap-5">
         <div>
           <span className="inline-block text-[#785b27] text-[0.78rem] font-bold tracking-[0.03em] mb-[5px]">امروز در فروشگاه</span>
-          <h1 className="mt-0 mb-0">نمای کلی</h1>
+          <h1 className="m-0 text-2xl sm:text-3xl">نمای کلی</h1>
         </div>
       </div>
-      <div className="grid grid-cols-4 gap-[14px] mt-[22px] max-[760px]:grid-cols-2">
+      <div className="mt-[22px] grid grid-cols-2 gap-3 xl:grid-cols-4 xl:gap-[14px]">
         {stats.map(({ val, label, small }) => (
-          <div key={label} className="p-[21px] border border-[#e7e6e2] bg-white rounded-[4px]">
+          <div key={label} className="min-w-0 rounded-[4px] border border-[#e7e6e2] bg-white p-4 sm:p-[21px]">
             <strong className={`block font-bold ${small ? "text-[1rem]" : "text-2xl"}`}>{val}</strong>
             <span className="text-[#747982] text-[0.85rem]">{label}</span>
           </div>

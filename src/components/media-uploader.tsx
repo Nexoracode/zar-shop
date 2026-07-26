@@ -25,10 +25,10 @@ export function MediaUploader() {
 
   return (
     <form
-      className="grid gap-4 bg-white border border-[#e7e6e2] rounded-[4px] p-[22px]"
+      className="grid gap-4 rounded-[4px] border border-[#e7e6e2] bg-white p-4 sm:p-[22px]"
       onSubmit={upload}
     >
-      <div className="grid grid-cols-2 gap-[14px]">
+      <div className="grid grid-cols-1 gap-[14px] sm:grid-cols-2">
         <div className="grid gap-[7px]">
           <label htmlFor="mediaFile" className={labelClass}>تصویر یا ویدیو</label>
           <input

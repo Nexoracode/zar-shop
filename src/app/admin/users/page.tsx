@@ -1,5 +1,31 @@
+import type { Prisma } from "@generated/prisma/client";
 import { db } from "@/lib/db";
 import { formatDate } from "@/lib/format";
-import type { Prisma } from "@generated/prisma/client";
-type UserRow = Prisma.UserGetPayload<{include:{_count:{select:{orders:true}}}}>;
-export default async function UsersPage(){const users=await db.user.findMany({include:{_count:{select:{orders:true}}},orderBy:{createdAt:"desc"},take:100});return <><div className="panel-head"><div><h1>کاربران</h1><span className="meta">کنترل نقش، وضعیت و سوابق خرید</span></div></div><div className="table-wrap"><table><thead><tr><th>کاربر</th><th>تماس</th><th>نقش</th><th>سفارش</th><th>وضعیت</th><th>عضویت</th></tr></thead><tbody>{users.map((u: UserRow)=><tr key={u.id}><td><strong>{u.firstName} {u.lastName}</strong><br/><span className="meta">{u.email}</span></td><td dir="ltr">{u.phone??"—"}</td><td><span className="badge">{u.role}</span></td><td>{u._count.orders}</td><td>{u.status}</td><td>{formatDate(u.createdAt)}</td></tr>)}</tbody></table></div></>}
+
+type UserRow = Prisma.UserGetPayload<{ include: { _count: { select: { orders: true } } } }>;
+
+export default async function UsersPage() {
+  const users = await db.user.findMany({ include: { _count: { select: { orders: true } } }, orderBy: { createdAt: "desc" }, take: 100 });
+  const cell = "border-b border-[#e7e6e2] px-4 py-3.5 text-sm";
+
+  return (
+    <>
+      <div className="mb-6">
+        <h1 className="m-0 text-2xl sm:text-3xl">کاربران</h1>
+        <span className="text-sm text-[#747982]">کنترل نقش، وضعیت و سوابق خرید</span>
+      </div>
+      <div className="overflow-x-auto border border-[#e7e6e2] bg-white">
+        <table className="w-full min-w-[780px] border-collapse">
+          <thead><tr>{["کاربر", "تماس", "نقش", "سفارش", "وضعیت", "عضویت"].map((head) => <th className="border-b border-[#e7e6e2] bg-[#f8f7f4] px-4 py-3.5 text-right text-xs text-[#747982]" key={head}>{head}</th>)}</tr></thead>
+          <tbody>{users.map((user: UserRow) => (
+            <tr key={user.id} className="hover:bg-[#fbfaf7]">
+              <td className={cell}><strong>{user.firstName} {user.lastName}</strong><br /><span className="text-xs text-[#747982]">{user.email}</span></td>
+              <td className={cell} dir="ltr">{user.phone ?? "—"}</td><td className={cell}><span className="rounded-sm bg-[#efe5d1] px-2.5 py-1 text-xs text-[#785b27]">{user.role}</span></td>
+              <td className={cell}>{user._count.orders}</td><td className={cell}>{user.status}</td><td className={cell}>{formatDate(user.createdAt)}</td>
+            </tr>
+          ))}</tbody>
+        </table>
+      </div>
+    </>
+  );
+}

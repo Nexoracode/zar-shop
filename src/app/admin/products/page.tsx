@@ -9,9 +9,9 @@ export default async function AdminProducts() {
 
   return (
     <>
-      <div className="flex justify-between items-center gap-5 mb-6">
+      <div className="mb-6 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
         <div>
-          <h1 className="mt-0 mb-0">محصولات</h1>
+          <h1 className="m-0 text-2xl sm:text-3xl">محصولات</h1>
           <span className="text-[#747982] text-[0.82rem]">ثبت، انتشار و کنترل موجودی</span>
         </div>
         <Link className="min-h-[46px] px-6 py-[9px] inline-flex items-center justify-center bg-[#1c3155] text-white border border-[#1c3155] rounded-sm transition-all hover:-translate-y-[2px]" href="/admin/products/new">

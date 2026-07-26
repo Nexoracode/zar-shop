@@ -11,17 +11,17 @@ const navLinks = [
 
 export function AdminSidebar() {
   return (
-    <aside className="bg-[#132542] text-white p-[22px] self-start sticky top-[184px]">
+    <aside className="self-start bg-[#132542] p-4 text-white lg:sticky lg:top-[172px] lg:p-[22px]">
       <div className="px-[10px] pb-[18px] border-b border-white/10 mb-3">
         <strong className="block text-sm">مدیریت زر</strong>
         <small className="text-white/60 text-xs">مرکز عملیات فروشگاه</small>
       </div>
-      <nav className="grid gap-[5px]">
+      <nav className="flex gap-1 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden lg:grid lg:gap-[5px]">
         {navLinks.map(({ href, label }) => (
           <Link
             key={href}
             href={href}
-            className="block text-white/70 px-[10px] py-[10px] text-sm transition-colors hover:text-white hover:bg-white/8"
+            className="block shrink-0 px-[10px] py-[10px] text-sm text-white/70 transition-colors hover:bg-white/8 hover:text-white"
           >
             {label}
           </Link>

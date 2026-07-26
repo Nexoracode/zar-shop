@@ -30,8 +30,8 @@ export function ProductForm() {
   const labelClass = "text-[#4b5160] text-[0.84rem] font-bold";
 
   return (
-    <form className="grid gap-4 bg-white border border-[#e7e6e2] rounded-[4px] p-[22px]" onSubmit={submit}>
-      <div className="grid grid-cols-2 gap-[14px]">
+    <form className="grid gap-4 rounded-[4px] border border-[#e7e6e2] bg-white p-4 sm:p-[22px]" onSubmit={submit}>
+      <div className="grid grid-cols-1 gap-[14px] sm:grid-cols-2">
         <div className="grid gap-[7px]">
           <label htmlFor="productName" className={labelClass}>نام محصول</label>
           <input id="productName" name="name" required className={fieldClass} />
@@ -52,7 +52,7 @@ export function ProductForm() {
         <textarea id="productDescription" name="description" rows={4} className={fieldClass} />
       </div>
 
-      <div className="grid grid-cols-2 gap-[14px]">
+      <div className="grid grid-cols-1 gap-[14px] sm:grid-cols-2">
         <div className="grid gap-[7px]">
           <label htmlFor="productWeight" className={labelClass}>وزن (گرم)</label>
           <input id="productWeight" name="weightGrams" type="number" step="0.001" min="0.001" required className={fieldClass} />
@@ -63,7 +63,7 @@ export function ProductForm() {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-[14px]">
+      <div className="grid grid-cols-1 gap-[14px] sm:grid-cols-2">
         <div className="grid gap-[7px]">
           <label htmlFor="makingFeeType" className={labelClass}>نوع اجرت</label>
           <select id="makingFeeType" name="makingFeeType" className={fieldClass}>
@@ -77,7 +77,7 @@ export function ProductForm() {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-[14px]">
+      <div className="grid grid-cols-1 gap-[14px] sm:grid-cols-2">
         <div className="grid gap-[7px]">
           <label htmlFor="profitPercent" className={labelClass}>درصد سود</label>
           <input id="profitPercent" name="profitPercent" type="number" defaultValue="7" min="0" required className={fieldClass} />
@@ -88,7 +88,7 @@ export function ProductForm() {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-[14px]">
+      <div className="grid grid-cols-1 gap-[14px] sm:grid-cols-2">
         <div className="grid gap-[7px]">
           <label htmlFor="productStock" className={labelClass}>موجودی</label>
           <input id="productStock" name="stock" type="number" defaultValue="1" min="0" required className={fieldClass} />
