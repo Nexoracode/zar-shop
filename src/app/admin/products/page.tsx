@@ -11,7 +11,7 @@ import { AdminPagination } from "@/components/admin-pagination";
 import { parseAdminPagination, resolveAdminPagination } from "@/lib/admin-pagination";
 import { requirePermission } from "@/modules/auth/session";
 
-type Context = { searchParams: Promise<{ q?: string; status?: string; category?: string; page?: string; pageSize?: string }> };
+type Context = { searchParams: Promise<{ q?: string; status?: string; category?: string; featured?: string; page?: string; pageSize?: string }> };
 type ProductRow = Prisma.ProductGetPayload<{ include: { category: true; media: { include: { media: true } } } }>;
 
 export default async function AdminProducts({ searchParams }: Context) {
@@ -19,11 +19,13 @@ export default async function AdminProducts({ searchParams }: Context) {
   const params = await searchParams;
   const query = params.q?.trim() ?? "";
   const status = (["DRAFT", "ACTIVE", "ARCHIVED"] as const).includes(params.status as ProductStatus) ? params.status as ProductStatus : undefined;
+  const featured = params.featured === "yes" || params.featured === "no" ? params.featured : undefined;
   const { requestedPage, pageSize } = parseAdminPagination(params);
   const where: Prisma.ProductWhereInput = {
     ...(query ? { OR: [{ name: { contains: query } }, { sku: { contains: query } }, { slug: { contains: query } }] } : {}),
     ...(status ? { status } : {}),
     ...(params.category ? { categoryId: params.category } : {}),
+    ...(featured ? { featured: featured === "yes" } : {}),
   };
   const filteredTotal = await db.product.count({ where });
   const pagination = resolveAdminPagination(filteredTotal, requestedPage, pageSize);
@@ -44,7 +46,7 @@ export default async function AdminProducts({ searchParams }: Context) {
       </div>
 
       <AdminPanel>
-        <div className="border-b border-slate-100 bg-slate-50/70 p-4"><AdminListFilters path="/admin/products" query={query} queryLabel="جست‌وجوی محصول" queryPlaceholder="نام، کد کالا یا نشانی محصول" filters={[{ name: "status", label: "وضعیت محصول", value: status ?? "", options: [{ value: "", label: "همه وضعیت‌ها" }, ...Object.entries(productStatusLabels).map(([value, label]) => ({ value, label }))] }, { name: "category", label: "دسته‌بندی", value: params.category ?? "", options: [{ value: "", label: "همه دسته‌ها" }, ...categories.map((category) => ({ value: category.id, label: category.name }))] }]} /></div>
+        <div className="border-b border-slate-100 bg-slate-50/70 p-4"><AdminListFilters path="/admin/products" query={query} queryLabel="جست‌وجوی محصول" queryPlaceholder="نام، کد کالا یا نشانی محصول" filters={[{ name: "status", label: "وضعیت محصول", value: status ?? "", options: [{ value: "", label: "همه وضعیت‌ها" }, ...Object.entries(productStatusLabels).map(([value, label]) => ({ value, label }))] }, { name: "category", label: "دسته‌بندی", value: params.category ?? "", options: [{ value: "", label: "همه دسته‌ها" }, ...categories.map((category) => ({ value: category.id, label: category.name }))] }, { name: "featured", label: "نمایش ویژه", value: featured ?? "", options: [{ value: "", label: "همه محصولات" }, { value: "yes", label: "محصولات ویژه" }, { value: "no", label: "محصولات عادی" }] }]} /></div>
 
         {products.length ? <>
           <div className="grid gap-3 p-3 md:hidden">{products.map((product: ProductRow) => <ProductMobileCard key={product.id} product={product} />)}</div>

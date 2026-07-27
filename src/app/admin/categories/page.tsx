@@ -11,7 +11,7 @@ import { AdminPagination } from "@/components/admin-pagination";
 import { parseAdminPagination, resolveAdminPagination } from "@/lib/admin-pagination";
 import { requirePermission } from "@/modules/auth/session";
 
-type Context = { searchParams: Promise<{ q?: string; status?: string; page?: string; pageSize?: string }> };
+type Context = { searchParams: Promise<{ q?: string; status?: string; featured?: string; page?: string; pageSize?: string }> };
 type CategoryRow = Prisma.CategoryGetPayload<{ include: { image: true; parent: { select: { name: true } }; _count: { select: { products: true; children: true } } } }>;
 
 export default async function CategoriesPage({ searchParams }: Context) {
@@ -19,14 +19,16 @@ export default async function CategoriesPage({ searchParams }: Context) {
   const params = await searchParams;
   const query = params.q?.trim() ?? "";
   const status = params.status === "active" || params.status === "inactive" ? params.status : undefined;
+  const featuredFilter = params.featured === "yes" || params.featured === "no" ? params.featured : undefined;
   const { requestedPage, pageSize } = parseAdminPagination(params);
   const where: Prisma.CategoryWhereInput = {
     ...(query ? { OR: [{ name: { contains: query } }, { slug: { contains: query } }, { parent: { is: { name: { contains: query } } } }] } : {}),
     ...(status ? { isActive: status === "active" } : {}),
+    ...(featuredFilter ? { featured: featuredFilter === "yes" } : {}),
   };
   const filteredTotal = await db.category.count({ where });
   const pagination = resolveAdminPagination(filteredTotal, requestedPage, pageSize);
-  const [categories, total, active, featured] = await Promise.all([
+  const [categories, total, active, featuredCount] = await Promise.all([
     db.category.findMany({ where, skip: pagination.skip, take: pagination.pageSize, include: { image: true, parent: { select: { name: true } }, _count: { select: { products: true, children: true } } }, orderBy: [{ sortOrder: "asc" }, { name: "asc" }] }),
     db.category.count(),
     db.category.count({ where: { isActive: true } }),
@@ -38,11 +40,11 @@ export default async function CategoriesPage({ searchParams }: Context) {
       <AdminPageHeader eyebrow="ساختار فروشگاه" title="دسته‌بندی‌ها" description="دسته‌های اصلی، زیردسته‌ها، ترتیب نمایش و تصویر شاخص را مدیریت کنید." action={<AdminPrimaryLink href="/admin/categories/new"><Plus size={17} />دسته جدید</AdminPrimaryLink>} />
 
       <div className="mb-5 grid grid-cols-3 gap-3">
-        {[{ label: "همه دسته‌ها", value: total }, { label: "دسته فعال", value: active }, { label: "صفحه اصلی", value: featured }].map((item) => <Card key={item.label} variant="secondary" className="rounded-2xl border border-slate-200/80 bg-white p-3.5 sm:p-4"><strong className="block text-xl font-black text-[#172b4d]">{item.value.toLocaleString("fa-IR")}</strong><span className="text-[11px] text-slate-500 sm:text-xs">{item.label}</span></Card>)}
+        {[{ label: "همه دسته‌ها", value: total }, { label: "دسته فعال", value: active }, { label: "صفحه اصلی", value: featuredCount }].map((item) => <Card key={item.label} variant="secondary" className="rounded-2xl border border-slate-200/80 bg-white p-3.5 sm:p-4"><strong className="block text-xl font-black text-[#172b4d]">{item.value.toLocaleString("fa-IR")}</strong><span className="text-[11px] text-slate-500 sm:text-xs">{item.label}</span></Card>)}
       </div>
 
       <AdminPanel>
-        <div className="border-b border-slate-100 bg-slate-50/70 p-4"><AdminListFilters path="/admin/categories" query={query} queryLabel="جست‌وجوی دسته‌بندی" queryPlaceholder="نام، نشانی یا دسته والد" filters={[{ name: "status", label: "وضعیت دسته‌بندی", value: status ?? "", options: [{ value: "", label: "همه وضعیت‌ها" }, { value: "active", label: "فعال" }, { value: "inactive", label: "غیرفعال" }] }]} /></div>
+        <div className="border-b border-slate-100 bg-slate-50/70 p-4"><AdminListFilters path="/admin/categories" query={query} queryLabel="جست‌وجوی دسته‌بندی" queryPlaceholder="نام، نشانی یا دسته والد" filters={[{ name: "status", label: "وضعیت دسته‌بندی", value: status ?? "", options: [{ value: "", label: "همه وضعیت‌ها" }, { value: "active", label: "فعال" }, { value: "inactive", label: "غیرفعال" }] }, { name: "featured", label: "نمایش در صفحه اصلی", value: featuredFilter ?? "", options: [{ value: "", label: "همه دسته‌ها" }, { value: "yes", label: "نمایش در صفحه اصلی" }, { value: "no", label: "عدم نمایش در صفحه اصلی" }] }]} /></div>
 
         {categories.length ? <>
           <div className="grid gap-3 p-3 md:hidden">{categories.map((category) => <CategoryMobileCard key={category.id} category={category} />)}</div>
