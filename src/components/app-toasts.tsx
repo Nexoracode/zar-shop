@@ -3,16 +3,24 @@
 import { Toast } from "@heroui/react";
 
 const toastColors = {
-  danger: "border-[#b51230] bg-[#D31736] text-white shadow-[0_18px_45px_rgba(211,23,54,0.22)]",
-  warning: "border-amber-500 bg-amber-400 text-amber-950 shadow-[0_18px_45px_rgba(217,119,6,0.3)]",
-  success: "border-emerald-700 bg-emerald-600 text-white shadow-[0_18px_45px_rgba(5,150,105,0.3)]",
-  accent: "border-blue-700 bg-blue-600 text-white shadow-[0_18px_45px_rgba(37,99,235,0.3)]",
-  default: "border-slate-800 bg-slate-900 text-white shadow-[0_18px_45px_rgba(15,23,42,0.35)]",
+  danger: "border-0 border-r-2 border-r-[#D31736] bg-white text-slate-800 shadow-[0_18px_45px_rgba(15,23,42,0.16)]",
+  warning: "border-2 border-amber-500 bg-amber-400 text-amber-950 shadow-[0_18px_45px_rgba(217,119,6,0.3)]",
+  success: "border-2 border-emerald-700 bg-emerald-600 text-white shadow-[0_18px_45px_rgba(5,150,105,0.3)]",
+  accent: "border-2 border-blue-700 bg-blue-600 text-white shadow-[0_18px_45px_rgba(37,99,235,0.3)]",
+  default: "border-2 border-slate-800 bg-slate-900 text-white shadow-[0_18px_45px_rgba(15,23,42,0.35)]",
+} as const;
+
+const indicatorColors = {
+  danger: "bg-red-50 text-[#D31736]",
+  warning: "bg-white/25 text-current",
+  success: "bg-white/20 text-current",
+  accent: "bg-white/20 text-current",
+  default: "bg-white/20 text-current",
 } as const;
 
 export function AppToasts() {
   return (
-    <Toast.Provider placement="top" maxVisibleToasts={3} width={400} className="z-[300]">
+    <Toast.Provider placement="top start" maxVisibleToasts={3} width={400} className="z-[300]">
       {({ toast: queuedToast }) => {
         const content = queuedToast.content;
         const variant = content.variant ?? "default";
@@ -21,12 +29,13 @@ export function AppToasts() {
           <Toast
             toast={queuedToast}
             variant={variant}
-            placement="top"
+            placement="top start"
             dir="rtl"
-            className={`min-h-20 flex-row items-start gap-3 overflow-hidden border-2 px-4 py-4 text-right ${toastColors[variant]}`}
+            className={`min-h-20 flex-row items-start gap-3 overflow-hidden px-4 py-4 text-right ${toastColors[variant]}`}
+            style={{ borderTopRightRadius: 4, borderBottomRightRadius: 4, borderTopLeftRadius: 18, borderBottomLeftRadius: 18 }}
           >
             {content.indicator === null ? null : (
-              <Toast.Indicator variant={variant} className="mt-0.5 grid size-10 shrink-0 place-items-center rounded-xl bg-white/20 p-2 text-current [&_svg]:size-5">
+              <Toast.Indicator variant={variant} className={`mt-0.5 grid size-10 shrink-0 place-items-center rounded-xl p-2 [&_svg]:size-5 ${indicatorColors[variant]}`}>
                 {content.indicator}
               </Toast.Indicator>
             )}
@@ -35,7 +44,7 @@ export function AppToasts() {
               {content.description ? <Toast.Description className="w-full text-right text-xs leading-6 text-current opacity-95">{content.description}</Toast.Description> : null}
               {content.actionProps?.children ? <Toast.ActionButton {...content.actionProps} className="mt-2 border border-white/30 bg-white/15 text-current">{content.actionProps.children}</Toast.ActionButton> : null}
             </Toast.Content>
-            <Toast.CloseButton className="pointer-events-auto absolute left-2 top-2 right-auto size-7 border border-white/25 bg-white/15 text-current opacity-100" />
+            <Toast.CloseButton className={`pointer-events-auto absolute left-2 top-2 right-auto size-7 opacity-100 ${variant === "danger" ? "border border-slate-200 bg-slate-100 text-slate-500" : "border border-white/25 bg-white/15 text-current"}`} />
           </Toast>
         );
       }}

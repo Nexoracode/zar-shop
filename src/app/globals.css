@@ -100,3 +100,26 @@ button {
 img {
   max-width: 100%;
 }
+
+@keyframes zar-toast-left-in {
+  from {
+    translate: -110% 0;
+    opacity: 0;
+  }
+}
+
+@keyframes zar-toast-left-out {
+  to {
+    translate: -110% 0;
+    opacity: 0;
+  }
+}
+
+::view-transition-new(.toast-top):only-child {
+  animation: zar-toast-left-in 350ms ease-out;
+}
+
+::view-transition-old(.toast-top):only-child {
+  animation: zar-toast-left-out 300ms ease-in;
+  animation-fill-mode: forwards;
+}
