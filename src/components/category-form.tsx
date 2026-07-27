@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
-import { Alert, Button, Card, Input, TextArea, toast } from "@heroui/react";
+import { Button, Card, Input, TextArea, toast } from "@heroui/react";
 import { ChevronRight, FolderTree, ImageIcon, Save, Sparkles, X } from "lucide-react";
 import { MediaPickerDialog } from "@/components/media-picker-dialog";
 import type { MediaChoice } from "@/components/media-library";
@@ -50,12 +50,10 @@ export function CategoryForm({ categories, category }: { categories: CategoryOpt
   const [selectedImage, setSelectedImage] = useState<MediaChoice[]>(category?.image ? [category.image] : []);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setLoading(true);
-    setError("");
     const body = {
       name,
       slug,
@@ -69,7 +67,6 @@ export function CategoryForm({ categories, category }: { categories: CategoryOpt
     const validation = categorySchema.safeParse(body);
     if (!validation.success) {
       const message = validationErrorMessage(validation.error.issues, categoryFieldLabels);
-      setError(message);
       toast.danger("اطلاعات دسته‌بندی کامل نیست", { description: message, timeout: 7000 });
       setLoading(false);
       return;
@@ -86,7 +83,6 @@ export function CategoryForm({ categories, category }: { categories: CategoryOpt
       router.refresh();
     } catch (reason) {
       const message = reason instanceof Error ? reason.message : "ارتباط با سرور برقرار نشد.";
-      setError(message);
       toast.danger("ذخیره دسته‌بندی انجام نشد", { description: message, timeout: 7000 });
     } finally {
       setLoading(false);
@@ -145,7 +141,6 @@ export function CategoryForm({ categories, category }: { categories: CategoryOpt
             </div>
           </Card.Content>
         </Card>
-        {error && <Alert status="danger"><Alert.Description>{error}</Alert.Description></Alert>}
         <Button type="submit" isDisabled={loading} variant="primary" fullWidth className="min-h-12 gap-2 bg-[#172b4d] text-sm font-bold text-white shadow-lg"><Save size={17} />{loading ? "در حال ذخیره..." : category ? "ذخیره تغییرات" : "ثبت دسته‌بندی"}</Button>
         <Link href="/admin/categories" className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white text-sm font-bold text-slate-600"><ChevronRight size={16} />بازگشت به دسته‌بندی‌ها</Link>
       </aside>

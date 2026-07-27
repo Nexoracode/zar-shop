@@ -42,7 +42,6 @@ const productFieldLabels: Record<string, string> = {
 
 export function ProductForm({ categories = [], product }: Props) {
   const router = useRouter();
-  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [selectedMedia, setSelectedMedia] = useState<MediaChoice[]>(product?.media ?? []);
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -58,7 +57,7 @@ export function ProductForm({ categories = [], product }: Props) {
   }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault(); setLoading(true); setError("");
+    event.preventDefault(); setLoading(true);
     const form = new FormData(event.currentTarget);
     const body = {
       sku: form.get("sku"), name: form.get("name"), slug: form.get("slug"), description: form.get("description"), categoryId: form.get("categoryId") || null,
@@ -69,7 +68,6 @@ export function ProductForm({ categories = [], product }: Props) {
     const validation = productSchema.safeParse(body);
     if (!validation.success) {
       const message = validationErrorMessage(validation.error.issues, productFieldLabels);
-      setError(message);
       toast.danger("اطلاعات محصول کامل نیست", { description: message, timeout: 7000 });
       setLoading(false);
       return;
@@ -81,7 +79,6 @@ export function ProductForm({ categories = [], product }: Props) {
       router.push("/admin/products"); router.refresh();
     } catch (reason) {
       const message = reason instanceof Error ? reason.message : "ارتباط با سرور برقرار نشد.";
-      setError(message);
       toast.danger("ذخیره محصول انجام نشد", { description: message, timeout: 7000 });
       setLoading(false);
     }
@@ -116,7 +113,6 @@ export function ProductForm({ categories = [], product }: Props) {
             <Alert.Description className="block text-xs leading-6 text-amber-900">پیش از انتشار محصول، تصویر اصلی، دسته‌بندی، وزن و موجودی را بررسی کنید تا اطلاعات محصول کامل و قیمت آن درست محاسبه شود.</Alert.Description>
           </div>
         </Alert>
-        {error && <Alert status="danger"><Alert.Description>{error}</Alert.Description></Alert>}
         <div className="grid gap-2"><Button type="submit" isDisabled={loading} variant="primary" fullWidth className="min-h-12 gap-2 bg-[#172b4d] px-5 text-sm font-bold text-white shadow-lg"><Save size={17} />{loading ? "در حال ذخیره..." : product ? "ذخیره تغییرات" : "ثبت محصول"}</Button><Link href="/admin/products" className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white text-sm font-bold text-slate-600"><ChevronRight size={16} />بازگشت به محصولات</Link></div>
       </aside>
     </form>

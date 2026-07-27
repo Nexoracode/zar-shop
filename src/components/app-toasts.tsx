@@ -12,7 +12,7 @@ const toastColors = {
 
 export function AppToasts() {
   return (
-    <Toast.Provider placement="bottom end" maxVisibleToasts={3} width={400} className="z-[300]">
+    <Toast.Provider placement="top" maxVisibleToasts={3} width={400} className="z-[300]">
       {({ toast: queuedToast }) => {
         const content = queuedToast.content;
         const variant = content.variant ?? "default";
@@ -21,7 +21,7 @@ export function AppToasts() {
           <Toast
             toast={queuedToast}
             variant={variant}
-            placement="bottom end"
+            placement="top"
             dir="rtl"
             className={`min-h-20 flex-row items-start gap-3 overflow-hidden border-2 px-4 py-4 text-right ${toastColors[variant]}`}
           >
