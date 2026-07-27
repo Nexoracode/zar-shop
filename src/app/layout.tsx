@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import Link from "next/link";
 import { SiteHeader } from "@/components/site-header";
 import { AppChrome } from "@/components/app-chrome";
+import { AppToasts } from "@/components/app-toasts";
 import "./globals.css";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -68,6 +69,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         >
           {children}
         </AppChrome>
+        <AppToasts />
       </body>
     </html>
   );

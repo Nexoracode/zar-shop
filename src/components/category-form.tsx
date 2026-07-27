@@ -4,13 +4,15 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
-import { Alert, Button, Card, Input, TextArea } from "@heroui/react";
+import { Alert, Button, Card, Input, TextArea, toast } from "@heroui/react";
 import { ChevronRight, FolderTree, ImageIcon, Save, Sparkles, X } from "lucide-react";
 import { MediaPickerDialog } from "@/components/media-picker-dialog";
 import type { MediaChoice } from "@/components/media-library";
 import { HeroSelectField } from "@/components/hero-select-field";
 import { adminFieldClass, adminLabelClass } from "@/components/admin-ui";
 import { AdminCheckbox } from "@/components/admin-checkbox";
+import { apiErrorMessage, validationErrorMessage } from "@/lib/form-errors";
+import { categorySchema } from "@/modules/categories/schemas";
 
 type CategoryOption = { id: string; name: string; parentName: string | null };
 type EditableCategory = {
@@ -23,6 +25,17 @@ type EditableCategory = {
   sortOrder: number;
   isActive: boolean;
   featured: boolean;
+};
+
+const categoryFieldLabels: Record<string, string> = {
+  name: "نام دسته‌بندی",
+  slug: "نشانی انگلیسی",
+  description: "توضیحات",
+  parentId: "دسته والد",
+  imageId: "تصویر شاخص",
+  isActive: "وضعیت دسته‌بندی",
+  featured: "نمایش در صفحه اصلی",
+  sortOrder: "ترتیب نمایش",
 };
 
 export function CategoryForm({ categories, category }: { categories: CategoryOption[]; category?: EditableCategory }) {
@@ -43,34 +56,45 @@ export function CategoryForm({ categories, category }: { categories: CategoryOpt
     event.preventDefault();
     setLoading(true);
     setError("");
+    const body = {
+      name,
+      slug,
+      description: description || null,
+      parentId: parentId || null,
+      imageId: selectedImage[0]?.id ?? null,
+      sortOrder: Number(sortOrder),
+      isActive,
+      featured,
+    };
+    const validation = categorySchema.safeParse(body);
+    if (!validation.success) {
+      const message = validationErrorMessage(validation.error.issues, categoryFieldLabels);
+      setError(message);
+      toast.danger("اطلاعات دسته‌بندی کامل نیست", { description: message, timeout: 7000 });
+      setLoading(false);
+      return;
+    }
     try {
       const response = await fetch(category ? `/api/categories/${category.id}` : "/api/categories", {
         method: category ? "PATCH" : "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name,
-          slug,
-          description: description || null,
-          parentId: parentId || null,
-          imageId: selectedImage[0]?.id ?? null,
-          sortOrder: Number(sortOrder),
-          isActive,
-          featured,
-        }),
+        body: JSON.stringify(validation.data),
       });
       const result = await response.json().catch(() => null);
-      if (!response.ok) throw new Error(result?.message ?? "ذخیره دسته‌بندی ناموفق بود.");
+      if (!response.ok) throw new Error(apiErrorMessage(result, "ذخیره دسته‌بندی ناموفق بود.", categoryFieldLabels));
       router.push("/admin/categories");
       router.refresh();
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "ارتباط با سرور برقرار نشد.");
+      const message = reason instanceof Error ? reason.message : "ارتباط با سرور برقرار نشد.";
+      setError(message);
+      toast.danger("ذخیره دسته‌بندی انجام نشد", { description: message, timeout: 7000 });
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <form onSubmit={submit} className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
+    <form onSubmit={submit} noValidate className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
       <div className="grid content-start gap-6">
         <Card variant="secondary" className="rounded-2xl border border-slate-200/80 bg-white shadow-sm">
           <Card.Content className="p-4 sm:p-6">

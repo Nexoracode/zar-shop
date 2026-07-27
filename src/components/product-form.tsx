@@ -4,13 +4,15 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState, type FormEvent, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import { Alert, Button, Card, Input, TextArea } from "@heroui/react";
+import { Alert, Button, Card, Input, TextArea, toast } from "@heroui/react";
 import { ArrowDown, ArrowUp, ChevronRight, Images, Info, PackageCheck, Save, Sparkles, Tag, X } from "lucide-react";
 import { MediaPickerDialog } from "@/components/media-picker-dialog";
 import type { MediaChoice } from "@/components/media-library";
 import { adminFieldClass, adminLabelClass } from "@/components/admin-ui";
 import { HeroSelectField } from "@/components/hero-select-field";
 import { AdminCheckbox } from "@/components/admin-checkbox";
+import { apiErrorMessage, validationErrorMessage } from "@/lib/form-errors";
+import { productSchema } from "@/modules/products/schemas";
 
 type EditableProduct = {
   id: string; sku: string; name: string; slug: string; description: string; categoryId: string; purity: number; weightGrams: number;
@@ -19,6 +21,24 @@ type EditableProduct = {
 };
 
 type Props = { categories?: Array<{ id: string; name: string; parentName: string | null }>; product?: EditableProduct };
+
+const productFieldLabels: Record<string, string> = {
+  sku: "کد کالا",
+  name: "نام محصول",
+  slug: "نشانی انگلیسی",
+  description: "توضیحات محصول",
+  categoryId: "دسته‌بندی",
+  purity: "عیار",
+  weightGrams: "وزن",
+  makingFeeType: "نوع اجرت",
+  makingFeeValue: "مقدار اجرت",
+  profitPercent: "درصد سود",
+  taxPercent: "درصد مالیات",
+  stock: "موجودی انبار",
+  status: "وضعیت محصول",
+  featured: "نمایش در محصولات ویژه",
+  mediaIds: "گالری محصول",
+};
 
 export function ProductForm({ categories = [], product }: Props) {
   const router = useRouter();
@@ -46,20 +66,31 @@ export function ProductForm({ categories = [], product }: Props) {
       profitPercent: Number(form.get("profitPercent")), taxPercent: Number(form.get("taxPercent")), stock: Number(form.get("stock")), status: form.get("status"),
       featured: form.get("featured") === "on", mediaIds: selectedMedia.map((media) => media.id),
     };
+    const validation = productSchema.safeParse(body);
+    if (!validation.success) {
+      const message = validationErrorMessage(validation.error.issues, productFieldLabels);
+      setError(message);
+      toast.danger("اطلاعات محصول کامل نیست", { description: message, timeout: 7000 });
+      setLoading(false);
+      return;
+    }
     try {
-      const response = await fetch(product ? `/api/products/${product.id}` : "/api/products", { method: product ? "PATCH" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+      const response = await fetch(product ? `/api/products/${product.id}` : "/api/products", { method: product ? "PATCH" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(validation.data) });
       const result = await response.json().catch(() => null);
-      if (!response.ok) throw new Error(result?.message ?? "ذخیره محصول ناموفق بود.");
+      if (!response.ok) throw new Error(apiErrorMessage(result, "ذخیره محصول ناموفق بود.", productFieldLabels));
       router.push("/admin/products"); router.refresh();
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "ارتباط با سرور برقرار نشد."); setLoading(false);
+      const message = reason instanceof Error ? reason.message : "ارتباط با سرور برقرار نشد.";
+      setError(message);
+      toast.danger("ذخیره محصول انجام نشد", { description: message, timeout: 7000 });
+      setLoading(false);
     }
   }
 
   const inputClass = `${adminFieldClass} text-left`;
 
   return <>
-    <form onSubmit={submit} className="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
+    <form onSubmit={submit} noValidate className="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
       <div className="grid gap-5">
         <FormSection icon={<Images size={18} />} title="گالری محصول" description="اولین رسانه به‌عنوان تصویر اصلی محصول نمایش داده می‌شود.">
           {selectedMedia.length ? <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">{selectedMedia.map((media, index) => <Card key={media.id} variant="secondary" className="overflow-hidden rounded-2xl border border-slate-200 bg-slate-50"><div className="relative aspect-square">{media.type === "IMAGE" ? <Image src={media.url} alt={media.title} fill sizes="180px" className="object-cover" /> : <video src={media.url} muted className="h-full w-full bg-black object-cover" />}<span className={`absolute right-2 top-2 rounded-full px-2.5 py-1 text-[10px] font-bold text-white ${index === 0 ? "bg-[#b5904c]" : "bg-slate-900/70"}`}>{index === 0 ? "تصویر اصلی" : `ردیف ${(index + 1).toLocaleString("fa-IR")}`}</span></div><div className="flex items-center justify-between gap-1 p-2"><Button type="button" size="sm" isIconOnly variant="ghost" isDisabled={index === 0} onPress={() => moveMedia(index, -1)} aria-label="انتقال به قبل"><ArrowUp size={14} /></Button><Button type="button" size="sm" variant="danger-soft" onPress={() => setSelectedMedia((current) => current.filter((item) => item.id !== media.id))} className="h-8 min-h-8 flex-1 gap-1 text-[11px] font-bold"><X size={13} />حذف</Button><Button type="button" size="sm" isIconOnly variant="ghost" isDisabled={index === selectedMedia.length - 1} onPress={() => moveMedia(index, 1)} aria-label="انتقال به بعد"><ArrowDown size={14} /></Button></div></Card>)}</div> : <Button type="button" variant="secondary" onPress={() => setPickerOpen(true)} className="grid min-h-32 w-full place-items-center rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50 px-5 text-center text-sm font-bold text-slate-600"><span><Images className="mx-auto mb-2" size={24} />هنوز رسانه‌ای انتخاب نشده است.</span></Button>}
