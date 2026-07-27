@@ -101,9 +101,9 @@ export default async function OrderDetailsPage({ params }: { params: PageParams 
         <AdminPanel className="p-4"><span className="mb-2 flex items-center gap-2 text-xs text-slate-400"><CreditCard size={16} /> تاریخ پرداخت</span><strong className="text-sm text-[#17233b]">{successfulPayment?.paidAt ? formatDateTime(successfulPayment.paidAt) : "هنوز پرداخت نشده"}</strong></AdminPanel>
       </section>
 
-      <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1.5fr)_minmax(320px,0.7fr)]">
-        <div className="space-y-5">
-          <AdminPanel>
+      <div className="grid items-start gap-5 lg:grid-cols-2">
+        <div className="contents">
+          <AdminPanel className="order-2 lg:col-span-2">
             <div className="flex items-center gap-2 border-b border-slate-100 px-5 py-4"><Package size={18} className="text-[#9a7434]" /><h2 className="m-0 text-base font-black text-[#17233b]">محصولات سفارش</h2></div>
             <div className="divide-y divide-slate-100">
               {order.items.map((item) => {
@@ -129,31 +129,52 @@ export default async function OrderDetailsPage({ params }: { params: PageParams 
             </div>
           </AdminPanel>
 
-          <AdminPanel>
+          <AdminPanel className="order-4 lg:col-span-2">
             <div className="flex items-center gap-2 border-b border-slate-100 px-5 py-4"><CreditCard size={18} className="text-[#9a7434]" /><h2 className="m-0 text-base font-black text-[#17233b]">سوابق پرداخت</h2></div>
-            {order.payments.length ? <div className="divide-y divide-slate-100">{order.payments.map((payment) => <div key={payment.id} className="grid gap-3 p-5 md:grid-cols-[1fr_1fr_auto] md:items-center"><div><span className="block text-xs text-slate-400">درگاه و مبلغ</span><strong className="mt-1 block text-sm text-slate-700">{payment.provider} · {formatMoney(payment.amount.toString())}</strong></div><div className="text-xs text-slate-500"><span className="block">ایجاد: {formatDateTime(payment.createdAt)}</span><span className="mt-1 block">پرداخت: {payment.paidAt ? formatDateTime(payment.paidAt) : "—"}</span>{payment.referenceId && <span className="mt-1 block" dir="ltr">Ref: {payment.referenceId}</span>}</div><AdminStatusBadge tone={paymentStatusTones[payment.status]}>{paymentStatusLabels[payment.status]}</AdminStatusBadge></div>)}</div> : <p className="m-0 px-5 py-8 text-center text-sm text-slate-400">هنوز تراکنشی برای این سفارش ثبت نشده است.</p>}
+            {order.payments.length ? (
+              <div className="grid gap-3 p-4 sm:p-5">
+                {order.payments.map((payment, index) => (
+                  <article key={payment.id} className="rounded-2xl border border-slate-200 bg-slate-50/60 p-4 sm:p-5">
+                    <div className="mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-slate-200/80 pb-4">
+                      <div>
+                        <span className="block text-[11px] text-slate-400">تراکنش شماره {(index + 1).toLocaleString("fa-IR")}</span>
+                        <strong className="mt-1 block text-sm text-[#17233b]">{formatMoney(payment.amount.toString())}</strong>
+                      </div>
+                      <AdminStatusBadge tone={paymentStatusTones[payment.status]}>{paymentStatusLabels[payment.status]}</AdminStatusBadge>
+                    </div>
+                    <dl className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+                      <InfoItem label="درگاه پرداخت" value={payment.provider} />
+                      <InfoItem label="زمان ایجاد تراکنش" value={formatDateTime(payment.createdAt)} />
+                      <InfoItem label="زمان پرداخت" value={payment.paidAt ? formatDateTime(payment.paidAt) : "—"} />
+                      <InfoItem label="شناسه مرجع" value={payment.referenceId ?? "—"} ltr />
+                    </dl>
+                    {payment.authority && <div className="mt-2 rounded-xl bg-white px-4 py-3 text-xs text-slate-500"><span className="ml-2 text-slate-400">شناسه درگاه:</span><b className="break-all text-slate-700" dir="ltr">{payment.authority}</b></div>}
+                  </article>
+                ))}
+              </div>
+            ) : <p className="m-0 px-5 py-8 text-center text-sm text-slate-400">هنوز تراکنشی برای این سفارش ثبت نشده است.</p>}
           </AdminPanel>
         </div>
 
-        <aside className="space-y-5">
-          <AdminPanel className="p-5">
+        <aside className="contents">
+          <AdminPanel className="order-1 p-5">
             <h2 className="mb-4 mt-0 flex items-center gap-2 text-base font-black text-[#17233b]"><UserRound size={18} className="text-[#9a7434]" /> اطلاعات خریدار</h2>
             <dl className="grid gap-2"><InfoItem label="نام و نام خانوادگی" value={customerName} /><InfoItem label="ایمیل" value={order.user.email} ltr /><InfoItem label="شماره موبایل" value={order.user.phone} ltr /><InfoItem label="کد ملی" value={order.user.nationalId} ltr /></dl>
           </AdminPanel>
 
-          <AdminPanel className="p-5">
+          <AdminPanel className="order-1 p-5">
             <h2 className="mb-4 mt-0 flex items-center gap-2 text-base font-black text-[#17233b]"><MapPin size={18} className="text-[#9a7434]" /> آدرس ارسال</h2>
             {address ? <dl className="grid gap-2"><InfoItem label="تحویل‌گیرنده" value={address.recipient} /><InfoItem label="شماره تماس" value={address.phone} ltr /><InfoItem label="استان و شهر" value={[address.province, address.city].filter(Boolean).join("، ")} /><InfoItem label="کد پستی" value={address.postalCode} ltr /><InfoItem label="نشانی" value={address.addressLine} /></dl> : <p className="m-0 text-sm text-slate-400">آدرس ارسال ثبت نشده است.</p>}
           </AdminPanel>
 
-          <AdminPanel className="p-5">
+          <AdminPanel className={`order-3 p-5 ${order.invoice ? "" : "lg:col-span-2"}`}>
             <h2 className="mb-4 mt-0 text-base font-black text-[#17233b]">خلاصه مبالغ</h2>
             <dl className="space-y-3 text-sm"><div className="flex justify-between gap-3 text-slate-500"><dt>جمع کالاها</dt><dd>{formatMoney(order.subtotal.toString())}</dd></div><div className="flex justify-between gap-3 text-slate-500"><dt>تخفیف</dt><dd>{formatMoney(order.discount.toString())}</dd></div><div className="flex justify-between gap-3 text-slate-500"><dt>هزینه ارسال</dt><dd>{formatMoney(order.shipping.toString())}</dd></div><div className="flex justify-between gap-3 text-slate-500"><dt>مالیات</dt><dd>{formatMoney(order.tax.toString())}</dd></div><div className="flex justify-between gap-3 border-t border-slate-100 pt-3 font-black text-[#17233b]"><dt>مبلغ نهایی</dt><dd>{formatMoney(order.total.toString())}</dd></div><div className="flex justify-between gap-3 rounded-xl bg-[#f8f1e4] px-3 py-2 text-xs font-bold text-[#846325]"><dt>نرخ طلای ثبت‌شده</dt><dd>{formatMoney(order.goldPriceSnapshot.toString())}</dd></div></dl>
           </AdminPanel>
 
-          {order.invoice && <AdminPanel className="p-5"><h2 className="mb-3 mt-0 flex items-center gap-2 text-base font-black text-[#17233b]"><FileText size={18} className="text-[#9a7434]" /> فاکتور رسمی</h2><p className="mb-3 mt-0 text-xs text-slate-500">شماره {order.invoice.invoiceNumber} · صادرشده در {formatDateTime(order.invoice.issuedAt)}</p><Link href={`/invoices/${order.id}`} className="inline-flex min-h-10 w-full items-center justify-center rounded-xl bg-[#172b4d] px-4 text-sm font-bold text-white transition hover:bg-[#203b66]">مشاهده فاکتور</Link></AdminPanel>}
+          {order.invoice && <AdminPanel className="order-3 p-5"><h2 className="mb-3 mt-0 flex items-center gap-2 text-base font-black text-[#17233b]"><FileText size={18} className="text-[#9a7434]" /> فاکتور رسمی</h2><p className="mb-3 mt-0 text-xs text-slate-500">شماره {order.invoice.invoiceNumber} · صادرشده در {formatDateTime(order.invoice.issuedAt)}</p><Link href={`/invoices/${order.id}`} className="inline-flex min-h-10 w-full items-center justify-center rounded-xl bg-[#172b4d] px-4 text-sm font-bold text-white transition hover:bg-[#203b66]">مشاهده فاکتور</Link></AdminPanel>}
 
-          {order.notes && <AdminPanel className="p-5"><h2 className="mb-2 mt-0 text-base font-black text-[#17233b]">یادداشت سفارش</h2><p className="m-0 whitespace-pre-wrap text-sm leading-7 text-slate-600">{order.notes}</p></AdminPanel>}
+          {order.notes && <AdminPanel className="order-5 p-5 lg:col-span-2"><h2 className="mb-2 mt-0 text-base font-black text-[#17233b]">یادداشت سفارش</h2><p className="m-0 whitespace-pre-wrap text-sm leading-7 text-slate-600">{order.notes}</p></AdminPanel>}
         </aside>
       </div>
     </>
