@@ -4,12 +4,13 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
-import { Alert, Button, Card, Checkbox, Input, TextArea } from "@heroui/react";
+import { Alert, Button, Card, Input, TextArea } from "@heroui/react";
 import { ChevronRight, FolderTree, ImageIcon, Save, Sparkles, X } from "lucide-react";
 import { MediaPickerDialog } from "@/components/media-picker-dialog";
 import type { MediaChoice } from "@/components/media-library";
 import { HeroSelectField } from "@/components/hero-select-field";
 import { adminFieldClass, adminLabelClass } from "@/components/admin-ui";
+import { AdminCheckbox } from "@/components/admin-checkbox";
 
 type CategoryOption = { id: string; name: string; parentName: string | null };
 type EditableCategory = {
@@ -115,8 +116,8 @@ export function CategoryForm({ categories, category }: { categories: CategoryOpt
           <Card.Content className="p-5">
             <div className="mb-4 flex items-center gap-2"><Sparkles size={18} className="text-[#9a7434]" /><h2 className="m-0 text-base font-black text-slate-800">انتشار</h2></div>
             <div className="grid gap-3">
-              <Checkbox isSelected={isActive} onChange={setIsActive} className="rounded-xl border border-slate-200 p-3.5 text-sm font-bold text-slate-600">دسته فعال باشد</Checkbox>
-              <Checkbox isSelected={featured} onChange={setFeatured} className="rounded-xl border border-slate-200 p-3.5 text-sm font-bold text-slate-600">نمایش در صفحه اصلی</Checkbox>
+              <AdminCheckbox isSelected={isActive} onChange={setIsActive} description="دسته در فروشگاه و منوها قابل مشاهده باشد.">دسته فعال باشد</AdminCheckbox>
+              <AdminCheckbox isSelected={featured} onChange={setFeatured} icon={<Sparkles size={17} />} description="این دسته در بخش دسته‌بندی‌های منتخب صفحه اصلی نمایش داده شود.">نمایش در صفحه اصلی</AdminCheckbox>
             </div>
           </Card.Content>
         </Card>

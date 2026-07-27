@@ -4,12 +4,13 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState, type FormEvent, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import { Alert, Button, Card, Checkbox, Input, TextArea } from "@heroui/react";
+import { Alert, Button, Card, Input, TextArea } from "@heroui/react";
 import { ArrowDown, ArrowUp, ChevronRight, Images, Info, PackageCheck, Save, Sparkles, Tag, X } from "lucide-react";
 import { MediaPickerDialog } from "@/components/media-picker-dialog";
 import type { MediaChoice } from "@/components/media-library";
 import { adminFieldClass, adminLabelClass } from "@/components/admin-ui";
 import { HeroSelectField } from "@/components/hero-select-field";
+import { AdminCheckbox } from "@/components/admin-checkbox";
 
 type EditableProduct = {
   id: string; sku: string; name: string; slug: string; description: string; categoryId: string; purity: number; weightGrams: number;
@@ -77,8 +78,8 @@ export function ProductForm({ categories = [], product }: Props) {
       </div>
 
       <aside className="grid gap-4 lg:sticky lg:top-7">
-        <Card variant="secondary" className="rounded-2xl border border-slate-200/80 bg-white shadow-sm"><Card.Content className="p-5"><div className="mb-4 flex items-center gap-2"><PackageCheck size={18} className="text-[#9a7434]" /><h2 className="m-0 text-base font-black">انتشار و موجودی</h2></div><div className="grid gap-4"><HeroSelectField name="status" label="وضعیت محصول" defaultValue={product?.status ?? "DRAFT"} options={[{ value: "DRAFT", label: "پیش‌نویس" }, { value: "ACTIVE", label: "منتشرشده" }, { value: "ARCHIVED", label: "بایگانی‌شده" }]} /><Field label="موجودی انبار"><Input name="stock" type="number" defaultValue={product?.stock ?? 1} min="0" required fullWidth variant="secondary" className={adminFieldClass} /></Field><Checkbox name="featured" value="on" defaultSelected={product?.featured} className="rounded-xl border border-slate-200 p-3.5 text-sm font-bold text-slate-600"><Sparkles size={17} className="text-[#b5904c]" />نمایش در محصولات ویژه</Checkbox></div></Card.Content></Card>
-        <Alert status="warning"><Alert.Title>نکته انتشار</Alert.Title><Alert.Description>برای انتشار بهتر، حداقل یک تصویر واضح، دسته‌بندی صحیح، وزن و موجودی محصول را تکمیل کنید.</Alert.Description></Alert>
+        <Card variant="secondary" className="rounded-2xl border border-slate-200/80 bg-white shadow-sm"><Card.Content className="p-5"><div className="mb-4 flex items-center gap-2"><PackageCheck size={18} className="text-[#9a7434]" /><h2 className="m-0 text-base font-black">انتشار و موجودی</h2></div><div className="grid gap-4"><HeroSelectField name="status" label="وضعیت محصول" defaultValue={product?.status ?? "DRAFT"} options={[{ value: "DRAFT", label: "پیش‌نویس" }, { value: "ACTIVE", label: "منتشرشده" }, { value: "ARCHIVED", label: "بایگانی‌شده" }]} /><Field label="موجودی انبار"><Input name="stock" type="number" defaultValue={product?.stock ?? 1} min="0" required fullWidth variant="secondary" className={adminFieldClass} /></Field><AdminCheckbox name="featured" value="on" defaultSelected={product?.featured ?? false} icon={<Sparkles size={17} />} description="این محصول در بخش پیشنهادهای ویژه فروشگاه نمایش داده می‌شود.">نمایش در محصولات ویژه</AdminCheckbox></div></Card.Content></Card>
+        <Alert status="warning" className="border border-amber-300 bg-amber-50 text-amber-950 shadow-sm"><Alert.Title>نکته مهم انتشار</Alert.Title><Alert.Description>برای انتشار بهتر، حداقل یک تصویر واضح، دسته‌بندی صحیح، وزن و موجودی محصول را تکمیل کنید.</Alert.Description></Alert>
         {error && <Alert status="danger"><Alert.Description>{error}</Alert.Description></Alert>}
         <div className="grid gap-2"><Button type="submit" isDisabled={loading} variant="primary" fullWidth className="min-h-12 gap-2 bg-[#172b4d] px-5 text-sm font-bold text-white shadow-lg"><Save size={17} />{loading ? "در حال ذخیره..." : product ? "ذخیره تغییرات" : "ثبت محصول"}</Button><Link href="/admin/products" className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white text-sm font-bold text-slate-600"><ChevronRight size={16} />بازگشت به محصولات</Link></div>
       </aside>
