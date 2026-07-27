@@ -9,11 +9,13 @@ import { Card, Table, TableBody, TableCell, TableColumn, TableContent, TableHead
 import { AdminListFilters } from "@/components/admin-list-filters";
 import { AdminPagination } from "@/components/admin-pagination";
 import { parseAdminPagination, resolveAdminPagination } from "@/lib/admin-pagination";
+import { requirePermission } from "@/modules/auth/session";
 
 type Context = { searchParams: Promise<{ q?: string; status?: string; page?: string; pageSize?: string }> };
 type CategoryRow = Prisma.CategoryGetPayload<{ include: { image: true; parent: { select: { name: true } }; _count: { select: { products: true; children: true } } } }>;
 
 export default async function CategoriesPage({ searchParams }: Context) {
+  await requirePermission("catalog:manage");
   const params = await searchParams;
   const query = params.q?.trim() ?? "";
   const status = params.status === "active" || params.status === "inactive" ? params.status : undefined;

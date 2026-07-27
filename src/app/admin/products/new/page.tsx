@@ -1,8 +1,10 @@
 import { ProductForm } from "@/components/product-form";
 import { db } from "@/lib/db";
 import { AdminPageHeader } from "@/components/admin-ui";
+import { requirePermission } from "@/modules/auth/session";
 
 export default async function NewProduct() {
+  await requirePermission("catalog:manage");
   const categories = await db.category.findMany({
     where: { isActive: true },
     include: { parent: { select: { name: true } } },

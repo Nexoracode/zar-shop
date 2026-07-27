@@ -10,7 +10,9 @@ datasource db {
 enum UserRole {
   CUSTOMER
   ADMIN
-  OPERATOR
+  CATALOG_MANAGER
+  USER_MANAGER
+  ORDER_MANAGER
 }
 
 enum UserStatus {

@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { apiError } from "@/lib/http";
 import { getCurrentUser } from "@/modules/auth/session";
 import { updateCategorySchema } from "@/modules/categories/schemas";
+import { hasPermission } from "@/modules/auth/permissions";
 import { wouldCreateCategoryCycle } from "@/modules/categories/category-tree";
 
 type Context = { params: Promise<{ id: string }> };
@@ -15,16 +16,12 @@ const categoryInclude = {
   _count: { select: { products: true, children: true } },
 } satisfies Prisma.CategoryInclude;
 
-function isManager(role: string | undefined) {
-  return role === "ADMIN" || role === "OPERATOR";
-}
-
 export async function GET(request: Request, context: Context) {
   const { id } = await context.params;
   const includeInactive = new URL(request.url).searchParams.get("includeInactive") === "true";
   if (includeInactive) {
     const actor = await getCurrentUser();
-    if (!isManager(actor?.role)) return NextResponse.json({ message: "دسترسی غیرمجاز است." }, { status: 403 });
+    if (!actor || !hasPermission(actor.role, "catalog:manage")) return NextResponse.json({ message: "دسترسی غیرمجاز است." }, { status: 403 });
   }
   const category = await db.category.findFirst({
     where: { id, ...(includeInactive ? {} : { isActive: true }) },
@@ -37,7 +34,7 @@ export async function GET(request: Request, context: Context) {
 export async function PATCH(request: Request, context: Context) {
   try {
     const actor = await getCurrentUser();
-    if (!isManager(actor?.role)) return NextResponse.json({ message: "دسترسی غیرمجاز است." }, { status: 403 });
+    if (!actor || !hasPermission(actor.role, "catalog:manage")) return NextResponse.json({ message: "دسترسی غیرمجاز است." }, { status: 403 });
     const { id } = await context.params;
     const input = updateCategorySchema.parse(await request.json());
 
@@ -76,7 +73,7 @@ export async function PATCH(request: Request, context: Context) {
 export async function DELETE(_request: Request, context: Context) {
   try {
     const actor = await getCurrentUser();
-    if (!isManager(actor?.role)) return NextResponse.json({ message: "دسترسی غیرمجاز است." }, { status: 403 });
+    if (!actor || !hasPermission(actor.role, "catalog:manage")) return NextResponse.json({ message: "دسترسی غیرمجاز است." }, { status: 403 });
     const { id } = await context.params;
     const category = await db.category.findUnique({ where: { id }, include: { _count: { select: { products: true, children: true } } } });
     if (!category) return NextResponse.json({ message: "دسته‌بندی پیدا نشد." }, { status: 404 });

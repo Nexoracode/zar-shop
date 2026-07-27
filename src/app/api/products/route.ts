@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { apiError } from "@/lib/http";
 import { getCurrentUser } from "@/modules/auth/session";
 import { productSchema } from "@/modules/products/schemas";
+import { hasPermission } from "@/modules/auth/permissions";
 
 export async function GET() {
   const products = await db.product.findMany({
@@ -16,7 +17,7 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const actor = await getCurrentUser();
-    if (!actor || !["ADMIN", "OPERATOR"].includes(actor.role)) {
+    if (!actor || !hasPermission(actor.role, "catalog:manage")) {
       return NextResponse.json({ message: "دسترسی غیرمجاز است." }, { status: 403 });
     }
     const { mediaIds, ...input } = productSchema.parse(await request.json());

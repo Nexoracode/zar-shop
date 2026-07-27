@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { formatDate, formatMoney } from "@/lib/format";
 import { requireUser } from "@/modules/auth/session";
 import { Card, Table, TableBody, TableCell, TableColumn, TableContent, TableHeader, TableRow, TableScrollContainer } from "@/components/hero";
+import { hasPermission } from "@/modules/auth/permissions";
 
 type InvoiceOrder = Prisma.OrderGetPayload<{ include: { invoice: true; items: true; payments: true } }>;
 type InvoiceItem = InvoiceOrder["items"][number];
@@ -16,7 +17,7 @@ export default async function InvoicePage({ params }: { params: Promise<{ orderI
   const { orderId } = await params;
   const order = await db.order.findUnique({ where: { id: orderId }, include: { invoice: true, items: true, payments: true } }) as InvoiceOrder | null;
   if (!order?.invoice) notFound();
-  if (order.userId !== user.id && user.role === "CUSTOMER") redirect("/account");
+  if (order.userId !== user.id && !hasPermission(user.role, "orders:manage")) redirect("/account");
   const successful = order.payments.find((payment: InvoicePayment) => payment.status === "SUCCESS");
   const cell = "border-b border-[#e7e6e2] px-3 py-3 text-sm";
 

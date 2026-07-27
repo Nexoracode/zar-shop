@@ -6,17 +6,19 @@ import { usePathname, useRouter } from "next/navigation";
 import { Boxes, ChartNoAxesCombined, FolderTree, Images, LogOut, Menu, PackageCheck, Store, Users, X } from "lucide-react";
 import { useState } from "react";
 import { userRoleLabels } from "@/modules/admin/labels";
+import type { UserRole } from "@generated/prisma/enums";
+import { hasPermission, type AdminPermission } from "@/modules/auth/permissions";
 
-const navLinks = [
-  { href: "/admin", label: "نمای کلی", icon: ChartNoAxesCombined },
-  { href: "/admin/products", label: "محصولات", icon: Boxes },
-  { href: "/admin/categories", label: "دسته‌بندی‌ها", icon: FolderTree },
-  { href: "/admin/media", label: "گالری رسانه", icon: Images },
-  { href: "/admin/orders", label: "سفارش‌ها", icon: PackageCheck },
-  { href: "/admin/users", label: "کاربران", icon: Users },
+const navLinks: Array<{ href: string; label: string; icon: typeof Boxes; permission: AdminPermission }> = [
+  { href: "/admin", label: "نمای کلی", icon: ChartNoAxesCombined, permission: "dashboard:view" },
+  { href: "/admin/products", label: "محصولات", icon: Boxes, permission: "catalog:manage" },
+  { href: "/admin/categories", label: "دسته‌بندی‌ها", icon: FolderTree, permission: "catalog:manage" },
+  { href: "/admin/media", label: "گالری رسانه", icon: Images, permission: "catalog:manage" },
+  { href: "/admin/orders", label: "سفارش‌ها", icon: PackageCheck, permission: "orders:manage" },
+  { href: "/admin/users", label: "کاربران", icon: Users, permission: "users:manage" },
 ];
 
-type Props = { user: { firstName: string | null; lastName: string | null; email: string; role: "ADMIN" | "OPERATOR" } };
+type Props = { user: { firstName: string | null; lastName: string | null; email: string; role: UserRole } };
 
 export function AdminSidebar({ user }: Props) {
   const pathname = usePathname();
@@ -32,7 +34,7 @@ export function AdminSidebar({ user }: Props) {
 
   const navigation = (
     <nav className="grid gap-1.5">
-      {navLinks.map(({ href, label, icon: Icon }) => {
+      {navLinks.filter((item) => hasPermission(user.role, item.permission)).map(({ href, label, icon: Icon }) => {
         const active = href === "/admin" ? pathname === href : pathname.startsWith(href);
         return <Link key={href} href={href} onClick={() => setOpen(false)} className={`flex min-h-11 items-center gap-3 rounded-xl px-3.5 text-sm font-bold transition ${active ? "bg-white text-[#172b4d] shadow-sm" : "text-white/65 hover:bg-white/8 hover:text-white"}`}><Icon size={18} strokeWidth={1.8} /><span>{label}</span>{active && <span className="mr-auto h-1.5 w-1.5 rounded-full bg-[#b5904c]" />}</Link>;
       })}

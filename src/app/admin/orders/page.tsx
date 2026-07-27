@@ -7,6 +7,7 @@ import { orderStatusLabels, orderStatusTones } from "@/modules/admin/labels";
 import { AdminListFilters } from "@/components/admin-list-filters";
 import { AdminPagination } from "@/components/admin-pagination";
 import { parseAdminPagination, resolveAdminPagination } from "@/lib/admin-pagination";
+import { requirePermission } from "@/modules/auth/session";
 import {
   Table,
   TableBody,
@@ -24,6 +25,7 @@ type SearchParams = Promise<{ q?: string; status?: string; page?: string; pageSi
 const statuses = Object.values(OrderStatus);
 
 export default async function OrdersPage({ searchParams }: { searchParams: SearchParams }) {
+  await requirePermission("orders:manage");
   const params = await searchParams;
   const query = params.q?.trim() ?? "";
   const status = statuses.includes(params.status as OrderStatus) ? params.status as OrderStatus : undefined;

@@ -3,13 +3,14 @@ import { db } from "@/lib/db";
 import { apiError } from "@/lib/http";
 import { getCurrentUser } from "@/modules/auth/session";
 import { productSchema } from "@/modules/products/schemas";
+import { hasPermission } from "@/modules/auth/permissions";
 
 type Context = { params: Promise<{ id: string }> };
 
 export async function PATCH(request: Request, context: Context) {
   try {
     const actor = await getCurrentUser();
-    if (!actor || !["ADMIN", "OPERATOR"].includes(actor.role)) return NextResponse.json({ message: "دسترسی غیرمجاز است." }, { status: 403 });
+    if (!actor || !hasPermission(actor.role, "catalog:manage")) return NextResponse.json({ message: "دسترسی غیرمجاز است." }, { status: 403 });
     const { id } = await context.params;
     const { mediaIds, ...input } = productSchema.partial().parse(await request.json());
     if (mediaIds) {

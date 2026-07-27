@@ -18,8 +18,10 @@ export const orderStatusLabels: Record<OrderStatus, string> = {
 
 export const userRoleLabels: Record<UserRole, string> = {
   CUSTOMER: "مشتری",
-  OPERATOR: "اپراتور",
   ADMIN: "مدیر کل",
+  CATALOG_MANAGER: "مدیر کاتالوگ",
+  USER_MANAGER: "مدیر کاربران",
+  ORDER_MANAGER: "مدیر سفارش‌ها",
 };
 
 export const userStatusLabels: Record<UserStatus, string> = {

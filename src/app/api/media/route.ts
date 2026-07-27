@@ -4,6 +4,7 @@ import type { MediaScope } from "@generated/prisma/enums";
 import { db } from "@/lib/db";
 import { apiError } from "@/lib/http";
 import { getCurrentUser } from "@/modules/auth/session";
+import { hasPermission } from "@/modules/auth/permissions";
 import { MediaStorageUnavailableError, uploadMediaToFtp } from "@/modules/media/ftp-storage";
 
 const MAX_SIZE = 25 * 1024 * 1024;
@@ -15,17 +16,13 @@ const EXTENSIONS: Record<string, string> = {
   "video/webm": ".webm",
 };
 
-function isManager(role: string | undefined) {
-  return role === "ADMIN" || role === "OPERATOR";
-}
-
 function parseScope(value: string | null): MediaScope | null {
   return value === "CATEGORY" || value === "PRODUCT" ? value : null;
 }
 
 export async function GET(request: Request) {
   const actor = await getCurrentUser();
-  if (!isManager(actor?.role)) return NextResponse.json({ message: "دسترسی غیرمجاز است." }, { status: 403 });
+  if (!actor || !hasPermission(actor.role, "catalog:manage")) return NextResponse.json({ message: "دسترسی غیرمجاز است." }, { status: 403 });
   const params = new URL(request.url).searchParams;
   const rawScope = params.get("scope");
   const scope = parseScope(rawScope);
@@ -46,7 +43,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const actor = await getCurrentUser();
-    if (!isManager(actor?.role)) return NextResponse.json({ message: "دسترسی غیرمجاز است." }, { status: 403 });
+    if (!actor || !hasPermission(actor.role, "catalog:manage")) return NextResponse.json({ message: "دسترسی غیرمجاز است." }, { status: 403 });
     const form = await request.formData();
     const file = form.get("file");
     const scope = parseScope(String(form.get("scope") ?? ""));

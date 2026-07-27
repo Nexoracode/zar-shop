@@ -2,10 +2,12 @@ import { notFound } from "next/navigation";
 import { ProductForm } from "@/components/product-form";
 import { db } from "@/lib/db";
 import { AdminPageHeader } from "@/components/admin-ui";
+import { requirePermission } from "@/modules/auth/session";
 
 type Context = { params: Promise<{ id: string }> };
 
 export default async function EditProductPage({ params }: Context) {
+  await requirePermission("catalog:manage");
   const { id } = await params;
   const [product, categories] = await Promise.all([
     db.product.findUnique({

@@ -7,6 +7,8 @@ import { userRoleLabels, userStatusLabels, userStatusTones } from "@/modules/adm
 import { AdminListFilters } from "@/components/admin-list-filters";
 import { AdminPagination } from "@/components/admin-pagination";
 import { parseAdminPagination, resolveAdminPagination } from "@/lib/admin-pagination";
+import { requirePermission } from "@/modules/auth/session";
+import { UserRoleSelect } from "@/components/user-role-select";
 import {
   Table,
   TableBody,
@@ -25,6 +27,8 @@ const roles = Object.values(UserRole);
 const statuses = Object.values(UserStatus);
 
 export default async function UsersPage({ searchParams }: { searchParams: SearchParams }) {
+  const actor = await requirePermission("users:manage");
+  const assignableRoles = actor.role === "ADMIN" ? roles : roles.filter((item) => item !== "ADMIN");
   const params = await searchParams;
   const query = params.q?.trim() ?? "";
   const role = roles.includes(params.role as UserRole) ? params.role as UserRole : undefined;
@@ -73,7 +77,7 @@ export default async function UsersPage({ searchParams }: { searchParams: Search
                       <div className="min-w-0"><strong className="block truncate text-sm text-[#17233b]">{fullName}</strong><span className="block truncate text-xs text-slate-400">{user.email}</span></div>
                       <AdminStatusBadge tone={userStatusTones[user.status]}>{userStatusLabels[user.status]}</AdminStatusBadge>
                     </div>
-                    <div className="flex flex-wrap items-center gap-2"><AdminStatusBadge tone={user.role === "ADMIN" ? "gold" : user.role === "OPERATOR" ? "info" : "neutral"}>{userRoleLabels[user.role]}</AdminStatusBadge><span className="text-xs text-slate-500" dir="ltr">{user.phone ?? "شماره ثبت نشده"}</span></div>
+                    <div className="grid gap-2"><UserRoleSelect userId={user.id} value={user.role} roles={user.role === "ADMIN" && actor.role !== "ADMIN" ? ["ADMIN"] : assignableRoles} disabled={user.id === actor.id || (user.role === "ADMIN" && actor.role !== "ADMIN")} /><span className="text-xs text-slate-500" dir="ltr">{user.phone ?? "شماره ثبت نشده"}</span></div>
                     <dl className="grid grid-cols-2 gap-2 rounded-xl bg-slate-50 p-3 text-xs">
                       <div><dt className="text-slate-400">تعداد سفارش</dt><dd className="mt-1 font-bold text-slate-700">{user._count.orders.toLocaleString("fa-IR")}</dd></div>
                       <div><dt className="text-slate-400">تاریخ عضویت</dt><dd className="mt-1 font-bold text-slate-700">{formatDate(user.createdAt)}</dd></div>
@@ -90,7 +94,7 @@ export default async function UsersPage({ searchParams }: { searchParams: Search
                       <TableCell className={`${cell} w-16 font-bold text-slate-400`}>{(pagination.skip + index + 1).toLocaleString("fa-IR")}</TableCell>
                       <TableCell className={cell}><strong className="block text-slate-700">{fullName}</strong><span className="text-xs text-slate-400">{user.email}</span></TableCell>
                       <TableCell className={cell}><span dir="ltr">{user.phone ?? "—"}</span></TableCell>
-                      <TableCell className={cell}><AdminStatusBadge tone={user.role === "ADMIN" ? "gold" : user.role === "OPERATOR" ? "info" : "neutral"}>{userRoleLabels[user.role]}</AdminStatusBadge></TableCell>
+                      <TableCell className={cell}><UserRoleSelect userId={user.id} value={user.role} roles={user.role === "ADMIN" && actor.role !== "ADMIN" ? ["ADMIN"] : assignableRoles} disabled={user.id === actor.id || (user.role === "ADMIN" && actor.role !== "ADMIN")} /></TableCell>
                       <TableCell className={cell}>{user._count.orders.toLocaleString("fa-IR")}</TableCell>
                       <TableCell className={cell}><AdminStatusBadge tone={userStatusTones[user.status]}>{userStatusLabels[user.status]}</AdminStatusBadge></TableCell>
                       <TableCell className={cell}>{formatDate(user.createdAt)}</TableCell>

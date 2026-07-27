@@ -4,15 +4,12 @@ import { apiError } from "@/lib/http";
 import { getCurrentUser } from "@/modules/auth/session";
 import { buildCategoryTree } from "@/modules/categories/category-tree";
 import { categorySchema } from "@/modules/categories/schemas";
+import { hasPermission } from "@/modules/auth/permissions";
 
 const categoryInclude = {
   image: true,
   _count: { select: { products: true, children: true } },
 } as const;
-
-function isManager(role: string | undefined) {
-  return role === "ADMIN" || role === "OPERATOR";
-}
 
 async function validateRelations(parentId?: string | null, imageId?: string | null) {
   if (parentId) {
@@ -30,7 +27,7 @@ export async function GET(request: Request) {
   const includeInactive = new URL(request.url).searchParams.get("includeInactive") === "true";
   if (includeInactive) {
     const actor = await getCurrentUser();
-    if (!isManager(actor?.role)) return NextResponse.json({ message: "دسترسی غیرمجاز است." }, { status: 403 });
+    if (!actor || !hasPermission(actor.role, "catalog:manage")) return NextResponse.json({ message: "دسترسی غیرمجاز است." }, { status: 403 });
   }
 
   const categories = await db.category.findMany({
@@ -45,7 +42,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const actor = await getCurrentUser();
-    if (!isManager(actor?.role)) return NextResponse.json({ message: "دسترسی غیرمجاز است." }, { status: 403 });
+    if (!actor || !hasPermission(actor.role, "catalog:manage")) return NextResponse.json({ message: "دسترسی غیرمجاز است." }, { status: 403 });
 
     const input = categorySchema.parse(await request.json());
     const relationError = await validateRelations(input.parentId, input.imageId);

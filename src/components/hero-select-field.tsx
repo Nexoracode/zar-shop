@@ -19,6 +19,7 @@ type Props = {
   placeholder?: string;
   includeEmptyOption?: boolean;
   required?: boolean;
+  disabled?: boolean;
   className?: string;
   onValueChange?: (value: string) => void;
 };
@@ -35,6 +36,7 @@ export function HeroSelectField({
   placeholder = "انتخاب کنید",
   includeEmptyOption = true,
   required,
+  disabled,
   className = "",
   onValueChange,
 }: Props) {
@@ -60,6 +62,7 @@ export function HeroSelectField({
         onChange={change}
         placeholder={placeholder}
         isRequired={required}
+        isDisabled={disabled}
         variant="secondary"
         fullWidth
         aria-label={ariaLabel ?? label ?? name}

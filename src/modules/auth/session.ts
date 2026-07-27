@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import type { UserRole } from "@generated/prisma/enums";
 import { SESSION_COOKIE } from "@/modules/auth/constants";
+import { adminRoles, adminStartPath, hasPermission, type AdminPermission } from "@/modules/auth/permissions";
 
 const SESSION_AGE_MS = 1000 * 60 * 60 * 24 * 14;
 
@@ -51,5 +52,15 @@ export async function requireUser() {
 export async function requireRole(roles: UserRole[]) {
   const user = await requireUser();
   if (!roles.includes(user.role)) redirect("/");
+  return user;
+}
+
+export async function requireAdminUser() {
+  return requireRole(adminRoles);
+}
+
+export async function requirePermission(permission: AdminPermission) {
+  const user = await requireAdminUser();
+  if (!hasPermission(user.role, permission)) redirect(adminStartPath(user.role));
   return user;
 }

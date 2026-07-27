@@ -30,8 +30,11 @@ import {
   TableRow,
   TableScrollContainer,
 } from "@/components/hero";
+import { requirePermission } from "@/modules/auth/session";
 
 export default async function AdminPage() {
+  const actor = await requirePermission("dashboard:view");
+  const isFullAdmin = actor.role === "ADMIN";
   const [activeProducts, customers, actionableOrders, revenue, recentOrders, lowStockProducts] = await Promise.all([
     db.product.count({ where: { status: "ACTIVE" } }),
     db.user.count({ where: { role: "CUSTOMER" } }),
@@ -84,6 +87,7 @@ export default async function AdminPage() {
       tone: "bg-violet-50 text-violet-700",
     },
   ];
+  const visibleStats = isFullAdmin ? stats : stats.slice(0, 2);
 
   const shortcuts = [
     { href: "/admin/products/new", label: "ثبت محصول جدید", description: "مشخصات، قیمت‌گذاری و تصاویر", icon: PackagePlus },
@@ -91,6 +95,7 @@ export default async function AdminPage() {
     { href: "/admin/categories", label: "مدیریت دسته‌بندی", description: "دسته‌ها و زیردسته‌های فروشگاه", icon: FolderTree },
     { href: "/admin/media", label: "گالری رسانه", description: "تصاویر و ویدیوهای محصولات", icon: Images },
   ];
+  const visibleShortcuts = isFullAdmin ? shortcuts : shortcuts.filter((item) => item.href === "/admin/orders");
 
   return (
     <>
@@ -100,8 +105,8 @@ export default async function AdminPage() {
         description="وضعیت فروش، سفارش‌ها و موجودی محصولات را یک‌جا دنبال کنید."
       />
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        {stats.map(({ label, value, hint, icon: Icon, tone, compact }) => (
+      <div className={`grid grid-cols-1 gap-3 sm:grid-cols-2 ${isFullAdmin ? "xl:grid-cols-4" : "xl:grid-cols-2"}`}>
+        {visibleStats.map(({ label, value, hint, icon: Icon, tone, compact }) => (
           <Card key={label} variant="secondary" className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-[0_8px_30px_rgba(15,23,42,0.035)] sm:p-5">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
@@ -115,7 +120,7 @@ export default async function AdminPage() {
         ))}
       </div>
 
-      <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,1.55fr)_minmax(280px,0.75fr)]">
+      <div className={`mt-6 grid gap-6 ${isFullAdmin ? "xl:grid-cols-[minmax(0,1.55fr)_minmax(280px,0.75fr)]" : "grid-cols-1"}`}>
         <AdminPanel>
           <div className="flex items-center justify-between gap-3 border-b border-slate-100 px-4 py-4 sm:px-5">
             <div><h2 className="m-0 text-base font-black text-slate-800">آخرین سفارش‌ها</h2><p className="m-0 text-xs text-slate-400">جدیدترین فعالیت‌های خرید فروشگاه</p></div>
@@ -147,7 +152,7 @@ export default async function AdminPage() {
           ) : <AdminEmptyState title="هنوز سفارشی ثبت نشده است" description="سفارش‌های جدید در این قسمت نمایش داده می‌شوند." />}
         </AdminPanel>
 
-        <div className="grid content-start gap-6">
+        {isFullAdmin ? <div className="grid content-start gap-6">
           <AdminPanel>
             <div className="flex items-center justify-between border-b border-slate-100 px-4 py-4 sm:px-5"><div className="flex items-center gap-2"><span className="grid h-9 w-9 place-items-center rounded-xl bg-rose-50 text-rose-600"><TriangleAlert size={18} /></span><div><h2 className="m-0 text-sm font-black text-slate-800">هشدار موجودی</h2><p className="m-0 text-[0.68rem] text-slate-400">محصولات با موجودی ۳ عدد یا کمتر</p></div></div></div>
             {lowStockProducts.length ? <div className="divide-y divide-slate-100">{lowStockProducts.map((product) => <Link href={`/admin/products/${product.id}/edit`} key={product.id} className="flex items-center justify-between gap-3 px-4 py-3 transition hover:bg-slate-50 sm:px-5"><div className="min-w-0"><strong className="block truncate text-xs text-slate-700">{product.name}</strong><span className="text-[0.68rem] text-slate-400" dir="ltr">{product.sku}</span></div><AdminStatusBadge tone={product.stock === 0 ? "danger" : "warning"}>{product.stock === 0 ? "ناموجود" : `${product.stock.toLocaleString("fa-IR")} عدد`}</AdminStatusBadge></Link>)}</div> : <AdminEmptyState title="موجودی محصولات مناسب است" description="محصول کم‌موجودی وجود ندارد." />}
@@ -156,10 +161,10 @@ export default async function AdminPage() {
           <AdminPanel>
             <div className="border-b border-slate-100 px-4 py-4 sm:px-5"><h2 className="m-0 text-sm font-black text-slate-800">دسترسی سریع</h2><p className="m-0 text-[0.68rem] text-slate-400">عملیات پرتکرار مدیریت فروشگاه</p></div>
             <div className="grid grid-cols-2 gap-2 p-3">
-              {shortcuts.map(({ href, label, description, icon: Icon }) => <Link href={href} key={href} className="group rounded-xl border border-slate-100 p-3 transition hover:border-[#dac69f] hover:bg-[#fffcf7]"><span className="mb-3 grid h-9 w-9 place-items-center rounded-xl bg-slate-100 text-slate-600 transition group-hover:bg-[#f4ead8] group-hover:text-[#846325]"><Icon size={18} /></span><strong className="block text-xs text-slate-700">{label}</strong><span className="mt-1 hidden text-[0.65rem] leading-5 text-slate-400 sm:block">{description}</span></Link>)}
+              {visibleShortcuts.map(({ href, label, description, icon: Icon }) => <Link href={href} key={href} className="group rounded-xl border border-slate-100 p-3 transition hover:border-[#dac69f] hover:bg-[#fffcf7]"><span className="mb-3 grid h-9 w-9 place-items-center rounded-xl bg-slate-100 text-slate-600 transition group-hover:bg-[#f4ead8] group-hover:text-[#846325]"><Icon size={18} /></span><strong className="block text-xs text-slate-700">{label}</strong><span className="mt-1 hidden text-[0.65rem] leading-5 text-slate-400 sm:block">{description}</span></Link>)}
             </div>
           </AdminPanel>
-        </div>
+        </div> : null}
       </div>
     </>
   );

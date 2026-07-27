@@ -9,11 +9,13 @@ import { productStatusLabels, productStatusTones } from "@/modules/admin/labels"
 import { AdminListFilters } from "@/components/admin-list-filters";
 import { AdminPagination } from "@/components/admin-pagination";
 import { parseAdminPagination, resolveAdminPagination } from "@/lib/admin-pagination";
+import { requirePermission } from "@/modules/auth/session";
 
 type Context = { searchParams: Promise<{ q?: string; status?: string; category?: string; page?: string; pageSize?: string }> };
 type ProductRow = Prisma.ProductGetPayload<{ include: { category: true; media: { include: { media: true } } } }>;
 
 export default async function AdminProducts({ searchParams }: Context) {
+  await requirePermission("catalog:manage");
   const params = await searchParams;
   const query = params.q?.trim() ?? "";
   const status = (["DRAFT", "ACTIVE", "ARCHIVED"] as const).includes(params.status as ProductStatus) ? params.status as ProductStatus : undefined;
