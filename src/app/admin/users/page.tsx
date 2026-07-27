@@ -83,10 +83,11 @@ export default async function UsersPage({ searchParams }: { searchParams: Search
               })}
             </div>
 
-            <Table className="hidden md:block"><TableScrollContainer><TableContent aria-label="فهرست کاربران" className="w-full min-w-[820px]"><TableHeader>{["کاربر", "تماس", "نقش", "سفارش‌ها", "وضعیت", "عضویت"].map((head, index) => <TableColumn id={head} isRowHeader={index === 0} className="bg-slate-50/70 px-5 py-4 text-right text-xs font-bold text-slate-500" key={head}>{head}</TableColumn>)}</TableHeader><TableBody>{users.map((user: UserRow) => {
+            <Table className="hidden md:block"><TableScrollContainer><TableContent aria-label="فهرست کاربران" className="w-full min-w-[860px]"><TableHeader>{["ردیف", "کاربر", "تماس", "نقش", "سفارش‌ها", "وضعیت", "عضویت"].map((head, index) => <TableColumn id={head} isRowHeader={index === 1} className="bg-slate-50/70 px-5 py-4 text-right text-xs font-bold text-slate-500" key={head}>{head}</TableColumn>)}</TableHeader><TableBody>{users.map((user: UserRow, index) => {
                   const fullName = `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim() || "کاربر بدون نام";
                   return (
                     <TableRow id={user.id} key={user.id} className="transition hover:bg-slate-50/60">
+                      <TableCell className={`${cell} w-16 font-bold text-slate-400`}>{(pagination.skip + index + 1).toLocaleString("fa-IR")}</TableCell>
                       <TableCell className={cell}><strong className="block text-slate-700">{fullName}</strong><span className="text-xs text-slate-400">{user.email}</span></TableCell>
                       <TableCell className={cell}><span dir="ltr">{user.phone ?? "—"}</span></TableCell>
                       <TableCell className={cell}><AdminStatusBadge tone={user.role === "ADMIN" ? "gold" : user.role === "OPERATOR" ? "info" : "neutral"}>{userRoleLabels[user.role]}</AdminStatusBadge></TableCell>

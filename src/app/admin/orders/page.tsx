@@ -86,10 +86,11 @@ export default async function OrdersPage({ searchParams }: { searchParams: Searc
               })}
             </div>
 
-            <Table className="hidden md:block"><TableScrollContainer><TableContent aria-label="فهرست سفارش‌ها" className="w-full min-w-[780px]"><TableHeader>{["شماره سفارش", "مشتری", "اقلام", "مبلغ", "وضعیت", "تاریخ"].map((head, index) => <TableColumn id={head} isRowHeader={index === 0} className="bg-slate-50/70 px-5 py-4 text-right text-xs font-bold text-slate-500" key={head}>{head}</TableColumn>)}</TableHeader><TableBody>{orders.map((order: OrderRow) => {
+            <Table className="hidden md:block"><TableScrollContainer><TableContent aria-label="فهرست سفارش‌ها" className="w-full min-w-[820px]"><TableHeader>{["ردیف", "شماره سفارش", "مشتری", "اقلام", "مبلغ", "وضعیت", "تاریخ"].map((head, index) => <TableColumn id={head} isRowHeader={index === 1} className="bg-slate-50/70 px-5 py-4 text-right text-xs font-bold text-slate-500" key={head}>{head}</TableColumn>)}</TableHeader><TableBody>{orders.map((order: OrderRow, index) => {
                   const customerName = `${order.user.firstName ?? ""} ${order.user.lastName ?? ""}`.trim() || "کاربر بدون نام";
                   return (
                     <TableRow id={order.id} key={order.id} className="transition hover:bg-slate-50/60">
+                      <TableCell className={`${cell} w-16 font-bold text-slate-400`}>{(pagination.skip + index + 1).toLocaleString("fa-IR")}</TableCell>
                       <TableCell className={cell}><strong className="text-[#17233b]" dir="ltr">{order.orderNumber}</strong></TableCell>
                       <TableCell className={cell}><strong className="block text-slate-700">{customerName}</strong><span className="text-xs text-slate-400">{order.user.email}</span></TableCell>
                       <TableCell className={cell}>{order._count.items.toLocaleString("fa-IR")}</TableCell>
