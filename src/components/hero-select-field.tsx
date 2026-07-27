@@ -17,6 +17,7 @@ type Props = {
   value?: string;
   defaultValue?: string;
   placeholder?: string;
+  includeEmptyOption?: boolean;
   required?: boolean;
   className?: string;
   onValueChange?: (value: string) => void;
@@ -32,6 +33,7 @@ export function HeroSelectField({
   value,
   defaultValue = "",
   placeholder = "انتخاب کنید",
+  includeEmptyOption = true,
   required,
   className = "",
   onValueChange,
@@ -39,7 +41,7 @@ export function HeroSelectField({
   const [internalValue, setInternalValue] = useState(defaultValue);
   const selectedValue = value ?? internalValue;
   const selectedKey = selectedValue || emptyKey;
-  const normalizedOptions = options.some((option) => option.value === "")
+  const normalizedOptions = !includeEmptyOption || options.some((option) => option.value === "")
     ? options
     : [{ value: "", label: placeholder }, ...options];
 

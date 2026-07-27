@@ -1,5 +1,5 @@
 export const adminPageSizes = [10, 20, 50, 100] as const;
-export const defaultAdminPageSize = 20;
+export const defaultAdminPageSize = 10;
 
 export function parseAdminPagination(params: { page?: string; pageSize?: string }) {
   const parsedPage = Number.parseInt(params.page ?? "1", 10);

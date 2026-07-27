@@ -37,7 +37,7 @@ export function AdminPagination({ page, pageSize, totalItems, totalPages }: Prop
     <footer className={`flex flex-col gap-3 border-t border-slate-100 bg-slate-50/60 px-4 py-3 sm:flex-row sm:items-center sm:justify-between ${isPending ? "opacity-70" : ""}`} aria-busy={isPending}>
       <div className="flex flex-wrap items-center gap-3">
         <span className="text-xs text-slate-500">نمایش {firstItem.toLocaleString("fa-IR")} تا {lastItem.toLocaleString("fa-IR")} از {totalItems.toLocaleString("fa-IR")}</span>
-        <HeroSelectField name="pageSize" ariaLabel="تعداد ردیف در هر صفحه" value={String(pageSize)} options={adminPageSizes.map((size) => ({ value: String(size), label: `${size.toLocaleString("fa-IR")} ردیف` }))} onValueChange={(value) => update("pageSize", Number(value))} className="w-32" />
+        <HeroSelectField name="pageSize" ariaLabel="تعداد ردیف در هر صفحه" value={String(pageSize)} includeEmptyOption={false} options={adminPageSizes.map((size) => ({ value: String(size), label: `${size.toLocaleString("fa-IR")} ردیف` }))} onValueChange={(value) => update("pageSize", Number(value))} className="w-32" />
       </div>
       <div className="flex items-center justify-between gap-1 sm:justify-end">
         <Button type="button" isIconOnly variant="secondary" aria-label="صفحه قبل" isDisabled={page <= 1 || isPending} onPress={() => update("page", page - 1)} className="h-9 min-h-9 w-9 min-w-9 border border-slate-200"><ChevronRight size={16} /></Button>
