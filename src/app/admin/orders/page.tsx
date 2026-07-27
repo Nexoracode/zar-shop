@@ -1,5 +1,7 @@
 import type { Prisma } from "@generated/prisma/client";
 import { OrderStatus } from "@generated/prisma/enums";
+import Link from "next/link";
+import { Eye } from "lucide-react";
 import { AdminEmptyState, AdminPageHeader, AdminPanel, AdminStatusBadge } from "@/components/admin-ui";
 import { db } from "@/lib/db";
 import { formatDate, formatMoney } from "@/lib/format";
@@ -83,12 +85,13 @@ export default async function OrdersPage({ searchParams }: { searchParams: Searc
                       <div><dt className="text-slate-400">تعداد اقلام</dt><dd className="mt-1 font-bold text-slate-700">{order._count.items.toLocaleString("fa-IR")}</dd></div>
                       <div><dt className="text-slate-400">تاریخ</dt><dd className="mt-1 font-bold text-slate-700">{formatDate(order.createdAt)}</dd></div>
                     </dl>
+                    <Link href={`/admin/orders/${order.id}`} className="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold text-[#172b4d] transition hover:border-[#b5904c] hover:text-[#846325]"><Eye size={16} />مشاهده جزئیات</Link>
                   </article>
                 );
               })}
             </div>
 
-            <Table className="hidden md:block"><TableScrollContainer><TableContent aria-label="فهرست سفارش‌ها" className="w-full min-w-[820px]"><TableHeader>{["ردیف", "شماره سفارش", "مشتری", "اقلام", "مبلغ", "وضعیت", "تاریخ"].map((head, index) => <TableColumn id={head} isRowHeader={index === 1} className="bg-slate-50/70 px-5 py-4 text-right text-xs font-bold text-slate-500" key={head}>{head}</TableColumn>)}</TableHeader><TableBody>{orders.map((order: OrderRow, index) => {
+            <Table className="hidden md:block"><TableScrollContainer><TableContent aria-label="فهرست سفارش‌ها" className="w-full min-w-[900px]"><TableHeader>{["ردیف", "شماره سفارش", "مشتری", "اقلام", "مبلغ", "وضعیت", "تاریخ", "جزئیات"].map((head, index) => <TableColumn id={head} isRowHeader={index === 1} className="bg-slate-50/70 px-5 py-4 text-right text-xs font-bold text-slate-500" key={head}>{head}</TableColumn>)}</TableHeader><TableBody>{orders.map((order: OrderRow, index) => {
                   const customerName = `${order.user.firstName ?? ""} ${order.user.lastName ?? ""}`.trim() || "کاربر بدون نام";
                   return (
                     <TableRow id={order.id} key={order.id} className="transition hover:bg-slate-50/60">
@@ -99,6 +102,7 @@ export default async function OrdersPage({ searchParams }: { searchParams: Searc
                       <TableCell className={cell}><strong className="text-slate-700">{formatMoney(order.total.toString())}</strong></TableCell>
                       <TableCell className={cell}><AdminStatusBadge tone={orderStatusTones[order.status]}>{orderStatusLabels[order.status]}</AdminStatusBadge></TableCell>
                       <TableCell className={cell}>{formatDate(order.createdAt)}</TableCell>
+                      <TableCell className={cell}><Link href={`/admin/orders/${order.id}`} aria-label={`مشاهده جزئیات سفارش ${order.orderNumber}`} className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-slate-200 px-3 text-xs font-bold text-[#172b4d] transition hover:border-[#b5904c] hover:text-[#846325]"><Eye size={14} />مشاهده</Link></TableCell>
                     </TableRow>
                   );
                 })}</TableBody></TableContent></TableScrollContainer></Table>

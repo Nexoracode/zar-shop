@@ -1,4 +1,4 @@
-import type { OrderStatus, ProductStatus, UserRole, UserStatus } from "@generated/prisma/enums";
+import type { OrderStatus, PaymentStatus, ProductStatus, UserRole, UserStatus } from "@generated/prisma/enums";
 
 export const productStatusLabels: Record<ProductStatus, string> = {
   DRAFT: "پیش‌نویس",
@@ -12,6 +12,15 @@ export const orderStatusLabels: Record<OrderStatus, string> = {
   PROCESSING: "در حال آماده‌سازی",
   SHIPPED: "ارسال‌شده",
   DELIVERED: "تحویل‌شده",
+  CANCELLED: "لغوشده",
+  REFUNDED: "بازپرداخت‌شده",
+};
+
+export const paymentStatusLabels: Record<PaymentStatus, string> = {
+  INITIATED: "آغازشده",
+  PENDING: "در انتظار پرداخت",
+  SUCCESS: "موفق",
+  FAILED: "ناموفق",
   CANCELLED: "لغوشده",
   REFUNDED: "بازپرداخت‌شده",
 };
@@ -45,6 +54,15 @@ export const orderStatusTones: Record<OrderStatus, AdminTone> = {
   DELIVERED: "success",
   CANCELLED: "danger",
   REFUNDED: "neutral",
+};
+
+export const paymentStatusTones: Record<PaymentStatus, AdminTone> = {
+  INITIATED: "neutral",
+  PENDING: "warning",
+  SUCCESS: "success",
+  FAILED: "danger",
+  CANCELLED: "neutral",
+  REFUNDED: "info",
 };
 
 export const userStatusTones: Record<UserStatus, AdminTone> = {
