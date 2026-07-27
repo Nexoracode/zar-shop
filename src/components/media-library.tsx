@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Search, Trash2, UploadCloud } from "lucide-react";
 import { Alert, Button, Card, Input } from "@heroui/react";
 import { AdminEmptyState, adminFieldClass, adminLabelClass } from "@/components/admin-ui";
+import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
 
 export type MediaScope = "CATEGORY" | "PRODUCT";
 export type MediaChoice = {
@@ -27,6 +28,8 @@ export function MediaLibrary() {
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [pendingDelete, setPendingDelete] = useState<MediaItem | null>(null);
   const [message, setMessage] = useState("");
   const filteredItems = useMemo(() => items.filter((item) => item.title.toLocaleLowerCase("fa").includes(query.trim().toLocaleLowerCase("fa"))), [items, query]);
 
@@ -67,7 +70,7 @@ export function MediaLibrary() {
   }
 
   async function remove(item: MediaItem) {
-    if (!window.confirm(`فایل «${item.title}» از گالری و فضای FTP حذف شود؟`)) return;
+    setDeleting(true);
     setMessage("");
     try {
       const response = await fetch(`/api/media/${item.id}`, { method: "DELETE" });
@@ -75,8 +78,11 @@ export function MediaLibrary() {
       if (!response.ok) throw new Error(result?.message ?? "حذف فایل ناموفق بود.");
       setItems((current) => current.filter((candidate) => candidate.id !== item.id));
       setMessage("فایل با موفقیت حذف شد.");
+      setPendingDelete(null);
     } catch (reason) {
       setMessage(reason instanceof Error ? reason.message : "حذف فایل ناموفق بود.");
+    } finally {
+      setDeleting(false);
     }
   }
 
@@ -114,13 +120,22 @@ export function MediaLibrary() {
                 </div>
                 <div className="grid gap-2 p-3">
                   <strong className="truncate text-xs">{item.title}</strong>
-                  <div className="flex items-center justify-between gap-2 text-[0.68rem] text-slate-500"><span>{usage ? `${usage.toLocaleString("fa-IR")} مورد استفاده` : "بدون استفاده"}</span><Button type="button" size="sm" variant="danger-soft" isDisabled={usage > 0} aria-label={usage ? "ابتدا رسانه را از محصول یا دسته‌بندی جدا کنید" : "حذف رسانه"} onPress={() => void remove(item)} className="h-8 min-h-8 gap-1 px-2 text-xs font-bold"><Trash2 className="size-3.5" />{usage ? "در حال استفاده" : "حذف"}</Button></div>
+                  <div className="flex items-center justify-between gap-2 text-[0.68rem] text-slate-500"><span>{usage ? `${usage.toLocaleString("fa-IR")} مورد استفاده` : "بدون استفاده"}</span><Button type="button" size="sm" variant="danger-soft" isDisabled={usage > 0 || deleting} aria-label={usage ? "ابتدا رسانه را از محصول یا دسته‌بندی جدا کنید" : "حذف رسانه"} onPress={() => setPendingDelete(item)} className="h-8 min-h-8 gap-1 px-2 text-xs font-bold"><Trash2 className="size-3.5" />{usage ? "در حال استفاده" : "حذف"}</Button></div>
                 </div>
               </Card>
             );
           })}
         </div>
       ) : <AdminEmptyState title={query ? "فایلی پیدا نشد" : "این گالری هنوز خالی است"} description={query ? "عبارت جست‌وجو را تغییر دهید." : "اولین فایل را از فرم بالا بارگذاری کنید."} />}
+      <DeleteConfirmDialog
+        open={Boolean(pendingDelete)}
+        itemName={pendingDelete?.title}
+        description="این فایل از گالری و فضای FTP حذف می‌شود و امکان بازیابی آن وجود ندارد."
+        loading={deleting}
+        confirmLabel="حذف فایل"
+        onClose={() => { if (!deleting) setPendingDelete(null); }}
+        onConfirm={() => { if (pendingDelete) void remove(pendingDelete); }}
+      />
     </div>
   );
 }

@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react
 import { Alert, Button, Card, Input, Modal } from "@heroui/react";
 import { Check, Film, ImageIcon, RefreshCw, Search, Trash2, Upload, X } from "lucide-react";
 import type { MediaChoice, MediaScope } from "@/components/media-library";
+import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
 
 type PickerItem = MediaChoice & { _count: { products: number; categories: number } };
 type Props = { open: boolean; scope: MediaScope; multiple?: boolean; selected: MediaChoice[]; onClose: () => void; onConfirm: (items: MediaChoice[]) => void };
@@ -15,6 +16,7 @@ export function MediaPickerDialog({ open, scope, multiple = false, selected, onC
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<PickerItem | null>(null);
   const [query, setQuery] = useState("");
   const [error, setError] = useState("");
   const [uploadFileName, setUploadFileName] = useState("");
@@ -87,7 +89,6 @@ export function MediaPickerDialog({ open, scope, multiple = false, selected, onC
       setError("این رسانه در حال استفاده است؛ ابتدا آن را از محصول یا دسته‌بندی مربوط جدا کنید.");
       return;
     }
-    if (!window.confirm(`فایل «${item.title}» از گالری و FTP حذف شود؟`)) return;
     setDeletingId(item.id);
     setError("");
     try {
@@ -96,6 +97,7 @@ export function MediaPickerDialog({ open, scope, multiple = false, selected, onC
       if (!response.ok) throw new Error(result?.message ?? "حذف فایل ناموفق بود.");
       setItems((current) => current.filter((candidate) => candidate.id !== item.id));
       setDraft((current) => current.filter((candidate) => candidate.id !== item.id));
+      setPendingDelete(null);
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "حذف فایل ناموفق بود.");
     } finally {
@@ -114,7 +116,8 @@ export function MediaPickerDialog({ open, scope, multiple = false, selected, onC
   }
 
   return (
-    <Modal.Backdrop isOpen={open} onOpenChange={(isOpen) => { if (!isOpen) onClose(); }} variant="blur">
+    <>
+    <Modal.Backdrop isOpen={open} onOpenChange={(isOpen) => { if (!isOpen && !pendingDelete) onClose(); }} variant="blur">
       <Modal.Container size="lg" placement="center" scroll="inside">
           <Modal.Dialog aria-label={`انتخاب از گالری ${scopeLabel}`} className="mx-2 max-h-[calc(100dvh-20px)] w-[calc(100%-16px)] max-w-6xl overflow-hidden bg-slate-50 sm:mx-5 sm:max-h-[calc(100dvh-40px)] sm:w-[calc(100%-40px)]">
             <Modal.Header className="flex-row items-center justify-between border-b border-slate-200 bg-white px-4 py-4 sm:px-6">
@@ -162,7 +165,7 @@ export function MediaPickerDialog({ open, scope, multiple = false, selected, onC
                             <span className="flex w-full items-center gap-2 px-3 py-2.5"><span className="min-w-0 flex-1 truncate text-xs font-bold text-slate-700">{item.title}</span>{usage > 0 && <small className="shrink-0 text-[10px] text-slate-400">{usage.toLocaleString("fa-IR")} استفاده</small>}</span>
                             {chosen && <span className="absolute right-2.5 top-2.5 grid h-8 min-w-8 place-items-center rounded-full bg-[#b5904c] px-2 text-xs font-black text-white shadow-lg">{multiple ? (chosenIndex + 1).toLocaleString("fa-IR") : <Check size={16} />}</span>}
                           </Button>
-                          <Button type="button" size="sm" variant="danger-soft" fullWidth isDisabled={deletingId === item.id || usage > 0} onPress={() => void remove(item)} className="min-h-9 rounded-none border-t border-slate-100 text-[11px] font-bold"><Trash2 size={13} />{usage > 0 ? "در حال استفاده" : deletingId === item.id ? "در حال حذف..." : "حذف از گالری"}</Button>
+                          <Button type="button" size="sm" variant="danger-soft" fullWidth isDisabled={deletingId === item.id || usage > 0} onPress={() => setPendingDelete(item)} className="min-h-9 rounded-none border-t border-slate-100 text-[11px] font-bold"><Trash2 size={13} />{usage > 0 ? "در حال استفاده" : deletingId === item.id ? "در حال حذف..." : "حذف از گالری"}</Button>
                         </Card>
                       );
                     })}
@@ -180,5 +183,15 @@ export function MediaPickerDialog({ open, scope, multiple = false, selected, onC
           </Modal.Dialog>
       </Modal.Container>
     </Modal.Backdrop>
+    <DeleteConfirmDialog
+      open={Boolean(pendingDelete)}
+      itemName={pendingDelete?.title}
+      description="این فایل از گالری و فضای FTP حذف می‌شود و امکان بازیابی آن وجود ندارد."
+      loading={Boolean(deletingId)}
+      confirmLabel="حذف فایل"
+      onClose={() => { if (!deletingId) setPendingDelete(null); }}
+      onConfirm={() => { if (pendingDelete) void remove(pendingDelete); }}
+    />
+    </>
   );
 }
