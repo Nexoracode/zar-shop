@@ -188,7 +188,6 @@ export function MediaPickerDialog({ open, scope, multiple = false, selected, onC
       itemName={pendingDelete?.title}
       description="این فایل از گالری و فضای FTP حذف می‌شود و امکان بازیابی آن وجود ندارد."
       loading={Boolean(deletingId)}
-      confirmLabel="حذف فایل"
       onClose={() => { if (!deletingId) setPendingDelete(null); }}
       onConfirm={() => { if (pendingDelete) void remove(pendingDelete); }}
     />

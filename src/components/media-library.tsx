@@ -132,7 +132,6 @@ export function MediaLibrary() {
         itemName={pendingDelete?.title}
         description="این فایل از گالری و فضای FTP حذف می‌شود و امکان بازیابی آن وجود ندارد."
         loading={deleting}
-        confirmLabel="حذف فایل"
         onClose={() => { if (!deleting) setPendingDelete(null); }}
         onConfirm={() => { if (pendingDelete) void remove(pendingDelete); }}
       />

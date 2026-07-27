@@ -10,7 +10,6 @@ type Props = {
   description: string;
   error?: string;
   loading?: boolean;
-  confirmLabel?: string;
   onClose: () => void;
   onConfirm: () => void;
 };
@@ -22,7 +21,6 @@ export function DeleteConfirmDialog({
   description,
   error,
   loading = false,
-  confirmLabel = "بله، حذف شود",
   onClose,
   onConfirm,
 }: Props) {
@@ -63,19 +61,19 @@ export function DeleteConfirmDialog({
                 <strong className="mt-1 block truncate text-sm font-black text-slate-800">{itemName}</strong>
               </div>
             ) : null}
-            <div className="flex items-start gap-2.5 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-amber-900">
+            <div className="mt-3 flex items-start gap-2.5 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-amber-900">
               <AlertTriangle className="mt-0.5 size-4 shrink-0" />
               <p className="text-xs font-medium leading-6">{description}</p>
             </div>
           </Modal.Body>
 
-          <Modal.Footer className="grid grid-cols-2 gap-2 border-t border-slate-100 bg-slate-50/70 px-5 py-4 sm:px-6">
-            <Button type="button" variant="secondary" isDisabled={loading} onPress={onClose} className="min-h-11 rounded-xl border border-slate-200 bg-white text-sm font-bold text-slate-600">
-              انصراف
-            </Button>
-            <Button type="button" variant="danger" isDisabled={loading} onPress={onConfirm} className="min-h-11 gap-2 rounded-xl bg-rose-600 text-sm font-bold text-white shadow-sm hover:bg-rose-700">
+          <Modal.Footer className="flex flex-row items-center justify-start gap-2 border-t border-slate-100 bg-slate-50/70 px-5 py-4 sm:px-6">
+            <Button type="button" variant="danger" isDisabled={loading} onPress={onConfirm} className="min-h-11 min-w-28 gap-2 rounded-xl bg-rose-600 px-6 text-sm font-bold text-white shadow-sm hover:bg-rose-700">
               <Trash2 size={16} />
-              {loading ? "در حال حذف..." : confirmLabel}
+              {loading ? "در حال حذف..." : "حذف"}
+            </Button>
+            <Button type="button" variant="secondary" isDisabled={loading} onPress={onClose} className="min-h-11 min-w-28 rounded-xl border border-slate-200 bg-white px-6 text-sm font-bold text-slate-600">
+              انصراف
             </Button>
           </Modal.Footer>
         </Modal.Dialog>

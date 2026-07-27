@@ -40,7 +40,6 @@ export function CategoryDeleteButton({ id, name, disabled }: { id: string; name:
         description="با حذف این دسته‌بندی، اطلاعات آن برای همیشه پاک می‌شود. دسته‌هایی که محصول یا زیردسته دارند قابل حذف نیستند."
         error={error}
         loading={loading}
-        confirmLabel="حذف دسته‌بندی"
         onClose={() => { if (!loading) setOpen(false); }}
         onConfirm={() => void remove()}
       />
