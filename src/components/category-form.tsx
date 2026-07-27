@@ -67,7 +67,7 @@ export function CategoryForm({ categories, category }: { categories: CategoryOpt
     const validation = categorySchema.safeParse(body);
     if (!validation.success) {
       const message = validationErrorMessage(validation.error.issues, categoryFieldLabels);
-      toast.danger("اطلاعات دسته‌بندی کامل نیست", { description: message, timeout: 7000 });
+      toast.danger("اطلاعات دسته‌بندی کامل نیست", { description: message, timeout: 5000 });
       setLoading(false);
       return;
     }
@@ -83,7 +83,7 @@ export function CategoryForm({ categories, category }: { categories: CategoryOpt
       router.refresh();
     } catch (reason) {
       const message = reason instanceof Error ? reason.message : "ارتباط با سرور برقرار نشد.";
-      toast.danger("ذخیره دسته‌بندی انجام نشد", { description: message, timeout: 7000 });
+      toast.danger("ذخیره دسته‌بندی انجام نشد", { description: message, timeout: 5000 });
     } finally {
       setLoading(false);
     }

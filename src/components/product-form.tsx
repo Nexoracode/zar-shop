@@ -68,7 +68,7 @@ export function ProductForm({ categories = [], product }: Props) {
     const validation = productSchema.safeParse(body);
     if (!validation.success) {
       const message = validationErrorMessage(validation.error.issues, productFieldLabels);
-      toast.danger("اطلاعات محصول کامل نیست", { description: message, timeout: 7000 });
+      toast.danger("اطلاعات محصول کامل نیست", { description: message, timeout: 5000 });
       setLoading(false);
       return;
     }
@@ -79,7 +79,7 @@ export function ProductForm({ categories = [], product }: Props) {
       router.push("/admin/products"); router.refresh();
     } catch (reason) {
       const message = reason instanceof Error ? reason.message : "ارتباط با سرور برقرار نشد.";
-      toast.danger("ذخیره محصول انجام نشد", { description: message, timeout: 7000 });
+      toast.danger("ذخیره محصول انجام نشد", { description: message, timeout: 5000 });
       setLoading(false);
     }
   }

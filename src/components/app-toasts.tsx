@@ -3,7 +3,7 @@
 import { Toast } from "@heroui/react";
 
 const toastColors = {
-  danger: "border-rose-700 bg-rose-600 text-white shadow-[0_18px_45px_rgba(190,24,93,0.35)]",
+  danger: "border-[#743143] bg-[#8f4055] text-white shadow-[0_18px_45px_rgba(116,49,67,0.28)]",
   warning: "border-amber-500 bg-amber-400 text-amber-950 shadow-[0_18px_45px_rgba(217,119,6,0.3)]",
   success: "border-emerald-700 bg-emerald-600 text-white shadow-[0_18px_45px_rgba(5,150,105,0.3)]",
   accent: "border-blue-700 bg-blue-600 text-white shadow-[0_18px_45px_rgba(37,99,235,0.3)]",
