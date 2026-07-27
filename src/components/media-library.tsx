@@ -82,9 +82,9 @@ export function MediaLibrary() {
 
   return (
     <div className="grid gap-6">
-      <div className="grid grid-cols-2 overflow-hidden rounded-2xl border border-slate-200 bg-white p-1.5 shadow-sm">
+      <div className="flex w-fit max-w-full justify-self-start gap-1 overflow-hidden rounded-2xl border border-slate-200 bg-white p-1.5 shadow-sm">
         {(["CATEGORY", "PRODUCT"] as const).map((value) => (
-          <Button key={value} type="button" onPress={() => { setLoading(true); setMessage(""); setScope(value); }} variant={scope === value ? "primary" : "ghost"} className={`min-h-11 rounded-xl px-3 text-sm font-bold ${scope === value ? "bg-slate-900 text-white shadow-sm" : "text-slate-600"}`}>
+          <Button key={value} type="button" onPress={() => { setLoading(true); setMessage(""); setScope(value); }} variant={scope === value ? "primary" : "ghost"} className={`min-h-11 shrink-0 rounded-xl px-4 text-sm font-bold ${scope === value ? "bg-slate-900 text-white shadow-sm" : "text-slate-600"}`}>
             {value === "CATEGORY" ? "تصاویر دسته‌بندی" : "رسانه محصولات"}
           </Button>
         ))}
