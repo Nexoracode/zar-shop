@@ -1,14 +1,13 @@
 import type { Prisma } from "@generated/prisma/client";
-import Link from "next/link";
 import { UserRole, UserStatus } from "@generated/prisma/enums";
-import { AdminEmptyState, AdminPageHeader, AdminPanel, AdminStatusBadge, adminFieldClass } from "@/components/admin-ui";
+import { AdminEmptyState, AdminPageHeader, AdminPanel, AdminStatusBadge } from "@/components/admin-ui";
 import { db } from "@/lib/db";
 import { formatDate } from "@/lib/format";
 import { userRoleLabels, userStatusLabels, userStatusTones } from "@/modules/admin/labels";
-import { HeroSelectField } from "@/components/hero-select-field";
+import { AdminListFilters } from "@/components/admin-list-filters";
+import { AdminPagination } from "@/components/admin-pagination";
+import { parseAdminPagination, resolveAdminPagination } from "@/lib/admin-pagination";
 import {
-  Button,
-  Input,
   Table,
   TableBody,
   TableCell,
@@ -20,7 +19,7 @@ import {
 } from "@/components/hero";
 
 type UserRow = Prisma.UserGetPayload<{ include: { _count: { select: { orders: true } } } }>;
-type SearchParams = Promise<{ q?: string; status?: string; role?: string }>;
+type SearchParams = Promise<{ q?: string; status?: string; role?: string; page?: string; pageSize?: string }>;
 
 const roles = Object.values(UserRole);
 const statuses = Object.values(UserStatus);
@@ -30,6 +29,7 @@ export default async function UsersPage({ searchParams }: { searchParams: Search
   const query = params.q?.trim() ?? "";
   const role = roles.includes(params.role as UserRole) ? params.role as UserRole : undefined;
   const status = statuses.includes(params.status as UserStatus) ? params.status as UserStatus : undefined;
+  const { requestedPage, pageSize } = parseAdminPagination(params);
   const where: Prisma.UserWhereInput = {
     ...(role ? { role } : {}),
     ...(status ? { status } : {}),
@@ -40,11 +40,14 @@ export default async function UsersPage({ searchParams }: { searchParams: Search
       { phone: { contains: query } },
     ] } : {}),
   };
+  const filteredTotal = await db.user.count({ where });
+  const pagination = resolveAdminPagination(filteredTotal, requestedPage, pageSize);
   const users = await db.user.findMany({
     where,
     include: { _count: { select: { orders: true } } },
     orderBy: { createdAt: "desc" },
-    take: 100,
+    skip: pagination.skip,
+    take: pagination.pageSize,
   });
   const cell = "border-b border-slate-100 px-5 py-4 text-sm text-slate-600";
 
@@ -53,18 +56,7 @@ export default async function UsersPage({ searchParams }: { searchParams: Search
       <AdminPageHeader eyebrow="مدیریت مشتریان" title="کاربران" description="اطلاعات تماس، نقش، وضعیت حساب و سابقه سفارش کاربران را بررسی کنید." />
 
       <AdminPanel className="mb-5 p-4 sm:p-5">
-        <form method="get" action="/admin/users" className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_180px_180px_auto] lg:items-end">
-          <label className="grid gap-1.5 text-xs font-bold text-slate-600">
-            جست‌وجوی کاربر
-            <Input name="q" defaultValue={query} fullWidth variant="secondary" className={adminFieldClass} placeholder="نام، ایمیل یا شماره موبایل" />
-          </label>
-          <HeroSelectField name="role" label="نقش کاربر" defaultValue={role ?? ""} options={[{ value: "", label: "همه نقش‌ها" }, ...roles.map((item) => ({ value: item, label: userRoleLabels[item] }))]} />
-          <HeroSelectField name="status" label="وضعیت حساب" defaultValue={status ?? ""} options={[{ value: "", label: "همه وضعیت‌ها" }, ...statuses.map((item) => ({ value: item, label: userStatusLabels[item] }))]} />
-          <div className="flex gap-2">
-            <Button type="submit" variant="primary" className="min-h-12 flex-1 bg-[#172b4d] px-5 text-sm font-bold text-white lg:flex-none">اعمال فیلتر</Button>
-            {(query || role || status) && <Link href="/admin/users" className="inline-flex min-h-12 items-center justify-center rounded-xl border border-slate-200 px-4 text-sm font-bold text-slate-500 hover:bg-slate-50">پاک‌کردن</Link>}
-          </div>
-        </form>
+        <AdminListFilters path="/admin/users" query={query} queryLabel="جست‌وجوی کاربر" queryPlaceholder="نام، ایمیل یا شماره موبایل" filters={[{ name: "role", label: "نقش کاربر", value: role ?? "", options: [{ value: "", label: "همه نقش‌ها" }, ...roles.map((item) => ({ value: item, label: userRoleLabels[item] }))] }, { name: "status", label: "وضعیت حساب", value: status ?? "", options: [{ value: "", label: "همه وضعیت‌ها" }, ...statuses.map((item) => ({ value: item, label: userStatusLabels[item] }))] }]} />
       </AdminPanel>
 
       <AdminPanel>
@@ -104,6 +96,7 @@ export default async function UsersPage({ searchParams }: { searchParams: Search
                     </TableRow>
                   );
                 })}</TableBody></TableContent></TableScrollContainer></Table>
+            <AdminPagination {...pagination} />
           </>
         )}
       </AdminPanel>

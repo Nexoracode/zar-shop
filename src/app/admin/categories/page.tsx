@@ -1,26 +1,31 @@
 import Image from "next/image";
 import Link from "next/link";
-import { FolderTree, Pencil, Plus, Search, Star } from "lucide-react";
+import { FolderTree, Pencil, Plus, Star } from "lucide-react";
 import type { Prisma } from "@generated/prisma/client";
 import { db } from "@/lib/db";
-import { AdminEmptyState, AdminPageHeader, AdminPanel, AdminPrimaryLink, AdminStatusBadge, adminFieldClass } from "@/components/admin-ui";
+import { AdminEmptyState, AdminPageHeader, AdminPanel, AdminPrimaryLink, AdminStatusBadge } from "@/components/admin-ui";
 import { CategoryDeleteButton } from "@/components/category-delete-button";
-import { HeroSelectField } from "@/components/hero-select-field";
-import { Button, Card, Input, Table, TableBody, TableCell, TableColumn, TableContent, TableHeader, TableRow, TableScrollContainer } from "@/components/hero";
+import { Card, Table, TableBody, TableCell, TableColumn, TableContent, TableHeader, TableRow, TableScrollContainer } from "@/components/hero";
+import { AdminListFilters } from "@/components/admin-list-filters";
+import { AdminPagination } from "@/components/admin-pagination";
+import { parseAdminPagination, resolveAdminPagination } from "@/lib/admin-pagination";
 
-type Context = { searchParams: Promise<{ q?: string; status?: string }> };
+type Context = { searchParams: Promise<{ q?: string; status?: string; page?: string; pageSize?: string }> };
 type CategoryRow = Prisma.CategoryGetPayload<{ include: { image: true; parent: { select: { name: true } }; _count: { select: { products: true; children: true } } } }>;
 
 export default async function CategoriesPage({ searchParams }: Context) {
   const params = await searchParams;
   const query = params.q?.trim() ?? "";
   const status = params.status === "active" || params.status === "inactive" ? params.status : undefined;
+  const { requestedPage, pageSize } = parseAdminPagination(params);
   const where: Prisma.CategoryWhereInput = {
     ...(query ? { OR: [{ name: { contains: query } }, { slug: { contains: query } }, { parent: { is: { name: { contains: query } } } }] } : {}),
     ...(status ? { isActive: status === "active" } : {}),
   };
+  const filteredTotal = await db.category.count({ where });
+  const pagination = resolveAdminPagination(filteredTotal, requestedPage, pageSize);
   const [categories, total, active, featured] = await Promise.all([
-    db.category.findMany({ where, include: { image: true, parent: { select: { name: true } }, _count: { select: { products: true, children: true } } }, orderBy: [{ sortOrder: "asc" }, { name: "asc" }] }),
+    db.category.findMany({ where, skip: pagination.skip, take: pagination.pageSize, include: { image: true, parent: { select: { name: true } }, _count: { select: { products: true, children: true } } }, orderBy: [{ sortOrder: "asc" }, { name: "asc" }] }),
     db.category.count(),
     db.category.count({ where: { isActive: true } }),
     db.category.count({ where: { featured: true } }),
@@ -35,15 +40,12 @@ export default async function CategoriesPage({ searchParams }: Context) {
       </div>
 
       <AdminPanel>
-        <form method="get" action="/admin/categories" className="grid gap-3 border-b border-slate-100 bg-slate-50/70 p-4 md:grid-cols-[minmax(220px,1fr)_190px_auto]">
-          <div className="relative"><Search className="pointer-events-none absolute right-3.5 top-1/2 z-10 -translate-y-1/2 text-slate-400" size={17} /><Input name="q" defaultValue={query} fullWidth variant="secondary" placeholder="جست‌وجوی نام، نشانی یا دسته والد..." className={`${adminFieldClass} pr-10`} /></div>
-          <HeroSelectField name="status" ariaLabel="وضعیت دسته‌بندی" defaultValue={status ?? ""} options={[{ value: "", label: "همه وضعیت‌ها" }, { value: "active", label: "فعال" }, { value: "inactive", label: "غیرفعال" }]} />
-          <div className="flex gap-2"><Button type="submit" variant="primary" className="min-h-11 flex-1 bg-[#172b4d] px-5 text-sm font-bold text-white">اعمال فیلتر</Button>{(query || status) && <Link href="/admin/categories" className="inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 text-xs font-bold text-slate-500">پاک‌کردن</Link>}</div>
-        </form>
+        <div className="border-b border-slate-100 bg-slate-50/70 p-4"><AdminListFilters path="/admin/categories" query={query} queryLabel="جست‌وجوی دسته‌بندی" queryPlaceholder="نام، نشانی یا دسته والد" filters={[{ name: "status", label: "وضعیت دسته‌بندی", value: status ?? "", options: [{ value: "", label: "همه وضعیت‌ها" }, { value: "active", label: "فعال" }, { value: "inactive", label: "غیرفعال" }] }]} /></div>
 
         {categories.length ? <>
           <div className="grid gap-3 p-3 md:hidden">{categories.map((category) => <CategoryMobileCard key={category.id} category={category} />)}</div>
           <Table className="hidden md:block"><TableScrollContainer><TableContent aria-label="فهرست دسته‌بندی‌ها" className="w-full min-w-[900px]"><TableHeader>{["دسته‌بندی", "والد", "محصولات", "زیردسته‌ها", "ترتیب", "وضعیت", "عملیات"].map((head, index) => <TableColumn id={head} key={head} isRowHeader={index === 0} className="bg-white px-5 py-4 text-right text-xs font-bold text-slate-500">{head}</TableColumn>)}</TableHeader><TableBody>{categories.map((category) => <CategoryTableRow key={category.id} category={category} />)}</TableBody></TableContent></TableScrollContainer></Table>
+          <AdminPagination {...pagination} />
         </> : <AdminEmptyState title="دسته‌بندی‌ای پیدا نشد" description="فیلترها را تغییر دهید یا اولین دسته فروشگاه را ثبت کنید." />}
       </AdminPanel>
     </>

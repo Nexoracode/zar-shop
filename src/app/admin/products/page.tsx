@@ -1,26 +1,32 @@
 import Image from "next/image";
 import Link from "next/link";
-import { Pencil, Plus, Search, Star } from "lucide-react";
-import { Button, Card, Input, Table, TableBody, TableCell, TableColumn, TableContent, TableHeader, TableRow, TableScrollContainer } from "@/components/hero";
+import { Pencil, Plus, Star } from "lucide-react";
+import { Card, Table, TableBody, TableCell, TableColumn, TableContent, TableHeader, TableRow, TableScrollContainer } from "@/components/hero";
 import type { Prisma, ProductStatus } from "@generated/prisma/client";
 import { db } from "@/lib/db";
-import { AdminEmptyState, AdminPageHeader, AdminPanel, AdminPrimaryLink, AdminStatusBadge, adminFieldClass } from "@/components/admin-ui";
+import { AdminEmptyState, AdminPageHeader, AdminPanel, AdminPrimaryLink, AdminStatusBadge } from "@/components/admin-ui";
 import { productStatusLabels, productStatusTones } from "@/modules/admin/labels";
-import { HeroSelectField } from "@/components/hero-select-field";
+import { AdminListFilters } from "@/components/admin-list-filters";
+import { AdminPagination } from "@/components/admin-pagination";
+import { parseAdminPagination, resolveAdminPagination } from "@/lib/admin-pagination";
 
-type Context = { searchParams: Promise<{ q?: string; status?: string; category?: string }> };
+type Context = { searchParams: Promise<{ q?: string; status?: string; category?: string; page?: string; pageSize?: string }> };
 type ProductRow = Prisma.ProductGetPayload<{ include: { category: true; media: { include: { media: true } } } }>;
 
 export default async function AdminProducts({ searchParams }: Context) {
   const params = await searchParams;
+  const query = params.q?.trim() ?? "";
   const status = (["DRAFT", "ACTIVE", "ARCHIVED"] as const).includes(params.status as ProductStatus) ? params.status as ProductStatus : undefined;
+  const { requestedPage, pageSize } = parseAdminPagination(params);
   const where: Prisma.ProductWhereInput = {
-    ...(params.q ? { OR: [{ name: { contains: params.q } }, { sku: { contains: params.q } }, { slug: { contains: params.q } }] } : {}),
+    ...(query ? { OR: [{ name: { contains: query } }, { sku: { contains: query } }, { slug: { contains: query } }] } : {}),
     ...(status ? { status } : {}),
     ...(params.category ? { categoryId: params.category } : {}),
   };
+  const filteredTotal = await db.product.count({ where });
+  const pagination = resolveAdminPagination(filteredTotal, requestedPage, pageSize);
   const [products, categories, total, active, drafts] = await Promise.all([
-    db.product.findMany({ where, orderBy: { updatedAt: "desc" }, include: { category: true, media: { where: { isCover: true }, include: { media: true }, take: 1 } } }),
+    db.product.findMany({ where, skip: pagination.skip, take: pagination.pageSize, orderBy: { updatedAt: "desc" }, include: { category: true, media: { where: { isCover: true }, include: { media: true }, take: 1 } } }),
     db.category.findMany({ orderBy: [{ sortOrder: "asc" }, { name: "asc" }], select: { id: true, name: true } }),
     db.product.count(),
     db.product.count({ where: { status: "ACTIVE" } }),
@@ -36,16 +42,12 @@ export default async function AdminProducts({ searchParams }: Context) {
       </div>
 
       <AdminPanel>
-        <form className="grid gap-3 border-b border-slate-100 bg-slate-50/70 p-4 md:grid-cols-[minmax(220px,1fr)_180px_180px_auto]">
-          <div className="relative"><Search className="pointer-events-none absolute right-3.5 top-1/2 z-10 -translate-y-1/2 text-slate-400" size={17} /><Input name="q" defaultValue={params.q} fullWidth variant="secondary" placeholder="جست‌وجوی نام، کد یا نشانی..." className={`${adminFieldClass} pr-10`} /></div>
-          <HeroSelectField name="status" ariaLabel="وضعیت محصول" defaultValue={status ?? ""} options={[{ value: "", label: "همه وضعیت‌ها" }, ...Object.entries(productStatusLabels).map(([value, label]) => ({ value, label }))]} />
-          <HeroSelectField name="category" ariaLabel="دسته‌بندی" defaultValue={params.category ?? ""} options={[{ value: "", label: "همه دسته‌ها" }, ...categories.map((category) => ({ value: category.id, label: category.name }))]} />
-          <Button type="submit" variant="primary" className="min-h-11 bg-[#172b4d] px-5 text-sm font-bold text-white">اعمال فیلتر</Button>
-        </form>
+        <div className="border-b border-slate-100 bg-slate-50/70 p-4"><AdminListFilters path="/admin/products" query={query} queryLabel="جست‌وجوی محصول" queryPlaceholder="نام، کد کالا یا نشانی محصول" filters={[{ name: "status", label: "وضعیت محصول", value: status ?? "", options: [{ value: "", label: "همه وضعیت‌ها" }, ...Object.entries(productStatusLabels).map(([value, label]) => ({ value, label }))] }, { name: "category", label: "دسته‌بندی", value: params.category ?? "", options: [{ value: "", label: "همه دسته‌ها" }, ...categories.map((category) => ({ value: category.id, label: category.name }))] }]} /></div>
 
         {products.length ? <>
           <div className="grid gap-3 p-3 md:hidden">{products.map((product: ProductRow) => <ProductMobileCard key={product.id} product={product} />)}</div>
           <Table className="hidden md:block"><TableScrollContainer><TableContent aria-label="فهرست محصولات" className="w-full min-w-[820px]"><TableHeader>{["محصول", "کد کالا", "وزن", "موجودی", "وضعیت", "عملیات"].map((head, index) => <TableColumn id={head} key={head} isRowHeader={index === 0} className="bg-white px-5 py-4 text-right text-xs font-bold text-slate-500">{head}</TableColumn>)}</TableHeader><TableBody>{products.map((product: ProductRow) => <ProductTableRow key={product.id} product={product} />)}</TableBody></TableContent></TableScrollContainer></Table>
+          <AdminPagination {...pagination} />
         </> : <AdminEmptyState title="محصولی پیدا نشد" description="فیلترها را تغییر دهید یا اولین محصول را ثبت کنید." />}
       </AdminPanel>
     </>
