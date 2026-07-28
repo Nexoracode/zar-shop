@@ -16,6 +16,7 @@ const EXTENSIONS: Record<string, string> = {
   "image/webp": ".webp",
   "video/mp4": ".mp4",
   "video/webm": ".webm",
+  "application/pdf": ".pdf",
 };
 
 function parseScope(value: string | null): MediaScope | null {
@@ -33,7 +34,7 @@ export async function GET(request: Request) {
   const limit = Number.isFinite(requestedLimit) ? Math.min(Math.max(Math.trunc(requestedLimit), 1), 200) : 100;
   const items = await db.mediaAsset.findMany({
     where: scope ? { scope } : undefined,
-    include: { _count: { select: { products: true, categories: true } } },
+    include: { _count: { select: { products: true, sizeGuideProducts: true, categories: true } } },
     orderBy: { createdAt: "desc" },
     take: limit,
   });
@@ -72,7 +73,7 @@ export async function POST(request: Request) {
         for (const [index, item] of uploaded.entries()) {
           const created = await tx.mediaAsset.create({
             data: {
-              type: item.file.type.startsWith("video/") ? "VIDEO" : "IMAGE",
+              type: item.file.type === "application/pdf" ? "DOCUMENT" : item.file.type.startsWith("video/") ? "VIDEO" : "IMAGE",
               scope,
               url: item.url,
               storageKey: item.storageKey,

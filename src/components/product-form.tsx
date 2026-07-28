@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useState, type FormEvent, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { Alert, Button, Card, Input, TextArea, toast } from "@heroui/react";
-import { ChevronRight, GripVertical, Images, Info, PackageCheck, Save, Sparkles, Tag, Trash2 } from "lucide-react";
+import { ChevronRight, FileText, GripVertical, Images, Info, PackageCheck, Plus, Ruler, Save, Sparkles, Tag, Trash2, X } from "lucide-react";
 import { MediaPickerDialog } from "@/components/media-picker-dialog";
 import type { MediaChoice } from "@/components/media-library";
 import { adminFieldClass, adminLabelClass } from "@/components/admin-ui";
@@ -17,7 +17,7 @@ import { productSchema } from "@/modules/products/schemas";
 type EditableProduct = {
   id: string; sku: string; name: string; slug: string; description: string; categoryId: string; purity: number; weightGrams: number;
   makingFeeType: string; makingFeeValue: number; profitPercent: number; taxPercent: number; stock: number;
-  status: "DRAFT" | "ACTIVE" | "ARCHIVED"; featured: boolean; media: MediaChoice[];
+  status: "DRAFT" | "ACTIVE" | "ARCHIVED"; featured: boolean; media: MediaChoice[]; sizes: string[]; sizeGuide: MediaChoice | null;
 };
 
 type Props = { categories?: Array<{ id: string; name: string; parentName: string | null }>; product?: EditableProduct };
@@ -38,6 +38,8 @@ const productFieldLabels: Record<string, string> = {
   status: "وضعیت محصول",
   featured: "نمایش در محصولات ویژه",
   mediaIds: "گالری محصول",
+  sizes: "سایزهای محصول",
+  sizeGuideId: "راهنمای سایز",
 };
 
 export function ProductForm({ categories = [], product }: Props) {
@@ -45,6 +47,11 @@ export function ProductForm({ categories = [], product }: Props) {
   const [loading, setLoading] = useState(false);
   const [selectedMedia, setSelectedMedia] = useState<MediaChoice[]>(product?.media ?? []);
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [sizeGuidePickerOpen, setSizeGuidePickerOpen] = useState(false);
+  const [sizeGuide, setSizeGuide] = useState<MediaChoice | null>(product?.sizeGuide ?? null);
+  const [sizes, setSizes] = useState<string[]>(product?.sizes ?? []);
+  const [sizeInput, setSizeInput] = useState("");
+  const [draggedSize, setDraggedSize] = useState<string | null>(null);
   const [draggedMediaId, setDraggedMediaId] = useState<string | null>(null);
 
   function moveMedia(targetId: string) {
@@ -60,14 +67,40 @@ export function ProductForm({ categories = [], product }: Props) {
     });
   }
 
+  function addSize() {
+    const label = sizeInput.trim();
+    if (!label) return;
+    if (sizes.includes(label)) {
+      toast.danger("این سایز قبلاً اضافه شده است", { description: `سایز «${label}» در فهرست تنوع محصول وجود دارد.`, timeout: 3500 });
+      return;
+    }
+    setSizes((current) => [...current, label]);
+    setSizeInput("");
+  }
+
+  function moveSize(target: string) {
+    if (!draggedSize || draggedSize === target) return;
+    setSizes((current) => {
+      const sourceIndex = current.indexOf(draggedSize);
+      const targetIndex = current.indexOf(target);
+      if (sourceIndex < 0 || targetIndex < 0) return current;
+      const next = [...current];
+      const [moved] = next.splice(sourceIndex, 1);
+      next.splice(targetIndex, 0, moved);
+      return next;
+    });
+  }
+
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault(); setLoading(true);
     const form = new FormData(event.currentTarget);
+    const pendingSize = sizeInput.trim();
+    const submittedSizes = pendingSize && !sizes.includes(pendingSize) ? [...sizes, pendingSize] : sizes;
     const body = {
       sku: form.get("sku"), name: form.get("name"), slug: form.get("slug"), description: form.get("description"), categoryId: form.get("categoryId") || null,
       purity: Number(form.get("purity")), weightGrams: Number(form.get("weightGrams")), makingFeeType: form.get("makingFeeType"), makingFeeValue: Number(form.get("makingFeeValue")),
       profitPercent: Number(form.get("profitPercent")), taxPercent: Number(form.get("taxPercent")), stock: Number(form.get("stock")), status: form.get("status"),
-      featured: form.get("featured") === "on", mediaIds: selectedMedia.map((media) => media.id),
+      featured: form.get("featured") === "on", mediaIds: selectedMedia.map((media) => media.id), sizes: submittedSizes, sizeGuideId: sizeGuide?.id ?? null,
     };
     const validation = productSchema.safeParse(body);
     if (!validation.success) {
@@ -127,6 +160,25 @@ export function ProductForm({ categories = [], product }: Props) {
           <label className={`${adminLabelClass} mt-4`}>توضیحات محصول<TextArea name="description" rows={6} fullWidth variant="secondary" defaultValue={product?.description} className={adminFieldClass} /></label>
         </FormSection>
 
+        <FormSection icon={<Ruler size={18} />} title="تنوع و راهنمای سایز" description="سایزهای قابل انتخاب مشتری و فایل راهنمای اندازه‌گیری را مشخص کنید.">
+          <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_260px]">
+            <div>
+              <label className={adminLabelClass}>افزودن سایز
+                <span className="flex gap-2">
+                  <Input value={sizeInput} onChange={(event) => setSizeInput(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); addSize(); } }} fullWidth variant="secondary" placeholder="مثلاً ۱۴" className={adminFieldClass} />
+                  <Button type="button" variant="secondary" onPress={addSize} className="min-h-11 shrink-0 gap-1 border border-[#d8c29a] bg-[#fbf7ef] px-4 font-bold text-[#846325]"><Plus size={16} />افزودن</Button>
+                </span>
+              </label>
+              {sizes.length ? <div className="mt-3 flex flex-wrap gap-2">{sizes.map((size, index) => <div key={size} draggable onDragStart={() => setDraggedSize(size)} onDragOver={(event) => event.preventDefault()} onDrop={() => { moveSize(size); setDraggedSize(null); }} onDragEnd={() => setDraggedSize(null)} className={`flex min-h-10 cursor-grab items-center gap-2 rounded-lg border bg-white px-2.5 text-sm font-bold text-slate-700 shadow-sm active:cursor-grabbing ${draggedSize === size ? "border-[#b5904c] opacity-50" : "border-slate-200"}`}><GripVertical size={14} className="text-slate-400" /><span>سایز {size}</span><Button type="button" size="sm" isIconOnly variant="ghost" onPress={() => setSizes((current) => current.filter((item) => item !== size))} className="h-7 min-h-7 w-7 min-w-7 text-slate-400 hover:text-[#d31736]" aria-label={`حذف سایز ${size}`}><X size={14} /></Button><span className="sr-only">ردیف {(index + 1).toLocaleString("fa-IR")}</span></div>)}</div> : <p className="mt-3 rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-3 text-xs leading-6 text-slate-500">اگر این محصول سایزبندی ندارد، این بخش را خالی بگذارید. در غیر این صورت مشتری پیش از افزودن محصول به سبد باید یکی از سایزها را انتخاب کند.</p>}
+            </div>
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+              <div className="mb-3 flex items-center justify-between gap-2"><strong className="text-xs text-slate-700">راهنمای انتخاب سایز</strong>{sizeGuide && <Button type="button" size="sm" isIconOnly variant="ghost" onPress={() => setSizeGuide(null)} className="h-7 min-h-7 w-7 min-w-7 text-slate-400 hover:text-[#d31736]" aria-label="حذف راهنمای سایز"><Trash2 size={14} /></Button>}</div>
+              {sizeGuide ? <div className="overflow-hidden rounded-lg border border-slate-200 bg-white">{sizeGuide.type === "IMAGE" ? <div className="relative aspect-[4/3]"><Image src={sizeGuide.url} alt={sizeGuide.title} fill sizes="260px" className="object-cover" /></div> : <div className="grid min-h-32 place-items-center text-[#9a7434]"><span className="grid justify-items-center gap-2 text-xs font-bold"><FileText size={34} />فایل PDF راهنما</span></div>}</div> : <div className="grid min-h-32 place-items-center rounded-lg border border-dashed border-slate-300 bg-white text-center text-xs text-slate-400"><span><Ruler className="mx-auto mb-2" size={24} />تصویر یا PDF انتخاب نشده است.</span></div>}
+              <Button type="button" variant="secondary" onPress={() => setSizeGuidePickerOpen(true)} className="mt-3 min-h-10 w-full gap-2 border-[#d8c29a] bg-[#fbf7ef] text-xs font-bold text-[#846325]"><Images size={15} />{sizeGuide ? "تغییر فایل راهنما" : "انتخاب از گالری"}</Button>
+            </div>
+          </div>
+        </FormSection>
+
         <FormSection icon={<Tag size={18} />} title="مشخصات و قیمت‌گذاری" description="اعداد این بخش در محاسبه قیمت نهایی طلا استفاده می‌شوند.">
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3"><Field label="وزن (گرم)"><Input name="weightGrams" type="number" step="0.001" min="0.001" required fullWidth variant="secondary" defaultValue={product?.weightGrams} className={adminFieldClass} /></Field><Field label="عیار"><Input name="purity" type="number" min="1" max="999" defaultValue={product?.purity ?? 750} required fullWidth variant="secondary" className={adminFieldClass} /></Field><HeroSelectField name="makingFeeType" label="نوع اجرت" defaultValue={product?.makingFeeType ?? "PERCENT"} options={[{ value: "PERCENT", label: "درصدی" }, { value: "FIXED", label: "مبلغ ثابت" }]} /><Field label="مقدار اجرت"><Input name="makingFeeValue" type="number" step="0.001" defaultValue={product?.makingFeeValue ?? 10} min="0" required fullWidth variant="secondary" className={adminFieldClass} /></Field><Field label="درصد سود"><Input name="profitPercent" type="number" step="0.01" defaultValue={product?.profitPercent ?? 7} min="0" required fullWidth variant="secondary" className={adminFieldClass} /></Field><Field label="درصد مالیات"><Input name="taxPercent" type="number" step="0.01" defaultValue={product?.taxPercent ?? 10} min="0" required fullWidth variant="secondary" className={adminFieldClass} /></Field></div>
         </FormSection>
@@ -143,7 +195,8 @@ export function ProductForm({ categories = [], product }: Props) {
         <div className="grid gap-2"><Button type="submit" isDisabled={loading} variant="primary" fullWidth className="min-h-12 gap-2 bg-[#172b4d] px-5 text-sm font-bold text-white shadow-lg"><Save size={17} />{loading ? "در حال ذخیره..." : product ? "ذخیره تغییرات" : "ثبت محصول"}</Button><Link href="/admin/products" className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white text-sm font-bold text-slate-600"><ChevronRight size={16} />بازگشت به محصولات</Link></div>
       </aside>
     </form>
-    <MediaPickerDialog open={pickerOpen} scope="PRODUCT" multiple selected={selectedMedia} onClose={() => setPickerOpen(false)} onConfirm={setSelectedMedia} />
+    <MediaPickerDialog open={pickerOpen} scope="PRODUCT" multiple allowedTypes={["IMAGE", "VIDEO"]} selected={selectedMedia} onClose={() => setPickerOpen(false)} onConfirm={setSelectedMedia} />
+    <MediaPickerDialog open={sizeGuidePickerOpen} scope="PRODUCT" allowedTypes={["IMAGE", "DOCUMENT"]} selected={sizeGuide ? [sizeGuide] : []} onClose={() => setSizeGuidePickerOpen(false)} onConfirm={(items) => setSizeGuide(items[0] ?? null)} />
   </>;
 }
 

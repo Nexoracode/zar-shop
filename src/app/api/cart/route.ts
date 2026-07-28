@@ -4,19 +4,21 @@ import { db } from "@/lib/db";
 import { apiError } from "@/lib/http";
 import { getCurrentUser } from "@/modules/auth/session";
 
-const inputSchema = z.object({ productId: z.string().cuid(), quantity: z.coerce.number().int().min(1).max(10).default(1) });
+const inputSchema = z.object({ productId: z.string().cuid(), quantity: z.coerce.number().int().min(1).max(10).default(1), selectedSize: z.string().trim().max(50).default("") });
 
 export async function POST(request: Request) {
   try {
     const user = await getCurrentUser();
     if (!user) return NextResponse.json({ message: "ابتدا وارد حساب خود شوید." }, { status: 401 });
     const input = inputSchema.parse(await request.json());
-    const product = await db.product.findFirst({ where: { id: input.productId, status: "ACTIVE" } });
+    const product = await db.product.findFirst({ where: { id: input.productId, status: "ACTIVE" }, include: { sizes: true } });
     if (!product || product.stock < input.quantity) return NextResponse.json({ message: "محصول موجود نیست یا موجودی کافی ندارد." }, { status: 409 });
+    if (product.sizes.length && !product.sizes.some((size) => size.label === input.selectedSize)) return NextResponse.json({ message: "لطفاً یکی از سایزهای معتبر محصول را انتخاب کنید." }, { status: 422 });
+    const selectedSize = product.sizes.length ? input.selectedSize : "";
     const cart = await db.cart.upsert({ where: { userId: user.id }, update: {}, create: { userId: user.id } });
     await db.cartItem.upsert({
-      where: { cartId_productId: { cartId: cart.id, productId: product.id } },
-      create: { cartId: cart.id, productId: product.id, quantity: input.quantity },
+      where: { cartId_productId_selectedSize: { cartId: cart.id, productId: product.id, selectedSize } },
+      create: { cartId: cart.id, productId: product.id, selectedSize, quantity: input.quantity },
       update: { quantity: input.quantity },
     });
     return NextResponse.json({ message: "به سبد خرید اضافه شد." });

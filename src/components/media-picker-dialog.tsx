@@ -3,14 +3,14 @@
 import Image from "next/image";
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
 import { Alert, Button, Card, Input, Modal, toast } from "@heroui/react";
-import { Check, Film, ImageIcon, RefreshCw, Search, Trash2, Upload, X } from "lucide-react";
+import { Check, FileText, Film, ImageIcon, RefreshCw, Search, Trash2, Upload, X } from "lucide-react";
 import type { MediaChoice, MediaScope } from "@/components/media-library";
 import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
 
-type PickerItem = MediaChoice & { _count: { products: number; categories: number } };
-type Props = { open: boolean; scope: MediaScope; multiple?: boolean; selected: MediaChoice[]; onClose: () => void; onConfirm: (items: MediaChoice[]) => void };
+type PickerItem = MediaChoice & { _count: { products: number; sizeGuideProducts: number; categories: number } };
+type Props = { open: boolean; scope: MediaScope; multiple?: boolean; allowedTypes?: MediaChoice["type"][]; selected: MediaChoice[]; onClose: () => void; onConfirm: (items: MediaChoice[]) => void };
 
-export function MediaPickerDialog({ open, scope, multiple = false, selected, onClose, onConfirm }: Props) {
+export function MediaPickerDialog({ open, scope, multiple = false, allowedTypes, selected, onClose, onConfirm }: Props) {
   const [items, setItems] = useState<PickerItem[]>([]);
   const [draft, setDraft] = useState<MediaChoice[]>(selected);
   const [loading, setLoading] = useState(false);
@@ -22,7 +22,10 @@ export function MediaPickerDialog({ open, scope, multiple = false, selected, onC
   const [uploadFileName, setUploadFileName] = useState("");
 
   const scopeLabel = scope === "CATEGORY" ? "دسته‌بندی" : "محصول";
-  const acceptedFiles = scope === "CATEGORY" ? "image/jpeg,image/png,image/webp" : "image/jpeg,image/png,image/webp,video/mp4,video/webm";
+  const allowedTypeKey = (allowedTypes ?? (scope === "CATEGORY" ? ["IMAGE"] : ["IMAGE", "VIDEO"])).join(",");
+  const acceptedFiles = allowedTypeKey.includes("DOCUMENT")
+    ? "image/jpeg,image/png,image/webp,application/pdf"
+    : scope === "CATEGORY" ? "image/jpeg,image/png,image/webp" : "image/jpeg,image/png,image/webp,video/mp4,video/webm";
 
   const load = useCallback(async (signal?: AbortSignal) => {
     setLoading(true);
@@ -89,7 +92,7 @@ export function MediaPickerDialog({ open, scope, multiple = false, selected, onC
   }
 
   async function remove(item: PickerItem) {
-    const usage = item._count.products + item._count.categories;
+    const usage = item._count.products + item._count.sizeGuideProducts + item._count.categories;
     if (usage) {
       setError("این رسانه در حال استفاده است؛ ابتدا آن را از محصول یا دسته‌بندی مربوط جدا کنید.");
       return;
@@ -113,8 +116,9 @@ export function MediaPickerDialog({ open, scope, multiple = false, selected, onC
 
   const visibleItems = useMemo(() => {
     const normalized = query.trim().toLocaleLowerCase("fa-IR");
-    return normalized ? items.filter((item) => item.title.toLocaleLowerCase("fa-IR").includes(normalized)) : items;
-  }, [items, query]);
+    const permitted = new Set(allowedTypeKey.split(","));
+    return items.filter((item) => permitted.has(item.type) && (!normalized || item.title.toLocaleLowerCase("fa-IR").includes(normalized)));
+  }, [allowedTypeKey, items, query]);
 
   function confirm() {
     onConfirm(draft);
@@ -129,7 +133,7 @@ export function MediaPickerDialog({ open, scope, multiple = false, selected, onC
             <Modal.Header className="flex-row items-center justify-between border-b border-slate-200 bg-white px-4 py-4 sm:px-6">
               <div className="flex min-w-0 flex-1 items-center gap-3">
                 <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-[#fbf7ef] text-[#9a7434]"><ImageIcon size={21} /></span>
-                <div className="min-w-0"><Modal.Heading className="truncate text-base font-black text-slate-900 sm:text-lg">گالری {scopeLabel}</Modal.Heading><p className="mt-1 truncate text-xs text-slate-500">{multiple ? "چند رسانه انتخاب کنید؛ مورد اول تصویر اصلی خواهد بود." : "یک تصویر را به‌عنوان تصویر شاخص انتخاب کنید."}</p></div>
+                <div className="min-w-0"><Modal.Heading className="truncate text-base font-black text-slate-900 sm:text-lg">گالری {scopeLabel}</Modal.Heading><p className="mt-1 truncate text-xs text-slate-500">{multiple ? "چند رسانه انتخاب کنید؛ مورد اول تصویر اصلی خواهد بود." : allowedTypeKey.includes("DOCUMENT") ? "یک تصویر یا فایل PDF را به‌عنوان راهنمای سایز انتخاب کنید." : "یک تصویر را به‌عنوان تصویر شاخص انتخاب کنید."}</p></div>
               </div>
               <Modal.CloseTrigger aria-label="بستن گالری" className="grid h-10 w-10 shrink-0 place-items-center rounded-xl text-slate-500 transition hover:bg-slate-100 hover:text-slate-800"><X size={19} /></Modal.CloseTrigger>
             </Modal.Header>
@@ -141,7 +145,7 @@ export function MediaPickerDialog({ open, scope, multiple = false, selected, onC
                     <span className="hidden h-10 w-10 place-items-center rounded-xl bg-[#f4ead8] text-[#8b682b] sm:grid"><Upload size={19} /></span>
                     <label className="grid min-w-0 cursor-pointer gap-1 rounded-xl border border-slate-200 bg-white px-3 py-2 transition hover:border-[#c8a867]">
                       <span className="text-xs font-bold text-slate-700">بارگذاری فایل جدید</span>
-                      <span className="truncate text-[11px] text-slate-400">{uploadFileName || (scope === "CATEGORY" ? "انتخاب یک یا چند تصویر JPG، PNG یا WebP" : "انتخاب یک یا چند تصویر یا ویدیوی محصول")}</span>
+                      <span className="truncate text-[11px] text-slate-400">{uploadFileName || (allowedTypeKey.includes("DOCUMENT") ? "انتخاب تصویر یا فایل PDF راهنمای سایز" : scope === "CATEGORY" ? "انتخاب یک یا چند تصویر JPG، PNG یا WebP" : "انتخاب یک یا چند تصویر یا ویدیوی محصول")}</span>
                       <input name="file" type="file" multiple required accept={acceptedFiles} className="sr-only" onChange={(event) => { const files = event.target.files; setUploadFileName(files?.length ? (files.length === 1 ? files[0].name : `${files.length.toLocaleString("fa-IR")} فایل انتخاب شد`) : ""); }} />
                     </label>
                     <Button type="submit" isDisabled={uploading} variant="primary" className="min-h-10 gap-2 bg-[#b5904c] px-4 text-xs font-bold text-white"><Upload size={15} />{uploading ? "در حال بارگذاری" : "بارگذاری"}</Button>
@@ -162,12 +166,12 @@ export function MediaPickerDialog({ open, scope, multiple = false, selected, onC
                   <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
                     {visibleItems.map((item) => {
                       const chosenIndex = draft.findIndex((chosen) => chosen.id === item.id);
-                      const usage = item._count.products + item._count.categories;
+                      const usage = item._count.products + item._count.sizeGuideProducts + item._count.categories;
                       const chosen = chosenIndex >= 0;
                       return (
                         <Card key={item.id} variant="secondary" className={`group relative min-w-0 overflow-hidden rounded-2xl border-2 bg-white shadow-sm transition ${chosen ? "border-[#b5904c] ring-2 ring-[#b5904c]/15" : "border-transparent hover:border-slate-300 hover:shadow-md"}`}>
                           <Button type="button" variant="ghost" onPress={() => toggle(item)} aria-label={`انتخاب ${item.title}`} aria-pressed={chosen} className="relative flex h-auto w-full flex-col items-stretch justify-start overflow-hidden rounded-none p-0 text-right">
-                            <div className="relative aspect-square w-full overflow-hidden bg-[#f1eee8]">{item.type === "IMAGE" ? <Image src={item.url} alt={item.title} fill sizes="(max-width:640px) 50vw, 20vw" className="object-cover transition duration-300 group-hover:scale-[1.025]" /> : <><video src={item.url} muted className="h-full w-full bg-black object-cover" /><span className="absolute left-2 top-2 grid h-7 w-7 place-items-center rounded-full bg-black/65 text-white"><Film size={14} /></span></>}</div>
+                            <div className="relative aspect-square w-full overflow-hidden bg-[#f1eee8]">{item.type === "IMAGE" ? <Image src={item.url} alt={item.title} fill sizes="(max-width:640px) 50vw, 20vw" className="object-cover transition duration-300 group-hover:scale-[1.025]" /> : item.type === "VIDEO" ? <><video src={item.url} muted className="h-full w-full bg-black object-cover" /><span className="absolute left-2 top-2 grid h-7 w-7 place-items-center rounded-full bg-black/65 text-white"><Film size={14} /></span></> : <span className="grid h-full place-items-center text-[#9a7434]"><span className="grid justify-items-center gap-2 text-xs font-bold"><FileText size={40} />فایل PDF</span></span>}</div>
                             <span className="flex w-full items-center gap-2 px-3 py-2.5"><span className="min-w-0 flex-1 truncate text-xs font-bold text-slate-700">{item.title}</span>{usage > 0 && <small className="shrink-0 text-[10px] text-slate-400">{usage.toLocaleString("fa-IR")} استفاده</small>}</span>
                             {chosen && <span className="absolute right-2.5 top-2.5 grid h-8 min-w-8 place-items-center rounded-full bg-[#b5904c] px-2 text-xs font-black text-white shadow-lg">{multiple ? (chosenIndex + 1).toLocaleString("fa-IR") : <Check size={16} />}</span>}
                           </Button>

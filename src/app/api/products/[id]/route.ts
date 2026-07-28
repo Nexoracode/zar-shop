@@ -12,19 +12,27 @@ export async function PATCH(request: Request, context: Context) {
     const actor = await getCurrentUser();
     if (!actor || !hasPermission(actor.role, "catalog:manage")) return NextResponse.json({ message: "دسترسی غیرمجاز است." }, { status: 403 });
     const { id } = await context.params;
-    const { mediaIds, ...input } = productSchema.partial().parse(await request.json());
+    const { mediaIds, sizes, sizeGuideId, ...input } = productSchema.partial().parse(await request.json());
     if (mediaIds) {
-      const media = mediaIds.length ? await db.mediaAsset.findMany({ where: { id: { in: mediaIds }, scope: "PRODUCT" }, select: { id: true } }) : [];
+      const media = mediaIds.length ? await db.mediaAsset.findMany({ where: { id: { in: mediaIds }, scope: "PRODUCT", type: { in: ["IMAGE", "VIDEO"] } }, select: { id: true } }) : [];
       if (media.length !== new Set(mediaIds).size) return NextResponse.json({ message: "یک یا چند رسانه محصول معتبر نیست." }, { status: 422 });
     }
+    if (sizeGuideId) {
+      const guide = await db.mediaAsset.findFirst({ where: { id: sizeGuideId, scope: "PRODUCT", type: { in: ["IMAGE", "DOCUMENT"] } }, select: { id: true } });
+      if (!guide) return NextResponse.json({ message: "فایل راهنمای سایز باید تصویر یا PDF معتبر از گالری محصولات باشد." }, { status: 422 });
+    }
     const product = await db.$transaction(async (tx) => {
-      await tx.product.update({ where: { id }, data: input });
+      await tx.product.update({ where: { id }, data: { ...input, ...(sizeGuideId !== undefined ? { sizeGuideId } : {}) } });
       if (mediaIds) {
         await tx.productMedia.deleteMany({ where: { productId: id } });
         if (mediaIds.length) await tx.productMedia.createMany({ data: mediaIds.map((mediaId, position) => ({ productId: id, mediaId, position, isCover: position === 0 })) });
       }
+      if (sizes) {
+        await tx.productSize.deleteMany({ where: { productId: id } });
+        if (sizes.length) await tx.productSize.createMany({ data: sizes.map((label, position) => ({ productId: id, label, position })) });
+      }
       await tx.auditLog.create({ data: { actorId: actor.id, action: "PRODUCT_UPDATE", entityType: "Product", entityId: id } });
-      return tx.product.findUniqueOrThrow({ where: { id }, include: { media: { include: { media: true }, orderBy: { position: "asc" } }, category: true } });
+      return tx.product.findUniqueOrThrow({ where: { id }, include: { media: { include: { media: true }, orderBy: { position: "asc" } }, category: true, sizes: { orderBy: { position: "asc" } }, sizeGuide: true } });
     });
     return NextResponse.json(product);
   } catch (error) { return apiError(error); }

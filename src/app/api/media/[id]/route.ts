@@ -14,10 +14,10 @@ export async function DELETE(_request: Request, context: Context) {
     const { id } = await context.params;
     const media = await db.mediaAsset.findUnique({
       where: { id },
-      include: { _count: { select: { products: true, categories: true } } },
+      include: { _count: { select: { products: true, sizeGuideProducts: true, categories: true } } },
     });
     if (!media) return NextResponse.json({ message: "رسانه پیدا نشد." }, { status: 404 });
-    if (media._count.products > 0 || media._count.categories > 0) {
+    if (media._count.products > 0 || media._count.sizeGuideProducts > 0 || media._count.categories > 0) {
       return NextResponse.json({ message: "این رسانه در محصول یا دسته‌بندی استفاده شده و ابتدا باید از آن بخش حذف شود." }, { status: 409 });
     }
 

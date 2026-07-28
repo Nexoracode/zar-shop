@@ -87,7 +87,7 @@ export default async function InvoicePage({ params }: { params: Promise<{ orderI
               {order.items.map((item, index) => (
                 <tr key={item.id}>
                   <td className={cell}>{(index + 1).toLocaleString("fa-IR")}</td>
-                  <td className={`${cell} text-right font-bold`}>{item.name}</td>
+                  <td className={`${cell} text-right font-bold`}>{item.name}{item.selectedSize && <small className="mt-1 block font-normal text-slate-500">سایز: {item.selectedSize}</small>}</td>
                   <td className={cell} dir="ltr">{item.sku}</td>
                   <td className={cell}>{item.quantity.toLocaleString("fa-IR")}</td>
                   <td className={cell}>{Number(item.weightGrams).toLocaleString("fa-IR", { maximumFractionDigits: 3 })}</td>

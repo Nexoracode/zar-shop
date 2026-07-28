@@ -16,4 +16,6 @@ export const productSchema = z.object({
   status: z.enum(["DRAFT", "ACTIVE", "ARCHIVED"]).default("DRAFT"),
   featured: z.boolean().default(false),
   mediaIds: z.array(z.string().cuid()).max(20).refine((ids) => new Set(ids).size === ids.length, "رسانه تکراری مجاز نیست.").default([]),
+  sizes: z.array(z.string().trim().min(1).max(50)).max(30).refine((sizes) => new Set(sizes).size === sizes.length, "سایز تکراری مجاز نیست.").default([]),
+  sizeGuideId: z.string().cuid().nullable().default(null),
 });

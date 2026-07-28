@@ -13,7 +13,7 @@ export const dynamic = "force-dynamic";
 export default async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const [product, gold] = await Promise.all([
-    db.product.findFirst({ where: { slug, status: "ACTIVE" }, include: { category: true, media: { include: { media: true }, orderBy: { position: "asc" } } } }),
+    db.product.findFirst({ where: { slug, status: "ACTIVE" }, include: { category: true, media: { include: { media: true }, orderBy: { position: "asc" } }, sizes: { orderBy: { position: "asc" } }, sizeGuide: true } }),
     getGoldPriceForDisplay(),
   ]);
   if (!product) notFound();
@@ -72,6 +72,8 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
             </strong>
             <AddToCart
               productId={product.id}
+              sizes={product.sizes.map((size) => size.label)}
+              sizeGuide={product.sizeGuide && product.sizeGuide.type !== "VIDEO" ? { url: product.sizeGuide.url, type: product.sizeGuide.type, title: product.sizeGuide.title ?? "راهنمای انتخاب سایز" } : null}
               disabled={product.stock < 1 || total === null}
               disabledLabel={product.stock < 1 ? "ناموجود" : "قیمت موقتاً نامشخص"}
             />

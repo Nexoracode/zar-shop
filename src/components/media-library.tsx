@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Search, Trash2, UploadCloud } from "lucide-react";
+import { FileText, Search, Trash2, UploadCloud } from "lucide-react";
 import { Alert, Button, Card, Input, toast } from "@heroui/react";
 import { AdminEmptyState, adminFieldClass, adminLabelClass } from "@/components/admin-ui";
 import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
@@ -12,12 +12,12 @@ export type MediaChoice = {
   id: string;
   title: string;
   url: string;
-  type: "IMAGE" | "VIDEO";
+  type: "IMAGE" | "VIDEO" | "DOCUMENT";
 };
 
 type MediaItem = MediaChoice & {
   storageKey: string;
-  _count: { products: number; categories: number };
+  _count: { products: number; sizeGuideProducts: number; categories: number };
 };
 
 const fieldClass = adminFieldClass;
@@ -99,8 +99,8 @@ export function MediaLibrary() {
 
       <form onSubmit={upload} className="grid gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] sm:items-end sm:p-5">
         <label className={adminLabelClass}>
-          {scope === "CATEGORY" ? "تصویر دسته‌بندی" : "تصویر یا ویدیوی محصول"}
-          <Input name="file" type="file" multiple required fullWidth variant="secondary" accept={scope === "CATEGORY" ? "image/jpeg,image/png,image/webp" : "image/jpeg,image/png,image/webp,video/mp4,video/webm"} className={fieldClass} />
+          {scope === "CATEGORY" ? "تصویر دسته‌بندی" : "تصویر، ویدیو یا PDF محصول"}
+          <Input name="file" type="file" multiple required fullWidth variant="secondary" accept={scope === "CATEGORY" ? "image/jpeg,image/png,image/webp" : "image/jpeg,image/png,image/webp,video/mp4,video/webm,application/pdf"} className={fieldClass} />
         </label>
         <label className={adminLabelClass}>عنوان فایل<Input name="title" fullWidth variant="secondary" className={fieldClass} placeholder="مثلاً نمای روبه‌روی محصول" /></label>
         <Button type="submit" isDisabled={uploading} variant="primary" className="min-h-[46px] gap-2 rounded-xl bg-amber-600 px-6 text-sm font-bold text-white"><UploadCloud className="size-4" />{uploading ? "در حال بارگذاری..." : "بارگذاری در FTP"}</Button>
@@ -113,11 +113,11 @@ export function MediaLibrary() {
       {loading ? <div className="rounded-2xl border border-slate-200 bg-white py-14 text-center text-sm text-slate-500">در حال دریافت گالری...</div> : filteredItems.length ? (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
           {filteredItems.map((item) => {
-            const usage = item._count.products + item._count.categories;
+            const usage = item._count.products + item._count.sizeGuideProducts + item._count.categories;
             return (
               <Card key={item.id} variant="secondary" className="min-w-0 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
                 <div className="relative aspect-square bg-[#f5f3ee]">
-                  {item.type === "IMAGE" ? <Image src={item.url} alt={item.title} fill sizes="(max-width:640px) 50vw, 25vw" className="object-cover" /> : <video src={item.url} controls className="h-full w-full bg-black object-cover" />}
+                  {item.type === "IMAGE" ? <Image src={item.url} alt={item.title} fill sizes="(max-width:640px) 50vw, 25vw" className="object-cover" /> : item.type === "VIDEO" ? <video src={item.url} controls className="h-full w-full bg-black object-cover" /> : <a href={item.url} target="_blank" rel="noreferrer" className="grid h-full place-items-center text-slate-500"><span className="grid justify-items-center gap-2 text-xs font-bold"><FileText size={38} className="text-[#9a7434]" />فایل PDF</span></a>}
                 </div>
                 <div className="grid gap-2 p-3">
                   <strong className="truncate text-xs">{item.title}</strong>
