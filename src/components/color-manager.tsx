@@ -3,8 +3,9 @@
 import { useState, type FormEvent } from "react";
 import { Button, Card, ColorArea, ColorField, ColorPicker, ColorSlider, ColorSwatch, Input, Label, Modal, parseColor, toast } from "@heroui/react";
 import { Pencil, Plus, Save, Trash2, X } from "lucide-react";
-import { adminFieldClass, adminLabelClass } from "@/components/admin-ui";
+import { AdminStatusBadge, adminFieldClass, adminLabelClass } from "@/components/admin-ui";
 import { AdminCheckbox } from "@/components/admin-checkbox";
+import { Table, TableBody, TableCell, TableColumn, TableContent, TableHeader, TableRow, TableScrollContainer } from "@/components/hero";
 import { apiErrorMessage } from "@/lib/form-errors";
 
 type ColorItem = { id: string; name: string; hex: string; isActive: boolean; sortOrder: number };
@@ -50,7 +51,9 @@ export function ColorManager({ initialColors }: { initialColors: ColorItem[] }) 
     toast.success("رنگ حذف شد");
   }
 
-  return <div className="grid items-start gap-5 lg:grid-cols-[340px_minmax(0,1fr)]">
+  const cellClass = "border-t border-slate-100 px-3 py-2.5 text-xs";
+
+  return <div className="grid items-start gap-4 lg:grid-cols-[300px_minmax(0,1fr)]">
     <Card variant="secondary" className="rounded-2xl border border-slate-200 bg-white"><Card.Content className="p-5">
       <div className="mb-5 flex items-center justify-between"><strong>{editing ? "ویرایش رنگ" : "رنگ جدید"}</strong>{editing && <Button isIconOnly variant="ghost" onPress={stopEditing} aria-label="انصراف"><X size={17} /></Button>}</div>
       <form key={editing?.id ?? "new"} onSubmit={submit} className="grid gap-4">
@@ -66,7 +69,7 @@ export function ColorManager({ initialColors }: { initialColors: ColorItem[] }) 
         <Button type="submit" isDisabled={loading} variant="primary" className="min-h-11 gap-2 bg-[#172b4d] text-white">{editing ? <Save size={16} /> : <Plus size={16} />}{editing ? "ذخیره تغییرات" : "افزودن رنگ"}</Button>
       </form>
     </Card.Content></Card>
-    <div className="grid gap-3">{colors.map((color) => <Card key={color.id} variant="secondary" className="rounded-2xl border border-slate-200 bg-white"><Card.Content className="flex items-center gap-3 p-4"><ColorSwatch color={color.hex} size="md" className="shrink-0 shadow ring-1 ring-slate-200" /><div className="min-w-0 flex-1"><strong className="block text-sm text-slate-800">{color.name}</strong><span className="text-xs text-slate-400" dir="ltr">{color.hex} · {color.isActive ? "فعال" : "غیرفعال"}</span></div><Button isIconOnly variant="ghost" onPress={() => startEditing(color)} aria-label={`ویرایش ${color.name}`}><Pencil size={16} /></Button><Button isIconOnly variant="danger-soft" onPress={() => setPendingDelete(color)} aria-label={`حذف ${color.name}`}><Trash2 size={16} /></Button></Card.Content></Card>)}{!colors.length && <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-10 text-center text-sm text-slate-500">هنوز رنگی ثبت نشده است.</div>}</div>
+    <Card variant="secondary" className="overflow-hidden rounded-2xl border border-slate-200 bg-white"><Table><TableScrollContainer><TableContent aria-label="فهرست رنگ‌ها" className="w-full min-w-[560px]"><TableHeader>{["رنگ", "نام", "کد", "ترتیب", "وضعیت", "عملیات"].map((head, index) => <TableColumn id={head} key={head} isRowHeader={index === 1} className="bg-slate-50 px-3 py-2.5 text-right text-[11px] font-bold text-slate-500">{head}</TableColumn>)}</TableHeader><TableBody>{colors.map((color) => <TableRow id={color.id} key={color.id} className="transition hover:bg-slate-50/70"><TableCell className={`${cellClass} w-16`}><ColorSwatch color={color.hex} size="sm" className="shadow ring-1 ring-slate-200" /></TableCell><TableCell className={`${cellClass} font-bold text-slate-700`}>{color.name}</TableCell><TableCell className={`${cellClass} font-mono text-slate-500`}><span dir="ltr">{color.hex}</span></TableCell><TableCell className={`${cellClass} text-slate-500`}>{color.sortOrder.toLocaleString("fa-IR")}</TableCell><TableCell className={cellClass}><AdminStatusBadge tone={color.isActive ? "success" : "neutral"}>{color.isActive ? "فعال" : "غیرفعال"}</AdminStatusBadge></TableCell><TableCell className={cellClass}><div className="flex items-center gap-1"><Button isIconOnly size="sm" variant="ghost" onPress={() => startEditing(color)} aria-label={`ویرایش ${color.name}`} className="h-8 min-h-8 w-8 min-w-8"><Pencil size={14} /></Button><Button isIconOnly size="sm" variant="danger-soft" onPress={() => setPendingDelete(color)} aria-label={`حذف ${color.name}`} className="h-8 min-h-8 w-8 min-w-8"><Trash2 size={14} /></Button></div></TableCell></TableRow>)}</TableBody></TableContent></TableScrollContainer></Table>{!colors.length && <div className="border-t border-slate-100 px-4 py-8 text-center text-xs text-slate-500">هنوز رنگی ثبت نشده است.</div>}</Card>
     <Modal.Backdrop isOpen={Boolean(pendingDelete)} onOpenChange={(open) => { if (!open) setPendingDelete(null); }} variant="blur">
       <Modal.Container placement="center"><Modal.Dialog aria-label="تأیید حذف رنگ" className="mx-4 max-w-md bg-white"><Modal.Header className="flex-row items-center justify-between border-b border-slate-100 p-5"><Modal.Heading className="text-base font-black">حذف رنگ</Modal.Heading><Modal.CloseTrigger aria-label="بستن" className="grid h-9 w-9 place-items-center rounded-lg text-slate-500 hover:bg-slate-100"><X size={18} /></Modal.CloseTrigger></Modal.Header><Modal.Body className="p-5 text-sm leading-7 text-slate-600">رنگ «{pendingDelete?.name}» حذف شود؟</Modal.Body><Modal.Footer className="flex gap-2 border-t border-slate-100 p-4"><Button variant="danger" onPress={() => pendingDelete && void remove(pendingDelete)} className="font-bold">حذف رنگ</Button><Button variant="secondary" onPress={() => setPendingDelete(null)}>انصراف</Button></Modal.Footer></Modal.Dialog></Modal.Container>
     </Modal.Backdrop>
