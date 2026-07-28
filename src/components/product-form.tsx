@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useState, type FormEvent, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { Alert, Button, Card, Input, TextArea, toast } from "@heroui/react";
-import { ArrowDown, ArrowUp, ChevronRight, Images, Info, PackageCheck, Save, Sparkles, Tag, X } from "lucide-react";
+import { ChevronRight, GripVertical, Images, Info, PackageCheck, Save, Sparkles, Tag, Trash2 } from "lucide-react";
 import { MediaPickerDialog } from "@/components/media-picker-dialog";
 import type { MediaChoice } from "@/components/media-library";
 import { adminFieldClass, adminLabelClass } from "@/components/admin-ui";
@@ -45,13 +45,17 @@ export function ProductForm({ categories = [], product }: Props) {
   const [loading, setLoading] = useState(false);
   const [selectedMedia, setSelectedMedia] = useState<MediaChoice[]>(product?.media ?? []);
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [draggedMediaId, setDraggedMediaId] = useState<string | null>(null);
 
-  function moveMedia(index: number, offset: number) {
+  function moveMedia(targetId: string) {
+    if (!draggedMediaId || draggedMediaId === targetId) return;
     setSelectedMedia((current) => {
-      const target = index + offset;
-      if (target < 0 || target >= current.length) return current;
+      const sourceIndex = current.findIndex((item) => item.id === draggedMediaId);
+      const targetIndex = current.findIndex((item) => item.id === targetId);
+      if (sourceIndex < 0 || targetIndex < 0) return current;
       const next = [...current];
-      [next[index], next[target]] = [next[target], next[index]];
+      const [moved] = next.splice(sourceIndex, 1);
+      next.splice(targetIndex, 0, moved);
       return next;
     });
   }
@@ -91,7 +95,32 @@ export function ProductForm({ categories = [], product }: Props) {
     <form onSubmit={submit} noValidate className="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
       <div className="grid gap-5">
         <FormSection icon={<Images size={18} />} title="گالری محصول" description="اولین رسانه به‌عنوان تصویر اصلی محصول نمایش داده می‌شود.">
-          {selectedMedia.length ? <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">{selectedMedia.map((media, index) => <Card key={media.id} variant="secondary" className="overflow-hidden rounded-2xl border border-slate-200 bg-slate-50"><div className="relative aspect-square">{media.type === "IMAGE" ? <Image src={media.url} alt={media.title} fill sizes="180px" className="object-cover" /> : <video src={media.url} muted className="h-full w-full bg-black object-cover" />}<span className={`absolute right-2 top-2 rounded-full px-2.5 py-1 text-[10px] font-bold text-white ${index === 0 ? "bg-[#b5904c]" : "bg-slate-900/70"}`}>{index === 0 ? "تصویر اصلی" : `ردیف ${(index + 1).toLocaleString("fa-IR")}`}</span></div><div className="flex items-center justify-between gap-1 p-2"><Button type="button" size="sm" isIconOnly variant="ghost" isDisabled={index === 0} onPress={() => moveMedia(index, -1)} aria-label="انتقال به قبل"><ArrowUp size={14} /></Button><Button type="button" size="sm" variant="danger-soft" onPress={() => setSelectedMedia((current) => current.filter((item) => item.id !== media.id))} className="h-8 min-h-8 flex-1 gap-1 text-[11px] font-bold"><X size={13} />حذف</Button><Button type="button" size="sm" isIconOnly variant="ghost" isDisabled={index === selectedMedia.length - 1} onPress={() => moveMedia(index, 1)} aria-label="انتقال به بعد"><ArrowDown size={14} /></Button></div></Card>)}</div> : <Button type="button" variant="secondary" onPress={() => setPickerOpen(true)} className="grid min-h-32 w-full place-items-center rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50 px-5 text-center text-sm font-bold text-slate-600"><span><Images className="mx-auto mb-2" size={24} />هنوز رسانه‌ای انتخاب نشده است.</span></Button>}
+          {selectedMedia.length ? (
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
+              {selectedMedia.map((media, index) => (
+                <Card
+                  key={media.id}
+                  variant="secondary"
+                  draggable
+                  onDragStart={(event) => { event.dataTransfer.effectAllowed = "move"; setDraggedMediaId(media.id); }}
+                  onDragOver={(event) => { event.preventDefault(); event.dataTransfer.dropEffect = "move"; }}
+                  onDrop={(event) => { event.preventDefault(); moveMedia(media.id); setDraggedMediaId(null); }}
+                  onDragEnd={() => setDraggedMediaId(null)}
+                  className={`group cursor-grab overflow-hidden rounded-2xl border bg-slate-50 transition active:cursor-grabbing ${draggedMediaId === media.id ? "scale-[0.98] border-[#b5904c] opacity-50" : "border-slate-200 hover:border-[#c9ad75]"}`}
+                >
+                  <div className="relative aspect-square">
+                    {media.type === "IMAGE" ? <Image src={media.url} alt={media.title} fill sizes="180px" className="pointer-events-none object-cover" /> : <video src={media.url} muted className="pointer-events-none h-full w-full bg-black object-cover" />}
+                    <span className={`absolute right-2 top-2 rounded-full px-2.5 py-1 text-[10px] font-bold text-white ${index === 0 ? "bg-[#b5904c]" : "bg-slate-900/70"}`}>{index === 0 ? "تصویر اصلی" : `ردیف ${(index + 1).toLocaleString("fa-IR")}`}</span>
+                    <span className="absolute left-2 top-2 grid h-8 w-8 place-items-center rounded-lg bg-white/95 text-slate-500 shadow" title="برای تغییر ترتیب بکشید"><GripVertical size={17} /></span>
+                  </div>
+                  <div className="flex items-center justify-between gap-2 p-2.5">
+                    <span className="min-w-0 truncate text-[11px] font-bold text-slate-500">{media.title}</span>
+                    <Button type="button" size="sm" isIconOnly variant="danger-soft" onPress={() => setSelectedMedia((current) => current.filter((item) => item.id !== media.id))} className="h-8 min-h-8 w-8 min-w-8 shrink-0" aria-label={`حذف ${media.title} از محصول`}><Trash2 size={14} /></Button>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          ) : <Button type="button" variant="secondary" onPress={() => setPickerOpen(true)} className="grid min-h-32 w-full place-items-center rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50 px-5 text-center text-sm font-bold text-slate-600"><span><Images className="mx-auto mb-2" size={24} />هنوز رسانه‌ای انتخاب نشده است.</span></Button>}
           <Button type="button" variant="secondary" onPress={() => setPickerOpen(true)} className="mt-3 min-h-11 gap-2 border-[#d8c29a] bg-[#fbf7ef] px-5 text-sm font-bold text-[#846325]"><Images size={17} />انتخاب از گالری</Button>
         </FormSection>
 

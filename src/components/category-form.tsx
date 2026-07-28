@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { Button, Card, Input, TextArea, toast } from "@heroui/react";
-import { ChevronRight, FolderTree, ImageIcon, Save, Sparkles, X } from "lucide-react";
+import { ChevronRight, FolderTree, ImageIcon, Save, Sparkles, Trash2 } from "lucide-react";
 import { MediaPickerDialog } from "@/components/media-picker-dialog";
 import type { MediaChoice } from "@/components/media-library";
 import { HeroSelectField } from "@/components/hero-select-field";
@@ -120,7 +120,7 @@ export function CategoryForm({ categories, category }: { categories: CategoryOpt
             {selectedImage[0] ? (
               <div className="relative aspect-[16/7] overflow-hidden rounded-2xl bg-slate-100">
                 <Image src={selectedImage[0].url} alt={selectedImage[0].title} fill sizes="(max-width: 1024px) 100vw, 700px" className="object-cover" />
-                <Button type="button" size="sm" variant="danger-soft" onPress={() => setSelectedImage([])} className="absolute left-3 top-3 gap-1 bg-white/95 font-bold shadow"><X size={14} />حذف انتخاب</Button>
+                <Button type="button" size="sm" isIconOnly variant="danger-soft" aria-label="حذف تصویر شاخص دسته‌بندی" onPress={() => setSelectedImage([])} className="absolute left-3 top-3 h-9 min-h-9 w-9 min-w-9 bg-white/95 shadow"><Trash2 size={15} /></Button>
               </div>
             ) : (
               <Button type="button" variant="secondary" onPress={() => setPickerOpen(true)} className="flex min-h-44 w-full flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50 p-6 text-center text-sm font-bold text-slate-500 transition hover:border-[#b5904c] hover:bg-[#fffcf7]">
