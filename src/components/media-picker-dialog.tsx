@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
-import { Alert, Button, Card, Input, Modal } from "@heroui/react";
+import { Alert, Button, Card, Input, Modal, toast } from "@heroui/react";
 import { Check, Film, ImageIcon, RefreshCw, Search, Trash2, Upload, X } from "lucide-react";
 import type { MediaChoice, MediaScope } from "@/components/media-library";
 import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
@@ -76,6 +76,7 @@ export function MediaPickerDialog({ open, scope, multiple = false, selected, onC
       form.reset();
       setUploadFileName("");
       await load();
+      toast.success("فایل در گالری ذخیره شد", { description: "رسانه جدید با موفقیت بارگذاری شد.", timeout: 4000 });
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "بارگذاری فایل ناموفق بود.");
     } finally {
@@ -98,6 +99,7 @@ export function MediaPickerDialog({ open, scope, multiple = false, selected, onC
       setItems((current) => current.filter((candidate) => candidate.id !== item.id));
       setDraft((current) => current.filter((candidate) => candidate.id !== item.id));
       setPendingDelete(null);
+      toast.success("فایل از گالری حذف شد", { description: `فایل «${item.title}» با موفقیت حذف شد.`, timeout: 4000 });
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "حذف فایل ناموفق بود.");
     } finally {

@@ -3,19 +3,19 @@
 import { Toast } from "@heroui/react";
 
 const toastColors = {
-  danger: "border-0 border-r-2 border-r-[#D31736] bg-white text-slate-800 shadow-[0_18px_45px_rgba(15,23,42,0.16)]",
-  warning: "border-2 border-amber-500 bg-amber-400 text-amber-950 shadow-[0_18px_45px_rgba(217,119,6,0.3)]",
-  success: "border-2 border-emerald-700 bg-emerald-600 text-white shadow-[0_18px_45px_rgba(5,150,105,0.3)]",
-  accent: "border-2 border-blue-700 bg-blue-600 text-white shadow-[0_18px_45px_rgba(37,99,235,0.3)]",
-  default: "border-2 border-slate-800 bg-slate-900 text-white shadow-[0_18px_45px_rgba(15,23,42,0.35)]",
+  danger: "border-0 border-r-[3px] border-r-[#D31736] bg-white text-slate-800 shadow-[0_18px_45px_rgba(15,23,42,0.16)]",
+  warning: "border-0 border-r-[3px] border-r-amber-500 bg-white text-slate-800 shadow-[0_18px_45px_rgba(15,23,42,0.16)]",
+  success: "border-0 border-r-[3px] border-r-emerald-600 bg-white text-slate-800 shadow-[0_18px_45px_rgba(15,23,42,0.16)]",
+  accent: "border-0 border-r-[3px] border-r-blue-600 bg-white text-slate-800 shadow-[0_18px_45px_rgba(15,23,42,0.16)]",
+  default: "border-0 border-r-[3px] border-r-slate-500 bg-white text-slate-800 shadow-[0_18px_45px_rgba(15,23,42,0.16)]",
 } as const;
 
 const indicatorColors = {
   danger: "bg-red-50 text-[#D31736]",
-  warning: "bg-white/25 text-current",
-  success: "bg-white/20 text-current",
-  accent: "bg-white/20 text-current",
-  default: "bg-white/20 text-current",
+  warning: "bg-amber-50 text-amber-600",
+  success: "bg-emerald-50 text-emerald-600",
+  accent: "bg-blue-50 text-blue-600",
+  default: "bg-slate-100 text-slate-600",
 } as const;
 
 export function AppToasts() {
@@ -42,9 +42,9 @@ export function AppToasts() {
             <Toast.Content className="min-w-0 flex-1 items-start gap-1 self-start text-right">
               {content.title ? <Toast.Title className="w-full text-right text-sm font-black text-current">{content.title}</Toast.Title> : null}
               {content.description ? <Toast.Description className="w-full text-right text-xs leading-6 text-current opacity-95">{content.description}</Toast.Description> : null}
-              {content.actionProps?.children ? <Toast.ActionButton {...content.actionProps} className="mt-2 border border-white/30 bg-white/15 text-current">{content.actionProps.children}</Toast.ActionButton> : null}
+              {content.actionProps?.children ? <Toast.ActionButton {...content.actionProps} className="mt-2 border border-slate-200 bg-slate-50 text-slate-700">{content.actionProps.children}</Toast.ActionButton> : null}
             </Toast.Content>
-            <Toast.CloseButton className={`pointer-events-auto absolute left-2 top-2 right-auto size-7 opacity-100 ${variant === "danger" ? "border border-slate-200 bg-slate-100 text-slate-500" : "border border-white/25 bg-white/15 text-current"}`} />
+            <Toast.CloseButton className="pointer-events-auto absolute left-2 top-2 right-auto size-7 border border-slate-200 bg-slate-100 text-slate-500 opacity-100" />
           </Toast>
         );
       }}

@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Alert, Button, Input } from "@heroui/react";
+import { Alert, Button, Input, toast } from "@heroui/react";
 
 export function AuthForm({ mode }: { mode: "login" | "register" }) {
   const router = useRouter();
@@ -21,6 +21,7 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
     });
     const result = await response.json();
     if (!response.ok) { setError(result.message ?? "خطایی رخ داد."); setLoading(false); return; }
+    toast.success(mode === "login" ? "ورود موفق بود" : "حساب کاربری ساخته شد", { description: mode === "login" ? "با موفقیت وارد حساب کاربری شدید." : "حساب شما با موفقیت ایجاد شد.", timeout: 4000 });
     router.push(mode === "login" ? "/account" : "/");
     router.refresh();
   }

@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Search, Trash2, UploadCloud } from "lucide-react";
-import { Alert, Button, Card, Input } from "@heroui/react";
+import { Alert, Button, Card, Input, toast } from "@heroui/react";
 import { AdminEmptyState, adminFieldClass, adminLabelClass } from "@/components/admin-ui";
 import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
 
@@ -61,7 +61,7 @@ export function MediaLibrary() {
       if (!response.ok) throw new Error(result?.message ?? "بارگذاری ناموفق بود.");
       form.reset();
       await load();
-      setMessage("فایل با موفقیت در گالری ذخیره شد.");
+      toast.success("فایل در گالری ذخیره شد", { description: "بارگذاری فایل با موفقیت انجام شد.", timeout: 4000 });
     } catch (reason) {
       setMessage(reason instanceof Error ? reason.message : "بارگذاری فایل ناموفق بود.");
     } finally {
@@ -77,7 +77,7 @@ export function MediaLibrary() {
       const result = response.status === 204 ? null : await response.json().catch(() => null);
       if (!response.ok) throw new Error(result?.message ?? "حذف فایل ناموفق بود.");
       setItems((current) => current.filter((candidate) => candidate.id !== item.id));
-      setMessage("فایل با موفقیت حذف شد.");
+      toast.success("فایل از گالری حذف شد", { description: `فایل «${item.title}» با موفقیت حذف شد.`, timeout: 4000 });
       setPendingDelete(null);
     } catch (reason) {
       setMessage(reason instanceof Error ? reason.message : "حذف فایل ناموفق بود.");

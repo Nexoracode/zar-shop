@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { Alert, Button, Card, Input, TextArea } from "@heroui/react";
+import { Alert, Button, Card, Input, TextArea, toast } from "@heroui/react";
 
 export function CheckoutForm() {
   const [error, setError] = useState("");
@@ -18,7 +18,8 @@ export function CheckoutForm() {
     });
     const data = await r.json();
     if (!r.ok) { setError(data.message ?? "ثبت سفارش ناموفق بود."); setLoading(false); return; }
-    window.location.assign(data.redirectUrl);
+    toast.success("سفارش با موفقیت ثبت شد", { description: "در حال انتقال به درگاه پرداخت هستید.", timeout: 4000 });
+    window.setTimeout(() => window.location.assign(data.redirectUrl), 500);
   }
 
   const fieldClass = "w-full border border-[#e7e6e2] rounded-sm bg-white px-[13px] py-3 outline-none focus:border-[#b5904c] focus:shadow-[0_0_0_3px_rgba(181,144,76,0.1)]";

@@ -79,6 +79,7 @@ export function CategoryForm({ categories, category }: { categories: CategoryOpt
       });
       const result = await response.json().catch(() => null);
       if (!response.ok) throw new Error(apiErrorMessage(result, "ذخیره دسته‌بندی ناموفق بود.", categoryFieldLabels));
+      toast.success(category ? "تغییرات دسته‌بندی ذخیره شد" : "دسته‌بندی جدید ثبت شد", { description: category ? "اطلاعات دسته‌بندی با موفقیت به‌روزرسانی شد." : "دسته‌بندی با موفقیت به ساختار فروشگاه اضافه شد.", timeout: 4000 });
       router.push("/admin/categories");
       router.refresh();
     } catch (reason) {

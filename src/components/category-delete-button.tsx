@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { Button } from "@heroui/react";
+import { Button, toast } from "@heroui/react";
 import { Trash2 } from "lucide-react";
 import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
 
@@ -21,6 +21,7 @@ export function CategoryDeleteButton({ id, name, disabled }: { id: string; name:
       const result = response.status === 204 ? null : await response.json().catch(() => null);
       if (!response.ok) throw new Error(result?.message ?? "حذف دسته‌بندی ناموفق بود.");
       setOpen(false);
+      toast.success("دسته‌بندی حذف شد", { description: `دسته‌بندی «${name}» با موفقیت حذف شد.`, timeout: 4000 });
       router.refresh();
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "حذف دسته‌بندی ناموفق بود.");
