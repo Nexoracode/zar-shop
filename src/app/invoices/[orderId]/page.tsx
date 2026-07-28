@@ -1,43 +1,132 @@
 import { notFound, redirect } from "next/navigation";
 import type { Prisma } from "@generated/prisma/client";
+import { InvoiceActions } from "@/components/invoice-actions";
 import { db } from "@/lib/db";
-import { formatDate, formatMoney } from "@/lib/format";
-import { requireUser } from "@/modules/auth/session";
-import { Card, Table, TableBody, TableCell, TableColumn, TableContent, TableHeader, TableRow, TableScrollContainer } from "@/components/hero";
+import { formatDate, formatDateTime, formatMoney } from "@/lib/format";
 import { hasPermission } from "@/modules/auth/permissions";
+import { requireUser } from "@/modules/auth/session";
 
-type InvoiceOrder = Prisma.OrderGetPayload<{ include: { invoice: true; items: true; payments: true } }>;
-type InvoiceItem = InvoiceOrder["items"][number];
-type InvoicePayment = InvoiceOrder["payments"][number];
+type InvoiceOrder = Prisma.OrderGetPayload<{ include: { invoice: true; items: true; payments: true; user: true } }>;
+type JsonRecord = Record<string, Prisma.JsonValue>;
 
 export const dynamic = "force-dynamic";
+
+function asRecord(value: Prisma.JsonValue | null | undefined): JsonRecord {
+  return value && typeof value === "object" && !Array.isArray(value) ? value as JsonRecord : {};
+}
+
+function text(record: JsonRecord, key: string, fallback = "—") {
+  const value = record[key];
+  return typeof value === "string" && value.trim() ? value : fallback;
+}
+
+function InvoiceInfo({ label, value, ltr = false }: { label: string; value: string; ltr?: boolean }) {
+  return <div><dt className="text-[10px] text-slate-500">{label}</dt><dd className="m-0 mt-0.5 break-words text-xs font-bold text-slate-800" dir={ltr ? "ltr" : undefined}>{value}</dd></div>;
+}
 
 export default async function InvoicePage({ params }: { params: Promise<{ orderId: string }> }) {
   const user = await requireUser();
   const { orderId } = await params;
-  const order = await db.order.findUnique({ where: { id: orderId }, include: { invoice: true, items: true, payments: true } }) as InvoiceOrder | null;
+  const order = await db.order.findUnique({
+    where: { id: orderId },
+    include: { invoice: true, items: true, payments: { orderBy: { createdAt: "desc" } }, user: true },
+  }) as InvoiceOrder | null;
+
   if (!order?.invoice) notFound();
-  if (order.userId !== user.id && !hasPermission(user.role, "orders:manage")) redirect("/account");
-  const successful = order.payments.find((payment: InvoicePayment) => payment.status === "SUCCESS");
-  const cell = "border-b border-[#e7e6e2] px-3 py-3 text-sm";
+  const canManageOrders = hasPermission(user.role, "orders:manage");
+  if (order.userId !== user.id && !canManageOrders) redirect("/account");
+
+  const seller = asRecord(order.invoice.sellerData);
+  const buyer = asRecord(order.invoice.buyerData);
+  const address = asRecord(buyer.address ?? order.shippingAddress);
+  const successfulPayment = order.payments.find((payment) => payment.status === "SUCCESS");
+  const buyerName = text(buyer, "name", [order.user.firstName, order.user.lastName].filter(Boolean).join(" ") || "—");
+  const buyerPhone = text(buyer, "phone", text(address, "phone", order.user.phone ?? "—"));
+  const fullAddress = [text(address, "province", ""), text(address, "city", ""), text(address, "addressLine", "")].filter(Boolean).join("، ") || "—";
+  const cell = "border border-slate-300 px-2 py-2 text-center text-[10px] text-slate-700";
 
   return (
-    <main className="bg-[#f5f5f3] px-4 py-10 sm:px-6 sm:py-16">
-      <Card variant="secondary" className="mx-auto max-w-[900px] rounded-2xl border border-[#e7e6e2] bg-white p-5 shadow-[0_16px_50px_rgba(20,35,61,0.06)] sm:p-9">
-        <div className="mb-7 flex flex-col justify-between gap-4 border-b border-[#e7e6e2] pb-6 sm:flex-row sm:items-start">
-          <div><span className="text-xs font-bold text-[#785b27]">فاکتور رسمی فروش</span><h1 className="m-0 mt-1 text-3xl">زر گالری</h1></div>
-          <div className="sm:text-left"><strong>{order.invoice.invoiceNumber}</strong><br /><span className="text-sm text-[#747982]">{formatDate(order.invoice.issuedAt)}</span></div>
-        </div>
-        <div className="mb-7 grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <div className="border border-[#e7e6e2] bg-[#fbfaf7] p-4"><span className="block text-xs text-[#747982]">شماره سفارش</span><strong>{order.orderNumber}</strong></div>
-          <div className="border border-[#e7e6e2] bg-[#fbfaf7] p-4"><span className="block text-xs text-[#747982]">شناسه پرداخت</span><strong className="break-all">{successful?.referenceId ?? "—"}</strong></div>
-        </div>
-        <Table><TableScrollContainer><TableContent aria-label="اقلام فاکتور" className="w-full min-w-[820px]"><TableHeader>{["شرح", "وزن", "عیار", "تعداد", "اجرت", "سود", "مالیات", "جمع"].map((head, index) => <TableColumn id={head} isRowHeader={index === 0} className="bg-[#f8f7f4] px-3 py-3 text-right text-xs text-[#747982]" key={head}>{head}</TableColumn>)}</TableHeader><TableBody>
-          {order.items.map((item: InvoiceItem) => <TableRow id={item.id} key={item.id}><TableCell className={cell}>{item.name}<br /><span className="text-xs text-[#747982]">{item.sku}</span></TableCell><TableCell className={cell}>{Number(item.weightGrams)}</TableCell><TableCell className={cell}>{item.purity}</TableCell><TableCell className={cell}>{item.quantity}</TableCell><TableCell className={cell}>{formatMoney(item.makingFee.toString())}</TableCell><TableCell className={cell}>{formatMoney(item.profit.toString())}</TableCell><TableCell className={cell}>{formatMoney(item.tax.toString())}</TableCell><TableCell className={cell}>{formatMoney(item.total.toString())}</TableCell></TableRow>)}
-          <TableRow id="total"><TableCell className={cell}><strong>مبلغ قابل پرداخت</strong></TableCell>{Array.from({ length: 6 }).map((_, index) => <TableCell key={index} className={cell}>—</TableCell>)}<TableCell className={cell}><strong>{formatMoney(order.total.toString())}</strong></TableCell></TableRow>
-        </TableBody></TableContent></TableScrollContainer></Table>
-        <p className="mb-0 mt-6 text-xs leading-7 text-[#747982]">نرخ مبنای طلای ۱۸ عیار در زمان ثبت سفارش: {formatMoney(order.goldPriceSnapshot.toString())}. این فاکتور پس از تأیید پرداخت صادر شده است.</p>
-      </Card>
+    <main className="invoice-page-shell min-h-screen bg-slate-100 px-3 py-6 sm:px-6">
+      <InvoiceActions backHref={canManageOrders ? `/admin/orders/${order.id}` : "/account"} />
+
+      <article className="invoice-print-area mx-auto w-full max-w-[210mm] bg-white p-5 text-slate-900 shadow-[0_18px_60px_rgba(15,23,42,0.12)] sm:p-8">
+        <header className="grid grid-cols-[1fr_auto_1fr] items-center border-2 border-slate-800 px-4 py-3">
+          <div className="text-right"><strong className="block text-lg font-black text-[#17233b]">{text(seller, "name", "زر گالری")}</strong><span className="text-[10px] text-slate-500">فروشگاه طلا و زیورآلات</span></div>
+          <div className="px-4 text-center"><h1 className="m-0 text-xl font-black">فاکتور رسمی فروش</h1><span className="text-[10px] text-slate-500">صورتحساب کالا و خدمات</span></div>
+          <dl className="m-0 space-y-1 text-left text-[10px]"><div><dt className="inline text-slate-500">شماره فاکتور: </dt><dd className="inline font-bold" dir="ltr">{order.invoice.invoiceNumber}</dd></div><div><dt className="inline text-slate-500">تاریخ صدور: </dt><dd className="inline font-bold">{formatDate(order.invoice.issuedAt)}</dd></div><div><dt className="inline text-slate-500">شماره سفارش: </dt><dd className="inline font-bold" dir="ltr">{order.orderNumber}</dd></div></dl>
+        </header>
+
+        <section className="mt-3 border border-slate-300">
+          <h2 className="m-0 border-b border-slate-300 bg-slate-100 px-3 py-1.5 text-xs font-black">مشخصات فروشنده</h2>
+          <dl className="m-0 grid grid-cols-2 gap-x-5 gap-y-3 p-3 sm:grid-cols-4">
+            <InvoiceInfo label="نام فروشنده" value={text(seller, "name", "زر گالری")} />
+            <InvoiceInfo label="شناسه ملی" value={text(seller, "nationalId")} ltr />
+            <InvoiceInfo label="کد اقتصادی" value={text(seller, "economicCode")} ltr />
+            <InvoiceInfo label="شماره ثبت" value={text(seller, "registrationNumber")} ltr />
+            <InvoiceInfo label="شماره تماس" value={text(seller, "phone")} ltr />
+            <div className="col-span-2 sm:col-span-3"><InvoiceInfo label="نشانی فروشنده" value={text(seller, "address")} /></div>
+          </dl>
+        </section>
+
+        <section className="mt-3 border border-slate-300">
+          <h2 className="m-0 border-b border-slate-300 bg-slate-100 px-3 py-1.5 text-xs font-black">مشخصات خریدار</h2>
+          <dl className="m-0 grid grid-cols-2 gap-x-5 gap-y-3 p-3 sm:grid-cols-4">
+            <InvoiceInfo label="نام خریدار" value={buyerName} />
+            <InvoiceInfo label="کد ملی" value={text(buyer, "nationalId", order.user.nationalId ?? "—")} ltr />
+            <InvoiceInfo label="شماره تماس" value={buyerPhone} ltr />
+            <InvoiceInfo label="ایمیل" value={text(buyer, "email", order.user.email)} ltr />
+            <InvoiceInfo label="کد پستی" value={text(address, "postalCode")} ltr />
+            <div className="col-span-2 sm:col-span-3"><InvoiceInfo label="نشانی خریدار" value={fullAddress} /></div>
+          </dl>
+        </section>
+
+        <section className="mt-3 overflow-hidden">
+          <table className="w-full table-fixed border-collapse" aria-label="اقلام فاکتور رسمی">
+            <thead className="bg-slate-100"><tr>{["ردیف", "شرح کالا", "کد کالا", "تعداد", "وزن", "عیار", "مبلغ واحد", "اجرت", "سود", "مالیات", "مبلغ کل"].map((head) => <th key={head} className={`${cell} font-black text-slate-800`}>{head}</th>)}</tr></thead>
+            <tbody>
+              {order.items.map((item, index) => (
+                <tr key={item.id}>
+                  <td className={cell}>{(index + 1).toLocaleString("fa-IR")}</td>
+                  <td className={`${cell} text-right font-bold`}>{item.name}</td>
+                  <td className={cell} dir="ltr">{item.sku}</td>
+                  <td className={cell}>{item.quantity.toLocaleString("fa-IR")}</td>
+                  <td className={cell}>{Number(item.weightGrams).toLocaleString("fa-IR", { maximumFractionDigits: 3 })}</td>
+                  <td className={cell}>{item.purity.toLocaleString("fa-IR")}</td>
+                  <td className={cell}>{Number(item.unitPrice).toLocaleString("fa-IR")}</td>
+                  <td className={cell}>{Number(item.makingFee).toLocaleString("fa-IR")}</td>
+                  <td className={cell}>{Number(item.profit).toLocaleString("fa-IR")}</td>
+                  <td className={cell}>{Number(item.tax).toLocaleString("fa-IR")}</td>
+                  <td className={`${cell} font-black`}>{Number(item.total).toLocaleString("fa-IR")}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </section>
+
+        <section className="mt-3 grid gap-3 sm:grid-cols-[1fr_290px]">
+          <div className="border border-slate-300 p-3 text-[10px] leading-6 text-slate-600">
+            <strong className="block text-xs text-slate-800">اطلاعات پرداخت</strong>
+            <span>وضعیت: {successfulPayment ? "پرداخت موفق" : "در انتظار پرداخت"}</span><br />
+            <span>تاریخ پرداخت: {successfulPayment?.paidAt ? formatDateTime(successfulPayment.paidAt) : "—"}</span><br />
+            <span>شناسه مرجع: <b dir="ltr">{successfulPayment?.referenceId ?? "—"}</b></span><br />
+            <span>نرخ هر گرم طلای ۱۸ عیار هنگام ثبت سفارش: {formatMoney(order.goldPriceSnapshot.toString())}</span>
+          </div>
+          <dl className="m-0 border border-slate-300 text-xs">
+            <div className="flex justify-between border-b border-slate-200 px-3 py-2"><dt>جمع کالاها</dt><dd>{formatMoney(order.subtotal.toString())}</dd></div>
+            <div className="flex justify-between border-b border-slate-200 px-3 py-2"><dt>تخفیف</dt><dd>{formatMoney(order.discount.toString())}</dd></div>
+            <div className="flex justify-between border-b border-slate-200 px-3 py-2"><dt>ارسال</dt><dd>{formatMoney(order.shipping.toString())}</dd></div>
+            <div className="flex justify-between border-b border-slate-200 px-3 py-2"><dt>مالیات</dt><dd>{formatMoney(order.tax.toString())}</dd></div>
+            <div className="flex justify-between bg-slate-100 px-3 py-2.5 font-black"><dt>مبلغ نهایی</dt><dd>{formatMoney(order.total.toString())}</dd></div>
+          </dl>
+        </section>
+
+        {order.notes && <section className="mt-3 border border-slate-300 px-3 py-2 text-[10px]"><strong>توضیحات:</strong> {order.notes}</section>}
+
+        <footer className="mt-5 grid grid-cols-2 gap-8 text-center text-xs">
+          <div className="min-h-20 border-t border-dashed border-slate-400 pt-2">مهر و امضای فروشنده</div>
+          <div className="min-h-20 border-t border-dashed border-slate-400 pt-2">امضای خریدار</div>
+        </footer>
+      </article>
     </main>
   );
 }

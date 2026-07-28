@@ -5,6 +5,6 @@ import type { ReactNode } from "react";
 
 export function AppChrome({ header, footer, children }: { header: ReactNode; footer: ReactNode; children: ReactNode }) {
   const pathname = usePathname();
-  const isAdmin = pathname.startsWith("/admin");
-  return <>{!isAdmin && header}{children}{!isAdmin && footer}</>;
+  const isStandalone = pathname.startsWith("/admin") || pathname.startsWith("/invoices/");
+  return <>{!isStandalone && header}{children}{!isStandalone && footer}</>;
 }
