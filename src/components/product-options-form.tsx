@@ -3,13 +3,13 @@
 import Link from "next/link";
 import { useState, type FormEvent } from "react";
 import { Button, Card, Input, buttonVariants, toast } from "@heroui/react";
-import { Eye, EyeOff, ChevronRight, GripVertical, ListPlus, Plus, Save, Trash2, X } from "lucide-react";
+import { Eye, EyeOff, ChevronRight, GripVertical, ListPlus, Plus, Save, Trash2 } from "lucide-react";
 import { adminFieldClass, adminLabelClass } from "@/components/admin-ui";
 import { HeroSelectField } from "@/components/hero-select-field";
 import { apiErrorMessage, validationErrorMessage } from "@/lib/form-errors";
 import { productSchema } from "@/modules/products/schemas";
 
-type OptionValue = { value: string; colorId: string | null; isActive: boolean; stock: number | null; priceAdjustment: number; persisted?: boolean };
+type OptionValue = { value: string; colorId: string | null; isActive: boolean; stock: number | null; priceAdjustment: number; persisted?: boolean; used?: boolean };
 type DraftOption = { key: string; name: string; values: OptionValue[]; valueInput: string; persisted: boolean };
 type ColorChoice = { id: string; name: string; hex: string };
 
@@ -35,7 +35,7 @@ export function ProductOptionsForm({ productId, colors, initialOptions }: {
       if (option.key !== key) return option;
       const value = option.valueInput.trim();
       if (!value || option.values.some((item) => item.value === value)) return option;
-      return { ...option, values: [...option.values, { value, colorId: null, isActive: true, stock: 0, priceAdjustment: 0, persisted: false }], valueInput: "" };
+      return { ...option, values: [...option.values, { value, colorId: null, isActive: true, stock: 0, priceAdjustment: 0, persisted: false, used: false }], valueInput: "" };
     }));
   }
 
@@ -44,7 +44,7 @@ export function ProductOptionsForm({ productId, colors, initialOptions }: {
     if (!color) return;
     setOptions((current) => current.map((option) => option.key !== key ? option : {
       ...option,
-      values: option.values.some((item) => item.colorId === colorId) ? option.values : [...option.values, { value: color.name, colorId, isActive: true, stock: 0, priceAdjustment: 0, persisted: false }],
+      values: option.values.some((item) => item.colorId === colorId) ? option.values : [...option.values, { value: color.name, colorId, isActive: true, stock: 0, priceAdjustment: 0, persisted: false, used: false }],
     }));
   }
 
@@ -63,6 +63,7 @@ export function ProductOptionsForm({ productId, colors, initialOptions }: {
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const usedKeys = new Set(options.flatMap((option) => option.values.filter((item) => item.used).map((item) => JSON.stringify([option.name, item.value]))));
     const submittedOptions = options.map((option) => {
       const pendingValue = option.valueInput.trim();
       const values = !option.name.includes("رنگ") && pendingValue && !option.values.some((item) => item.value === pendingValue) ? [...option.values, { value: pendingValue, colorId: null, isActive: true, stock: 0, priceAdjustment: 0 }] : option.values;
@@ -78,7 +79,7 @@ export function ProductOptionsForm({ productId, colors, initialOptions }: {
       const response = await fetch(`/api/products/${productId}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ options: validation.data }) });
       const result = await response.json().catch(() => null);
       if (!response.ok) throw new Error(apiErrorMessage(result, "ذخیره تنوع‌ها انجام نشد.", { options: "تنوع‌های محصول" }));
-      setOptions(validation.data.map((option, index) => ({ key: `saved-${index}`, ...option, values: option.values.map((item) => ({ ...item, persisted: true })), valueInput: "", persisted: true })));
+      setOptions(validation.data.map((option, index) => ({ key: `saved-${index}`, ...option, values: option.values.map((item) => ({ ...item, persisted: true, used: usedKeys.has(JSON.stringify([option.name, item.value])) })), valueInput: "", persisted: true })));
       toast.success("تنوع‌های محصول ذخیره شدند", { description: "تغییرات همین محصول با موفقیت ثبت شد." });
     } catch (reason) {
       toast.danger("ذخیره تنوع‌ها انجام نشد", { description: reason instanceof Error ? reason.message : "خطای ناشناخته" });
@@ -101,7 +102,7 @@ export function ProductOptionsForm({ productId, colors, initialOptions }: {
             <div className="mb-3 flex items-end gap-2">
               <span draggable onDragStart={() => setDraggedKey(option.key)} onDragEnd={() => setDraggedKey(null)} className="mb-1 grid h-10 shrink-0 cursor-grab place-items-center text-slate-400" title="تغییر ترتیب"><GripVertical size={17} /></span>
               <label className={`${adminLabelClass} min-w-0 flex-1`}>عنوان تنوع<Input value={option.name} disabled={option.persisted} onChange={(event) => updateOption(option.key, { name: event.target.value })} fullWidth variant="secondary" placeholder="مثلاً سایز، رنگ یا طول زنجیر" className={adminFieldClass} /></label>
-              {option.persisted ? <Button type="button" size="sm" isIconOnly variant="ghost" aria-label={`${option.values.some((item) => item.isActive) ? "غیرفعال‌سازی" : "فعال‌سازی"} گروه ${option.name}`} onPress={() => updateOption(option.key, { values: option.values.map((item) => ({ ...item, isActive: !option.values.some((value) => value.isActive) })) })} className={`mb-1 h-9 min-h-9 w-9 min-w-9 ${option.values.some((item) => item.isActive) ? "text-emerald-600" : "text-slate-400"}`}>{option.values.some((item) => item.isActive) ? <Eye size={16} /> : <EyeOff size={16} />}</Button> : <Button type="button" size="sm" isIconOnly variant="danger-soft" onPress={() => setOptions((current) => current.filter((item) => item.key !== option.key))} className="mb-1 h-9 min-h-9 w-9 min-w-9" aria-label={`حذف تنوع ${(index + 1).toLocaleString("fa-IR")}`}><Trash2 size={15} /></Button>}
+              {option.values.some((item) => item.used) ? <Button type="button" size="sm" isIconOnly variant="ghost" aria-label={`${option.values.some((item) => item.isActive) ? "غیرفعال‌سازی" : "فعال‌سازی"} گروه ${option.name}`} onPress={() => updateOption(option.key, { values: option.values.map((item) => ({ ...item, isActive: !option.values.some((value) => value.isActive) })) })} className={`mb-1 h-9 min-h-9 w-9 min-w-9 ${option.values.some((item) => item.isActive) ? "text-emerald-600" : "text-slate-400"}`}>{option.values.some((item) => item.isActive) ? <Eye size={16} /> : <EyeOff size={16} />}</Button> : <Button type="button" size="sm" isIconOnly variant="danger-soft" onPress={() => setOptions((current) => current.filter((item) => item.key !== option.key))} className="mb-1 h-9 min-h-9 w-9 min-w-9" aria-label={`حذف گروه ${option.name || (index + 1).toLocaleString("fa-IR")}`}><Trash2 size={15} /></Button>}
             </div>
 
             {option.name.includes("رنگ") ? <div className={adminLabelClass}>انتخاب رنگ<HeroSelectField name={`color-${option.key}`} ariaLabel="انتخاب رنگ" value="" placeholder={colors.length ? "یک رنگ را انتخاب کنید" : "رنگی ثبت نشده"} disabled={!colors.length} options={colors.filter((color) => !option.values.some((item) => item.colorId === color.id)).map((color) => ({ value: color.id, label: `${color.name} (${color.hex})` }))} onValueChange={(colorId) => addOptionColor(option.key, colorId)} /></div> : <label className={adminLabelClass}>مقدار قابل انتخاب<span className="flex gap-2"><Input value={option.valueInput} onChange={(event) => updateOption(option.key, { valueInput: event.target.value })} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); addOptionValue(option.key); } }} fullWidth variant="secondary" placeholder="مثلاً ۱۲" className={adminFieldClass} /><Button type="button" variant="secondary" onPress={() => addOptionValue(option.key)} className="min-h-11 shrink-0 gap-1"><Plus size={14} />افزودن</Button></span></label>}
@@ -116,7 +117,7 @@ export function ProductOptionsForm({ productId, colors, initialOptions }: {
                   <span className="inline-flex min-w-0 items-center gap-2 truncate text-xs font-bold text-slate-700">{color && <span className="h-4 w-4 shrink-0 rounded-full border border-slate-300" style={{ backgroundColor: color.hex }} />}{color?.name ?? item.value}</span>
                   <Input type="number" min="0" value={String(item.stock ?? 0)} onChange={(event) => updateOption(option.key, { values: option.values.map((value) => value.value === item.value ? { ...value, stock: Math.max(0, Number(event.target.value) || 0) } : value) })} variant="secondary" className={compactInputClass} aria-label={`موجودی ${item.value}`} />
                   <Input type="number" min="0" step="1" value={String(item.priceAdjustment)} onChange={(event) => updateOption(option.key, { values: option.values.map((value) => value.value === item.value ? { ...value, priceAdjustment: Math.max(0, Math.trunc(Number(event.target.value) || 0)) } : value) })} variant="secondary" className={compactInputClass} aria-label={`افزایش قیمت ${item.value}`} />
-                  {item.persisted ? <Button type="button" size="sm" isIconOnly variant="ghost" aria-label={`${item.isActive ? "غیرفعال‌سازی" : "فعال‌سازی"} ${item.value}`} onPress={() => updateOption(option.key, { values: option.values.map((value) => value.value === item.value ? { ...value, isActive: !value.isActive } : value) })} className={`h-8 min-h-8 w-8 min-w-8 rounded-lg ${item.isActive ? "text-emerald-600" : "text-slate-400"}`}>{item.isActive ? <Eye size={15} /> : <EyeOff size={15} />}</Button> : <Button type="button" size="sm" isIconOnly variant="danger-soft" onPress={() => updateOption(option.key, { values: option.values.filter((value) => value.value !== item.value) })} className="h-8 min-h-8 w-8 min-w-8 rounded-lg" aria-label={`حذف مقدار ${item.value}`}><X size={13} /></Button>}
+                  {item.used ? <Button type="button" size="sm" isIconOnly variant="ghost" aria-label={`${item.isActive ? "غیرفعال‌سازی" : "فعال‌سازی"} ${item.value}`} onPress={() => updateOption(option.key, { values: option.values.map((value) => value.value === item.value ? { ...value, isActive: !value.isActive } : value) })} className={`h-8 min-h-8 w-8 min-w-8 rounded-lg ${item.isActive ? "text-emerald-600" : "text-slate-400"}`}>{item.isActive ? <Eye size={15} /> : <EyeOff size={15} />}</Button> : <Button type="button" size="sm" isIconOnly variant="danger-soft" onPress={() => updateOption(option.key, { values: option.values.filter((value) => value.value !== item.value) })} className="h-8 min-h-8 w-8 min-w-8 rounded-lg" aria-label={`حذف مقدار ${item.value}`}><Trash2 size={13} /></Button>}
                 </div>;
               })}
             </div> : <p className="mt-2 text-xs text-amber-700">حداقل یک مقدار به این تنوع اضافه کنید.</p>}

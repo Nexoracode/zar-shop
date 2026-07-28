@@ -67,6 +67,7 @@ export function getOptionPriceAdjustment(options: ProductOptionLike[], snapshot:
 export function mergeOptionsPreservingHistory(
   existing: Array<{ name: string; values: unknown }>,
   incoming: Array<{ name: string; values: ProductOptionValue[] }>,
+  usedSelectionKeys: Set<string> = new Set(),
 ) {
   const existingByName = new Map(existing.map((option) => [option.name, parseOptionValues(option.values)]));
   const merged = incoming.map((option) => {
@@ -75,11 +76,18 @@ export function mergeOptionsPreservingHistory(
     existingByName.delete(option.name);
     return {
       ...option,
-      values: [...option.values, ...previous.filter((item) => !incomingValues.has(item.value)).map((item) => ({ ...item, isActive: false }))],
+      values: [...option.values, ...previous.filter((item) => !incomingValues.has(item.value) && usedSelectionKeys.has(optionSelectionKey(option.name, item.value))).map((item) => ({ ...item, isActive: false }))],
     };
   });
-  for (const [name, values] of existingByName) merged.push({ name, values: values.map((item) => ({ ...item, isActive: false })) });
+  for (const [name, values] of existingByName) {
+    const usedValues = values.filter((item) => usedSelectionKeys.has(optionSelectionKey(name, item.value)));
+    if (usedValues.length) merged.push({ name, values: usedValues.map((item) => ({ ...item, isActive: false })) });
+  }
   return merged;
+}
+
+export function optionSelectionKey(name: string, value: string) {
+  return JSON.stringify([name, value]);
 }
 
 export function optionEntries(value: unknown): Array<[string, string]> {

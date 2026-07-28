@@ -6,7 +6,7 @@ import { productSchema } from "@/modules/products/schemas";
 import { hasPermission } from "@/modules/auth/permissions";
 import { areOptionColorsValid } from "@/modules/products/color-validation";
 import { sanitizeProductDescription } from "@/modules/products/rich-text";
-import { mergeOptionsPreservingHistory } from "@/modules/products/options";
+import { mergeOptionsPreservingHistory, optionEntries, optionSelectionKey } from "@/modules/products/options";
 
 type Context = { params: Promise<{ id: string }> };
 
@@ -33,7 +33,9 @@ export async function PATCH(request: Request, context: Context) {
       }
       if (options) {
         const existingOptions = await tx.productOption.findMany({ where: { productId: id }, select: { name: true, values: true } });
-        const safeOptions = mergeOptionsPreservingHistory(existingOptions, options);
+        const orderItems = await tx.orderItem.findMany({ where: { productId: id }, select: { selectedOptions: true } });
+        const usedSelectionKeys = new Set(orderItems.flatMap((item) => optionEntries(item.selectedOptions).map(([name, value]) => optionSelectionKey(name, value))));
+        const safeOptions = mergeOptionsPreservingHistory(existingOptions, options, usedSelectionKeys);
         await tx.productOption.deleteMany({ where: { productId: id } });
         if (safeOptions.length) await tx.productOption.createMany({ data: safeOptions.map((option, position) => ({ productId: id, ...option, position })) });
       }
