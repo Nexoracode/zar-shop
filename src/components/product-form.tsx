@@ -110,12 +110,9 @@ export function ProductForm({ categories = [], product }: Props) {
                 >
                   <div className="relative aspect-square">
                     {media.type === "IMAGE" ? <Image src={media.url} alt={media.title} fill sizes="180px" className="pointer-events-none object-cover" /> : <video src={media.url} muted className="pointer-events-none h-full w-full bg-black object-cover" />}
-                    <span className={`absolute right-1.5 top-1.5 rounded-md px-2 py-0.5 text-[9px] font-bold text-white shadow-sm ${index === 0 ? "bg-[#b5904c]" : "bg-slate-900/70"}`}>{index === 0 ? "تصویر اصلی" : `ردیف ${(index + 1).toLocaleString("fa-IR")}`}</span>
-                    <span className="absolute left-1.5 top-1.5 grid h-7 w-7 place-items-center rounded-md bg-white/95 text-slate-500 shadow-sm" title="برای تغییر ترتیب بکشید"><GripVertical size={15} /></span>
-                  </div>
-                  <div className="flex h-9 items-center justify-between gap-1.5 border-t border-slate-100 px-2 py-1">
-                    <span className="min-w-0 truncate text-[10px] font-medium text-slate-500">{media.title}</span>
-                    <Button type="button" size="sm" isIconOnly variant="danger-soft" onPress={() => setSelectedMedia((current) => current.filter((item) => item.id !== media.id))} className="h-7 min-h-7 w-7 min-w-7 shrink-0 rounded-md" aria-label={`حذف ${media.title} از محصول`}><Trash2 size={13} /></Button>
+                    <span className={`absolute right-1.5 top-1.5 grid h-7 min-w-7 place-items-center rounded-md px-1.5 text-[9px] font-black text-white shadow-sm ${index === 0 ? "bg-[#b5904c]" : "bg-slate-900/65"}`}>{index === 0 ? "اصلی" : (index + 1).toLocaleString("fa-IR")}</span>
+                    <span className="absolute left-1.5 top-1.5 grid h-7 w-7 place-items-center rounded-md bg-white/90 text-slate-500 opacity-80 shadow-sm transition group-hover:opacity-100" title="برای تغییر ترتیب بکشید"><GripVertical size={15} /></span>
+                    <Button type="button" size="sm" isIconOnly variant="danger-soft" onPress={() => setSelectedMedia((current) => current.filter((item) => item.id !== media.id))} className="absolute bottom-1.5 left-1.5 h-7 min-h-7 w-7 min-w-7 rounded-md bg-white/90 shadow-sm" aria-label={`حذف رسانه ردیف ${(index + 1).toLocaleString("fa-IR")} از محصول`}><Trash2 size={13} /></Button>
                   </div>
                 </Card>
               ))}
