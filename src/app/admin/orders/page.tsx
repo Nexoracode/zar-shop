@@ -10,6 +10,7 @@ import { AdminListFilters } from "@/components/admin-list-filters";
 import { AdminPagination } from "@/components/admin-pagination";
 import { parseAdminPagination, resolveAdminPagination } from "@/lib/admin-pagination";
 import { requirePermission } from "@/modules/auth/session";
+import { AdminBulkCheckbox, AdminBulkEditor, AdminBulkSelectAll } from "@/components/admin-bulk-editor";
 import {
   Table,
   TableBody,
@@ -91,10 +92,11 @@ export default async function OrdersPage({ searchParams }: { searchParams: Searc
               })}
             </div>
 
-            <Table className="hidden md:block"><TableScrollContainer><TableContent aria-label="فهرست سفارش‌ها" className="w-full min-w-[900px]"><TableHeader>{["ردیف", "شماره سفارش", "مشتری", "اقلام", "مبلغ", "وضعیت", "تاریخ", "جزئیات"].map((head, index) => <TableColumn id={head} isRowHeader={index === 1} className="bg-slate-50/70 px-5 py-4 text-right text-xs font-bold text-slate-500" key={head}>{head}</TableColumn>)}</TableHeader><TableBody>{orders.map((order: OrderRow, index) => {
+            <AdminBulkEditor entity="orders" entityLabel="سفارش" ids={orders.map((order) => order.id)} actions={[{ value: "status:PROCESSING", label: "شروع آماده‌سازی سفارش‌های پرداخت‌شده" }, { value: "status:SHIPPED", label: "ثبت ارسال سفارش‌های در حال آماده‌سازی" }, { value: "status:DELIVERED", label: "ثبت تحویل سفارش‌های ارسال‌شده" }, { value: "status:CANCELLED", label: "لغو سفارش‌های پرداخت‌نشده" }]}><Table><TableScrollContainer><TableContent aria-label="فهرست سفارش‌ها" className="w-full min-w-[940px]"><TableHeader><TableColumn id="select" className="w-12 bg-slate-50/70 px-4 py-4 text-center"><AdminBulkSelectAll /></TableColumn>{["ردیف", "شماره سفارش", "مشتری", "اقلام", "مبلغ", "وضعیت", "تاریخ", "جزئیات"].map((head, index) => <TableColumn id={head} isRowHeader={index === 1} className="bg-slate-50/70 px-5 py-4 text-right text-xs font-bold text-slate-500" key={head}>{head}</TableColumn>)}</TableHeader><TableBody>{orders.map((order: OrderRow, index) => {
                   const customerName = `${order.user.firstName ?? ""} ${order.user.lastName ?? ""}`.trim() || "کاربر بدون نام";
                   return (
                     <TableRow id={order.id} key={order.id} className="transition hover:bg-slate-50/60">
+                      <TableCell className={`${cell} w-12 text-center`}><AdminBulkCheckbox id={order.id} label={`انتخاب سفارش ${order.orderNumber}`} /></TableCell>
                       <TableCell className={`${cell} w-16 font-bold text-slate-400`}>{(pagination.skip + index + 1).toLocaleString("fa-IR")}</TableCell>
                       <TableCell className={cell}><strong className="text-[#17233b]" dir="ltr">{order.orderNumber}</strong></TableCell>
                       <TableCell className={cell}><strong className="block text-slate-700">{customerName}</strong><span className="text-xs text-slate-400">{order.user.email}</span></TableCell>
@@ -105,7 +107,7 @@ export default async function OrdersPage({ searchParams }: { searchParams: Searc
                       <TableCell className={cell}><Link href={`/admin/orders/${order.id}`} aria-label={`مشاهده جزئیات سفارش ${order.orderNumber}`} title="مشاهده جزئیات" className="inline-flex h-9 min-h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-[#172b4d] transition hover:border-[#b5904c] hover:text-[#846325]"><Eye size={15} /></Link></TableCell>
                     </TableRow>
                   );
-                })}</TableBody></TableContent></TableScrollContainer></Table>
+                })}</TableBody></TableContent></TableScrollContainer></Table></AdminBulkEditor>
             <AdminPagination {...pagination} />
           </>
         )}

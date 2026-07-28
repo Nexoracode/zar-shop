@@ -1,0 +1,63 @@
+import { NextResponse } from "next/server";
+import { z } from "zod";
+import { OrderStatus, ProductStatus, UserStatus } from "@generated/prisma/enums";
+import { db } from "@/lib/db";
+import { getCurrentUser } from "@/modules/auth/session";
+import { hasPermission } from "@/modules/auth/permissions";
+
+const bodySchema = z.object({
+  entity: z.enum(["products", "categories", "orders", "users"]),
+  action: z.string().min(1).max(191),
+  ids: z.array(z.string().min(1)).min(1).max(100),
+});
+
+const productStatuses = new Set(Object.values(ProductStatus));
+const orderStatuses = new Set(Object.values(OrderStatus));
+const userStatuses = new Set(Object.values(UserStatus));
+
+export async function PATCH(request: Request) {
+  const actor = await getCurrentUser();
+  if (!actor) return NextResponse.json({ message: "ابتدا وارد حساب کاربری شوید." }, { status: 401 });
+  const parsed = bodySchema.safeParse(await request.json().catch(() => null));
+  if (!parsed.success) return NextResponse.json({ message: "اطلاعات ویرایش گروهی معتبر نیست." }, { status: 422 });
+  const { entity, action, ids } = parsed.data;
+  const uniqueIds = [...new Set(ids)];
+  const permission = entity === "orders" ? "orders:manage" : entity === "users" ? "users:manage" : "catalog:manage";
+  if (!hasPermission(actor.role, permission)) return NextResponse.json({ message: "برای این عملیات دسترسی کافی ندارید." }, { status: 403 });
+
+  let updated = 0;
+  if (entity === "products") {
+    if (action.startsWith("status:")) {
+      const status = action.slice(7) as ProductStatus;
+      if (!productStatuses.has(status)) return NextResponse.json({ message: "وضعیت محصول معتبر نیست." }, { status: 422 });
+      updated = (await db.product.updateMany({ where: { id: { in: uniqueIds } }, data: { status } })).count;
+    } else if (action === "featured:on" || action === "featured:off") {
+      updated = (await db.product.updateMany({ where: { id: { in: uniqueIds } }, data: { featured: action === "featured:on" } })).count;
+    } else if (action.startsWith("category:")) {
+      const categoryId = action.slice(9);
+      if (categoryId !== "none" && !await db.category.findUnique({ where: { id: categoryId }, select: { id: true } })) return NextResponse.json({ message: "دسته‌بندی انتخاب‌شده پیدا نشد." }, { status: 404 });
+      updated = (await db.product.updateMany({ where: { id: { in: uniqueIds } }, data: { categoryId: categoryId === "none" ? null : categoryId } })).count;
+    } else return NextResponse.json({ message: "عملیات محصول معتبر نیست." }, { status: 422 });
+  } else if (entity === "categories") {
+    if (action === "active:on" || action === "active:off") updated = (await db.category.updateMany({ where: { id: { in: uniqueIds } }, data: { isActive: action === "active:on" } })).count;
+    else if (action === "featured:on" || action === "featured:off") updated = (await db.category.updateMany({ where: { id: { in: uniqueIds } }, data: { featured: action === "featured:on" } })).count;
+    else return NextResponse.json({ message: "عملیات دسته‌بندی معتبر نیست." }, { status: 422 });
+  } else if (entity === "orders") {
+    if (!action.startsWith("status:")) return NextResponse.json({ message: "عملیات سفارش معتبر نیست." }, { status: 422 });
+    const status = action.slice(7) as OrderStatus;
+    if (!orderStatuses.has(status)) return NextResponse.json({ message: "وضعیت سفارش معتبر نیست." }, { status: 422 });
+    const allowedCurrentStatuses: Partial<Record<OrderStatus, OrderStatus[]>> = { PROCESSING: ["PAID"], SHIPPED: ["PROCESSING"], DELIVERED: ["SHIPPED"], CANCELLED: ["PENDING_PAYMENT"] };
+    const allowed = allowedCurrentStatuses[status];
+    if (!allowed) return NextResponse.json({ message: "این وضعیت برای ویرایش سریع مجاز نیست." }, { status: 422 });
+    updated = (await db.order.updateMany({ where: { id: { in: uniqueIds }, status: { in: allowed } }, data: { status } })).count;
+  } else {
+    if (!action.startsWith("status:")) return NextResponse.json({ message: "عملیات کاربر معتبر نیست." }, { status: 422 });
+    const status = action.slice(7) as UserStatus;
+    if (!userStatuses.has(status)) return NextResponse.json({ message: "وضعیت کاربر معتبر نیست." }, { status: 422 });
+    updated = (await db.user.updateMany({ where: { id: { in: uniqueIds, not: actor.id }, role: { not: "ADMIN" } }, data: { status } })).count;
+  }
+
+  if (!updated) return NextResponse.json({ message: "هیچ‌کدام از موارد انتخاب‌شده شرایط این تغییر را ندارند." }, { status: 409 });
+  await db.auditLog.create({ data: { actorId: actor.id, action: "BULK_UPDATE", entityType: entity, metadata: { action, requestedIds: uniqueIds, updated } } });
+  return NextResponse.json({ updated });
+}

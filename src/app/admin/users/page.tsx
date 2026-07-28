@@ -9,6 +9,7 @@ import { AdminPagination } from "@/components/admin-pagination";
 import { parseAdminPagination, resolveAdminPagination } from "@/lib/admin-pagination";
 import { requirePermission } from "@/modules/auth/session";
 import { UserRoleSelect } from "@/components/user-role-select";
+import { AdminBulkCheckbox, AdminBulkEditor, AdminBulkSelectAll } from "@/components/admin-bulk-editor";
 import {
   Table,
   TableBody,
@@ -87,10 +88,11 @@ export default async function UsersPage({ searchParams }: { searchParams: Search
               })}
             </div>
 
-            <Table className="hidden md:block"><TableScrollContainer><TableContent aria-label="فهرست کاربران" className="w-full min-w-[860px]"><TableHeader>{["ردیف", "کاربر", "تماس", "نقش", "سفارش‌ها", "وضعیت", "عضویت"].map((head, index) => <TableColumn id={head} isRowHeader={index === 1} className="bg-slate-50/70 px-5 py-4 text-right text-xs font-bold text-slate-500" key={head}>{head}</TableColumn>)}</TableHeader><TableBody>{users.map((user: UserRow, index) => {
+            <AdminBulkEditor entity="users" entityLabel="کاربر" ids={users.filter((user) => user.id !== actor.id && user.role !== "ADMIN").map((user) => user.id)} actions={[{ value: "status:ACTIVE", label: "فعال‌کردن حساب‌ها" }, { value: "status:SUSPENDED", label: "تعلیق حساب‌ها" }]}><Table><TableScrollContainer><TableContent aria-label="فهرست کاربران" className="w-full min-w-[900px]"><TableHeader><TableColumn id="select" className="w-12 bg-slate-50/70 px-4 py-4 text-center"><AdminBulkSelectAll /></TableColumn>{["ردیف", "کاربر", "تماس", "نقش", "سفارش‌ها", "وضعیت", "عضویت"].map((head, index) => <TableColumn id={head} isRowHeader={index === 1} className="bg-slate-50/70 px-5 py-4 text-right text-xs font-bold text-slate-500" key={head}>{head}</TableColumn>)}</TableHeader><TableBody>{users.map((user: UserRow, index) => {
                   const fullName = `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim() || "کاربر بدون نام";
                   return (
                     <TableRow id={user.id} key={user.id} className="transition hover:bg-slate-50/60">
+                      <TableCell className={`${cell} w-12 text-center`}><AdminBulkCheckbox id={user.id} label={`انتخاب کاربر ${fullName}`} disabled={user.id === actor.id || user.role === "ADMIN"} /></TableCell>
                       <TableCell className={`${cell} w-16 font-bold text-slate-400`}>{(pagination.skip + index + 1).toLocaleString("fa-IR")}</TableCell>
                       <TableCell className={cell}><strong className="block text-slate-700">{fullName}</strong><span className="text-xs text-slate-400">{user.email}</span></TableCell>
                       <TableCell className={cell}><span dir="ltr">{user.phone ?? "—"}</span></TableCell>
@@ -100,7 +102,7 @@ export default async function UsersPage({ searchParams }: { searchParams: Search
                       <TableCell className={cell}>{formatDate(user.createdAt)}</TableCell>
                     </TableRow>
                   );
-                })}</TableBody></TableContent></TableScrollContainer></Table>
+                })}</TableBody></TableContent></TableScrollContainer></Table></AdminBulkEditor>
             <AdminPagination {...pagination} />
           </>
         )}
