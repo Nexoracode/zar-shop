@@ -96,7 +96,7 @@ export function ProductForm({ categories = [], product }: Props) {
       <div className="grid gap-5">
         <FormSection icon={<Images size={18} />} title="گالری محصول" description="اولین رسانه به‌عنوان تصویر اصلی محصول نمایش داده می‌شود.">
           {selectedMedia.length ? (
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-5">
               {selectedMedia.map((media, index) => (
                 <Card
                   key={media.id}
@@ -106,16 +106,16 @@ export function ProductForm({ categories = [], product }: Props) {
                   onDragOver={(event) => { event.preventDefault(); event.dataTransfer.dropEffect = "move"; }}
                   onDrop={(event) => { event.preventDefault(); moveMedia(media.id); setDraggedMediaId(null); }}
                   onDragEnd={() => setDraggedMediaId(null)}
-                  className={`group cursor-grab overflow-hidden rounded-2xl border bg-slate-50 transition active:cursor-grabbing ${draggedMediaId === media.id ? "scale-[0.98] border-[#b5904c] opacity-50" : "border-slate-200 hover:border-[#c9ad75]"}`}
+                  className={`group cursor-grab overflow-hidden rounded-lg border bg-white shadow-[0_2px_10px_rgba(15,23,42,0.04)] transition active:cursor-grabbing ${draggedMediaId === media.id ? "scale-[0.98] border-[#b5904c] opacity-50" : "border-slate-200 hover:border-[#c9ad75] hover:shadow-[0_5px_16px_rgba(15,23,42,0.08)]"}`}
                 >
                   <div className="relative aspect-square">
                     {media.type === "IMAGE" ? <Image src={media.url} alt={media.title} fill sizes="180px" className="pointer-events-none object-cover" /> : <video src={media.url} muted className="pointer-events-none h-full w-full bg-black object-cover" />}
-                    <span className={`absolute right-2 top-2 rounded-full px-2.5 py-1 text-[10px] font-bold text-white ${index === 0 ? "bg-[#b5904c]" : "bg-slate-900/70"}`}>{index === 0 ? "تصویر اصلی" : `ردیف ${(index + 1).toLocaleString("fa-IR")}`}</span>
-                    <span className="absolute left-2 top-2 grid h-8 w-8 place-items-center rounded-lg bg-white/95 text-slate-500 shadow" title="برای تغییر ترتیب بکشید"><GripVertical size={17} /></span>
+                    <span className={`absolute right-1.5 top-1.5 rounded-md px-2 py-0.5 text-[9px] font-bold text-white shadow-sm ${index === 0 ? "bg-[#b5904c]" : "bg-slate-900/70"}`}>{index === 0 ? "تصویر اصلی" : `ردیف ${(index + 1).toLocaleString("fa-IR")}`}</span>
+                    <span className="absolute left-1.5 top-1.5 grid h-7 w-7 place-items-center rounded-md bg-white/95 text-slate-500 shadow-sm" title="برای تغییر ترتیب بکشید"><GripVertical size={15} /></span>
                   </div>
-                  <div className="flex items-center justify-between gap-2 p-2.5">
-                    <span className="min-w-0 truncate text-[11px] font-bold text-slate-500">{media.title}</span>
-                    <Button type="button" size="sm" isIconOnly variant="danger-soft" onPress={() => setSelectedMedia((current) => current.filter((item) => item.id !== media.id))} className="h-8 min-h-8 w-8 min-w-8 shrink-0" aria-label={`حذف ${media.title} از محصول`}><Trash2 size={14} /></Button>
+                  <div className="flex h-9 items-center justify-between gap-1.5 border-t border-slate-100 px-2 py-1">
+                    <span className="min-w-0 truncate text-[10px] font-medium text-slate-500">{media.title}</span>
+                    <Button type="button" size="sm" isIconOnly variant="danger-soft" onPress={() => setSelectedMedia((current) => current.filter((item) => item.id !== media.id))} className="h-7 min-h-7 w-7 min-w-7 shrink-0 rounded-md" aria-label={`حذف ${media.title} از محصول`}><Trash2 size={13} /></Button>
                   </div>
                 </Card>
               ))}
