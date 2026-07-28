@@ -10,7 +10,7 @@ import { AdminListFilters } from "@/components/admin-list-filters";
 import { AdminPagination } from "@/components/admin-pagination";
 import { parseAdminPagination, resolveAdminPagination } from "@/lib/admin-pagination";
 import { requirePermission } from "@/modules/auth/session";
-import { AdminBulkCheckbox, AdminBulkEditor, AdminBulkSelectAll } from "@/components/admin-bulk-editor";
+import { AdminBulkCheckbox, AdminBulkEditor } from "@/components/admin-bulk-editor";
 import {
   Table,
   TableBody,
@@ -92,7 +92,7 @@ export default async function OrdersPage({ searchParams }: { searchParams: Searc
               })}
             </div>
 
-            <AdminBulkEditor entity="orders" entityLabel="سفارش" ids={orders.map((order) => order.id)} actions={[{ value: "status:PROCESSING", label: "شروع آماده‌سازی سفارش‌های پرداخت‌شده" }, { value: "status:SHIPPED", label: "ثبت ارسال سفارش‌های در حال آماده‌سازی" }, { value: "status:DELIVERED", label: "ثبت تحویل سفارش‌های ارسال‌شده" }, { value: "status:CANCELLED", label: "لغو سفارش‌های پرداخت‌نشده" }]}><Table><TableScrollContainer><TableContent aria-label="فهرست سفارش‌ها" className="w-full min-w-[940px]"><TableHeader><TableColumn id="select" className="w-12 bg-slate-50/70 px-4 py-4 text-center"><AdminBulkSelectAll /></TableColumn>{["ردیف", "شماره سفارش", "مشتری", "اقلام", "مبلغ", "وضعیت", "تاریخ", "جزئیات"].map((head, index) => <TableColumn id={head} isRowHeader={index === 1} className="bg-slate-50/70 px-5 py-4 text-right text-xs font-bold text-slate-500" key={head}>{head}</TableColumn>)}</TableHeader><TableBody>{orders.map((order: OrderRow, index) => {
+            <AdminBulkEditor entity="orders" entityLabel="سفارش" ids={orders.map((order) => order.id)} actions={[{ value: "status:PROCESSING", label: "شروع آماده‌سازی سفارش‌های پرداخت‌شده" }, { value: "status:SHIPPED", label: "ثبت ارسال سفارش‌های در حال آماده‌سازی" }, { value: "status:DELIVERED", label: "ثبت تحویل سفارش‌های ارسال‌شده" }, { value: "status:CANCELLED", label: "لغو سفارش‌های پرداخت‌نشده" }]}><Table><TableScrollContainer><TableContent aria-label="فهرست سفارش‌ها" className="w-full min-w-[940px]"><TableHeader><TableColumn id="select" className="w-12 bg-slate-50/70 px-4 py-4 text-center"><span className="sr-only">انتخاب</span></TableColumn>{["ردیف", "شماره سفارش", "مشتری", "اقلام", "مبلغ", "وضعیت", "تاریخ", "جزئیات"].map((head, index) => <TableColumn id={head} isRowHeader={index === 1} className="bg-slate-50/70 px-5 py-4 text-right text-xs font-bold text-slate-500" key={head}>{head}</TableColumn>)}</TableHeader><TableBody>{orders.map((order: OrderRow, index) => {
                   const customerName = `${order.user.firstName ?? ""} ${order.user.lastName ?? ""}`.trim() || "کاربر بدون نام";
                   return (
                     <TableRow id={order.id} key={order.id} className="transition hover:bg-slate-50/60">

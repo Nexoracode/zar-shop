@@ -10,7 +10,7 @@ import { AdminListFilters } from "@/components/admin-list-filters";
 import { AdminPagination } from "@/components/admin-pagination";
 import { parseAdminPagination, resolveAdminPagination } from "@/lib/admin-pagination";
 import { requirePermission } from "@/modules/auth/session";
-import { AdminBulkCheckbox, AdminBulkEditor, AdminBulkSelectAll } from "@/components/admin-bulk-editor";
+import { AdminBulkCheckbox, AdminBulkEditor } from "@/components/admin-bulk-editor";
 
 type Context = { searchParams: Promise<{ q?: string; status?: string; featured?: string; page?: string; pageSize?: string }> };
 type CategoryRow = Prisma.CategoryGetPayload<{ include: { image: true; parent: { select: { name: true } }; _count: { select: { products: true; children: true } } } }>;
@@ -49,7 +49,7 @@ export default async function CategoriesPage({ searchParams }: Context) {
 
         {categories.length ? <>
           <div className="grid gap-3 p-3 md:hidden">{categories.map((category) => <CategoryMobileCard key={category.id} category={category} />)}</div>
-          <AdminBulkEditor entity="categories" entityLabel="دسته‌بندی" ids={categories.map((category) => category.id)} actions={[{ value: "featured:on", label: "نمایش در صفحه اصلی" }, { value: "featured:off", label: "حذف از صفحه اصلی" }, { value: "active:on", label: "فعال‌کردن دسته‌بندی‌ها" }, { value: "active:off", label: "غیرفعال‌کردن دسته‌بندی‌ها" }]}><Table><TableScrollContainer><TableContent aria-label="فهرست دسته‌بندی‌ها" className="w-full min-w-[980px]"><TableHeader><TableColumn id="select" className="w-12 bg-white px-4 py-4 text-center"><AdminBulkSelectAll /></TableColumn>{["ردیف", "دسته‌بندی", "والد", "محصولات", "زیردسته‌ها", "ترتیب", "وضعیت", "عملیات"].map((head, index) => <TableColumn id={head} key={head} isRowHeader={index === 1} className="bg-white px-5 py-4 text-right text-xs font-bold text-slate-500">{head}</TableColumn>)}</TableHeader><TableBody>{categories.map((category, index) => <CategoryTableRow key={category.id} category={category} rowNumber={pagination.skip + index + 1} />)}</TableBody></TableContent></TableScrollContainer></Table></AdminBulkEditor>
+          <AdminBulkEditor entity="categories" entityLabel="دسته‌بندی" ids={categories.map((category) => category.id)} actions={[{ value: "featured:on", label: "نمایش در صفحه اصلی" }, { value: "featured:off", label: "حذف از صفحه اصلی" }, { value: "active:on", label: "فعال‌کردن دسته‌بندی‌ها" }, { value: "active:off", label: "غیرفعال‌کردن دسته‌بندی‌ها" }]}><Table><TableScrollContainer><TableContent aria-label="فهرست دسته‌بندی‌ها" className="w-full min-w-[980px]"><TableHeader><TableColumn id="select" className="w-12 bg-white px-4 py-4 text-center"><span className="sr-only">انتخاب</span></TableColumn>{["ردیف", "دسته‌بندی", "والد", "محصولات", "زیردسته‌ها", "ترتیب", "وضعیت", "عملیات"].map((head, index) => <TableColumn id={head} key={head} isRowHeader={index === 1} className="bg-white px-5 py-4 text-right text-xs font-bold text-slate-500">{head}</TableColumn>)}</TableHeader><TableBody>{categories.map((category, index) => <CategoryTableRow key={category.id} category={category} rowNumber={pagination.skip + index + 1} />)}</TableBody></TableContent></TableScrollContainer></Table></AdminBulkEditor>
           <AdminPagination {...pagination} />
         </> : <AdminEmptyState title="دسته‌بندی‌ای پیدا نشد" description="فیلترها را تغییر دهید یا اولین دسته فروشگاه را ثبت کنید." />}
       </AdminPanel>

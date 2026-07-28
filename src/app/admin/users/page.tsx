@@ -9,7 +9,7 @@ import { AdminPagination } from "@/components/admin-pagination";
 import { parseAdminPagination, resolveAdminPagination } from "@/lib/admin-pagination";
 import { requirePermission } from "@/modules/auth/session";
 import { UserRoleSelect } from "@/components/user-role-select";
-import { AdminBulkCheckbox, AdminBulkEditor, AdminBulkSelectAll } from "@/components/admin-bulk-editor";
+import { AdminBulkCheckbox, AdminBulkEditor } from "@/components/admin-bulk-editor";
 import {
   Table,
   TableBody,
@@ -88,7 +88,7 @@ export default async function UsersPage({ searchParams }: { searchParams: Search
               })}
             </div>
 
-            <AdminBulkEditor entity="users" entityLabel="کاربر" ids={users.filter((user) => user.id !== actor.id && user.role !== "ADMIN").map((user) => user.id)} actions={[{ value: "status:ACTIVE", label: "فعال‌کردن حساب‌ها" }, { value: "status:SUSPENDED", label: "تعلیق حساب‌ها" }]}><Table><TableScrollContainer><TableContent aria-label="فهرست کاربران" className="w-full min-w-[900px]"><TableHeader><TableColumn id="select" className="w-12 bg-slate-50/70 px-4 py-4 text-center"><AdminBulkSelectAll /></TableColumn>{["ردیف", "کاربر", "تماس", "نقش", "سفارش‌ها", "وضعیت", "عضویت"].map((head, index) => <TableColumn id={head} isRowHeader={index === 1} className="bg-slate-50/70 px-5 py-4 text-right text-xs font-bold text-slate-500" key={head}>{head}</TableColumn>)}</TableHeader><TableBody>{users.map((user: UserRow, index) => {
+            <AdminBulkEditor entity="users" entityLabel="کاربر" ids={users.filter((user) => user.id !== actor.id && user.role !== "ADMIN").map((user) => user.id)} actions={[{ value: "status:ACTIVE", label: "فعال‌کردن حساب‌ها" }, { value: "status:SUSPENDED", label: "تعلیق حساب‌ها" }]}><Table><TableScrollContainer><TableContent aria-label="فهرست کاربران" className="w-full min-w-[900px]"><TableHeader><TableColumn id="select" className="w-12 bg-slate-50/70 px-4 py-4 text-center"><span className="sr-only">انتخاب</span></TableColumn>{["ردیف", "کاربر", "تماس", "نقش", "سفارش‌ها", "وضعیت", "عضویت"].map((head, index) => <TableColumn id={head} isRowHeader={index === 1} className="bg-slate-50/70 px-5 py-4 text-right text-xs font-bold text-slate-500" key={head}>{head}</TableColumn>)}</TableHeader><TableBody>{users.map((user: UserRow, index) => {
                   const fullName = `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim() || "کاربر بدون نام";
                   return (
                     <TableRow id={user.id} key={user.id} className="transition hover:bg-slate-50/60">
