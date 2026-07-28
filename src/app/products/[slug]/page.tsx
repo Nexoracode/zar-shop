@@ -81,7 +81,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
             </strong>
             <AddToCart
               productId={product.id}
-              options={optionValues.map(({ option, values }) => ({ id: option.id, name: option.name, values: values.map((item) => ({ value: item.value, stock: item.stock ?? product.stock, color: item.colorId ? colorsById.get(item.colorId) ?? null : null })) }))}
+              options={optionValues.map(({ option, values }) => ({ id: option.id, name: option.name, values: values.map((item) => ({ value: item.value, stock: item.stock ?? product.stock, priceAdjustment: item.priceAdjustment, color: item.colorId ? colorsById.get(item.colorId) ?? null : null })) }))}
               optionGuide={product.optionGuide && product.optionGuide.type !== "VIDEO" ? { url: product.optionGuide.url, type: product.optionGuide.type, title: product.optionGuide.title ?? "راهنمای انتخاب محصول" } : null}
               disabled={product.stock < 1 || total === null}
               disabledLabel={product.stock < 1 ? "ناموجود" : "قیمت موقتاً نامشخص"}

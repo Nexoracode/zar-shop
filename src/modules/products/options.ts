@@ -2,18 +2,19 @@ import { createHash } from "node:crypto";
 
 type ProductOptionLike = { id: string; name: string; values: unknown };
 
-export type ProductOptionValue = { value: string; colorId: string | null; isActive: boolean; stock: number | null };
+export type ProductOptionValue = { value: string; colorId: string | null; isActive: boolean; stock: number | null; priceAdjustment: number };
 
 export function parseOptionValues(values: unknown): ProductOptionValue[] {
   if (!Array.isArray(values)) return [];
   return values.flatMap((item) => {
-    if (typeof item === "string") return [{ value: item, colorId: null, isActive: true, stock: null }];
+    if (typeof item === "string") return [{ value: item, colorId: null, isActive: true, stock: null, priceAdjustment: 0 }];
     if (!item || typeof item !== "object" || !("value" in item) || typeof item.value !== "string") return [];
     return [{
       value: item.value,
       colorId: "colorId" in item && typeof item.colorId === "string" ? item.colorId : null,
       isActive: !("isActive" in item) || item.isActive !== false,
       stock: "stock" in item && typeof item.stock === "number" && Number.isInteger(item.stock) && item.stock >= 0 ? item.stock : null,
+      priceAdjustment: "priceAdjustment" in item && typeof item.priceAdjustment === "number" && Number.isSafeInteger(item.priceAdjustment) && item.priceAdjustment >= 0 ? item.priceAdjustment : 0,
     }];
   });
 }
@@ -53,6 +54,14 @@ export function decrementSelectedOptionStocks(options: ProductOptionLike[], snap
       ? { ...item, stock: Math.max(0, (item.stock ?? fallbackStock) - quantity) }
       : item),
   }));
+}
+
+export function getOptionPriceAdjustment(options: ProductOptionLike[], snapshot: unknown) {
+  const selected = Object.fromEntries(optionEntries(snapshot));
+  return options.reduce((total, option) => {
+    const value = parseOptionValues(option.values).find((item) => item.value === selected[option.name]);
+    return total + (value?.priceAdjustment ?? 0);
+  }, 0);
 }
 
 export function mergeOptionsPreservingHistory(

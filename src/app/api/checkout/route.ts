@@ -6,7 +6,7 @@ import { apiError } from "@/lib/http";
 import { getCurrentUser } from "@/modules/auth/session";
 import { getGoldPrice } from "@/modules/gold/gold-price.service";
 import { calculateProductPrice } from "@/modules/products/pricing";
-import { isOptionSnapshotValid, optionEntries } from "@/modules/products/options";
+import { getOptionPriceAdjustment, isOptionSnapshotValid, optionEntries } from "@/modules/products/options";
 import { getPaymentProvider } from "@/modules/payments/payment-provider";
 import type { Prisma } from "@generated/prisma/client";
 
@@ -54,7 +54,7 @@ export async function POST(request: Request) {
         profitPercent: Number(p.profitPercent),
         taxPercent: Number(p.taxPercent),
       });
-      const unitPrice = p.fixedPrice ? Number(p.fixedPrice) : parts.total;
+      const unitPrice = (p.fixedPrice ? Number(p.fixedPrice) : parts.total) + getOptionPriceAdjustment(p.options, item.selectedOptions);
       return { item, p, parts, unitPrice, total: unitPrice * item.quantity };
     });
     const total = lines.reduce((sum: number, line: CheckoutLine) => sum + line.total, 0);

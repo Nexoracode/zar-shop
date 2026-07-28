@@ -7,6 +7,7 @@ const productOptionSchema = z.object({
     colorId: z.string().cuid().nullable().default(null),
     isActive: z.boolean().default(true),
     stock: z.coerce.number().int().nonnegative().nullable().default(null),
+    priceAdjustment: z.coerce.number().int().min(0).max(1_000_000_000_000_000).default(0),
   })).min(1).max(50).refine((values) => new Set(values.map((item) => item.value)).size === values.length, "مقدار تکراری در یک تنوع مجاز نیست."),
 }).superRefine((option, context) => {
   if (option.name.includes("رنگ") && option.values.some((item) => !item.colorId)) {

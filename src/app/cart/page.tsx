@@ -7,25 +7,26 @@ import { calculateProductPrice } from "@/modules/products/pricing";
 import { formatMoney } from "@/lib/format";
 import { CheckoutForm } from "@/components/checkout-form";
 import type { Prisma } from "@generated/prisma/client";
-import { optionEntries } from "@/modules/products/options";
+import { getOptionPriceAdjustment, optionEntries } from "@/modules/products/options";
 
-type CartItemRow = Prisma.CartItemGetPayload<{ include: { product: true } }>;
+type CartItemRow = Prisma.CartItemGetPayload<{ include: { product: { include: { options: true } } } }>;
 
 export const dynamic = "force-dynamic";
 
 export default async function CartPage() {
   const user = await requireUser();
   const [cart, gold] = await Promise.all([
-    db.cart.findUnique({ where: { userId: user.id }, include: { items: { include: { product: true } } } }),
+    db.cart.findUnique({ where: { userId: user.id }, include: { items: { include: { product: { include: { options: true } } } } } }),
     getGoldPriceForDisplay(),
   ]);
   const items = (cart?.items ?? []) as CartItemRow[];
   const rate = gold ? Number(gold.pricePerGram18) : null;
   const getItemAmount = (item: CartItemRow) => {
     const p = item.product;
-    if (p.fixedPrice) return Number(p.fixedPrice);
+    const optionAdjustment = getOptionPriceAdjustment(p.options, item.selectedOptions);
+    if (p.fixedPrice) return Number(p.fixedPrice) + optionAdjustment;
     if (rate === null) return null;
-    return calculateProductPrice({ goldPricePerGram18: rate, weightGrams: Number(p.weightGrams), purity: p.purity, makingFeeType: p.makingFeeType, makingFeeValue: Number(p.makingFeeValue), profitPercent: Number(p.profitPercent), taxPercent: Number(p.taxPercent) }).total;
+    return calculateProductPrice({ goldPricePerGram18: rate, weightGrams: Number(p.weightGrams), purity: p.purity, makingFeeType: p.makingFeeType, makingFeeValue: Number(p.makingFeeValue), profitPercent: Number(p.profitPercent), taxPercent: Number(p.taxPercent) }).total + optionAdjustment;
   };
   const itemAmounts = items.map(getItemAmount);
   const total = itemAmounts.some((amount) => amount === null)
