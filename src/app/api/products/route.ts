@@ -5,6 +5,7 @@ import { getCurrentUser } from "@/modules/auth/session";
 import { productSchema } from "@/modules/products/schemas";
 import { hasPermission } from "@/modules/auth/permissions";
 import { areOptionColorsValid } from "@/modules/products/color-validation";
+import { sanitizeProductDescription } from "@/modules/products/rich-text";
 
 export async function GET() {
   const products = await db.product.findMany({
@@ -30,7 +31,7 @@ export async function POST(request: Request) {
       if (!guide) return NextResponse.json({ message: "فایل راهنمای انتخاب باید تصویر یا PDF معتبر از گالری محصولات باشد." }, { status: 422 });
     }
     const product = await db.$transaction(async (tx) => {
-      const created = await tx.product.create({ data: { ...input, optionGuideId, options: { create: options.map((option, position) => ({ ...option, position })) } } });
+      const created = await tx.product.create({ data: { ...input, description: sanitizeProductDescription(input.description), optionGuideId, options: { create: options.map((option, position) => ({ ...option, position })) } } });
       if (mediaIds.length) await tx.productMedia.createMany({ data: mediaIds.map((mediaId, position) => ({ productId: created.id, mediaId, position, isCover: position === 0 })) });
       await tx.auditLog.create({ data: { actorId: actor.id, action: "PRODUCT_CREATE", entityType: "Product", entityId: created.id } });
       return tx.product.findUniqueOrThrow({ where: { id: created.id }, include: { media: { include: { media: true }, orderBy: { position: "asc" } }, category: true, options: { orderBy: { position: "asc" } }, optionGuide: true } });

@@ -8,6 +8,7 @@ import { formatMoney } from "@/lib/format";
 import { getGoldPriceForDisplay } from "@/modules/gold/gold-price.service";
 import { calculateProductPrice } from "@/modules/products/pricing";
 import { parseOptionValues } from "@/modules/products/options";
+import { sanitizeProductDescription } from "@/modules/products/rich-text";
 
 export const dynamic = "force-dynamic";
 
@@ -51,7 +52,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
             {product.category?.name ?? "مجموعه طلا"}
           </span>
           <h1 className="mt-[5px] mb-[14px] text-[clamp(2.2rem,4vw,3.5rem)] leading-[1.3] font-medium">{product.name}</h1>
-          <p className="text-[#747982]">{product.description ?? "طراحی اصیل و ظریف، همراه با فاکتور رسمی و تضمین اصالت زر گالری."}</p>
+          <div className="rich-text-content text-[#747982]" dangerouslySetInnerHTML={{ __html: sanitizeProductDescription(product.description || "<p>طراحی اصیل و ظریف، همراه با فاکتور رسمی و تضمین اصالت زر گالری.</p>") }} />
 
           {/* Specs */}
           <div className="my-[30px] grid grid-cols-3 border-y border-[#e7e6e2]">

@@ -5,6 +5,7 @@ import { getCurrentUser } from "@/modules/auth/session";
 import { productSchema } from "@/modules/products/schemas";
 import { hasPermission } from "@/modules/auth/permissions";
 import { areOptionColorsValid } from "@/modules/products/color-validation";
+import { sanitizeProductDescription } from "@/modules/products/rich-text";
 
 type Context = { params: Promise<{ id: string }> };
 
@@ -24,7 +25,7 @@ export async function PATCH(request: Request, context: Context) {
       if (!guide) return NextResponse.json({ message: "فایل راهنمای انتخاب باید تصویر یا PDF معتبر از گالری محصولات باشد." }, { status: 422 });
     }
     const product = await db.$transaction(async (tx) => {
-      await tx.product.update({ where: { id }, data: { ...input, ...(optionGuideId !== undefined ? { optionGuideId } : {}) } });
+      await tx.product.update({ where: { id }, data: { ...input, ...(input.description !== undefined ? { description: sanitizeProductDescription(input.description) } : {}), ...(optionGuideId !== undefined ? { optionGuideId } : {}) } });
       if (mediaIds) {
         await tx.productMedia.deleteMany({ where: { productId: id } });
         if (mediaIds.length) await tx.productMedia.createMany({ data: mediaIds.map((mediaId, position) => ({ productId: id, mediaId, position, isCover: position === 0 })) });

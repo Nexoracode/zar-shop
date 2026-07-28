@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState, type FormEvent, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import { Alert, Button, Card, Input, TextArea, toast } from "@heroui/react";
+import { Alert, Button, Card, Input, toast } from "@heroui/react";
 import { ChevronRight, FileText, GripVertical, Images, Info, PackageCheck, Plus, Ruler, Save, Sparkles, Tag, Trash2, X } from "lucide-react";
 import { MediaPickerDialog } from "@/components/media-picker-dialog";
 import type { MediaChoice } from "@/components/media-library";
@@ -13,6 +13,7 @@ import { HeroSelectField } from "@/components/hero-select-field";
 import { AdminCheckbox } from "@/components/admin-checkbox";
 import { apiErrorMessage, validationErrorMessage } from "@/lib/form-errors";
 import { productSchema } from "@/modules/products/schemas";
+import { RichTextEditor } from "@/components/rich-text-editor";
 
 type EditableProduct = {
   id: string; sku: string; name: string; slug: string; description: string; categoryId: string; purity: number; weightGrams: number;
@@ -51,6 +52,7 @@ export function ProductForm({ categories = [], colors = [], product }: Props) {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [optionGuidePickerOpen, setOptionGuidePickerOpen] = useState(false);
   const [optionGuide, setOptionGuide] = useState<MediaChoice | null>(product?.optionGuide ?? null);
+  const [description, setDescription] = useState(product?.description ?? "");
   const [options, setOptions] = useState<DraftOption[]>(() => product?.options.map((option, index) => ({ key: `existing-${index}`, ...option, valueInput: "" })) ?? []);
   const [draggedOptionKey, setDraggedOptionKey] = useState<string | null>(null);
   const [draggedMediaId, setDraggedMediaId] = useState<string | null>(null);
@@ -130,7 +132,7 @@ export function ProductForm({ categories = [], colors = [], product }: Props) {
       return { name: option.name, values: !option.name.includes("رنگ") && pendingValue && !option.values.some((item) => item.value === pendingValue) ? [...option.values, { value: pendingValue, colorId: null }] : option.values };
     });
     const body = {
-      sku: form.get("sku"), name: form.get("name"), slug: form.get("slug"), description: form.get("description"), categoryId: form.get("categoryId") || null,
+      sku: form.get("sku"), name: form.get("name"), slug: form.get("slug"), description, categoryId: form.get("categoryId") || null,
       purity: Number(form.get("purity")), weightGrams: Number(form.get("weightGrams")), makingFeeType: form.get("makingFeeType"), makingFeeValue: Number(form.get("makingFeeValue")),
       profitPercent: Number(form.get("profitPercent")), taxPercent: Number(form.get("taxPercent")), stock: Number(form.get("stock")), status: form.get("status"),
       featured: form.get("featured") === "on", mediaIds: selectedMedia.map((media) => media.id), options: submittedOptions, optionGuideId: optionGuide?.id ?? null,
@@ -190,7 +192,7 @@ export function ProductForm({ categories = [], colors = [], product }: Props) {
         <FormSection icon={<Info size={18} />} title="اطلاعات پایه" description="مشخصات اصلی که در صفحه محصول نمایش داده می‌شود.">
           <div className="grid gap-4 sm:grid-cols-2"><Field label="نام محصول"><Input name="name" required fullWidth variant="secondary" defaultValue={product?.name} className={adminFieldClass} /></Field><Field label="کد کالا"><Input name="sku" dir="ltr" required fullWidth variant="secondary" defaultValue={product?.sku} className={inputClass} /></Field></div>
           <div className="mt-4 grid gap-4 sm:grid-cols-2"><Field label="نشانی انگلیسی"><Input name="slug" dir="ltr" pattern="[a-z0-9-]+" required fullWidth variant="secondary" defaultValue={product?.slug} placeholder="minimal-gold-ring" className={inputClass} /></Field><HeroSelectField name="categoryId" label="دسته‌بندی" defaultValue={product?.categoryId ?? ""} options={[{ value: "", label: "بدون دسته‌بندی" }, ...categories.map((category) => ({ value: category.id, label: `${category.parentName ? `${category.parentName} ← ` : ""}${category.name}` }))]} /></div>
-          <label className={`${adminLabelClass} mt-4`}>توضیحات محصول<TextArea name="description" rows={6} fullWidth variant="secondary" defaultValue={product?.description} className={adminFieldClass} /></label>
+          <div className={`${adminLabelClass} mt-4`}>توضیحات محصول<RichTextEditor value={product?.description} onChange={setDescription} /></div>
         </FormSection>
 
         <FormSection icon={<Ruler size={18} />} title="تنوع‌های محصول" description="هر نوع ویژگی قابل انتخاب مثل سایز، رنگ، طول یا نوع قفل را تعریف کنید.">

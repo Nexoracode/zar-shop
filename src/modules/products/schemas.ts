@@ -16,7 +16,7 @@ export const productSchema = z.object({
   sku: z.string().trim().min(2).max(80),
   name: z.string().trim().min(2).max(191),
   slug: z.string().trim().min(2).max(191).regex(/^[a-z0-9-]+$/),
-  description: z.string().max(10000).optional(),
+  description: z.string().max(200000).optional(),
   categoryId: z.string().cuid().nullable().optional(),
   purity: z.coerce.number().int().min(1).max(999).default(750),
   weightGrams: z.coerce.number().positive().max(100000),
