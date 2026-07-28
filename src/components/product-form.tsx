@@ -72,6 +72,13 @@ export function ProductForm({ categories = [], product }: Props) {
     setOptions((current) => current.map((option) => option.key === key ? { ...option, ...update } : option));
   }
 
+  function addOptionGroup() {
+    setOptions((current) => {
+      if (current.length >= 10) return current;
+      return [...current, { key: `option-${Date.now()}-${Math.random().toString(36).slice(2)}`, name: "", values: [], valueInput: "" }];
+    });
+  }
+
   function addOptionValue(key: string) {
     setOptions((current) => current.map((option) => {
       if (option.key !== key) return option;
@@ -170,10 +177,11 @@ export function ProductForm({ categories = [], product }: Props) {
             <div className="grid gap-3">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div><strong className="text-sm text-slate-700">گروه‌های تنوع</strong><p className="mt-1 text-xs text-slate-400">مشتری باید از هر گروه یک مقدار انتخاب کند.</p></div>
-                <Button type="button" variant="secondary" onPress={() => setOptions((current) => [...current, { key: crypto.randomUUID(), name: "", values: [], valueInput: "" }])} className="min-h-10 gap-1 border border-[#d8c29a] bg-[#fbf7ef] px-4 text-xs font-bold text-[#846325]"><Plus size={15} />افزودن نوع تنوع</Button>
+                <Button type="button" variant="secondary" isDisabled={options.length >= 10} onPress={addOptionGroup} className="min-h-10 gap-1 border border-[#d8c29a] bg-[#fbf7ef] px-4 text-xs font-bold text-[#846325]"><Plus size={15} />افزودن نوع تنوع</Button>
               </div>
-              {options.length ? options.map((option, optionIndex) => (
+              {options.length ? <>{options.map((option, optionIndex) => (
                 <div key={option.key} draggable onDragStart={() => setDraggedOptionKey(option.key)} onDragOver={(event) => event.preventDefault()} onDrop={() => { moveOption(option.key); setDraggedOptionKey(null); }} onDragEnd={() => setDraggedOptionKey(null)} className={`rounded-xl border bg-white p-3 shadow-sm ${draggedOptionKey === option.key ? "border-[#b5904c] opacity-50" : "border-slate-200"}`}>
+                  <div className="mb-2 flex items-center justify-between gap-2"><span className="rounded-md bg-[#f4ead8] px-2 py-1 text-[11px] font-black text-[#785b27]">تنوع {(optionIndex + 1).toLocaleString("fa-IR")}</span><span className="text-[11px] text-slate-400">{option.values.length.toLocaleString("fa-IR")} مقدار ثبت‌شده</span></div>
                   <div className="mb-3 flex items-end gap-2">
                     <GripVertical size={17} className="mb-3 shrink-0 cursor-grab text-slate-400" />
                     <label className={`${adminLabelClass} min-w-0 flex-1`}>عنوان تنوع<Input value={option.name} onChange={(event) => updateOption(option.key, { name: event.target.value })} fullWidth variant="secondary" placeholder="مثلاً سایز، رنگ یا طول زنجیر" className={adminFieldClass} /></label>
@@ -184,7 +192,7 @@ export function ProductForm({ categories = [], product }: Props) {
                   </label>
                   {option.values.length ? <div className="mt-3 flex flex-wrap gap-2">{option.values.map((value) => <span key={value} className="inline-flex min-h-9 items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-2.5 text-xs font-bold text-slate-700">{value}<Button type="button" size="sm" isIconOnly variant="ghost" onPress={() => updateOption(option.key, { values: option.values.filter((item) => item !== value) })} className="h-6 min-h-6 w-6 min-w-6 text-slate-400 hover:text-[#d31736]" aria-label={`حذف مقدار ${value}`}><X size={13} /></Button></span>)}</div> : <p className="mt-2 text-xs text-amber-700">حداقل یک مقدار برای این تنوع اضافه کنید.</p>}
                 </div>
-              )) : <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-5 text-center text-xs leading-6 text-slate-500">اگر محصول تنوع ندارد، این بخش را خالی بگذارید. برای محصولاتی مثل دستبند، انگشتر یا زنجیر می‌توانید هر تعداد گروه موردنیاز تعریف کنید.</div>}
+              ))}<Button type="button" variant="secondary" isDisabled={options.length >= 10} onPress={addOptionGroup} className="min-h-11 w-full gap-2 border-2 border-dashed border-[#d8c29a] bg-[#fffcf6] text-sm font-bold text-[#846325]"><Plus size={16} />{options.length >= 10 ? "حداکثر ۱۰ تنوع ثبت شده است" : "افزودن تنوع دیگر"}</Button></> : <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-5 text-center text-xs leading-6 text-slate-500">اگر محصول تنوع ندارد، این بخش را خالی بگذارید. برای محصولات مختلف می‌توانید هم‌زمان گروه‌هایی مثل سایز، رنگ، طول و نوع قفل تعریف کنید.</div>}
             </div>
             <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
               <div className="mb-3 flex items-center justify-between gap-2"><strong className="text-xs text-slate-700">راهنمای انتخاب</strong>{optionGuide && <Button type="button" size="sm" isIconOnly variant="ghost" onPress={() => setOptionGuide(null)} className="h-7 min-h-7 w-7 min-w-7 text-slate-400 hover:text-[#d31736]" aria-label="حذف راهنمای انتخاب"><Trash2 size={14} /></Button>}</div>
