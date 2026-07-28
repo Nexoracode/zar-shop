@@ -6,7 +6,7 @@ import { Button, toast } from "@heroui/react";
 import { Trash2 } from "lucide-react";
 import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
 
-export function CategoryDeleteButton({ id, name, disabled }: { id: string; name: string; disabled: boolean }) {
+export function CategoryDeleteButton({ id, name, disabled, iconOnly = false }: { id: string; name: string; disabled: boolean; iconOnly?: boolean }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -32,8 +32,8 @@ export function CategoryDeleteButton({ id, name, disabled }: { id: string; name:
 
   return (
     <>
-      <Button type="button" size="sm" variant="danger-soft" isDisabled={disabled || loading} onPress={() => { setError(""); setOpen(true); }} className="min-h-9 gap-1 px-3 text-xs font-bold">
-        <Trash2 size={14} />حذف
+      <Button type="button" size="sm" variant="danger-soft" isIconOnly={iconOnly} aria-label={`حذف دسته‌بندی ${name}`} isDisabled={disabled || loading} onPress={() => { setError(""); setOpen(true); }} className={iconOnly ? "h-9 min-h-9 w-9 min-w-9 rounded-lg" : "min-h-9 gap-1 px-3 text-xs font-bold"}>
+        <Trash2 size={14} />{iconOnly ? null : "حذف"}
       </Button>
       <DeleteConfirmDialog
         open={open}

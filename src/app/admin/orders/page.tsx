@@ -102,7 +102,7 @@ export default async function OrdersPage({ searchParams }: { searchParams: Searc
                       <TableCell className={cell}><strong className="text-slate-700">{formatMoney(order.total.toString())}</strong></TableCell>
                       <TableCell className={cell}><AdminStatusBadge tone={orderStatusTones[order.status]}>{orderStatusLabels[order.status]}</AdminStatusBadge></TableCell>
                       <TableCell className={cell}>{formatDate(order.createdAt)}</TableCell>
-                      <TableCell className={cell}><Link href={`/admin/orders/${order.id}`} aria-label={`مشاهده جزئیات سفارش ${order.orderNumber}`} className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-slate-200 px-3 text-xs font-bold text-[#172b4d] transition hover:border-[#b5904c] hover:text-[#846325]"><Eye size={14} />مشاهده</Link></TableCell>
+                      <TableCell className={cell}><Link href={`/admin/orders/${order.id}`} aria-label={`مشاهده جزئیات سفارش ${order.orderNumber}`} title="مشاهده جزئیات" className="inline-flex h-9 min-h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-[#172b4d] transition hover:border-[#b5904c] hover:text-[#846325]"><Eye size={15} /></Link></TableCell>
                     </TableRow>
                   );
                 })}</TableBody></TableContent></TableScrollContainer></Table>
