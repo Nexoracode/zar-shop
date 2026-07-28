@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import { Button, toast } from "@heroui/react";
+import { toast } from "@heroui/react";
 import { CheckSquare, Loader2 } from "lucide-react";
 import { HeroSelectField, type HeroSelectOption } from "@/components/hero-select-field";
 
@@ -38,20 +38,20 @@ export function AdminBulkEditor({ entity, entityLabel, ids, actions, children }:
     toggleAll: () => setSelected(allSelected ? new Set() : new Set(ids)),
   }), [allSelected, ids, partiallySelected, selected]);
 
-  async function apply() {
-    if (!selected.size || !action || loading) return;
+  async function apply(selectedAction: string) {
+    if (!selected.size || !selectedAction || loading) return;
     setLoading(true);
     try {
-      const response = await fetch("/api/admin/bulk", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ entity, action, ids: [...selected] }) });
+      const response = await fetch("/api/admin/bulk", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ entity, action: selectedAction, ids: [...selected] }) });
       const result = await response.json().catch(() => null);
       if (!response.ok) throw new Error(result?.message ?? "ویرایش گروهی انجام نشد.");
       toast.success("ویرایش گروهی انجام شد", { description: `${Number(result?.updated ?? selected.size).toLocaleString("fa-IR")} ${entityLabel} با موفقیت به‌روزرسانی شد.`, timeout: 4000 });
       setSelected(new Set());
-      setAction("");
       router.refresh();
     } catch (reason) {
       toast.danger("ویرایش گروهی انجام نشد", { description: reason instanceof Error ? reason.message : "ارتباط با سرور برقرار نشد.", timeout: 5000 });
     } finally {
+      setAction("");
       setLoading(false);
     }
   }
@@ -60,9 +60,8 @@ export function AdminBulkEditor({ entity, entityLabel, ids, actions, children }:
     <BulkContext.Provider value={value}>
       <div className="hidden md:block">
         <div className="flex flex-wrap items-end gap-3 border-b border-slate-100 bg-white px-4 py-3">
-          <div className="ml-auto flex min-h-10 items-center gap-2 text-xs font-bold text-slate-600"><CheckSquare size={17} className="text-[#9a7434]" />{selected.size ? `${selected.size.toLocaleString("fa-IR")} ${entityLabel} انتخاب شده` : `برای ویرایش سریع، ${entityLabel} را انتخاب کنید`}</div>
-          <HeroSelectField name={`${entity}-bulk-action`} label="ویرایش سریع" value={action} onValueChange={setAction} options={[{ value: "", label: "انتخاب عملیات" }, ...actions]} className="w-64" />
-          <Button type="button" variant="primary" isDisabled={!selected.size || !action || loading} onPress={() => void apply()} className="min-h-10 gap-2 bg-[#172b4d] px-4 text-xs font-bold text-white">{loading ? <Loader2 size={15} className="animate-spin" /> : <CheckSquare size={15} />}اعمال تغییر</Button>
+          <div className="ml-auto flex min-h-10 items-center gap-2 text-xs font-bold text-slate-600">{loading ? <Loader2 size={17} className="animate-spin text-[#9a7434]" /> : <CheckSquare size={17} className="text-[#9a7434]" />}{loading ? "در حال اعمال تغییر..." : selected.size ? `${selected.size.toLocaleString("fa-IR")} ${entityLabel} انتخاب شده` : `برای ویرایش سریع، ${entityLabel} را انتخاب کنید`}</div>
+          <HeroSelectField name={`${entity}-bulk-action`} label="ویرایش سریع" value={action} disabled={!selected.size || loading} onValueChange={(value) => { setAction(value); if (value) void apply(value); }} options={[{ value: "", label: "انتخاب عملیات؛ اعمال خودکار" }, ...actions]} className="w-72" />
         </div>
         {children}
       </div>
