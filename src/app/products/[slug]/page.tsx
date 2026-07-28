@@ -20,7 +20,9 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   ]);
   if (!product) notFound();
 
-  const optionValues = product.options.map((option) => ({ option, values: parseOptionValues(option.values) }));
+  const optionValues = product.options
+    .map((option) => ({ option, values: parseOptionValues(option.values).filter((item) => item.isActive) }))
+    .filter(({ values }) => values.length > 0);
   const colorIds = [...new Set(optionValues.flatMap(({ values }) => values.flatMap((item) => item.colorId ? [item.colorId] : [])))];
   const colors = colorIds.length ? await db.color.findMany({ where: { id: { in: colorIds }, isActive: true }, select: { id: true, name: true, hex: true } }) : [];
   const colorsById = new Map(colors.map((color) => [color.id, color]));
@@ -79,7 +81,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
             </strong>
             <AddToCart
               productId={product.id}
-              options={optionValues.map(({ option, values }) => ({ id: option.id, name: option.name, values: values.map((item) => ({ value: item.value, color: item.colorId ? colorsById.get(item.colorId) ?? null : null })) }))}
+              options={optionValues.map(({ option, values }) => ({ id: option.id, name: option.name, values: values.map((item) => ({ value: item.value, stock: item.stock ?? product.stock, color: item.colorId ? colorsById.get(item.colorId) ?? null : null })) }))}
               optionGuide={product.optionGuide && product.optionGuide.type !== "VIDEO" ? { url: product.optionGuide.url, type: product.optionGuide.type, title: product.optionGuide.title ?? "راهنمای انتخاب محصول" } : null}
               disabled={product.stock < 1 || total === null}
               disabledLabel={product.stock < 1 ? "ناموجود" : "قیمت موقتاً نامشخص"}

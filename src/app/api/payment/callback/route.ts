@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { env } from "@/lib/env";
 import { getPaymentProvider } from "@/modules/payments/payment-provider";
+import { decrementSelectedOptionStocks } from "@/modules/products/options";
 import type { PrismaClient } from "@generated/prisma/client";
 
 export async function GET(request: Request) {
@@ -30,6 +31,12 @@ export async function GET(request: Request) {
       await transaction.order.update({ where: { id: payment.orderId }, data: { status: "PAID" } });
       for (const item of payment.order.items) {
         if (item.productId) {
+          const currentProduct = await transaction.product.findUnique({ where: { id: item.productId }, include: { options: true } });
+          if (!currentProduct) continue;
+          const updatedOptions = decrementSelectedOptionStocks(currentProduct.options, item.selectedOptions, item.quantity, currentProduct.stock);
+          for (const option of updatedOptions) {
+            await transaction.productOption.update({ where: { id: option.id }, data: { values: option.values } });
+          }
           await transaction.product.update({
             where: { id: item.productId },
             data: { stock: { decrement: item.quantity } },

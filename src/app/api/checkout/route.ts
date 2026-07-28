@@ -44,7 +44,7 @@ export async function POST(request: Request) {
     const lines: CheckoutLine[] = cart.items.map((item: ItemWithProduct) => {
       const p = item.product;
       if (p.status !== "ACTIVE" || p.stock < item.quantity) throw new Error(`موجودی ${p.name} کافی نیست.`);
-      if (!isOptionSnapshotValid(p.options, item.selectedOptions)) throw new Error(`تنوع انتخاب‌شده برای ${p.name} دیگر معتبر نیست.`);
+      if (!isOptionSnapshotValid(p.options, item.selectedOptions, item.quantity, p.stock)) throw new Error(`تنوع انتخاب‌شده برای ${p.name} غیرفعال یا ناموجود است.`);
       const parts = calculateProductPrice({
         goldPricePerGram18: rate,
         weightGrams: Number(p.weightGrams),

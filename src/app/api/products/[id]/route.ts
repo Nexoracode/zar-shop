@@ -6,6 +6,7 @@ import { productSchema } from "@/modules/products/schemas";
 import { hasPermission } from "@/modules/auth/permissions";
 import { areOptionColorsValid } from "@/modules/products/color-validation";
 import { sanitizeProductDescription } from "@/modules/products/rich-text";
+import { mergeOptionsPreservingHistory } from "@/modules/products/options";
 
 type Context = { params: Promise<{ id: string }> };
 
@@ -31,8 +32,10 @@ export async function PATCH(request: Request, context: Context) {
         if (mediaIds.length) await tx.productMedia.createMany({ data: mediaIds.map((mediaId, position) => ({ productId: id, mediaId, position, isCover: position === 0 })) });
       }
       if (options) {
+        const existingOptions = await tx.productOption.findMany({ where: { productId: id }, select: { name: true, values: true } });
+        const safeOptions = mergeOptionsPreservingHistory(existingOptions, options);
         await tx.productOption.deleteMany({ where: { productId: id } });
-        if (options.length) await tx.productOption.createMany({ data: options.map((option, position) => ({ productId: id, ...option, position })) });
+        if (safeOptions.length) await tx.productOption.createMany({ data: safeOptions.map((option, position) => ({ productId: id, ...option, position })) });
       }
       await tx.auditLog.create({ data: { actorId: actor.id, action: "PRODUCT_UPDATE", entityType: "Product", entityId: id } });
       return tx.product.findUniqueOrThrow({ where: { id }, include: { media: { include: { media: true }, orderBy: { position: "asc" } }, category: true, options: { orderBy: { position: "asc" } }, optionGuide: true } });

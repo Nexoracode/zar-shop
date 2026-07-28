@@ -5,6 +5,8 @@ const productOptionSchema = z.object({
   values: z.array(z.object({
     value: z.string().trim().min(1).max(80),
     colorId: z.string().cuid().nullable().default(null),
+    isActive: z.boolean().default(true),
+    stock: z.coerce.number().int().nonnegative().nullable().default(null),
   })).min(1).max(50).refine((values) => new Set(values.map((item) => item.value)).size === values.length, "مقدار تکراری در یک تنوع مجاز نیست."),
 }).superRefine((option, context) => {
   if (option.name.includes("رنگ") && option.values.some((item) => !item.colorId)) {
