@@ -7,7 +7,7 @@ import { Check, FileText, Film, ImageIcon, RefreshCw, Search, Trash2, Upload, X 
 import type { MediaChoice, MediaScope } from "@/components/media-library";
 import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
 
-type PickerItem = MediaChoice & { _count: { products: number; sizeGuideProducts: number; categories: number } };
+type PickerItem = MediaChoice & { _count: { products: number; optionGuideProducts: number; categories: number } };
 type Props = { open: boolean; scope: MediaScope; multiple?: boolean; allowedTypes?: MediaChoice["type"][]; selected: MediaChoice[]; onClose: () => void; onConfirm: (items: MediaChoice[]) => void };
 
 export function MediaPickerDialog({ open, scope, multiple = false, allowedTypes, selected, onClose, onConfirm }: Props) {
@@ -92,7 +92,7 @@ export function MediaPickerDialog({ open, scope, multiple = false, allowedTypes,
   }
 
   async function remove(item: PickerItem) {
-    const usage = item._count.products + item._count.sizeGuideProducts + item._count.categories;
+    const usage = item._count.products + item._count.optionGuideProducts + item._count.categories;
     if (usage) {
       setError("این رسانه در حال استفاده است؛ ابتدا آن را از محصول یا دسته‌بندی مربوط جدا کنید.");
       return;
@@ -166,7 +166,7 @@ export function MediaPickerDialog({ open, scope, multiple = false, allowedTypes,
                   <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
                     {visibleItems.map((item) => {
                       const chosenIndex = draft.findIndex((chosen) => chosen.id === item.id);
-                      const usage = item._count.products + item._count.sizeGuideProducts + item._count.categories;
+                      const usage = item._count.products + item._count.optionGuideProducts + item._count.categories;
                       const chosen = chosenIndex >= 0;
                       return (
                         <Card key={item.id} variant="secondary" className={`group relative min-w-0 overflow-hidden rounded-2xl border-2 bg-white shadow-sm transition ${chosen ? "border-[#b5904c] ring-2 ring-[#b5904c]/15" : "border-transparent hover:border-slate-300 hover:shadow-md"}`}>

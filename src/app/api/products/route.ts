@@ -8,7 +8,7 @@ import { hasPermission } from "@/modules/auth/permissions";
 export async function GET() {
   const products = await db.product.findMany({
     where: { status: "ACTIVE" },
-    include: { media: { include: { media: true }, orderBy: { position: "asc" } }, category: true, sizes: { orderBy: { position: "asc" } }, sizeGuide: true },
+    include: { media: { include: { media: true }, orderBy: { position: "asc" } }, category: true, options: { orderBy: { position: "asc" } }, optionGuide: true },
     orderBy: { createdAt: "desc" },
   });
   return NextResponse.json(products);
@@ -20,18 +20,18 @@ export async function POST(request: Request) {
     if (!actor || !hasPermission(actor.role, "catalog:manage")) {
       return NextResponse.json({ message: "دسترسی غیرمجاز است." }, { status: 403 });
     }
-    const { mediaIds, sizes, sizeGuideId, ...input } = productSchema.parse(await request.json());
+    const { mediaIds, options, optionGuideId, ...input } = productSchema.parse(await request.json());
     const media = mediaIds.length ? await db.mediaAsset.findMany({ where: { id: { in: mediaIds }, scope: "PRODUCT", type: { in: ["IMAGE", "VIDEO"] } }, select: { id: true } }) : [];
     if (media.length !== new Set(mediaIds).size) return NextResponse.json({ message: "یک یا چند رسانه محصول معتبر نیست." }, { status: 422 });
-    if (sizeGuideId) {
-      const guide = await db.mediaAsset.findFirst({ where: { id: sizeGuideId, scope: "PRODUCT", type: { in: ["IMAGE", "DOCUMENT"] } }, select: { id: true } });
-      if (!guide) return NextResponse.json({ message: "فایل راهنمای سایز باید تصویر یا PDF معتبر از گالری محصولات باشد." }, { status: 422 });
+    if (optionGuideId) {
+      const guide = await db.mediaAsset.findFirst({ where: { id: optionGuideId, scope: "PRODUCT", type: { in: ["IMAGE", "DOCUMENT"] } }, select: { id: true } });
+      if (!guide) return NextResponse.json({ message: "فایل راهنمای انتخاب باید تصویر یا PDF معتبر از گالری محصولات باشد." }, { status: 422 });
     }
     const product = await db.$transaction(async (tx) => {
-      const created = await tx.product.create({ data: { ...input, sizeGuideId, sizes: { create: sizes.map((label, position) => ({ label, position })) } } });
+      const created = await tx.product.create({ data: { ...input, optionGuideId, options: { create: options.map((option, position) => ({ ...option, position })) } } });
       if (mediaIds.length) await tx.productMedia.createMany({ data: mediaIds.map((mediaId, position) => ({ productId: created.id, mediaId, position, isCover: position === 0 })) });
       await tx.auditLog.create({ data: { actorId: actor.id, action: "PRODUCT_CREATE", entityType: "Product", entityId: created.id } });
-      return tx.product.findUniqueOrThrow({ where: { id: created.id }, include: { media: { include: { media: true }, orderBy: { position: "asc" } }, category: true, sizes: { orderBy: { position: "asc" } }, sizeGuide: true } });
+      return tx.product.findUniqueOrThrow({ where: { id: created.id }, include: { media: { include: { media: true }, orderBy: { position: "asc" } }, category: true, options: { orderBy: { position: "asc" } }, optionGuide: true } });
     });
     return NextResponse.json(product, { status: 201 });
   } catch (error) { return apiError(error); }

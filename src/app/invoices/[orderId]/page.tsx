@@ -5,6 +5,7 @@ import { db } from "@/lib/db";
 import { formatDate, formatDateTime, formatMoney } from "@/lib/format";
 import { hasPermission } from "@/modules/auth/permissions";
 import { requireUser } from "@/modules/auth/session";
+import { optionEntries } from "@/modules/products/options";
 
 type InvoiceOrder = Prisma.OrderGetPayload<{ include: { invoice: true; items: true; payments: true; user: true } }>;
 type JsonRecord = Record<string, Prisma.JsonValue>;
@@ -87,7 +88,7 @@ export default async function InvoicePage({ params }: { params: Promise<{ orderI
               {order.items.map((item, index) => (
                 <tr key={item.id}>
                   <td className={cell}>{(index + 1).toLocaleString("fa-IR")}</td>
-                  <td className={`${cell} text-right font-bold`}>{item.name}{item.selectedSize && <small className="mt-1 block font-normal text-slate-500">سایز: {item.selectedSize}</small>}</td>
+                  <td className={`${cell} text-right font-bold`}>{item.name}{optionEntries(item.selectedOptions).map(([name, value]) => <small key={name} className="mt-1 block font-normal text-slate-500">{name}: {value}</small>)}</td>
                   <td className={cell} dir="ltr">{item.sku}</td>
                   <td className={cell}>{item.quantity.toLocaleString("fa-IR")}</td>
                   <td className={cell}>{Number(item.weightGrams).toLocaleString("fa-IR", { maximumFractionDigits: 3 })}</td>

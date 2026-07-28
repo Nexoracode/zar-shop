@@ -1,5 +1,10 @@
 import { z } from "zod";
 
+const productOptionSchema = z.object({
+  name: z.string().trim().min(1).max(80),
+  values: z.array(z.string().trim().min(1).max(80)).min(1).max(50).refine((values) => new Set(values).size === values.length, "مقدار تکراری در یک تنوع مجاز نیست."),
+});
+
 export const productSchema = z.object({
   sku: z.string().trim().min(2).max(80),
   name: z.string().trim().min(2).max(191),
@@ -16,6 +21,6 @@ export const productSchema = z.object({
   status: z.enum(["DRAFT", "ACTIVE", "ARCHIVED"]).default("DRAFT"),
   featured: z.boolean().default(false),
   mediaIds: z.array(z.string().cuid()).max(20).refine((ids) => new Set(ids).size === ids.length, "رسانه تکراری مجاز نیست.").default([]),
-  sizes: z.array(z.string().trim().min(1).max(50)).max(30).refine((sizes) => new Set(sizes).size === sizes.length, "سایز تکراری مجاز نیست.").default([]),
-  sizeGuideId: z.string().cuid().nullable().default(null),
+  options: z.array(productOptionSchema).max(10).refine((options) => new Set(options.map((option) => option.name)).size === options.length, "عنوان تنوع تکراری مجاز نیست.").default([]),
+  optionGuideId: z.string().cuid().nullable().default(null),
 });

@@ -34,7 +34,7 @@ export async function GET(request: Request) {
   const limit = Number.isFinite(requestedLimit) ? Math.min(Math.max(Math.trunc(requestedLimit), 1), 200) : 100;
   const items = await db.mediaAsset.findMany({
     where: scope ? { scope } : undefined,
-    include: { _count: { select: { products: true, sizeGuideProducts: true, categories: true } } },
+    include: { _count: { select: { products: true, optionGuideProducts: true, categories: true } } },
     orderBy: { createdAt: "desc" },
     take: limit,
   });

@@ -12,7 +12,7 @@ export default async function EditProductPage({ params }: Context) {
   const [product, categories] = await Promise.all([
     db.product.findUnique({
       where: { id },
-      include: { media: { include: { media: true }, orderBy: { position: "asc" } }, sizes: { orderBy: { position: "asc" } }, sizeGuide: true },
+      include: { media: { include: { media: true }, orderBy: { position: "asc" } }, options: { orderBy: { position: "asc" } }, optionGuide: true },
     }),
     db.category.findMany({
       where: { isActive: true },
@@ -43,8 +43,8 @@ export default async function EditProductPage({ params }: Context) {
           stock: product.stock,
           status: product.status,
           featured: product.featured,
-          sizes: product.sizes.map((size) => size.label),
-          sizeGuide: product.sizeGuide ? { id: product.sizeGuide.id, title: product.sizeGuide.title ?? product.sizeGuide.storageKey, url: product.sizeGuide.url, type: product.sizeGuide.type } : null,
+          options: product.options.map((option) => ({ name: option.name, values: Array.isArray(option.values) ? option.values.filter((value): value is string => typeof value === "string") : [] })),
+          optionGuide: product.optionGuide ? { id: product.optionGuide.id, title: product.optionGuide.title ?? product.optionGuide.storageKey, url: product.optionGuide.url, type: product.optionGuide.type } : null,
           media: product.media.map(({ media }) => ({ id: media.id, title: media.title ?? media.storageKey, url: media.url, type: media.type })),
         }}
       />

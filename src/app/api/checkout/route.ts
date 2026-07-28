@@ -6,10 +6,11 @@ import { apiError } from "@/lib/http";
 import { getCurrentUser } from "@/modules/auth/session";
 import { getGoldPrice } from "@/modules/gold/gold-price.service";
 import { calculateProductPrice } from "@/modules/products/pricing";
+import { isOptionSnapshotValid, optionEntries } from "@/modules/products/options";
 import { getPaymentProvider } from "@/modules/payments/payment-provider";
 import type { Prisma } from "@generated/prisma/client";
 
-type ItemWithProduct = Prisma.CartItemGetPayload<{ include: { product: { include: { sizes: true } } } }>;
+type ItemWithProduct = Prisma.CartItemGetPayload<{ include: { product: { include: { options: true } } } }>;
 type PriceParts = ReturnType<typeof calculateProductPrice>;
 type CheckoutLine = { item: ItemWithProduct; p: ItemWithProduct["product"]; parts: PriceParts; unitPrice: number; total: number };
 
@@ -27,7 +28,7 @@ export async function POST(request: Request) {
     const user = await getCurrentUser();
     if (!user) return NextResponse.json({ message: "ابتدا وارد حساب شوید." }, { status: 401 });
     const address = addressSchema.parse(await request.json());
-    const cart = await db.cart.findUnique({ where: { userId: user.id }, include: { items: { include: { product: { include: { sizes: true } } } } } });
+    const cart = await db.cart.findUnique({ where: { userId: user.id }, include: { items: { include: { product: { include: { options: true } } } } } });
     if (!cart?.items.length) return NextResponse.json({ message: "سبد خرید خالی است." }, { status: 409 });
     let gold;
     try {
@@ -43,7 +44,7 @@ export async function POST(request: Request) {
     const lines: CheckoutLine[] = cart.items.map((item: ItemWithProduct) => {
       const p = item.product;
       if (p.status !== "ACTIVE" || p.stock < item.quantity) throw new Error(`موجودی ${p.name} کافی نیست.`);
-      if (p.sizes.length && !p.sizes.some((size) => size.label === item.selectedSize)) throw new Error(`سایز انتخاب‌شده برای ${p.name} دیگر معتبر نیست.`);
+      if (!isOptionSnapshotValid(p.options, item.selectedOptions)) throw new Error(`تنوع انتخاب‌شده برای ${p.name} دیگر معتبر نیست.`);
       const parts = calculateProductPrice({
         goldPricePerGram18: rate,
         weightGrams: Number(p.weightGrams),
@@ -67,7 +68,7 @@ export async function POST(request: Request) {
         shippingAddress: address,
         items: {
           create: lines.map(({ item, p, parts, unitPrice, total: lineTotal }: CheckoutLine) => ({
-            productId: p.id, sku: p.sku, name: p.name, selectedSize: item.selectedSize || null, quantity: item.quantity,
+            productId: p.id, sku: p.sku, name: p.name, selectedOptions: optionEntries(item.selectedOptions).length ? Object.fromEntries(optionEntries(item.selectedOptions)) : undefined, quantity: item.quantity,
             weightGrams: p.weightGrams, purity: p.purity, makingFee: parts.makingFee,
             profit: parts.profit, tax: parts.tax, unitPrice, total: lineTotal,
           })),
@@ -84,7 +85,7 @@ export async function POST(request: Request) {
     });
     return NextResponse.json({ redirectUrl: paymentRequest.redirectUrl });
   } catch (error) {
-    if (error instanceof Error && (error.message.startsWith("موجودی") || error.message.startsWith("سایز"))) return NextResponse.json({ message: error.message }, { status: 409 });
+    if (error instanceof Error && (error.message.startsWith("موجودی") || error.message.startsWith("تنوع"))) return NextResponse.json({ message: error.message }, { status: 409 });
     return apiError(error);
   }
 }

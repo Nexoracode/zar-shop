@@ -7,6 +7,7 @@ import { calculateProductPrice } from "@/modules/products/pricing";
 import { formatMoney } from "@/lib/format";
 import { CheckoutForm } from "@/components/checkout-form";
 import type { Prisma } from "@generated/prisma/client";
+import { optionEntries } from "@/modules/products/options";
 
 type CartItemRow = Prisma.CartItemGetPayload<{ include: { product: true } }>;
 
@@ -59,8 +60,8 @@ export default async function CartPage() {
                     const p = item.product;
                     const amount = getItemAmount(item);
                     return (
-                      <TableRow id={`${p.id}-${item.selectedSize}`} key={`${p.id}-${item.selectedSize}`}>
-                        <TableCell className="px-4 py-[14px]"><strong>{p.name}</strong><br /><span className="text-[#747982] text-[0.82rem]">{p.sku}{item.selectedSize ? ` · سایز ${item.selectedSize}` : ""}</span></TableCell>
+                      <TableRow id={item.id} key={item.id}>
+                        <TableCell className="px-4 py-[14px]"><strong>{p.name}</strong><br /><span className="text-[#747982] text-[0.82rem]">{p.sku}{optionEntries(item.selectedOptions).map(([name, value]) => ` · ${name}: ${value}`).join("")}</span></TableCell>
                         <TableCell className="px-4 py-[14px]">{item.quantity}</TableCell>
                         <TableCell className="px-4 py-[14px]">{Number(p.weightGrams)} گرم</TableCell>
                         <TableCell className="px-4 py-[14px]">

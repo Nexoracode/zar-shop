@@ -13,6 +13,7 @@ import {
   paymentStatusTones,
 } from "@/modules/admin/labels";
 import { requirePermission } from "@/modules/auth/session";
+import { optionEntries } from "@/modules/products/options";
 
 type PageParams = Promise<{ id: string }>;
 
@@ -117,7 +118,7 @@ export default async function OrderDetailsPage({ params }: { params: PageParams 
                       {item.product ? <Link href={`/products/${item.product.slug}`} className="font-black text-[#17233b] transition hover:text-[#9a7434]">{item.name}</Link> : <strong className="text-[#17233b]">{item.name}</strong>}
                       <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-500">
                         <span>کد: <b dir="ltr">{item.sku}</b></span>
-                        {item.selectedSize && <span>سایز: <b>{item.selectedSize}</b></span>}
+                        {optionEntries(item.selectedOptions).map(([name, value]) => <span key={name}>{name}: <b>{value}</b></span>)}
                         <span>تعداد: <b>{item.quantity.toLocaleString("fa-IR")}</b></span>
                         <span>وزن: <b>{Number(item.weightGrams).toLocaleString("fa-IR", { maximumFractionDigits: 3 })} گرم</b></span>
                         <span>عیار: <b>{item.purity.toLocaleString("fa-IR")}</b></span>

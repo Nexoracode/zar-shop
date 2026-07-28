@@ -13,7 +13,7 @@ export const dynamic = "force-dynamic";
 export default async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const [product, gold] = await Promise.all([
-    db.product.findFirst({ where: { slug, status: "ACTIVE" }, include: { category: true, media: { include: { media: true }, orderBy: { position: "asc" } }, sizes: { orderBy: { position: "asc" } }, sizeGuide: true } }),
+    db.product.findFirst({ where: { slug, status: "ACTIVE" }, include: { category: true, media: { include: { media: true }, orderBy: { position: "asc" } }, options: { orderBy: { position: "asc" } }, optionGuide: true } }),
     getGoldPriceForDisplay(),
   ]);
   if (!product) notFound();
@@ -72,8 +72,8 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
             </strong>
             <AddToCart
               productId={product.id}
-              sizes={product.sizes.map((size) => size.label)}
-              sizeGuide={product.sizeGuide && product.sizeGuide.type !== "VIDEO" ? { url: product.sizeGuide.url, type: product.sizeGuide.type, title: product.sizeGuide.title ?? "راهنمای انتخاب سایز" } : null}
+              options={product.options.map((option) => ({ id: option.id, name: option.name, values: Array.isArray(option.values) ? option.values.filter((value): value is string => typeof value === "string") : [] }))}
+              optionGuide={product.optionGuide && product.optionGuide.type !== "VIDEO" ? { url: product.optionGuide.url, type: product.optionGuide.type, title: product.optionGuide.title ?? "راهنمای انتخاب محصول" } : null}
               disabled={product.stock < 1 || total === null}
               disabledLabel={product.stock < 1 ? "ناموجود" : "قیمت موقتاً نامشخص"}
             />

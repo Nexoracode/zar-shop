@@ -17,7 +17,7 @@ export type MediaChoice = {
 
 type MediaItem = MediaChoice & {
   storageKey: string;
-  _count: { products: number; sizeGuideProducts: number; categories: number };
+  _count: { products: number; optionGuideProducts: number; categories: number };
 };
 
 const fieldClass = adminFieldClass;
@@ -113,7 +113,7 @@ export function MediaLibrary() {
       {loading ? <div className="rounded-2xl border border-slate-200 bg-white py-14 text-center text-sm text-slate-500">در حال دریافت گالری...</div> : filteredItems.length ? (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
           {filteredItems.map((item) => {
-            const usage = item._count.products + item._count.sizeGuideProducts + item._count.categories;
+            const usage = item._count.products + item._count.optionGuideProducts + item._count.categories;
             return (
               <Card key={item.id} variant="secondary" className="min-w-0 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
                 <div className="relative aspect-square bg-[#f5f3ee]">
