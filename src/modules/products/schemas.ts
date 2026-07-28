@@ -2,7 +2,14 @@ import { z } from "zod";
 
 const productOptionSchema = z.object({
   name: z.string().trim().min(1).max(80),
-  values: z.array(z.string().trim().min(1).max(80)).min(1).max(50).refine((values) => new Set(values).size === values.length, "مقدار تکراری در یک تنوع مجاز نیست."),
+  values: z.array(z.object({
+    value: z.string().trim().min(1).max(80),
+    colorId: z.string().cuid().nullable().default(null),
+  })).min(1).max(50).refine((values) => new Set(values.map((item) => item.value)).size === values.length, "مقدار تکراری در یک تنوع مجاز نیست."),
+}).superRefine((option, context) => {
+  if (option.name.includes("رنگ") && option.values.some((item) => !item.colorId)) {
+    context.addIssue({ code: "custom", path: ["values"], message: "برای هر مقدارِ تنوع رنگ، خود رنگ را نیز انتخاب کنید." });
+  }
 });
 
 export const productSchema = z.object({

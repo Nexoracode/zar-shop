@@ -3,13 +3,14 @@ import { ProductForm } from "@/components/product-form";
 import { db } from "@/lib/db";
 import { AdminPageHeader } from "@/components/admin-ui";
 import { requirePermission } from "@/modules/auth/session";
+import { parseOptionValues } from "@/modules/products/options";
 
 type Context = { params: Promise<{ id: string }> };
 
 export default async function EditProductPage({ params }: Context) {
   await requirePermission("catalog:manage");
   const { id } = await params;
-  const [product, categories] = await Promise.all([
+  const [product, categories, colors] = await Promise.all([
     db.product.findUnique({
       where: { id },
       include: { media: { include: { media: true }, orderBy: { position: "asc" } }, options: { orderBy: { position: "asc" } }, optionGuide: true },
@@ -19,6 +20,7 @@ export default async function EditProductPage({ params }: Context) {
       include: { parent: { select: { name: true } } },
       orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
     }),
+    db.color.findMany({ where: { isActive: true }, select: { id: true, name: true, hex: true }, orderBy: [{ sortOrder: "asc" }, { name: "asc" }] }),
   ]);
   if (!product) notFound();
 
@@ -27,6 +29,7 @@ export default async function EditProductPage({ params }: Context) {
       <AdminPageHeader eyebrow="مدیریت کاتالوگ" title={`ویرایش «${product.name}»`} description="اطلاعات، قیمت‌گذاری، موجودی و گالری این محصول را به‌روزرسانی کنید." />
       <ProductForm
         categories={categories.map((category) => ({ id: category.id, name: category.name, parentName: category.parent?.name ?? null }))}
+        colors={colors}
         product={{
           id: product.id,
           sku: product.sku,
@@ -43,7 +46,7 @@ export default async function EditProductPage({ params }: Context) {
           stock: product.stock,
           status: product.status,
           featured: product.featured,
-          options: product.options.map((option) => ({ name: option.name, values: Array.isArray(option.values) ? option.values.filter((value): value is string => typeof value === "string") : [] })),
+          options: product.options.map((option) => ({ name: option.name, values: parseOptionValues(option.values) })),
           optionGuide: product.optionGuide ? { id: product.optionGuide.id, title: product.optionGuide.title ?? product.optionGuide.storageKey, url: product.optionGuide.url, type: product.optionGuide.type } : null,
           media: product.media.map(({ media }) => ({ id: media.id, title: media.title ?? media.storageKey, url: media.url, type: media.type })),
         }}

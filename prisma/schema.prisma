@@ -136,6 +136,18 @@ model Category {
   @@index([isActive, featured, sortOrder])
 }
 
+model Color {
+  id        String   @id @default(cuid())
+  name      String   @unique @db.VarChar(100)
+  hex       String   @db.Char(7)
+  isActive  Boolean  @default(true)
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([isActive, sortOrder, name])
+}
+
 model Product {
   id             String          @id @default(cuid())
   sku            String          @unique @db.VarChar(80)

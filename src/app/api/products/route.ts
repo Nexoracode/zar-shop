@@ -4,6 +4,7 @@ import { apiError } from "@/lib/http";
 import { getCurrentUser } from "@/modules/auth/session";
 import { productSchema } from "@/modules/products/schemas";
 import { hasPermission } from "@/modules/auth/permissions";
+import { areOptionColorsValid } from "@/modules/products/color-validation";
 
 export async function GET() {
   const products = await db.product.findMany({
@@ -21,6 +22,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: "دسترسی غیرمجاز است." }, { status: 403 });
     }
     const { mediaIds, options, optionGuideId, ...input } = productSchema.parse(await request.json());
+    if (!await areOptionColorsValid(options)) return NextResponse.json({ message: "یک یا چند رنگ انتخاب‌شده معتبر یا فعال نیست." }, { status: 422 });
     const media = mediaIds.length ? await db.mediaAsset.findMany({ where: { id: { in: mediaIds }, scope: "PRODUCT", type: { in: ["IMAGE", "VIDEO"] } }, select: { id: true } }) : [];
     if (media.length !== new Set(mediaIds).size) return NextResponse.json({ message: "یک یا چند رسانه محصول معتبر نیست." }, { status: 422 });
     if (optionGuideId) {

@@ -6,7 +6,7 @@ import { Button, Modal, toast } from "@heroui/react";
 import { FileText, Ruler, X } from "lucide-react";
 
 type OptionGuide = { url: string; type: "IMAGE" | "DOCUMENT"; title: string };
-type ProductOption = { id: string; name: string; values: string[] };
+type ProductOption = { id: string; name: string; values: Array<{ value: string; color: { name: string; hex: string } | null }> };
 
 export function AddToCart({ productId, options = [], optionGuide, disabled, disabledLabel = "ناموجود" }: { productId: string; options?: ProductOption[]; optionGuide?: OptionGuide | null; disabled: boolean; disabledLabel?: string }) {
   const router = useRouter();
@@ -39,7 +39,7 @@ export function AddToCart({ productId, options = [], optionGuide, disabled, disa
     <div className="grid gap-3">
       {options.length > 0 && <div className="grid gap-4">
         <div className="flex items-center justify-between gap-3"><strong className="text-sm text-[#17233b]">انتخاب مشخصات محصول</strong>{optionGuide && <Button type="button" variant="ghost" onPress={() => setGuideOpen(true)} className="h-auto min-h-0 gap-1 p-0 text-xs font-bold text-[#785b27]"><Ruler size={15} />راهنمای انتخاب</Button>}</div>
-        {options.map((option) => <div key={option.id} className="grid gap-2"><span className="text-xs font-bold text-[#525966]">{option.name}</span><div className="flex flex-wrap gap-2" role="group" aria-label={`انتخاب ${option.name}`}>{option.values.map((value) => <Button key={value} type="button" variant="secondary" aria-pressed={selectedOptions[option.id] === value} onPress={() => setSelectedOptions((current) => ({ ...current, [option.id]: value }))} className={`min-h-10 min-w-12 rounded-lg border px-3 text-sm font-bold transition ${selectedOptions[option.id] === value ? "border-[#b5904c] bg-[#b5904c] text-white" : "border-[#d8d5ce] bg-white text-[#17233b] hover:border-[#b5904c]"}`}>{value}</Button>)}</div></div>)}
+        {options.map((option) => <div key={option.id} className="grid gap-2"><span className="text-xs font-bold text-[#525966]">{option.name}</span><div className="flex flex-wrap gap-2" role="group" aria-label={`انتخاب ${option.name}`}>{option.values.map((item) => { const selected = selectedOptions[option.id] === item.value; return <Button key={item.value} type="button" variant="secondary" aria-pressed={selected} aria-label={item.color ? `${item.value}، رنگ ${item.color.name}${selected ? "، انتخاب‌شده" : ""}` : undefined} onPress={() => setSelectedOptions((current) => ({ ...current, [option.id]: item.value }))} className={`min-h-10 min-w-12 rounded-lg border px-3 text-sm font-bold transition ${selected ? "border-[#b5904c] bg-[#b5904c] text-white ring-2 ring-[#b5904c]/25" : "border-[#d8d5ce] bg-white text-[#17233b] hover:border-[#b5904c]"}`}>{item.color && <span className="ml-2 inline-block h-5 w-5 rounded-full border-2 border-white shadow ring-1 ring-slate-300" style={{ backgroundColor: item.color.hex }} />}{item.value}</Button>; })}</div></div>)}
       </div>}
       <Button
         onPress={() => void add()}

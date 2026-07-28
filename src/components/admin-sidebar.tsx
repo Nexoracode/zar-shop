@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { Button } from "@heroui/react";
 import { usePathname, useRouter } from "next/navigation";
-import { Boxes, ChartNoAxesCombined, FolderTree, Images, LogOut, Menu, PackageCheck, Store, Users, X } from "lucide-react";
+import { Boxes, ChartNoAxesCombined, FolderTree, Images, LogOut, Menu, PackageCheck, Palette, Store, Users, X } from "lucide-react";
 import { useState } from "react";
 import { userRoleLabels } from "@/modules/admin/labels";
 import type { UserRole } from "@generated/prisma/enums";
@@ -13,6 +13,7 @@ const navLinks: Array<{ href: string; label: string; icon: typeof Boxes; permiss
   { href: "/admin", label: "نمای کلی", icon: ChartNoAxesCombined, permission: "dashboard:view" },
   { href: "/admin/products", label: "محصولات", icon: Boxes, permission: "catalog:manage" },
   { href: "/admin/categories", label: "دسته‌بندی‌ها", icon: FolderTree, permission: "catalog:manage" },
+  { href: "/admin/colors", label: "رنگ‌ها", icon: Palette, permission: "catalog:manage" },
   { href: "/admin/media", label: "گالری رسانه", icon: Images, permission: "catalog:manage" },
   { href: "/admin/orders", label: "سفارش‌ها", icon: PackageCheck, permission: "orders:manage" },
   { href: "/admin/users", label: "کاربران", icon: Users, permission: "users:manage" },

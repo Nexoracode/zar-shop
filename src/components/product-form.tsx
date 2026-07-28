@@ -17,12 +17,12 @@ import { productSchema } from "@/modules/products/schemas";
 type EditableProduct = {
   id: string; sku: string; name: string; slug: string; description: string; categoryId: string; purity: number; weightGrams: number;
   makingFeeType: string; makingFeeValue: number; profitPercent: number; taxPercent: number; stock: number;
-  status: "DRAFT" | "ACTIVE" | "ARCHIVED"; featured: boolean; media: MediaChoice[]; options: Array<{ name: string; values: string[] }>; optionGuide: MediaChoice | null;
+  status: "DRAFT" | "ACTIVE" | "ARCHIVED"; featured: boolean; media: MediaChoice[]; options: Array<{ name: string; values: Array<{ value: string; colorId: string | null }> }>; optionGuide: MediaChoice | null;
 };
 
-type DraftOption = { key: string; name: string; values: string[]; valueInput: string };
+type DraftOption = { key: string; name: string; values: Array<{ value: string; colorId: string | null }>; valueInput: string; selectedColorId: string };
 
-type Props = { categories?: Array<{ id: string; name: string; parentName: string | null }>; product?: EditableProduct };
+type Props = { categories?: Array<{ id: string; name: string; parentName: string | null }>; colors?: Array<{ id: string; name: string; hex: string }>; product?: EditableProduct };
 
 const productFieldLabels: Record<string, string> = {
   sku: "کد کالا",
@@ -44,14 +44,14 @@ const productFieldLabels: Record<string, string> = {
   optionGuideId: "راهنمای انتخاب",
 };
 
-export function ProductForm({ categories = [], product }: Props) {
+export function ProductForm({ categories = [], colors = [], product }: Props) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [selectedMedia, setSelectedMedia] = useState<MediaChoice[]>(product?.media ?? []);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [optionGuidePickerOpen, setOptionGuidePickerOpen] = useState(false);
   const [optionGuide, setOptionGuide] = useState<MediaChoice | null>(product?.optionGuide ?? null);
-  const [options, setOptions] = useState<DraftOption[]>(() => product?.options.map((option, index) => ({ key: `existing-${index}`, ...option, valueInput: "" })) ?? []);
+  const [options, setOptions] = useState<DraftOption[]>(() => product?.options.map((option, index) => ({ key: `existing-${index}`, ...option, valueInput: "", selectedColorId: "" })) ?? []);
   const [draggedOptionKey, setDraggedOptionKey] = useState<string | null>(null);
   const [draggedMediaId, setDraggedMediaId] = useState<string | null>(null);
 
@@ -75,7 +75,7 @@ export function ProductForm({ categories = [], product }: Props) {
   function addOptionGroup() {
     setOptions((current) => {
       if (current.length >= 10) return current;
-      return [...current, { key: `option-${Date.now()}-${Math.random().toString(36).slice(2)}`, name: "", values: [], valueInput: "" }];
+      return [...current, { key: `option-${Date.now()}-${Math.random().toString(36).slice(2)}`, name: "", values: [], valueInput: "", selectedColorId: "" }];
     });
   }
 
@@ -83,9 +83,20 @@ export function ProductForm({ categories = [], product }: Props) {
     setOptions((current) => current.map((option) => {
       if (option.key !== key) return option;
       const value = option.valueInput.trim();
-      if (!value || option.values.includes(value)) return option;
-      return { ...option, values: [...option.values, value], valueInput: "" };
+      if (!value || option.values.some((item) => item.value === value)) return option;
+      if (option.name.includes("رنگ") && !option.selectedColorId) {
+        toast.warning("خود رنگ را هم انتخاب کنید", { description: "برای تنوع رنگ، مقدار متنی و رنگ ثبت‌شده هر دو لازم هستند." });
+        return option;
+      }
+      return { ...option, values: [...option.values, { value, colorId: option.selectedColorId || null }], valueInput: "", selectedColorId: "" };
     }));
+  }
+
+  function updateOptionValueColor(key: string, value: string, colorId: string) {
+    setOptions((current) => current.map((option) => option.key === key ? {
+      ...option,
+      values: option.values.map((item) => item.value === value ? { ...item, colorId: colorId || null } : item),
+    } : option));
   }
 
   function moveOption(targetKey: string) {
@@ -106,7 +117,7 @@ export function ProductForm({ categories = [], product }: Props) {
     const form = new FormData(event.currentTarget);
     const submittedOptions = options.map((option) => {
       const pendingValue = option.valueInput.trim();
-      return { name: option.name, values: pendingValue && !option.values.includes(pendingValue) ? [...option.values, pendingValue] : option.values };
+      return { name: option.name, values: pendingValue && !option.values.some((item) => item.value === pendingValue) ? [...option.values, { value: pendingValue, colorId: option.selectedColorId || null }] : option.values };
     });
     const body = {
       sku: form.get("sku"), name: form.get("name"), slug: form.get("slug"), description: form.get("description"), categoryId: form.get("categoryId") || null,
@@ -188,9 +199,10 @@ export function ProductForm({ categories = [], product }: Props) {
                     <Button type="button" size="sm" isIconOnly variant="ghost" onPress={() => setOptions((current) => current.filter((item) => item.key !== option.key))} className="mb-1 h-9 min-h-9 w-9 min-w-9 text-slate-400 hover:text-[#d31736]" aria-label={`حذف تنوع ردیف ${(optionIndex + 1).toLocaleString("fa-IR")}`}><Trash2 size={15} /></Button>
                   </div>
                   <label className={adminLabelClass}>مقادیر قابل انتخاب
-                    <span className="flex gap-2"><Input value={option.valueInput} onChange={(event) => updateOption(option.key, { valueInput: event.target.value })} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); addOptionValue(option.key); } }} fullWidth variant="secondary" placeholder="مثلاً ۱۲ یا رزگلد" className={adminFieldClass} /><Button type="button" variant="secondary" onPress={() => addOptionValue(option.key)} className="min-h-11 shrink-0 gap-1 border border-slate-200 bg-slate-50 px-3 text-xs font-bold text-slate-600"><Plus size={14} />افزودن</Button></span>
+                    <span className="flex flex-col gap-2 sm:flex-row"><Input value={option.valueInput} onChange={(event) => updateOption(option.key, { valueInput: event.target.value })} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); addOptionValue(option.key); } }} fullWidth variant="secondary" placeholder="مثلاً ۱۲ یا رزگلد" className={adminFieldClass} />{option.name.includes("رنگ") && <select aria-label="انتخاب رنگ ثبت‌شده" value={option.selectedColorId} onChange={(event) => updateOption(option.key, { selectedColorId: event.target.value })} className={`${adminFieldClass} min-h-11 rounded-xl border border-slate-200 bg-white px-3 text-sm sm:w-48`}><option value="">انتخاب خود رنگ</option>{colors.map((color) => <option key={color.id} value={color.id}>{color.name} ({color.hex})</option>)}</select>}<Button type="button" variant="secondary" onPress={() => addOptionValue(option.key)} className="min-h-11 shrink-0 gap-1 border border-slate-200 bg-slate-50 px-3 text-xs font-bold text-slate-600"><Plus size={14} />افزودن</Button></span>
                   </label>
-                  {option.values.length ? <div className="mt-3 flex flex-wrap gap-2">{option.values.map((value) => <span key={value} className="inline-flex min-h-9 items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-2.5 text-xs font-bold text-slate-700">{value}<Button type="button" size="sm" isIconOnly variant="ghost" onPress={() => updateOption(option.key, { values: option.values.filter((item) => item !== value) })} className="h-6 min-h-6 w-6 min-w-6 text-slate-400 hover:text-[#d31736]" aria-label={`حذف مقدار ${value}`}><X size={13} /></Button></span>)}</div> : <p className="mt-2 text-xs text-amber-700">حداقل یک مقدار برای این تنوع اضافه کنید.</p>}
+                  {option.name.includes("رنگ") && !colors.length && <p className="mt-2 text-xs text-amber-700">ابتدا رنگ‌ها را از صفحه «رنگ‌ها» ثبت کنید.</p>}
+                  {option.values.length ? <div className="mt-3 grid gap-2">{option.values.map((item) => { const color = colors.find((candidate) => candidate.id === item.colorId); return <div key={item.value} className="flex flex-wrap items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 p-2 text-xs font-bold text-slate-700"><span className="inline-flex min-w-24 flex-1 items-center gap-2">{color && <span className="h-4 w-4 rounded-full border border-slate-300" style={{ backgroundColor: color.hex }} aria-label={`رنگ ${color.name}`} />}{item.value}</span>{option.name.includes("رنگ") && <select aria-label={`رنگ مرتبط با ${item.value}`} value={item.colorId ?? ""} onChange={(event) => updateOptionValueColor(option.key, item.value, event.target.value)} className="min-h-8 rounded-lg border border-slate-200 bg-white px-2 text-xs font-medium"><option value="">انتخاب خود رنگ</option>{colors.map((candidate) => <option key={candidate.id} value={candidate.id}>{candidate.name} ({candidate.hex})</option>)}</select>}<Button type="button" size="sm" isIconOnly variant="ghost" onPress={() => updateOption(option.key, { values: option.values.filter((value) => value.value !== item.value) })} className="h-6 min-h-6 w-6 min-w-6 text-slate-400 hover:text-[#d31736]" aria-label={`حذف مقدار ${item.value}`}><X size={13} /></Button></div>; })}</div> : <p className="mt-2 text-xs text-amber-700">حداقل یک مقدار برای این تنوع اضافه کنید.</p>}
                 </div>
               ))}<Button type="button" variant="secondary" isDisabled={options.length >= 10} onPress={addOptionGroup} className="min-h-11 w-full gap-2 border-2 border-dashed border-[#d8c29a] bg-[#fffcf6] text-sm font-bold text-[#846325]"><Plus size={16} />{options.length >= 10 ? "حداکثر ۱۰ تنوع ثبت شده است" : "افزودن تنوع دیگر"}</Button></> : <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-5 text-center text-xs leading-6 text-slate-500">اگر محصول تنوع ندارد، این بخش را خالی بگذارید. برای محصولات مختلف می‌توانید هم‌زمان گروه‌هایی مثل سایز، رنگ، طول و نوع قفل تعریف کنید.</div>}
             </div>

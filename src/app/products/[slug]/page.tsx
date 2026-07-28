@@ -7,6 +7,7 @@ import { db } from "@/lib/db";
 import { formatMoney } from "@/lib/format";
 import { getGoldPriceForDisplay } from "@/modules/gold/gold-price.service";
 import { calculateProductPrice } from "@/modules/products/pricing";
+import { parseOptionValues } from "@/modules/products/options";
 
 export const dynamic = "force-dynamic";
 
@@ -17,6 +18,11 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
     getGoldPriceForDisplay(),
   ]);
   if (!product) notFound();
+
+  const optionValues = product.options.map((option) => ({ option, values: parseOptionValues(option.values) }));
+  const colorIds = [...new Set(optionValues.flatMap(({ values }) => values.flatMap((item) => item.colorId ? [item.colorId] : [])))];
+  const colors = colorIds.length ? await db.color.findMany({ where: { id: { in: colorIds }, isActive: true }, select: { id: true, name: true, hex: true } }) : [];
+  const colorsById = new Map(colors.map((color) => [color.id, color]));
 
   const rate = gold ? Number(gold.pricePerGram18) : null;
   const parts = rate === null ? null : calculateProductPrice({ goldPricePerGram18: rate, weightGrams: Number(product.weightGrams), purity: product.purity, makingFeeType: product.makingFeeType, makingFeeValue: Number(product.makingFeeValue), profitPercent: Number(product.profitPercent), taxPercent: Number(product.taxPercent) });
@@ -72,7 +78,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
             </strong>
             <AddToCart
               productId={product.id}
-              options={product.options.map((option) => ({ id: option.id, name: option.name, values: Array.isArray(option.values) ? option.values.filter((value): value is string => typeof value === "string") : [] }))}
+              options={optionValues.map(({ option, values }) => ({ id: option.id, name: option.name, values: values.map((item) => ({ value: item.value, color: item.colorId ? colorsById.get(item.colorId) ?? null : null })) }))}
               optionGuide={product.optionGuide && product.optionGuide.type !== "VIDEO" ? { url: product.optionGuide.url, type: product.optionGuide.type, title: product.optionGuide.title ?? "راهنمای انتخاب محصول" } : null}
               disabled={product.stock < 1 || total === null}
               disabledLabel={product.stock < 1 ? "ناموجود" : "قیمت موقتاً نامشخص"}

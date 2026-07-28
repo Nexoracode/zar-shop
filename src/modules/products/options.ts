@@ -2,8 +2,19 @@ import { createHash } from "node:crypto";
 
 type ProductOptionLike = { id: string; name: string; values: unknown };
 
+export type ProductOptionValue = { value: string; colorId: string | null };
+
+export function parseOptionValues(values: unknown): ProductOptionValue[] {
+  if (!Array.isArray(values)) return [];
+  return values.flatMap((item) => {
+    if (typeof item === "string") return [{ value: item, colorId: null }];
+    if (!item || typeof item !== "object" || !("value" in item) || typeof item.value !== "string") return [];
+    return [{ value: item.value, colorId: "colorId" in item && typeof item.colorId === "string" ? item.colorId : null }];
+  });
+}
+
 function optionValues(option: ProductOptionLike) {
-  return Array.isArray(option.values) ? option.values.filter((value): value is string => typeof value === "string") : [];
+  return parseOptionValues(option.values).map((item) => item.value);
 }
 
 export function resolveOptionSelection(options: ProductOptionLike[], selected: Record<string, string>) {
