@@ -5,9 +5,11 @@ import { db } from "@/lib/db";
 import { apiError } from "@/lib/http";
 import { getCurrentUser } from "@/modules/auth/session";
 import { hasPermission } from "@/modules/auth/permissions";
-import { MediaStorageUnavailableError, uploadMediaToFtp } from "@/modules/media/ftp-storage";
+import { deleteStoredMedia, MediaStorageUnavailableError, uploadMediaToFtp } from "@/modules/media/ftp-storage";
 
 const MAX_SIZE = 25 * 1024 * 1024;
+const MAX_TOTAL_SIZE = 100 * 1024 * 1024;
+const MAX_FILES = 10;
 const EXTENSIONS: Record<string, string> = {
   "image/jpeg": ".jpg",
   "image/png": ".png",
@@ -45,39 +47,49 @@ export async function POST(request: Request) {
     const actor = await getCurrentUser();
     if (!actor || !hasPermission(actor.role, "catalog:manage")) return NextResponse.json({ message: "دسترسی غیرمجاز است." }, { status: 403 });
     const form = await request.formData();
-    const file = form.get("file");
+    const files = form.getAll("file").filter((item): item is File => item instanceof File && item.size > 0);
     const scope = parseScope(String(form.get("scope") ?? ""));
-    if (!(file instanceof File)) return NextResponse.json({ message: "فایلی انتخاب نشده است." }, { status: 400 });
+    if (!files.length) return NextResponse.json({ message: "فایلی انتخاب نشده است." }, { status: 400 });
     if (!scope) return NextResponse.json({ message: "بخش گالری مشخص نشده است." }, { status: 422 });
-    const extension = EXTENSIONS[file.type];
-    if (!extension || file.size > MAX_SIZE || (scope === "CATEGORY" && !file.type.startsWith("image/"))) {
+    if (files.length > MAX_FILES) return NextResponse.json({ message: `در هر بار حداکثر ${MAX_FILES.toLocaleString("fa-IR")} فایل قابل بارگذاری است.` }, { status: 422 });
+    if (files.reduce((total, file) => total + file.size, 0) > MAX_TOTAL_SIZE) return NextResponse.json({ message: "حجم مجموع فایل‌ها نباید بیشتر از ۱۰۰ مگابایت باشد." }, { status: 422 });
+    if (files.some((file) => !EXTENSIONS[file.type] || file.size > MAX_SIZE || (scope === "CATEGORY" && !file.type.startsWith("image/")))) {
       return NextResponse.json({ message: "نوع یا حجم فایل برای این بخش مجاز نیست." }, { status: 422 });
     }
 
     const folder = scope === "CATEGORY" ? "categories" : "products";
-    const storageKey = `zar-shop/${folder}/${randomUUID()}${extension}`;
-    const url = await uploadMediaToFtp(Buffer.from(await file.arrayBuffer()), storageKey);
+    const uploaded: Array<{ file: File; storageKey: string; url: string }> = [];
     try {
+      for (const file of files) {
+        const storageKey = `zar-shop/${folder}/${randomUUID()}${EXTENSIONS[file.type]}`;
+        const url = await uploadMediaToFtp(Buffer.from(await file.arrayBuffer()), storageKey);
+        uploaded.push({ file, storageKey, url });
+      }
+      const title = typeof form.get("title") === "string" ? String(form.get("title")).trim() : "";
+      const alt = typeof form.get("alt") === "string" && String(form.get("alt")).trim() ? String(form.get("alt")).trim() : null;
       const media = await db.$transaction(async (tx) => {
-        const created = await tx.mediaAsset.create({
-          data: {
-            type: file.type.startsWith("video/") ? "VIDEO" : "IMAGE",
-            scope,
-            url,
-            storageKey,
-            title: typeof form.get("title") === "string" && String(form.get("title")).trim() ? String(form.get("title")).trim() : file.name,
-            alt: typeof form.get("alt") === "string" && String(form.get("alt")).trim() ? String(form.get("alt")).trim() : null,
-            mimeType: file.type,
-            sizeBytes: file.size,
-          },
-        });
-        await tx.auditLog.create({ data: { actorId: actor!.id, action: "MEDIA_UPLOAD", entityType: "MediaAsset", entityId: created.id, metadata: { scope, storageKey } } });
-        return created;
+        const createdItems = [];
+        for (const [index, item] of uploaded.entries()) {
+          const created = await tx.mediaAsset.create({
+            data: {
+              type: item.file.type.startsWith("video/") ? "VIDEO" : "IMAGE",
+              scope,
+              url: item.url,
+              storageKey: item.storageKey,
+              title: title ? (uploaded.length > 1 ? `${title} ${(index + 1).toLocaleString("fa-IR")}` : title) : item.file.name,
+              alt,
+              mimeType: item.file.type,
+              sizeBytes: item.file.size,
+            },
+          });
+          await tx.auditLog.create({ data: { actorId: actor.id, action: "MEDIA_UPLOAD", entityType: "MediaAsset", entityId: created.id, metadata: { scope, storageKey: item.storageKey } } });
+          createdItems.push(created);
+        }
+        return createdItems;
       });
-      return NextResponse.json(media, { status: 201 });
+      return NextResponse.json({ items: media }, { status: 201 });
     } catch (error) {
-      const { deleteStoredMedia } = await import("@/modules/media/ftp-storage");
-      await deleteStoredMedia(storageKey, url).catch(() => undefined);
+      await Promise.all(uploaded.map((item) => deleteStoredMedia(item.storageKey, item.url).catch(() => undefined)));
       throw error;
     }
   } catch (error) {

@@ -59,9 +59,10 @@ export function MediaLibrary() {
       const response = await fetch("/api/media", { method: "POST", body: data });
       const result = await response.json().catch(() => null);
       if (!response.ok) throw new Error(result?.message ?? "بارگذاری ناموفق بود.");
+      const uploadedCount = Array.isArray(result?.items) ? result.items.length : 0;
       form.reset();
       await load();
-      toast.success("فایل در گالری ذخیره شد", { description: "بارگذاری فایل با موفقیت انجام شد.", timeout: 4000 });
+      toast.success("فایل‌ها در گالری ذخیره شدند", { description: `${uploadedCount.toLocaleString("fa-IR")} فایل با موفقیت بارگذاری شد.`, timeout: 4000 });
     } catch (reason) {
       setMessage(reason instanceof Error ? reason.message : "بارگذاری فایل ناموفق بود.");
     } finally {
@@ -99,7 +100,7 @@ export function MediaLibrary() {
       <form onSubmit={upload} className="grid gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] sm:items-end sm:p-5">
         <label className={adminLabelClass}>
           {scope === "CATEGORY" ? "تصویر دسته‌بندی" : "تصویر یا ویدیوی محصول"}
-          <Input name="file" type="file" required fullWidth variant="secondary" accept={scope === "CATEGORY" ? "image/jpeg,image/png,image/webp" : "image/jpeg,image/png,image/webp,video/mp4,video/webm"} className={fieldClass} />
+          <Input name="file" type="file" multiple required fullWidth variant="secondary" accept={scope === "CATEGORY" ? "image/jpeg,image/png,image/webp" : "image/jpeg,image/png,image/webp,video/mp4,video/webm"} className={fieldClass} />
         </label>
         <label className={adminLabelClass}>عنوان فایل<Input name="title" fullWidth variant="secondary" className={fieldClass} placeholder="مثلاً نمای روبه‌روی محصول" /></label>
         <Button type="submit" isDisabled={uploading} variant="primary" className="min-h-[46px] gap-2 rounded-xl bg-amber-600 px-6 text-sm font-bold text-white"><UploadCloud className="size-4" />{uploading ? "در حال بارگذاری..." : "بارگذاری در FTP"}</Button>

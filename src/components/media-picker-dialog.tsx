@@ -73,10 +73,14 @@ export function MediaPickerDialog({ open, scope, multiple = false, selected, onC
       const response = await fetch("/api/media", { method: "POST", body: data });
       const result = await response.json().catch(() => null);
       if (!response.ok) throw new Error(result?.message ?? "بارگذاری فایل ناموفق بود.");
+      const uploadedItems = Array.isArray(result?.items) ? result.items as MediaChoice[] : [];
       form.reset();
       setUploadFileName("");
       await load();
-      toast.success("فایل در گالری ذخیره شد", { description: "رسانه جدید با موفقیت بارگذاری شد.", timeout: 4000 });
+      if (uploadedItems.length) {
+        setDraft((current) => multiple ? [...current, ...uploadedItems.filter((item) => !current.some((chosen) => chosen.id === item.id))] : [uploadedItems[0]]);
+      }
+      toast.success("فایل‌ها در گالری ذخیره شدند", { description: `${uploadedItems.length.toLocaleString("fa-IR")} رسانه جدید با موفقیت بارگذاری و انتخاب شد.`, timeout: 4000 });
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "بارگذاری فایل ناموفق بود.");
     } finally {
@@ -137,8 +141,8 @@ export function MediaPickerDialog({ open, scope, multiple = false, selected, onC
                     <span className="hidden h-10 w-10 place-items-center rounded-xl bg-[#f4ead8] text-[#8b682b] sm:grid"><Upload size={19} /></span>
                     <label className="grid min-w-0 cursor-pointer gap-1 rounded-xl border border-slate-200 bg-white px-3 py-2 transition hover:border-[#c8a867]">
                       <span className="text-xs font-bold text-slate-700">بارگذاری فایل جدید</span>
-                      <span className="truncate text-[11px] text-slate-400">{uploadFileName || (scope === "CATEGORY" ? "انتخاب تصویر JPG، PNG یا WebP" : "انتخاب تصویر یا ویدیوی محصول")}</span>
-                      <input name="file" type="file" required accept={acceptedFiles} className="sr-only" onChange={(event) => setUploadFileName(event.target.files?.[0]?.name ?? "")} />
+                      <span className="truncate text-[11px] text-slate-400">{uploadFileName || (scope === "CATEGORY" ? "انتخاب یک یا چند تصویر JPG، PNG یا WebP" : "انتخاب یک یا چند تصویر یا ویدیوی محصول")}</span>
+                      <input name="file" type="file" multiple required accept={acceptedFiles} className="sr-only" onChange={(event) => { const files = event.target.files; setUploadFileName(files?.length ? (files.length === 1 ? files[0].name : `${files.length.toLocaleString("fa-IR")} فایل انتخاب شد`) : ""); }} />
                     </label>
                     <Button type="submit" isDisabled={uploading} variant="primary" className="min-h-10 gap-2 bg-[#b5904c] px-4 text-xs font-bold text-white"><Upload size={15} />{uploading ? "در حال بارگذاری" : "بارگذاری"}</Button>
                   </form>
