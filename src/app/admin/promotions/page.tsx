@@ -1,8 +1,9 @@
 import { AdminPromotions } from "@/components/admin-promotions";
-import { AdminPageHeader } from "@/components/admin-ui";
+import { AdminPageHeader, AdminPrimaryLink } from "@/components/admin-ui";
 import { requirePermission } from "@/modules/auth/session";
 import { db } from "@/lib/db";
 import { serializePromotion } from "@/modules/promotions/admin";
+import { Plus } from "lucide-react";
 
 export default async function AdminPromotionsPage() {
   await requirePermission("orders:manage");
@@ -16,9 +17,10 @@ export default async function AdminPromotionsPage() {
       <AdminPageHeader
         eyebrow="بازاریابی و فروش"
         title="پروموشن‌ها"
-        description="مشوق‌های خرید، کدهای تخفیف و پیشنهادهای ویژه مشتریان را از یک محل تعریف و مدیریت کنید."
+        description="وضعیت، بازه اعتبار و میزان استفاده از کمپین‌های فروش را مدیریت کنید."
+        action={<AdminPrimaryLink href="/admin/promotions/new"><Plus size={17} />پروموشن جدید</AdminPrimaryLink>}
       />
-      <AdminPromotions initialItems={promotions.map(serializePromotion)} />
+      <AdminPromotions mode="list" initialItems={promotions.map(serializePromotion)} />
     </>
   );
 }

@@ -1,7 +1,8 @@
 "use client";
 
-import { useCallback, useState, type FormEvent, type ReactNode } from "react";
-import { Alert, Button, Card, Chip, Input, Spinner, toast } from "@heroui/react";
+import { useState, type FormEvent, type ReactNode } from "react";
+import { useRouter } from "next/navigation";
+import { Button, Card, Chip, Input, Spinner, toast } from "@heroui/react";
 import { BadgePercent, Check, Eye, EyeOff, Gift, Pencil, Save, ShoppingBag, Trash2, Truck } from "lucide-react";
 import { AdminCheckbox } from "@/components/admin-checkbox";
 import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
@@ -12,7 +13,7 @@ import { adminFieldClass, adminLabelClass } from "@/components/admin-ui";
 
 type PromotionType = "COUPON" | "FREE_SHIPPING" | "NEXT_PURCHASE" | "FIRST_PURCHASE";
 type DiscountType = "PERCENT" | "FIXED";
-type PromotionItem = {
+export type PromotionItem = {
   id: string;
   title: string;
   type: PromotionType;
@@ -62,35 +63,25 @@ function apiMessage(payload: unknown, fallback: string) {
   return data.message ?? fallback;
 }
 
-export function AdminPromotions({ initialItems }: { initialItems: PromotionItem[] }) {
-  const [selectedType, setSelectedType] = useState<PromotionType>("COUPON");
-  const [dateRange, setDateRange] = useState<{ start: string; end: string } | null>(null);
-  const [isActive, setIsActive] = useState(true);
+type AdminPromotionsProps = {
+  initialItems?: PromotionItem[];
+  initialEditing?: PromotionItem | null;
+  mode: "list" | "form";
+};
+
+export function AdminPromotions({ initialItems = [], initialEditing = null, mode }: AdminPromotionsProps) {
+  const router = useRouter();
+  const [selectedType, setSelectedType] = useState<PromotionType>(initialEditing?.type ?? "COUPON");
+  const [dateRange, setDateRange] = useState<{ start: string; end: string } | null>(initialEditing ? { start: initialEditing.startsAt, end: initialEditing.endsAt } : null);
+  const [isActive, setIsActive] = useState(initialEditing?.isActive ?? true);
   const [items, setItems] = useState<PromotionItem[]>(initialItems);
-  const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [listError, setListError] = useState("");
-  const [editing, setEditing] = useState<PromotionItem | null>(null);
+  const [editing, setEditing] = useState<PromotionItem | null>(initialEditing);
   const [deleting, setDeleting] = useState<PromotionItem | null>(null);
   const [deleteError, setDeleteError] = useState("");
   const [deletingBusy, setDeletingBusy] = useState(false);
   const [formVersion, setFormVersion] = useState(0);
   const selected = typeInfo(selectedType);
-
-  const loadItems = useCallback(async () => {
-    setLoading(true);
-    setListError("");
-    try {
-      const response = await fetch("/api/admin/promotions", { cache: "no-store" });
-      const data = await response.json().catch(() => null);
-      if (!response.ok) throw new Error(apiMessage(data, "دریافت پروموشن‌ها انجام نشد."));
-      setItems(Array.isArray(data?.items) ? data.items : []);
-    } catch (reason) {
-      setListError(reason instanceof Error ? reason.message : "دریافت پروموشن‌ها انجام نشد.");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
 
   function resetForm(type = selectedType) {
     setSelectedType(type);
@@ -101,16 +92,16 @@ export function AdminPromotions({ initialItems }: { initialItems: PromotionItem[
   }
 
   function selectType(type: PromotionType) {
+    if (editing) {
+      setSelectedType(type);
+      setFormVersion((value) => value + 1);
+      return;
+    }
     resetForm(type);
   }
 
   function editPromotion(item: PromotionItem) {
-    setSelectedType(item.type);
-    setEditing(item);
-    setDateRange({ start: item.startsAt, end: item.endsAt });
-    setIsActive(item.isActive);
-    setFormVersion((value) => value + 1);
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    router.push(`/admin/promotions/${item.id}/edit`);
   }
 
   function payloadFromForm(form: HTMLFormElement, active = isActive) {
@@ -154,8 +145,8 @@ export function AdminPromotions({ initialItems }: { initialItems: PromotionItem[
       const data = await response.json().catch(() => null);
       if (!response.ok) throw new Error(apiMessage(data, "ذخیره پروموشن انجام نشد."));
       toast.success(editing ? "پروموشن ویرایش شد." : "پروموشن ساخته شد.", { description: "قواعد کمپین از این لحظه در محاسبات سفارش بررسی می‌شوند." });
-      resetForm(selectedType);
-      await loadItems();
+      router.push("/admin/promotions");
+      router.refresh();
     } catch (reason) {
       toast.danger("ذخیره پروموشن انجام نشد", { description: reason instanceof Error ? reason.message : "خطای ناشناخته" });
     } finally {
@@ -197,6 +188,7 @@ export function AdminPromotions({ initialItems }: { initialItems: PromotionItem[
 
   return (
     <div dir="rtl" className="grid gap-5 text-right">
+      {mode === "form" ? <>
       <Card variant="secondary" className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-sm"><Card.Content className="p-4 sm:p-5">
         <div className="mb-4 flex items-start justify-between gap-3"><div><h2 className="m-0 text-base font-black text-[var(--foreground)]">نوع پروموشن را انتخاب کنید</h2><p className="mb-0 mt-1 text-xs text-[var(--muted)]">هر پروموشن قواعد و محدودیت‌های مخصوص خودش را دارد.</p></div><Chip size="sm" variant="soft" className="shrink-0 bg-violet-50 text-violet-700"><Chip.Label>۴ نوع</Chip.Label></Chip></div>
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">{promotionTypes.map((item) => { const active = selectedType === item.id; return <Button key={item.id} type="button" variant="secondary" aria-pressed={active} onPress={() => selectType(item.id)} className={`h-auto min-h-32 w-full justify-start whitespace-normal rounded-xl border p-3 text-right ${active ? "border-violet-400 bg-violet-50/60 ring-2 ring-violet-100" : "border-[var(--border)] bg-[var(--surface-secondary)] hover:border-violet-200"}`}><span className="grid w-full gap-2"><span className="flex items-start justify-between gap-3"><span className={`grid h-9 w-9 place-items-center rounded-lg ${item.color}`}>{item.icon}</span>{active ? <span className="grid h-6 w-6 place-items-center rounded-full bg-violet-700 text-white"><Check size={13} /></span> : null}</span><strong className="block text-xs font-black text-[var(--foreground)]">{item.title}</strong><span className="block text-[11px] leading-5 text-[var(--muted)]">{item.description}</span></span></Button>; })}</div>
@@ -210,16 +202,19 @@ export function AdminPromotions({ initialItems }: { initialItems: PromotionItem[
             <PromotionFields type={selectedType} editing={editing} />
             <AdminCheckbox isSelected={isActive} onChange={setIsActive} icon={isActive ? <Eye size={16} /> : <EyeOff size={16} />} description="فقط پروموشن فعال و در بازه اعتبار وارد محاسبات سفارش می‌شود.">پروموشن فعال باشد</AdminCheckbox>
           </div>
-          <div className="mt-5 flex flex-col-reverse gap-2 border-t border-[var(--border)] pt-4 sm:flex-row sm:justify-end"><Button type="button" variant="secondary" isDisabled={saving} onPress={() => resetForm(selectedType)} className="min-h-10 px-4 text-xs">{editing ? "انصراف از ویرایش" : "پاک‌کردن فرم"}</Button><Button type="submit" variant="primary" isPending={saving} className="min-h-10 gap-2 bg-violet-700 px-5 text-xs font-bold text-white">{({ isPending }) => <>{isPending ? <Spinner color="current" size="sm" /> : <Save size={15} />}{isPending ? "در حال ذخیره..." : editing ? "ذخیره تغییرات" : "ذخیره پروموشن"}</>}</Button></div>
+          <div className="mt-5 flex flex-col-reverse gap-2 border-t border-[var(--border)] pt-4 sm:flex-row sm:justify-end"><Button type="button" variant="secondary" isDisabled={saving} onPress={() => editing ? router.push("/admin/promotions") : resetForm(selectedType)} className="min-h-10 px-4 text-xs">{editing ? "انصراف از ویرایش" : "پاک‌کردن فرم"}</Button><Button type="submit" variant="primary" isPending={saving} className="min-h-10 gap-2 bg-violet-700 px-5 text-xs font-bold text-white">{({ isPending }) => <>{isPending ? <Spinner color="current" size="sm" /> : <Save size={15} />}{isPending ? "در حال ذخیره..." : editing ? "ذخیره تغییرات" : "ذخیره پروموشن"}</>}</Button></div>
         </Card.Content></Card>
       </form>
+      </> : null}
 
+      {mode === "list" ?
       <Card variant="secondary" className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-sm"><Card.Content className="p-4 sm:p-5">
         <div className="mb-4 flex items-center justify-between gap-3"><div><h2 className="m-0 text-base font-black">پروموشن‌های ثبت‌شده</h2><p className="mb-0 mt-1 text-xs text-[var(--muted)]">وضعیت، مصرف و بازه هر کمپین را مدیریت کنید.</p></div><Chip size="sm" variant="soft"><Chip.Label>{items.length.toLocaleString("fa-IR")} مورد</Chip.Label></Chip></div>
-        {listError ? <Alert status="danger"><Alert.Description>{listError}</Alert.Description></Alert> : loading ? <div className="grid min-h-32 place-items-center"><Spinner size="lg" /></div> : items.length ? <div className="grid gap-2">{items.map((item) => <PromotionRow key={item.id} item={item} onEdit={() => editPromotion(item)} onToggle={() => void togglePromotion(item)} onDelete={() => { setDeleteError(""); setDeleting(item); }} />)}</div> : <div className="rounded-xl border-2 border-dashed border-[var(--border)] bg-[var(--surface-secondary)] px-5 py-10 text-center"><strong className="block text-sm">هنوز پروموشنی ثبت نشده است</strong><span className="mt-1 block text-xs text-[var(--muted)]">یکی از چهار نوع بالا را انتخاب و اولین کمپین را ایجاد کنید.</span></div>}
+        {items.length ? <div className="grid gap-2">{items.map((item) => <PromotionRow key={item.id} item={item} onEdit={() => editPromotion(item)} onToggle={() => void togglePromotion(item)} onDelete={() => { setDeleteError(""); setDeleting(item); }} />)}</div> : <div className="rounded-xl border-2 border-dashed border-[var(--border)] bg-[var(--surface-secondary)] px-5 py-10 text-center"><strong className="block text-sm">هنوز پروموشنی ثبت نشده است</strong><span className="mt-1 block text-xs text-[var(--muted)]">برای ساخت اولین کمپین از دکمه «پروموشن جدید» استفاده کنید.</span></div>}
       </Card.Content></Card>
+      : null}
 
-      <DeleteConfirmDialog open={Boolean(deleting)} title="حذف پروموشن" itemName={deleting?.title} description="اگر این پروموشن سابقه استفاده یا پاداش داشته باشد حذف نمی‌شود و باید آن را غیرفعال کنید." error={deleteError} loading={deletingBusy} onClose={() => { setDeleting(null); setDeleteError(""); }} onConfirm={() => void confirmDelete()} />
+      {mode === "list" ? <DeleteConfirmDialog open={Boolean(deleting)} title="حذف پروموشن" itemName={deleting?.title} description="اگر این پروموشن سابقه استفاده یا پاداش داشته باشد حذف نمی‌شود و باید آن را غیرفعال کنید." error={deleteError} loading={deletingBusy} onClose={() => { setDeleting(null); setDeleteError(""); }} onConfirm={() => void confirmDelete()} /> : null}
     </div>
   );
 }
