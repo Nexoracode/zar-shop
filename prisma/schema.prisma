@@ -26,6 +26,11 @@ enum ProductStatus {
   ARCHIVED
 }
 
+enum StoreIndustry {
+  GOLD
+  GENERAL
+}
+
 enum MediaType {
   IMAGE
   VIDEO
@@ -155,6 +160,7 @@ model Product {
   slug           String          @unique @db.VarChar(191)
   description    String?         @db.LongText
   status         ProductStatus   @default(DRAFT)
+  storeIndustry  StoreIndustry   @default(GOLD)
   categoryId     String?
   optionGuideId  String?
   purity         Int             @default(750)
@@ -178,6 +184,13 @@ model Product {
   @@index([categoryId, status])
   @@index([optionGuideId])
   @@index([featured, status])
+}
+
+model StoreSetting {
+  id        String        @id @default("main") @db.VarChar(20)
+  industry  StoreIndustry @default(GOLD)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
 }
 
 model MediaAsset {
@@ -291,6 +304,7 @@ model OrderItem {
   sku             String   @db.VarChar(80)
   name            String   @db.VarChar(191)
   selectedOptions Json?
+  storeIndustry    StoreIndustry @default(GOLD)
   quantity        Int
   weightGrams     Decimal  @db.Decimal(10, 3)
   purity          Int

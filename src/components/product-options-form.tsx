@@ -10,13 +10,14 @@ import { apiErrorMessage, validationErrorMessage } from "@/lib/form-errors";
 import { productSchema } from "@/modules/products/schemas";
 import { parseOptionValueShortcut } from "@/modules/products/option-shortcuts";
 
-type OptionValue = { value: string; colorId: string | null; isActive: boolean; stock: number | null; weightGrams: string | null; persisted?: boolean; used?: boolean };
+type OptionValue = { value: string; colorId: string | null; isActive: boolean; stock: number | null; weightGrams: string | null; price: string | null; persisted?: boolean; used?: boolean };
 type DraftOption = { key: string; name: string; values: OptionValue[]; valueInput: string; persisted: boolean };
 type ColorChoice = { id: string; name: string; hex: string };
 
-export function ProductOptionsForm({ productId, productStock, colors, initialOptions }: {
+export function ProductOptionsForm({ productId, productStock, storeIndustry, colors, initialOptions }: {
   productId: string;
   productStock: number;
+  storeIndustry: "GOLD" | "GENERAL";
   colors: ColorChoice[];
   initialOptions: Array<{ name: string; values: OptionValue[] }>;
 }) {
@@ -44,7 +45,7 @@ export function ProductOptionsForm({ productId, productStock, colors, initialOpt
     setOptions((current) => current.map((option) => {
       if (option.key !== key) return option;
       const existingValues = new Set(option.values.map((item) => item.value));
-      const addedValues = parsed.values.filter((item) => !existingValues.has(item.value)).map((item) => ({ ...item, colorId: null, isActive: true, stock: productStock, persisted: false, used: false }));
+      const addedValues = parsed.values.filter((item) => !existingValues.has(item.value)).map((item) => ({ ...item, weightGrams: storeIndustry === "GOLD" ? item.weightGrams : null, price: null, colorId: null, isActive: true, stock: productStock, persisted: false, used: false }));
       return { ...option, values: [...option.values, ...addedValues], valueInput: "" };
     }));
   }
@@ -54,7 +55,7 @@ export function ProductOptionsForm({ productId, productStock, colors, initialOpt
     if (!color) return;
     setOptions((current) => current.map((option) => option.key !== key ? option : {
       ...option,
-      values: option.values.some((item) => item.colorId === colorId) ? option.values : [...option.values, { value: color.name, colorId, isActive: true, stock: productStock, weightGrams: null, persisted: false, used: false }],
+      values: option.values.some((item) => item.colorId === colorId) ? option.values : [...option.values, { value: color.name, colorId, isActive: true, stock: productStock, weightGrams: null, price: null, persisted: false, used: false }],
     }));
   }
 
@@ -82,8 +83,8 @@ export function ProductOptionsForm({ productId, productStock, colors, initialOpt
     const submittedOptions = options.map((option) => {
       const pendingValues = option.name.includes("رنگ") ? [] : parseOptionValueShortcut(option.valueInput).values;
       const existingValues = new Set(option.values.map((item) => item.value));
-      const values = [...option.values, ...pendingValues.filter((item) => !existingValues.has(item.value)).map((item) => ({ ...item, colorId: null, isActive: true, stock: productStock }))];
-      return { name: option.name, values: values.map((item) => ({ value: item.value, colorId: item.colorId, isActive: item.isActive, stock: item.stock, weightGrams: item.weightGrams })) };
+      const values = [...option.values, ...pendingValues.filter((item) => !existingValues.has(item.value)).map((item) => ({ ...item, weightGrams: storeIndustry === "GOLD" ? item.weightGrams : null, price: null, colorId: null, isActive: true, stock: productStock }))];
+      return { name: option.name, values: values.map((item) => ({ value: item.value, colorId: item.colorId, isActive: item.isActive, stock: item.stock, weightGrams: item.weightGrams, price: item.price })) };
     });
     const validation = productSchema.shape.options.safeParse(submittedOptions);
     if (!validation.success) {
@@ -121,18 +122,18 @@ export function ProductOptionsForm({ productId, productStock, colors, initialOpt
               {option.values.some((item) => item.used) ? <Button type="button" size="sm" isIconOnly variant="ghost" aria-label={`${option.values.some((item) => item.isActive) ? "غیرفعال‌سازی" : "فعال‌سازی"} گروه ${option.name}`} onPress={() => updateOption(option.key, { values: option.values.map((item) => ({ ...item, isActive: !option.values.some((value) => value.isActive) })) })} className={`mb-1 h-9 min-h-9 w-9 min-w-9 ${option.values.some((item) => item.isActive) ? "text-emerald-600" : "text-slate-400"}`}>{option.values.some((item) => item.isActive) ? <Eye size={16} /> : <EyeOff size={16} />}</Button> : <Button type="button" size="sm" isIconOnly variant="danger-soft" onPress={() => setOptions((current) => current.filter((item) => item.key !== option.key))} className="mb-1 h-9 min-h-9 w-9 min-w-9" aria-label={`حذف گروه ${option.name || (index + 1).toLocaleString("fa-IR")}`}><Trash2 size={15} /></Button>}
             </div>
 
-            {option.name.includes("رنگ") ? <div className={adminLabelClass}>انتخاب رنگ<HeroSelectField name={`color-${option.key}`} ariaLabel="انتخاب رنگ" value="" placeholder={colors.length ? "یک رنگ را انتخاب کنید" : "رنگی ثبت نشده"} disabled={!colors.length} options={colors.filter((color) => !option.values.some((item) => item.colorId === color.id)).map((color) => ({ value: color.id, label: `${color.name} (${color.hex})` }))} onValueChange={(colorId) => addOptionColor(option.key, colorId)} /></div> : <label className={adminLabelClass}>مقدار قابل انتخاب<span className="flex gap-2"><Input value={option.valueInput} onChange={(event) => updateOption(option.key, { valueInput: event.target.value })} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); addOptionValue(option.key); } }} fullWidth variant="secondary" placeholder="۱۲,۱۳,۱۴ یا ۱۲:۲/۴۰۰" className={adminFieldClass} /><Button type="button" variant="secondary" onPress={() => addOptionValue(option.key)} className="min-h-11 shrink-0 gap-1"><Plus size={14} />افزودن</Button></span><span className="text-[10px] font-normal text-slate-400">چند مقدار را با کاما جدا کنید؛ بعد از دونقطه وزن را بنویسید.</span></label>}
+            {option.name.includes("رنگ") ? <div className={adminLabelClass}>انتخاب رنگ<HeroSelectField name={`color-${option.key}`} ariaLabel="انتخاب رنگ" value="" placeholder={colors.length ? "یک رنگ را انتخاب کنید" : "رنگی ثبت نشده"} disabled={!colors.length} options={colors.filter((color) => !option.values.some((item) => item.colorId === color.id)).map((color) => ({ value: color.id, label: `${color.name} (${color.hex})` }))} onValueChange={(colorId) => addOptionColor(option.key, colorId)} /></div> : <label className={adminLabelClass}>مقدار قابل انتخاب<span className="flex gap-2"><Input value={option.valueInput} onChange={(event) => updateOption(option.key, { valueInput: event.target.value })} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); addOptionValue(option.key); } }} fullWidth variant="secondary" placeholder={storeIndustry === "GOLD" ? "۱۲,۱۳,۱۴ یا ۱۲:۲/۴۰۰" : "کوچک،متوسط،بزرگ"} className={adminFieldClass} /><Button type="button" variant="secondary" onPress={() => addOptionValue(option.key)} className="min-h-11 shrink-0 gap-1"><Plus size={14} />افزودن</Button></span><span className="text-[10px] font-normal text-slate-400">{storeIndustry === "GOLD" ? "چند مقدار را با کاما جدا کنید؛ بعد از دونقطه وزن را بنویسید." : "چند مقدار را با کاما از هم جدا کنید."}</span></label>}
 
             {option.name.includes("رنگ") && !colors.length && <p className="mt-2 text-xs text-amber-700">ابتدا از <Link href="/admin/colors" className="font-black underline">صفحه رنگ‌ها</Link> رنگ موردنظر را ثبت کنید.</p>}
             {option.values.length ? <div className="mt-4 grid gap-1.5 overflow-x-auto pb-1">
-              <div className="grid min-w-[360px] grid-cols-[minmax(100px,1fr)_88px_110px_34px] gap-2 px-3 text-[10px] font-bold text-slate-400"><span>مقدار</span><span>موجودی</span><span>وزن (گرم)</span><span className="sr-only">وضعیت</span></div>
+              <div className="grid min-w-[360px] grid-cols-[minmax(100px,1fr)_88px_130px_34px] gap-2 px-3 text-[10px] font-bold text-slate-400"><span>مقدار</span><span>موجودی</span><span>{storeIndustry === "GOLD" ? "وزن (گرم)" : "قیمت (ریال)"}</span><span className="sr-only">وضعیت</span></div>
               {option.values.map((item) => {
                 const color = colors.find((candidate) => candidate.id === item.colorId);
                 const compactInputClass = `${adminFieldClass} h-9 min-h-9 rounded-lg border-slate-200 bg-white px-2 py-1 text-xs shadow-none`;
-                return <div key={item.value} className={`grid min-w-[360px] grid-cols-[minmax(100px,1fr)_88px_110px_34px] items-center gap-2 rounded-lg border px-3 py-2 ${item.isActive ? "border-slate-200 bg-slate-50/60" : "border-slate-200 bg-slate-50 opacity-55"}`}>
+                return <div key={item.value} className={`grid min-w-[360px] grid-cols-[minmax(100px,1fr)_88px_130px_34px] items-center gap-2 rounded-lg border px-3 py-2 ${item.isActive ? "border-slate-200 bg-slate-50/60" : "border-slate-200 bg-slate-50 opacity-55"}`}>
                   <span className="inline-flex min-w-0 items-center gap-2 truncate text-xs font-bold text-slate-700">{color && <span className="h-4 w-4 shrink-0 rounded-full border border-slate-300" style={{ backgroundColor: color.hex }} />}{color?.name ?? item.value}</span>
                   <Input type="number" min="0" value={String(item.stock ?? 0)} onChange={(event) => updateOption(option.key, { values: option.values.map((value) => value.value === item.value ? { ...value, stock: Math.max(0, Number(event.target.value) || 0) } : value) })} variant="secondary" className={compactInputClass} aria-label={`موجودی ${item.value}`} />
-                  <Input type="number" min="0.001" step="0.001" value={item.weightGrams ?? ""} placeholder="پایه" onChange={(event) => updateOption(option.key, { values: option.values.map((value) => value.value === item.value ? { ...value, weightGrams: event.target.value || null } : value) })} variant="secondary" className={compactInputClass} aria-label={`وزن ${item.value}`} />
+                  {storeIndustry === "GOLD" ? <Input type="number" min="0.001" step="0.001" value={item.weightGrams ?? ""} placeholder="پایه" onChange={(event) => updateOption(option.key, { values: option.values.map((value) => value.value === item.value ? { ...value, weightGrams: event.target.value || null } : value) })} variant="secondary" className={compactInputClass} aria-label={`وزن ${item.value}`} /> : <Input type="number" min="1" value={item.price ?? ""} placeholder="قیمت پایه" onChange={(event) => updateOption(option.key, { values: option.values.map((value) => value.value === item.value ? { ...value, price: event.target.value || null } : value) })} variant="secondary" className={compactInputClass} aria-label={`قیمت ${item.value}`} />}
                   {item.used ? <Button type="button" size="sm" isIconOnly variant="ghost" aria-label={`${item.isActive ? "غیرفعال‌سازی" : "فعال‌سازی"} ${item.value}`} onPress={() => updateOption(option.key, { values: option.values.map((value) => value.value === item.value ? { ...value, isActive: !value.isActive } : value) })} className={`h-8 min-h-8 w-8 min-w-8 rounded-lg ${item.isActive ? "text-emerald-600" : "text-slate-400"}`}>{item.isActive ? <Eye size={15} /> : <EyeOff size={15} />}</Button> : <Button type="button" size="sm" isIconOnly variant="danger-soft" onPress={() => updateOption(option.key, { values: option.values.filter((value) => value.value !== item.value) })} className="h-8 min-h-8 w-8 min-w-8 rounded-lg" aria-label={`حذف مقدار ${item.value}`}><Trash2 size={13} /></Button>}
                 </div>;
               })}

@@ -1,0 +1,2 @@
+ALTER TABLE `OrderItem`
+    ADD COLUMN `storeIndustry` ENUM('GOLD', 'GENERAL') NOT NULL DEFAULT 'GOLD';

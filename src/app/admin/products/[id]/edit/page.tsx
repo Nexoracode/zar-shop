@@ -28,6 +28,7 @@ export default async function EditProductPage({ params }: Context) {
     <>
       <AdminPageHeader eyebrow="مدیریت کاتالوگ" title={`ویرایش «${product.name}»`} description="اطلاعات، قیمت‌گذاری، موجودی و گالری این محصول را به‌روزرسانی کنید." />
       <ProductForm
+        storeIndustry={product.storeIndustry}
         categories={categories.map((category) => ({ id: category.id, name: category.name, parentName: category.parent?.name ?? null }))}
         colors={colors}
         product={{
@@ -37,12 +38,14 @@ export default async function EditProductPage({ params }: Context) {
           slug: product.slug,
           description: product.description ?? "",
           categoryId: product.categoryId ?? "",
+          storeIndustry: product.storeIndustry,
           purity: product.purity,
           weightGrams: Number(product.weightGrams),
           makingFeeType: product.makingFeeType,
           makingFeeValue: Number(product.makingFeeValue),
           profitPercent: Number(product.profitPercent),
           taxPercent: Number(product.taxPercent),
+          fixedPrice: product.fixedPrice === null ? null : Number(product.fixedPrice),
           stock: product.stock,
           status: product.status,
           featured: product.featured,

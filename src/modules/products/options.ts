@@ -2,12 +2,12 @@ import { createHash } from "node:crypto";
 
 type ProductOptionLike = { id: string; name: string; values: unknown };
 
-export type ProductOptionValue = { value: string; colorId: string | null; isActive: boolean; stock: number | null; weightGrams: string | null };
+export type ProductOptionValue = { value: string; colorId: string | null; isActive: boolean; stock: number | null; weightGrams: string | null; price: string | null };
 
 export function parseOptionValues(values: unknown): ProductOptionValue[] {
   if (!Array.isArray(values)) return [];
   return values.flatMap((item) => {
-    if (typeof item === "string") return [{ value: item, colorId: null, isActive: true, stock: null, weightGrams: null }];
+    if (typeof item === "string") return [{ value: item, colorId: null, isActive: true, stock: null, weightGrams: null, price: null }];
     if (!item || typeof item !== "object" || !("value" in item) || typeof item.value !== "string") return [];
     return [{
       value: item.value,
@@ -15,6 +15,7 @@ export function parseOptionValues(values: unknown): ProductOptionValue[] {
       isActive: !("isActive" in item) || item.isActive !== false,
       stock: "stock" in item && typeof item.stock === "number" && Number.isInteger(item.stock) && item.stock >= 0 ? item.stock : null,
       weightGrams: "weightGrams" in item && typeof item.weightGrams === "string" && /^\d{1,7}(\.\d{1,3})?$/.test(item.weightGrams) ? item.weightGrams : null,
+      price: "price" in item && typeof item.price === "string" && /^[1-9]\d{0,17}$/.test(item.price) ? item.price : null,
     }];
   });
 }
@@ -63,6 +64,15 @@ export function getSelectedOptionWeight(options: ProductOptionLike[], snapshot: 
     return value?.weightGrams ? [Number(value.weightGrams)] : [];
   });
   return selectedWeights[0] ?? fallbackWeight;
+}
+
+export function getSelectedOptionPrice(options: ProductOptionLike[], snapshot: unknown, fallbackPrice: number) {
+  const selected = Object.fromEntries(optionEntries(snapshot));
+  const selectedPrices = options.flatMap((option) => {
+    const value = parseOptionValues(option.values).find((item) => item.value === selected[option.name]);
+    return value?.price ? [Number(value.price)] : [];
+  });
+  return selectedPrices[0] ?? fallbackPrice;
 }
 
 export function mergeOptionsPreservingHistory(

@@ -120,8 +120,7 @@ export default async function OrderDetailsPage({ params }: { params: PageParams 
                         <span>کد: <b dir="ltr">{item.sku}</b></span>
                         {optionEntries(item.selectedOptions).map(([name, value]) => <span key={name}>{name}: <b>{value}</b></span>)}
                         <span>تعداد: <b>{item.quantity.toLocaleString("fa-IR")}</b></span>
-                        <span>وزن: <b>{Number(item.weightGrams).toLocaleString("fa-IR", { maximumFractionDigits: 3 })} گرم</b></span>
-                        <span>عیار: <b>{item.purity.toLocaleString("fa-IR")}</b></span>
+                        {item.storeIndustry === "GOLD" && <><span>وزن: <b>{Number(item.weightGrams).toLocaleString("fa-IR", { maximumFractionDigits: 3 })} گرم</b></span><span>عیار: <b>{item.purity.toLocaleString("fa-IR")}</b></span></>}
                       </div>
                     </div>
                     <div className="text-right sm:text-left"><span className="block text-xs text-slate-400">مبلغ این ردیف</span><strong className="mt-1 block whitespace-nowrap text-sm text-slate-700">{formatMoney(item.total.toString())}</strong><span className="mt-1 block text-[11px] text-slate-400">واحد: {formatMoney(item.unitPrice.toString())}</span></div>

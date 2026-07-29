@@ -77,6 +77,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
                   key={product.id}
                   href={`/products/${product.slug}`}
                   name={product.name}
+                  industry={product.storeIndustry}
                   category={product.category?.name ?? "طلا"}
                   weight={Number(product.weightGrams)}
                   purity={product.purity}

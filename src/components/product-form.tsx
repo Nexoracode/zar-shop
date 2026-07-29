@@ -12,18 +12,18 @@ import { adminFieldClass, adminLabelClass } from "@/components/admin-ui";
 import { HeroSelectField } from "@/components/hero-select-field";
 import { AdminCheckbox } from "@/components/admin-checkbox";
 import { apiErrorMessage, validationErrorMessage } from "@/lib/form-errors";
-import { productSchema } from "@/modules/products/schemas";
+import { completeProductSchema } from "@/modules/products/schemas";
 import { RichTextEditor } from "@/components/rich-text-editor";
 
 type EditableProduct = {
   id: string; sku: string; name: string; slug: string; description: string; categoryId: string; purity: number; weightGrams: number;
-  makingFeeType: string; makingFeeValue: number; profitPercent: number; taxPercent: number; stock: number;
+  storeIndustry: "GOLD" | "GENERAL"; makingFeeType: string; makingFeeValue: number; profitPercent: number; taxPercent: number; fixedPrice: number | null; stock: number;
   status: "DRAFT" | "ACTIVE" | "ARCHIVED"; featured: boolean; media: MediaChoice[]; options: Array<{ name: string; values: Array<{ value: string; colorId: string | null }> }>; optionGuide: MediaChoice | null;
 };
 
 type DraftOption = { key: string; name: string; values: Array<{ value: string; colorId: string | null }>; valueInput: string };
 
-type Props = { categories?: Array<{ id: string; name: string; parentName: string | null }>; colors?: Array<{ id: string; name: string; hex: string }>; product?: EditableProduct };
+type Props = { storeIndustry: "GOLD" | "GENERAL"; categories?: Array<{ id: string; name: string; parentName: string | null }>; colors?: Array<{ id: string; name: string; hex: string }>; product?: EditableProduct };
 
 const productFieldLabels: Record<string, string> = {
   sku: "کد کالا",
@@ -37,6 +37,7 @@ const productFieldLabels: Record<string, string> = {
   makingFeeValue: "مقدار اجرت",
   profitPercent: "درصد سود",
   taxPercent: "درصد مالیات",
+  fixedPrice: "قیمت محصول",
   stock: "موجودی انبار",
   status: "وضعیت محصول",
   featured: "نمایش در محصولات ویژه",
@@ -45,7 +46,7 @@ const productFieldLabels: Record<string, string> = {
   optionGuideId: "راهنمای انتخاب",
 };
 
-export function ProductForm({ categories = [], colors = [], product }: Props) {
+export function ProductForm({ storeIndustry, categories = [], colors = [], product }: Props) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [selectedMedia, setSelectedMedia] = useState<MediaChoice[]>(product?.media ?? []);
@@ -133,11 +134,13 @@ export function ProductForm({ categories = [], colors = [], product }: Props) {
     });
     const body = {
       sku: form.get("sku"), name: form.get("name"), slug: form.get("slug"), description, categoryId: form.get("categoryId") || null,
-      purity: Number(form.get("purity")), weightGrams: Number(form.get("weightGrams")), makingFeeType: form.get("makingFeeType"), makingFeeValue: Number(form.get("makingFeeValue")),
-      profitPercent: Number(form.get("profitPercent")), taxPercent: Number(form.get("taxPercent")), stock: Number(form.get("stock")), status: form.get("status"),
+      storeIndustry, purity: storeIndustry === "GOLD" ? Number(form.get("purity")) : 750, weightGrams: storeIndustry === "GOLD" ? Number(form.get("weightGrams")) : 0,
+      makingFeeType: storeIndustry === "GOLD" ? form.get("makingFeeType") : "PERCENT", makingFeeValue: storeIndustry === "GOLD" ? Number(form.get("makingFeeValue")) : 0,
+      profitPercent: storeIndustry === "GOLD" ? Number(form.get("profitPercent")) : 0, taxPercent: storeIndustry === "GOLD" ? Number(form.get("taxPercent")) : 0,
+      fixedPrice: storeIndustry === "GENERAL" ? Number(form.get("fixedPrice")) : null, stock: Number(form.get("stock")), status: form.get("status"),
       featured: form.get("featured") === "on", mediaIds: selectedMedia.map((media) => media.id), options: submittedOptions, optionGuideId: optionGuide?.id ?? null,
     };
-    const validation = productSchema.safeParse(body);
+    const validation = completeProductSchema.safeParse(body);
     if (!validation.success) {
       const message = validationErrorMessage(validation.error.issues, productFieldLabels);
       toast.danger("اطلاعات محصول کامل نیست", { description: message, timeout: 5000 });
@@ -224,8 +227,8 @@ export function ProductForm({ categories = [], colors = [], product }: Props) {
           </div>
         </FormSection>
 
-        <FormSection icon={<Tag size={18} />} title="مشخصات و قیمت‌گذاری" description="اعداد این بخش در محاسبه قیمت نهایی طلا استفاده می‌شوند.">
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3"><Field label="وزن (گرم)"><Input name="weightGrams" type="number" step="0.001" min="0.001" required fullWidth variant="secondary" defaultValue={product?.weightGrams} className={adminFieldClass} /></Field><Field label="عیار"><Input name="purity" type="number" min="1" max="999" defaultValue={product?.purity ?? 750} required fullWidth variant="secondary" className={adminFieldClass} /></Field><HeroSelectField name="makingFeeType" label="نوع اجرت" defaultValue={product?.makingFeeType ?? "PERCENT"} options={[{ value: "PERCENT", label: "درصدی" }, { value: "FIXED", label: "مبلغ ثابت" }]} /><Field label="مقدار اجرت"><Input name="makingFeeValue" type="number" step="0.001" defaultValue={product?.makingFeeValue ?? 10} min="0" required fullWidth variant="secondary" className={adminFieldClass} /></Field><Field label="درصد سود"><Input name="profitPercent" type="number" step="0.01" defaultValue={product?.profitPercent ?? 7} min="0" required fullWidth variant="secondary" className={adminFieldClass} /></Field><Field label="درصد مالیات"><Input name="taxPercent" type="number" step="0.01" defaultValue={product?.taxPercent ?? 10} min="0" required fullWidth variant="secondary" className={adminFieldClass} /></Field></div>
+        <FormSection icon={<Tag size={18} />} title="مشخصات و قیمت‌گذاری" description={storeIndustry === "GOLD" ? "قیمت بر اساس نرخ روز طلا، وزن، اجرت، سود و مالیات محاسبه می‌شود." : "برای محصول معمولی، قیمت فروش را مستقیم به ریال وارد کنید."}>
+          {storeIndustry === "GOLD" ? <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3"><Field label="وزن (گرم)"><Input name="weightGrams" type="number" step="0.001" min="0.001" required fullWidth variant="secondary" defaultValue={product?.weightGrams} className={adminFieldClass} /></Field><Field label="عیار"><Input name="purity" type="number" min="1" max="999" defaultValue={product?.purity ?? 750} required fullWidth variant="secondary" className={adminFieldClass} /></Field><HeroSelectField name="makingFeeType" label="نوع اجرت" defaultValue={product?.makingFeeType ?? "PERCENT"} options={[{ value: "PERCENT", label: "درصدی" }, { value: "FIXED", label: "مبلغ ثابت" }]} /><Field label="مقدار اجرت"><Input name="makingFeeValue" type="number" step="0.001" defaultValue={product?.makingFeeValue ?? 10} min="0" required fullWidth variant="secondary" className={adminFieldClass} /></Field><Field label="درصد سود"><Input name="profitPercent" type="number" step="0.01" defaultValue={product?.profitPercent ?? 7} min="0" required fullWidth variant="secondary" className={adminFieldClass} /></Field><Field label="درصد مالیات"><Input name="taxPercent" type="number" step="0.01" defaultValue={product?.taxPercent ?? 10} min="0" required fullWidth variant="secondary" className={adminFieldClass} /></Field></div> : <div className="max-w-md"><Field label="قیمت فروش (ریال)"><Input name="fixedPrice" type="number" min="1" required fullWidth variant="secondary" defaultValue={product?.fixedPrice ?? undefined} placeholder="مثلاً ۱۵۰۰۰۰۰" className={adminFieldClass} /></Field></div>}
         </FormSection>
       </div>
 
@@ -234,7 +237,7 @@ export function ProductForm({ categories = [], colors = [], product }: Props) {
         <Alert status="warning" className="border border-amber-300 bg-amber-50 text-amber-950 shadow-sm">
           <div className="grid gap-1.5">
             <Alert.Title className="block text-sm font-black text-amber-950">نکته مهم</Alert.Title>
-            <Alert.Description className="block text-xs leading-6 text-amber-900">پیش از انتشار محصول، تصویر اصلی، دسته‌بندی، وزن و موجودی را بررسی کنید تا اطلاعات محصول کامل و قیمت آن درست محاسبه شود.</Alert.Description>
+            <Alert.Description className="block text-xs leading-6 text-amber-900">پیش از انتشار محصول، تصویر اصلی، دسته‌بندی، {storeIndustry === "GOLD" ? "وزن" : "قیمت"} و موجودی را بررسی کنید.</Alert.Description>
           </div>
         </Alert>
         <div className="grid gap-2"><Button type="submit" isPending={loading} variant="primary" fullWidth className="min-h-12 gap-2 bg-[#172b4d] px-5 text-sm font-bold text-white shadow-lg">{({ isPending }) => <>{isPending ? <Spinner color="current" size="sm" /> : <Save size={17} />}{isPending ? "در حال ذخیره..." : product ? "ذخیره تغییرات" : "ثبت محصول"}</>}</Button><Link href="/admin/products" className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white text-sm font-bold text-slate-600"><ChevronRight size={16} />بازگشت به محصولات</Link></div>

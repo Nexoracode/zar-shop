@@ -28,9 +28,10 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   const colorsById = new Map(colors.map((color) => [color.id, color]));
 
   const rate = gold ? Number(gold.pricePerGram18) : null;
-  const parts = rate === null ? null : calculateProductPrice({ goldPricePerGram18: rate, weightGrams: Number(product.weightGrams), purity: product.purity, makingFeeType: product.makingFeeType, makingFeeValue: Number(product.makingFeeValue), profitPercent: Number(product.profitPercent), taxPercent: Number(product.taxPercent) });
+  const parts = product.storeIndustry === "GOLD" && rate !== null ? calculateProductPrice({ goldPricePerGram18: rate, weightGrams: Number(product.weightGrams), purity: product.purity, makingFeeType: product.makingFeeType, makingFeeValue: Number(product.makingFeeValue), profitPercent: Number(product.profitPercent), taxPercent: Number(product.taxPercent) }) : null;
   const total = product.fixedPrice ? Number(product.fixedPrice) : parts?.total ?? null;
-  const priceForVariantWeight = (weightGrams: string | null) => {
+  const priceForVariant = (weightGrams: string | null, price: string | null) => {
+    if (product.storeIndustry === "GENERAL") return price ? Number(price) : product.fixedPrice ? Number(product.fixedPrice) : null;
     if (!weightGrams) return null;
     if (product.fixedPrice) return Number(product.fixedPrice);
     if (rate === null) return null;
@@ -64,7 +65,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
 
           {/* Specs */}
           <div className="my-[30px] grid grid-cols-3 border-y border-[#e7e6e2]">
-            {[["وزن", `${Number(product.weightGrams)} گرم`], ["عیار", String(product.purity)], ["موجودی", product.stock > 0 ? "موجود" : "ناموجود"]].map(([label, val]) => (
+            {(product.storeIndustry === "GOLD" ? [["وزن", `${Number(product.weightGrams)} گرم`], ["عیار", String(product.purity)], ["موجودی", product.stock > 0 ? "موجود" : "ناموجود"]] : [["کد کالا", product.sku], ["نوع محصول", "کالای فروشگاهی"], ["موجودی", product.stock > 0 ? "موجود" : "ناموجود"]]).map(([label, val]) => (
               <div key={label} className="py-[17px] px-3 grid gap-[2px] text-center border-l border-[#e7e6e2] last:border-l-0">
                 <span className="text-[#747982] text-[0.75rem]">{label}</span>
                 <strong className="text-[0.9rem]">{val}</strong>
@@ -75,19 +76,21 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
           {/* Purchase card */}
           <div className="p-6 grid gap-[15px] bg-[#f5f5f3] border-r-[3px] border-[#b5904c]">
             <span className="text-[#747982] text-[0.82rem]">
-              {product.fixedPrice
+              {product.storeIndustry === "GENERAL"
+                ? "قیمت فروش محصول"
+                : product.fixedPrice
                 ? "قیمت ثابت محصول"
                 : rate === null
                   ? "نرخ لحظه‌ای طلا موقتاً در دسترس نیست."
                   : `قیمت نهایی بر اساس نرخ ${formatMoney(rate)}`}
             </span>
-            {rate !== null && <PriceTooltip />}
+            {product.storeIndustry === "GOLD" && rate !== null && <PriceTooltip />}
             <strong className="text-[#1c3155] text-[1.55rem]">
               {total === null ? "امکان محاسبه قیمت وجود ندارد" : formatMoney(total)}
             </strong>
             <AddToCart
               productId={product.id}
-              options={optionValues.map(({ option, values }) => ({ id: option.id, name: option.name, values: values.map((item) => ({ value: item.value, stock: item.stock ?? product.stock, weightGrams: item.weightGrams, price: priceForVariantWeight(item.weightGrams), color: item.colorId ? colorsById.get(item.colorId) ?? null : null })) }))}
+              options={optionValues.map(({ option, values }) => ({ id: option.id, name: option.name, values: values.map((item) => ({ value: item.value, stock: item.stock ?? product.stock, weightGrams: item.weightGrams, price: priceForVariant(item.weightGrams, item.price), color: item.colorId ? colorsById.get(item.colorId) ?? null : null })) }))}
               optionGuide={product.optionGuide && product.optionGuide.type !== "VIDEO" ? { url: product.optionGuide.url, type: product.optionGuide.type, title: product.optionGuide.title ?? "راهنمای انتخاب محصول" } : null}
               disabled={product.stock < 1 || total === null}
               disabledLabel={product.stock < 1 ? "ناموجود" : "قیمت موقتاً نامشخص"}

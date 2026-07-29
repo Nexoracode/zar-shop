@@ -11,7 +11,7 @@ export default async function ProductOptionsPage({ params }: Context) {
   await requirePermission("catalog:manage");
   const { id } = await params;
   const [product, colors, orderItems] = await Promise.all([
-    db.product.findUnique({ where: { id }, select: { id: true, name: true, sku: true, stock: true, options: { orderBy: { position: "asc" } } } }),
+    db.product.findUnique({ where: { id }, select: { id: true, name: true, sku: true, stock: true, storeIndustry: true, options: { orderBy: { position: "asc" } } } }),
     db.color.findMany({ where: { isActive: true }, select: { id: true, name: true, hex: true }, orderBy: [{ sortOrder: "asc" }, { name: "asc" }] }),
     db.orderItem.findMany({ where: { productId: id }, select: { selectedOptions: true } }),
   ]);
@@ -20,6 +20,6 @@ export default async function ProductOptionsPage({ params }: Context) {
 
   return <>
     <AdminPageHeader eyebrow={`محصول ${product.sku}`} title={`مدیریت تنوع «${product.name}»`} description="رنگ، سایز و سایر گزینه‌های قابل انتخاب این محصول را در این صفحه مدیریت کنید." />
-    <ProductOptionsForm productId={product.id} productStock={product.stock} colors={colors} initialOptions={product.options.map((option) => ({ name: option.name, values: parseOptionValues(option.values).map((item) => ({ ...item, stock: item.stock ?? product.stock, used: usedSelectionKeys.has(optionSelectionKey(option.name, item.value)) })) }))} />
+    <ProductOptionsForm productId={product.id} productStock={product.stock} storeIndustry={product.storeIndustry} colors={colors} initialOptions={product.options.map((option) => ({ name: option.name, values: parseOptionValues(option.values).map((item) => ({ ...item, stock: item.stock ?? product.stock, used: usedSelectionKeys.has(optionSelectionKey(option.name, item.value)) })) }))} />
   </>;
 }

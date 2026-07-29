@@ -2,10 +2,11 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { apiError } from "@/lib/http";
 import { getCurrentUser } from "@/modules/auth/session";
-import { productSchema } from "@/modules/products/schemas";
+import { completeProductSchema } from "@/modules/products/schemas";
 import { hasPermission } from "@/modules/auth/permissions";
 import { areOptionColorsValid } from "@/modules/products/color-validation";
 import { sanitizeProductDescription } from "@/modules/products/rich-text";
+import { getStoreIndustry } from "@/modules/settings/store-settings";
 
 export async function GET() {
   const products = await db.product.findMany({
@@ -22,7 +23,8 @@ export async function POST(request: Request) {
     if (!actor || !hasPermission(actor.role, "catalog:manage")) {
       return NextResponse.json({ message: "دسترسی غیرمجاز است." }, { status: 403 });
     }
-    const { mediaIds, options, optionGuideId, ...input } = productSchema.parse(await request.json());
+    const storeIndustry = await getStoreIndustry();
+    const { mediaIds, options, optionGuideId, ...input } = completeProductSchema.parse({ ...(await request.json()), storeIndustry });
     if (!await areOptionColorsValid(options)) return NextResponse.json({ message: "یک یا چند رنگ انتخاب‌شده معتبر یا فعال نیست." }, { status: 422 });
     const media = mediaIds.length ? await db.mediaAsset.findMany({ where: { id: { in: mediaIds }, scope: "PRODUCT", type: { in: ["IMAGE", "VIDEO"] } }, select: { id: true } }) : [];
     if (media.length !== new Set(mediaIds).size) return NextResponse.json({ message: "یک یا چند رسانه محصول معتبر نیست." }, { status: 422 });

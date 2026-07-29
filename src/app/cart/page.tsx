@@ -7,7 +7,7 @@ import { calculateProductPrice } from "@/modules/products/pricing";
 import { formatMoney } from "@/lib/format";
 import { CheckoutForm } from "@/components/checkout-form";
 import type { Prisma } from "@generated/prisma/client";
-import { getSelectedOptionWeight, optionEntries } from "@/modules/products/options";
+import { getSelectedOptionPrice, getSelectedOptionWeight, optionEntries } from "@/modules/products/options";
 
 type CartItemRow = Prisma.CartItemGetPayload<{ include: { product: { include: { options: true } } } }>;
 
@@ -21,9 +21,11 @@ export default async function CartPage() {
   ]);
   const items = (cart?.items ?? []) as CartItemRow[];
   const rate = gold ? Number(gold.pricePerGram18) : null;
+  const hasGoldItems = items.some((item) => item.product.storeIndustry === "GOLD");
   const getItemAmount = (item: CartItemRow) => {
     const p = item.product;
     const selectedWeight = getSelectedOptionWeight(p.options, item.selectedOptions, Number(p.weightGrams));
+    if (p.storeIndustry === "GENERAL") return getSelectedOptionPrice(p.options, item.selectedOptions, Number(p.fixedPrice ?? 0));
     if (p.fixedPrice) return Number(p.fixedPrice);
     if (rate === null) return null;
     return calculateProductPrice({ goldPricePerGram18: rate, weightGrams: selectedWeight, purity: p.purity, makingFeeType: p.makingFeeType, makingFeeValue: Number(p.makingFeeValue), profitPercent: Number(p.profitPercent), taxPercent: Number(p.taxPercent) }).total;
@@ -42,7 +44,7 @@ export default async function CartPage() {
             <span className="inline-block text-[#785b27] text-[0.78rem] font-bold tracking-[0.03em] mb-[5px]">خرید امن</span>
             <h1 className="mt-0 mb-0">سبد خرید</h1>
           </div>
-          <ChipRoot variant="soft" className="bg-[#efe5d1] text-[#785b27]"><ChipLabel>نرخ مبنا: {rate === null ? "موقتاً در دسترس نیست" : formatMoney(rate)}</ChipLabel></ChipRoot>
+          {hasGoldItems && <ChipRoot variant="soft" className="bg-[#efe5d1] text-[#785b27]"><ChipLabel>نرخ مبنا: {rate === null ? "موقتاً در دسترس نیست" : formatMoney(rate)}</ChipLabel></ChipRoot>}
         </div>
 
         {!items.length ? (
@@ -65,7 +67,7 @@ export default async function CartPage() {
                       <TableRow id={item.id} key={item.id}>
                         <TableCell className="px-4 py-[14px]"><strong>{p.name}</strong><br /><span className="text-[#747982] text-[0.82rem]">{p.sku}{optionEntries(item.selectedOptions).map(([name, value]) => ` · ${name}: ${value}`).join("")}</span></TableCell>
                         <TableCell className="px-4 py-[14px]">{item.quantity}</TableCell>
-                        <TableCell className="px-4 py-[14px]">{selectedWeight.toLocaleString("fa-IR", { maximumFractionDigits: 3 })} گرم</TableCell>
+                        <TableCell className="px-4 py-[14px]">{p.storeIndustry === "GOLD" ? `${selectedWeight.toLocaleString("fa-IR", { maximumFractionDigits: 3 })} گرم` : "—"}</TableCell>
                         <TableCell className="px-4 py-[14px]">
                           {amount === null ? "قیمت موقتاً نامشخص" : formatMoney(amount * item.quantity)}
                         </TableCell>
@@ -80,7 +82,7 @@ export default async function CartPage() {
                     </strong></TableCell>
                   </TableRow>
                 </TableBody></TableContent></TableScrollContainer></Table>
-            {rate === null ? (
+            {total === null ? (
               <AlertRoot status="warning" className="self-start"><AlertDescription>نرخ لحظه‌ای طلا موقتاً در دسترس نیست. سبد خرید شما حفظ شده است و پس از برقراری سرویس می‌توانید پرداخت را ادامه دهید.</AlertDescription></AlertRoot>
             ) : (
               <CheckoutForm />

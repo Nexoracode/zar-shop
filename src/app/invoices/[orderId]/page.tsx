@@ -91,12 +91,12 @@ export default async function InvoicePage({ params }: { params: Promise<{ orderI
                   <td className={`${cell} text-right font-bold`}>{item.name}{optionEntries(item.selectedOptions).map(([name, value]) => <small key={name} className="mt-1 block font-normal text-slate-500">{name}: {value}</small>)}</td>
                   <td className={cell} dir="ltr">{item.sku}</td>
                   <td className={cell}>{item.quantity.toLocaleString("fa-IR")}</td>
-                  <td className={cell}>{Number(item.weightGrams).toLocaleString("fa-IR", { maximumFractionDigits: 3 })}</td>
-                  <td className={cell}>{item.purity.toLocaleString("fa-IR")}</td>
+                  <td className={cell}>{item.storeIndustry === "GOLD" ? Number(item.weightGrams).toLocaleString("fa-IR", { maximumFractionDigits: 3 }) : "—"}</td>
+                  <td className={cell}>{item.storeIndustry === "GOLD" ? item.purity.toLocaleString("fa-IR") : "—"}</td>
                   <td className={cell}>{Number(item.unitPrice).toLocaleString("fa-IR")}</td>
-                  <td className={cell}>{Number(item.makingFee).toLocaleString("fa-IR")}</td>
-                  <td className={cell}>{Number(item.profit).toLocaleString("fa-IR")}</td>
-                  <td className={cell}>{Number(item.tax).toLocaleString("fa-IR")}</td>
+                  <td className={cell}>{item.storeIndustry === "GOLD" ? Number(item.makingFee).toLocaleString("fa-IR") : "—"}</td>
+                  <td className={cell}>{item.storeIndustry === "GOLD" ? Number(item.profit).toLocaleString("fa-IR") : "—"}</td>
+                  <td className={cell}>{item.storeIndustry === "GOLD" ? Number(item.tax).toLocaleString("fa-IR") : "—"}</td>
                   <td className={`${cell} font-black`}>{Number(item.total).toLocaleString("fa-IR")}</td>
                 </tr>
               ))}
@@ -110,7 +110,7 @@ export default async function InvoicePage({ params }: { params: Promise<{ orderI
             <span>وضعیت: {successfulPayment ? "پرداخت موفق" : "در انتظار پرداخت"}</span><br />
             <span>تاریخ پرداخت: {successfulPayment?.paidAt ? formatDateTime(successfulPayment.paidAt) : "—"}</span><br />
             <span>شناسه مرجع: <b dir="ltr">{successfulPayment?.referenceId ?? "—"}</b></span><br />
-            <span>نرخ هر گرم طلای ۱۸ عیار هنگام ثبت سفارش: {formatMoney(order.goldPriceSnapshot.toString())}</span>
+            {order.items.some((item) => item.storeIndustry === "GOLD") && <span>نرخ هر گرم طلای ۱۸ عیار هنگام ثبت سفارش: {formatMoney(order.goldPriceSnapshot.toString())}</span>}
           </div>
           <dl className="m-0 border border-slate-300 text-xs">
             <div className="flex justify-between border-b border-slate-200 px-3 py-2"><dt>جمع کالاها</dt><dd>{formatMoney(order.subtotal.toString())}</dd></div>

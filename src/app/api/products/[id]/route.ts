@@ -15,7 +15,19 @@ export async function PATCH(request: Request, context: Context) {
     const actor = await getCurrentUser();
     if (!actor || !hasPermission(actor.role, "catalog:manage")) return NextResponse.json({ message: "دسترسی غیرمجاز است." }, { status: 403 });
     const { id } = await context.params;
-    const { mediaIds, options, optionGuideId, ...input } = productSchema.partial().parse(await request.json());
+    const existingProduct = await db.product.findUnique({ where: { id }, select: { storeIndustry: true } });
+    if (!existingProduct) return NextResponse.json({ message: "محصول پیدا نشد." }, { status: 404 });
+    const { mediaIds, options, optionGuideId, storeIndustry: _ignoredIndustry, ...input } = productSchema.partial().parse(await request.json());
+    void _ignoredIndustry;
+    if (existingProduct.storeIndustry === "GOLD" && options?.some((option) => option.values.some((item) => item.price !== null))) {
+      return NextResponse.json({ message: "برای محصول طلا، قیمت تنوع از وزن آن محاسبه می‌شود." }, { status: 422 });
+    }
+    if (existingProduct.storeIndustry === "GENERAL" && options?.some((option) => option.values.some((item) => item.weightGrams !== null))) {
+      return NextResponse.json({ message: "برای محصول معمولی، به‌جای وزن قیمت مستقیم تنوع را وارد کنید." }, { status: 422 });
+    }
+    if (existingProduct.storeIndustry === "GENERAL" && input.fixedPrice === null) {
+      return NextResponse.json({ message: "قیمت محصول را وارد کنید." }, { status: 422 });
+    }
     if (options && !await areOptionColorsValid(options)) return NextResponse.json({ message: "یک یا چند رنگ انتخاب‌شده معتبر یا فعال نیست." }, { status: 422 });
     if (mediaIds) {
       const media = mediaIds.length ? await db.mediaAsset.findMany({ where: { id: { in: mediaIds }, scope: "PRODUCT", type: { in: ["IMAGE", "VIDEO"] } }, select: { id: true } }) : [];

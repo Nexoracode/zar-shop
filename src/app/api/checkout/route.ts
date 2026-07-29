@@ -6,7 +6,7 @@ import { apiError } from "@/lib/http";
 import { getCurrentUser } from "@/modules/auth/session";
 import { getGoldPrice } from "@/modules/gold/gold-price.service";
 import { calculateProductPrice } from "@/modules/products/pricing";
-import { getSelectedOptionWeight, isOptionSnapshotValid, optionEntries } from "@/modules/products/options";
+import { getSelectedOptionPrice, getSelectedOptionWeight, isOptionSnapshotValid, optionEntries } from "@/modules/products/options";
 import { getPaymentProvider } from "@/modules/payments/payment-provider";
 import type { Prisma } from "@generated/prisma/client";
 
@@ -30,17 +30,20 @@ export async function POST(request: Request) {
     const address = addressSchema.parse(await request.json());
     const cart = await db.cart.findUnique({ where: { userId: user.id }, include: { items: { include: { product: { include: { options: true } } } } } });
     if (!cart?.items.length) return NextResponse.json({ message: "سبد خرید خالی است." }, { status: 409 });
-    let gold;
-    try {
-      gold = await getGoldPrice({ force: true });
-    } catch (error) {
-      console.error("[checkout] Gold price is unavailable; checkout was stopped.", error);
-      return NextResponse.json(
-        { message: "نرخ لحظه‌ای طلا موقتاً در دسترس نیست. سبد خرید شما حفظ شده؛ لطفاً کمی بعد دوباره تلاش کنید." },
-        { status: 503 },
-      );
+    const needsGoldRate = cart.items.some((item) => item.product.storeIndustry === "GOLD");
+    let rate = 0;
+    if (needsGoldRate) {
+      try {
+        const gold = await getGoldPrice({ force: true });
+        rate = Number(gold.pricePerGram18);
+      } catch (error) {
+        console.error("[checkout] Gold price is unavailable; checkout was stopped.", error);
+        return NextResponse.json(
+          { message: "نرخ لحظه‌ای طلا موقتاً در دسترس نیست. سبد خرید شما حفظ شده؛ لطفاً کمی بعد دوباره تلاش کنید." },
+          { status: 503 },
+        );
+      }
     }
-    const rate = Number(gold.pricePerGram18);
     const lines: CheckoutLine[] = cart.items.map((item: ItemWithProduct) => {
       const p = item.product;
       if (p.status !== "ACTIVE" || p.stock < item.quantity) throw new Error(`موجودی ${p.name} کافی نیست.`);
@@ -48,14 +51,17 @@ export async function POST(request: Request) {
       const selectedWeight = getSelectedOptionWeight(p.options, item.selectedOptions, Number(p.weightGrams));
       const parts = calculateProductPrice({
         goldPricePerGram18: rate,
-        weightGrams: selectedWeight,
+        weightGrams: p.storeIndustry === "GOLD" ? selectedWeight : 0,
         purity: p.purity,
         makingFeeType: p.makingFeeType,
         makingFeeValue: Number(p.makingFeeValue),
         profitPercent: Number(p.profitPercent),
         taxPercent: Number(p.taxPercent),
       });
-      const unitPrice = p.fixedPrice ? Number(p.fixedPrice) : parts.total;
+      const unitPrice = p.storeIndustry === "GENERAL"
+        ? getSelectedOptionPrice(p.options, item.selectedOptions, Number(p.fixedPrice ?? 0))
+        : p.fixedPrice ? Number(p.fixedPrice) : parts.total;
+      if (unitPrice <= 0) throw new Error(`قیمت ${p.name} معتبر نیست.`);
       return { item, p, parts, unitPrice, total: unitPrice * item.quantity };
     });
     const total = lines.reduce((sum: number, line: CheckoutLine) => sum + line.total, 0);
@@ -70,6 +76,7 @@ export async function POST(request: Request) {
         items: {
           create: lines.map(({ item, p, parts, unitPrice, total: lineTotal }: CheckoutLine) => ({
             productId: p.id, sku: p.sku, name: p.name, selectedOptions: optionEntries(item.selectedOptions).length ? Object.fromEntries(optionEntries(item.selectedOptions)) : undefined, quantity: item.quantity,
+            storeIndustry: p.storeIndustry,
             weightGrams: getSelectedOptionWeight(p.options, item.selectedOptions, Number(p.weightGrams)), purity: p.purity, makingFee: parts.makingFee,
             profit: parts.profit, tax: parts.tax, unitPrice, total: lineTotal,
           })),
@@ -86,7 +93,7 @@ export async function POST(request: Request) {
     });
     return NextResponse.json({ redirectUrl: paymentRequest.redirectUrl });
   } catch (error) {
-    if (error instanceof Error && (error.message.startsWith("موجودی") || error.message.startsWith("تنوع"))) return NextResponse.json({ message: error.message }, { status: 409 });
+    if (error instanceof Error && (error.message.startsWith("موجودی") || error.message.startsWith("تنوع") || error.message.startsWith("قیمت"))) return NextResponse.json({ message: error.message }, { status: 409 });
     return apiError(error);
   }
 }
