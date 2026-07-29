@@ -28,7 +28,7 @@ export function AdminSettings() {
             <Tabs.Tab id="general" className={tabClass}><Store size={16} />عمومی</Tabs.Tab>
             <Tabs.Tab id="homepage" className={tabClass}><LayoutDashboard size={16} />صفحه اصلی</Tabs.Tab>
             <Tabs.Tab id="branding" className={tabClass}><Palette size={16} />ظاهر و برند</Tabs.Tab>
-            <Tabs.Tab id="orders" className={tabClass}><PackageCheck size={16} />سفارش و سبد</Tabs.Tab>
+            <Tabs.Tab id="orders" className={tabClass}><PackageCheck size={16} />سفارش و انقضا</Tabs.Tab>
             <Tabs.Tab id="catalog" className={tabClass}><Boxes size={16} />محصول و طلا</Tabs.Tab>
             <Tabs.Tab id="commerce" className={tabClass}><Truck size={16} />ارسال و پرداخت</Tabs.Tab>
             <Tabs.Tab id="content" className={tabClass}><FileQuestion size={16} />محتوا و FAQ</Tabs.Tab>
@@ -104,10 +104,23 @@ function BrandSettings({ onDemo }: { onDemo: (title: string) => void }) {
 
 function OrderSettings({ onDemo }: { onDemo: (title: string) => void }) {
   return <SettingsGrid>
-    <SettingCard icon={<Clock3 size={19} />} title="انقضا و رزرو سفارش" description="کنترل سفارش‌های پرداخت‌نشده و آزادسازی موجودی">
-      <div className="grid gap-4 sm:grid-cols-2"><Field label="مهلت پرداخت سفارش (دقیقه)"><Input type="number" defaultValue="15" min={1} variant="secondary" className={adminFieldClass} /></Field><Field label="مهلت نگهداری سبد (دقیقه)"><Input type="number" defaultValue="30" min={1} variant="secondary" className={adminFieldClass} /></Field></div>
-      <AdminCheckbox defaultSelected description="پس از پایان مهلت، سفارش لغو و موجودی تنوع‌ها آزاد شود">لغو خودکار سفارش منقضی‌شده</AdminCheckbox><AdminCheckbox defaultSelected description="۵ دقیقه قبل از انقضا به مشتری هشدار داده شود">هشدار پایان مهلت پرداخت</AdminCheckbox>
-      <Alert status="warning"><Alert.Description>در پیاده‌سازی نهایی، آزادسازی موجودی باید اتمیک و ثبت سفارش/پرداخت idempotent باشد.</Alert.Description></Alert>
+    <SettingCard icon={<Clock3 size={19} />} title="انقضای سفارش‌های بدون اقدام" description="مانند فروشگاه‌های بزرگ، سفارش پرداخت‌نشده پس از مهلت تعیین‌شده منقضی می‌شود" className="lg:col-span-2">
+      <div className="grid gap-5 lg:grid-cols-[minmax(240px,0.7fr)_minmax(0,1.3fr)]">
+        <div className="grid content-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-amber-950">
+          <span className="grid size-11 place-items-center rounded-xl bg-amber-100 text-amber-700"><Clock3 size={21} /></span>
+          <div><span className="text-xs text-amber-700">مهلت فعلی پرداخت</span><strong className="mt-1 block text-2xl font-black">۱۵ دقیقه</strong></div>
+          <p className="m-0 text-xs leading-6 text-amber-800">اگر مشتری در این زمان پرداخت را کامل نکند، سفارش منقضی و موجودی رزروشده دوباره قابل فروش می‌شود.</p>
+          <Chip size="sm" variant="soft" className="w-fit text-amber-800"><Chip.Label>فقط سفارش‌های در انتظار پرداخت</Chip.Label></Chip>
+        </div>
+        <div className="grid gap-4">
+          <div className="grid gap-4 sm:grid-cols-2"><Field label="زمان انقضا (دقیقه)"><Input type="number" defaultValue="15" min={1} max={1440} variant="secondary" className={adminFieldClass} /></Field><Field label="هشدار قبل از انقضا (دقیقه)"><Input type="number" defaultValue="5" min={0} variant="secondary" className={adminFieldClass} /></Field></div>
+          <div className="grid gap-4 sm:grid-cols-2"><HeroSelectField name="order-expiration-start" label="شروع شمارش زمان از" defaultValue="CREATED_AT" includeEmptyOption={false} options={[{ value: "CREATED_AT", label: "زمان ایجاد سفارش" }, { value: "PAYMENT_STARTED_AT", label: "زمان ورود به درگاه" }]} /><HeroSelectField name="order-expiration-action" label="اقدام پس از پایان مهلت" defaultValue="EXPIRE" includeEmptyOption={false} options={[{ value: "EXPIRE", label: "منقضی‌کردن خودکار سفارش" }, { value: "CANCEL", label: "لغو خودکار سفارش" }, { value: "NOTIFY", label: "فقط ارسال هشدار به مدیر" }]} /></div>
+          <AdminCheckbox defaultSelected description="شمارش معکوس مهلت پرداخت در صفحه سفارش و پرداخت دیده شود">نمایش شمارش معکوس به مشتری</AdminCheckbox>
+        </div>
+      </div>
+      <div className="grid gap-3 md:grid-cols-3"><AdminCheckbox defaultSelected description="پس از پایان زمان، وضعیت سفارش به منقضی‌شده تغییر کند">انقضای خودکار سفارش</AdminCheckbox><AdminCheckbox defaultSelected description="موجودی محصول و تنوع‌ها دوباره آزاد شود">آزادسازی موجودی رزروشده</AdminCheckbox><AdminCheckbox defaultSelected description="کد تخفیف مصرف‌شده دوباره قابل استفاده شود">بازگرداندن ظرفیت کد تخفیف</AdminCheckbox></div>
+      <Alert status="warning"><Alert.Description>در پیاده‌سازی نهایی، پرداخت موفق هم‌زمان با انقضا باید اولویت داشته باشد و لغو سفارش، آزادسازی موجودی و callback پرداخت به‌صورت اتمیک و idempotent اجرا شوند.</Alert.Description></Alert>
+      <DemoFooter onPress={() => onDemo("انقضای سفارش‌های بدون اقدام")} />
     </SettingCard>
     <SettingCard icon={<PackageCheck size={19} />} title="قواعد ثبت سفارش" description="محدودیت‌ها و شماره‌گذاری سفارش">
       <div className="grid gap-4 sm:grid-cols-2"><Field label="حداقل مبلغ سفارش (ریال)"><Input type="number" defaultValue="5000000" dir="ltr" variant="secondary" className={adminFieldClass} /></Field><Field label="پیشوند شماره سفارش"><Input defaultValue="ZG" dir="ltr" variant="secondary" className={adminFieldClass} /></Field></div>
