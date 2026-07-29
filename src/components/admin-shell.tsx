@@ -76,12 +76,12 @@ export function AdminShell({ user, goldPrice, goldFetchedAt, notificationCount, 
                   <span className="grid h-8 w-8 place-items-center rounded-full bg-[var(--accent)] text-[11px] font-black text-[var(--accent-foreground)]">{fullName.slice(0, 1)}</span>
                   <span className="absolute bottom-0 left-0 h-3 w-3 rounded-full border-2 border-[var(--surface)] bg-emerald-500" aria-label="آنلاین" />
                 </Popover.Trigger>
-                <Popover.Content placement="bottom right" className="w-[min(90vw,300px)] rounded-[5px] border border-[var(--border)] bg-[var(--overlay)] p-0 text-[var(--overlay-foreground)] shadow-xl">
-                  <Popover.Dialog className="p-0">
+                <Popover.Content dir="rtl" placement="bottom right" className="w-[min(90vw,300px)] rounded-[5px] border border-[var(--border)] bg-[var(--overlay)] p-0 text-right text-[var(--overlay-foreground)] shadow-xl">
+                  <Popover.Dialog dir="rtl" className="p-0 text-right">
                     <div className="p-4">
                       <div className="flex items-center gap-3 border-b border-[var(--border)] pb-4">
                         <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-[var(--accent)]/10 text-[var(--accent)]"><UserRound size={20} /></span>
-                        <div className="min-w-0"><strong className="block truncate text-sm">{fullName}</strong><span className="mt-0.5 block truncate text-[11px] text-[var(--muted)]">{user.email}</span></div>
+                        <div className="min-w-0"><strong className="block truncate text-sm">{fullName}</strong><span dir="ltr" className="mt-0.5 block truncate text-right text-[11px] text-[var(--muted)]">{user.email}</span></div>
                       </div>
                       <div className="flex items-center justify-between gap-3 py-4"><span className="text-[11px] text-[var(--muted)]">سطح دسترسی</span><Chip size="sm" variant="soft"><Chip.Label>{userRoleLabels[user.role]}</Chip.Label></Chip></div>
                       <Button type="button" variant="danger-soft" fullWidth onPress={() => void logout()} className="justify-start gap-2 rounded-[5px]"><LogOut size={15} />خروج از حساب</Button>
@@ -95,8 +95,8 @@ export function AdminShell({ user, goldPrice, goldFetchedAt, notificationCount, 
                   <Bell size={18} />
                   {notificationCount > 0 && <span className="absolute -left-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full bg-[var(--danger)] px-1 text-[10px] font-black text-[var(--danger-foreground)]">{notificationCount.toLocaleString("fa-IR")}</span>}
                 </Popover.Trigger>
-                <Popover.Content placement="bottom right" className="w-[min(90vw,320px)] rounded-[5px] border border-[var(--border)] bg-[var(--overlay)] p-0 text-[var(--overlay-foreground)] shadow-xl">
-                  <Popover.Dialog className="p-0">
+                <Popover.Content dir="rtl" placement="bottom right" className="w-[min(90vw,320px)] rounded-[5px] border border-[var(--border)] bg-[var(--overlay)] p-0 text-right text-[var(--overlay-foreground)] shadow-xl">
+                  <Popover.Dialog dir="rtl" className="p-0 text-right">
                     <div className="p-4">
                       <div className="mb-4 flex items-center justify-between gap-3 border-b border-[var(--border)] pb-3">
                         <Popover.Heading className="m-0 text-sm font-black">اعلان‌ها</Popover.Heading>
