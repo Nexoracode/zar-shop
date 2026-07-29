@@ -8,6 +8,7 @@ import { collectCategoryAndDescendantIds } from "@/modules/categories/category-t
 import { getGoldPriceForDisplay } from "@/modules/gold/gold-price.service";
 import { calculateProductPrice } from "@/modules/products/pricing";
 import { calculateDiscountedPrice } from "@/modules/products/discount";
+import { getGeneralStoreSettings } from "@/modules/settings/general-settings";
 
 type ProductWithRelations = Prisma.ProductGetPayload<{ include: { category: true; media: { include: { media: true } } } }>;
 
@@ -16,9 +17,10 @@ export const metadata = { title: "محصولات" };
 
 export default async function ProductsPage({ searchParams }: { searchParams: Promise<{ category?: string }> }) {
   const { category: categorySlug } = await searchParams;
-  const [allCategories, gold] = await Promise.all([
+  const [allCategories, gold, settings] = await Promise.all([
     db.category.findMany({ where: { isActive: true }, orderBy: [{ sortOrder: "asc" }, { name: "asc" }] }),
     getGoldPriceForDisplay(),
+    getGeneralStoreSettings(),
   ]);
   const selectedCategory = categorySlug ? allCategories.find((category) => category.slug === categorySlug) : null;
   if (categorySlug && !selectedCategory) notFound();
@@ -36,12 +38,12 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
       {/* Catalog hero */}
       <section className="bg-[linear-gradient(135deg,#eee1d3,#f8f3ed_50%,#dfe6e2)] px-5 py-14 text-center sm:py-[76px]">
         <div className="mx-auto w-full max-w-[1240px]">
-          <span className="text-[#785b27] text-[0.8rem]">{selectedCategory ? "دسته‌بندی محصولات" : "کالکشن زر گالری"}</span>
+          <span className="text-[#785b27] text-[0.8rem]">{selectedCategory ? "دسته‌بندی محصولات" : `کالکشن ${settings.storeName}`}</span>
           <h1 className="mt-[5px] mb-0 text-[clamp(2.5rem,5vw,4.5rem)] font-medium">{selectedCategory?.name ?? "طلا برای هر لحظه"}</h1>
           <p className="m-0 text-[#747982]">{selectedCategory?.description ?? "مجموعه‌ای از طراحی‌های مینیمال و ماندگار با قیمت‌گذاری شفاف."}</p>
           <div className="mt-5 text-[0.78rem]">
             نرخ امروز: <strong className="text-[#1c3155] text-[0.95rem]">
-              {rate === null ? "موقتاً در دسترس نیست" : formatMoney(rate)}
+              {rate === null ? "موقتاً در دسترس نیست" : formatMoney(rate, settings.currency)}
             </strong>
           </div>
         </div>
@@ -83,8 +85,8 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
                   category={product.category?.name ?? "طلا"}
                   weight={Number(product.weightGrams)}
                   purity={product.purity}
-                  price={discounted === null ? "قیمت موقتاً در دسترس نیست" : formatMoney(discounted.finalPrice)}
-                  originalPrice={discounted?.isActive ? formatMoney(discounted.originalPrice) : undefined}
+                  price={discounted === null ? "قیمت موقتاً در دسترس نیست" : formatMoney(discounted.finalPrice, settings.currency)}
+                  originalPrice={discounted?.isActive ? formatMoney(discounted.originalPrice, settings.currency) : undefined}
                   image={media?.type === "IMAGE" ? { src: media.url, alt: media.alt ?? product.name } : undefined}
                 />
               );

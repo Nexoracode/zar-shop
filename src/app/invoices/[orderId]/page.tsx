@@ -40,6 +40,9 @@ export default async function InvoicePage({ params }: { params: Promise<{ orderI
   const seller = asRecord(order.invoice.sellerData);
   const buyer = asRecord(order.invoice.buyerData);
   const address = asRecord(buyer.address ?? order.shippingAddress);
+  const invoiceCurrency = text(seller, "currency", "IRR") === "IRT" ? "IRT" : "IRR";
+  const money = (value: number | string) => formatMoney(value, invoiceCurrency);
+  const amount = (value: number | string) => (invoiceCurrency === "IRT" ? Number(value) / 10 : Number(value)).toLocaleString("fa-IR", { maximumFractionDigits: 0 });
   const successfulPayment = order.payments.find((payment) => payment.status === "SUCCESS");
   const buyerName = text(buyer, "name", [order.user.firstName, order.user.lastName].filter(Boolean).join(" ") || "—");
   const buyerPhone = text(buyer, "phone", text(address, "phone", order.user.phone ?? "—"));
@@ -52,7 +55,7 @@ export default async function InvoicePage({ params }: { params: Promise<{ orderI
 
       <article className="invoice-print-area mx-auto w-full max-w-[210mm] bg-white p-5 text-slate-900 shadow-[0_18px_60px_rgba(15,23,42,0.12)] sm:p-8">
         <header className="grid grid-cols-[1fr_auto_1fr] items-center border-2 border-slate-800 px-4 py-3">
-          <div className="text-right"><strong className="block text-lg font-black text-[#17233b]">{text(seller, "name", "زر گالری")}</strong><span className="text-[10px] text-slate-500">فروشگاه طلا و زیورآلات</span></div>
+          <div className="text-right"><strong className="block text-lg font-black text-[#17233b]">{text(seller, "name", "زر گالری")}</strong><span className="text-[10px] text-slate-500">{text(seller, "industry", "GOLD") === "GOLD" ? "فروشگاه طلا و زیورآلات" : "فروشگاه اینترنتی"}</span></div>
           <div className="px-4 text-center"><h1 className="m-0 text-xl font-black">فاکتور رسمی فروش</h1><span className="text-[10px] text-slate-500">صورتحساب کالا و خدمات</span></div>
           <dl className="m-0 space-y-1 text-left text-[10px]"><div><dt className="inline text-slate-500">شماره فاکتور: </dt><dd className="inline font-bold" dir="ltr">{order.invoice.invoiceNumber}</dd></div><div><dt className="inline text-slate-500">تاریخ صدور: </dt><dd className="inline font-bold">{formatDate(order.invoice.issuedAt)}</dd></div><div><dt className="inline text-slate-500">شماره سفارش: </dt><dd className="inline font-bold" dir="ltr">{order.orderNumber}</dd></div></dl>
         </header>
@@ -63,9 +66,9 @@ export default async function InvoicePage({ params }: { params: Promise<{ orderI
             <InvoiceInfo label="نام فروشنده" value={text(seller, "name", "زر گالری")} />
             <InvoiceInfo label="شناسه ملی" value={text(seller, "nationalId")} ltr />
             <InvoiceInfo label="کد اقتصادی" value={text(seller, "economicCode")} ltr />
-            <InvoiceInfo label="شماره ثبت" value={text(seller, "registrationNumber")} ltr />
             <InvoiceInfo label="شماره تماس" value={text(seller, "phone")} ltr />
-            <div className="col-span-2 sm:col-span-3"><InvoiceInfo label="نشانی فروشنده" value={text(seller, "address")} /></div>
+            <InvoiceInfo label="ایمیل" value={text(seller, "email")} ltr />
+            <div className="col-span-2 sm:col-span-2"><InvoiceInfo label="نشانی فروشنده" value={text(seller, "address")} /></div>
           </dl>
         </section>
 
@@ -75,7 +78,7 @@ export default async function InvoicePage({ params }: { params: Promise<{ orderI
             <InvoiceInfo label="نام خریدار" value={buyerName} />
             <InvoiceInfo label="کد ملی" value={text(buyer, "nationalId", order.user.nationalId ?? "—")} ltr />
             <InvoiceInfo label="شماره تماس" value={buyerPhone} ltr />
-            <InvoiceInfo label="ایمیل" value={text(buyer, "email", order.user.email)} ltr />
+            <InvoiceInfo label="ایمیل" value={text(buyer, "email", order.user.isGuest ? "—" : order.user.email)} ltr />
             <InvoiceInfo label="کد پستی" value={text(address, "postalCode")} ltr />
             <div className="col-span-2 sm:col-span-3"><InvoiceInfo label="نشانی خریدار" value={fullAddress} /></div>
           </dl>
@@ -93,12 +96,12 @@ export default async function InvoicePage({ params }: { params: Promise<{ orderI
                   <td className={cell}>{item.quantity.toLocaleString("fa-IR")}</td>
                   <td className={cell}>{item.storeIndustry === "GOLD" ? Number(item.weightGrams).toLocaleString("fa-IR", { maximumFractionDigits: 3 }) : "—"}</td>
                   <td className={cell}>{item.storeIndustry === "GOLD" ? item.purity.toLocaleString("fa-IR") : "—"}</td>
-                  <td className={cell}>{Number(item.unitPrice).toLocaleString("fa-IR")}</td>
-                  <td className={cell}>{Number(item.discountAmount).toLocaleString("fa-IR")}</td>
-                  <td className={cell}>{item.storeIndustry === "GOLD" ? Number(item.makingFee).toLocaleString("fa-IR") : "—"}</td>
-                  <td className={cell}>{item.storeIndustry === "GOLD" ? Number(item.profit).toLocaleString("fa-IR") : "—"}</td>
-                  <td className={cell}>{item.storeIndustry === "GOLD" ? Number(item.tax).toLocaleString("fa-IR") : "—"}</td>
-                  <td className={`${cell} font-black`}>{Number(item.total).toLocaleString("fa-IR")}</td>
+                  <td className={cell}>{amount(item.unitPrice.toString())}</td>
+                  <td className={cell}>{amount(item.discountAmount.toString())}</td>
+                  <td className={cell}>{item.storeIndustry === "GOLD" ? amount(item.makingFee.toString()) : "—"}</td>
+                  <td className={cell}>{item.storeIndustry === "GOLD" ? amount(item.profit.toString()) : "—"}</td>
+                  <td className={cell}>{item.storeIndustry === "GOLD" ? amount(item.tax.toString()) : "—"}</td>
+                  <td className={`${cell} font-black`}>{amount(item.total.toString())}</td>
                 </tr>
               ))}
             </tbody>
@@ -111,16 +114,16 @@ export default async function InvoicePage({ params }: { params: Promise<{ orderI
             <span>وضعیت: {successfulPayment ? "پرداخت موفق" : "در انتظار پرداخت"}</span><br />
             <span>تاریخ پرداخت: {successfulPayment?.paidAt ? formatDateTime(successfulPayment.paidAt) : "—"}</span><br />
             <span>شناسه مرجع: <b dir="ltr">{successfulPayment?.referenceId ?? "—"}</b></span><br />
-            {order.items.some((item) => item.storeIndustry === "GOLD") && <span>نرخ هر گرم طلای ۱۸ عیار هنگام ثبت سفارش: {formatMoney(order.goldPriceSnapshot.toString())}</span>}
+            {order.items.some((item) => item.storeIndustry === "GOLD") && <span>نرخ هر گرم طلای ۱۸ عیار هنگام ثبت سفارش: {money(order.goldPriceSnapshot.toString())}</span>}
           </div>
           <dl className="m-0 border border-slate-300 text-xs">
-            <div className="flex justify-between border-b border-slate-200 px-3 py-2"><dt>جمع کالاها</dt><dd>{formatMoney(order.subtotal.toString())}</dd></div>
-            {Number(order.productDiscount) > 0 && <div className="flex justify-between border-b border-slate-200 px-3 py-2"><dt>تخفیف محصولات</dt><dd>{formatMoney(order.productDiscount.toString())}</dd></div>}
-            {Number(order.promotionDiscount) > 0 && <div className="flex justify-between border-b border-slate-200 px-3 py-2"><dt>تخفیف پروموشن</dt><dd>{formatMoney(order.promotionDiscount.toString())}</dd></div>}
-            {Number(order.shippingDiscount) > 0 && <div className="flex justify-between border-b border-slate-200 px-3 py-2"><dt>تخفیف ارسال</dt><dd>{formatMoney(order.shippingDiscount.toString())}</dd></div>}
-            <div className="flex justify-between border-b border-slate-200 px-3 py-2"><dt>ارسال</dt><dd>{formatMoney(order.shipping.toString())}</dd></div>
-            <div className="flex justify-between border-b border-slate-200 px-3 py-2"><dt>مالیات</dt><dd>{formatMoney(order.tax.toString())}</dd></div>
-            <div className="flex justify-between bg-slate-100 px-3 py-2.5 font-black"><dt>مبلغ نهایی</dt><dd>{formatMoney(order.total.toString())}</dd></div>
+            <div className="flex justify-between border-b border-slate-200 px-3 py-2"><dt>جمع کالاها</dt><dd>{money(order.subtotal.toString())}</dd></div>
+            {Number(order.productDiscount) > 0 && <div className="flex justify-between border-b border-slate-200 px-3 py-2"><dt>تخفیف محصولات</dt><dd>{money(order.productDiscount.toString())}</dd></div>}
+            {Number(order.promotionDiscount) > 0 && <div className="flex justify-between border-b border-slate-200 px-3 py-2"><dt>تخفیف پروموشن</dt><dd>{money(order.promotionDiscount.toString())}</dd></div>}
+            {Number(order.shippingDiscount) > 0 && <div className="flex justify-between border-b border-slate-200 px-3 py-2"><dt>تخفیف ارسال</dt><dd>{money(order.shippingDiscount.toString())}</dd></div>}
+            <div className="flex justify-between border-b border-slate-200 px-3 py-2"><dt>ارسال</dt><dd>{money(order.shipping.toString())}</dd></div>
+            <div className="flex justify-between border-b border-slate-200 px-3 py-2"><dt>مالیات</dt><dd>{money(order.tax.toString())}</dd></div>
+            <div className="flex justify-between bg-slate-100 px-3 py-2.5 font-black"><dt>مبلغ نهایی</dt><dd>{money(order.total.toString())}</dd></div>
           </dl>
         </section>
 

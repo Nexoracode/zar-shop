@@ -11,6 +11,7 @@ import { getPaymentProvider } from "@/modules/payments/payment-provider";
 import type { Prisma } from "@generated/prisma/client";
 import { calculateDiscountedPrice } from "@/modules/products/discount";
 import { PromotionValidationError, resolveCheckoutPromotions } from "@/modules/promotions/service";
+import { getGeneralStoreSettings, isStorefrontAvailable } from "@/modules/settings/general-settings";
 
 type ItemWithProduct = Prisma.CartItemGetPayload<{ include: { product: { include: { options: true } } } }>;
 type PriceParts = ReturnType<typeof calculateProductPrice>;
@@ -28,8 +29,10 @@ const addressSchema = z.object({
 
 export async function POST(request: Request) {
   try {
-    const user = await getCurrentUser();
+    const [user, generalSettings] = await Promise.all([getCurrentUser(), getGeneralStoreSettings()]);
     if (!user) return NextResponse.json({ message: "ابتدا وارد حساب شوید." }, { status: 401 });
+    if (!isStorefrontAvailable(generalSettings, user.role)) return NextResponse.json({ message: "فروشگاه در حال حاضر امکان ثبت سفارش ندارد." }, { status: 503 });
+    if (user.isGuest && !generalSettings.guestCheckout) return NextResponse.json({ message: "برای ادامه خرید وارد حساب شوید." }, { status: 403 });
     const input = addressSchema.parse(await request.json());
     const { couponCode, ...address } = input;
     const cart = await db.cart.findUnique({ where: { userId: user.id }, include: { items: { include: { product: { include: { options: true } } } } } });

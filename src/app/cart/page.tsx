@@ -9,6 +9,7 @@ import { CheckoutForm } from "@/components/checkout-form";
 import type { Prisma } from "@generated/prisma/client";
 import { getSelectedOptionPrice, getSelectedOptionWeight, optionEntries } from "@/modules/products/options";
 import { calculateDiscountedPrice } from "@/modules/products/discount";
+import { getGeneralStoreSettings } from "@/modules/settings/general-settings";
 
 type CartItemRow = Prisma.CartItemGetPayload<{ include: { product: { include: { options: true } } } }>;
 
@@ -16,9 +17,10 @@ export const dynamic = "force-dynamic";
 
 export default async function CartPage() {
   const user = await requireUser();
-  const [cart, gold] = await Promise.all([
+  const [cart, gold, settings] = await Promise.all([
     db.cart.findUnique({ where: { userId: user.id }, include: { items: { include: { product: { include: { options: true } } } } } }),
     getGoldPriceForDisplay(),
+    getGeneralStoreSettings(),
   ]);
   const items = (cart?.items ?? []) as CartItemRow[];
   const rate = gold ? Number(gold.pricePerGram18) : null;
@@ -46,7 +48,7 @@ export default async function CartPage() {
             <span className="inline-block text-[#785b27] text-[0.78rem] font-bold tracking-[0.03em] mb-[5px]">خرید امن</span>
             <h1 className="mt-0 mb-0">سبد خرید</h1>
           </div>
-          {hasGoldItems && <ChipRoot variant="soft" className="bg-[#efe5d1] text-[#785b27]"><ChipLabel>نرخ مبنا: {rate === null ? "موقتاً در دسترس نیست" : formatMoney(rate)}</ChipLabel></ChipRoot>}
+          {hasGoldItems && <ChipRoot variant="soft" className="bg-[#efe5d1] text-[#785b27]"><ChipLabel>نرخ مبنا: {rate === null ? "موقتاً در دسترس نیست" : formatMoney(rate, settings.currency)}</ChipLabel></ChipRoot>}
         </div>
 
         {!items.length ? (
@@ -72,7 +74,7 @@ export default async function CartPage() {
                         <TableCell className="px-4 py-[14px]">{item.quantity}</TableCell>
                         <TableCell className="px-4 py-[14px]">{p.storeIndustry === "GOLD" ? `${selectedWeight.toLocaleString("fa-IR", { maximumFractionDigits: 3 })} گرم` : "—"}</TableCell>
                         <TableCell className="px-4 py-[14px]">
-                          {amount === null ? "قیمت موقتاً نامشخص" : <span>{pricing?.isActive && <small className="ml-2 text-slate-400 line-through">{formatMoney(pricing.originalPrice * item.quantity)}</small>}{formatMoney(amount * item.quantity)}</span>}
+                          {amount === null ? "قیمت موقتاً نامشخص" : <span>{pricing?.isActive && <small className="ml-2 text-slate-400 line-through">{formatMoney(pricing.originalPrice * item.quantity, settings.currency)}</small>}{formatMoney(amount * item.quantity, settings.currency)}</span>}
                         </TableCell>
                       </TableRow>
                     );
@@ -81,7 +83,7 @@ export default async function CartPage() {
                     <TableCell className="px-4 py-[14px]"><strong>جمع کل</strong></TableCell>
                     <TableCell className="px-4 py-[14px]">—</TableCell><TableCell className="px-4 py-[14px]">—</TableCell>
                     <TableCell className="px-4 py-[14px]"><strong>
-                      {total === null ? "قابل محاسبه نیست" : formatMoney(total)}
+                      {total === null ? "قابل محاسبه نیست" : formatMoney(total, settings.currency)}
                     </strong></TableCell>
                   </TableRow>
                 </TableBody></TableContent></TableScrollContainer></Table>

@@ -8,6 +8,7 @@ import { formatMoney } from "@/lib/format";
 import { getGoldPriceForDisplay } from "@/modules/gold/gold-price.service";
 import { calculateProductPrice } from "@/modules/products/pricing";
 import { calculateDiscountedPrice } from "@/modules/products/discount";
+import { getGeneralStoreSettings } from "@/modules/settings/general-settings";
 
 type HomeProduct = Prisma.ProductGetPayload<{ include: { category: true; media: { include: { media: true } } } }>;
 type HomeCategory = Prisma.CategoryGetPayload<{ include: { image: true; children: true; _count: { select: { products: true } } } }>;
@@ -15,7 +16,7 @@ type HomeCategory = Prisma.CategoryGetPayload<{ include: { image: true; children
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
-  const [gold, products, rootCategories] = await Promise.all([
+  const [gold, products, rootCategories, settings] = await Promise.all([
     getGoldPriceForDisplay(),
     db.product.findMany({
       where: { status: "ACTIVE" },
@@ -33,6 +34,7 @@ export default async function Home() {
       orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
       take: 8,
     }),
+    getGeneralStoreSettings(),
   ]);
   const price = gold ? Number(gold.pricePerGram18) : null;
   const featuredCategories = rootCategories.filter((category) => category.featured);
@@ -43,7 +45,7 @@ export default async function Home() {
       <section className="relative isolate flex min-h-[620px] items-center overflow-hidden bg-[#c8b39f] sm:min-h-[680px] lg:min-h-[calc(100svh-160px)] lg:max-h-[820px]" aria-labelledby="hero-title">
         <Image
           src="/images/zar-hero-campaign.png"
-          alt="مدل با گردنبند، گوشواره و دستبند طلای زر گالری"
+          alt={`محصولات منتخب ${settings.storeName}`}
           fill
           priority
           sizes="100vw"
@@ -53,11 +55,11 @@ export default async function Home() {
         <div className="relative z-10 mx-auto flex w-full max-w-[1240px] items-end px-5 pb-14 pt-56 sm:px-8 sm:pb-20 lg:items-center lg:px-6 lg:py-20">
           <div className="max-w-[610px] text-white">
             <span className="mb-4 inline-flex items-center gap-2 text-xs font-bold tracking-[0.08em] text-[#ead39f] sm:text-sm"><i className="h-px w-8 bg-[#d7b66e]" /> کالکشن امضای زر · ۱۴۰۵</span>
-            <h1 id="hero-title" className="m-0 text-[clamp(2.55rem,7vw,5.5rem)] font-normal leading-[1.25] tracking-[-0.04em]">طلا، روایتِ<br /><em className="font-normal text-[#efd79f]">ماندگارِ شما</em></h1>
+            <h1 id="hero-title" className="m-0 max-w-3xl text-[clamp(2.55rem,7vw,5.5rem)] font-normal leading-[1.25] tracking-[-0.04em]">{settings.tagline}</h1>
             <p className="mb-0 mt-5 max-w-[540px] text-sm leading-8 text-white/80 sm:text-base sm:leading-9">زیورآلاتی برای لحظه‌هایی که می‌مانند؛ با طراحی اصیل، قیمت‌گذاری شفاف و تضمین همیشگی اصالت.</p>
             <div className="mt-8 flex flex-wrap items-center gap-5 sm:mt-10">
               <Link className="inline-flex min-h-12 items-center justify-center gap-2 bg-[#b5904c] px-6 text-sm text-white transition hover:-translate-y-0.5 hover:bg-[#9f7938]" href="/products">مشاهده کالکشن <ArrowLeft size={17} /></Link>
-              <Link className="border-b border-white/50 pb-1 text-sm text-white transition hover:border-white" href="#about">قصه زر گالری</Link>
+              <Link className="border-b border-white/50 pb-1 text-sm text-white transition hover:border-white" href="#about">قصه {settings.storeName}</Link>
             </div>
           </div>
         </div>
@@ -66,7 +68,7 @@ export default async function Home() {
       </section>
 
       {/* Promises */}
-      <section className="border-b border-[#e5dfd4] bg-white" aria-label="مزایای خرید از زر گالری">
+      <section className="border-b border-[#e5dfd4] bg-white" aria-label={`مزایای خرید از ${settings.storeName}`}>
         <div className="w-[min(1240px,calc(100%-40px))] mx-auto min-h-[104px] grid grid-cols-3 items-center max-[760px]:grid-cols-1 max-[760px]:py-2">
           {[
             { icon: <Gem size={19} strokeWidth={1.4} />, title: "طلای ۱۸ عیار", sub: "تضمین اصالت هر قطعه" },
@@ -163,8 +165,8 @@ export default async function Home() {
                     category={product.category?.name ?? "طلا"}
                     weight={Number(product.weightGrams)}
                     purity={product.purity}
-                    price={discounted ? formatMoney(discounted.finalPrice) : "قیمت موقتاً در دسترس نیست"}
-                    originalPrice={discounted?.isActive ? formatMoney(discounted.originalPrice) : undefined}
+                    price={discounted ? formatMoney(discounted.finalPrice, settings.currency) : "قیمت موقتاً در دسترس نیست"}
+                    originalPrice={discounted?.isActive ? formatMoney(discounted.originalPrice, settings.currency) : undefined}
                     image={media?.type === "IMAGE" ? { src: media.url, alt: media.alt ?? product.name } : undefined}
                   />
                 );
@@ -174,7 +176,7 @@ export default async function Home() {
             <div className="min-h-[310px] grid place-items-center content-center gap-2 text-center bg-[#f8f6f1] border border-[#e2ddd4]">
               <Gem size={38} className="text-[#a67b39]" />
               <h3 className="mt-[5px] mb-0 text-[#172840] text-[1.45rem] font-medium">کالکشن تازه در راه است</h3>
-              <p className="m-0 mb-3 text-[#817d76] text-[0.8rem]">به‌زودی قطعه‌های جدید زر گالری را اینجا خواهید دید.</p>
+              <p className="m-0 mb-3 text-[#817d76] text-[0.8rem]">به‌زودی محصولات جدید {settings.storeName} را اینجا خواهید دید.</p>
               <Link className="min-h-[46px] px-6 py-[9px] inline-flex items-center justify-center bg-[#1c3155] text-white border border-[#1c3155] rounded-sm" href="/products">مشاهده فروشگاه</Link>
             </div>
           )}
@@ -192,7 +194,7 @@ export default async function Home() {
         </div>
 
         <div className="p-[clamp(52px,7vw,100px)] text-white self-center max-[760px]:p-7 max-[760px]:pb-[55px]">
-          <span className="inline-block text-[#9a6e2d] text-[0.78rem] font-bold tracking-[0.08em] mb-[5px]">فلسفه زر گالری</span>
+          <span className="inline-block text-[#9a6e2d] text-[0.78rem] font-bold tracking-[0.08em] mb-[5px]">فلسفه {settings.storeName}</span>
           <h2 className="mt-[6px] mb-5 text-[clamp(2.7rem,4.5vw,4.6rem)] font-normal leading-[1.3]">
             زیبایی امروز،<br />ارزش ماندگار فردا
           </h2>

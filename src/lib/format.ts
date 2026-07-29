@@ -1,5 +1,6 @@
-export function formatMoney(value: number | string) {
-  return `${Number(value).toLocaleString("fa-IR")} ریال`;
+export function formatMoney(value: number | string, currency: "IRR" | "IRT" = "IRR") {
+  const amount = currency === "IRT" ? Number(value) / 10 : Number(value);
+  return `${amount.toLocaleString("fa-IR", { maximumFractionDigits: 0 })} ${currency === "IRT" ? "تومان" : "ریال"}`;
 }
 
 export function formatDate(value: Date | string) {

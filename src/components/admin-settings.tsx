@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useState, type FormEvent, type ReactNode } from "react";
 import { Alert, Button, Card, Chip, Input, Label, Tabs, TextArea, toast } from "@heroui/react";
 import {
   Bell, Boxes, CheckCircle2, ChevronDown, CircleDollarSign, Clock3, CreditCard, FileQuestion, FileText,
@@ -11,32 +11,18 @@ import { AdminCheckbox } from "@/components/admin-checkbox";
 import { HeroSelectField } from "@/components/hero-select-field";
 import { adminFieldClass, adminLabelClass } from "@/components/admin-ui";
 import { HeroNumberInput } from "@/components/hero-number-input";
+import type { GeneralStoreSettingsInput } from "@/modules/settings/general-settings";
 
 const tabClass = "min-h-11 min-w-0 gap-2 whitespace-nowrap rounded-xl px-2 text-xs font-bold sm:px-3";
 
-export function AdminSettings({ initialIndustry }: { initialIndustry: "GOLD" | "GENERAL" }) {
-  const [industry, setIndustry] = useState(initialIndustry);
-  const [savingIndustry, setSavingIndustry] = useState(false);
+export function AdminSettings({ initialSettings }: { initialSettings: GeneralStoreSettingsInput }) {
+  const [industry, setIndustry] = useState(initialSettings.industry);
   const demoAction = (title: string) => toast.info("نسخه نمایشی تنظیمات", { description: `بخش «${title}» پس از تأیید شما به API و دیتابیس متصل می‌شود.` });
-
-  async function saveIndustry() {
-    setSavingIndustry(true);
-    try {
-      const response = await fetch("/api/admin/settings/store-industry", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ industry }) });
-      const result = await response.json().catch(() => null);
-      if (!response.ok) throw new Error(result?.message ?? "ذخیره صنف فروشگاه انجام نشد.");
-      toast.success("صنف فروشگاه ذخیره شد", { description: industry === "GOLD" ? "محصولات جدید با قیمت روز طلا ثبت می‌شوند." : "محصولات جدید با قیمت مستقیم ثبت می‌شوند." });
-    } catch (reason) {
-      toast.danger("ذخیره صنف فروشگاه انجام نشد", { description: reason instanceof Error ? reason.message : "خطای ناشناخته" });
-    } finally {
-      setSavingIndustry(false);
-    }
-  }
 
   return (
     <div className="grid gap-5">
       <Alert status="accent" className="rounded-xl border border-blue-200 bg-blue-50 text-blue-900">
-        <Alert.Description>تنظیم «صنف فروشگاه» فعال و متصل است. سایر بخش‌های این صفحه فعلاً نمونه رابط کاربری هستند و ذخیره نمی‌شوند.</Alert.Description>
+        <Alert.Description>تب «عمومی» به سایت، فاکتور و فرایند خرید متصل است. سایر تب‌ها فعلاً نمونه رابط کاربری هستند و ذخیره نمی‌شوند.</Alert.Description>
       </Alert>
 
       <Tabs defaultSelectedKey="general" aria-label="بخش‌های تنظیمات فروشگاه" className="grid gap-5">
@@ -53,7 +39,7 @@ export function AdminSettings({ initialIndustry }: { initialIndustry: "GOLD" | "
           </Tabs.List>
         </Tabs.ListContainer>
 
-        <Tabs.Panel id="general"><GeneralSettings industry={industry} savingIndustry={savingIndustry} onIndustryChange={setIndustry} onSaveIndustry={saveIndustry} onDemo={demoAction} /></Tabs.Panel>
+        <Tabs.Panel id="general"><GeneralSettings initialSettings={initialSettings} industry={industry} onIndustryChange={setIndustry} /></Tabs.Panel>
         <Tabs.Panel id="homepage"><HomepageSettings onDemo={demoAction} /></Tabs.Panel>
         <Tabs.Panel id="branding"><BrandSettings onDemo={demoAction} /></Tabs.Panel>
         <Tabs.Panel id="orders"><OrderSettings onDemo={demoAction} /></Tabs.Panel>
@@ -66,31 +52,54 @@ export function AdminSettings({ initialIndustry }: { initialIndustry: "GOLD" | "
   );
 }
 
-function GeneralSettings({ industry, savingIndustry, onIndustryChange, onSaveIndustry, onDemo }: { industry: "GOLD" | "GENERAL"; savingIndustry: boolean; onIndustryChange: (value: "GOLD" | "GENERAL") => void; onSaveIndustry: () => void; onDemo: (title: string) => void }) {
-  return <SettingsGrid>
+function GeneralSettings({ initialSettings, industry, onIndustryChange }: { initialSettings: GeneralStoreSettingsInput; industry: "GOLD" | "GENERAL"; onIndustryChange: (value: "GOLD" | "GENERAL") => void }) {
+  const [saving, setSaving] = useState(false);
+  const [isStoreActive, setIsStoreActive] = useState(initialSettings.isStoreActive);
+  const [guestCheckout, setGuestCheckout] = useState(initialSettings.guestCheckout);
+  const [maintenanceMode, setMaintenanceMode] = useState(initialSettings.maintenanceMode);
+
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setSaving(true);
+    try {
+      const values = Object.fromEntries(new FormData(event.currentTarget));
+      const response = await fetch("/api/admin/settings/general", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...values, industry, isStoreActive, guestCheckout, maintenanceMode }),
+      });
+      const result = await response.json().catch(() => null);
+      if (!response.ok) throw new Error(result?.message ?? "ذخیره تنظیمات عمومی انجام نشد.");
+      toast.success("تنظیمات عمومی ذخیره شد", { description: "تغییرات در سایت و سفارش‌های جدید اعمال شدند." });
+    } catch (reason) {
+      toast.danger("ذخیره تنظیمات عمومی انجام نشد", { description: reason instanceof Error ? reason.message : "خطای ناشناخته" });
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return <form onSubmit={submit} className="grid gap-5"><SettingsGrid>
     <SettingCard icon={<Boxes size={19} />} title="صنف فروشگاه" description="نوع اطلاعات و روش قیمت‌گذاری محصولات را تعیین می‌کند" className="lg:col-span-2">
       <div className="flex flex-col items-stretch gap-2 sm:flex-row sm:items-stretch sm:justify-start">
         <Button type="button" variant={industry === "GOLD" ? "primary" : "secondary"} onPress={() => onIndustryChange("GOLD")} className="h-auto min-h-24 w-full justify-start gap-3 overflow-hidden whitespace-normal p-4 text-right sm:w-80"><span className="grid size-11 shrink-0 place-items-center rounded-xl bg-amber-100 text-amber-700"><Sparkles size={20} /></span><span className="min-w-0 flex-1"><strong className="block text-sm">طلا و جواهر</strong><small className="mt-1 block whitespace-normal break-words leading-5 opacity-75">قیمت روز طلا، وزن، عیار، اجرت، سود و مالیات</small></span></Button>
         <Button type="button" variant={industry === "GENERAL" ? "primary" : "secondary"} onPress={() => onIndustryChange("GENERAL")} className="h-auto min-h-24 w-full justify-start gap-3 overflow-hidden whitespace-normal p-4 text-right sm:w-80"><span className="grid size-11 shrink-0 place-items-center rounded-xl bg-blue-100 text-blue-700"><Store size={20} /></span><span className="min-w-0 flex-1"><strong className="block text-sm">فروشگاه محصولات معمولی</strong><small className="mt-1 block whitespace-normal break-words leading-5 opacity-75">قیمت مستقیم محصول و قیمت مستقل برای هر تنوع</small></span></Button>
       </div>
       <Alert status="warning"><Alert.Description>این انتخاب روی فرم محصولات جدید اثر می‌گذارد. روش قیمت‌گذاری محصولات قبلی برای حفظ سفارش‌ها و فاکتورها تغییر نمی‌کند.</Alert.Description></Alert>
-      <div className="flex justify-end border-t border-[var(--border)] pt-4"><Button type="button" variant="primary" isPending={savingIndustry} onPress={onSaveIndustry} className="gap-2"><Save size={16} />ذخیره صنف فروشگاه</Button></div>
     </SettingCard>
     <SettingCard icon={<Store size={19} />} title="هویت فروشگاه" description="اطلاعات اصلی نمایش‌داده‌شده در سایت و فاکتور">
-      <div className="grid gap-4 sm:grid-cols-2"><Field label="نام فروشگاه"><Input defaultValue="زر گالری" variant="secondary" className={adminFieldClass} /></Field><Field label="شعار کوتاه"><Input defaultValue="طلا، روایت ماندگار شما" variant="secondary" className={adminFieldClass} /></Field></div>
-      <Field label="توضیح کوتاه فروشگاه"><TextArea defaultValue="فروش آنلاین زیورآلات طلای ۱۸ عیار با قیمت روز و فاکتور رسمی" rows={3} variant="secondary" className={adminFieldClass} /></Field>
-      <div className="grid gap-4 sm:grid-cols-2"><HeroSelectField name="store-currency" label="واحد پول" defaultValue="IRR" includeEmptyOption={false} options={[{ value: "IRR", label: "ریال" }, { value: "IRT", label: "تومان" }]} /><HeroSelectField name="store-timezone" label="منطقه زمانی" defaultValue="Asia/Tehran" includeEmptyOption={false} options={[{ value: "Asia/Tehran", label: "تهران (UTC+3:30)" }]} /></div>
+      <div className="grid gap-4 sm:grid-cols-2"><Field label="نام فروشگاه"><Input name="storeName" required defaultValue={initialSettings.storeName} variant="secondary" className={adminFieldClass} /></Field><Field label="شعار کوتاه"><Input name="tagline" required defaultValue={initialSettings.tagline} variant="secondary" className={adminFieldClass} /></Field></div>
+      <Field label="توضیح کوتاه فروشگاه"><TextArea name="shortDescription" required defaultValue={initialSettings.shortDescription} rows={3} variant="secondary" className={adminFieldClass} /></Field>
+      <div className="grid gap-4 sm:grid-cols-2"><HeroSelectField name="currency" label="واحد پول" defaultValue={initialSettings.currency} includeEmptyOption={false} options={[{ value: "IRR", label: "ریال" }, { value: "IRT", label: "تومان" }]} /><HeroSelectField name="timezone" label="منطقه زمانی" defaultValue={initialSettings.timezone} includeEmptyOption={false} options={[{ value: "Asia/Tehran", label: "تهران (UTC+3:30)" }]} /></div>
     </SettingCard>
     <SettingCard icon={<MapPin size={19} />} title="اطلاعات تماس و حقوقی" description="برای فوتر، فاکتور و صفحات اعتماد">
-      <div className="grid gap-4 sm:grid-cols-2"><Field label="شماره تماس"><Input defaultValue="۰۲۱-۰۰۰۰۰۰۰۰" dir="ltr" variant="secondary" className={adminFieldClass} /></Field><Field label="ایمیل پشتیبانی"><Input defaultValue="support@zargallery.ir" dir="ltr" variant="secondary" className={adminFieldClass} /></Field></div>
-      <Field label="نشانی فروشگاه"><TextArea placeholder="نشانی کامل فروشگاه" rows={2} variant="secondary" className={adminFieldClass} /></Field>
-      <div className="grid gap-4 sm:grid-cols-2"><Field label="شناسه ملی / کد اقتصادی"><Input placeholder="برای فاکتور رسمی" variant="secondary" className={adminFieldClass} /></Field><Field label="ساعات پاسخ‌گویی"><Input defaultValue="شنبه تا پنجشنبه، ۹ تا ۱۸" variant="secondary" className={adminFieldClass} /></Field></div>
+      <div className="grid gap-4 sm:grid-cols-2"><Field label="شماره تماس"><Input name="supportPhone" defaultValue={initialSettings.supportPhone ?? ""} dir="ltr" variant="secondary" className={adminFieldClass} /></Field><Field label="ایمیل پشتیبانی"><Input name="supportEmail" type="email" defaultValue={initialSettings.supportEmail ?? ""} dir="ltr" variant="secondary" className={adminFieldClass} /></Field></div>
+      <Field label="نشانی فروشگاه"><TextArea name="storeAddress" defaultValue={initialSettings.storeAddress ?? ""} placeholder="نشانی کامل فروشگاه" rows={2} variant="secondary" className={adminFieldClass} /></Field>
+      <div className="grid gap-4 sm:grid-cols-2"><Field label="شناسه ملی / کد اقتصادی"><Input name="legalIdentifier" defaultValue={initialSettings.legalIdentifier ?? ""} placeholder="برای فاکتور رسمی" variant="secondary" className={adminFieldClass} /></Field><Field label="ساعات پاسخ‌گویی"><Input name="supportHours" defaultValue={initialSettings.supportHours ?? ""} variant="secondary" className={adminFieldClass} /></Field></div>
     </SettingCard>
     <SettingCard icon={<Settings2 size={19} />} title="وضعیت و دسترسی فروشگاه" description="کنترل نمایش عمومی و تجربه حساب کاربری" className="lg:col-span-2">
-      <div className="grid gap-3 md:grid-cols-3"><AdminCheckbox defaultSelected icon={<Globe2 size={17} />} description="فروشگاه برای کاربران قابل مشاهده باشد">فروشگاه فعال</AdminCheckbox><AdminCheckbox defaultSelected icon={<Users size={17} />} description="خرید بدون ساخت حساب امکان‌پذیر باشد">خرید مهمان</AdminCheckbox><AdminCheckbox icon={<ShieldCheck size={17} />} description="نمایش صفحه در حال بروزرسانی به بازدیدکنندگان">حالت تعمیر و نگهداری</AdminCheckbox></div>
-      <DemoFooter onPress={() => onDemo("تنظیمات عمومی")} />
+      <div className="grid gap-3 md:grid-cols-3"><AdminCheckbox isSelected={isStoreActive} onChange={setIsStoreActive} icon={<Globe2 size={17} />} description="فروشگاه برای کاربران قابل مشاهده باشد">فروشگاه فعال</AdminCheckbox><AdminCheckbox isSelected={guestCheckout} onChange={setGuestCheckout} icon={<Users size={17} />} description="خرید بدون ساخت حساب امکان‌پذیر باشد">خرید مهمان</AdminCheckbox><AdminCheckbox isSelected={maintenanceMode} onChange={setMaintenanceMode} icon={<ShieldCheck size={17} />} description="نمایش صفحه در حال بروزرسانی به بازدیدکنندگان">حالت تعمیر و نگهداری</AdminCheckbox></div>
     </SettingCard>
-  </SettingsGrid>;
+  </SettingsGrid><div className="flex justify-end rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4"><Button type="submit" variant="primary" isPending={saving} className="gap-2"><Save size={16} />{saving ? "در حال ذخیره..." : "ذخیره تنظیمات عمومی"}</Button></div></form>;
 }
 
 const homeSections = [

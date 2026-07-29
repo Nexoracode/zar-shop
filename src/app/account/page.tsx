@@ -5,11 +5,12 @@ import type { Order } from "@generated/prisma/client";
 import { Button, Card, Table, TableBody, TableCell, TableColumn, TableContent, TableHeader, TableRow, TableScrollContainer } from "@/components/hero";
 import { AdminStatusBadge } from "@/components/admin-ui";
 import { orderStatusLabels, orderStatusTones } from "@/modules/admin/labels";
+import { getGeneralStoreSettings } from "@/modules/settings/general-settings";
 
 export default async function AccountPage() {
   const user = await requireUser();
-  const orders = await db.order.findMany({ where: { userId: user.id }, orderBy: { createdAt: "desc" }, take: 20 });
-  const displayName = user.firstName ? `${user.firstName} ${user.lastName ?? ""}` : user.email;
+  const [orders, settings] = await Promise.all([db.order.findMany({ where: { userId: user.id }, orderBy: { createdAt: "desc" }, take: 20 }), getGeneralStoreSettings()]);
+  const displayName = user.isGuest ? "خریدار مهمان" : user.firstName ? `${user.firstName} ${user.lastName ?? ""}` : user.email;
 
   return (
     <main className="px-5 py-12 sm:px-6 sm:py-[86px]">
@@ -33,7 +34,7 @@ export default async function AccountPage() {
             { val: orders.length.toLocaleString("fa-IR"), label: "سفارش ثبت‌شده" },
             { val: orders.filter((o: Order) => o.status === "DELIVERED").length.toLocaleString("fa-IR"), label: "تحویل‌شده" },
             { val: user.phone ?? "—", label: "شماره تماس" },
-            { val: user.email, label: "ایمیل حساب", small: true },
+            { val: user.isGuest ? "بدون ثبت‌نام" : user.email, label: "ایمیل حساب", small: true },
           ].map(({ val, label, small }) => (
             <Card key={label} variant="secondary" className="rounded-2xl border border-[#e7e6e2] bg-white p-[21px]">
               <strong className={`block font-bold ${small ? "text-[1rem]" : "text-2xl"}`}>{val}</strong>
@@ -51,7 +52,7 @@ export default async function AccountPage() {
               {orders.map((o: Order) => (
                 <TableRow id={o.id} key={o.id}>
                   <TableCell className="px-4 py-[14px]">{o.orderNumber}</TableCell>
-                  <TableCell className="px-4 py-[14px]">{formatMoney(o.total.toString())}</TableCell>
+                  <TableCell className="px-4 py-[14px]">{formatMoney(o.total.toString(), settings.currency)}</TableCell>
                   <TableCell className="px-4 py-[14px]"><AdminStatusBadge tone={orderStatusTones[o.status]}>{orderStatusLabels[o.status]}</AdminStatusBadge></TableCell>
                   <TableCell className="px-4 py-[14px]">{formatDate(o.createdAt)}</TableCell>
                 </TableRow>

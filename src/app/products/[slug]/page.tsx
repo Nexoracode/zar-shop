@@ -10,14 +10,16 @@ import { calculateProductPrice } from "@/modules/products/pricing";
 import { parseOptionValues } from "@/modules/products/options";
 import { sanitizeProductDescription } from "@/modules/products/rich-text";
 import { calculateDiscountedPrice } from "@/modules/products/discount";
+import { getGeneralStoreSettings } from "@/modules/settings/general-settings";
 
 export const dynamic = "force-dynamic";
 
 export default async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const [product, gold] = await Promise.all([
+  const [product, gold, settings] = await Promise.all([
     db.product.findFirst({ where: { slug, status: "ACTIVE" }, include: { category: true, media: { include: { media: true }, orderBy: { position: "asc" } }, options: { orderBy: { position: "asc" } }, optionGuide: true } }),
     getGoldPriceForDisplay(),
+    getGeneralStoreSettings(),
   ]);
   if (!product) notFound();
 
@@ -67,7 +69,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
             {product.category?.name ?? "مجموعه طلا"}
           </span>
           <h1 className="mt-[5px] mb-[14px] text-[clamp(2.2rem,4vw,3.5rem)] leading-[1.3] font-medium">{product.name}</h1>
-          <div className="rich-text-content text-[#747982]" dangerouslySetInnerHTML={{ __html: sanitizeProductDescription(product.description || "<p>طراحی اصیل و ظریف، همراه با فاکتور رسمی و تضمین اصالت زر گالری.</p>") }} />
+          <div className="rich-text-content text-[#747982]" dangerouslySetInnerHTML={{ __html: sanitizeProductDescription(product.description || `<p>طراحی اصیل و ظریف، همراه با فاکتور رسمی و تضمین اصالت ${settings.storeName}.</p>`) }} />
 
           {/* Specs */}
           <div className="my-[30px] grid grid-cols-3 border-y border-[#e7e6e2]">
@@ -88,15 +90,16 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
                 ? "قیمت ثابت محصول"
                 : rate === null
                   ? "نرخ لحظه‌ای طلا موقتاً در دسترس نیست."
-                  : `قیمت نهایی بر اساس نرخ ${formatMoney(rate)}`}
+                  : `قیمت نهایی بر اساس نرخ ${formatMoney(rate, settings.currency)}`}
             </span>
             {product.storeIndustry === "GOLD" && rate !== null && <PriceTooltip />}
             <strong className="text-[#1c3155] text-[1.55rem]">
-              {total === null ? "امکان محاسبه قیمت وجود ندارد" : formatMoney(total)}
+              {total === null ? "امکان محاسبه قیمت وجود ندارد" : formatMoney(total, settings.currency)}
             </strong>
-            {discounted?.isActive && <div className="flex flex-wrap items-center gap-2"><span className="text-sm text-slate-400 line-through">{formatMoney(discounted.originalPrice)}</span><span className="inline-flex items-center gap-1 rounded-lg bg-rose-50 px-2 py-1 text-xs font-bold text-rose-600"><BadgePercent size={14} />{product.discountType === "PERCENT" ? `${Number(product.discountValue).toLocaleString("fa-IR")}٪ تخفیف` : `${formatMoney(discounted.discountAmount)} تخفیف`}</span></div>}
+            {discounted?.isActive && <div className="flex flex-wrap items-center gap-2"><span className="text-sm text-slate-400 line-through">{formatMoney(discounted.originalPrice, settings.currency)}</span><span className="inline-flex items-center gap-1 rounded-lg bg-rose-50 px-2 py-1 text-xs font-bold text-rose-600"><BadgePercent size={14} />{product.discountType === "PERCENT" ? `${Number(product.discountValue).toLocaleString("fa-IR")}٪ تخفیف` : `${formatMoney(discounted.discountAmount, settings.currency)} تخفیف`}</span></div>}
             <AddToCart
               productId={product.id}
+              currency={settings.currency}
               options={optionValues.map(({ option, values }) => ({ id: option.id, name: option.name, values: values.map((item) => ({ value: item.value, stock: item.stock ?? product.stock, weightGrams: item.weightGrams, price: priceForVariant(item.weightGrams, item.price), color: item.colorId ? colorsById.get(item.colorId) ?? null : null })) }))}
               optionGuide={product.optionGuide && product.optionGuide.type !== "VIDEO" ? { url: product.optionGuide.url, type: product.optionGuide.type, title: product.optionGuide.title ?? "راهنمای انتخاب محصول" } : null}
               disabled={product.stock < 1 || total === null}

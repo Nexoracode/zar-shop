@@ -5,6 +5,7 @@ import { getPaymentProvider } from "@/modules/payments/payment-provider";
 import { decrementSelectedOptionStocks } from "@/modules/products/options";
 import type { PrismaClient } from "@generated/prisma/client";
 import { issueNextPurchaseRewards } from "@/modules/promotions/service";
+import { generalStoreSettingsDefaults } from "@/modules/settings/general-settings";
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
@@ -55,15 +56,30 @@ export async function GET(request: Request) {
           });
         }
       }
+      const sellerSettings = await transaction.storeSetting.findUnique({
+        where: { id: "main" },
+        select: { industry: true, storeName: true, supportPhone: true, supportEmail: true, storeAddress: true, legalIdentifier: true, currency: true, timezone: true },
+      });
       await transaction.invoice.create({
         data: {
           invoiceNumber: `INV-${Date.now()}`,
           orderId: payment.orderId,
-          sellerData: { name: "زر گالری", nationalId: "تنظیم شود", economicCode: "تنظیم شود" },
+          sellerData: {
+            name: sellerSettings?.storeName ?? generalStoreSettingsDefaults.storeName,
+            phone: sellerSettings?.supportPhone,
+            email: sellerSettings?.supportEmail,
+            address: sellerSettings?.storeAddress,
+            nationalId: sellerSettings?.legalIdentifier,
+            economicCode: sellerSettings?.legalIdentifier,
+            currency: sellerSettings?.currency ?? generalStoreSettingsDefaults.currency,
+            timezone: sellerSettings?.timezone ?? generalStoreSettingsDefaults.timezone,
+            industry: sellerSettings?.industry ?? generalStoreSettingsDefaults.industry,
+          },
           buyerData: {
-            name: `${payment.order.user.firstName ?? ""} ${payment.order.user.lastName ?? ""}`.trim(),
+            name: payment.order.user.isGuest ? String((payment.order.shippingAddress as { recipient?: string } | null)?.recipient ?? "") : `${payment.order.user.firstName ?? ""} ${payment.order.user.lastName ?? ""}`.trim(),
             nationalId: payment.order.user.nationalId,
-            email: payment.order.user.email,
+            email: payment.order.user.isGuest ? null : payment.order.user.email,
+            phone: (payment.order.shippingAddress as { phone?: string } | null)?.phone,
             address: payment.order.shippingAddress,
           },
         },

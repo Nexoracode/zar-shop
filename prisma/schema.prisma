@@ -100,6 +100,7 @@ model User {
   status          UserStatus @default(ACTIVE)
   emailVerifiedAt DateTime?
   lastLoginAt     DateTime?
+  isGuest         Boolean    @default(false)
   createdAt       DateTime   @default(now())
   updatedAt       DateTime   @updatedAt
   addresses       Address[]
@@ -213,6 +214,19 @@ model Product {
 model StoreSetting {
   id                 String        @id @default("main") @db.VarChar(20)
   industry           StoreIndustry @default(GOLD)
+  storeName          String        @default("زر گالری") @db.VarChar(120)
+  tagline            String        @default("طلا، روایت ماندگار شما") @db.VarChar(191)
+  shortDescription   String        @default("فروش آنلاین زیورآلات طلای ۱۸ عیار با قیمت روز و فاکتور رسمی") @db.VarChar(500)
+  currency           String        @default("IRR") @db.VarChar(3)
+  timezone           String        @default("Asia/Tehran") @db.VarChar(50)
+  supportPhone       String?       @db.VarChar(30)
+  supportEmail       String?       @db.VarChar(191)
+  storeAddress       String?       @db.Text
+  legalIdentifier    String?       @db.VarChar(80)
+  supportHours       String?       @db.VarChar(191)
+  isStoreActive      Boolean       @default(true)
+  guestCheckout      Boolean       @default(true)
+  maintenanceMode    Boolean       @default(false)
   defaultShippingFee Decimal       @default(0) @db.Decimal(18, 0)
   createdAt          DateTime      @default(now())
   updatedAt          DateTime      @updatedAt

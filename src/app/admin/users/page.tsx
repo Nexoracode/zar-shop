@@ -36,6 +36,7 @@ export default async function UsersPage({ searchParams }: { searchParams: Search
   const status = statuses.includes(params.status as UserStatus) ? params.status as UserStatus : undefined;
   const { requestedPage, pageSize } = parseAdminPagination(params);
   const where: Prisma.UserWhereInput = {
+    isGuest: false,
     ...(role ? { role } : {}),
     ...(status ? { status } : {}),
     ...(query ? { OR: [

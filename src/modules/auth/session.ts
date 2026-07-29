@@ -1,4 +1,5 @@
 import { createHash, randomBytes } from "node:crypto";
+import { hash as hashPassword } from "bcryptjs";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
@@ -23,6 +24,20 @@ export async function createSession(userId: string) {
     path: "/",
     maxAge: SESSION_AGE_MS / 1000,
   });
+}
+
+export async function createGuestSessionUser() {
+  const marker = randomBytes(18).toString("hex");
+  const passwordHash = await hashPassword(randomBytes(48).toString("base64url"), 12);
+  const user = await db.user.create({
+    data: {
+      email: `guest-${marker}@guest.local`,
+      passwordHash,
+      isGuest: true,
+    },
+  });
+  await createSession(user.id);
+  return user;
 }
 
 export async function destroySession() {
