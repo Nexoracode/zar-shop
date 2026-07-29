@@ -7,6 +7,7 @@ import { AdminStatusBadge, adminFieldClass, adminLabelClass } from "@/components
 import { AdminCheckbox } from "@/components/admin-checkbox";
 import { Table, TableBody, TableCell, TableColumn, TableContent, TableHeader, TableRow, TableScrollContainer } from "@/components/hero";
 import { apiErrorMessage } from "@/lib/form-errors";
+import { HeroNumberInput } from "@/components/hero-number-input";
 
 type ColorItem = { id: string; name: string; hex: string; isActive: boolean; sortOrder: number };
 
@@ -64,7 +65,7 @@ export function ColorManager({ initialColors }: { initialColors: ColorItem[] }) 
             <div className="grid gap-4"><ColorArea colorSpace="hsb" xChannel="saturation" yChannel="brightness" className="h-44 w-full rounded-xl"><ColorArea.Thumb /></ColorArea><ColorSlider colorSpace="hsb" channel="hue"><ColorSlider.Track className="h-7 rounded-full"><ColorSlider.Thumb /></ColorSlider.Track></ColorSlider><ColorField><Label className="text-xs font-bold text-slate-600">کد رنگ</Label><ColorField.Group variant="secondary" fullWidth><ColorField.Input /></ColorField.Group></ColorField></div>
           </ColorPicker.Popover>
         </ColorPicker></div>
-        <label className={adminLabelClass}>ترتیب نمایش<Input name="sortOrder" type="number" min="0" defaultValue={editing?.sortOrder ?? 0} fullWidth variant="secondary" className={adminFieldClass} /></label>
+        <label className={adminLabelClass}>ترتیب نمایش<HeroNumberInput name="sortOrder" min="0" defaultValue={editing?.sortOrder ?? 0} fullWidth variant="secondary" className={adminFieldClass} /></label>
         <AdminCheckbox name="isActive" value="on" defaultSelected={editing?.isActive ?? true}>فعال</AdminCheckbox>
         <Button type="submit" isPending={loading} variant="primary" className="min-h-11 gap-2 bg-[#172b4d] text-white">{({ isPending }) => <>{isPending ? <Spinner color="current" size="sm" /> : editing ? <Save size={16} /> : <Plus size={16} />}{isPending ? "در حال ذخیره..." : editing ? "ذخیره تغییرات" : "افزودن رنگ"}</>}</Button>
       </form>

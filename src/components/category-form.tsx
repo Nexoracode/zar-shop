@@ -9,6 +9,7 @@ import { ChevronRight, FolderTree, ImageIcon, Save, Sparkles, Trash2 } from "luc
 import { MediaPickerDialog } from "@/components/media-picker-dialog";
 import type { MediaChoice } from "@/components/media-library";
 import { HeroSelectField } from "@/components/hero-select-field";
+import { HeroNumberInput } from "@/components/hero-number-input";
 import { adminFieldClass, adminLabelClass } from "@/components/admin-ui";
 import { AdminCheckbox } from "@/components/admin-checkbox";
 import { apiErrorMessage, validationErrorMessage } from "@/lib/form-errors";
@@ -106,7 +107,7 @@ export function CategoryForm({ categories, category }: { categories: CategoryOpt
             <label className={`${adminLabelClass} mt-4`}>توضیحات<TextArea rows={5} value={description} onChange={(event) => setDescription(event.target.value)} fullWidth variant="secondary" className={adminFieldClass} /></label>
             <div className="mt-4 grid gap-4 sm:grid-cols-2">
               <HeroSelectField name="parentId" label="دسته والد" value={parentId} onValueChange={setParentId} options={[{ value: "", label: "بدون والد (دسته اصلی)" }, ...categories.filter((item) => item.id !== category?.id).map((item) => ({ value: item.id, label: `${item.parentName ? `${item.parentName} ← ` : ""}${item.name}` }))]} />
-              <label className={adminLabelClass}>ترتیب نمایش<Input type="number" value={sortOrder} onChange={(event) => setSortOrder(event.target.value)} fullWidth variant="secondary" className={adminFieldClass} /></label>
+              <label className={adminLabelClass}>ترتیب نمایش<HeroNumberInput value={sortOrder} onValueChange={setSortOrder} fullWidth variant="secondary" className={adminFieldClass} /></label>
             </div>
           </Card.Content>
         </Card>

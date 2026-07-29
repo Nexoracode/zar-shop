@@ -10,6 +10,7 @@ import {
 import { AdminCheckbox } from "@/components/admin-checkbox";
 import { HeroSelectField } from "@/components/hero-select-field";
 import { adminFieldClass, adminLabelClass } from "@/components/admin-ui";
+import { HeroNumberInput } from "@/components/hero-number-input";
 
 const tabClass = "min-h-11 min-w-0 gap-2 whitespace-nowrap rounded-xl px-2 text-xs font-bold sm:px-3";
 
@@ -137,7 +138,7 @@ function OrderSettings({ onDemo }: { onDemo: (title: string) => void }) {
           <Chip size="sm" variant="soft" className="w-fit text-amber-800"><Chip.Label>فقط سفارش‌های در انتظار پرداخت</Chip.Label></Chip>
         </div>
         <div className="grid gap-4">
-          <div className="grid gap-4 sm:grid-cols-2"><Field label="زمان انقضا (دقیقه)"><Input type="number" defaultValue="15" min={1} max={1440} variant="secondary" className={adminFieldClass} /></Field><Field label="هشدار قبل از انقضا (دقیقه)"><Input type="number" defaultValue="5" min={0} variant="secondary" className={adminFieldClass} /></Field></div>
+          <div className="grid gap-4 sm:grid-cols-2"><Field label="زمان انقضا (دقیقه)"><HeroNumberInput defaultValue="15" min={1} max={1440} variant="secondary" className={adminFieldClass} /></Field><Field label="هشدار قبل از انقضا (دقیقه)"><HeroNumberInput defaultValue="5" min={0} variant="secondary" className={adminFieldClass} /></Field></div>
           <div className="grid gap-4 sm:grid-cols-2"><HeroSelectField name="order-expiration-start" label="شروع شمارش زمان از" defaultValue="CREATED_AT" includeEmptyOption={false} options={[{ value: "CREATED_AT", label: "زمان ایجاد سفارش" }, { value: "PAYMENT_STARTED_AT", label: "زمان ورود به درگاه" }]} /><HeroSelectField name="order-expiration-action" label="اقدام پس از پایان مهلت" defaultValue="EXPIRE" includeEmptyOption={false} options={[{ value: "EXPIRE", label: "منقضی‌کردن خودکار سفارش" }, { value: "CANCEL", label: "لغو خودکار سفارش" }, { value: "NOTIFY", label: "فقط ارسال هشدار به مدیر" }]} /></div>
           <AdminCheckbox defaultSelected description="شمارش معکوس مهلت پرداخت در صفحه سفارش و پرداخت دیده شود">نمایش شمارش معکوس به مشتری</AdminCheckbox>
         </div>
@@ -147,8 +148,8 @@ function OrderSettings({ onDemo }: { onDemo: (title: string) => void }) {
       <DemoFooter onPress={() => onDemo("انقضای سفارش‌های بدون اقدام")} />
     </SettingCard>
     <SettingCard icon={<PackageCheck size={19} />} title="قواعد ثبت سفارش" description="محدودیت‌ها و شماره‌گذاری سفارش">
-      <div className="grid gap-4 sm:grid-cols-2"><Field label="حداقل مبلغ سفارش (ریال)"><Input type="number" defaultValue="5000000" dir="ltr" variant="secondary" className={adminFieldClass} /></Field><Field label="پیشوند شماره سفارش"><Input defaultValue="ZG" dir="ltr" variant="secondary" className={adminFieldClass} /></Field></div>
-      <div className="grid gap-4 sm:grid-cols-2"><Field label="حداکثر تعداد هر قلم"><Input type="number" defaultValue="5" variant="secondary" className={adminFieldClass} /></Field><HeroSelectField name="order-default-status" label="وضعیت اولیه" defaultValue="PENDING" includeEmptyOption={false} options={[{ value: "PENDING", label: "در انتظار پرداخت" }, { value: "PROCESSING", label: "در حال پردازش" }]} /></div>
+      <div className="grid gap-4 sm:grid-cols-2"><Field label="حداقل مبلغ سفارش (ریال)"><HeroNumberInput defaultValue="5000000" isPrice variant="secondary" className={adminFieldClass} /></Field><Field label="پیشوند شماره سفارش"><Input defaultValue="ZG" dir="ltr" variant="secondary" className={adminFieldClass} /></Field></div>
+      <div className="grid gap-4 sm:grid-cols-2"><Field label="حداکثر تعداد هر قلم"><HeroNumberInput defaultValue="5" variant="secondary" className={adminFieldClass} /></Field><HeroSelectField name="order-default-status" label="وضعیت اولیه" defaultValue="PENDING" includeEmptyOption={false} options={[{ value: "PENDING", label: "در انتظار پرداخت" }, { value: "PROCESSING", label: "در حال پردازش" }]} /></div>
       <AdminCheckbox defaultSelected description="پیش از پرداخت، نرخ و مبلغ سفارش سمت سرور دوباره کنترل شود">بازبینی نرخ طلا هنگام پرداخت</AdminCheckbox>
       <DemoFooter onPress={() => onDemo("سفارش و سبد خرید")} />
     </SettingCard>
@@ -158,11 +159,11 @@ function OrderSettings({ onDemo }: { onDemo: (title: string) => void }) {
 function CatalogSettings() {
   return <SettingsGrid>
     <SettingCard icon={<Boxes size={19} />} title="موجودی و کاتالوگ" description="قواعد عمومی محصولات و تنوع‌ها">
-      <div className="grid gap-4 sm:grid-cols-2"><Field label="آستانه هشدار موجودی کم"><Input type="number" defaultValue="3" min={0} variant="secondary" className={adminFieldClass} /></Field><Field label="تعداد محصولات هر صفحه"><Input type="number" defaultValue="24" min={1} variant="secondary" className={adminFieldClass} /></Field></div>
+      <div className="grid gap-4 sm:grid-cols-2"><Field label="آستانه هشدار موجودی کم"><HeroNumberInput defaultValue="3" min={0} variant="secondary" className={adminFieldClass} /></Field><Field label="تعداد محصولات هر صفحه"><HeroNumberInput defaultValue="24" min={1} variant="secondary" className={adminFieldClass} /></Field></div>
       <AdminCheckbox defaultSelected description="محصول بدون موجودی در نتایج فروشگاه نمایش داده نشود">مخفی‌کردن محصولات ناموجود</AdminCheckbox><AdminCheckbox defaultSelected description="نمایش امتیاز و دیدگاه تأییدشده در صفحه محصول">دیدگاه و امتیاز مشتریان</AdminCheckbox><AdminCheckbox description="اجازه ثبت سفارش بیشتر از موجودی فعلی">پیش‌فروش / Backorder</AdminCheckbox>
     </SettingCard>
     <SettingCard icon={<CircleDollarSign size={19} />} title="نرخ طلا و قیمت‌گذاری" description="رفتار نرخ لحظه‌ای و وضعیت منبع قیمت">
-      <div className="grid gap-4 sm:grid-cols-2"><Field label="فاصله بروزرسانی نرخ (ثانیه)"><Input type="number" defaultValue="60" min={10} variant="secondary" className={adminFieldClass} /></Field><Field label="حداکثر عمر نرخ جایگزین (دقیقه)"><Input type="number" defaultValue="15" min={1} variant="secondary" className={adminFieldClass} /></Field></div>
+      <div className="grid gap-4 sm:grid-cols-2"><Field label="فاصله بروزرسانی نرخ (ثانیه)"><HeroNumberInput defaultValue="60" min={10} variant="secondary" className={adminFieldClass} /></Field><Field label="حداکثر عمر نرخ جایگزین (دقیقه)"><HeroNumberInput defaultValue="15" min={1} variant="secondary" className={adminFieldClass} /></Field></div>
       <HeroSelectField name="gold-source" label="منبع نرخ اصلی" defaultValue="primary" includeEmptyOption={false} options={[{ value: "primary", label: "سرویس نرخ طلای اصلی" }, { value: "manual", label: "نرخ دستی اضطراری" }]} />
       <AdminCheckbox defaultSelected description="اگر نرخ معتبر در دسترس نبود، امکان ثبت سفارش متوقف شود">توقف فروش هنگام نامعتبر بودن نرخ</AdminCheckbox><AdminCheckbox defaultSelected description="نرخ، وزن، اجرت، سود و مالیات در سفارش ثابت بماند">Snapshot کامل اجزای قیمت</AdminCheckbox>
       <div className="flex items-center justify-between rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-xs text-emerald-800"><span className="flex items-center gap-2 font-bold"><CheckCircle2 size={16} />منبع نرخ اصلی متصل است</span><Chip size="sm" variant="soft"><Chip.Label>نمونه نمایشی</Chip.Label></Chip></div>
@@ -177,7 +178,7 @@ function CommerceSettings({ onDemo }: { onDemo: (title: string) => void }) {
       <Button type="button" variant="secondary" onPress={() => onDemo("افزودن درگاه پرداخت")} className="gap-2"><Plus size={16} />افزودن درگاه</Button>
     </SettingCard>
     <SettingCard icon={<Truck size={19} />} title="ارسال و تحویل" description="قواعد محاسبه هزینه و زمان آماده‌سازی">
-      <div className="grid gap-4 sm:grid-cols-2"><Field label="ارسال رایگان از مبلغ (ریال)"><Input type="number" defaultValue="100000000" dir="ltr" variant="secondary" className={adminFieldClass} /></Field><Field label="زمان آماده‌سازی (روز کاری)"><Input type="number" defaultValue="2" min={0} variant="secondary" className={adminFieldClass} /></Field></div>
+      <div className="grid gap-4 sm:grid-cols-2"><Field label="ارسال رایگان از مبلغ (ریال)"><HeroNumberInput defaultValue="100000000" isPrice variant="secondary" className={adminFieldClass} /></Field><Field label="زمان آماده‌سازی (روز کاری)"><HeroNumberInput defaultValue="2" min={0} variant="secondary" className={adminFieldClass} /></Field></div>
       <MethodRow icon={<Truck size={18} />} title="ارسال بیمه‌شده" description="ارسال سراسری با محاسبه هزینه" active /><MethodRow icon={<MapPin size={18} />} title="تحویل حضوری" description="انتخاب شعبه و بازه مراجعه" active />
       <AdminCheckbox defaultSelected description="تا پیش از ورود نشانی، هزینه ارسال نمایش داده نشود">محاسبه ارسال پس از دریافت نشانی</AdminCheckbox>
       <DemoFooter onPress={() => onDemo("ارسال و پرداخت")} />
