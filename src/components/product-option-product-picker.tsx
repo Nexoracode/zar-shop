@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Alert, Button, Card, Input, Spinner } from "@heroui/react";
-import { Boxes, CheckCircle2, ListPlus, ListTree, LockKeyhole, PackageSearch, Plus, Search } from "lucide-react";
+import { Boxes, CheckCircle2, ListPlus, ListTree, LockKeyhole, PackageSearch, Plus, Search, X } from "lucide-react";
 import { AdminStatusBadge, adminFieldClass } from "@/components/admin-ui";
 import { ProductOptionsForm } from "@/components/product-options-form";
 import { productStatusLabels, productStatusTones } from "@/modules/admin/labels";
@@ -97,6 +97,16 @@ export function ProductOptionProductPicker() {
     }
   }
 
+  function clearSearch() {
+    optionRequest.current?.abort();
+    setQuery("");
+    setSearchResponse({ query: "", results: [], error: null });
+    setSelectedProduct(null);
+    setOptionData(null);
+    setOptionError(null);
+    setLoadingOptions(false);
+  }
+
   const remainingCharacters = Math.max(0, 3 - normalizedQuery.length);
 
   return (
@@ -113,8 +123,9 @@ export function ProductOptionProductPicker() {
               جست‌وجوی محصول
               <div className="relative">
                 <Search className="pointer-events-none absolute right-3.5 top-1/2 z-10 -translate-y-1/2 text-slate-400" size={17} />
-                <Input value={query} onChange={(event) => setQuery(event.target.value)} fullWidth autoFocus variant="secondary" className={`${adminFieldClass} min-h-11 px-10 text-sm`} placeholder="حداقل ۳ کاراکتر" aria-describedby="product-option-search-hint" />
-                {loadingSearch && <Spinner size="sm" className="absolute left-3.5 top-1/2 z-10 -translate-y-1/2" aria-label="در حال جست‌وجو" />}
+                <Input value={query} onChange={(event) => setQuery(event.target.value)} fullWidth autoFocus variant="secondary" className={`${adminFieldClass} min-h-11 pr-10 pl-20 text-sm`} placeholder="حداقل ۳ کاراکتر" aria-describedby="product-option-search-hint" />
+                {loadingSearch && <Spinner size="sm" className="absolute left-11 top-1/2 z-10 -translate-y-1/2" aria-label="در حال جست‌وجو" />}
+                {query ? <Button type="button" isIconOnly variant="ghost" aria-label="پاک‌کردن جست‌وجو" onPress={clearSearch} className="absolute left-1.5 top-1/2 z-20 h-8 min-h-8 w-8 min-w-8 -translate-y-1/2 rounded-lg text-slate-400 hover:text-slate-700"><X size={15} /></Button> : null}
               </div>
             </label>
 
@@ -173,7 +184,7 @@ export function ProductOptionProductPicker() {
 
 function DisabledOptionsPanel() {
   return <div className="relative" aria-disabled="true">
-    <Card variant="secondary" className="rounded-2xl border border-slate-200 bg-white opacity-60 shadow-sm"><Card.Content className="p-4 sm:p-6"><div className="mb-5 flex items-center justify-between gap-3 border-b border-slate-100 pb-4"><div className="flex items-center gap-3"><span className="grid h-10 w-10 place-items-center rounded-xl bg-slate-100 text-slate-400"><ListPlus size={19} /></span><div><h2 className="text-base font-black text-slate-700">گروه‌های تنوع</h2><p className="text-xs text-slate-400">پس از انتخاب محصول فعال می‌شود.</p></div></div><Button type="button" variant="secondary" isDisabled className="gap-2"><Plus size={15} />افزودن تنوع</Button></div><div className="grid gap-3"><div className="rounded-xl border border-slate-200 bg-slate-50 p-4"><Input disabled fullWidth variant="secondary" placeholder="عنوان تنوع؛ مثلاً سایز یا رنگ" className={adminFieldClass} /><div className="mt-3 flex gap-2"><Input disabled fullWidth variant="secondary" placeholder="مقدار قابل انتخاب" className={adminFieldClass} /><Button type="button" isDisabled variant="secondary">افزودن</Button></div></div><div className="grid min-h-36 place-items-center rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 text-center"><div><LockKeyhole className="mx-auto mb-3 text-slate-300" size={30} /><strong className="block text-sm text-slate-600">ابتدا یک محصول انتخاب کنید</strong><span className="mt-1 block text-xs text-slate-400">فرم مدیریت تنوع پس از انتخاب محصول در دسترس قرار می‌گیرد.</span></div></div></div></Card.Content></Card>
+    <Card variant="secondary" className="rounded-2xl border border-slate-200 bg-white opacity-60 shadow-sm"><Card.Content className="p-4 sm:p-6"><div className="mb-5 flex items-center justify-between gap-3 border-b border-slate-100 pb-4"><div className="flex items-center gap-3"><span className="grid h-10 w-10 place-items-center rounded-xl bg-slate-100 text-slate-400"><ListPlus size={19} /></span><div><h2 className="text-base font-black text-slate-700">گروه‌های تنوع</h2><p className="text-xs text-slate-400">پس از انتخاب محصول فعال می‌شود.</p></div></div><Button type="button" variant="secondary" isDisabled className="gap-1.5 text-[11px]"><Plus size={14} />افزودن</Button></div><div className="grid gap-3"><div className="rounded-xl border border-slate-200 bg-slate-50 p-4"><Input disabled fullWidth variant="secondary" placeholder="عنوان تنوع؛ مثلاً سایز یا رنگ" className={adminFieldClass} /><div className="mt-3 flex gap-2"><Input disabled fullWidth variant="secondary" placeholder="مقدار قابل انتخاب" className={adminFieldClass} /><Button type="button" isDisabled variant="secondary">افزودن</Button></div></div><div className="grid min-h-36 place-items-center rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 text-center"><div><LockKeyhole className="mx-auto mb-3 text-slate-300" size={30} /><strong className="block text-sm text-slate-600">ابتدا یک محصول انتخاب کنید</strong><span className="mt-1 block text-xs text-slate-400">فرم مدیریت تنوع پس از انتخاب محصول در دسترس قرار می‌گیرد.</span></div></div></div></Card.Content></Card>
   </div>;
 }
 

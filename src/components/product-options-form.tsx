@@ -112,7 +112,7 @@ export function ProductOptionsForm({ productId, productStock, storeIndustry, col
       <Card.Content className="p-4 sm:p-6">
         <div className="mb-5 flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-4">
           <div className="flex items-center gap-3"><span className="grid h-10 w-10 place-items-center rounded-xl bg-[#fbf7ef] text-[#9a7434]"><ListPlus size={19} /></span><div><h2 className="text-base font-black text-slate-800">گروه‌های تنوع</h2><p className="text-xs text-slate-400">برای هر گروه، عنوان و مقادیر قابل انتخاب مشتری را مشخص کنید.</p></div></div>
-          <Button type="button" variant="secondary" isDisabled={options.length >= 10} onPress={addOptionGroup} className="min-h-10 gap-2 border-[#d8c29a] bg-[#fbf7ef] text-xs font-bold text-[#846325]"><Plus size={15} />افزودن تنوع</Button>
+          <Button type="button" variant="secondary" isDisabled={options.length >= 10} onPress={addOptionGroup} className="min-h-10 gap-1.5 border-[#d8c29a] bg-[#fbf7ef] text-[11px] font-bold text-[#846325]"><Plus size={14} />افزودن</Button>
         </div>
 
         <div className="grid gap-3">
