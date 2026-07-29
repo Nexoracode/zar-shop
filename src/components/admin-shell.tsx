@@ -4,10 +4,11 @@ import Link from "next/link";
 import { useEffect, useSyncExternalStore, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { Button, Chip, Popover } from "@heroui/react";
-import { Bell, LogOut, Moon, ShoppingBag, Sun, UserRound } from "lucide-react";
+import { Bell, LogOut, ShoppingBag, UserRound } from "lucide-react";
 import { formatDateTime, formatMoney } from "@/lib/format";
 import { userRoleLabels } from "@/modules/admin/labels";
 import type { UserRole } from "@generated/prisma/enums";
+import { getResolvedAdminTheme, subscribeToAdminTheme } from "@/lib/admin-theme";
 
 type AdminUser = { firstName: string | null; lastName: string | null; email: string; role: UserRole };
 
@@ -20,37 +21,14 @@ type Props = {
   children: ReactNode;
 };
 
-const themeStorageKey = "zar-admin-theme";
-const themeChangeEvent = "zar-admin-theme-change";
-
-function getThemeSnapshot() {
-  const savedTheme = window.localStorage.getItem(themeStorageKey);
-  return savedTheme ? savedTheme === "dark" : window.matchMedia("(prefers-color-scheme: dark)").matches;
-}
-
-function subscribeToTheme(callback: () => void) {
-  window.addEventListener("storage", callback);
-  window.addEventListener(themeChangeEvent, callback);
-  return () => {
-    window.removeEventListener("storage", callback);
-    window.removeEventListener(themeChangeEvent, callback);
-  };
-}
-
-function setAdminTheme(dark: boolean) {
-  window.localStorage.setItem(themeStorageKey, dark ? "dark" : "light");
-  window.dispatchEvent(new Event(themeChangeEvent));
-}
-
 export function AdminShell({ user, goldPrice, goldFetchedAt, notificationCount, sidebar, children }: Props) {
   const router = useRouter();
-  const dark = useSyncExternalStore(subscribeToTheme, getThemeSnapshot, () => false);
+  const theme = useSyncExternalStore(subscribeToAdminTheme, getResolvedAdminTheme, () => "light");
   const fullName = `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim() || "مدیر فروشگاه";
 
   useEffect(() => {
-    const theme = dark ? "zar-dark" : "zar";
-    document.documentElement.dataset.theme = theme;
-  }, [dark]);
+    document.documentElement.dataset.theme = theme === "dark" ? "zar-dark" : "zar";
+  }, [theme]);
 
   useEffect(() => {
     return () => {
@@ -116,9 +94,6 @@ export function AdminShell({ user, goldPrice, goldFetchedAt, notificationCount, 
                 </Popover.Content>
               </Popover>
 
-              <Button type="button" isIconOnly variant="ghost" aria-label={dark ? "فعال‌کردن حالت روشن" : "فعال‌کردن حالت تاریک"} onPress={() => setAdminTheme(!dark)} className="h-10 min-h-10 w-10 min-w-10 rounded-full border border-[var(--border)] bg-[var(--surface-secondary)] text-[var(--foreground)]">
-                {dark ? <Sun size={18} /> : <Moon size={18} />}
-              </Button>
             </div>
 
             <div className="flex min-w-0 items-center gap-3">
