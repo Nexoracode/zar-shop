@@ -30,6 +30,12 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   const rate = gold ? Number(gold.pricePerGram18) : null;
   const parts = rate === null ? null : calculateProductPrice({ goldPricePerGram18: rate, weightGrams: Number(product.weightGrams), purity: product.purity, makingFeeType: product.makingFeeType, makingFeeValue: Number(product.makingFeeValue), profitPercent: Number(product.profitPercent), taxPercent: Number(product.taxPercent) });
   const total = product.fixedPrice ? Number(product.fixedPrice) : parts?.total ?? null;
+  const priceForVariantWeight = (weightGrams: string | null) => {
+    if (!weightGrams) return null;
+    if (product.fixedPrice) return Number(product.fixedPrice);
+    if (rate === null) return null;
+    return calculateProductPrice({ goldPricePerGram18: rate, weightGrams: Number(weightGrams), purity: product.purity, makingFeeType: product.makingFeeType, makingFeeValue: Number(product.makingFeeValue), profitPercent: Number(product.profitPercent), taxPercent: Number(product.taxPercent) }).total;
+  };
   const media = product.media[0]?.media;
 
   return (
@@ -81,7 +87,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
             </strong>
             <AddToCart
               productId={product.id}
-              options={optionValues.map(({ option, values }) => ({ id: option.id, name: option.name, values: values.map((item) => ({ value: item.value, stock: item.stock ?? product.stock, priceAdjustment: item.priceAdjustment, color: item.colorId ? colorsById.get(item.colorId) ?? null : null })) }))}
+              options={optionValues.map(({ option, values }) => ({ id: option.id, name: option.name, values: values.map((item) => ({ value: item.value, stock: item.stock ?? product.stock, weightGrams: item.weightGrams, price: priceForVariantWeight(item.weightGrams), color: item.colorId ? colorsById.get(item.colorId) ?? null : null })) }))}
               optionGuide={product.optionGuide && product.optionGuide.type !== "VIDEO" ? { url: product.optionGuide.url, type: product.optionGuide.type, title: product.optionGuide.title ?? "راهنمای انتخاب محصول" } : null}
               disabled={product.stock < 1 || total === null}
               disabledLabel={product.stock < 1 ? "ناموجود" : "قیمت موقتاً نامشخص"}

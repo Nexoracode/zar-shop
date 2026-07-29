@@ -9,7 +9,7 @@ import { HeroSelectField } from "@/components/hero-select-field";
 import { apiErrorMessage, validationErrorMessage } from "@/lib/form-errors";
 import { productSchema } from "@/modules/products/schemas";
 
-type OptionValue = { value: string; colorId: string | null; isActive: boolean; stock: number | null; priceAdjustment: number; persisted?: boolean; used?: boolean };
+type OptionValue = { value: string; colorId: string | null; isActive: boolean; stock: number | null; weightGrams: string | null; persisted?: boolean; used?: boolean };
 type DraftOption = { key: string; name: string; values: OptionValue[]; valueInput: string; persisted: boolean };
 type ColorChoice = { id: string; name: string; hex: string };
 
@@ -35,7 +35,7 @@ export function ProductOptionsForm({ productId, colors, initialOptions }: {
       if (option.key !== key) return option;
       const value = option.valueInput.trim();
       if (!value || option.values.some((item) => item.value === value)) return option;
-      return { ...option, values: [...option.values, { value, colorId: null, isActive: true, stock: 0, priceAdjustment: 0, persisted: false, used: false }], valueInput: "" };
+      return { ...option, values: [...option.values, { value, colorId: null, isActive: true, stock: 0, weightGrams: null, persisted: false, used: false }], valueInput: "" };
     }));
   }
 
@@ -44,7 +44,7 @@ export function ProductOptionsForm({ productId, colors, initialOptions }: {
     if (!color) return;
     setOptions((current) => current.map((option) => option.key !== key ? option : {
       ...option,
-      values: option.values.some((item) => item.colorId === colorId) ? option.values : [...option.values, { value: color.name, colorId, isActive: true, stock: 0, priceAdjustment: 0, persisted: false, used: false }],
+      values: option.values.some((item) => item.colorId === colorId) ? option.values : [...option.values, { value: color.name, colorId, isActive: true, stock: 0, weightGrams: null, persisted: false, used: false }],
     }));
   }
 
@@ -66,8 +66,8 @@ export function ProductOptionsForm({ productId, colors, initialOptions }: {
     const usedKeys = new Set(options.flatMap((option) => option.values.filter((item) => item.used).map((item) => JSON.stringify([option.name, item.value]))));
     const submittedOptions = options.map((option) => {
       const pendingValue = option.valueInput.trim();
-      const values = !option.name.includes("رنگ") && pendingValue && !option.values.some((item) => item.value === pendingValue) ? [...option.values, { value: pendingValue, colorId: null, isActive: true, stock: 0, priceAdjustment: 0 }] : option.values;
-      return { name: option.name, values: values.map((item) => ({ value: item.value, colorId: item.colorId, isActive: item.isActive, stock: item.stock, priceAdjustment: item.priceAdjustment })) };
+      const values = !option.name.includes("رنگ") && pendingValue && !option.values.some((item) => item.value === pendingValue) ? [...option.values, { value: pendingValue, colorId: null, isActive: true, stock: 0, weightGrams: null }] : option.values;
+      return { name: option.name, values: values.map((item) => ({ value: item.value, colorId: item.colorId, isActive: item.isActive, stock: item.stock, weightGrams: item.weightGrams })) };
     });
     const validation = productSchema.shape.options.safeParse(submittedOptions);
     if (!validation.success) {
@@ -109,14 +109,14 @@ export function ProductOptionsForm({ productId, colors, initialOptions }: {
 
             {option.name.includes("رنگ") && !colors.length && <p className="mt-2 text-xs text-amber-700">ابتدا از <Link href="/admin/colors" className="font-black underline">صفحه رنگ‌ها</Link> رنگ موردنظر را ثبت کنید.</p>}
             {option.values.length ? <div className="mt-4 grid gap-1.5 overflow-x-auto pb-1">
-              <div className="grid min-w-[390px] grid-cols-[minmax(100px,1fr)_88px_minmax(130px,180px)_34px] gap-2 px-3 text-[10px] font-bold text-slate-400"><span>مقدار</span><span>موجودی</span><span>افزایش قیمت (ریال)</span><span className="sr-only">وضعیت</span></div>
+              <div className="grid min-w-[360px] grid-cols-[minmax(100px,1fr)_88px_110px_34px] gap-2 px-3 text-[10px] font-bold text-slate-400"><span>مقدار</span><span>موجودی</span><span>وزن (گرم)</span><span className="sr-only">وضعیت</span></div>
               {option.values.map((item) => {
                 const color = colors.find((candidate) => candidate.id === item.colorId);
                 const compactInputClass = `${adminFieldClass} h-9 min-h-9 rounded-lg border-slate-200 bg-white px-2 py-1 text-xs shadow-none`;
-                return <div key={item.value} className={`grid min-w-[390px] grid-cols-[minmax(100px,1fr)_88px_minmax(130px,180px)_34px] items-center gap-2 rounded-lg border px-3 py-2 ${item.isActive ? "border-slate-200 bg-slate-50/60" : "border-slate-200 bg-slate-50 opacity-55"}`}>
+                return <div key={item.value} className={`grid min-w-[360px] grid-cols-[minmax(100px,1fr)_88px_110px_34px] items-center gap-2 rounded-lg border px-3 py-2 ${item.isActive ? "border-slate-200 bg-slate-50/60" : "border-slate-200 bg-slate-50 opacity-55"}`}>
                   <span className="inline-flex min-w-0 items-center gap-2 truncate text-xs font-bold text-slate-700">{color && <span className="h-4 w-4 shrink-0 rounded-full border border-slate-300" style={{ backgroundColor: color.hex }} />}{color?.name ?? item.value}</span>
                   <Input type="number" min="0" value={String(item.stock ?? 0)} onChange={(event) => updateOption(option.key, { values: option.values.map((value) => value.value === item.value ? { ...value, stock: Math.max(0, Number(event.target.value) || 0) } : value) })} variant="secondary" className={compactInputClass} aria-label={`موجودی ${item.value}`} />
-                  <Input type="number" min="0" step="1" value={String(item.priceAdjustment)} onChange={(event) => updateOption(option.key, { values: option.values.map((value) => value.value === item.value ? { ...value, priceAdjustment: Math.max(0, Math.trunc(Number(event.target.value) || 0)) } : value) })} variant="secondary" className={compactInputClass} aria-label={`افزایش قیمت ${item.value}`} />
+                  <Input type="number" min="0.001" step="0.001" value={item.weightGrams ?? ""} placeholder="پایه" onChange={(event) => updateOption(option.key, { values: option.values.map((value) => value.value === item.value ? { ...value, weightGrams: event.target.value || null } : value) })} variant="secondary" className={compactInputClass} aria-label={`وزن ${item.value}`} />
                   {item.used ? <Button type="button" size="sm" isIconOnly variant="ghost" aria-label={`${item.isActive ? "غیرفعال‌سازی" : "فعال‌سازی"} ${item.value}`} onPress={() => updateOption(option.key, { values: option.values.map((value) => value.value === item.value ? { ...value, isActive: !value.isActive } : value) })} className={`h-8 min-h-8 w-8 min-w-8 rounded-lg ${item.isActive ? "text-emerald-600" : "text-slate-400"}`}>{item.isActive ? <Eye size={15} /> : <EyeOff size={15} />}</Button> : <Button type="button" size="sm" isIconOnly variant="danger-soft" onPress={() => updateOption(option.key, { values: option.values.filter((value) => value.value !== item.value) })} className="h-8 min-h-8 w-8 min-w-8 rounded-lg" aria-label={`حذف مقدار ${item.value}`}><Trash2 size={13} /></Button>}
                 </div>;
               })}

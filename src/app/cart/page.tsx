@@ -7,7 +7,7 @@ import { calculateProductPrice } from "@/modules/products/pricing";
 import { formatMoney } from "@/lib/format";
 import { CheckoutForm } from "@/components/checkout-form";
 import type { Prisma } from "@generated/prisma/client";
-import { getOptionPriceAdjustment, optionEntries } from "@/modules/products/options";
+import { getSelectedOptionWeight, optionEntries } from "@/modules/products/options";
 
 type CartItemRow = Prisma.CartItemGetPayload<{ include: { product: { include: { options: true } } } }>;
 
@@ -23,10 +23,10 @@ export default async function CartPage() {
   const rate = gold ? Number(gold.pricePerGram18) : null;
   const getItemAmount = (item: CartItemRow) => {
     const p = item.product;
-    const optionAdjustment = getOptionPriceAdjustment(p.options, item.selectedOptions);
-    if (p.fixedPrice) return Number(p.fixedPrice) + optionAdjustment;
+    const selectedWeight = getSelectedOptionWeight(p.options, item.selectedOptions, Number(p.weightGrams));
+    if (p.fixedPrice) return Number(p.fixedPrice);
     if (rate === null) return null;
-    return calculateProductPrice({ goldPricePerGram18: rate, weightGrams: Number(p.weightGrams), purity: p.purity, makingFeeType: p.makingFeeType, makingFeeValue: Number(p.makingFeeValue), profitPercent: Number(p.profitPercent), taxPercent: Number(p.taxPercent) }).total + optionAdjustment;
+    return calculateProductPrice({ goldPricePerGram18: rate, weightGrams: selectedWeight, purity: p.purity, makingFeeType: p.makingFeeType, makingFeeValue: Number(p.makingFeeValue), profitPercent: Number(p.profitPercent), taxPercent: Number(p.taxPercent) }).total;
   };
   const itemAmounts = items.map(getItemAmount);
   const total = itemAmounts.some((amount) => amount === null)
@@ -60,11 +60,12 @@ export default async function CartPage() {
                   {items.map((item) => {
                     const p = item.product;
                     const amount = getItemAmount(item);
+                    const selectedWeight = getSelectedOptionWeight(p.options, item.selectedOptions, Number(p.weightGrams));
                     return (
                       <TableRow id={item.id} key={item.id}>
                         <TableCell className="px-4 py-[14px]"><strong>{p.name}</strong><br /><span className="text-[#747982] text-[0.82rem]">{p.sku}{optionEntries(item.selectedOptions).map(([name, value]) => ` · ${name}: ${value}`).join("")}</span></TableCell>
                         <TableCell className="px-4 py-[14px]">{item.quantity}</TableCell>
-                        <TableCell className="px-4 py-[14px]">{Number(p.weightGrams)} گرم</TableCell>
+                        <TableCell className="px-4 py-[14px]">{selectedWeight.toLocaleString("fa-IR", { maximumFractionDigits: 3 })} گرم</TableCell>
                         <TableCell className="px-4 py-[14px]">
                           {amount === null ? "قیمت موقتاً نامشخص" : formatMoney(amount * item.quantity)}
                         </TableCell>

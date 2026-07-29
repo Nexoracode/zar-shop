@@ -7,7 +7,7 @@ const productOptionSchema = z.object({
     colorId: z.string().cuid().nullable().default(null),
     isActive: z.boolean().default(true),
     stock: z.coerce.number().int().nonnegative().nullable().default(null),
-    priceAdjustment: z.coerce.number().int().min(0).max(1_000_000_000_000_000).default(0),
+    weightGrams: z.string().trim().regex(/^\d{1,7}(\.\d{1,3})?$/, "وزن تنوع باید حداکثر سه رقم اعشار داشته باشد.").nullable().default(null),
   })).min(1).max(50).refine((values) => new Set(values.map((item) => item.value)).size === values.length, "مقدار تکراری در یک تنوع مجاز نیست."),
 }).superRefine((option, context) => {
   if (option.name.includes("رنگ") && option.values.some((item) => !item.colorId)) {
@@ -31,6 +31,10 @@ export const productSchema = z.object({
   status: z.enum(["DRAFT", "ACTIVE", "ARCHIVED"]).default("DRAFT"),
   featured: z.boolean().default(false),
   mediaIds: z.array(z.string().cuid()).max(20).refine((ids) => new Set(ids).size === ids.length, "رسانه تکراری مجاز نیست.").default([]),
-  options: z.array(productOptionSchema).max(10).refine((options) => new Set(options.map((option) => option.name)).size === options.length, "عنوان تنوع تکراری مجاز نیست.").default([]),
+  options: z.array(productOptionSchema).max(10).refine((options) => new Set(options.map((option) => option.name)).size === options.length, "عنوان تنوع تکراری مجاز نیست.").superRefine((options, context) => {
+    if (options.filter((option) => option.values.some((item) => item.weightGrams !== null)).length > 1) {
+      context.addIssue({ code: "custom", message: "وزن فقط در یک گروه تنوع، مانند سایز، قابل تعریف است." });
+    }
+  }).default([]),
   optionGuideId: z.string().cuid().nullable().default(null),
 });

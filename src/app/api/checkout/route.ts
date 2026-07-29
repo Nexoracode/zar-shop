@@ -6,7 +6,7 @@ import { apiError } from "@/lib/http";
 import { getCurrentUser } from "@/modules/auth/session";
 import { getGoldPrice } from "@/modules/gold/gold-price.service";
 import { calculateProductPrice } from "@/modules/products/pricing";
-import { getOptionPriceAdjustment, isOptionSnapshotValid, optionEntries } from "@/modules/products/options";
+import { getSelectedOptionWeight, isOptionSnapshotValid, optionEntries } from "@/modules/products/options";
 import { getPaymentProvider } from "@/modules/payments/payment-provider";
 import type { Prisma } from "@generated/prisma/client";
 
@@ -45,16 +45,17 @@ export async function POST(request: Request) {
       const p = item.product;
       if (p.status !== "ACTIVE" || p.stock < item.quantity) throw new Error(`موجودی ${p.name} کافی نیست.`);
       if (!isOptionSnapshotValid(p.options, item.selectedOptions, item.quantity, p.stock)) throw new Error(`تنوع انتخاب‌شده برای ${p.name} غیرفعال یا ناموجود است.`);
+      const selectedWeight = getSelectedOptionWeight(p.options, item.selectedOptions, Number(p.weightGrams));
       const parts = calculateProductPrice({
         goldPricePerGram18: rate,
-        weightGrams: Number(p.weightGrams),
+        weightGrams: selectedWeight,
         purity: p.purity,
         makingFeeType: p.makingFeeType,
         makingFeeValue: Number(p.makingFeeValue),
         profitPercent: Number(p.profitPercent),
         taxPercent: Number(p.taxPercent),
       });
-      const unitPrice = (p.fixedPrice ? Number(p.fixedPrice) : parts.total) + getOptionPriceAdjustment(p.options, item.selectedOptions);
+      const unitPrice = p.fixedPrice ? Number(p.fixedPrice) : parts.total;
       return { item, p, parts, unitPrice, total: unitPrice * item.quantity };
     });
     const total = lines.reduce((sum: number, line: CheckoutLine) => sum + line.total, 0);
@@ -69,7 +70,7 @@ export async function POST(request: Request) {
         items: {
           create: lines.map(({ item, p, parts, unitPrice, total: lineTotal }: CheckoutLine) => ({
             productId: p.id, sku: p.sku, name: p.name, selectedOptions: optionEntries(item.selectedOptions).length ? Object.fromEntries(optionEntries(item.selectedOptions)) : undefined, quantity: item.quantity,
-            weightGrams: p.weightGrams, purity: p.purity, makingFee: parts.makingFee,
+            weightGrams: getSelectedOptionWeight(p.options, item.selectedOptions, Number(p.weightGrams)), purity: p.purity, makingFee: parts.makingFee,
             profit: parts.profit, tax: parts.tax, unitPrice, total: lineTotal,
           })),
         },
