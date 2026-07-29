@@ -178,7 +178,7 @@ export function ProductForm({ storeIndustry, categories = [], colors = [], produ
   const inputClass = `${adminFieldClass} text-left`;
 
   return <>
-    <form onSubmit={submit} noValidate className="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
+    <form onSubmit={submit} noValidate className="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_380px]">
       <div className="grid gap-5">
         <FormSection icon={<Images size={18} />} title="گالری محصول" description="اولین رسانه به‌عنوان تصویر اصلی محصول نمایش داده می‌شود.">
           {selectedMedia.length ? (
