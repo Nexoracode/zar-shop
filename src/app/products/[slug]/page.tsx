@@ -1,6 +1,6 @@
 import Image from "next/image";
 import { notFound } from "next/navigation";
-import { BadgeCheck, PackageCheck, ShieldCheck } from "lucide-react";
+import { BadgeCheck, BadgePercent, PackageCheck, ShieldCheck } from "lucide-react";
 import { AddToCart } from "@/components/add-to-cart";
 import { PriceTooltip } from "@/components/price-tooltip";
 import { db } from "@/lib/db";
@@ -9,6 +9,7 @@ import { getGoldPriceForDisplay } from "@/modules/gold/gold-price.service";
 import { calculateProductPrice } from "@/modules/products/pricing";
 import { parseOptionValues } from "@/modules/products/options";
 import { sanitizeProductDescription } from "@/modules/products/rich-text";
+import { calculateDiscountedPrice } from "@/modules/products/discount";
 
 export const dynamic = "force-dynamic";
 
@@ -29,13 +30,18 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
 
   const rate = gold ? Number(gold.pricePerGram18) : null;
   const parts = product.storeIndustry === "GOLD" && rate !== null ? calculateProductPrice({ goldPricePerGram18: rate, weightGrams: Number(product.weightGrams), purity: product.purity, makingFeeType: product.makingFeeType, makingFeeValue: Number(product.makingFeeValue), profitPercent: Number(product.profitPercent), taxPercent: Number(product.taxPercent) }) : null;
-  const total = product.fixedPrice ? Number(product.fixedPrice) : parts?.total ?? null;
+  const baseTotal = product.fixedPrice ? Number(product.fixedPrice) : parts?.total ?? null;
+  const discounted = baseTotal === null ? null : calculateDiscountedPrice(baseTotal, product);
+  const total = discounted?.finalPrice ?? null;
   const priceForVariant = (weightGrams: string | null, price: string | null) => {
-    if (product.storeIndustry === "GENERAL") return price ? Number(price) : product.fixedPrice ? Number(product.fixedPrice) : null;
+    if (product.storeIndustry === "GENERAL") {
+      const basePrice = price ? Number(price) : product.fixedPrice ? Number(product.fixedPrice) : null;
+      return basePrice === null ? null : calculateDiscountedPrice(basePrice, product).finalPrice;
+    }
     if (!weightGrams) return null;
-    if (product.fixedPrice) return Number(product.fixedPrice);
+    if (product.fixedPrice) return calculateDiscountedPrice(Number(product.fixedPrice), product).finalPrice;
     if (rate === null) return null;
-    return calculateProductPrice({ goldPricePerGram18: rate, weightGrams: Number(weightGrams), purity: product.purity, makingFeeType: product.makingFeeType, makingFeeValue: Number(product.makingFeeValue), profitPercent: Number(product.profitPercent), taxPercent: Number(product.taxPercent) }).total;
+    return calculateDiscountedPrice(calculateProductPrice({ goldPricePerGram18: rate, weightGrams: Number(weightGrams), purity: product.purity, makingFeeType: product.makingFeeType, makingFeeValue: Number(product.makingFeeValue), profitPercent: Number(product.profitPercent), taxPercent: Number(product.taxPercent) }).total, product).finalPrice;
   };
   const media = product.media[0]?.media;
 
@@ -88,6 +94,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
             <strong className="text-[#1c3155] text-[1.55rem]">
               {total === null ? "امکان محاسبه قیمت وجود ندارد" : formatMoney(total)}
             </strong>
+            {discounted?.isActive && <div className="flex flex-wrap items-center gap-2"><span className="text-sm text-slate-400 line-through">{formatMoney(discounted.originalPrice)}</span><span className="inline-flex items-center gap-1 rounded-lg bg-rose-50 px-2 py-1 text-xs font-bold text-rose-600"><BadgePercent size={14} />{product.discountType === "PERCENT" ? `${Number(product.discountValue).toLocaleString("fa-IR")}٪ تخفیف` : `${formatMoney(discounted.discountAmount)} تخفیف`}</span></div>}
             <AddToCart
               productId={product.id}
               options={optionValues.map(({ option, values }) => ({ id: option.id, name: option.name, values: values.map((item) => ({ value: item.value, stock: item.stock ?? product.stock, weightGrams: item.weightGrams, price: priceForVariant(item.weightGrams, item.price), color: item.colorId ? colorsById.get(item.colorId) ?? null : null })) }))}

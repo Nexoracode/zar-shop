@@ -83,7 +83,7 @@ export default async function InvoicePage({ params }: { params: Promise<{ orderI
 
         <section className="mt-3 overflow-hidden">
           <table className="w-full table-fixed border-collapse" aria-label="اقلام فاکتور رسمی">
-            <thead className="bg-slate-100"><tr>{["ردیف", "شرح کالا", "کد کالا", "تعداد", "وزن", "عیار", "مبلغ واحد", "اجرت", "سود", "مالیات", "مبلغ کل"].map((head) => <th key={head} className={`${cell} font-black text-slate-800`}>{head}</th>)}</tr></thead>
+            <thead className="bg-slate-100"><tr>{["ردیف", "شرح کالا", "کد کالا", "تعداد", "وزن", "عیار", "مبلغ واحد", "تخفیف", "اجرت", "سود", "مالیات", "مبلغ کل"].map((head) => <th key={head} className={`${cell} font-black text-slate-800`}>{head}</th>)}</tr></thead>
             <tbody>
               {order.items.map((item, index) => (
                 <tr key={item.id}>
@@ -94,6 +94,7 @@ export default async function InvoicePage({ params }: { params: Promise<{ orderI
                   <td className={cell}>{item.storeIndustry === "GOLD" ? Number(item.weightGrams).toLocaleString("fa-IR", { maximumFractionDigits: 3 }) : "—"}</td>
                   <td className={cell}>{item.storeIndustry === "GOLD" ? item.purity.toLocaleString("fa-IR") : "—"}</td>
                   <td className={cell}>{Number(item.unitPrice).toLocaleString("fa-IR")}</td>
+                  <td className={cell}>{Number(item.discountAmount).toLocaleString("fa-IR")}</td>
                   <td className={cell}>{item.storeIndustry === "GOLD" ? Number(item.makingFee).toLocaleString("fa-IR") : "—"}</td>
                   <td className={cell}>{item.storeIndustry === "GOLD" ? Number(item.profit).toLocaleString("fa-IR") : "—"}</td>
                   <td className={cell}>{item.storeIndustry === "GOLD" ? Number(item.tax).toLocaleString("fa-IR") : "—"}</td>

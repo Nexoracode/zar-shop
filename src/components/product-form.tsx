@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useState, type FormEvent, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { Alert, Button, Card, Input, Spinner, toast } from "@heroui/react";
-import { ChevronRight, FileText, GripVertical, Images, Info, PackageCheck, Plus, Ruler, Save, Sparkles, Tag, Trash2, X } from "lucide-react";
+import { BadgePercent, ChevronRight, FileText, GripVertical, Images, Info, PackageCheck, Plus, Ruler, Save, Sparkles, Tag, Trash2, X } from "lucide-react";
 import { MediaPickerDialog } from "@/components/media-picker-dialog";
 import type { MediaChoice } from "@/components/media-library";
 import { adminFieldClass, adminLabelClass } from "@/components/admin-ui";
@@ -14,10 +14,12 @@ import { AdminCheckbox } from "@/components/admin-checkbox";
 import { apiErrorMessage, validationErrorMessage } from "@/lib/form-errors";
 import { completeProductSchema } from "@/modules/products/schemas";
 import { RichTextEditor } from "@/components/rich-text-editor";
+import { HeroDateRangeField } from "@/components/hero-date-range-field";
 
 type EditableProduct = {
   id: string; sku: string; name: string; slug: string; description: string; categoryId: string; purity: number; weightGrams: number;
   storeIndustry: "GOLD" | "GENERAL"; makingFeeType: string; makingFeeValue: number; profitPercent: number; taxPercent: number; fixedPrice: number | null; stock: number;
+  discountType: "PERCENT" | "FIXED" | null; discountValue: number | null; discountStartsAt: string | null; discountEndsAt: string | null;
   status: "DRAFT" | "ACTIVE" | "ARCHIVED"; featured: boolean; media: MediaChoice[]; options: Array<{ name: string; values: Array<{ value: string; colorId: string | null }> }>; optionGuide: MediaChoice | null;
 };
 
@@ -38,6 +40,10 @@ const productFieldLabels: Record<string, string> = {
   profitPercent: "درصد سود",
   taxPercent: "درصد مالیات",
   fixedPrice: "قیمت محصول",
+  discountType: "نوع تخفیف",
+  discountValue: "مقدار تخفیف",
+  discountStartsAt: "شروع تخفیف",
+  discountEndsAt: "پایان تخفیف",
   stock: "موجودی انبار",
   status: "وضعیت محصول",
   featured: "نمایش در محصولات ویژه",
@@ -54,6 +60,8 @@ export function ProductForm({ storeIndustry, categories = [], colors = [], produ
   const [optionGuidePickerOpen, setOptionGuidePickerOpen] = useState(false);
   const [optionGuide, setOptionGuide] = useState<MediaChoice | null>(product?.optionGuide ?? null);
   const [description, setDescription] = useState(product?.description ?? "");
+  const [discountEnabled, setDiscountEnabled] = useState(Boolean(product?.discountType));
+  const [discountRange, setDiscountRange] = useState<{ start: string; end: string } | null>(() => product?.discountStartsAt && product.discountEndsAt ? { start: product.discountStartsAt, end: product.discountEndsAt } : null);
   const [options, setOptions] = useState<DraftOption[]>(() => product?.options.map((option, index) => ({ key: `existing-${index}`, ...option, valueInput: "" })) ?? []);
   const [draggedOptionKey, setDraggedOptionKey] = useState<string | null>(null);
   const [draggedMediaId, setDraggedMediaId] = useState<string | null>(null);
@@ -138,6 +146,10 @@ export function ProductForm({ storeIndustry, categories = [], colors = [], produ
       makingFeeType: storeIndustry === "GOLD" ? form.get("makingFeeType") : "PERCENT", makingFeeValue: storeIndustry === "GOLD" ? Number(form.get("makingFeeValue")) : 0,
       profitPercent: storeIndustry === "GOLD" ? Number(form.get("profitPercent")) : 0, taxPercent: storeIndustry === "GOLD" ? Number(form.get("taxPercent")) : 0,
       fixedPrice: storeIndustry === "GENERAL" ? Number(form.get("fixedPrice")) : null, stock: Number(form.get("stock")), status: form.get("status"),
+      discountType: discountEnabled ? form.get("discountType") : null,
+      discountValue: discountEnabled ? Number(form.get("discountValue")) : null,
+      discountStartsAt: discountEnabled ? discountRange?.start ?? null : null,
+      discountEndsAt: discountEnabled ? discountRange?.end ?? null : null,
       featured: form.get("featured") === "on", mediaIds: selectedMedia.map((media) => media.id), options: submittedOptions, optionGuideId: optionGuide?.id ?? null,
     };
     const validation = completeProductSchema.safeParse(body);
@@ -229,11 +241,19 @@ export function ProductForm({ storeIndustry, categories = [], colors = [], produ
 
         <FormSection icon={<Tag size={18} />} title="مشخصات و قیمت‌گذاری" description={storeIndustry === "GOLD" ? "قیمت بر اساس نرخ روز طلا، وزن، اجرت، سود و مالیات محاسبه می‌شود." : "برای محصول معمولی، قیمت فروش را مستقیم به ریال وارد کنید."}>
           {storeIndustry === "GOLD" ? <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3"><Field label="وزن (گرم)"><Input name="weightGrams" type="number" step="0.001" min="0.001" required fullWidth variant="secondary" defaultValue={product?.weightGrams} className={adminFieldClass} /></Field><Field label="عیار"><Input name="purity" type="number" min="1" max="999" defaultValue={product?.purity ?? 750} required fullWidth variant="secondary" className={adminFieldClass} /></Field><HeroSelectField name="makingFeeType" label="نوع اجرت" defaultValue={product?.makingFeeType ?? "PERCENT"} options={[{ value: "PERCENT", label: "درصدی" }, { value: "FIXED", label: "مبلغ ثابت" }]} /><Field label="مقدار اجرت"><Input name="makingFeeValue" type="number" step="0.001" defaultValue={product?.makingFeeValue ?? 10} min="0" required fullWidth variant="secondary" className={adminFieldClass} /></Field><Field label="درصد سود"><Input name="profitPercent" type="number" step="0.01" defaultValue={product?.profitPercent ?? 7} min="0" required fullWidth variant="secondary" className={adminFieldClass} /></Field><Field label="درصد مالیات"><Input name="taxPercent" type="number" step="0.01" defaultValue={product?.taxPercent ?? 10} min="0" required fullWidth variant="secondary" className={adminFieldClass} /></Field></div> : <div className="max-w-md"><Field label="قیمت فروش (ریال)"><Input name="fixedPrice" type="number" min="1" required fullWidth variant="secondary" defaultValue={product?.fixedPrice ?? undefined} placeholder="مثلاً ۱۵۰۰۰۰۰" className={adminFieldClass} /></Field></div>}
+          <div className="mt-5 grid gap-4 border-t border-slate-100 pt-5">
+            <AdminCheckbox isSelected={discountEnabled} onChange={setDiscountEnabled} icon={<BadgePercent size={17} />} description="تخفیف فقط در بازه زمانی انتخاب‌شده به‌صورت خودکار اعمال می‌شود.">تخفیف زمان‌دار محصول</AdminCheckbox>
+            {discountEnabled && <div className="grid gap-4 rounded-xl border border-emerald-200 bg-emerald-50/50 p-4 sm:grid-cols-2">
+              <HeroSelectField name="discountType" label="نوع تخفیف" defaultValue={product?.discountType ?? "PERCENT"} includeEmptyOption={false} options={[{ value: "PERCENT", label: "درصدی" }, { value: "FIXED", label: "مبلغ ثابت (ریال)" }]} />
+              <Field label="مقدار تخفیف"><Input name="discountValue" type="number" min="0.001" step="0.001" required fullWidth variant="secondary" defaultValue={product?.discountValue ?? undefined} placeholder="مثلاً ۱۰" className={adminFieldClass} /></Field>
+              <div className="sm:col-span-2"><HeroDateRangeField label="بازه زمانی تخفیف (تقویم فارسی)" start={discountRange?.start ?? null} end={discountRange?.end ?? null} onChange={setDiscountRange} /></div>
+            </div>}
+          </div>
         </FormSection>
       </div>
 
       <aside className="grid gap-4 lg:sticky lg:top-7">
-        <Card variant="secondary" className="rounded-2xl border border-slate-200/80 bg-white shadow-sm"><Card.Content className="p-5"><div className="mb-4 flex items-center gap-2"><PackageCheck size={18} className="text-[#9a7434]" /><h2 className="m-0 text-base font-black">انتشار و موجودی</h2></div><div className="grid gap-4"><HeroSelectField name="status" label="وضعیت محصول" defaultValue={product?.status ?? "DRAFT"} options={[{ value: "DRAFT", label: "پیش‌نویس" }, { value: "ACTIVE", label: "منتشرشده" }, { value: "ARCHIVED", label: "بایگانی‌شده" }]} /><Field label="موجودی انبار"><Input name="stock" type="number" defaultValue={product?.stock ?? 1} min="0" required fullWidth variant="secondary" className={adminFieldClass} /></Field><AdminCheckbox name="featured" value="on" defaultSelected={product?.featured ?? false} icon={<Sparkles size={17} />} description="این محصول در بخش پیشنهادهای ویژه فروشگاه نمایش داده می‌شود.">نمایش در محصولات ویژه</AdminCheckbox></div></Card.Content></Card>
+        <Card variant="secondary" className="rounded-2xl border border-slate-200/80 bg-white shadow-sm"><Card.Content className="p-5"><div className="mb-4 flex items-center gap-2"><PackageCheck size={18} className="text-[#9a7434]" /><h2 className="m-0 text-base font-black">انتشار و موجودی</h2></div><div className="grid gap-4"><HeroSelectField name="status" label="وضعیت محصول" defaultValue={product?.status ?? "DRAFT"} options={[{ value: "DRAFT", label: "پیش‌نویس" }, { value: "ACTIVE", label: "منتشرشده" }, { value: "ARCHIVED", label: "بایگانی‌شده" }]} /><Field label="تعداد موجودی انبار"><Input name="stock" type="number" defaultValue={product?.stock ?? 1} min="0" required fullWidth variant="secondary" className={adminFieldClass} /></Field><AdminCheckbox name="featured" value="on" defaultSelected={product?.featured ?? false} icon={<Sparkles size={17} />} description="این محصول در بخش پیشنهادهای ویژه فروشگاه نمایش داده می‌شود.">نمایش در محصولات ویژه</AdminCheckbox></div></Card.Content></Card>
         <Alert status="warning" className="border border-amber-300 bg-amber-50 text-amber-950 shadow-sm">
           <div className="grid gap-1.5">
             <Alert.Title className="block text-sm font-black text-amber-950">نکته مهم</Alert.Title>

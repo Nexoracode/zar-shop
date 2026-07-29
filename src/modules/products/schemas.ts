@@ -1,5 +1,11 @@
 import { z } from "zod";
 
+const dateOnlySchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/).refine((value) => {
+  const [year, month, day] = value.split("-").map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  return date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day;
+}, "تاریخ واردشده معتبر نیست.");
+
 const productOptionSchema = z.object({
   name: z.string().trim().min(1).max(80),
   values: z.array(z.object({
@@ -30,6 +36,10 @@ export const productSchema = z.object({
   profitPercent: z.coerce.number().min(0).max(100),
   taxPercent: z.coerce.number().min(0).max(100),
   fixedPrice: z.coerce.number().positive().max(999999999999999999).nullable().default(null),
+  discountType: z.enum(["PERCENT", "FIXED"]).nullable().default(null),
+  discountValue: z.coerce.number().positive().max(999999999999999999).nullable().default(null),
+  discountStartsAt: dateOnlySchema.nullable().default(null),
+  discountEndsAt: dateOnlySchema.nullable().default(null),
   stock: z.coerce.number().int().nonnegative(),
   status: z.enum(["DRAFT", "ACTIVE", "ARCHIVED"]).default("DRAFT"),
   featured: z.boolean().default(false),
@@ -51,6 +61,16 @@ export const completeProductSchema = productSchema.superRefine((product, context
   }
   if (product.storeIndustry === "GENERAL" && product.fixedPrice === null) {
     context.addIssue({ code: "custom", path: ["fixedPrice"], message: "قیمت محصول را وارد کنید." });
+  }
+  const discountFields = [product.discountType, product.discountValue, product.discountStartsAt, product.discountEndsAt];
+  if (discountFields.some((value) => value !== null) && discountFields.some((value) => value === null)) {
+    context.addIssue({ code: "custom", path: ["discountType"], message: "نوع، مقدار و بازه زمانی تخفیف را کامل کنید." });
+  }
+  if (product.discountType === "PERCENT" && product.discountValue !== null && product.discountValue > 100) {
+    context.addIssue({ code: "custom", path: ["discountValue"], message: "درصد تخفیف نمی‌تواند بیشتر از ۱۰۰ باشد." });
+  }
+  if (product.discountStartsAt && product.discountEndsAt && product.discountEndsAt < product.discountStartsAt) {
+    context.addIssue({ code: "custom", path: ["discountEndsAt"], message: "پایان تخفیف باید بعد از شروع آن باشد." });
   }
   if (product.storeIndustry === "GOLD" && product.options.some((option) => option.values.some((item) => item.price !== null))) {
     context.addIssue({ code: "custom", path: ["options"], message: "برای محصول طلا، قیمت تنوع از وزن آن محاسبه می‌شود." });

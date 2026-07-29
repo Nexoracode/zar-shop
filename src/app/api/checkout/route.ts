@@ -9,10 +9,11 @@ import { calculateProductPrice } from "@/modules/products/pricing";
 import { getSelectedOptionPrice, getSelectedOptionWeight, isOptionSnapshotValid, optionEntries } from "@/modules/products/options";
 import { getPaymentProvider } from "@/modules/payments/payment-provider";
 import type { Prisma } from "@generated/prisma/client";
+import { calculateDiscountedPrice } from "@/modules/products/discount";
 
 type ItemWithProduct = Prisma.CartItemGetPayload<{ include: { product: { include: { options: true } } } }>;
 type PriceParts = ReturnType<typeof calculateProductPrice>;
-type CheckoutLine = { item: ItemWithProduct; p: ItemWithProduct["product"]; parts: PriceParts; unitPrice: number; total: number };
+type CheckoutLine = { item: ItemWithProduct; p: ItemWithProduct["product"]; parts: PriceParts; originalUnitPrice: number; discountAmount: number; unitPrice: number; total: number };
 
 const addressSchema = z.object({
   recipient: z.string().min(3).max(150),
@@ -58,27 +59,32 @@ export async function POST(request: Request) {
         profitPercent: Number(p.profitPercent),
         taxPercent: Number(p.taxPercent),
       });
-      const unitPrice = p.storeIndustry === "GENERAL"
+      const originalUnitPrice = p.storeIndustry === "GENERAL"
         ? getSelectedOptionPrice(p.options, item.selectedOptions, Number(p.fixedPrice ?? 0))
         : p.fixedPrice ? Number(p.fixedPrice) : parts.total;
+      const pricing = calculateDiscountedPrice(originalUnitPrice, p);
+      const unitPrice = pricing.finalPrice;
       if (unitPrice <= 0) throw new Error(`قیمت ${p.name} معتبر نیست.`);
-      return { item, p, parts, unitPrice, total: unitPrice * item.quantity };
+      return { item, p, parts, originalUnitPrice, discountAmount: pricing.discountAmount, unitPrice, total: unitPrice * item.quantity };
     });
     const total = lines.reduce((sum: number, line: CheckoutLine) => sum + line.total, 0);
+    const subtotal = lines.reduce((sum: number, line: CheckoutLine) => sum + line.originalUnitPrice * line.item.quantity, 0);
+    const discount = lines.reduce((sum: number, line: CheckoutLine) => sum + line.discountAmount * line.item.quantity, 0);
     const order = await db.order.create({
       data: {
         orderNumber: `Z${Date.now()}`,
         userId: user.id,
         goldPriceSnapshot: rate,
-        subtotal: total,
+        subtotal,
+        discount,
         total,
         shippingAddress: address,
         items: {
-          create: lines.map(({ item, p, parts, unitPrice, total: lineTotal }: CheckoutLine) => ({
+          create: lines.map(({ item, p, parts, originalUnitPrice, discountAmount, unitPrice, total: lineTotal }: CheckoutLine) => ({
             productId: p.id, sku: p.sku, name: p.name, selectedOptions: optionEntries(item.selectedOptions).length ? Object.fromEntries(optionEntries(item.selectedOptions)) : undefined, quantity: item.quantity,
             storeIndustry: p.storeIndustry,
             weightGrams: getSelectedOptionWeight(p.options, item.selectedOptions, Number(p.weightGrams)), purity: p.purity, makingFee: parts.makingFee,
-            profit: parts.profit, tax: parts.tax, unitPrice, total: lineTotal,
+            profit: parts.profit, tax: parts.tax, originalUnitPrice, discountAmount, unitPrice, total: lineTotal,
           })),
         },
       },

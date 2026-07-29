@@ -7,6 +7,7 @@ import { hasPermission } from "@/modules/auth/permissions";
 import { areOptionColorsValid } from "@/modules/products/color-validation";
 import { sanitizeProductDescription } from "@/modules/products/rich-text";
 import { mergeOptionsPreservingHistory, optionEntries, optionSelectionKey } from "@/modules/products/options";
+import { formatTehranDateInput, tehranDateEnd, tehranDateStart } from "@/modules/products/discount";
 
 type Context = { params: Promise<{ id: string }> };
 
@@ -15,7 +16,7 @@ export async function PATCH(request: Request, context: Context) {
     const actor = await getCurrentUser();
     if (!actor || !hasPermission(actor.role, "catalog:manage")) return NextResponse.json({ message: "دسترسی غیرمجاز است." }, { status: 403 });
     const { id } = await context.params;
-    const existingProduct = await db.product.findUnique({ where: { id }, select: { storeIndustry: true } });
+    const existingProduct = await db.product.findUnique({ where: { id }, select: { storeIndustry: true, discountType: true, discountValue: true, discountStartsAt: true, discountEndsAt: true } });
     if (!existingProduct) return NextResponse.json({ message: "محصول پیدا نشد." }, { status: 404 });
     const { mediaIds, options, optionGuideId, storeIndustry: _ignoredIndustry, ...input } = productSchema.partial().parse(await request.json());
     void _ignoredIndustry;
@@ -28,6 +29,22 @@ export async function PATCH(request: Request, context: Context) {
     if (existingProduct.storeIndustry === "GENERAL" && input.fixedPrice === null) {
       return NextResponse.json({ message: "قیمت محصول را وارد کنید." }, { status: 422 });
     }
+    const discount = {
+      type: input.discountType !== undefined ? input.discountType : existingProduct.discountType,
+      value: input.discountValue !== undefined ? input.discountValue : existingProduct.discountValue === null ? null : Number(existingProduct.discountValue),
+      startsAt: input.discountStartsAt !== undefined ? input.discountStartsAt : formatTehranDateInput(existingProduct.discountStartsAt),
+      endsAt: input.discountEndsAt !== undefined ? input.discountEndsAt : formatTehranDateInput(existingProduct.discountEndsAt),
+    };
+    const discountFields = [discount.type, discount.value, discount.startsAt, discount.endsAt];
+    if (discountFields.some((value) => value !== null) && discountFields.some((value) => value === null)) {
+      return NextResponse.json({ message: "نوع، مقدار و بازه زمانی تخفیف را کامل کنید." }, { status: 422 });
+    }
+    if (discount.type === "PERCENT" && Number(discount.value) > 100) {
+      return NextResponse.json({ message: "درصد تخفیف نمی‌تواند بیشتر از ۱۰۰ باشد." }, { status: 422 });
+    }
+    if (discount.startsAt && discount.endsAt && discount.endsAt < discount.startsAt) {
+      return NextResponse.json({ message: "پایان تخفیف باید بعد از شروع آن باشد." }, { status: 422 });
+    }
     if (options && !await areOptionColorsValid(options)) return NextResponse.json({ message: "یک یا چند رنگ انتخاب‌شده معتبر یا فعال نیست." }, { status: 422 });
     if (mediaIds) {
       const media = mediaIds.length ? await db.mediaAsset.findMany({ where: { id: { in: mediaIds }, scope: "PRODUCT", type: { in: ["IMAGE", "VIDEO"] } }, select: { id: true } }) : [];
@@ -38,7 +55,7 @@ export async function PATCH(request: Request, context: Context) {
       if (!guide) return NextResponse.json({ message: "فایل راهنمای انتخاب باید تصویر یا PDF معتبر از گالری محصولات باشد." }, { status: 422 });
     }
     const product = await db.$transaction(async (tx) => {
-      await tx.product.update({ where: { id }, data: { ...input, ...(input.description !== undefined ? { description: sanitizeProductDescription(input.description) } : {}), ...(optionGuideId !== undefined ? { optionGuideId } : {}) } });
+      await tx.product.update({ where: { id }, data: { ...input, ...(input.discountStartsAt !== undefined ? { discountStartsAt: tehranDateStart(input.discountStartsAt) } : {}), ...(input.discountEndsAt !== undefined ? { discountEndsAt: tehranDateEnd(input.discountEndsAt) } : {}), ...(input.description !== undefined ? { description: sanitizeProductDescription(input.description) } : {}), ...(optionGuideId !== undefined ? { optionGuideId } : {}) } });
       if (mediaIds) {
         await tx.productMedia.deleteMany({ where: { productId: id } });
         if (mediaIds.length) await tx.productMedia.createMany({ data: mediaIds.map((mediaId, position) => ({ productId: id, mediaId, position, isCover: position === 0 })) });

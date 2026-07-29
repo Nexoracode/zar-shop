@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { AdminPageHeader } from "@/components/admin-ui";
 import { requirePermission } from "@/modules/auth/session";
 import { parseOptionValues } from "@/modules/products/options";
+import { formatTehranDateInput } from "@/modules/products/discount";
 
 type Context = { params: Promise<{ id: string }> };
 
@@ -46,6 +47,10 @@ export default async function EditProductPage({ params }: Context) {
           profitPercent: Number(product.profitPercent),
           taxPercent: Number(product.taxPercent),
           fixedPrice: product.fixedPrice === null ? null : Number(product.fixedPrice),
+          discountType: product.discountType,
+          discountValue: product.discountValue === null ? null : Number(product.discountValue),
+          discountStartsAt: formatTehranDateInput(product.discountStartsAt),
+          discountEndsAt: formatTehranDateInput(product.discountEndsAt),
           stock: product.stock,
           status: product.status,
           featured: product.featured,

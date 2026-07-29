@@ -31,6 +31,11 @@ enum StoreIndustry {
   GENERAL
 }
 
+enum ProductDiscountType {
+  PERCENT
+  FIXED
+}
+
 enum MediaType {
   IMAGE
   VIDEO
@@ -170,6 +175,10 @@ model Product {
   profitPercent  Decimal         @default(7) @db.Decimal(5, 2)
   taxPercent     Decimal         @default(10) @db.Decimal(5, 2)
   fixedPrice     Decimal?        @db.Decimal(18, 0)
+  discountType   ProductDiscountType?
+  discountValue  Decimal?        @db.Decimal(18, 3)
+  discountStartsAt DateTime?
+  discountEndsAt DateTime?
   stock          Int             @default(0)
   featured       Boolean         @default(false)
   createdAt      DateTime        @default(now())
@@ -184,6 +193,7 @@ model Product {
   @@index([categoryId, status])
   @@index([optionGuideId])
   @@index([featured, status])
+  @@index([discountEndsAt])
 }
 
 model StoreSetting {
@@ -311,6 +321,8 @@ model OrderItem {
   makingFee       Decimal  @db.Decimal(18, 0)
   profit          Decimal  @db.Decimal(18, 0)
   tax             Decimal  @db.Decimal(18, 0)
+  originalUnitPrice Decimal @default(0) @db.Decimal(18, 0)
+  discountAmount  Decimal  @default(0) @db.Decimal(18, 0)
   unitPrice       Decimal  @db.Decimal(18, 0)
   total           Decimal  @db.Decimal(18, 0)
   order           Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)

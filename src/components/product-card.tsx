@@ -9,10 +9,11 @@ type ProductCardProps = {
   weight: number;
   purity: number;
   price: string;
+  originalPrice?: string;
   image?: { src: string; alt: string };
 };
 
-export function ProductCard({ href, name, category, industry, weight, purity, price, image }: ProductCardProps) {
+export function ProductCard({ href, name, category, industry, weight, purity, price, originalPrice, image }: ProductCardProps) {
   return (
     <Link
       className="group min-w-0 bg-white transition-all duration-[250ms] ease-out hover:-translate-y-[5px] hover:shadow-[0_18px_42px_rgba(23,35,59,0.09)]"
@@ -43,6 +44,7 @@ export function ProductCard({ href, name, category, industry, weight, purity, pr
       <div className="px-2.5 pb-4 pt-3 text-center sm:px-[15px] sm:pb-5 sm:pt-[17px]">
         <span className="text-[#747982] text-[0.74rem]">{industry === "GOLD" ? `${category} · ${weight} گرم` : category}</span>
         <h3 className="mb-[7px] mt-[5px] min-h-8 text-[0.82rem] font-medium sm:text-[0.95rem]">{name}</h3>
+        {originalPrice && <span className="ml-2 text-[0.7rem] text-slate-400 line-through">{originalPrice}</span>}
         <strong className="text-[0.76rem] text-[#1c3155] sm:text-[0.92rem]">{price}</strong>
       </div>
     </Link>

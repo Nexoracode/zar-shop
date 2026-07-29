@@ -7,6 +7,7 @@ import { formatMoney } from "@/lib/format";
 import { collectCategoryAndDescendantIds } from "@/modules/categories/category-tree";
 import { getGoldPriceForDisplay } from "@/modules/gold/gold-price.service";
 import { calculateProductPrice } from "@/modules/products/pricing";
+import { calculateDiscountedPrice } from "@/modules/products/discount";
 
 type ProductWithRelations = Prisma.ProductGetPayload<{ include: { category: true; media: { include: { media: true } } } }>;
 
@@ -66,11 +67,12 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
 
           <div className="grid grid-cols-2 gap-x-3 gap-y-6 sm:gap-x-4 lg:grid-cols-3 xl:grid-cols-4">
             {products.map((product: ProductWithRelations) => {
-              const amount = product.fixedPrice
+              const baseAmount = product.fixedPrice
                 ? Number(product.fixedPrice)
                 : rate === null
                   ? null
                   : calculateProductPrice({ goldPricePerGram18: rate, weightGrams: Number(product.weightGrams), purity: product.purity, makingFeeType: product.makingFeeType, makingFeeValue: Number(product.makingFeeValue), profitPercent: Number(product.profitPercent), taxPercent: Number(product.taxPercent) }).total;
+              const discounted = baseAmount === null ? null : calculateDiscountedPrice(baseAmount, product);
               const media = product.media[0]?.media;
               return (
                 <ProductCard
@@ -81,7 +83,8 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
                   category={product.category?.name ?? "طلا"}
                   weight={Number(product.weightGrams)}
                   purity={product.purity}
-                  price={amount === null ? "قیمت موقتاً در دسترس نیست" : formatMoney(amount)}
+                  price={discounted === null ? "قیمت موقتاً در دسترس نیست" : formatMoney(discounted.finalPrice)}
+                  originalPrice={discounted?.isActive ? formatMoney(discounted.originalPrice) : undefined}
                   image={media?.type === "IMAGE" ? { src: media.url, alt: media.alt ?? product.name } : undefined}
                 />
               );

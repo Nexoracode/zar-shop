@@ -7,6 +7,7 @@ import { db } from "@/lib/db";
 import { formatMoney } from "@/lib/format";
 import { getGoldPriceForDisplay } from "@/modules/gold/gold-price.service";
 import { calculateProductPrice } from "@/modules/products/pricing";
+import { calculateDiscountedPrice } from "@/modules/products/discount";
 
 type HomeProduct = Prisma.ProductGetPayload<{ include: { category: true; media: { include: { media: true } } } }>;
 type HomeCategory = Prisma.CategoryGetPayload<{ include: { image: true; children: true; _count: { select: { products: true } } } }>;
@@ -150,6 +151,8 @@ export default async function Home() {
                   makingFeeType: product.makingFeeType, makingFeeValue: Number(product.makingFeeValue),
                   profitPercent: Number(product.profitPercent), taxPercent: Number(product.taxPercent),
                 });
+                const baseAmount = product.fixedPrice ? Number(product.fixedPrice) : calculated?.total ?? null;
+                const discounted = baseAmount === null ? null : calculateDiscountedPrice(baseAmount, product);
                 const media = product.media[0]?.media;
                 return (
                   <ProductCard
@@ -160,11 +163,8 @@ export default async function Home() {
                     category={product.category?.name ?? "طلا"}
                     weight={Number(product.weightGrams)}
                     purity={product.purity}
-                    price={product.fixedPrice
-                      ? formatMoney(product.fixedPrice.toString())
-                      : calculated
-                        ? formatMoney(calculated.total)
-                        : "قیمت موقتاً در دسترس نیست"}
+                    price={discounted ? formatMoney(discounted.finalPrice) : "قیمت موقتاً در دسترس نیست"}
+                    originalPrice={discounted?.isActive ? formatMoney(discounted.originalPrice) : undefined}
                     image={media?.type === "IMAGE" ? { src: media.url, alt: media.alt ?? product.name } : undefined}
                   />
                 );

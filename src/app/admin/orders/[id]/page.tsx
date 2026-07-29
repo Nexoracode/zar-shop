@@ -123,7 +123,7 @@ export default async function OrderDetailsPage({ params }: { params: PageParams 
                         {item.storeIndustry === "GOLD" && <><span>وزن: <b>{Number(item.weightGrams).toLocaleString("fa-IR", { maximumFractionDigits: 3 })} گرم</b></span><span>عیار: <b>{item.purity.toLocaleString("fa-IR")}</b></span></>}
                       </div>
                     </div>
-                    <div className="text-right sm:text-left"><span className="block text-xs text-slate-400">مبلغ این ردیف</span><strong className="mt-1 block whitespace-nowrap text-sm text-slate-700">{formatMoney(item.total.toString())}</strong><span className="mt-1 block text-[11px] text-slate-400">واحد: {formatMoney(item.unitPrice.toString())}</span></div>
+                    <div className="text-right sm:text-left"><span className="block text-xs text-slate-400">مبلغ این ردیف</span><strong className="mt-1 block whitespace-nowrap text-sm text-slate-700">{formatMoney(item.total.toString())}</strong>{Number(item.discountAmount) > 0 && <span className="mt-1 block text-[11px] text-rose-500">تخفیف واحد: {formatMoney(item.discountAmount.toString())}</span>}<span className="mt-1 block text-[11px] text-slate-400">واحد: {formatMoney(item.unitPrice.toString())}</span></div>
                   </article>
                 );
               })}

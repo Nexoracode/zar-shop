@@ -8,6 +8,7 @@ import { formatMoney } from "@/lib/format";
 import { CheckoutForm } from "@/components/checkout-form";
 import type { Prisma } from "@generated/prisma/client";
 import { getSelectedOptionPrice, getSelectedOptionWeight, optionEntries } from "@/modules/products/options";
+import { calculateDiscountedPrice } from "@/modules/products/discount";
 
 type CartItemRow = Prisma.CartItemGetPayload<{ include: { product: { include: { options: true } } } }>;
 
@@ -22,14 +23,15 @@ export default async function CartPage() {
   const items = (cart?.items ?? []) as CartItemRow[];
   const rate = gold ? Number(gold.pricePerGram18) : null;
   const hasGoldItems = items.some((item) => item.product.storeIndustry === "GOLD");
-  const getItemAmount = (item: CartItemRow) => {
+  const getItemPricing = (item: CartItemRow) => {
     const p = item.product;
     const selectedWeight = getSelectedOptionWeight(p.options, item.selectedOptions, Number(p.weightGrams));
-    if (p.storeIndustry === "GENERAL") return getSelectedOptionPrice(p.options, item.selectedOptions, Number(p.fixedPrice ?? 0));
-    if (p.fixedPrice) return Number(p.fixedPrice);
-    if (rate === null) return null;
-    return calculateProductPrice({ goldPricePerGram18: rate, weightGrams: selectedWeight, purity: p.purity, makingFeeType: p.makingFeeType, makingFeeValue: Number(p.makingFeeValue), profitPercent: Number(p.profitPercent), taxPercent: Number(p.taxPercent) }).total;
+    const baseAmount = p.storeIndustry === "GENERAL"
+      ? getSelectedOptionPrice(p.options, item.selectedOptions, Number(p.fixedPrice ?? 0))
+      : p.fixedPrice ? Number(p.fixedPrice) : rate === null ? null : calculateProductPrice({ goldPricePerGram18: rate, weightGrams: selectedWeight, purity: p.purity, makingFeeType: p.makingFeeType, makingFeeValue: Number(p.makingFeeValue), profitPercent: Number(p.profitPercent), taxPercent: Number(p.taxPercent) }).total;
+    return baseAmount === null ? null : calculateDiscountedPrice(baseAmount, p);
   };
+  const getItemAmount = (item: CartItemRow) => getItemPricing(item)?.finalPrice ?? null;
   const itemAmounts = items.map(getItemAmount);
   const total = itemAmounts.some((amount) => amount === null)
     ? null
@@ -62,6 +64,7 @@ export default async function CartPage() {
                   {items.map((item) => {
                     const p = item.product;
                     const amount = getItemAmount(item);
+                    const pricing = getItemPricing(item);
                     const selectedWeight = getSelectedOptionWeight(p.options, item.selectedOptions, Number(p.weightGrams));
                     return (
                       <TableRow id={item.id} key={item.id}>
@@ -69,7 +72,7 @@ export default async function CartPage() {
                         <TableCell className="px-4 py-[14px]">{item.quantity}</TableCell>
                         <TableCell className="px-4 py-[14px]">{p.storeIndustry === "GOLD" ? `${selectedWeight.toLocaleString("fa-IR", { maximumFractionDigits: 3 })} گرم` : "—"}</TableCell>
                         <TableCell className="px-4 py-[14px]">
-                          {amount === null ? "قیمت موقتاً نامشخص" : formatMoney(amount * item.quantity)}
+                          {amount === null ? "قیمت موقتاً نامشخص" : <span>{pricing?.isActive && <small className="ml-2 text-slate-400 line-through">{formatMoney(pricing.originalPrice * item.quantity)}</small>}{formatMoney(amount * item.quantity)}</span>}
                         </TableCell>
                       </TableRow>
                     );
