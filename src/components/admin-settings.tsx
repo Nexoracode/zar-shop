@@ -11,7 +11,7 @@ import { AdminCheckbox } from "@/components/admin-checkbox";
 import { HeroSelectField } from "@/components/hero-select-field";
 import { adminFieldClass, adminLabelClass } from "@/components/admin-ui";
 
-const tabClass = "min-h-11 shrink-0 gap-2 rounded-xl px-3 text-xs font-bold";
+const tabClass = "min-h-11 min-w-0 gap-2 whitespace-nowrap rounded-xl px-2 text-xs font-bold sm:px-3";
 
 export function AdminSettings() {
   const demoAction = (title: string) => toast.info("نسخه نمایشی تنظیمات", { description: `بخش «${title}» پس از تأیید شما به API و دیتابیس متصل می‌شود.` });
@@ -23,8 +23,8 @@ export function AdminSettings() {
       </Alert>
 
       <Tabs defaultSelectedKey="general" aria-label="بخش‌های تنظیمات فروشگاه" className="grid gap-5">
-        <Tabs.ListContainer className="overflow-x-auto rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-2 shadow-sm">
-          <Tabs.List className="flex min-w-max gap-1">
+        <Tabs.ListContainer className="w-full rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-1.5 shadow-sm sm:p-2">
+          <Tabs.List className="grid w-full grid-cols-2 gap-1 p-0 md:grid-cols-4 2xl:grid-cols-8">
             <Tabs.Tab id="general" className={tabClass}><Store size={16} />عمومی</Tabs.Tab>
             <Tabs.Tab id="homepage" className={tabClass}><LayoutDashboard size={16} />صفحه اصلی</Tabs.Tab>
             <Tabs.Tab id="branding" className={tabClass}><Palette size={16} />ظاهر و برند</Tabs.Tab>
