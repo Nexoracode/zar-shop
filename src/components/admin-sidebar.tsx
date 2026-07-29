@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { Button } from "@heroui/react";
 import { usePathname, useRouter } from "next/navigation";
-import { Boxes, ChartNoAxesCombined, FolderTree, Images, ListTree, LogOut, Menu, PackageCheck, Palette, Settings, Store, Users, X } from "lucide-react";
+import { BadgePercent, Boxes, ChartNoAxesCombined, FolderTree, Images, ListTree, LogOut, Menu, PackageCheck, Palette, Settings, Store, Users, X } from "lucide-react";
 import { useState } from "react";
 import { userRoleLabels } from "@/modules/admin/labels";
 import type { UserRole } from "@generated/prisma/enums";
@@ -30,6 +30,7 @@ const navGroups: Array<{ title: string; items: NavItem[] }> = [
     title: "فروش و مشتریان",
     items: [
       { href: "/admin/orders", label: "سفارش‌ها", icon: PackageCheck, permission: "orders:manage" },
+      { href: "/admin/promotions", label: "پروموشن‌ها", icon: BadgePercent, permission: "orders:manage" },
       { href: "/admin/users", label: "کاربران", icon: Users, permission: "users:manage" },
     ],
   },
