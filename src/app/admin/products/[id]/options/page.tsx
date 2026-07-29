@@ -20,6 +20,6 @@ export default async function ProductOptionsPage({ params }: Context) {
 
   return <>
     <AdminPageHeader eyebrow={`محصول ${product.sku}`} title={`مدیریت تنوع «${product.name}»`} description="رنگ، سایز و سایر گزینه‌های قابل انتخاب این محصول را در این صفحه مدیریت کنید." />
-    <ProductOptionsForm productId={product.id} colors={colors} initialOptions={product.options.map((option) => ({ name: option.name, values: parseOptionValues(option.values).map((item) => ({ ...item, stock: item.stock ?? product.stock, used: usedSelectionKeys.has(optionSelectionKey(option.name, item.value)) })) }))} />
+    <ProductOptionsForm productId={product.id} productStock={product.stock} colors={colors} initialOptions={product.options.map((option) => ({ name: option.name, values: parseOptionValues(option.values).map((item) => ({ ...item, stock: item.stock ?? product.stock, used: usedSelectionKeys.has(optionSelectionKey(option.name, item.value)) })) }))} />
   </>;
 }

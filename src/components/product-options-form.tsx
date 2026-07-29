@@ -8,13 +8,15 @@ import { adminFieldClass, adminLabelClass } from "@/components/admin-ui";
 import { HeroSelectField } from "@/components/hero-select-field";
 import { apiErrorMessage, validationErrorMessage } from "@/lib/form-errors";
 import { productSchema } from "@/modules/products/schemas";
+import { parseOptionValueShortcut } from "@/modules/products/option-shortcuts";
 
 type OptionValue = { value: string; colorId: string | null; isActive: boolean; stock: number | null; weightGrams: string | null; persisted?: boolean; used?: boolean };
 type DraftOption = { key: string; name: string; values: OptionValue[]; valueInput: string; persisted: boolean };
 type ColorChoice = { id: string; name: string; hex: string };
 
-export function ProductOptionsForm({ productId, colors, initialOptions }: {
+export function ProductOptionsForm({ productId, productStock, colors, initialOptions }: {
   productId: string;
+  productStock: number;
   colors: ColorChoice[];
   initialOptions: Array<{ name: string; values: OptionValue[] }>;
 }) {
@@ -31,11 +33,19 @@ export function ProductOptionsForm({ productId, colors, initialOptions }: {
   }
 
   function addOptionValue(key: string) {
+    const draft = options.find((option) => option.key === key);
+    if (!draft) return;
+    const parsed = parseOptionValueShortcut(draft.valueInput);
+    if (parsed.invalid.length) {
+      toast.danger("فرمت مقدار یا وزن درست نیست", { description: `موارد نامعتبر: ${parsed.invalid.join("، ")}` });
+      return;
+    }
+    if (!parsed.values.length) return;
     setOptions((current) => current.map((option) => {
       if (option.key !== key) return option;
-      const value = option.valueInput.trim();
-      if (!value || option.values.some((item) => item.value === value)) return option;
-      return { ...option, values: [...option.values, { value, colorId: null, isActive: true, stock: 0, weightGrams: null, persisted: false, used: false }], valueInput: "" };
+      const existingValues = new Set(option.values.map((item) => item.value));
+      const addedValues = parsed.values.filter((item) => !existingValues.has(item.value)).map((item) => ({ ...item, colorId: null, isActive: true, stock: productStock, persisted: false, used: false }));
+      return { ...option, values: [...option.values, ...addedValues], valueInput: "" };
     }));
   }
 
@@ -44,7 +54,7 @@ export function ProductOptionsForm({ productId, colors, initialOptions }: {
     if (!color) return;
     setOptions((current) => current.map((option) => option.key !== key ? option : {
       ...option,
-      values: option.values.some((item) => item.colorId === colorId) ? option.values : [...option.values, { value: color.name, colorId, isActive: true, stock: 0, weightGrams: null, persisted: false, used: false }],
+      values: option.values.some((item) => item.colorId === colorId) ? option.values : [...option.values, { value: color.name, colorId, isActive: true, stock: productStock, weightGrams: null, persisted: false, used: false }],
     }));
   }
 
@@ -64,9 +74,15 @@ export function ProductOptionsForm({ productId, colors, initialOptions }: {
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const usedKeys = new Set(options.flatMap((option) => option.values.filter((item) => item.used).map((item) => JSON.stringify([option.name, item.value]))));
+    const invalidPending = options.flatMap((option) => parseOptionValueShortcut(option.valueInput).invalid);
+    if (invalidPending.length) {
+      toast.danger("فرمت مقدار یا وزن درست نیست", { description: `موارد نامعتبر: ${invalidPending.join("، ")}` });
+      return;
+    }
     const submittedOptions = options.map((option) => {
-      const pendingValue = option.valueInput.trim();
-      const values = !option.name.includes("رنگ") && pendingValue && !option.values.some((item) => item.value === pendingValue) ? [...option.values, { value: pendingValue, colorId: null, isActive: true, stock: 0, weightGrams: null }] : option.values;
+      const pendingValues = option.name.includes("رنگ") ? [] : parseOptionValueShortcut(option.valueInput).values;
+      const existingValues = new Set(option.values.map((item) => item.value));
+      const values = [...option.values, ...pendingValues.filter((item) => !existingValues.has(item.value)).map((item) => ({ ...item, colorId: null, isActive: true, stock: productStock }))];
       return { name: option.name, values: values.map((item) => ({ value: item.value, colorId: item.colorId, isActive: item.isActive, stock: item.stock, weightGrams: item.weightGrams })) };
     });
     const validation = productSchema.shape.options.safeParse(submittedOptions);
@@ -105,7 +121,7 @@ export function ProductOptionsForm({ productId, colors, initialOptions }: {
               {option.values.some((item) => item.used) ? <Button type="button" size="sm" isIconOnly variant="ghost" aria-label={`${option.values.some((item) => item.isActive) ? "غیرفعال‌سازی" : "فعال‌سازی"} گروه ${option.name}`} onPress={() => updateOption(option.key, { values: option.values.map((item) => ({ ...item, isActive: !option.values.some((value) => value.isActive) })) })} className={`mb-1 h-9 min-h-9 w-9 min-w-9 ${option.values.some((item) => item.isActive) ? "text-emerald-600" : "text-slate-400"}`}>{option.values.some((item) => item.isActive) ? <Eye size={16} /> : <EyeOff size={16} />}</Button> : <Button type="button" size="sm" isIconOnly variant="danger-soft" onPress={() => setOptions((current) => current.filter((item) => item.key !== option.key))} className="mb-1 h-9 min-h-9 w-9 min-w-9" aria-label={`حذف گروه ${option.name || (index + 1).toLocaleString("fa-IR")}`}><Trash2 size={15} /></Button>}
             </div>
 
-            {option.name.includes("رنگ") ? <div className={adminLabelClass}>انتخاب رنگ<HeroSelectField name={`color-${option.key}`} ariaLabel="انتخاب رنگ" value="" placeholder={colors.length ? "یک رنگ را انتخاب کنید" : "رنگی ثبت نشده"} disabled={!colors.length} options={colors.filter((color) => !option.values.some((item) => item.colorId === color.id)).map((color) => ({ value: color.id, label: `${color.name} (${color.hex})` }))} onValueChange={(colorId) => addOptionColor(option.key, colorId)} /></div> : <label className={adminLabelClass}>مقدار قابل انتخاب<span className="flex gap-2"><Input value={option.valueInput} onChange={(event) => updateOption(option.key, { valueInput: event.target.value })} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); addOptionValue(option.key); } }} fullWidth variant="secondary" placeholder="مثلاً ۱۲" className={adminFieldClass} /><Button type="button" variant="secondary" onPress={() => addOptionValue(option.key)} className="min-h-11 shrink-0 gap-1"><Plus size={14} />افزودن</Button></span></label>}
+            {option.name.includes("رنگ") ? <div className={adminLabelClass}>انتخاب رنگ<HeroSelectField name={`color-${option.key}`} ariaLabel="انتخاب رنگ" value="" placeholder={colors.length ? "یک رنگ را انتخاب کنید" : "رنگی ثبت نشده"} disabled={!colors.length} options={colors.filter((color) => !option.values.some((item) => item.colorId === color.id)).map((color) => ({ value: color.id, label: `${color.name} (${color.hex})` }))} onValueChange={(colorId) => addOptionColor(option.key, colorId)} /></div> : <label className={adminLabelClass}>مقدار قابل انتخاب<span className="flex gap-2"><Input value={option.valueInput} onChange={(event) => updateOption(option.key, { valueInput: event.target.value })} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); addOptionValue(option.key); } }} fullWidth variant="secondary" placeholder="۱۲,۱۳,۱۴ یا ۱۲:۲/۴۰۰" className={adminFieldClass} /><Button type="button" variant="secondary" onPress={() => addOptionValue(option.key)} className="min-h-11 shrink-0 gap-1"><Plus size={14} />افزودن</Button></span><span className="text-[10px] font-normal text-slate-400">چند مقدار را با کاما جدا کنید؛ بعد از دونقطه وزن را بنویسید.</span></label>}
 
             {option.name.includes("رنگ") && !colors.length && <p className="mt-2 text-xs text-amber-700">ابتدا از <Link href="/admin/colors" className="font-black underline">صفحه رنگ‌ها</Link> رنگ موردنظر را ثبت کنید.</p>}
             {option.values.length ? <div className="mt-4 grid gap-1.5 overflow-x-auto pb-1">
