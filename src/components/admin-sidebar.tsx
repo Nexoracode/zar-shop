@@ -9,15 +9,33 @@ import { userRoleLabels } from "@/modules/admin/labels";
 import type { UserRole } from "@generated/prisma/enums";
 import { hasPermission, type AdminPermission } from "@/modules/auth/permissions";
 
-const navLinks: Array<{ href: string; label: string; icon: typeof Boxes; permission?: AdminPermission }> = [
-  { href: "/admin", label: "نمای کلی", icon: ChartNoAxesCombined, permission: "dashboard:view" },
-  { href: "/admin/products", label: "محصولات", icon: Boxes, permission: "catalog:manage" },
-  { href: "/admin/categories", label: "دسته‌بندی‌ها", icon: FolderTree, permission: "catalog:manage" },
-  { href: "/admin/colors", label: "رنگ‌ها", icon: Palette, permission: "catalog:manage" },
-  { href: "/admin/media", label: "گالری رسانه", icon: Images, permission: "catalog:manage" },
-  { href: "/admin/orders", label: "سفارش‌ها", icon: PackageCheck, permission: "orders:manage" },
-  { href: "/admin/users", label: "کاربران", icon: Users, permission: "users:manage" },
-  { href: "/admin/settings", label: "تنظیمات", icon: Settings },
+type NavItem = { href: string; label: string; icon: typeof Boxes; permission?: AdminPermission };
+
+const navGroups: Array<{ title: string; items: NavItem[] }> = [
+  {
+    title: "داشبورد",
+    items: [{ href: "/admin", label: "نمای کلی", icon: ChartNoAxesCombined, permission: "dashboard:view" }],
+  },
+  {
+    title: "کاتالوگ و محصولات",
+    items: [
+      { href: "/admin/products", label: "محصولات", icon: Boxes, permission: "catalog:manage" },
+      { href: "/admin/categories", label: "دسته‌بندی‌ها", icon: FolderTree, permission: "catalog:manage" },
+      { href: "/admin/colors", label: "رنگ‌ها", icon: Palette, permission: "catalog:manage" },
+      { href: "/admin/media", label: "گالری رسانه", icon: Images, permission: "catalog:manage" },
+    ],
+  },
+  {
+    title: "فروش و مشتریان",
+    items: [
+      { href: "/admin/orders", label: "سفارش‌ها", icon: PackageCheck, permission: "orders:manage" },
+      { href: "/admin/users", label: "کاربران", icon: Users, permission: "users:manage" },
+    ],
+  },
+  {
+    title: "تنظیمات سیستم",
+    items: [{ href: "/admin/settings", label: "تنظیمات", icon: Settings }],
+  },
 ];
 
 type Props = { user: { firstName: string | null; lastName: string | null; email: string; role: UserRole } };
@@ -34,12 +52,24 @@ export function AdminSidebar({ user }: Props) {
     router.refresh();
   }
 
+  const visibleGroups = navGroups.map((group) => ({
+    ...group,
+    items: group.items.filter((item) => !item.permission || hasPermission(user.role, item.permission)),
+  })).filter((group) => group.items.length > 0);
+
   const navigation = (
-    <nav className="grid gap-1.5">
-      {navLinks.filter((item) => !item.permission || hasPermission(user.role, item.permission)).map(({ href, label, icon: Icon }) => {
-        const active = href === "/admin" ? pathname === href : pathname.startsWith(href);
-        return <Link key={href} href={href} onClick={() => setOpen(false)} className={`flex min-h-11 items-center gap-3 rounded-xl px-3.5 text-sm font-bold transition ${active ? "bg-white/12 text-white shadow-sm" : "text-white/65 hover:bg-white/8 hover:text-white"}`}><Icon size={18} strokeWidth={1.8} /><span>{label}</span>{active && <span className="mr-auto h-1.5 w-1.5 rounded-full bg-[#d8bd83]" />}</Link>;
-      })}
+    <nav aria-label="منوی اصلی مدیریت" className="grid min-h-0 flex-1 content-start overflow-y-auto pl-1">
+      {visibleGroups.map((group, groupIndex) => (
+        <section key={group.title} aria-labelledby={`admin-nav-${groupIndex}`} className={groupIndex ? "mt-3 border-t border-white/10 pt-3" : ""}>
+          <h2 id={`admin-nav-${groupIndex}`} className="mb-1 px-3 text-[10px] font-bold text-white/35">{group.title}</h2>
+          <div className="grid gap-0.5">
+            {group.items.map(({ href, label, icon: Icon }) => {
+              const active = href === "/admin" ? pathname === href : pathname.startsWith(href);
+              return <Link key={href} href={href} onClick={() => setOpen(false)} className={`flex min-h-9 items-center gap-3 rounded-xl px-3.5 text-sm font-bold transition ${active ? "bg-white/12 text-white shadow-sm" : "text-white/65 hover:bg-white/8 hover:text-white"}`}><Icon size={18} strokeWidth={1.8} /><span>{label}</span>{active && <span className="mr-auto h-1.5 w-1.5 rounded-full bg-[#d8bd83]" />}</Link>;
+            })}
+          </div>
+        </section>
+      ))}
     </nav>
   );
 
