@@ -6,15 +6,14 @@ import { getStoreIndustry } from "@/modules/settings/store-settings";
 
 export default async function NewProduct() {
   await requirePermission("catalog:manage");
-  const [categories, colors, storeIndustry] = await Promise.all([
+  const [categories, storeIndustry] = await Promise.all([
     db.category.findMany({ where: { isActive: true }, include: { parent: { select: { name: true } } }, orderBy: [{ sortOrder: "asc" }, { name: "asc" }] }),
-    db.color.findMany({ where: { isActive: true }, select: { id: true, name: true, hex: true }, orderBy: [{ sortOrder: "asc" }, { name: "asc" }] }),
     getStoreIndustry(),
   ]);
   return (
     <>
       <AdminPageHeader eyebrow="مدیریت کاتالوگ" title="ثبت محصول جدید" description="اطلاعات فنی، قیمت‌گذاری، موجودی و تصاویر محصول را تکمیل کنید." />
-      <ProductForm storeIndustry={storeIndustry} categories={categories.map((category) => ({ id: category.id, name: category.name, parentName: category.parent?.name ?? null }))} colors={colors} />
+      <ProductForm storeIndustry={storeIndustry} categories={categories.map((category) => ({ id: category.id, name: category.name, parentName: category.parent?.name ?? null }))} />
     </>
   );
 }

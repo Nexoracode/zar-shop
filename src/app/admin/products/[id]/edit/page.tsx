@@ -11,7 +11,7 @@ type Context = { params: Promise<{ id: string }> };
 export default async function EditProductPage({ params }: Context) {
   await requirePermission("catalog:manage");
   const { id } = await params;
-  const [product, categories, colors] = await Promise.all([
+  const [product, categories] = await Promise.all([
     db.product.findUnique({
       where: { id },
       include: { media: { include: { media: true }, orderBy: { position: "asc" } }, options: { orderBy: { position: "asc" } }, optionGuide: true },
@@ -21,7 +21,6 @@ export default async function EditProductPage({ params }: Context) {
       include: { parent: { select: { name: true } } },
       orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
     }),
-    db.color.findMany({ where: { isActive: true }, select: { id: true, name: true, hex: true }, orderBy: [{ sortOrder: "asc" }, { name: "asc" }] }),
   ]);
   if (!product) notFound();
 
@@ -31,7 +30,6 @@ export default async function EditProductPage({ params }: Context) {
       <ProductForm
         storeIndustry={product.storeIndustry}
         categories={categories.map((category) => ({ id: category.id, name: category.name, parentName: category.parent?.name ?? null }))}
-        colors={colors}
         product={{
           id: product.id,
           sku: product.sku,
