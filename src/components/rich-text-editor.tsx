@@ -83,17 +83,29 @@ export function RichTextEditor({ value, onChange }: Props) {
   async function uploadImage() {
     if (!imageFile) return toast.warning("ابتدا یک تصویر انتخاب کنید");
     setUploading(true);
-    try {
+    const file = imageFile;
+    const alt = imageAlt.trim();
+    const uploadPromise = (async () => {
       const data = new FormData();
-      data.set("file", imageFile); data.set("scope", "PRODUCT"); data.set("title", imageAlt.trim() || imageFile.name); data.set("alt", imageAlt.trim());
+      data.set("file", file); data.set("scope", "PRODUCT"); data.set("title", alt || file.name); data.set("alt", alt);
       const response = await fetch("/api/media", { method: "POST", body: data });
       const result = await response.json().catch(() => null);
       if (!response.ok) throw new Error(result?.message ?? "بارگذاری تصویر انجام نشد.");
       const uploadedUrl = result?.items?.[0]?.url;
       if (typeof uploadedUrl !== "string") throw new Error("نشانی تصویر بارگذاری‌شده دریافت نشد.");
-      insertImage(uploadedUrl, imageAlt.trim());
-      toast.success("تصویر به توضیحات اضافه شد");
-    } catch (reason) { toast.danger("افزودن تصویر انجام نشد", { description: reason instanceof Error ? reason.message : "خطای ناشناخته" }); }
+      insertImage(uploadedUrl, alt);
+      return uploadedUrl;
+    })();
+
+    toast.promise(uploadPromise, {
+      loading: "تصویر در حال بارگذاری است...",
+      success: "تصویر به توضیحات محصول اضافه شد",
+      error: (reason) => reason.message || "افزودن تصویر انجام نشد",
+    });
+
+    try {
+      await uploadPromise;
+    } catch { /* toast.promise نتیجه خطا را نمایش می‌دهد. */ }
     finally { setUploading(false); }
   }
 

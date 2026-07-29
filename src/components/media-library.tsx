@@ -55,14 +55,25 @@ export function MediaLibrary() {
     const form = event.currentTarget;
     const data = new FormData(form);
     data.set("scope", scope);
-    try {
+
+    const uploadPromise = (async () => {
       const response = await fetch("/api/media", { method: "POST", body: data });
       const result = await response.json().catch(() => null);
       if (!response.ok) throw new Error(result?.message ?? "بارگذاری ناموفق بود.");
       const uploadedCount = Array.isArray(result?.items) ? result.items.length : 0;
       form.reset();
       await load();
-      toast.success("فایل‌ها در گالری ذخیره شدند", { description: `${uploadedCount.toLocaleString("fa-IR")} فایل با موفقیت بارگذاری شد.`, timeout: 4000 });
+      return uploadedCount;
+    })();
+
+    toast.promise(uploadPromise, {
+      loading: "فایل‌ها در حال بارگذاری هستند...",
+      success: (uploadedCount) => `${uploadedCount.toLocaleString("fa-IR")} فایل با موفقیت در گالری ذخیره شد`,
+      error: (reason) => reason.message || "بارگذاری فایل ناموفق بود",
+    });
+
+    try {
+      await uploadPromise;
     } catch (reason) {
       setMessage(reason instanceof Error ? reason.message : "بارگذاری فایل ناموفق بود.");
     } finally {

@@ -69,10 +69,11 @@ export function MediaPickerDialog({ open, scope, multiple = false, allowedTypes,
     event.preventDefault();
     setUploading(true);
     setError("");
-    try {
-      const form = event.currentTarget;
-      const data = new FormData(form);
-      data.set("scope", scope);
+    const form = event.currentTarget;
+    const data = new FormData(form);
+    data.set("scope", scope);
+
+    const uploadPromise = (async () => {
       const response = await fetch("/api/media", { method: "POST", body: data });
       const result = await response.json().catch(() => null);
       if (!response.ok) throw new Error(result?.message ?? "بارگذاری فایل ناموفق بود.");
@@ -83,7 +84,17 @@ export function MediaPickerDialog({ open, scope, multiple = false, allowedTypes,
       if (uploadedItems.length) {
         setDraft((current) => multiple ? [...current, ...uploadedItems.filter((item) => !current.some((chosen) => chosen.id === item.id))] : [uploadedItems[0]]);
       }
-      toast.success("فایل‌ها در گالری ذخیره شدند", { description: `${uploadedItems.length.toLocaleString("fa-IR")} رسانه جدید با موفقیت بارگذاری و انتخاب شد.`, timeout: 4000 });
+      return uploadedItems;
+    })();
+
+    toast.promise(uploadPromise, {
+      loading: "رسانه در حال بارگذاری است...",
+      success: (uploadedItems) => `${uploadedItems.length.toLocaleString("fa-IR")} رسانه بارگذاری و انتخاب شد`,
+      error: (reason) => reason.message || "بارگذاری فایل ناموفق بود",
+    });
+
+    try {
+      await uploadPromise;
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "بارگذاری فایل ناموفق بود.");
     } finally {
