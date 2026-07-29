@@ -36,6 +36,18 @@ enum ProductDiscountType {
   FIXED
 }
 
+enum PromotionType {
+  COUPON
+  FREE_SHIPPING
+  NEXT_PURCHASE
+  FIRST_PURCHASE
+}
+
+enum PromotionDiscountType {
+  PERCENT
+  FIXED
+}
+
 enum MediaType {
   IMAGE
   VIDEO
@@ -95,6 +107,8 @@ model User {
   cart            Cart?
   sessions        Session[]
   auditLogs       AuditLog[] @relation("AuditActor")
+  promotionRedemptions PromotionRedemption[]
+  promotionRewards     PromotionReward[]
 }
 
 model Session {
@@ -197,10 +211,76 @@ model Product {
 }
 
 model StoreSetting {
-  id        String        @id @default("main") @db.VarChar(20)
-  industry  StoreIndustry @default(GOLD)
-  createdAt DateTime      @default(now())
-  updatedAt DateTime      @updatedAt
+  id                 String        @id @default("main") @db.VarChar(20)
+  industry           StoreIndustry @default(GOLD)
+  defaultShippingFee Decimal       @default(0) @db.Decimal(18, 0)
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+}
+
+model Promotion {
+  id                String                 @id @default(cuid())
+  title             String                 @db.VarChar(191)
+  type              PromotionType
+  code              String?                @unique @db.VarChar(64)
+  discountType      PromotionDiscountType?
+  discountValue     Decimal?               @db.Decimal(18, 3)
+  minOrderAmount    Decimal?               @db.Decimal(18, 0)
+  maxDiscountAmount Decimal?               @db.Decimal(18, 0)
+  usageLimit        Int?
+  perUserLimit      Int                    @default(1)
+  rewardExpiresDays Int?
+  shippingScope     String?                @db.VarChar(30)
+  startsAt          DateTime
+  endsAt            DateTime
+  isActive          Boolean                @default(true)
+  createdAt         DateTime               @default(now())
+  updatedAt         DateTime               @updatedAt
+  redemptions       PromotionRedemption[]
+  rewards           PromotionReward[]
+
+  @@index([type, isActive, startsAt, endsAt])
+  @@index([isActive, endsAt])
+}
+
+model PromotionRedemption {
+  id               String    @id @default(cuid())
+  promotionId      String
+  userId           String
+  orderId          String
+  discountAmount   Decimal   @default(0) @db.Decimal(18, 0)
+  shippingDiscount Decimal   @default(0) @db.Decimal(18, 0)
+  snapshot         Json
+  createdAt        DateTime  @default(now())
+  promotion        Promotion @relation(fields: [promotionId], references: [id], onDelete: Restrict)
+  user             User      @relation(fields: [userId], references: [id], onDelete: Restrict)
+  order            Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@unique([promotionId, orderId])
+  @@index([promotionId, userId, createdAt])
+  @@index([orderId])
+}
+
+model PromotionReward {
+  id                String                @id @default(cuid())
+  promotionId       String
+  userId            String
+  sourceOrderId     String
+  redeemedOrderId   String?
+  discountType      PromotionDiscountType
+  discountValue     Decimal               @db.Decimal(18, 3)
+  maxDiscountAmount Decimal?              @db.Decimal(18, 0)
+  expiresAt         DateTime
+  redeemedAt        DateTime?
+  createdAt         DateTime              @default(now())
+  promotion         Promotion             @relation(fields: [promotionId], references: [id], onDelete: Restrict)
+  user              User                  @relation(fields: [userId], references: [id], onDelete: Restrict)
+  sourceOrder        Order                 @relation("PromotionRewardSource", fields: [sourceOrderId], references: [id], onDelete: Restrict)
+  redeemedOrder      Order?                @relation("PromotionRewardRedemption", fields: [redeemedOrderId], references: [id], onDelete: SetNull)
+
+  @@unique([promotionId, sourceOrderId])
+  @@index([userId, redeemedAt, expiresAt])
+  @@index([redeemedOrderId])
 }
 
 model MediaAsset {
@@ -291,7 +371,10 @@ model Order {
   goldPriceSnapshot Decimal     @db.Decimal(18, 0)
   subtotal          Decimal     @db.Decimal(18, 0)
   discount          Decimal     @default(0) @db.Decimal(18, 0)
+  productDiscount   Decimal     @default(0) @db.Decimal(18, 0)
+  promotionDiscount Decimal     @default(0) @db.Decimal(18, 0)
   shipping          Decimal     @default(0) @db.Decimal(18, 0)
+  shippingDiscount  Decimal     @default(0) @db.Decimal(18, 0)
   tax               Decimal     @default(0) @db.Decimal(18, 0)
   total             Decimal     @db.Decimal(18, 0)
   shippingAddress   Json
@@ -302,6 +385,9 @@ model Order {
   items             OrderItem[]
   payments          Payment[]
   invoice           Invoice?
+  promotionRedemptions PromotionRedemption[]
+  issuedPromotionRewards PromotionReward[] @relation("PromotionRewardSource")
+  redeemedPromotionRewards PromotionReward[] @relation("PromotionRewardRedemption")
 
   @@index([userId, createdAt])
   @@index([status, createdAt])

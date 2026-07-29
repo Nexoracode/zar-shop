@@ -4,12 +4,23 @@ import { env } from "@/lib/env";
 import { getPaymentProvider } from "@/modules/payments/payment-provider";
 import { decrementSelectedOptionStocks } from "@/modules/products/options";
 import type { PrismaClient } from "@generated/prisma/client";
+import { issueNextPurchaseRewards } from "@/modules/promotions/service";
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const authority = url.searchParams.get("authority");
   const status = url.searchParams.get("status");
   if (!authority || status !== "OK") {
+    if (authority) {
+      const cancelled = await db.payment.findUnique({ where: { authority }, select: { id: true, orderId: true, status: true } });
+      if (cancelled && cancelled.status !== "SUCCESS") {
+        await db.$transaction(async (tx) => {
+          await tx.payment.update({ where: { id: cancelled.id }, data: { status: "CANCELLED" } });
+          await tx.promotionReward.updateMany({ where: { redeemedOrderId: cancelled.orderId, redeemedAt: null }, data: { redeemedOrderId: null } });
+          await tx.promotionRedemption.deleteMany({ where: { orderId: cancelled.orderId } });
+        });
+      }
+    }
     return NextResponse.redirect(`${env.APP_URL}/account?payment=cancelled`);
   }
 
@@ -29,6 +40,7 @@ export async function GET(request: Request) {
         data: { status: "SUCCESS", referenceId: verified.referenceId, paidAt: new Date() },
       });
       await transaction.order.update({ where: { id: payment.orderId }, data: { status: "PAID" } });
+      await transaction.promotionReward.updateMany({ where: { redeemedOrderId: payment.orderId, redeemedAt: null }, data: { redeemedAt: new Date() } });
       for (const item of payment.order.items) {
         if (item.productId) {
           const currentProduct = await transaction.product.findUnique({ where: { id: item.productId }, include: { options: true } });
@@ -56,11 +68,20 @@ export async function GET(request: Request) {
           },
         },
       });
+      await issueNextPurchaseRewards(transaction, {
+        orderId: payment.orderId,
+        userId: payment.order.userId,
+        merchandiseAmount: Number(payment.order.subtotal) - Number(payment.order.productDiscount),
+      });
       await transaction.cartItem.deleteMany({ where: { cart: { userId: payment.order.userId } } });
     });
     return NextResponse.redirect(`${env.APP_URL}/invoices/${payment.orderId}`);
   } catch {
-    await db.payment.update({ where: { id: payment.id }, data: { status: "FAILED" } });
+    await db.$transaction(async (tx) => {
+      await tx.payment.update({ where: { id: payment.id }, data: { status: "FAILED" } });
+      await tx.promotionReward.updateMany({ where: { redeemedOrderId: payment.orderId, redeemedAt: null }, data: { redeemedOrderId: null } });
+      await tx.promotionRedemption.deleteMany({ where: { orderId: payment.orderId } });
+    });
     return NextResponse.redirect(`${env.APP_URL}/account?payment=failed`);
   }
 }

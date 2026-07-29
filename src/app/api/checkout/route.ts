@@ -10,6 +10,7 @@ import { getSelectedOptionPrice, getSelectedOptionWeight, isOptionSnapshotValid,
 import { getPaymentProvider } from "@/modules/payments/payment-provider";
 import type { Prisma } from "@generated/prisma/client";
 import { calculateDiscountedPrice } from "@/modules/products/discount";
+import { PromotionValidationError, resolveCheckoutPromotions } from "@/modules/promotions/service";
 
 type ItemWithProduct = Prisma.CartItemGetPayload<{ include: { product: { include: { options: true } } } }>;
 type PriceParts = ReturnType<typeof calculateProductPrice>;
@@ -22,13 +23,15 @@ const addressSchema = z.object({
   city: z.string().min(2).max(100),
   postalCode: z.string().min(5).max(20),
   addressLine: z.string().min(10).max(1000),
+  couponCode: z.string().trim().max(64).optional().default(""),
 });
 
 export async function POST(request: Request) {
   try {
     const user = await getCurrentUser();
     if (!user) return NextResponse.json({ message: "ابتدا وارد حساب شوید." }, { status: 401 });
-    const address = addressSchema.parse(await request.json());
+    const input = addressSchema.parse(await request.json());
+    const { couponCode, ...address } = input;
     const cart = await db.cart.findUnique({ where: { userId: user.id }, include: { items: { include: { product: { include: { options: true } } } } } });
     if (!cart?.items.length) return NextResponse.json({ message: "سبد خرید خالی است." }, { status: 409 });
     const needsGoldRate = cart.items.some((item) => item.product.storeIndustry === "GOLD");
@@ -67,38 +70,69 @@ export async function POST(request: Request) {
       if (unitPrice <= 0) throw new Error(`قیمت ${p.name} معتبر نیست.`);
       return { item, p, parts, originalUnitPrice, discountAmount: pricing.discountAmount, unitPrice, total: unitPrice * item.quantity };
     });
-    const total = lines.reduce((sum: number, line: CheckoutLine) => sum + line.total, 0);
+    const merchandiseAmount = lines.reduce((sum: number, line: CheckoutLine) => sum + line.total, 0);
     const subtotal = lines.reduce((sum: number, line: CheckoutLine) => sum + line.originalUnitPrice * line.item.quantity, 0);
-    const discount = lines.reduce((sum: number, line: CheckoutLine) => sum + line.discountAmount * line.item.quantity, 0);
-    const order = await db.order.create({
-      data: {
-        orderNumber: `Z${Date.now()}`,
-        userId: user.id,
-        goldPriceSnapshot: rate,
-        subtotal,
-        discount,
-        total,
-        shippingAddress: address,
-        items: {
-          create: lines.map(({ item, p, parts, originalUnitPrice, discountAmount, unitPrice, total: lineTotal }: CheckoutLine) => ({
-            productId: p.id, sku: p.sku, name: p.name, selectedOptions: optionEntries(item.selectedOptions).length ? Object.fromEntries(optionEntries(item.selectedOptions)) : undefined, quantity: item.quantity,
-            storeIndustry: p.storeIndustry,
-            weightGrams: getSelectedOptionWeight(p.options, item.selectedOptions, Number(p.weightGrams)), purity: p.purity, makingFee: parts.makingFee,
-            profit: parts.profit, tax: parts.tax, originalUnitPrice, discountAmount, unitPrice, total: lineTotal,
-          })),
+    const productDiscount = lines.reduce((sum: number, line: CheckoutLine) => sum + line.discountAmount * line.item.quantity, 0);
+    const tax = lines.reduce((sum: number, line: CheckoutLine) => sum + line.parts.tax * line.item.quantity, 0);
+    const order = await db.$transaction(async (tx) => {
+      const settings = await tx.storeSetting.findUnique({ where: { id: "main" }, select: { defaultShippingFee: true } });
+      const shippingFee = Number(settings?.defaultShippingFee ?? 0);
+      const promotions = await resolveCheckoutPromotions(tx, { userId: user.id, couponCode, merchandiseAmount, shippingFee, city: address.city });
+      const shipping = Math.max(0, shippingFee - promotions.shippingDiscount);
+      const total = merchandiseAmount - promotions.promotionDiscount + shipping;
+      if (total <= 0) throw new Error("مبلغ نهایی سفارش معتبر نیست.");
+      const created = await tx.order.create({
+        data: {
+          orderNumber: `Z${Date.now()}`,
+          userId: user.id,
+          goldPriceSnapshot: rate,
+          subtotal,
+          productDiscount,
+          promotionDiscount: promotions.promotionDiscount,
+          discount: productDiscount + promotions.promotionDiscount,
+          shipping,
+          shippingDiscount: promotions.shippingDiscount,
+          tax,
+          total,
+          shippingAddress: address,
+          items: {
+            create: lines.map(({ item, p, parts, originalUnitPrice, discountAmount, unitPrice, total: lineTotal }: CheckoutLine) => ({
+              productId: p.id, sku: p.sku, name: p.name, selectedOptions: optionEntries(item.selectedOptions).length ? Object.fromEntries(optionEntries(item.selectedOptions)) : undefined, quantity: item.quantity,
+              storeIndustry: p.storeIndustry,
+              weightGrams: getSelectedOptionWeight(p.options, item.selectedOptions, Number(p.weightGrams)), purity: p.purity, makingFee: parts.makingFee,
+              profit: parts.profit, tax: parts.tax, originalUnitPrice, discountAmount, unitPrice, total: lineTotal,
+            })),
+          },
+          promotionRedemptions: promotions.applications.length ? {
+            create: promotions.applications.map((promotion) => ({
+              promotionId: promotion.promotionId,
+              userId: user.id,
+              discountAmount: promotion.discountAmount,
+              shippingDiscount: promotion.shippingDiscount,
+              snapshot: promotion.snapshot,
+            })),
+          } : undefined,
         },
-      },
+      });
+      if (promotions.rewardId) {
+        const reserved = await tx.promotionReward.updateMany({ where: { id: promotions.rewardId, redeemedOrderId: null }, data: { redeemedOrderId: created.id } });
+        if (reserved.count !== 1) throw new PromotionValidationError("پاداش خرید بعدی هم‌زمان در سفارش دیگری استفاده شده است.");
+      }
+      return created;
     });
-    const paymentRequest = await getPaymentProvider().request({
-      amount: total,
-      orderId: order.id,
-      callbackUrl: `${env.APP_URL}/api/payment/callback`,
-    });
-    await db.payment.create({
-      data: { orderId: order.id, provider: env.PAYMENT_PROVIDER, authority: paymentRequest.authority, amount: total, status: "PENDING" },
-    });
-    return NextResponse.json({ redirectUrl: paymentRequest.redirectUrl });
+    try {
+      const paymentRequest = await getPaymentProvider().request({ amount: Number(order.total), orderId: order.id, callbackUrl: `${env.APP_URL}/api/payment/callback` });
+      await db.payment.create({ data: { orderId: order.id, provider: env.PAYMENT_PROVIDER, authority: paymentRequest.authority, amount: order.total, status: "PENDING" } });
+      return NextResponse.json({ redirectUrl: paymentRequest.redirectUrl });
+    } catch (error) {
+      await db.$transaction(async (tx) => {
+        await tx.promotionReward.updateMany({ where: { redeemedOrderId: order.id, redeemedAt: null }, data: { redeemedOrderId: null } });
+        await tx.order.delete({ where: { id: order.id } });
+      });
+      throw error;
+    }
   } catch (error) {
+    if (error instanceof PromotionValidationError) return NextResponse.json({ message: error.message }, { status: 422 });
     if (error instanceof Error && (error.message.startsWith("موجودی") || error.message.startsWith("تنوع") || error.message.startsWith("قیمت"))) return NextResponse.json({ message: error.message }, { status: 409 });
     return apiError(error);
   }

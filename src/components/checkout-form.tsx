@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { Alert, Button, Card, Input, Spinner, TextArea, toast } from "@heroui/react";
+import { BadgePercent } from "lucide-react";
 
 export function CheckoutForm() {
   const [error, setError] = useState("");
@@ -61,6 +62,12 @@ export function CheckoutForm() {
       <div className="grid gap-[7px]">
         <label htmlFor="addressLine" className={labelClass}>نشانی کامل</label>
         <TextArea id="addressLine" name="addressLine" rows={3} required fullWidth variant="secondary" className={fieldClass} />
+      </div>
+
+      <div className="grid gap-[7px] rounded-xl border border-violet-100 bg-violet-50/50 p-3">
+        <label htmlFor="couponCode" className={`${labelClass} flex items-center gap-2`}><BadgePercent size={16} className="text-violet-600" />کد تخفیف</label>
+        <Input id="couponCode" name="couponCode" dir="ltr" fullWidth variant="secondary" className={`${fieldClass} uppercase`} placeholder="اختیاری" />
+        <span className="text-[11px] text-slate-500">اعتبار کد و مبلغ نهایی هنگام ثبت سفارش دوباره در سرور بررسی می‌شود.</span>
       </div>
 
       {error && <Alert status="danger"><Alert.Description>{error}</Alert.Description></Alert>}
