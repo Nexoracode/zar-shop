@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { FileText, Search, Trash2, UploadCloud } from "lucide-react";
-import { Alert, Button, Card, Input, toast } from "@heroui/react";
+import { Alert, Button, Card, Input, Spinner, toast } from "@heroui/react";
 import { AdminEmptyState, adminFieldClass, adminLabelClass } from "@/components/admin-ui";
 import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
 
@@ -114,7 +114,9 @@ export function MediaLibrary() {
           <Input name="file" type="file" multiple required fullWidth variant="secondary" accept={scope === "CATEGORY" ? "image/jpeg,image/png,image/webp" : "image/jpeg,image/png,image/webp,video/mp4,video/webm,application/pdf"} className={fieldClass} />
         </label>
         <label className={adminLabelClass}>عنوان فایل<Input name="title" fullWidth variant="secondary" className={fieldClass} placeholder="مثلاً نمای روبه‌روی محصول" /></label>
-        <Button type="submit" isDisabled={uploading} variant="primary" className="min-h-[46px] gap-2 rounded-xl bg-amber-600 px-6 text-sm font-bold text-white"><UploadCloud className="size-4" />{uploading ? "در حال بارگذاری..." : "بارگذاری در FTP"}</Button>
+        <Button type="submit" isPending={uploading} variant="primary" className="min-h-[46px] gap-2 rounded-xl bg-amber-600 px-6 text-sm font-bold text-white">
+          {({ isPending }) => <>{isPending ? <Spinner color="current" size="sm" /> : <UploadCloud className="size-4" />}{isPending ? "در حال بارگذاری..." : "بارگذاری در FTP"}</>}
+        </Button>
       </form>
 
       {message && <Alert status="warning"><Alert.Description>{message}</Alert.Description></Alert>}

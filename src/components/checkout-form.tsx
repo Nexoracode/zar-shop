@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { Alert, Button, Card, Input, TextArea, toast } from "@heroui/react";
+import { Alert, Button, Card, Input, Spinner, TextArea, toast } from "@heroui/react";
 
 export function CheckoutForm() {
   const [error, setError] = useState("");
@@ -70,9 +70,9 @@ export function CheckoutForm() {
         fullWidth
         variant="primary"
         className="min-h-[46px] px-6 py-[9px] inline-flex items-center justify-center bg-[#b5904c] text-white border border-[#b5904c] rounded-sm transition-all hover:-translate-y-[2px] hover:shadow-[0_8px_20px_rgba(20,35,61,0.12)] disabled:opacity-60 disabled:cursor-not-allowed"
-        isDisabled={loading}
+        isPending={loading}
       >
-        {loading ? "در حال ایجاد سفارش..." : "ثبت سفارش و پرداخت"}
+        {({ isPending }) => <>{isPending && <Spinner color="current" size="sm" />}{isPending ? "در حال ایجاد سفارش..." : "ثبت سفارش و پرداخت"}</>}
       </Button>
     </form>
     </Card.Content>

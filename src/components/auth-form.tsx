@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Alert, Button, Input, toast } from "@heroui/react";
+import { Alert, Button, Input, Spinner, toast } from "@heroui/react";
 
 export function AuthForm({ mode }: { mode: "login" | "register" }) {
   const router = useRouter();
@@ -68,9 +68,9 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
         variant="primary"
         fullWidth
         className="min-h-[46px] px-6 py-[9px] inline-flex items-center justify-center bg-[#1c3155] text-white border border-[#1c3155] rounded-sm transition-all hover:-translate-y-[2px] hover:shadow-[0_8px_20px_rgba(20,35,61,0.12)] disabled:opacity-60 disabled:cursor-not-allowed"
-        isDisabled={loading}
+        isPending={loading}
       >
-        {loading ? "در حال بررسی..." : mode === "login" ? "ورود امن" : "ساخت حساب"}
+        {({ isPending }) => <>{isPending && <Spinner color="current" size="sm" />}{isPending ? "در حال بررسی..." : mode === "login" ? "ورود امن" : "ساخت حساب"}</>}
       </Button>
     </form>
   );

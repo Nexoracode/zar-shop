@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState, type FormEvent } from "react";
-import { Button, Card, Input, buttonVariants, toast } from "@heroui/react";
+import { Button, Card, Input, Spinner, buttonVariants, toast } from "@heroui/react";
 import { Eye, EyeOff, ChevronRight, GripVertical, ListPlus, Plus, Save, Trash2 } from "lucide-react";
 import { adminFieldClass, adminLabelClass } from "@/components/admin-ui";
 import { HeroSelectField } from "@/components/hero-select-field";
@@ -145,7 +145,7 @@ export function ProductOptionsForm({ productId, productStock, colors, initialOpt
 
     <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
       <Link href="/admin/products" className={buttonVariants({ variant: "secondary", className: "min-h-11 gap-2 rounded-xl" })}><ChevronRight size={16} />بازگشت به محصولات</Link>
-      <Button type="submit" variant="primary" isDisabled={loading} className="min-h-11 gap-2 bg-[#172b4d] px-6 font-bold text-white"><Save size={16} />{loading ? "در حال ذخیره..." : "ذخیره تنوع‌ها"}</Button>
+      <Button type="submit" variant="primary" isPending={loading} className="min-h-11 gap-2 bg-[#172b4d] px-6 font-bold text-white">{({ isPending }) => <>{isPending ? <Spinner color="current" size="sm" /> : <Save size={16} />}{isPending ? "در حال ذخیره..." : "ذخیره تنوع‌ها"}</>}</Button>
     </div>
   </form>;
 }

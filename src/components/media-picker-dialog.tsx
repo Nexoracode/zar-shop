@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
-import { Alert, Button, Card, Input, Modal, toast } from "@heroui/react";
+import { Alert, Button, Card, Input, Modal, Spinner, toast } from "@heroui/react";
 import { Check, FileText, Film, ImageIcon, RefreshCw, Search, Trash2, Upload, X } from "lucide-react";
 import type { MediaChoice, MediaScope } from "@/components/media-library";
 import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
@@ -159,11 +159,11 @@ export function MediaPickerDialog({ open, scope, multiple = false, allowedTypes,
                       <span className="truncate text-[11px] text-slate-400">{uploadFileName || (allowedTypeKey.includes("DOCUMENT") ? "انتخاب تصویر یا فایل PDF راهنمای سایز" : scope === "CATEGORY" ? "انتخاب یک یا چند تصویر JPG، PNG یا WebP" : "انتخاب یک یا چند تصویر یا ویدیوی محصول")}</span>
                       <input name="file" type="file" multiple required accept={acceptedFiles} className="sr-only" onChange={(event) => { const files = event.target.files; setUploadFileName(files?.length ? (files.length === 1 ? files[0].name : `${files.length.toLocaleString("fa-IR")} فایل انتخاب شد`) : ""); }} />
                     </label>
-                    <Button type="submit" isDisabled={uploading} variant="primary" className="min-h-10 gap-2 bg-[#b5904c] px-4 text-xs font-bold text-white"><Upload size={15} />{uploading ? "در حال بارگذاری" : "بارگذاری"}</Button>
+                    <Button type="submit" isPending={uploading} variant="primary" className="min-h-10 gap-2 bg-[#b5904c] px-4 text-xs font-bold text-white">{({ isPending }) => <>{isPending ? <Spinner color="current" size="sm" /> : <Upload size={15} />}{isPending ? "در حال بارگذاری" : "بارگذاری"}</>}</Button>
                   </form>
                   <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
                     <div className="relative"><Search className="pointer-events-none absolute right-3.5 top-1/2 z-10 -translate-y-1/2 text-slate-400" size={17} /><Input value={query} onChange={(event) => setQuery(event.target.value)} fullWidth variant="secondary" placeholder="جست‌وجوی عنوان فایل..." className="pr-10" /></div>
-                    <Button type="button" variant="secondary" isIconOnly aria-label="به‌روزرسانی گالری" onPress={() => void load()} isDisabled={loading} className="hidden h-10 w-10 min-w-10 border border-slate-200 sm:inline-flex"><RefreshCw size={16} className={loading ? "animate-spin" : ""} /></Button>
+                    <Button type="button" variant="secondary" isIconOnly aria-label="به‌روزرسانی گالری" onPress={() => void load()} isPending={loading} className="hidden h-10 w-10 min-w-10 border border-slate-200 sm:inline-flex">{({ isPending }) => isPending ? <Spinner color="current" size="sm" /> : <RefreshCw size={16} />}</Button>
                   </div>
                 </div>
                 {error && <Alert status="danger" className="mt-3"><Alert.Description>{error}</Alert.Description></Alert>}

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { Button, Card, ColorArea, ColorField, ColorPicker, ColorSlider, ColorSwatch, Input, Label, Modal, parseColor, toast } from "@heroui/react";
+import { Button, Card, ColorArea, ColorField, ColorPicker, ColorSlider, ColorSwatch, Input, Label, Modal, Spinner, parseColor, toast } from "@heroui/react";
 import { Pencil, Plus, Save, Trash2, X } from "lucide-react";
 import { AdminStatusBadge, adminFieldClass, adminLabelClass } from "@/components/admin-ui";
 import { AdminCheckbox } from "@/components/admin-checkbox";
@@ -66,7 +66,7 @@ export function ColorManager({ initialColors }: { initialColors: ColorItem[] }) 
         </ColorPicker></div>
         <label className={adminLabelClass}>ترتیب نمایش<Input name="sortOrder" type="number" min="0" defaultValue={editing?.sortOrder ?? 0} fullWidth variant="secondary" className={adminFieldClass} /></label>
         <AdminCheckbox name="isActive" value="on" defaultSelected={editing?.isActive ?? true}>فعال</AdminCheckbox>
-        <Button type="submit" isDisabled={loading} variant="primary" className="min-h-11 gap-2 bg-[#172b4d] text-white">{editing ? <Save size={16} /> : <Plus size={16} />}{editing ? "ذخیره تغییرات" : "افزودن رنگ"}</Button>
+        <Button type="submit" isPending={loading} variant="primary" className="min-h-11 gap-2 bg-[#172b4d] text-white">{({ isPending }) => <>{isPending ? <Spinner color="current" size="sm" /> : editing ? <Save size={16} /> : <Plus size={16} />}{isPending ? "در حال ذخیره..." : editing ? "ذخیره تغییرات" : "افزودن رنگ"}</>}</Button>
       </form>
     </Card.Content></Card>
     <Card variant="secondary" className="overflow-hidden rounded-2xl border border-slate-200 bg-white"><Table><TableScrollContainer><TableContent aria-label="فهرست رنگ‌ها" className="w-full min-w-[560px]"><TableHeader>{["رنگ", "نام", "کد", "ترتیب", "وضعیت", "عملیات"].map((head, index) => <TableColumn id={head} key={head} isRowHeader={index === 1} className="bg-slate-50 px-3 py-2.5 text-right text-[11px] font-bold text-slate-500">{head}</TableColumn>)}</TableHeader><TableBody>{colors.map((color) => <TableRow id={color.id} key={color.id} className="transition hover:bg-slate-50/70"><TableCell className={`${cellClass} w-16`}><ColorSwatch color={color.hex} size="sm" className="shadow ring-1 ring-slate-200" /></TableCell><TableCell className={`${cellClass} font-bold text-slate-700`}>{color.name}</TableCell><TableCell className={`${cellClass} font-mono text-slate-500`}><span dir="ltr">{color.hex}</span></TableCell><TableCell className={`${cellClass} text-slate-500`}>{color.sortOrder.toLocaleString("fa-IR")}</TableCell><TableCell className={cellClass}><AdminStatusBadge tone={color.isActive ? "success" : "neutral"}>{color.isActive ? "فعال" : "غیرفعال"}</AdminStatusBadge></TableCell><TableCell className={cellClass}><div className="flex items-center gap-1"><Button isIconOnly size="sm" variant="ghost" onPress={() => startEditing(color)} aria-label={`ویرایش ${color.name}`} className="h-8 min-h-8 w-8 min-w-8"><Pencil size={14} /></Button><Button isIconOnly size="sm" variant="danger-soft" onPress={() => setPendingDelete(color)} aria-label={`حذف ${color.name}`} className="h-8 min-h-8 w-8 min-w-8"><Trash2 size={14} /></Button></div></TableCell></TableRow>)}</TableBody></TableContent></TableScrollContainer></Table>{!colors.length && <div className="border-t border-slate-100 px-4 py-8 text-center text-xs text-slate-500">هنوز رنگی ثبت نشده است.</div>}</Card>

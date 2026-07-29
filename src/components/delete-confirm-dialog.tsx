@@ -1,6 +1,6 @@
 "use client";
 
-import { Alert, Button, Modal } from "@heroui/react";
+import { Alert, Button, Modal, Spinner } from "@heroui/react";
 import { AlertTriangle, Trash2, X } from "lucide-react";
 
 type Props = {
@@ -68,9 +68,8 @@ export function DeleteConfirmDialog({
           </Modal.Body>
 
           <Modal.Footer className="flex flex-row items-center justify-start gap-2 border-t border-slate-100 bg-slate-50/70 px-5 py-4 sm:px-6">
-            <Button type="button" variant="danger" isDisabled={loading} onPress={onConfirm} className="min-h-11 min-w-28 gap-2 rounded-xl bg-rose-600 px-6 text-sm font-bold text-white shadow-sm hover:bg-rose-700">
-              <Trash2 size={16} />
-              {loading ? "در حال حذف..." : "حذف"}
+            <Button type="button" variant="danger" isPending={loading} onPress={onConfirm} className="min-h-11 min-w-28 gap-2 rounded-xl bg-rose-600 px-6 text-sm font-bold text-white shadow-sm hover:bg-rose-700">
+              {({ isPending }) => <>{isPending ? <Spinner color="current" size="sm" /> : <Trash2 size={16} />}{isPending ? "در حال حذف..." : "حذف"}</>}
             </Button>
             <Button type="button" variant="secondary" isDisabled={loading} onPress={onClose} className="min-h-11 min-w-28 rounded-xl border border-slate-200 bg-white px-6 text-sm font-bold text-slate-600">
               انصراف
