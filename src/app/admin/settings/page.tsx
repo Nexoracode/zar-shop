@@ -6,7 +6,7 @@ export default async function AdminSettingsPage() {
   await requireAdminUser();
   return (
     <>
-      <AdminPageHeader eyebrow="تنظیمات پنل" title="تنظیمات" description="ظاهر و ترجیحات رابط مدیریت را برای تجربه کاری خود تنظیم کنید." />
+      <AdminPageHeader eyebrow="مرکز پیکربندی فروشگاه" title="تنظیمات سایت" description="ساختار، محتوای عمومی و قواعد عملیاتی فروشگاه را در یک محل مدیریت کنید." />
       <AdminSettings />
     </>
   );

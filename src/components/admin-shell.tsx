@@ -4,11 +4,11 @@ import Link from "next/link";
 import { useEffect, useSyncExternalStore, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { Button, Chip, Popover } from "@heroui/react";
-import { Bell, LogOut, ShoppingBag, UserRound } from "lucide-react";
+import { Bell, LogOut, Moon, ShoppingBag, Sun, UserRound } from "lucide-react";
 import { formatDateTime, formatMoney } from "@/lib/format";
 import { userRoleLabels } from "@/modules/admin/labels";
 import type { UserRole } from "@generated/prisma/enums";
-import { getResolvedAdminTheme, subscribeToAdminTheme } from "@/lib/admin-theme";
+import { getResolvedAdminTheme, setAdminThemePreference, subscribeToAdminTheme } from "@/lib/admin-theme";
 
 type AdminUser = { firstName: string | null; lastName: string | null; email: string; role: UserRole };
 
@@ -93,6 +93,10 @@ export function AdminShell({ user, goldPrice, goldFetchedAt, notificationCount, 
                   </Popover.Dialog>
                 </Popover.Content>
               </Popover>
+
+              <Button type="button" isIconOnly variant="ghost" aria-label={theme === "dark" ? "فعال‌کردن حالت روشن" : "فعال‌کردن حالت تاریک"} onPress={() => setAdminThemePreference(theme === "dark" ? "light" : "dark")} className="h-10 min-h-10 w-10 min-w-10 rounded-full border border-[var(--border)] bg-[var(--surface-secondary)] text-[var(--foreground)]">
+                {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
+              </Button>
 
             </div>
 
