@@ -5,7 +5,6 @@ import { Button } from "@heroui/react";
 import { usePathname, useRouter } from "next/navigation";
 import { BadgePercent, Boxes, ChartNoAxesCombined, FolderTree, Images, ListTree, LogOut, Menu, PackageCheck, Palette, Settings, Store, Users, X } from "lucide-react";
 import { useState } from "react";
-import { userRoleLabels } from "@/modules/admin/labels";
 import type { UserRole } from "@generated/prisma/enums";
 import { hasPermission, type AdminPermission } from "@/modules/auth/permissions";
 
@@ -60,7 +59,7 @@ export function AdminSidebar({ user }: Props) {
   })).filter((group) => group.items.length > 0);
 
   const navigation = (
-    <nav aria-label="منوی اصلی مدیریت" className="grid min-h-0 flex-1 content-start overflow-y-auto pl-1">
+    <nav aria-label="منوی اصلی مدیریت" className="admin-sidebar-scroll grid min-h-0 flex-1 content-start overflow-y-auto pl-1">
       {visibleGroups.map((group, groupIndex) => (
         <section key={group.title} aria-labelledby={`admin-nav-${groupIndex}`} className={groupIndex ? "mt-3 border-t border-white/10 pt-3" : ""}>
           <h2 id={`admin-nav-${groupIndex}`} className="mb-1 px-3 text-[10px] font-bold text-white/35">{group.title}</h2>
@@ -82,7 +81,6 @@ export function AdminSidebar({ user }: Props) {
       <aside className="hidden self-start overflow-hidden rounded-[24px] bg-[#172b4d] p-4 text-white shadow-[0_24px_70px_rgba(16,35,62,0.18)] lg:sticky lg:top-5 lg:flex lg:h-[calc(100dvh-2.5rem)] lg:min-h-0 lg:flex-col">
         <div className="mb-5 flex items-center gap-3 border-b border-white/10 px-1 pb-5"><span className="grid h-11 w-11 place-items-center rounded-2xl bg-[#b5904c] font-black shadow-lg">زر</span><div className="min-w-0"><strong className="block text-sm">مدیریت زر گالری</strong><small className="block truncate text-[11px] text-white/50">مرکز عملیات فروشگاه</small></div></div>
         {navigation}
-        <div className="mt-auto border-t border-white/10 pt-4"><div className="mb-3 flex items-center gap-3 px-2"><span className="grid h-9 w-9 place-items-center rounded-full bg-white/10 text-xs font-bold">{fullName.slice(0, 1)}</span><div className="min-w-0"><strong className="block truncate text-xs">{fullName}</strong><span className="block text-[10px] text-white/45">{userRoleLabels[user.role]}</span></div></div><div className="grid grid-cols-2 gap-2"><Link href="/" aria-label="مشاهده فروشگاه" className="grid min-h-10 place-items-center rounded-xl bg-white/8 text-white/65 hover:text-white"><Store size={17} /></Link><Button type="button" onPress={() => void logout()} aria-label="خروج از حساب" isIconOnly variant="ghost" className="min-h-10 w-full rounded-xl bg-white/8 text-rose-200 hover:bg-rose-500/15"><LogOut size={17} /></Button></div></div>
       </aside>
     </>
   );
