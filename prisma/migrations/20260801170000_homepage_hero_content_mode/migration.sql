@@ -1,0 +1,2 @@
+ALTER TABLE `StoreSetting`
+    ADD COLUMN `heroContentMode` VARCHAR(20) NOT NULL DEFAULT 'WITH_CONTENT';

@@ -11,7 +11,7 @@ export default function LoginPage() {
         <AuthForm mode="login" />
         <p className="mt-[18px] mb-0 text-sm">
           حساب ندارید؟{" "}
-          <Link href="/register" className="text-[#785b27] hover:underline">ثبت‌نام کنید</Link>
+          <Link href="/register" className="text-[var(--brand-accent)] hover:underline">ثبت‌نام کنید</Link>
         </p>
       </Card>
     </main>

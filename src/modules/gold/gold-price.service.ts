@@ -6,8 +6,8 @@ import type { GoldPriceProvider, GoldPriceQuote } from "@/modules/gold/gold-pric
 import { validateGoldPriceQuote } from "@/modules/gold/gold-price.types";
 import { fetchNavasanGoldPrice } from "@/modules/gold/navasan-gold-price.provider";
 import { fetchTgjuGoldPrice } from "@/modules/gold/tgju-gold-price.provider";
+import { getCatalogSettings } from "@/modules/settings/catalog-settings";
 
-const MAX_AGE_MS = 2 * 60 * 1000;
 const MAX_SOURCE_AGE_MS = env.GOLD_PRICE_MAX_SOURCE_AGE_MINUTES * 60 * 1000;
 
 async function fetchHttpProvider(): Promise<GoldPriceQuote> {
@@ -82,11 +82,14 @@ async function fetchProviderPrice() {
 }
 
 export async function getGoldPrice(options?: { force?: boolean }) {
+  const settings = await getCatalogSettings();
+  const maxAgeMs = settings.goldPriceCacheSeconds * 1000;
+  const fallbackMaxAgeMs = settings.goldPriceFallbackMinutes * 60_000;
   const cached = await db.goldPrice.findFirst({ orderBy: { fetchedAt: "desc" } });
   const cacheAge = cached ? Date.now() - cached.fetchedAt.getTime() : Number.POSITIVE_INFINITY;
   const cachedIsReal = cached && !["mock", "seed"].includes(cached.source);
 
-  if (!options?.force && cached && cacheAge < MAX_AGE_MS && (env.GOLD_PRICE_PROVIDER === "mock" || cachedIsReal)) {
+  if (!options?.force && cached && cacheAge < maxAgeMs && (env.GOLD_PRICE_PROVIDER === "mock" || cachedIsReal)) {
     return cached;
   }
   try {
@@ -95,6 +98,10 @@ export async function getGoldPrice(options?: { force?: boolean }) {
       data: { pricePerGram18: fresh.pricePerGram18, source: fresh.source, fetchedAt: new Date() },
     });
   } catch (error) {
+    if (cached && cachedIsReal && cacheAge <= fallbackMaxAgeMs) {
+      console.warn("[gold-price] Providers failed; using the most recent controlled fallback rate.");
+      return cached;
+    }
     throw error;
   }
 }

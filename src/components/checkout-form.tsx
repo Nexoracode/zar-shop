@@ -2,8 +2,10 @@
 import { useState } from "react";
 import { Alert, Button, Card, Input, Spinner, TextArea, toast } from "@heroui/react";
 import { BadgePercent } from "lucide-react";
+import { HeroSelectField } from "@/components/hero-select-field";
+import type { CommerceSettings } from "@/modules/settings/commerce-settings";
 
-export function CheckoutForm() {
+export function CheckoutForm({ settings }: { settings: CommerceSettings }) {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -23,7 +25,7 @@ export function CheckoutForm() {
     window.setTimeout(() => window.location.assign(data.redirectUrl), 500);
   }
 
-  const fieldClass = "w-full border border-[#e7e6e2] rounded-sm bg-white px-[13px] py-3 outline-none focus:border-[#b5904c] focus:shadow-[0_0_0_3px_rgba(181,144,76,0.1)]";
+  const fieldClass = "w-full border border-[#e7e6e2] rounded-sm bg-white px-[13px] py-3 outline-none focus:border-[var(--brand-accent)] focus:ring-2 focus:ring-[var(--brand-accent)]/20";
   const labelClass = "text-[#4b5160] text-[0.84rem] font-bold";
 
   return (
@@ -31,6 +33,8 @@ export function CheckoutForm() {
     <Card.Content>
     <form className="grid gap-4 p-1 sm:p-2" onSubmit={submit}>
       <h2 className="m-0 text-lg font-medium">اطلاعات تحویل و فاکتور</h2>
+
+      <HeroSelectField name="deliveryMethod" label="روش تحویل" defaultValue={settings.insuredShippingEnabled ? "INSURED_SHIPPING" : "STORE_PICKUP"} includeEmptyOption={false} options={[...(settings.insuredShippingEnabled ? [{ value: "INSURED_SHIPPING", label: "ارسال بیمه‌شده" }] : []), ...(settings.inStorePickupEnabled ? [{ value: "STORE_PICKUP", label: "تحویل حضوری از فروشگاه" }] : [])]} />
 
       <div className="grid grid-cols-1 gap-[14px] sm:grid-cols-2">
         <div className="grid gap-[7px]">
@@ -72,12 +76,15 @@ export function CheckoutForm() {
 
       {error && <Alert status="danger"><Alert.Description>{error}</Alert.Description></Alert>}
 
+      {!settings.onlinePaymentEnabled && <Alert status="warning"><Alert.Description>پرداخت آنلاین موقتاً توسط فروشگاه غیرفعال شده است.</Alert.Description></Alert>}
+
       <Button
         type="submit"
         fullWidth
         variant="primary"
-        className="min-h-[46px] px-6 py-[9px] inline-flex items-center justify-center bg-[#b5904c] text-white border border-[#b5904c] rounded-sm transition-all hover:-translate-y-[2px] hover:shadow-[0_8px_20px_rgba(20,35,61,0.12)] disabled:opacity-60 disabled:cursor-not-allowed"
+        className="min-h-[46px] px-6 py-[9px] inline-flex items-center justify-center bg-[var(--brand-primary)] text-[var(--brand-primary-foreground)] border border-[var(--brand-primary)] rounded-sm transition-all hover:-translate-y-[2px] hover:brightness-110 hover:shadow-[0_8px_20px_rgba(20,35,61,0.12)] disabled:opacity-60 disabled:cursor-not-allowed"
         isPending={loading}
+        isDisabled={!settings.onlinePaymentEnabled}
       >
         {({ isPending }) => <>{isPending && <Spinner color="current" size="sm" />}{isPending ? "در حال ایجاد سفارش..." : "ثبت سفارش و پرداخت"}</>}
       </Button>

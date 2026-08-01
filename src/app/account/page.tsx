@@ -6,10 +6,15 @@ import { Button, Card, Table, TableBody, TableCell, TableColumn, TableContent, T
 import { AdminStatusBadge } from "@/components/admin-ui";
 import { orderStatusLabels, orderStatusTones } from "@/modules/admin/labels";
 import { getGeneralStoreSettings } from "@/modules/settings/general-settings";
+import { getOrderSettings } from "@/modules/settings/order-settings";
+import { expirePendingOrders } from "@/modules/orders/expiration";
+import { OrderExpiryCountdown } from "@/components/order-expiry-countdown";
+import { SmsConsentPreference } from "@/components/sms-consent-preference";
 
 export default async function AccountPage() {
   const user = await requireUser();
-  const [orders, settings] = await Promise.all([db.order.findMany({ where: { userId: user.id }, orderBy: { createdAt: "desc" }, take: 20 }), getGeneralStoreSettings()]);
+  await expirePendingOrders();
+  const [orders, settings, orderSettings] = await Promise.all([db.order.findMany({ where: { userId: user.id }, orderBy: { createdAt: "desc" }, take: 20 }), getGeneralStoreSettings(), getOrderSettings()]);
   const displayName = user.isGuest ? "خریدار مهمان" : user.firstName ? `${user.firstName} ${user.lastName ?? ""}` : user.email;
 
   return (
@@ -18,7 +23,7 @@ export default async function AccountPage() {
         {/* Panel head */}
         <div className="mb-6 flex flex-col items-start justify-between gap-5 sm:flex-row sm:items-center">
           <div>
-            <span className="inline-block text-[#785b27] text-[0.78rem] font-bold tracking-[0.03em] mb-[5px]">حساب مشتری</span>
+            <span className="inline-block text-[var(--brand-accent)] text-[0.78rem] font-bold tracking-[0.03em] mb-[5px]">حساب مشتری</span>
             <h1 className="mt-0 mb-0">{displayName}</h1>
           </div>
           <form action="/api/auth/logout" method="post">
@@ -43,6 +48,8 @@ export default async function AccountPage() {
           ))}
         </div>
 
+        {!user.isGuest && <SmsConsentPreference initialValue={user.smsMarketingConsent} />}
+
         {/* Orders */}
         <div className="flex items-end justify-between gap-6 mt-[45px] mb-[34px]">
           <h2 className="m-0">سفارش‌های من</h2>
@@ -53,7 +60,7 @@ export default async function AccountPage() {
                 <TableRow id={o.id} key={o.id}>
                   <TableCell className="px-4 py-[14px]">{o.orderNumber}</TableCell>
                   <TableCell className="px-4 py-[14px]">{formatMoney(o.total.toString(), settings.currency)}</TableCell>
-                  <TableCell className="px-4 py-[14px]"><AdminStatusBadge tone={orderStatusTones[o.status]}>{orderStatusLabels[o.status]}</AdminStatusBadge></TableCell>
+                  <TableCell className="px-4 py-[14px]"><AdminStatusBadge tone={orderStatusTones[o.status]}>{orderStatusLabels[o.status]}</AdminStatusBadge>{orderSettings.showOrderCountdown && o.status === "PENDING_PAYMENT" && o.expiresAt ? <OrderExpiryCountdown expiresAt={o.expiresAt.toISOString()} warningMinutes={orderSettings.orderWarningMinutes} /> : null}</TableCell>
                   <TableCell className="px-4 py-[14px]">{formatDate(o.createdAt)}</TableCell>
                 </TableRow>
               ))}

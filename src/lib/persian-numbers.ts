@@ -77,3 +77,10 @@ export function priceToPersianWords(value: string, currency = "ریال") {
   const words = integerToPersianWords(integer);
   return words ? `${words} ${currency}` : "";
 }
+
+export function rialPriceToTomanWords(value: string) {
+  const integer = normalizeNumericValue(value, true).split(".")[0];
+  if (!integer || integer === "-") return "";
+  const toman = (BigInt(integer) / 10n).toString();
+  return priceToPersianWords(toman, "تومان");
+}

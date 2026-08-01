@@ -1,15 +1,14 @@
-import { AdminSettings } from "@/components/admin-settings";
 import { AdminPageHeader } from "@/components/admin-ui";
+import { AdminSettingsNavigation } from "@/components/admin-settings-navigation";
 import { requireAdminUser } from "@/modules/auth/session";
-import { getGeneralStoreSettings } from "@/modules/settings/general-settings";
+import { getStoreIndustry } from "@/modules/settings/store-settings";
 
 export default async function AdminSettingsPage() {
   await requireAdminUser();
-  const settings = await getGeneralStoreSettings();
-  return (
-    <>
-      <AdminPageHeader eyebrow="مرکز پیکربندی فروشگاه" title="تنظیمات سایت" description="ساختار، محتوای عمومی و قواعد عملیاتی فروشگاه را در یک محل مدیریت کنید." />
-      <AdminSettings initialSettings={settings} />
-    </>
-  );
+  const industry = await getStoreIndustry();
+
+  return <>
+    <AdminPageHeader eyebrow="مرکز پیکربندی فروشگاه" title="تنظیمات سایت" description="بخش موردنظر را انتخاب کنید تا تنظیمات آن را در صفحه‌ای مستقل مدیریت کنید." />
+    <AdminSettingsNavigation industry={industry} />
+  </>;
 }

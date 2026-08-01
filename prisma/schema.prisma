@@ -57,16 +57,35 @@ enum MediaType {
 enum MediaScope {
   CATEGORY
   PRODUCT
+  HOMEPAGE
+  BRAND
 }
 
 enum OrderStatus {
   PENDING_PAYMENT
+  EXPIRED
   PAID
   PROCESSING
   SHIPPED
   DELIVERED
   CANCELLED
   REFUNDED
+}
+
+enum OrderExpirationStart {
+  CREATED_AT
+  PAYMENT_STARTED_AT
+}
+
+enum OrderExpirationAction {
+  EXPIRE
+  CANCEL
+  NOTIFY
+}
+
+enum DeliveryMethod {
+  INSURED_SHIPPING
+  STORE_PICKUP
 }
 
 enum PaymentStatus {
@@ -89,25 +108,26 @@ enum AddressType {
 }
 
 model User {
-  id              String     @id @default(cuid())
-  email           String     @unique @db.VarChar(191)
-  phone           String?    @unique @db.VarChar(20)
-  passwordHash    String     @db.VarChar(191)
-  firstName       String?    @db.VarChar(100)
-  lastName        String?    @db.VarChar(100)
-  nationalId      String?    @unique @db.VarChar(20)
-  role            UserRole   @default(CUSTOMER)
-  status          UserStatus @default(ACTIVE)
-  emailVerifiedAt DateTime?
-  lastLoginAt     DateTime?
-  isGuest         Boolean    @default(false)
-  createdAt       DateTime   @default(now())
-  updatedAt       DateTime   @updatedAt
-  addresses       Address[]
-  orders          Order[]
-  cart            Cart?
-  sessions        Session[]
-  auditLogs       AuditLog[] @relation("AuditActor")
+  id                   String                @id @default(cuid())
+  email                String                @unique @db.VarChar(191)
+  phone                String?               @unique @db.VarChar(20)
+  passwordHash         String                @db.VarChar(191)
+  firstName            String?               @db.VarChar(100)
+  lastName             String?               @db.VarChar(100)
+  nationalId           String?               @unique @db.VarChar(20)
+  role                 UserRole              @default(CUSTOMER)
+  status               UserStatus            @default(ACTIVE)
+  emailVerifiedAt      DateTime?
+  lastLoginAt          DateTime?
+  isGuest              Boolean               @default(false)
+  smsMarketingConsent  Boolean               @default(false)
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+  addresses            Address[]
+  orders               Order[]
+  cart                 Cart?
+  sessions             Session[]
+  auditLogs            AuditLog[]            @relation("AuditActor")
   promotionRedemptions PromotionRedemption[]
   promotionRewards     PromotionReward[]
 }
@@ -174,36 +194,37 @@ model Color {
 }
 
 model Product {
-  id             String          @id @default(cuid())
-  sku            String          @unique @db.VarChar(80)
-  name           String          @db.VarChar(191)
-  slug           String          @unique @db.VarChar(191)
-  description    String?         @db.LongText
-  status         ProductStatus   @default(DRAFT)
-  storeIndustry  StoreIndustry   @default(GOLD)
-  categoryId     String?
-  optionGuideId  String?
-  purity         Int             @default(750)
-  weightGrams    Decimal         @db.Decimal(10, 3)
-  makingFeeType  String          @default("PERCENT") @db.VarChar(20)
-  makingFeeValue Decimal         @default(0) @db.Decimal(15, 3)
-  profitPercent  Decimal         @default(7) @db.Decimal(5, 2)
-  taxPercent     Decimal         @default(10) @db.Decimal(5, 2)
-  fixedPrice     Decimal?        @db.Decimal(18, 0)
-  discountType   ProductDiscountType?
-  discountValue  Decimal?        @db.Decimal(18, 3)
+  id               String               @id @default(cuid())
+  sku              String               @unique @db.VarChar(80)
+  name             String               @db.VarChar(191)
+  slug             String               @unique @db.VarChar(191)
+  description      String?              @db.LongText
+  status           ProductStatus        @default(DRAFT)
+  storeIndustry    StoreIndustry        @default(GOLD)
+  categoryId       String?
+  optionGuideId    String?
+  purity           Int                  @default(750)
+  weightGrams      Decimal              @db.Decimal(10, 3)
+  makingFeeType    String               @default("PERCENT") @db.VarChar(20)
+  makingFeeValue   Decimal              @default(0) @db.Decimal(15, 3)
+  profitPercent    Decimal              @default(7) @db.Decimal(5, 2)
+  taxPercent       Decimal              @default(10) @db.Decimal(5, 2)
+  fixedPrice       Decimal?             @db.Decimal(18, 0)
+  discountType     ProductDiscountType?
+  discountValue    Decimal?             @db.Decimal(18, 3)
   discountStartsAt DateTime?
-  discountEndsAt DateTime?
-  stock          Int             @default(0)
-  featured       Boolean         @default(false)
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
-  category       Category?       @relation(fields: [categoryId], references: [id], onDelete: SetNull)
-  optionGuide    MediaAsset?     @relation("ProductOptionGuide", fields: [optionGuideId], references: [id], onDelete: SetNull)
-  options        ProductOption[]
-  media          ProductMedia[]
-  orderItems     OrderItem[]
-  cartItems      CartItem[]
+  discountEndsAt   DateTime?
+  stock            Int                  @default(0)
+  preparationDays  Int                  @default(2)
+  featured         Boolean              @default(false)
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
+  category         Category?            @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  optionGuide      MediaAsset?          @relation("ProductOptionGuide", fields: [optionGuideId], references: [id], onDelete: SetNull)
+  options          ProductOption[]
+  media            ProductMedia[]
+  orderItems       OrderItem[]
+  cartItems        CartItem[]
 
   @@index([categoryId, status])
   @@index([optionGuideId])
@@ -212,24 +233,92 @@ model Product {
 }
 
 model StoreSetting {
-  id                 String        @id @default("main") @db.VarChar(20)
-  industry           StoreIndustry @default(GOLD)
-  storeName          String        @default("زر گالری") @db.VarChar(120)
-  tagline            String        @default("طلا، روایت ماندگار شما") @db.VarChar(191)
-  shortDescription   String        @default("فروش آنلاین زیورآلات طلای ۱۸ عیار با قیمت روز و فاکتور رسمی") @db.VarChar(500)
-  currency           String        @default("IRR") @db.VarChar(3)
-  timezone           String        @default("Asia/Tehran") @db.VarChar(50)
-  supportPhone       String?       @db.VarChar(30)
-  supportEmail       String?       @db.VarChar(191)
-  storeAddress       String?       @db.Text
-  legalIdentifier    String?       @db.VarChar(80)
-  supportHours       String?       @db.VarChar(191)
-  isStoreActive      Boolean       @default(true)
-  guestCheckout      Boolean       @default(true)
-  maintenanceMode    Boolean       @default(false)
-  defaultShippingFee Decimal       @default(0) @db.Decimal(18, 0)
-  createdAt          DateTime      @default(now())
-  updatedAt          DateTime      @updatedAt
+  id                   String        @id @default("main") @db.VarChar(20)
+  industry             StoreIndustry @default(GOLD)
+  storeName            String        @default("زر گالری") @db.VarChar(120)
+  tagline              String        @default("طلا، روایت ماندگار شما") @db.VarChar(191)
+  shortDescription     String        @default("فروش آنلاین زیورآلات طلای ۱۸ عیار با قیمت روز و فاکتور رسمی") @db.VarChar(500)
+  currency             String        @default("IRR") @db.VarChar(3)
+  timezone             String        @default("Asia/Tehran") @db.VarChar(50)
+  supportPhone         String?       @db.VarChar(30)
+  supportEmail         String?       @db.VarChar(191)
+  storeAddress         String?       @db.Text
+  legalIdentifier      String?       @db.VarChar(80)
+  supportHours         String?       @db.VarChar(191)
+  isStoreActive        Boolean       @default(true)
+  guestCheckout        Boolean       @default(true)
+  maintenanceMode      Boolean       @default(false)
+  defaultShippingFee   Decimal       @default(0) @db.Decimal(18, 0)
+  homepageSections     Json?
+  heroContentMode      String        @default("WITH_CONTENT") @db.VarChar(20)
+  heroTitle            String        @default("درخشش ماندگار، انتخابی مطمئن") @db.VarChar(191)
+  heroDescription      String        @default("جدیدترین زیورآلات طلا با قیمت لحظه‌ای") @db.VarChar(500)
+  heroButtonLabel      String        @default("مشاهده محصولات") @db.VarChar(80)
+  heroButtonHref       String        @default("/products") @db.VarChar(500)
+  heroDesktopMediaId   String?
+  heroMobileMediaId    String?
+  promoBannerEnabled   Boolean       @default(false)
+  promoBannerHref      String?       @db.VarChar(500)
+  promoDesktopMediaId  String?
+  promoMobileMediaId   String?
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
+  heroDesktopMedia     MediaAsset?   @relation("HomepageHeroDesktop", fields: [heroDesktopMediaId], references: [id], onDelete: SetNull)
+  heroMobileMedia      MediaAsset?   @relation("HomepageHeroMobile", fields: [heroMobileMediaId], references: [id], onDelete: SetNull)
+  promoDesktopMedia    MediaAsset?   @relation("HomepagePromoDesktop", fields: [promoDesktopMediaId], references: [id], onDelete: SetNull)
+  promoMobileMedia     MediaAsset?   @relation("HomepagePromoMobile", fields: [promoMobileMediaId], references: [id], onDelete: SetNull)
+  brandPrimaryColor    String        @default("#1C3155") @db.VarChar(7)
+  brandAccentColor     String        @default("#B5904C") @db.VarChar(7)
+  brandBackgroundColor String        @default("#F7F6F3") @db.VarChar(7)
+  brandDangerColor     String        @default("#B8423A") @db.VarChar(7)
+  enforceColorContrast Boolean       @default(true)
+  stickyStoreHeader    Boolean       @default(true)
+  compactMobileGrid    Boolean       @default(true)
+  liveGoldPrice        Boolean       @default(true)
+  mainLogoMediaId      String?
+  darkLogoMediaId      String?
+  faviconMediaId       String?
+  socialImageMediaId   String?
+  mainLogoMedia        MediaAsset?   @relation("BrandMainLogo", fields: [mainLogoMediaId], references: [id], onDelete: SetNull)
+  darkLogoMedia        MediaAsset?   @relation("BrandDarkLogo", fields: [darkLogoMediaId], references: [id], onDelete: SetNull)
+  faviconMedia         MediaAsset?   @relation("BrandFavicon", fields: [faviconMediaId], references: [id], onDelete: SetNull)
+  socialImageMedia     MediaAsset?   @relation("BrandSocialImage", fields: [socialImageMediaId], references: [id], onDelete: SetNull)
+  orderExpirationEnabled    Boolean               @default(true)
+  orderExpirationMinutes    Int                   @default(15)
+  orderWarningMinutes       Int                   @default(5)
+  orderExpirationStart      OrderExpirationStart  @default(CREATED_AT)
+  orderExpirationAction     OrderExpirationAction @default(EXPIRE)
+  showOrderCountdown        Boolean               @default(true)
+  releaseReservedInventory  Boolean               @default(true)
+  restorePromotionOnExpiry  Boolean               @default(true)
+  minimumOrderAmount        Decimal               @default(5000000) @db.Decimal(18, 0)
+  orderNumberPrefix         String                @default("ZG") @db.VarChar(10)
+  maxOrderItemQuantity      Int                   @default(5)
+  revalidateGoldAtCheckout  Boolean               @default(true)
+  onlinePaymentEnabled      Boolean               @default(true)
+  freeShippingThreshold     Decimal?              @default(100000000) @db.Decimal(18, 0)
+  preparationDays           Int                   @default(2)
+  insuredShippingEnabled    Boolean               @default(true)
+  inStorePickupEnabled      Boolean               @default(true)
+  calculateShippingAfterAddress Boolean           @default(true)
+  catalogLowStockThreshold Int                    @default(3)
+  catalogPageSize          Int                    @default(24)
+  hideOutOfStockProducts   Boolean                @default(true)
+  showProductStock         Boolean                @default(true)
+  goldPriceRefreshSeconds  Int                    @default(60)
+  goldPriceCacheSeconds    Int                    @default(120)
+  goldPriceFallbackMinutes Int                    @default(15)
+  faqItems              Json?
+  contentPages          Json?
+
+  @@index([heroDesktopMediaId])
+  @@index([heroMobileMediaId])
+  @@index([promoDesktopMediaId])
+  @@index([promoMobileMediaId])
+  @@index([mainLogoMediaId])
+  @@index([darkLogoMediaId])
+  @@index([faviconMediaId])
+  @@index([socialImageMediaId])
 }
 
 model Promotion {
@@ -289,8 +378,8 @@ model PromotionReward {
   createdAt         DateTime              @default(now())
   promotion         Promotion             @relation(fields: [promotionId], references: [id], onDelete: Restrict)
   user              User                  @relation(fields: [userId], references: [id], onDelete: Restrict)
-  sourceOrder        Order                 @relation("PromotionRewardSource", fields: [sourceOrderId], references: [id], onDelete: Restrict)
-  redeemedOrder      Order?                @relation("PromotionRewardRedemption", fields: [redeemedOrderId], references: [id], onDelete: SetNull)
+  sourceOrder       Order                 @relation("PromotionRewardSource", fields: [sourceOrderId], references: [id], onDelete: Restrict)
+  redeemedOrder     Order?                @relation("PromotionRewardRedemption", fields: [redeemedOrderId], references: [id], onDelete: SetNull)
 
   @@unique([promotionId, sourceOrderId])
   @@index([userId, redeemedAt, expiresAt])
@@ -298,22 +387,30 @@ model PromotionReward {
 }
 
 model MediaAsset {
-  id                  String         @id @default(cuid())
-  type                MediaType
-  scope               MediaScope     @default(PRODUCT)
-  url                 String         @db.Text
-  storageKey          String         @unique @db.VarChar(191)
-  title               String?        @db.VarChar(191)
-  alt                 String?        @db.VarChar(191)
-  mimeType            String         @db.VarChar(100)
-  sizeBytes           Int
-  width               Int?
-  height              Int?
-  durationSec         Int?
-  createdAt           DateTime       @default(now())
-  products            ProductMedia[]
-  optionGuideProducts Product[]      @relation("ProductOptionGuide")
-  categories          Category[]     @relation("CategoryImage")
+  id                   String         @id @default(cuid())
+  type                 MediaType
+  scope                MediaScope     @default(PRODUCT)
+  url                  String         @db.Text
+  storageKey           String         @unique @db.VarChar(191)
+  title                String?        @db.VarChar(191)
+  alt                  String?        @db.VarChar(191)
+  mimeType             String         @db.VarChar(100)
+  sizeBytes            Int
+  width                Int?
+  height               Int?
+  durationSec          Int?
+  createdAt            DateTime       @default(now())
+  products             ProductMedia[]
+  optionGuideProducts  Product[]      @relation("ProductOptionGuide")
+  categories           Category[]     @relation("CategoryImage")
+  homepageHeroDesktop  StoreSetting[] @relation("HomepageHeroDesktop")
+  homepageHeroMobile   StoreSetting[] @relation("HomepageHeroMobile")
+  homepagePromoDesktop StoreSetting[] @relation("HomepagePromoDesktop")
+  homepagePromoMobile  StoreSetting[] @relation("HomepagePromoMobile")
+  brandMainLogo        StoreSetting[] @relation("BrandMainLogo")
+  brandDarkLogo        StoreSetting[] @relation("BrandDarkLogo")
+  brandFavicon         StoreSetting[] @relation("BrandFavicon")
+  brandSocialImage     StoreSetting[] @relation("BrandSocialImage")
 
   @@index([scope, createdAt])
 }
@@ -353,6 +450,66 @@ model GoldPrice {
   @@index([fetchedAt])
 }
 
+model PaymentGatewayConfig {
+  id                  String   @id @default(cuid())
+  provider            String   @unique @db.VarChar(40)
+  displayName         String   @db.VarChar(100)
+  credentialEncrypted String   @db.Text
+  credentialMasked    String   @db.VarChar(80)
+  isSandbox           Boolean  @default(false)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@index([updatedAt])
+}
+
+model SmsProviderConfig {
+  id                   String   @id @default(cuid())
+  provider             String   @unique @db.VarChar(40)
+  displayName          String   @db.VarChar(100)
+  credentialsEncrypted String   @db.Text
+  credentialMasked     String   @db.VarChar(80)
+  senderNumber         String   @db.VarChar(40)
+  isActive             Boolean  @default(false)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  @@index([isActive, updatedAt])
+}
+
+model CommunicationSetting {
+  id                    String   @id @default("main")
+  smsEnabled            Boolean  @default(false)
+  inAppEnabled          Boolean  @default(true)
+  adminPhone            String?  @db.VarChar(20)
+  orderCreatedSms       Boolean  @default(false)
+  paymentSuccessSms     Boolean  @default(true)
+  orderShippedSms       Boolean  @default(true)
+  orderExpiredSms       Boolean  @default(false)
+  lowStockAdminSms      Boolean  @default(false)
+  templates             Json?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+}
+
+model SmsCampaign {
+  id              String   @id @default(cuid())
+  actorId         String?  @db.VarChar(191)
+  provider        String   @db.VarChar(40)
+  audience        String   @db.VarChar(50)
+  message         String   @db.Text
+  recipientCount  Int      @default(0)
+  successfulCount Int      @default(0)
+  failedCount     Int      @default(0)
+  status          String   @db.VarChar(30)
+  providerData    Json?
+  errorMessage    String?  @db.Text
+  createdAt       DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([actorId, createdAt])
+}
+
 model Cart {
   id        String     @id @default(cuid())
   userId    String     @unique
@@ -378,55 +535,62 @@ model CartItem {
 }
 
 model Order {
-  id                String      @id @default(cuid())
-  orderNumber       String      @unique @db.VarChar(40)
-  userId            String
-  status            OrderStatus @default(PENDING_PAYMENT)
-  goldPriceSnapshot Decimal     @db.Decimal(18, 0)
-  subtotal          Decimal     @db.Decimal(18, 0)
-  discount          Decimal     @default(0) @db.Decimal(18, 0)
-  productDiscount   Decimal     @default(0) @db.Decimal(18, 0)
-  promotionDiscount Decimal     @default(0) @db.Decimal(18, 0)
-  shipping          Decimal     @default(0) @db.Decimal(18, 0)
-  shippingDiscount  Decimal     @default(0) @db.Decimal(18, 0)
-  tax               Decimal     @default(0) @db.Decimal(18, 0)
-  total             Decimal     @db.Decimal(18, 0)
-  shippingAddress   Json
-  notes             String?     @db.Text
-  createdAt         DateTime    @default(now())
-  updatedAt         DateTime    @updatedAt
-  user              User        @relation(fields: [userId], references: [id])
-  items             OrderItem[]
-  payments          Payment[]
-  invoice           Invoice?
-  promotionRedemptions PromotionRedemption[]
-  issuedPromotionRewards PromotionReward[] @relation("PromotionRewardSource")
-  redeemedPromotionRewards PromotionReward[] @relation("PromotionRewardRedemption")
+  id                       String                @id @default(cuid())
+  orderNumber              String                @unique @db.VarChar(40)
+  userId                   String
+  status                   OrderStatus           @default(PENDING_PAYMENT)
+  goldPriceSnapshot        Decimal               @db.Decimal(18, 0)
+  subtotal                 Decimal               @db.Decimal(18, 0)
+  discount                 Decimal               @default(0) @db.Decimal(18, 0)
+  productDiscount          Decimal               @default(0) @db.Decimal(18, 0)
+  promotionDiscount        Decimal               @default(0) @db.Decimal(18, 0)
+  shipping                 Decimal               @default(0) @db.Decimal(18, 0)
+  shippingDiscount         Decimal               @default(0) @db.Decimal(18, 0)
+  tax                      Decimal               @default(0) @db.Decimal(18, 0)
+  total                    Decimal               @db.Decimal(18, 0)
+  shippingAddress          Json
+  notes                    String?               @db.Text
+  expiresAt                DateTime?
+  expiredAt                DateTime?
+  expirationHandledAt      DateTime?
+  deliveryMethod           DeliveryMethod        @default(INSURED_SHIPPING)
+  preparationDaysSnapshot  Int                   @default(2)
+  estimatedReadyAt         DateTime?
+  createdAt                DateTime              @default(now())
+  updatedAt                DateTime              @updatedAt
+  user                     User                  @relation(fields: [userId], references: [id])
+  items                    OrderItem[]
+  payments                 Payment[]
+  invoice                  Invoice?
+  promotionRedemptions     PromotionRedemption[]
+  issuedPromotionRewards   PromotionReward[]     @relation("PromotionRewardSource")
+  redeemedPromotionRewards PromotionReward[]     @relation("PromotionRewardRedemption")
 
   @@index([userId, createdAt])
   @@index([status, createdAt])
+  @@index([status, expiresAt])
 }
 
 model OrderItem {
-  id              String   @id @default(cuid())
-  orderId         String
-  productId       String?
-  sku             String   @db.VarChar(80)
-  name            String   @db.VarChar(191)
-  selectedOptions Json?
-  storeIndustry    StoreIndustry @default(GOLD)
-  quantity        Int
-  weightGrams     Decimal  @db.Decimal(10, 3)
-  purity          Int
-  makingFee       Decimal  @db.Decimal(18, 0)
-  profit          Decimal  @db.Decimal(18, 0)
-  tax             Decimal  @db.Decimal(18, 0)
-  originalUnitPrice Decimal @default(0) @db.Decimal(18, 0)
-  discountAmount  Decimal  @default(0) @db.Decimal(18, 0)
-  unitPrice       Decimal  @db.Decimal(18, 0)
-  total           Decimal  @db.Decimal(18, 0)
-  order           Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  product         Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+  id                String        @id @default(cuid())
+  orderId           String
+  productId         String?
+  sku               String        @db.VarChar(80)
+  name              String        @db.VarChar(191)
+  selectedOptions   Json?
+  storeIndustry     StoreIndustry @default(GOLD)
+  quantity          Int
+  weightGrams       Decimal       @db.Decimal(10, 3)
+  purity            Int
+  makingFee         Decimal       @db.Decimal(18, 0)
+  profit            Decimal       @db.Decimal(18, 0)
+  tax               Decimal       @db.Decimal(18, 0)
+  originalUnitPrice Decimal       @default(0) @db.Decimal(18, 0)
+  discountAmount    Decimal       @default(0) @db.Decimal(18, 0)
+  unitPrice         Decimal       @db.Decimal(18, 0)
+  total             Decimal       @db.Decimal(18, 0)
+  order             Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product           Product?      @relation(fields: [productId], references: [id], onDelete: SetNull)
 
   @@index([orderId])
 }

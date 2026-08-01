@@ -11,6 +11,8 @@ export default async function NewPromotionPage() {
         eyebrow="بازاریابی و فروش"
         title="پروموشن جدید"
         description="نوع کمپین، شرایط استفاده و بازه اعتبار آن را مشخص کنید."
+        backHref="/admin/promotions"
+        backLabel="بازگشت به پروموشن‌ها"
       />
       <AdminPromotions mode="form" />
     </>

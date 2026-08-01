@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "@heroui/react";
 import { CheckSquare, Loader2 } from "lucide-react";
 import { HeroSelectField, type HeroSelectOption } from "@/components/hero-select-field";
+import { AdminTableRefreshButton } from "@/components/admin-table-refresh";
 
 type BulkContextValue = {
   selected: Set<string>;
@@ -74,6 +75,7 @@ export function AdminBulkEditor({ entity, entityLabel, ids, actions, children }:
             <span className="flex items-center gap-2">{loading ? <Loader2 size={17} className="animate-spin text-[#9a7434]" /> : <CheckSquare size={17} className="text-[#9a7434]" />}{loading ? "در حال اعمال تغییر..." : selected.size ? `${selected.size.toLocaleString("fa-IR")} ${entityLabel} انتخاب شده` : `برای ویرایش سریع، ${entityLabel} را انتخاب کنید`}</span>
           </div>
           <HeroSelectField name={`${entity}-bulk-action`} label="ویرایش سریع" value={action} disabled={!selected.size || loading} onValueChange={(value) => { setAction(value); if (value) void apply(value); }} options={[{ value: "", label: "انتخاب عملیات؛ اعمال خودکار" }, ...actions]} className="w-72" />
+          <AdminTableRefreshButton className="mb-0.5" />
         </div>
         {children}
       </div>

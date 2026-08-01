@@ -2,18 +2,20 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Alert, Button, Input, Spinner, toast } from "@heroui/react";
+import { AdminCheckbox } from "@/components/admin-checkbox";
 
 export function AuthForm({ mode }: { mode: "login" | "register" }) {
   const router = useRouter();
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [smsMarketingConsent, setSmsMarketingConsent] = useState(false);
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setLoading(true);
     setError("");
     const form = new FormData(event.currentTarget);
-    const body = Object.fromEntries(form);
+    const body = { ...Object.fromEntries(form), ...(mode === "register" ? { smsMarketingConsent } : {}) };
     const response = await fetch(`/api/auth/${mode}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -26,7 +28,7 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
     router.refresh();
   }
 
-  const fieldClass = "w-full border border-[#e7e6e2] rounded-sm bg-white px-[13px] py-3 outline-none focus:border-[#b5904c] focus:shadow-[0_0_0_3px_rgba(181,144,76,0.1)]";
+  const fieldClass = "w-full border border-[#e7e6e2] rounded-sm bg-white px-[13px] py-3 outline-none focus:border-[var(--brand-accent)] focus:ring-2 focus:ring-[var(--brand-accent)]/20";
   const labelClass = "text-[#4b5160] text-[0.84rem] font-bold";
 
   return (
@@ -56,6 +58,8 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
         </div>
       )}
 
+      {mode === "register" && <AdminCheckbox isSelected={smsMarketingConsent} onChange={setSmsMarketingConsent} description="برای تخفیف‌ها و خبرهای فروشگاه؛ هر زمان قابل لغو است">مایلم پیامک‌های اطلاع‌رسانی فروشگاه را دریافت کنم</AdminCheckbox>}
+
       <div className="grid gap-[7px]">
         <label htmlFor="password" className={labelClass}>رمز عبور</label>
         <Input id="password" name="password" type="password" dir="ltr" minLength={8} required fullWidth variant="secondary" className={fieldClass} />
@@ -67,7 +71,7 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
         type="submit"
         variant="primary"
         fullWidth
-        className="min-h-[46px] px-6 py-[9px] inline-flex items-center justify-center bg-[#1c3155] text-white border border-[#1c3155] rounded-sm transition-all hover:-translate-y-[2px] hover:shadow-[0_8px_20px_rgba(20,35,61,0.12)] disabled:opacity-60 disabled:cursor-not-allowed"
+        className="min-h-[46px] px-6 py-[9px] inline-flex items-center justify-center bg-[var(--brand-primary)] text-[var(--brand-primary-foreground)] border border-[var(--brand-primary)] rounded-sm transition-all hover:-translate-y-[2px] hover:brightness-110 hover:shadow-[0_8px_20px_rgba(20,35,61,0.12)] disabled:opacity-60 disabled:cursor-not-allowed"
         isPending={loading}
       >
         {({ isPending }) => <>{isPending && <Spinner color="current" size="sm" />}{isPending ? "در حال بررسی..." : mode === "login" ? "ورود امن" : "ساخت حساب"}</>}

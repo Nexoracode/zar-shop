@@ -12,6 +12,10 @@ import type { Prisma } from "@generated/prisma/client";
 import { calculateDiscountedPrice } from "@/modules/products/discount";
 import { PromotionValidationError, resolveCheckoutPromotions } from "@/modules/promotions/service";
 import { getGeneralStoreSettings, isStorefrontAvailable } from "@/modules/settings/general-settings";
+import { getOrderSettings, orderExpiresAt } from "@/modules/settings/order-settings";
+import { expirePendingOrders } from "@/modules/orders/expiration";
+import { baseShippingFee, estimatedReadyAt, getCommerceSettings } from "@/modules/settings/commerce-settings";
+import { sendAutomatedSms } from "@/modules/communications/sms-service";
 
 type ItemWithProduct = Prisma.CartItemGetPayload<{ include: { product: { include: { options: true } } } }>;
 type PriceParts = ReturnType<typeof calculateProductPrice>;
@@ -25,23 +29,28 @@ const addressSchema = z.object({
   postalCode: z.string().min(5).max(20),
   addressLine: z.string().min(10).max(1000),
   couponCode: z.string().trim().max(64).optional().default(""),
+  deliveryMethod: z.enum(["INSURED_SHIPPING", "STORE_PICKUP"]),
 });
 
 export async function POST(request: Request) {
   try {
-    const [user, generalSettings] = await Promise.all([getCurrentUser(), getGeneralStoreSettings()]);
+    await expirePendingOrders();
+    const [user, generalSettings, orderSettings, commerceSettings] = await Promise.all([getCurrentUser(), getGeneralStoreSettings(), getOrderSettings(), getCommerceSettings()]);
     if (!user) return NextResponse.json({ message: "ابتدا وارد حساب شوید." }, { status: 401 });
     if (!isStorefrontAvailable(generalSettings, user.role)) return NextResponse.json({ message: "فروشگاه در حال حاضر امکان ثبت سفارش ندارد." }, { status: 503 });
     if (user.isGuest && !generalSettings.guestCheckout) return NextResponse.json({ message: "برای ادامه خرید وارد حساب شوید." }, { status: 403 });
+    if (!commerceSettings.onlinePaymentEnabled) return NextResponse.json({ message: "پرداخت آنلاین موقتاً غیرفعال است." }, { status: 503 });
     const input = addressSchema.parse(await request.json());
-    const { couponCode, ...address } = input;
+    const { couponCode, deliveryMethod, ...address } = input;
+    if (deliveryMethod === "INSURED_SHIPPING" && !commerceSettings.insuredShippingEnabled) return NextResponse.json({ message: "ارسال بیمه‌شده در حال حاضر فعال نیست." }, { status: 422 });
+    if (deliveryMethod === "STORE_PICKUP" && !commerceSettings.inStorePickupEnabled) return NextResponse.json({ message: "تحویل حضوری در حال حاضر فعال نیست." }, { status: 422 });
     const cart = await db.cart.findUnique({ where: { userId: user.id }, include: { items: { include: { product: { include: { options: true } } } } } });
     if (!cart?.items.length) return NextResponse.json({ message: "سبد خرید خالی است." }, { status: 409 });
     const needsGoldRate = cart.items.some((item) => item.product.storeIndustry === "GOLD");
     let rate = 0;
     if (needsGoldRate) {
       try {
-        const gold = await getGoldPrice({ force: true });
+        const gold = await getGoldPrice({ force: orderSettings.revalidateGoldAtCheckout });
         rate = Number(gold.pricePerGram18);
       } catch (error) {
         console.error("[checkout] Gold price is unavailable; checkout was stopped.", error);
@@ -53,6 +62,7 @@ export async function POST(request: Request) {
     }
     const lines: CheckoutLine[] = cart.items.map((item: ItemWithProduct) => {
       const p = item.product;
+      if (item.quantity > orderSettings.maxOrderItemQuantity) throw new Error(`حداکثر تعداد مجاز برای هر قلم ${orderSettings.maxOrderItemQuantity.toLocaleString("fa-IR")} عدد است.`);
       if (p.status !== "ACTIVE" || p.stock < item.quantity) throw new Error(`موجودی ${p.name} کافی نیست.`);
       if (!isOptionSnapshotValid(p.options, item.selectedOptions, item.quantity, p.stock)) throw new Error(`تنوع انتخاب‌شده برای ${p.name} غیرفعال یا ناموجود است.`);
       const selectedWeight = getSelectedOptionWeight(p.options, item.selectedOptions, Number(p.weightGrams));
@@ -74,20 +84,27 @@ export async function POST(request: Request) {
       return { item, p, parts, originalUnitPrice, discountAmount: pricing.discountAmount, unitPrice, total: unitPrice * item.quantity };
     });
     const merchandiseAmount = lines.reduce((sum: number, line: CheckoutLine) => sum + line.total, 0);
+    if (merchandiseAmount < orderSettings.minimumOrderAmount) return NextResponse.json({ message: `حداقل مبلغ سفارش ${orderSettings.minimumOrderAmount.toLocaleString("fa-IR")} ریال است.` }, { status: 422 });
     const subtotal = lines.reduce((sum: number, line: CheckoutLine) => sum + line.originalUnitPrice * line.item.quantity, 0);
     const productDiscount = lines.reduce((sum: number, line: CheckoutLine) => sum + line.discountAmount * line.item.quantity, 0);
     const tax = lines.reduce((sum: number, line: CheckoutLine) => sum + line.parts.tax * line.item.quantity, 0);
+    const preparationDays = Math.max(...lines.map((line) => line.p.preparationDays));
     const order = await db.$transaction(async (tx) => {
-      const settings = await tx.storeSetting.findUnique({ where: { id: "main" }, select: { defaultShippingFee: true } });
-      const shippingFee = Number(settings?.defaultShippingFee ?? 0);
+      const shippingFee = baseShippingFee(commerceSettings, merchandiseAmount, deliveryMethod);
       const promotions = await resolveCheckoutPromotions(tx, { userId: user.id, couponCode, merchandiseAmount, shippingFee, city: address.city });
       const shipping = Math.max(0, shippingFee - promotions.shippingDiscount);
       const total = merchandiseAmount - promotions.promotionDiscount + shipping;
       if (total <= 0) throw new Error("مبلغ نهایی سفارش معتبر نیست.");
+      const createdAt = new Date();
       const created = await tx.order.create({
         data: {
-          orderNumber: `Z${Date.now()}`,
+          orderNumber: `${orderSettings.orderNumberPrefix}-${Date.now().toString(36).toUpperCase()}-${crypto.randomUUID().slice(0, 6).toUpperCase()}`,
           userId: user.id,
+          createdAt,
+          expiresAt: orderSettings.orderExpirationStart === "CREATED_AT" ? orderExpiresAt(orderSettings, createdAt) : null,
+          deliveryMethod,
+          preparationDaysSnapshot: preparationDays,
+          estimatedReadyAt: estimatedReadyAt(preparationDays, createdAt),
           goldPriceSnapshot: rate,
           subtotal,
           productDiscount,
@@ -124,8 +141,13 @@ export async function POST(request: Request) {
       return created;
     });
     try {
-      const paymentRequest = await getPaymentProvider().request({ amount: Number(order.total), orderId: order.id, callbackUrl: `${env.APP_URL}/api/payment/callback` });
-      await db.payment.create({ data: { orderId: order.id, provider: env.PAYMENT_PROVIDER, authority: paymentRequest.authority, amount: order.total, status: "PENDING" } });
+      const paymentRequest = await getPaymentProvider().request({ amount: Number(order.total), orderId: order.id, callbackUrl: `${env.APP_URL}/api/payment/callback`, description: `پرداخت سفارش ${order.orderNumber}` });
+      await db.$transaction(async (transaction) => {
+        const paymentStartedAt = new Date();
+        await transaction.payment.create({ data: { orderId: order.id, provider: env.PAYMENT_PROVIDER, authority: paymentRequest.authority, amount: order.total, status: "PENDING" } });
+        if (orderSettings.orderExpirationStart === "PAYMENT_STARTED_AT") await transaction.order.update({ where: { id: order.id }, data: { expiresAt: orderExpiresAt(orderSettings, paymentStartedAt) } });
+      });
+      try { await sendAutomatedSms("orderCreated", input.phone, { orderNumber: order.orderNumber }); } catch (smsError) { console.error("[sms] Order-created notification failed.", smsError); }
       return NextResponse.json({ redirectUrl: paymentRequest.redirectUrl });
     } catch (error) {
       await db.$transaction(async (tx) => {
@@ -136,7 +158,7 @@ export async function POST(request: Request) {
     }
   } catch (error) {
     if (error instanceof PromotionValidationError) return NextResponse.json({ message: error.message }, { status: 422 });
-    if (error instanceof Error && (error.message.startsWith("موجودی") || error.message.startsWith("تنوع") || error.message.startsWith("قیمت"))) return NextResponse.json({ message: error.message }, { status: 409 });
+    if (error instanceof Error && (error.message.startsWith("موجودی") || error.message.startsWith("تنوع") || error.message.startsWith("قیمت") || error.message.startsWith("حداکثر تعداد"))) return NextResponse.json({ message: error.message }, { status: 409 });
     return apiError(error);
   }
 }

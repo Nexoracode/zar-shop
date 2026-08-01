@@ -1,0 +1,49 @@
+"use client";
+
+import { useEffect, useState, type FormEvent } from "react";
+import { useRouter } from "next/navigation";
+import { Alert, Button, Card, Chip, Input, TextArea, toast } from "@heroui/react";
+import { Send, Trash2, UserRound, Users } from "lucide-react";
+import { AdminCheckbox } from "@/components/admin-checkbox";
+import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
+import { HeroSelectField } from "@/components/hero-select-field";
+import { adminFieldClass, adminLabelClass } from "@/components/admin-ui";
+import { Table, TableBody, TableCell, TableColumn, TableContent, TableHeader, TableRow, TableScrollContainer } from "@/components/hero";
+import { smsAudienceOptions, type SmsAudience } from "@/modules/communications/sms-audiences";
+
+export type SmsCampaignListItem = { id: string; audience: string; message: string; recipientCount: number; successfulCount: number; failedCount: number; status: string; createdAt: string };
+export function ManualSmsForm() {
+  const router = useRouter();
+  const [mode, setMode] = useState<"AUDIENCE" | "DIRECT">("AUDIENCE"); const [audience, setAudience] = useState<SmsAudience>("ALL_OPTED_IN"); const [phone, setPhone] = useState(""); const [message, setMessage] = useState(""); const [confirmed, setConfirmed] = useState(false); const [count, setCount] = useState<number | null>(null); const [sending, setSending] = useState(false);
+  const phoneIsValid = /^09\d{9}$/.test(phone);
+  useEffect(() => { if (mode !== "AUDIENCE") return; const controller = new AbortController(); fetch(`/api/admin/sms/manual?audience=${audience}`, { signal: controller.signal }).then((response) => response.json()).then((result) => setCount(typeof result.count === "number" ? result.count : 0)).catch(() => undefined); return () => controller.abort(); }, [audience, mode]);
+  async function submit(event: FormEvent) { event.preventDefault(); if (!confirmed) return; setSending(true); try { const body = mode === "DIRECT" ? { mode, phone, message } : { mode, audience, message }; const response = await fetch("/api/admin/sms/manual", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }); const result = await response.json().catch(() => null); if (!response.ok) throw new Error(result?.message ?? "ارسال انجام نشد."); toast.success("ارسال پیامک ثبت شد", { description: `${result.recipientCount.toLocaleString("fa-IR")} گیرنده` }); router.push("/admin/settings/notifications/manual"); router.refresh(); } catch (error) { toast.danger("ارسال انجام نشد", { description: error instanceof Error ? error.message : "خطای ناشناخته" }); } finally { setSending(false); } }
+  return <form onSubmit={submit} dir="rtl"><Card variant="secondary" className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5"><div className="mb-5 flex flex-wrap justify-start gap-2"><Button type="button" variant={mode === "AUDIENCE" ? "primary" : "secondary"} onPress={() => { setMode("AUDIENCE"); setCount(null); setConfirmed(false); }} className="min-h-11 gap-2"><Users size={17} />ارسال گروهی</Button><Button type="button" variant={mode === "DIRECT" ? "primary" : "secondary"} onPress={() => { setMode("DIRECT"); setCount(1); setConfirmed(false); }} className="min-h-11 gap-2"><UserRound size={17} />ارسال به مخاطب خاص</Button></div><div className="grid items-start gap-5 lg:grid-cols-2"><div className="grid gap-4">{mode === "AUDIENCE" ? <><HeroSelectField name="audience" label="گروه مخاطبان" value={audience} onValueChange={(value) => { setCount(null); setAudience(value as SmsAudience); }} options={[...smsAudienceOptions]} /><Alert status="accent"><Alert.Description>{count === null ? "در حال محاسبه مخاطبان..." : `${count.toLocaleString("fa-IR")} کاربر واجد شرایط و دارای رضایت پیامک`}</Alert.Description></Alert></> : <><label className={adminLabelClass}>شماره همراه<Input required inputMode="tel" dir="ltr" pattern="09[0-9]{9}" minLength={11} maxLength={11} value={phone} onChange={(event) => setPhone(event.target.value.replace(/[۰-۹]/g, (digit) => String("۰۱۲۳۴۵۶۷۸۹".indexOf(digit))).replace(/[٠-٩]/g, (digit) => String("٠١٢٣٤٥٦٧٨٩".indexOf(digit))).replace(/\D/g, "").slice(0, 11))} placeholder="09123456789" variant="secondary" className={adminFieldClass} /></label><Alert status={phone && !phoneIsValid ? "danger" : "accent"}><Alert.Description>{phone && !phoneIsValid ? "شماره همراه باید ۱۱ رقم و با 09 شروع شود." : "پیام فقط برای همین شماره همراه ارسال می‌شود."}</Alert.Description></Alert></>}</div><div className="grid gap-4"><label className={adminLabelClass}>متن پیامک<TextArea required minLength={3} maxLength={500} rows={5} value={message} onChange={(event) => setMessage(event.target.value)} variant="secondary" className={adminFieldClass} /></label><AdminCheckbox isSelected={confirmed} onChange={setConfirmed}>{mode === "DIRECT" ? "شماره همراه و متن پیام را بررسی کردم" : "تعداد مخاطبان و متن پیام را بررسی کردم"}</AdminCheckbox><Button type="submit" variant="primary" isPending={sending} isDisabled={!confirmed || !message.trim() || (mode === "DIRECT" ? !phoneIsValid : !count)} className="min-h-11 gap-2"><Send size={16} />ارسال پیامک</Button></div></div></Card></form>;
+}
+
+export function SmsCampaignList({ items }: { items: SmsCampaignListItem[] }) {
+  const [campaigns, setCampaigns] = useState(items);
+  const [pendingDelete, setPendingDelete] = useState<SmsCampaignListItem | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
+
+  async function remove() {
+    if (!pendingDelete || deleting) return;
+    setDeleting(true);
+    setDeleteError("");
+    try {
+      const response = await fetch(`/api/admin/sms/manual?id=${encodeURIComponent(pendingDelete.id)}`, { method: "DELETE" });
+      const result = response.status === 204 ? null : await response.json().catch(() => null);
+      if (!response.ok) throw new Error(result?.message ?? "حذف پیام ناموفق بود.");
+      setCampaigns((current) => current.filter((item) => item.id !== pendingDelete.id));
+      setPendingDelete(null);
+      toast.success("پیام از تاریخچه حذف شد");
+    } catch (error) {
+      setDeleteError(error instanceof Error ? error.message : "حذف پیام ناموفق بود.");
+    } finally {
+      setDeleting(false);
+    }
+  }
+
+  return <><Card variant="secondary" className="overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)]" dir="rtl">{campaigns.length ? <Table><TableScrollContainer><TableContent aria-label="تاریخچه ارسال دستی پیامک" className="w-full min-w-[820px]"><TableHeader>{["متن پیام", "مخاطبان", "موفق", "ناموفق", "وضعیت", "زمان ارسال", "عملیات"].map((head, index) => <TableColumn id={head} key={head} isRowHeader={index === 0} className="bg-[var(--surface-secondary)] px-4 py-3 text-right text-[11px] font-bold text-[var(--muted)]">{head}</TableColumn>)}</TableHeader><TableBody>{campaigns.map((item) => <TableRow id={item.id} key={item.id}><TableCell className="max-w-sm px-4 py-3 align-middle"><p className="m-0 truncate text-sm font-bold">{item.message}</p></TableCell><TableCell className="px-4 py-3 align-middle">{item.recipientCount.toLocaleString("fa-IR")}</TableCell><TableCell className="px-4 py-3 align-middle text-emerald-700">{item.successfulCount.toLocaleString("fa-IR")}</TableCell><TableCell className="px-4 py-3 align-middle text-rose-600">{item.failedCount.toLocaleString("fa-IR")}</TableCell><TableCell className="px-4 py-3 align-middle"><Chip size="sm" variant="soft"><Chip.Label>{item.status === "SENT" ? "ارسال شد" : item.status === "FAILED" ? "ناموفق" : "در حال ارسال"}</Chip.Label></Chip></TableCell><TableCell className="px-4 py-3 align-middle text-xs text-[var(--muted)]">{new Date(item.createdAt).toLocaleString("fa-IR")}</TableCell><TableCell className="px-4 py-3 align-middle"><Button type="button" isIconOnly size="sm" variant="danger-soft" aria-label="حذف پیام از تاریخچه" onPress={() => { setDeleteError(""); setPendingDelete(item); }}><Trash2 size={14} /></Button></TableCell></TableRow>)}</TableBody></TableContent></TableScrollContainer></Table> : <div className="p-12 text-center text-xs text-[var(--muted)]">هنوز ارسال دستی ثبت نشده است.</div>}</Card><DeleteConfirmDialog open={Boolean(pendingDelete)} title="حذف پیام از تاریخچه" itemName={pendingDelete?.message} description="این رکورد فقط از تاریخچه پنل حذف می‌شود و پیامکی که قبلاً ارسال شده قابل بازگردانی یا لغو نیست." error={deleteError} loading={deleting} onClose={() => { if (!deleting) setPendingDelete(null); }} onConfirm={() => void remove()} /></>;
+}

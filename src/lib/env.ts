@@ -23,7 +23,12 @@ const schema = z.object({
   FTP_PASSWORD: z.string().default(""),
   FTP_SECURE: z.enum(["true", "false"]).default("false").transform((value) => value === "true"),
   FTP_PUBLIC_BASE_URL: z.string().default(""),
-  PAYMENT_PROVIDER: z.enum(["mock"]).default("mock"),
+  PAYMENT_PROVIDER: z.enum(["mock", "zarinpal"]).default("mock"),
+  ZARINPAL_MERCHANT_ID: z.string().uuid().optional(),
+  ZARINPAL_SANDBOX: z.enum(["true", "false"]).default("false").transform((value) => value === "true"),
+  CRON_SECRET: z.preprocess((value) => value === "" ? undefined : value, z.string().min(32).optional()),
+}).superRefine((values, context) => {
+  if (values.PAYMENT_PROVIDER === "zarinpal" && !values.ZARINPAL_MERCHANT_ID) context.addIssue({ code: "custom", path: ["ZARINPAL_MERCHANT_ID"], message: "Merchant ID is required for Zarinpal" });
 });
 
 export const env = schema.parse(process.env);

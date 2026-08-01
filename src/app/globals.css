@@ -42,6 +42,18 @@ body {
   line-height: 1.8;
 }
 
+.storefront-shell {
+  min-height: 100dvh;
+  background: var(--brand-background, #f7f6f3);
+  color: var(--foreground);
+}
+
+@media (max-width: 639px) {
+  .storefront-shell[data-compact-mobile-grid="false"] .storefront-product-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+}
+
 @layer base {
   [data-theme="zar"] {
     color-scheme: light;
@@ -314,6 +326,29 @@ img {
 ::view-transition-old(.toast-top):only-child {
   animation: zar-toast-left-out 300ms ease-in;
   animation-fill-mode: forwards;
+}
+
+.admin-sidebar-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(255 255 255 / 18%) transparent;
+  scrollbar-gutter: stable;
+}
+
+.admin-sidebar-scroll::-webkit-scrollbar {
+  width: 5px;
+}
+
+.admin-sidebar-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.admin-sidebar-scroll::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgb(255 255 255 / 18%);
+}
+
+.admin-sidebar-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgb(255 255 255 / 28%);
 }
 
 @media print {

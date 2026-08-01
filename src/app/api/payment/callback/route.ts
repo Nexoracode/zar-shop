@@ -6,11 +6,12 @@ import { decrementSelectedOptionStocks } from "@/modules/products/options";
 import type { PrismaClient } from "@generated/prisma/client";
 import { issueNextPurchaseRewards } from "@/modules/promotions/service";
 import { generalStoreSettingsDefaults } from "@/modules/settings/general-settings";
+import { sendAutomatedSms } from "@/modules/communications/sms-service";
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
-  const authority = url.searchParams.get("authority");
-  const status = url.searchParams.get("status");
+  const authority = url.searchParams.get("Authority") ?? url.searchParams.get("authority");
+  const status = url.searchParams.get("Status") ?? url.searchParams.get("status");
   if (!authority || status !== "OK") {
     if (authority) {
       const cancelled = await db.payment.findUnique({ where: { authority }, select: { id: true, orderId: true, status: true } });
@@ -33,14 +34,24 @@ export async function GET(request: Request) {
   if (payment.status === "SUCCESS") return NextResponse.redirect(`${env.APP_URL}/invoices/${payment.orderId}`);
 
   try {
-    const verified = await getPaymentProvider().verify(authority, Number(payment.amount));
+    const verified = await getPaymentProvider(payment.provider).verify(authority, Number(payment.amount));
     await db.$transaction(async (tx) => {
       const transaction = tx as unknown as PrismaClient;
+      const payable = await transaction.order.updateMany({
+        where: {
+          id: payment.orderId,
+          OR: [
+            { status: "PENDING_PAYMENT" },
+            { status: { in: ["EXPIRED", "CANCELLED"] }, expiredAt: { not: null } },
+          ],
+        },
+        data: { status: "PAID", expiredAt: null },
+      });
+      if (payable.count !== 1) throw new Error("وضعیت سفارش اجازه ثبت پرداخت را نمی‌دهد.");
       await transaction.payment.update({
         where: { id: payment.id },
         data: { status: "SUCCESS", referenceId: verified.referenceId, paidAt: new Date() },
       });
-      await transaction.order.update({ where: { id: payment.orderId }, data: { status: "PAID" } });
       await transaction.promotionReward.updateMany({ where: { redeemedOrderId: payment.orderId, redeemedAt: null }, data: { redeemedAt: new Date() } });
       for (const item of payment.order.items) {
         if (item.productId) {
@@ -91,6 +102,7 @@ export async function GET(request: Request) {
       });
       await transaction.cartItem.deleteMany({ where: { cart: { userId: payment.order.userId } } });
     });
+    try { await sendAutomatedSms("paymentSuccess", (payment.order.shippingAddress as { phone?: string } | null)?.phone, { orderNumber: payment.order.orderNumber }); } catch (smsError) { console.error("[sms] Payment-success notification failed.", smsError); }
     return NextResponse.redirect(`${env.APP_URL}/invoices/${payment.orderId}`);
   } catch {
     await db.$transaction(async (tx) => {

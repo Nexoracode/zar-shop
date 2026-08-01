@@ -23,6 +23,8 @@ export default async function EditPromotionPage({ params }: Context) {
         eyebrow="بازاریابی و فروش"
         title="ویرایش پروموشن"
         description={`شرایط و وضعیت «${promotion.title}» را ویرایش کنید.`}
+        backHref="/admin/promotions"
+        backLabel="بازگشت به پروموشن‌ها"
       />
       <AdminPromotions mode="form" initialEditing={serializePromotion(promotion)} />
     </>

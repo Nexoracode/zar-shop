@@ -14,13 +14,14 @@ const EXTENSIONS: Record<string, string> = {
   "image/jpeg": ".jpg",
   "image/png": ".png",
   "image/webp": ".webp",
+  "image/gif": ".gif",
   "video/mp4": ".mp4",
   "video/webm": ".webm",
   "application/pdf": ".pdf",
 };
 
 function parseScope(value: string | null): MediaScope | null {
-  return value === "CATEGORY" || value === "PRODUCT" ? value : null;
+  return value === "CATEGORY" || value === "PRODUCT" || value === "HOMEPAGE" || value === "BRAND" ? value : null;
 }
 
 export async function GET(request: Request) {
@@ -34,7 +35,7 @@ export async function GET(request: Request) {
   const limit = Number.isFinite(requestedLimit) ? Math.min(Math.max(Math.trunc(requestedLimit), 1), 200) : 100;
   const items = await db.mediaAsset.findMany({
     where: scope ? { scope } : undefined,
-    include: { _count: { select: { products: true, optionGuideProducts: true, categories: true } } },
+    include: { _count: { select: { products: true, optionGuideProducts: true, categories: true, homepageHeroDesktop: true, homepageHeroMobile: true, homepagePromoDesktop: true, homepagePromoMobile: true, brandMainLogo: true, brandDarkLogo: true, brandFavicon: true, brandSocialImage: true } } },
     orderBy: { createdAt: "desc" },
     take: limit,
   });
@@ -54,11 +55,11 @@ export async function POST(request: Request) {
     if (!scope) return NextResponse.json({ message: "بخش گالری مشخص نشده است." }, { status: 422 });
     if (files.length > MAX_FILES) return NextResponse.json({ message: `در هر بار حداکثر ${MAX_FILES.toLocaleString("fa-IR")} فایل قابل بارگذاری است.` }, { status: 422 });
     if (files.reduce((total, file) => total + file.size, 0) > MAX_TOTAL_SIZE) return NextResponse.json({ message: "حجم مجموع فایل‌ها نباید بیشتر از ۱۰۰ مگابایت باشد." }, { status: 422 });
-    if (files.some((file) => !EXTENSIONS[file.type] || file.size > MAX_SIZE || (scope === "CATEGORY" && !file.type.startsWith("image/")))) {
+    if (files.some((file) => !EXTENSIONS[file.type] || file.size > MAX_SIZE || ((scope === "CATEGORY" || scope === "BRAND") && !["image/jpeg", "image/png", "image/webp"].includes(file.type)) || (scope === "HOMEPAGE" && !file.type.startsWith("image/")))) {
       return NextResponse.json({ message: "نوع یا حجم فایل برای این بخش مجاز نیست." }, { status: 422 });
     }
 
-    const folder = scope === "CATEGORY" ? "categories" : "products";
+    const folder = scope === "CATEGORY" ? "categories" : scope === "HOMEPAGE" ? "homepage" : scope === "BRAND" ? "brand" : "products";
     const uploaded: Array<{ file: File; storageKey: string; url: string }> = [];
     try {
       for (const file of files) {

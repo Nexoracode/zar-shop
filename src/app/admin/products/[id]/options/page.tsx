@@ -13,7 +13,7 @@ export default async function ProductOptionsPage({ params }: Context) {
   if (!data) notFound();
 
   return <>
-    <AdminPageHeader eyebrow={`محصول ${data.productSku}`} title={`مدیریت تنوع «${data.productName}»`} description="رنگ، سایز و سایر گزینه‌های قابل انتخاب این محصول را در این صفحه مدیریت کنید." />
+    <AdminPageHeader eyebrow={`محصول ${data.productSku}`} title={`مدیریت تنوع «${data.productName}»`} description="رنگ، سایز و سایر گزینه‌های قابل انتخاب این محصول را در این صفحه مدیریت کنید." backHref="/admin/products" backLabel="بازگشت به محصولات" />
     <ProductOptionsForm productId={data.productId} productStock={data.productStock} storeIndustry={data.storeIndustry} colors={data.colors} initialOptions={data.initialOptions} />
   </>;
 }

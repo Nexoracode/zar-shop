@@ -12,7 +12,7 @@ export default async function NewProduct() {
   ]);
   return (
     <>
-      <AdminPageHeader eyebrow="مدیریت کاتالوگ" title="ثبت محصول جدید" description="اطلاعات فنی، قیمت‌گذاری، موجودی و تصاویر محصول را تکمیل کنید." />
+      <AdminPageHeader eyebrow="مدیریت کاتالوگ" title="ثبت محصول جدید" description="اطلاعات فنی، قیمت‌گذاری، موجودی و تصاویر محصول را تکمیل کنید." backHref="/admin/products" backLabel="بازگشت به محصولات" />
       <ProductForm storeIndustry={storeIndustry} categories={categories.map((category) => ({ id: category.id, name: category.name, parentName: category.parent?.name ?? null }))} />
     </>
   );

@@ -2,7 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Prisma } from "@generated/prisma/client";
-import { ArrowRight, CalendarDays, CreditCard, FileText, MapPin, Package, UserRound } from "lucide-react";
+import { CalendarDays, CreditCard, FileText, MapPin, Package, Truck, UserRound } from "lucide-react";
 import { AdminPageHeader, AdminPanel, AdminStatusBadge } from "@/components/admin-ui";
 import { db } from "@/lib/db";
 import { formatDateTime, formatMoney } from "@/lib/format";
@@ -85,22 +85,22 @@ export default async function OrderDetailsPage({ params }: { params: PageParams 
 
   return (
     <>
-      <Link href="/admin/orders" className="mb-4 inline-flex items-center gap-2 text-sm font-bold text-slate-500 transition hover:text-[#172b4d]">
-        <ArrowRight size={17} /> بازگشت به سفارش‌ها
-      </Link>
-
       <AdminPageHeader
         eyebrow="جزئیات سفارش"
         title={`سفارش ${order.orderNumber}`}
         description="اطلاعات خریدار، اقلام سفارش، پرداخت و فاکتور را در این صفحه بررسی کنید."
+        backHref="/admin/orders"
+        backLabel="بازگشت به سفارش‌ها"
         action={<AdminStatusBadge tone={orderStatusTones[order.status]}>{orderStatusLabels[order.status]}</AdminStatusBadge>}
       />
 
-      <section className="mb-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <section className="mb-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
         <AdminPanel className="p-4"><span className="mb-2 flex items-center gap-2 text-xs text-slate-400"><CreditCard size={16} /> مبلغ نهایی</span><strong className="text-base text-[#17233b]">{formatMoney(order.total.toString())}</strong></AdminPanel>
         <AdminPanel className="p-4"><span className="mb-2 flex items-center gap-2 text-xs text-slate-400"><Package size={16} /> تعداد اقلام</span><strong className="text-base text-[#17233b]">{itemsCount.toLocaleString("fa-IR")} عدد</strong></AdminPanel>
         <AdminPanel className="p-4"><span className="mb-2 flex items-center gap-2 text-xs text-slate-400"><CalendarDays size={16} /> تاریخ ثبت</span><strong className="text-sm text-[#17233b]">{formatDateTime(order.createdAt)}</strong></AdminPanel>
         <AdminPanel className="p-4"><span className="mb-2 flex items-center gap-2 text-xs text-slate-400"><CreditCard size={16} /> تاریخ پرداخت</span><strong className="text-sm text-[#17233b]">{successfulPayment?.paidAt ? formatDateTime(successfulPayment.paidAt) : "هنوز پرداخت نشده"}</strong></AdminPanel>
+        <AdminPanel className="p-4"><span className="mb-2 flex items-center gap-2 text-xs text-slate-400"><Truck size={16} /> روش تحویل</span><strong className="text-sm text-[#17233b]">{order.deliveryMethod === "STORE_PICKUP" ? "تحویل حضوری" : "ارسال بیمه‌شده"}</strong></AdminPanel>
+        <AdminPanel className="p-4"><span className="mb-2 flex items-center gap-2 text-xs text-slate-400"><CalendarDays size={16} /> آماده‌سازی تخمینی</span><strong className="text-sm text-[#17233b]">{order.estimatedReadyAt ? formatDateTime(order.estimatedReadyAt) : `${order.preparationDaysSnapshot.toLocaleString("fa-IR")} روز`}</strong></AdminPanel>
       </section>
 
       <div className="grid items-stretch gap-5 lg:grid-cols-2 xl:grid-cols-12">

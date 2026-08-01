@@ -7,17 +7,18 @@ import { Alert, Button, Card, Input, Spinner, toast } from "@heroui/react";
 import { AdminEmptyState, adminFieldClass, adminLabelClass } from "@/components/admin-ui";
 import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
 
-export type MediaScope = "CATEGORY" | "PRODUCT";
+export type MediaScope = "CATEGORY" | "PRODUCT" | "HOMEPAGE" | "BRAND";
 export type MediaChoice = {
   id: string;
   title: string;
   url: string;
   type: "IMAGE" | "VIDEO" | "DOCUMENT";
+  mimeType?: string;
 };
 
 type MediaItem = MediaChoice & {
   storageKey: string;
-  _count: { products: number; optionGuideProducts: number; categories: number };
+  _count: { products: number; optionGuideProducts: number; categories: number; homepageHeroDesktop: number; homepageHeroMobile: number; homepagePromoDesktop: number; homepagePromoMobile: number; brandMainLogo: number; brandDarkLogo: number; brandFavicon: number; brandSocialImage: number };
 };
 
 const fieldClass = adminFieldClass;
@@ -101,17 +102,17 @@ export function MediaLibrary() {
   return (
     <div className="grid gap-6">
       <div className="flex w-fit max-w-full justify-self-start gap-1 overflow-hidden rounded-2xl border border-slate-200 bg-white p-1.5 shadow-sm">
-        {(["CATEGORY", "PRODUCT"] as const).map((value) => (
+        {(["CATEGORY", "PRODUCT", "HOMEPAGE", "BRAND"] as const).map((value) => (
           <Button key={value} type="button" onPress={() => { setLoading(true); setMessage(""); setScope(value); }} variant={scope === value ? "primary" : "ghost"} className={`min-h-11 shrink-0 rounded-xl px-4 text-sm font-bold ${scope === value ? "bg-slate-900 text-white shadow-sm" : "text-slate-600"}`}>
-            {value === "CATEGORY" ? "تصاویر دسته‌بندی" : "رسانه محصولات"}
+            {value === "CATEGORY" ? "تصاویر دسته‌بندی" : value === "HOMEPAGE" ? "تصاویر صفحه اصلی" : value === "BRAND" ? "هویت بصری" : "رسانه محصولات"}
           </Button>
         ))}
       </div>
 
       <form onSubmit={upload} className="grid gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] sm:items-end sm:p-5">
         <label className={adminLabelClass}>
-          {scope === "CATEGORY" ? "تصویر دسته‌بندی" : "تصویر، ویدیو یا PDF محصول"}
-          <Input name="file" type="file" multiple required fullWidth variant="secondary" accept={scope === "CATEGORY" ? "image/jpeg,image/png,image/webp" : "image/jpeg,image/png,image/webp,video/mp4,video/webm,application/pdf"} className={fieldClass} />
+          {scope === "CATEGORY" ? "تصویر دسته‌بندی" : scope === "HOMEPAGE" ? "تصویر صفحه اصلی" : scope === "BRAND" ? "لوگو و تصویر برند" : "تصویر، ویدیو یا PDF محصول"}
+          <Input name="file" type="file" multiple required fullWidth variant="secondary" accept={scope === "PRODUCT" ? "image/jpeg,image/png,image/webp,video/mp4,video/webm,application/pdf" : scope === "HOMEPAGE" ? "image/jpeg,image/png,image/webp,image/gif" : "image/jpeg,image/png,image/webp"} className={fieldClass} />
         </label>
         <label className={adminLabelClass}>عنوان فایل<Input name="title" fullWidth variant="secondary" className={fieldClass} placeholder="مثلاً نمای روبه‌روی محصول" /></label>
         <Button type="submit" isPending={uploading} variant="primary" className="min-h-[46px] gap-2 rounded-xl bg-amber-600 px-6 text-sm font-bold text-white">
@@ -126,11 +127,11 @@ export function MediaLibrary() {
       {loading ? <div className="rounded-2xl border border-slate-200 bg-white py-14 text-center text-sm text-slate-500">در حال دریافت گالری...</div> : filteredItems.length ? (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
           {filteredItems.map((item) => {
-            const usage = item._count.products + item._count.optionGuideProducts + item._count.categories;
+            const usage = item._count.products + item._count.optionGuideProducts + item._count.categories + item._count.homepageHeroDesktop + item._count.homepageHeroMobile + item._count.homepagePromoDesktop + item._count.homepagePromoMobile + item._count.brandMainLogo + item._count.brandDarkLogo + item._count.brandFavicon + item._count.brandSocialImage;
             return (
               <Card key={item.id} variant="secondary" className="min-w-0 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
                 <div className="relative aspect-square bg-[#f5f3ee]">
-                  {item.type === "IMAGE" ? <Image src={item.url} alt={item.title} fill sizes="(max-width:640px) 50vw, 25vw" className="object-cover" /> : item.type === "VIDEO" ? <video src={item.url} controls className="h-full w-full bg-black object-cover" /> : <a href={item.url} target="_blank" rel="noreferrer" className="grid h-full place-items-center text-slate-500"><span className="grid justify-items-center gap-2 text-xs font-bold"><FileText size={38} className="text-[#9a7434]" />فایل PDF</span></a>}
+                  {item.type === "IMAGE" ? <Image src={item.url} alt={item.title} fill unoptimized={item.mimeType === "image/gif"} sizes="(max-width:640px) 50vw, 25vw" className="object-cover" /> : item.type === "VIDEO" ? <video src={item.url} controls className="h-full w-full bg-black object-cover" /> : <a href={item.url} target="_blank" rel="noreferrer" className="grid h-full place-items-center text-slate-500"><span className="grid justify-items-center gap-2 text-xs font-bold"><FileText size={38} className="text-[#9a7434]" />فایل PDF</span></a>}
                 </div>
                 <div className="grid gap-2 p-3">
                   <strong className="truncate text-xs">{item.title}</strong>

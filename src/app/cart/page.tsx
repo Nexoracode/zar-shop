@@ -10,6 +10,7 @@ import type { Prisma } from "@generated/prisma/client";
 import { getSelectedOptionPrice, getSelectedOptionWeight, optionEntries } from "@/modules/products/options";
 import { calculateDiscountedPrice } from "@/modules/products/discount";
 import { getGeneralStoreSettings } from "@/modules/settings/general-settings";
+import { getCommerceSettings } from "@/modules/settings/commerce-settings";
 
 type CartItemRow = Prisma.CartItemGetPayload<{ include: { product: { include: { options: true } } } }>;
 
@@ -17,10 +18,11 @@ export const dynamic = "force-dynamic";
 
 export default async function CartPage() {
   const user = await requireUser();
-  const [cart, gold, settings] = await Promise.all([
+  const [cart, gold, settings, commerceSettings] = await Promise.all([
     db.cart.findUnique({ where: { userId: user.id }, include: { items: { include: { product: { include: { options: true } } } } } }),
     getGoldPriceForDisplay(),
     getGeneralStoreSettings(),
+    getCommerceSettings(),
   ]);
   const items = (cart?.items ?? []) as CartItemRow[];
   const rate = gold ? Number(gold.pricePerGram18) : null;
@@ -38,6 +40,7 @@ export default async function CartPage() {
   const total = itemAmounts.some((amount) => amount === null)
     ? null
     : itemAmounts.reduce<number>((sum, amount, index) => sum + Number(amount) * items[index].quantity, 0);
+  const preparationDays = items.length ? Math.max(...items.map((item) => item.product.preparationDays)) : 0;
 
   return (
     <main className="px-5 py-12 sm:px-6 sm:py-[86px]">
@@ -45,7 +48,7 @@ export default async function CartPage() {
         {/* Panel head */}
         <div className="flex justify-between items-center gap-5 mb-6">
           <div>
-            <span className="inline-block text-[#785b27] text-[0.78rem] font-bold tracking-[0.03em] mb-[5px]">خرید امن</span>
+            <span className="inline-block text-[var(--brand-accent)] text-[0.78rem] font-bold tracking-[0.03em] mb-[5px]">خرید امن</span>
             <h1 className="mt-0 mb-0">سبد خرید</h1>
           </div>
           {hasGoldItems && <ChipRoot variant="soft" className="bg-[#efe5d1] text-[#785b27]"><ChipLabel>نرخ مبنا: {rate === null ? "موقتاً در دسترس نیست" : formatMoney(rate, settings.currency)}</ChipLabel></ChipRoot>}
@@ -55,7 +58,7 @@ export default async function CartPage() {
           <Card variant="secondary" className="py-12 text-center border border-[#e7e6e2] bg-white text-[#747982]">
             سبد خرید خالی است.
             <br />
-            <Link href="/products" className="min-h-[46px] mt-4 px-6 py-[9px] inline-flex items-center justify-center border border-[#17233b] rounded-sm transition-all hover:-translate-y-[2px]">
+            <Link href="/products" className="min-h-[46px] mt-4 px-6 py-[9px] inline-flex items-center justify-center border border-[var(--brand-primary)] text-[var(--brand-primary)] rounded-sm transition-all hover:-translate-y-[2px]">
               مشاهده محصولات
             </Link>
           </Card>
@@ -90,7 +93,7 @@ export default async function CartPage() {
             {total === null ? (
               <AlertRoot status="warning" className="self-start"><AlertDescription>نرخ لحظه‌ای طلا موقتاً در دسترس نیست. سبد خرید شما حفظ شده است و پس از برقراری سرویس می‌توانید پرداخت را ادامه دهید.</AlertDescription></AlertRoot>
             ) : (
-              <CheckoutForm />
+              <div className="grid self-start gap-3"><Card variant="secondary" className="rounded-xl border border-[var(--brand-accent)]/20 bg-white p-3 text-xs text-[#606774]"><p className="m-0">هزینه ارسال پس از دریافت نشانی و بر اساس وزن مرسوله محاسبه می‌شود.</p><p className="mb-0 mt-2 text-[11px]">زمان آماده‌سازی سفارش: {preparationDays.toLocaleString("fa-IR")} روز</p></Card><CheckoutForm settings={commerceSettings} /></div>
             )}
           </div>
         )}
