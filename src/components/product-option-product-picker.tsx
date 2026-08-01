@@ -112,7 +112,7 @@ export function ProductOptionProductPicker() {
   return (
     <div className="grid items-start gap-5 lg:grid-cols-[340px_minmax(0,1fr)]">
       <aside className="min-w-0 lg:sticky lg:top-24">
-        <Card variant="secondary" className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm">
+        <Card variant="secondary" className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm lg:min-h-[420px]">
           <Card.Content className="p-4">
             <div className="mb-4 flex items-start gap-3 border-b border-slate-100 pb-4">
               <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-violet-50 text-violet-700"><PackageSearch size={20} /></span>
