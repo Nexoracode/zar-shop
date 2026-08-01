@@ -45,9 +45,9 @@ export function PaymentGatewayManager({ initialConfigs }: { initialConfigs: Publ
   return <div className="grid gap-5" dir="rtl">
     <Card variant="secondary" className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 shadow-sm">
       <div className="mb-4"><h2 className="m-0 text-base font-black">درگاه‌های پیشنهادی</h2><p className="mb-0 mt-1 text-xs text-[var(--muted)]">درگاه موردنظر را انتخاب کنید تا راهنمای دریافت شناسه آن نمایش داده شود.</p></div>
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">{gatewayProviders.map((provider) => {
+      <div className="flex flex-wrap items-stretch justify-start gap-2">{gatewayProviders.map((provider) => {
         const configured = configs.some((config) => config.provider === provider.id);
-        return <Button key={provider.id} type="button" variant={selectedId === provider.id ? "primary" : "secondary"} onPress={() => { setSelectedId(provider.id); setCredential(""); setIsSandbox(false); }} className="h-auto min-h-20 justify-start gap-3 px-4 py-3 text-right">
+        return <Button key={provider.id} type="button" variant={selectedId === provider.id ? "primary" : "secondary"} onPress={() => { setSelectedId(provider.id); setCredential(""); setIsSandbox(false); }} className="h-auto min-h-20 w-full justify-start gap-3 px-4 py-3 text-right sm:w-52">
           <span className={`grid size-10 shrink-0 place-items-center rounded-xl ${selectedId === provider.id ? "bg-white/15" : "bg-[var(--accent)]/10 text-[var(--accent)]"}`}><CreditCard size={19} /></span>
           <span className="min-w-0"><strong className="block text-sm">{provider.name}</strong><span className="mt-1 block text-[10px] opacity-75">{configured ? "قبلاً ثبت شده" : "قابل افزودن"}</span></span>
         </Button>;
