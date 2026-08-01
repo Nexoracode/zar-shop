@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { ProductForm } from "@/components/product-form";
 import { db } from "@/lib/db";
-import { AdminBackLink, AdminPageHeader } from "@/components/admin-ui";
+import { AdminPageHeader } from "@/components/admin-ui";
 import { requirePermission } from "@/modules/auth/session";
 import { parseOptionValues } from "@/modules/products/options";
 import { formatTehranDateInput } from "@/modules/products/discount";
@@ -26,7 +26,7 @@ export default async function EditProductPage({ params }: Context) {
 
   return (
     <>
-      <AdminPageHeader eyebrow="مدیریت کاتالوگ" title={`ویرایش «${product.name}»`} description="اطلاعات، قیمت‌گذاری، موجودی و گالری این محصول را به‌روزرسانی کنید." action={<AdminBackLink href="/admin/products">بازگشت به محصولات</AdminBackLink>} />
+      <AdminPageHeader eyebrow="مدیریت کاتالوگ" title={`ویرایش «${product.name}»`} description="اطلاعات، قیمت‌گذاری، موجودی و گالری این محصول را به‌روزرسانی کنید." backHref="/admin/products" backLabel="بازگشت به محصولات" />
       <ProductForm
         storeIndustry={product.storeIndustry}
         categories={categories.map((category) => ({ id: category.id, name: category.name, parentName: category.parent?.name ?? null }))}

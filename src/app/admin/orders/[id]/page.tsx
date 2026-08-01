@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Prisma } from "@generated/prisma/client";
 import { CalendarDays, CreditCard, FileText, MapPin, Package, Truck, UserRound } from "lucide-react";
-import { AdminBackLink, AdminPageHeader, AdminPanel, AdminStatusBadge } from "@/components/admin-ui";
+import { AdminPageHeader, AdminPanel, AdminStatusBadge } from "@/components/admin-ui";
 import { db } from "@/lib/db";
 import { formatDateTime, formatMoney } from "@/lib/format";
 import {
@@ -85,12 +85,12 @@ export default async function OrderDetailsPage({ params }: { params: PageParams 
 
   return (
     <>
-      <div className="mb-4"><AdminBackLink href="/admin/orders">بازگشت به سفارش‌ها</AdminBackLink></div>
-
       <AdminPageHeader
         eyebrow="جزئیات سفارش"
         title={`سفارش ${order.orderNumber}`}
         description="اطلاعات خریدار، اقلام سفارش، پرداخت و فاکتور را در این صفحه بررسی کنید."
+        backHref="/admin/orders"
+        backLabel="بازگشت به سفارش‌ها"
         action={<AdminStatusBadge tone={orderStatusTones[order.status]}>{orderStatusLabels[order.status]}</AdminStatusBadge>}
       />
 

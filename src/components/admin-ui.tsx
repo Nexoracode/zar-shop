@@ -19,10 +19,11 @@ export function AdminStatusBadge({ children, tone = "neutral" }: { children: Rea
   return <Chip size="sm" variant="soft" className={`font-bold ring-1 ring-inset ${tones[tone]}`}><Chip.Label>{children}</Chip.Label></Chip>;
 }
 
-export function AdminPageHeader({ eyebrow, title, description, action }: { eyebrow?: string; title: string; description: string; action?: ReactNode }) {
+export function AdminPageHeader({ eyebrow, title, description, action, backHref, backLabel = "بازگشت" }: { eyebrow?: string; title: string; description: string; action?: ReactNode; backHref?: string; backLabel?: string }) {
   return (
     <header className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
       <div className="min-w-0">
+        {backHref && <Link href={backHref} className="mb-4 inline-flex items-center gap-2 text-sm font-bold text-[var(--muted)] transition hover:text-[var(--foreground)]"><ChevronRight size={17} />{backLabel}</Link>}
         {eyebrow && <span className="mb-1 block text-xs font-bold text-[var(--warning)]">{eyebrow}</span>}
         <h1 className="m-0 text-2xl font-black tracking-[-0.02em] text-[var(--foreground)] sm:text-3xl">{title}</h1>
         <p className="mb-0 mt-1 max-w-2xl text-sm text-[var(--muted)]">{description}</p>
@@ -34,10 +35,6 @@ export function AdminPageHeader({ eyebrow, title, description, action }: { eyebr
 
 export function AdminPrimaryLink({ href, children }: { href: string; children: ReactNode }) {
   return <Link href={href} className={buttonVariants({ variant: "primary", size: "md", className: "min-h-11 gap-2 rounded-xl bg-[var(--accent)] px-5 text-sm font-bold text-[var(--accent-foreground)] shadow-sm hover:bg-[var(--accent-hover)]" })}>{children}<ChevronLeft size={16} /></Link>;
-}
-
-export function AdminBackLink({ href, children }: { href: string; children: ReactNode }) {
-  return <Link href={href} className={buttonVariants({ variant: "secondary", size: "md", className: "min-h-11 gap-2 rounded-xl border border-[var(--border)] bg-[var(--surface)] px-4 text-sm font-bold text-[var(--foreground)]" })}><ChevronRight size={16} />{children}</Link>;
 }
 
 export function AdminPanel({ children, className = "" }: { children: ReactNode; className?: string }) {

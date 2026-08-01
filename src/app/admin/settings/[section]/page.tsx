@@ -11,7 +11,7 @@ import {
   OrderSettings,
   SeoSettings,
 } from "@/components/admin-settings";
-import { AdminBackLink, AdminPageHeader } from "@/components/admin-ui";
+import { AdminPageHeader } from "@/components/admin-ui";
 import { requireAdminUser } from "@/modules/auth/session";
 import { getBrandSettings } from "@/modules/settings/brand-settings";
 import { getCatalogSettings } from "@/modules/settings/catalog-settings";
@@ -77,7 +77,7 @@ export default async function AdminSettingSectionPage({ params }: Context) {
   }
 
   return <>
-    <AdminPageHeader eyebrow="تنظیمات سایت" title={meta.title} description={meta.description} action={<AdminBackLink href="/admin/settings">بازگشت به تنظیمات</AdminBackLink>} />
+    <AdminPageHeader eyebrow="تنظیمات سایت" title={meta.title} description={meta.description} backHref="/admin/settings" backLabel="بازگشت به تنظیمات" />
     {content}
   </>;
 }
