@@ -6,6 +6,11 @@ test("accepts complete general store settings", () => {
   assert.equal(generalStoreSettingsSchema.parse(generalStoreSettingsDefaults).storeName, "زر گالری");
 });
 
+test("accepts gold and general store industries", () => {
+  assert.equal(generalStoreSettingsSchema.parse({ ...generalStoreSettingsDefaults, industry: "GOLD" }).industry, "GOLD");
+  assert.equal(generalStoreSettingsSchema.parse({ ...generalStoreSettingsDefaults, industry: "GENERAL" }).industry, "GENERAL");
+});
+
 test("normalizes optional general values", () => {
   const result = generalStoreSettingsSchema.parse({ ...generalStoreSettingsDefaults, supportEmail: "", storeAddress: "" });
   assert.equal(result.supportEmail, null);

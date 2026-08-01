@@ -60,6 +60,7 @@ export function AdminSettings({ initialSettings, initialHomepageSettings, initia
 
 function GeneralSettings({ initialSettings }: { initialSettings: GeneralStoreSettingsInput }) {
   const [saving, setSaving] = useState(false);
+  const [industry, setIndustry] = useState<"GOLD" | "GENERAL">(initialSettings.industry);
   const [isStoreActive, setIsStoreActive] = useState(initialSettings.isStoreActive);
   const [guestCheckout, setGuestCheckout] = useState(initialSettings.guestCheckout);
   const [maintenanceMode, setMaintenanceMode] = useState(initialSettings.maintenanceMode);
@@ -72,7 +73,7 @@ function GeneralSettings({ initialSettings }: { initialSettings: GeneralStoreSet
       const response = await fetch("/api/admin/settings/general", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...values, isStoreActive, guestCheckout, maintenanceMode }),
+        body: JSON.stringify({ ...values, industry, isStoreActive, guestCheckout, maintenanceMode }),
       });
       const result = await response.json().catch(() => null);
       if (!response.ok) throw new Error(result?.message ?? "ذخیره تنظیمات عمومی انجام نشد.");
@@ -85,6 +86,13 @@ function GeneralSettings({ initialSettings }: { initialSettings: GeneralStoreSet
   }
 
   return <form onSubmit={submit} className="grid gap-5"><SettingsGrid>
+    <SettingCard icon={<Boxes size={19} />} title="صنف فروشگاه" description="نوع اطلاعات و روش قیمت‌گذاری محصولات را تعیین می‌کند" className="lg:col-span-2">
+      <div className="flex flex-col items-stretch gap-2 sm:flex-row sm:items-stretch sm:justify-start">
+        <Button type="button" variant={industry === "GOLD" ? "primary" : "secondary"} onPress={() => setIndustry("GOLD")} className="h-auto min-h-24 w-full justify-start gap-3 overflow-hidden whitespace-normal p-4 text-right sm:w-80"><span className="grid size-11 shrink-0 place-items-center rounded-xl bg-amber-100 text-amber-700"><Sparkles size={20} /></span><span className="min-w-0 flex-1"><strong className="block text-sm">طلا و جواهر</strong><small className="mt-1 block whitespace-normal break-words leading-5 opacity-75">قیمت روز طلا، وزن، عیار، اجرت، سود و مالیات</small></span></Button>
+        <Button type="button" variant={industry === "GENERAL" ? "primary" : "secondary"} onPress={() => setIndustry("GENERAL")} className="h-auto min-h-24 w-full justify-start gap-3 overflow-hidden whitespace-normal p-4 text-right sm:w-80"><span className="grid size-11 shrink-0 place-items-center rounded-xl bg-blue-100 text-blue-700"><Store size={20} /></span><span className="min-w-0 flex-1"><strong className="block text-sm">فروشگاه محصولات معمولی</strong><small className="mt-1 block whitespace-normal break-words leading-5 opacity-75">قیمت مستقیم محصول و قیمت مستقل برای هر تنوع</small></span></Button>
+      </div>
+      <Alert status="warning"><Alert.Description>این انتخاب روی فرم محصولات جدید اثر می‌گذارد. روش قیمت‌گذاری محصولات قبلی برای حفظ سفارش‌ها و فاکتورها تغییر نمی‌کند.</Alert.Description></Alert>
+    </SettingCard>
     <SettingCard icon={<Store size={19} />} title="هویت فروشگاه" description="اطلاعات اصلی نمایش‌داده‌شده در سایت و فاکتور">
       <div className="grid gap-4 sm:grid-cols-2"><Field label="نام فروشگاه"><Input name="storeName" required defaultValue={initialSettings.storeName} variant="secondary" className={adminFieldClass} /></Field><Field label="شعار کوتاه"><Input name="tagline" required defaultValue={initialSettings.tagline} variant="secondary" className={adminFieldClass} /></Field></div>
       <Field label="توضیح کوتاه فروشگاه"><TextArea name="shortDescription" required defaultValue={initialSettings.shortDescription} rows={3} variant="secondary" className={adminFieldClass} /></Field>

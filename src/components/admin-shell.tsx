@@ -14,6 +14,7 @@ type AdminUser = { firstName: string | null; lastName: string | null; email: str
 
 type Props = {
   user: AdminUser;
+  showGoldPrice: boolean;
   goldPrice: string | null;
   goldFetchedAt: string | null;
   notificationCount: number;
@@ -21,7 +22,7 @@ type Props = {
   children: ReactNode;
 };
 
-export function AdminShell({ user, goldPrice, goldFetchedAt, notificationCount, sidebar, children }: Props) {
+export function AdminShell({ user, showGoldPrice, goldPrice, goldFetchedAt, notificationCount, sidebar, children }: Props) {
   const router = useRouter();
   const theme = useSyncExternalStore(subscribeToAdminTheme, getResolvedAdminTheme, () => "light");
   const fullName = `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim() || "مدیر فروشگاه";
@@ -100,14 +101,14 @@ export function AdminShell({ user, goldPrice, goldFetchedAt, notificationCount, 
 
             </div>
 
-            <div className="flex min-w-0 items-center gap-3">
+            {showGoldPrice && <div className="flex min-w-0 items-center gap-3">
               <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[3px] bg-[var(--warning)]/15 text-[var(--warning)]"><span className="text-base font-black">۱۸</span></span>
               <div className="min-w-0">
                 <span className="block text-[10px] font-bold text-[var(--muted)]">نرخ هر گرم طلای ۱۸ عیار</span>
                 <strong className="block truncate text-sm font-black text-[var(--foreground)] sm:text-base">{goldPrice ? formatMoney(goldPrice) : "نرخ فعلاً در دسترس نیست"}</strong>
                 {goldFetchedAt && <span className="hidden text-[9px] text-[var(--muted)] sm:block">آخرین بروزرسانی: {formatDateTime(goldFetchedAt)}</span>}
               </div>
-            </div>
+            </div>}
           </header>
           <section className="min-w-0 rounded-[24px]">{children}</section>
         </div>
