@@ -62,9 +62,8 @@ export function GeneralSettings({ initialSettings }: { initialSettings: GeneralS
     </SettingCard>
     <SettingCard icon={<Settings2 size={19} />} title="وضعیت و دسترسی فروشگاه" description="کنترل نمایش عمومی و تجربه حساب کاربری" className="lg:col-span-2">
       <div className="grid gap-3 md:grid-cols-3"><AdminCheckbox isSelected={isStoreActive} onChange={setIsStoreActive} icon={<Globe2 size={17} />} description="فروشگاه برای کاربران قابل مشاهده باشد">فروشگاه فعال</AdminCheckbox><AdminCheckbox isSelected={guestCheckout} onChange={setGuestCheckout} icon={<Users size={17} />} description="خرید بدون ساخت حساب امکان‌پذیر باشد">خرید مهمان</AdminCheckbox><AdminCheckbox isSelected={maintenanceMode} onChange={setMaintenanceMode} icon={<ShieldCheck size={17} />} description="نمایش صفحه در حال بروزرسانی به بازدیدکنندگان">حالت تعمیر و نگهداری</AdminCheckbox></div>
-      <div className="flex justify-end border-t border-[var(--border)] pt-4"><Button type="submit" variant="primary" isPending={saving} className="min-w-32">ذخیره تنظیمات</Button></div>
     </SettingCard>
-  </SettingsGrid></form>;
+  </SettingsGrid><Card variant="secondary" className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4 shadow-sm"><div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"><div><strong className="block text-sm">ذخیره تنظیمات عمومی</strong><p className="m-0 mt-1 text-xs text-[var(--muted)]">اطلاعات و وضعیت عمومی فروشگاه با هم ذخیره می‌شوند.</p></div><Button type="submit" variant="primary" isPending={saving} className="min-h-11 gap-2 px-5"><Save size={16} />ذخیره تنظیمات</Button></div></Card></form>;
 }
 
 const homeSectionMeta: Record<HomepageSectionId, { title: string; description: string }> = {
