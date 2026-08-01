@@ -20,7 +20,7 @@ export async function POST(request: Request) {
     const input = manualSmsSchema.parse(await request.json());
     try {
       const result = await sendManualSms(input, actor.id);
-      await db.auditLog.create({ data: { actorId: actor.id, action: "MANUAL_SMS_SEND", entityType: "SmsCampaign", entityId: result.campaignId, metadata: { audience: input.audience, recipientCount: result.recipientCount } } });
+      await db.auditLog.create({ data: { actorId: actor.id, action: "MANUAL_SMS_SEND", entityType: "SmsCampaign", entityId: result.campaignId, metadata: { audience: input.mode === "DIRECT" ? "SPECIFIC_PHONE" : input.audience, recipientCount: result.recipientCount } } });
       return NextResponse.json(result, { status: 201 });
     } catch (error) { return NextResponse.json({ message: error instanceof Error ? error.message : "ارسال پیامک انجام نشد." }, { status: 422 }); }
   } catch (error) { return apiError(error); }

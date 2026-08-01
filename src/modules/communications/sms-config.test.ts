@@ -23,7 +23,9 @@ test("provider and manual campaign inputs are allow-listed", () => {
   assert.equal(smsProviderInputSchema.safeParse({ provider: "FARAZ_SMS", apiKey: "a".repeat(20), senderNumber: "+983000505" }).success, true);
   assert.equal(smsProviderInputSchema.safeParse({ provider: "UNKNOWN", apiKey: "a".repeat(20), senderNumber: "3000" }).success, false);
   assert.equal(smsAudienceSchema.parse("PURCHASED_30_DAYS"), "PURCHASED_30_DAYS");
-  assert.equal(manualSmsSchema.safeParse({ audience: "ALL_OPTED_IN", message: "پیام تست" }).success, true);
+  assert.equal(manualSmsSchema.safeParse({ mode: "AUDIENCE", audience: "ALL_OPTED_IN", message: "پیام تست" }).success, true);
+  assert.equal(manualSmsSchema.safeParse({ mode: "DIRECT", phone: "09123456789", message: "پیام تست" }).success, true);
+  assert.equal(manualSmsSchema.safeParse({ mode: "DIRECT", phone: "08123456789", message: "پیام تست" }).success, false);
 });
 
 test("communication settings require bounded templates", () => {

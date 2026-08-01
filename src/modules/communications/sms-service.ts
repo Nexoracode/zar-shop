@@ -4,7 +4,12 @@ import { decryptSmsCredentials } from "@/modules/communications/sms-config";
 import { getCommunicationSettings } from "@/modules/communications/communication-settings";
 import { smsAudienceSchema, type SmsAudience } from "@/modules/communications/sms-audiences";
 
-export const manualSmsSchema = z.object({ audience: smsAudienceSchema, message: z.string().trim().min(3).max(500) });
+const smsMessageSchema = z.string().trim().min(3).max(500);
+export const iranMobileSchema = z.string().trim().transform((value) => value.replace(/[۰-۹]/g, (digit) => String("۰۱۲۳۴۵۶۷۸۹".indexOf(digit))).replace(/[٠-٩]/g, (digit) => String("٠١٢٣٤٥٦٧٨٩".indexOf(digit)))).pipe(z.string().regex(/^09\d{9}$/));
+export const manualSmsSchema = z.discriminatedUnion("mode", [
+  z.object({ mode: z.literal("AUDIENCE"), audience: smsAudienceSchema, message: smsMessageSchema }),
+  z.object({ mode: z.literal("DIRECT"), phone: iranMobileSchema, message: smsMessageSchema }),
+]);
 
 const completedStatuses = ["PAID", "PROCESSING", "SHIPPED", "DELIVERED"] as const;
 
@@ -51,10 +56,9 @@ export async function sendAutomatedSms(event: "orderCreated" | "paymentSuccess" 
 export async function sendManualSms(input: z.infer<typeof manualSmsSchema>, actorId: string) {
   const provider = await db.smsProviderConfig.findFirst({ where: { isActive: true, provider: "FARAZ_SMS" } });
   if (!provider) throw new Error("ابتدا فراز اس‌ام‌اس را پیکربندی و فعال کنید.");
-  const users = await db.user.findMany({ where: audienceWhere(input.audience), select: { phone: true }, orderBy: { createdAt: "desc" }, take: 1000 });
-  const recipients = [...new Set(users.flatMap((user) => user.phone ? [normalizeIranPhone(user.phone)] : []).filter((phone): phone is string => Boolean(phone)))];
+  const recipients = input.mode === "DIRECT" ? [normalizeIranPhone(input.phone)!] : await db.user.findMany({ where: audienceWhere(input.audience), select: { phone: true }, orderBy: { createdAt: "desc" }, take: 1000 }).then((users) => [...new Set(users.flatMap((user) => user.phone ? [normalizeIranPhone(user.phone)] : []).filter((phone): phone is string => Boolean(phone)))]);
   if (!recipients.length) throw new Error("برای این فیلتر مخاطب واجد شرایطی پیدا نشد.");
-  const campaign = await db.smsCampaign.create({ data: { actorId, provider: provider.provider, audience: input.audience, message: input.message, recipientCount: recipients.length, status: "SENDING" } });
+  const campaign = await db.smsCampaign.create({ data: { actorId, provider: provider.provider, audience: input.mode === "DIRECT" ? "SPECIFIC_PHONE" : input.audience, message: input.message, recipientCount: recipients.length, status: "SENDING" } });
   try {
     const result = await sendWithFaraz(provider, recipients, input.message);
     await db.smsCampaign.update({ where: { id: campaign.id }, data: { status: "SENT", successfulCount: recipients.length, providerData: result ?? undefined } });
