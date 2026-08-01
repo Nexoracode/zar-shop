@@ -12,7 +12,6 @@ import {
   SeoSettings,
 } from "@/components/admin-settings";
 import { AdminPageHeader, AdminPrimaryLink } from "@/components/admin-ui";
-import { PaymentGatewayManager } from "@/components/payment-gateway-manager";
 import { requireAdminUser } from "@/modules/auth/session";
 import { getBrandSettings } from "@/modules/settings/brand-settings";
 import { getCatalogSettings } from "@/modules/settings/catalog-settings";
@@ -35,7 +34,6 @@ const sectionMeta = {
   content: { title: "تنظیمات محتوا و سوالات متداول", description: "مدیریت FAQ و صفحات راهنما و قوانین فروشگاه" },
   seo: { title: "SEO حرفه‌ای", description: "تنظیمات دیده‌شدن فروشگاه و ساختار فنی صفحات برای موتورهای جست‌وجو" },
   notifications: { title: "اعلان و پیامک", description: "مدیریت پیام‌های سیستمی، اطلاع‌رسانی سفارش و هشدارهای مدیریتی" },
-  "payment-gateways": { title: "درگاه‌های پرداخت", description: "انتخاب ارائه‌دهنده، دریافت راهنمای فعال‌سازی و ثبت امن شناسه درگاه" },
 } as const;
 
 async function getPageMeta(section: string) {
@@ -75,7 +73,6 @@ export default async function AdminSettingSectionPage({ params }: Context) {
     case "content": content = <ContentSettings initialSettings={await getContentSettings()} />; break;
     case "seo": content = <SeoSettings />; break;
     case "notifications": content = <NotificationSettings />; break;
-    case "payment-gateways": content = <PaymentGatewayManager initialConfigs={await getPublicGatewayConfigs()} />; break;
     default: notFound();
   }
 

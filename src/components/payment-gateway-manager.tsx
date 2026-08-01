@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState, type FormEvent } from "react";
+import { useRouter } from "next/navigation";
 import { Alert, Button, Card, Chip, Input, toast } from "@heroui/react";
 import { CheckCircle2, CreditCard, ExternalLink, Eye, EyeOff, Plus, ShieldCheck, Trash2 } from "lucide-react";
 import { adminFieldClass } from "@/components/admin-ui";
@@ -8,7 +9,8 @@ import { AdminCheckbox } from "@/components/admin-checkbox";
 import { gatewayProviders, type GatewayProviderId } from "@/modules/payments/gateway-providers";
 import type { PublicGatewayConfig } from "@/modules/payments/gateway-config";
 
-export function PaymentGatewayManager({ initialConfigs }: { initialConfigs: PublicGatewayConfig[] }) {
+export function PaymentGatewayManager({ mode, initialConfigs }: { mode: "list" | "form"; initialConfigs: PublicGatewayConfig[] }) {
+  const router = useRouter();
   const [configs, setConfigs] = useState(initialConfigs);
   const [selectedId, setSelectedId] = useState<GatewayProviderId>("ZARINPAL");
   const [credential, setCredential] = useState("");
@@ -26,6 +28,8 @@ export function PaymentGatewayManager({ initialConfigs }: { initialConfigs: Publ
       if (!response.ok) throw new Error(result?.message ?? "ثبت درگاه انجام نشد.");
       setConfigs(result as PublicGatewayConfig[]); setCredential(""); setShowCredential(false);
       toast.success(`${selected.name} ثبت شد`, { description: "اطلاعات اتصال به‌صورت رمزنگاری‌شده ذخیره شد." });
+      router.push("/admin/settings/payment-gateways");
+      router.refresh();
     } catch (reason) { toast.danger("ثبت درگاه انجام نشد", { description: reason instanceof Error ? reason.message : "خطای ناشناخته" }); }
     finally { setSaving(false); }
   }
@@ -41,6 +45,11 @@ export function PaymentGatewayManager({ initialConfigs }: { initialConfigs: Publ
     } catch (reason) { toast.danger("حذف درگاه انجام نشد", { description: reason instanceof Error ? reason.message : "خطای ناشناخته" }); }
     finally { setDeleting(null); }
   }
+
+  if (mode === "list") return <Card variant="secondary" className="overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-sm" dir="rtl">
+    <div className="border-b border-[var(--border)] p-5"><h2 className="m-0 text-base font-black">درگاه‌های ثبت‌شده</h2><p className="mb-0 mt-1 text-xs text-[var(--muted)]">برای تغییر شناسه، درگاه موردنظر را از صفحه افزودن دوباره ثبت کنید.</p></div>
+    {configs.length ? <div className="divide-y divide-[var(--border)]">{configs.map((config) => <div key={config.id} className="flex flex-wrap items-center gap-3 p-4 sm:px-5"><span className="grid size-10 shrink-0 place-items-center rounded-xl bg-emerald-50 text-emerald-700"><CheckCircle2 size={19} /></span><div className="min-w-0 flex-1"><strong className="block text-sm">{config.displayName}</strong><span className="mt-1 block font-mono text-xs text-[var(--muted)]" dir="ltr">{config.credentialMasked}</span></div>{config.isSandbox && <Chip size="sm" variant="soft" className="text-amber-700"><Chip.Label>آزمایشی</Chip.Label></Chip>}<Button type="button" isIconOnly size="sm" variant="danger-soft" isPending={deleting === config.provider} aria-label={`حذف ${config.displayName}`} onPress={() => void remove(config.provider)}><Trash2 size={15} /></Button></div>)}</div> : <div className="px-5 py-10 text-center text-xs text-[var(--muted)]">هنوز درگاهی ثبت نشده است.</div>}
+  </Card>;
 
   return <div className="grid gap-5" dir="rtl">
     <Card variant="secondary" className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 shadow-sm">
@@ -70,9 +79,5 @@ export function PaymentGatewayManager({ initialConfigs }: { initialConfigs: Publ
       </Card>
     </form>
 
-    <Card variant="secondary" className="overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-sm">
-      <div className="border-b border-[var(--border)] p-5"><h2 className="m-0 text-base font-black">درگاه‌های ثبت‌شده</h2><p className="mb-0 mt-1 text-xs text-[var(--muted)]">برای تغییر شناسه، همان درگاه را دوباره ثبت کنید.</p></div>
-      {configs.length ? <div className="divide-y divide-[var(--border)]">{configs.map((config) => <div key={config.id} className="flex flex-wrap items-center gap-3 p-4 sm:px-5"><span className="grid size-10 shrink-0 place-items-center rounded-xl bg-emerald-50 text-emerald-700"><CheckCircle2 size={19} /></span><div className="min-w-0 flex-1"><strong className="block text-sm">{config.displayName}</strong><span className="mt-1 block font-mono text-xs text-[var(--muted)]" dir="ltr">{config.credentialMasked}</span></div>{config.isSandbox && <Chip size="sm" variant="soft" className="text-amber-700"><Chip.Label>آزمایشی</Chip.Label></Chip>}<Button type="button" isIconOnly size="sm" variant="danger-soft" isPending={deleting === config.provider} aria-label={`حذف ${config.displayName}`} onPress={() => void remove(config.provider)}><Trash2 size={15} /></Button></div>)}</div> : <div className="px-5 py-10 text-center text-xs text-[var(--muted)]">هنوز درگاهی ثبت نشده است.</div>}
-    </Card>
   </div>;
 }
