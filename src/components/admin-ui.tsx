@@ -3,7 +3,7 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { Card, Chip, buttonVariants } from "@heroui/react";
-import { ChevronLeft, PackageOpen } from "lucide-react";
+import { ChevronLeft, ChevronRight, PackageOpen } from "lucide-react";
 import type { AdminTone } from "@/modules/admin/labels";
 
 const tones: Record<AdminTone, string> = {
@@ -34,6 +34,10 @@ export function AdminPageHeader({ eyebrow, title, description, action }: { eyebr
 
 export function AdminPrimaryLink({ href, children }: { href: string; children: ReactNode }) {
   return <Link href={href} className={buttonVariants({ variant: "primary", size: "md", className: "min-h-11 gap-2 rounded-xl bg-[var(--accent)] px-5 text-sm font-bold text-[var(--accent-foreground)] shadow-sm hover:bg-[var(--accent-hover)]" })}>{children}<ChevronLeft size={16} /></Link>;
+}
+
+export function AdminBackLink({ href, children }: { href: string; children: ReactNode }) {
+  return <Link href={href} className={buttonVariants({ variant: "secondary", size: "md", className: "min-h-11 gap-2 rounded-xl border border-[var(--border)] bg-[var(--surface)] px-4 text-sm font-bold text-[var(--foreground)]" })}><ChevronRight size={16} />{children}</Link>;
 }
 
 export function AdminPanel({ children, className = "" }: { children: ReactNode; className?: string }) {

@@ -6,6 +6,7 @@ import { Alert, Button, Card, Chip, Input, toast } from "@heroui/react";
 import { CheckCircle2, CreditCard, ExternalLink, Eye, EyeOff, Plus, ShieldCheck, Trash2 } from "lucide-react";
 import { adminFieldClass } from "@/components/admin-ui";
 import { AdminCheckbox } from "@/components/admin-checkbox";
+import { Table, TableBody, TableCell, TableColumn, TableContent, TableHeader, TableRow, TableScrollContainer } from "@/components/hero";
 import { gatewayProviders, type GatewayProviderId } from "@/modules/payments/gateway-providers";
 import type { PublicGatewayConfig } from "@/modules/payments/gateway-config";
 
@@ -48,7 +49,7 @@ export function PaymentGatewayManager({ mode, initialConfigs }: { mode: "list" |
 
   if (mode === "list") return <Card variant="secondary" className="overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-sm" dir="rtl">
     <div className="border-b border-[var(--border)] p-5"><h2 className="m-0 text-base font-black">درگاه‌های ثبت‌شده</h2><p className="mb-0 mt-1 text-xs text-[var(--muted)]">برای تغییر شناسه، درگاه موردنظر را از صفحه افزودن دوباره ثبت کنید.</p></div>
-    {configs.length ? <div className="divide-y divide-[var(--border)]">{configs.map((config) => <div key={config.id} className="flex flex-wrap items-center gap-3 p-4 sm:px-5"><span className="grid size-10 shrink-0 place-items-center rounded-xl bg-emerald-50 text-emerald-700"><CheckCircle2 size={19} /></span><div className="min-w-0 flex-1"><strong className="block text-sm">{config.displayName}</strong><span className="mt-1 block font-mono text-xs text-[var(--muted)]" dir="ltr">{config.credentialMasked}</span></div>{config.isSandbox && <Chip size="sm" variant="soft" className="text-amber-700"><Chip.Label>آزمایشی</Chip.Label></Chip>}<Button type="button" isIconOnly size="sm" variant="danger-soft" isPending={deleting === config.provider} aria-label={`حذف ${config.displayName}`} onPress={() => void remove(config.provider)}><Trash2 size={15} /></Button></div>)}</div> : <div className="px-5 py-10 text-center text-xs text-[var(--muted)]">هنوز درگاهی ثبت نشده است.</div>}
+    {configs.length ? <Table><TableScrollContainer><TableContent aria-label="فهرست درگاه‌های پرداخت" className="w-full min-w-[620px]"><TableHeader>{["درگاه", "شناسه اتصال", "محیط", "عملیات"].map((head, index) => <TableColumn id={head} key={head} isRowHeader={index === 0} className="bg-[var(--surface-secondary)] px-5 py-3 text-right text-[11px] font-bold text-[var(--muted)]">{head}</TableColumn>)}</TableHeader><TableBody>{configs.map((config) => <TableRow id={config.id} key={config.id} className="transition hover:bg-[var(--surface-secondary)]/70"><TableCell className="px-5 py-3 align-middle"><span className="flex items-center gap-3"><span className="grid size-9 shrink-0 place-items-center rounded-xl bg-emerald-50 text-emerald-700"><CheckCircle2 size={17} /></span><strong className="text-sm">{config.displayName}</strong></span></TableCell><TableCell className="px-5 py-3 align-middle"><span className="block font-mono text-xs text-[var(--muted)]" dir="ltr">{config.credentialMasked}</span></TableCell><TableCell className="px-5 py-3 align-middle"><Chip size="sm" variant="soft" className={config.isSandbox ? "text-amber-700" : "text-emerald-700"}><Chip.Label>{config.isSandbox ? "آزمایشی" : "اصلی"}</Chip.Label></Chip></TableCell><TableCell className="px-5 py-3 align-middle"><Button type="button" isIconOnly size="sm" variant="danger-soft" isPending={deleting === config.provider} aria-label={`حذف ${config.displayName}`} onPress={() => void remove(config.provider)}><Trash2 size={15} /></Button></TableCell></TableRow>)}</TableBody></TableContent></TableScrollContainer></Table> : <div className="px-5 py-10 text-center text-xs text-[var(--muted)]">هنوز درگاهی ثبت نشده است.</div>}
   </Card>;
 
   return <div className="grid gap-5" dir="rtl">
@@ -63,7 +64,7 @@ export function PaymentGatewayManager({ mode, initialConfigs }: { mode: "list" |
       })}</div>
     </Card>
 
-    <form onSubmit={submit} className="grid gap-5">
+    <form onSubmit={submit} className="grid items-start gap-5 lg:grid-cols-2">
       <Card variant="secondary" className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 shadow-sm">
         <div className="mb-4 flex items-center gap-3"><span className="grid size-11 place-items-center rounded-xl bg-[var(--accent)]/10 text-[var(--accent)]"><ShieldCheck size={20} /></span><div><h2 className="m-0 text-base font-black">فعال‌سازی {selected.name}</h2><p className="m-0 mt-1 text-xs text-[var(--muted)]">ابتدا شناسه اتصال را از پنل رسمی درگاه دریافت کنید.</p></div></div>
         <ol className="m-0 grid list-none gap-3 p-0">{selected.steps.map((step, index) => <li key={step} className="flex items-start gap-3 rounded-xl bg-[var(--surface-secondary)] p-3 text-xs leading-6"><span className="grid size-7 shrink-0 place-items-center rounded-lg bg-[var(--accent)]/10 font-black text-[var(--accent)]">{(index + 1).toLocaleString("fa-IR")}</span><span>{step}</span></li>)}</ol>
