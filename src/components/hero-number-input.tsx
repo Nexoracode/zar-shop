@@ -1,7 +1,7 @@
 "use client";
 
 import { Input } from "@heroui/react";
-import { useState, type ComponentProps } from "react";
+import { useState, type ComponentProps, type ReactNode } from "react";
 import { formatPersianNumber, normalizeNumericValue, priceToPersianWords, rialPriceToTomanWords } from "@/lib/persian-numbers";
 
 type InputProps = ComponentProps<typeof Input>;
@@ -16,6 +16,8 @@ type HeroNumberInputProps = Omit<InputProps, "defaultValue" | "name" | "onChange
   allowDecimal?: boolean;
   isPrice?: boolean;
   currency?: string;
+  suffix?: ReactNode;
+  reserveHelperSpace?: boolean;
   containerClassName?: string;
   onValueChange?: (value: string) => void;
 };
@@ -27,12 +29,15 @@ export function HeroNumberInput({
   allowDecimal,
   isPrice = false,
   currency = "تومان",
+  suffix,
+  reserveHelperSpace = false,
   containerClassName = "",
   onValueChange,
   min,
   max,
   step,
   dir = "ltr",
+  className = "",
   ...inputProps
 }: HeroNumberInputProps) {
   const decimalEnabled = allowDecimal ?? (step !== undefined && String(step).includes("."));
@@ -50,18 +55,22 @@ export function HeroNumberInput({
 
   return (
     <div className={`min-w-0 ${containerClassName}`} dir="rtl">
-      <Input
-        {...inputProps}
-        type="text"
-        inputMode={decimalEnabled ? "decimal" : "numeric"}
-        data-min={min}
-        data-max={max}
-        dir={dir}
-        value={displayValue}
-        onChange={(event) => changeValue(event.target.value)}
-      />
+      <div className="relative">
+        <Input
+          {...inputProps}
+          type="text"
+          inputMode={decimalEnabled ? "decimal" : "numeric"}
+          data-min={min}
+          data-max={max}
+          dir={dir}
+          value={displayValue}
+          className={`${className} ${suffix ? "pl-14" : ""}`}
+          onChange={(event) => changeValue(event.target.value)}
+        />
+        {suffix ? <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[11px] font-bold text-slate-400">{suffix}</span> : null}
+      </div>
       {name && <input type="hidden" name={name} value={rawValue} />}
-      {words && <p className="mt-1.5 min-h-4 break-words px-1 text-right text-[10px] leading-4 text-slate-500">{words}</p>}
+      {(words || reserveHelperSpace) && <p className="mt-1.5 min-h-4 break-words px-1 text-right text-[10px] leading-4 text-slate-500">{words || "\u00a0"}</p>}
     </div>
   );
 }
