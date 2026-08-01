@@ -1,8 +1,9 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useState, type DragEvent, type FormEvent, type ReactNode } from "react";
-import { Alert, Button, Card, Chip, Input, Label, TextArea, toast } from "@heroui/react";
+import { Alert, Button, Card, Chip, Input, Label, TextArea, buttonVariants, toast } from "@heroui/react";
 import {
   Bell, Boxes, CheckCircle2, CircleDollarSign, Clock3, CreditCard, Eye, EyeOff, FileQuestion, FileText,
   Globe2, GripVertical, Images, LayoutDashboard, Mail, MapPin, Megaphone, PackageCheck, Palette, Plus, Save,
@@ -356,7 +357,7 @@ export function CatalogSettings({ initialSettings }: { initialSettings: CatalogS
   </SettingsGrid><Card variant="secondary" className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4 shadow-sm"><div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"><div><strong className="block text-sm">{isGold ? "ذخیره تنظیمات محصول و قیمت طلا" : "ذخیره تنظیمات محصولات"}</strong><p className="m-0 mt-1 text-xs text-[var(--muted)]">تمام تنظیمات این صفحه با هم ذخیره و بلافاصله روی فروشگاه اعمال می‌شوند.</p></div><Button type="submit" variant="primary" isPending={saving} className="min-h-11 gap-2 px-5"><Save size={16} />ذخیره تنظیمات</Button></div></Card></form>;
 }
 
-export function CommerceSettings({ initialSettings, paymentProviderLabel }: { initialSettings: CommerceSettingsData; paymentProviderLabel: string }) {
+export function CommerceSettings({ initialSettings, configuredGatewayCount }: { initialSettings: CommerceSettingsData; configuredGatewayCount: number }) {
   const [settings, setSettings] = useState(initialSettings);
   const [saving, setSaving] = useState(false);
   const set = <Key extends keyof CommerceSettingsData>(key: Key, value: CommerceSettingsData[Key]) => setSettings((current) => ({ ...current, [key]: value }));
@@ -378,7 +379,8 @@ export function CommerceSettings({ initialSettings, paymentProviderLabel }: { in
   return <form onSubmit={submit} className="grid gap-5"><div className="grid items-start gap-5 lg:grid-cols-[minmax(280px,0.82fr)_minmax(0,1.18fr)]">
     <SettingCard icon={<CreditCard size={19} />} title="روش‌های پرداخت" description="درگاه‌ها و ترتیب نمایش در تسویه حساب">
       <AdminCheckbox isSelected={settings.onlinePaymentEnabled} onChange={(value) => set("onlinePaymentEnabled", value)} icon={<CreditCard size={18} />} description="در صورت غیرفعال‌شدن، ایجاد سفارش و انتقال به درگاه متوقف می‌شود">پرداخت آنلاین</AdminCheckbox>
-      <div className="flex items-center justify-between gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-emerald-800"><span className="flex items-center gap-2 text-sm font-bold"><CheckCircle2 size={17} />درگاه پیکربندی‌شده</span><Chip size="sm" variant="soft"><Chip.Label>{paymentProviderLabel}</Chip.Label></Chip></div>
+      <div className={`flex items-center justify-between gap-3 rounded-xl border p-3 ${configuredGatewayCount ? "border-emerald-200 bg-emerald-50 text-emerald-800" : "border-amber-200 bg-amber-50 text-amber-800"}`}><span className="flex items-center gap-2 text-sm font-bold">{configuredGatewayCount ? <CheckCircle2 size={17} /> : <CreditCard size={17} />}درگاه‌های ثبت‌شده</span><Chip size="sm" variant="soft"><Chip.Label>{configuredGatewayCount.toLocaleString("fa-IR")} درگاه</Chip.Label></Chip></div>
+      <Link href="/admin/settings/payment-gateways" className={buttonVariants({ variant: "secondary", className: "min-h-11 w-full gap-2" })}><Plus size={16} />افزودن و مدیریت درگاه</Link>
       <Alert status="accent"><Alert.Description>کارت‌به‌کارت و پرداخت حضوری تا زمان پیاده‌سازی تأیید دستی و رسید پرداخت، به مشتری نمایش داده نمی‌شوند.</Alert.Description></Alert>
     </SettingCard>
     <SettingCard icon={<Truck size={19} />} title="ارسال و تحویل" description="فعال‌سازی روش‌های قابل انتخاب برای مشتری">

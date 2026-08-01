@@ -12,7 +12,7 @@ import {
   SeoSettings,
 } from "@/components/admin-settings";
 import { AdminPageHeader, AdminPrimaryLink } from "@/components/admin-ui";
-import { env } from "@/lib/env";
+import { PaymentGatewayManager } from "@/components/payment-gateway-manager";
 import { requireAdminUser } from "@/modules/auth/session";
 import { getBrandSettings } from "@/modules/settings/brand-settings";
 import { getCatalogSettings } from "@/modules/settings/catalog-settings";
@@ -22,6 +22,7 @@ import { getGeneralStoreSettings } from "@/modules/settings/general-settings";
 import { getHomepageSettings } from "@/modules/settings/homepage-settings";
 import { getOrderSettings } from "@/modules/settings/order-settings";
 import { getStoreIndustry } from "@/modules/settings/store-settings";
+import { getPublicGatewayConfigs } from "@/modules/payments/gateway-config";
 
 type Context = { params: Promise<{ section: string }> };
 
@@ -34,6 +35,7 @@ const sectionMeta = {
   content: { title: "تنظیمات محتوا و سوالات متداول", description: "مدیریت FAQ و صفحات راهنما و قوانین فروشگاه" },
   seo: { title: "SEO حرفه‌ای", description: "تنظیمات دیده‌شدن فروشگاه و ساختار فنی صفحات برای موتورهای جست‌وجو" },
   notifications: { title: "اعلان و پیامک", description: "مدیریت پیام‌های سیستمی، اطلاع‌رسانی سفارش و هشدارهای مدیریتی" },
+  "payment-gateways": { title: "درگاه‌های پرداخت", description: "انتخاب ارائه‌دهنده، دریافت راهنمای فعال‌سازی و ثبت امن شناسه درگاه" },
 } as const;
 
 async function getPageMeta(section: string) {
@@ -65,10 +67,15 @@ export default async function AdminSettingSectionPage({ params }: Context) {
     case "branding": content = <BrandSettings initialSettings={await getBrandSettings()} />; break;
     case "orders": content = <OrderSettings initialSettings={await getOrderSettings()} />; break;
     case "catalog": content = <CatalogSettings initialSettings={await getCatalogSettings()} />; break;
-    case "commerce": content = <CommerceSettings initialSettings={await getCommerceSettings()} paymentProviderLabel={env.PAYMENT_PROVIDER === "zarinpal" ? `زرین‌پال${env.ZARINPAL_SANDBOX ? " (Sandbox)" : ""}` : "درگاه آزمایشی"} />; break;
+    case "commerce": {
+      const [settings, gateways] = await Promise.all([getCommerceSettings(), getPublicGatewayConfigs()]);
+      content = <CommerceSettings initialSettings={settings} configuredGatewayCount={gateways.length} />;
+      break;
+    }
     case "content": content = <ContentSettings initialSettings={await getContentSettings()} />; break;
     case "seo": content = <SeoSettings />; break;
     case "notifications": content = <NotificationSettings />; break;
+    case "payment-gateways": content = <PaymentGatewayManager initialConfigs={await getPublicGatewayConfigs()} />; break;
     default: notFound();
   }
 

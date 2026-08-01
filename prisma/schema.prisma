@@ -449,6 +449,19 @@ model GoldPrice {
   @@index([fetchedAt])
 }
 
+model PaymentGatewayConfig {
+  id                  String   @id @default(cuid())
+  provider            String   @unique @db.VarChar(40)
+  displayName         String   @db.VarChar(100)
+  credentialEncrypted String   @db.Text
+  credentialMasked    String   @db.VarChar(80)
+  isSandbox           Boolean  @default(false)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@index([updatedAt])
+}
+
 model Cart {
   id        String     @id @default(cuid())
   userId    String     @unique

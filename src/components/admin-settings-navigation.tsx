@@ -5,6 +5,7 @@ import {
   Bell,
   Boxes,
   ChevronLeft,
+  CreditCard,
   FileQuestion,
   LayoutDashboard,
   PackageCheck,
@@ -44,6 +45,7 @@ export function AdminSettingsNavigation({ industry }: { industry: StoreIndustry 
         { href: "/admin/settings/orders", title: "سفارش و انقضا", description: "مهلت پرداخت و قواعد ثبت سفارش", icon: PackageCheck },
         { href: "/admin/settings/catalog", title: industry === "GOLD" ? "محصول و قیمت طلا" : "محصولات", description: industry === "GOLD" ? "موجودی، کاتالوگ و نرخ قیمت‌گذاری" : "موجودی و نمایش کاتالوگ محصولات", icon: Boxes },
         { href: "/admin/settings/commerce", title: "ارسال و پرداخت", description: "روش‌های تحویل و درگاه پرداخت", icon: Truck },
+        { href: "/admin/settings/payment-gateways", title: "درگاه‌های پرداخت", description: "افزودن و مدیریت شناسه درگاه‌ها", icon: CreditCard },
       ],
     },
     {
