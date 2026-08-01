@@ -7,15 +7,16 @@ import { getBrandSettings } from "@/modules/settings/brand-settings";
 import { getOrderSettings } from "@/modules/settings/order-settings";
 import { getCommerceSettings } from "@/modules/settings/commerce-settings";
 import { getContentSettings } from "@/modules/settings/content-settings";
+import { getCatalogSettings } from "@/modules/settings/catalog-settings";
 import { env } from "@/lib/env";
 
 export default async function AdminSettingsPage() {
   await requireAdminUser();
-  const [settings, homepageSettings, brandSettings, orderSettings, commerceSettings, contentSettings] = await Promise.all([getGeneralStoreSettings(), getHomepageSettings(), getBrandSettings(), getOrderSettings(), getCommerceSettings(), getContentSettings()]);
+  const [settings, homepageSettings, brandSettings, orderSettings, commerceSettings, contentSettings, catalogSettings] = await Promise.all([getGeneralStoreSettings(), getHomepageSettings(), getBrandSettings(), getOrderSettings(), getCommerceSettings(), getContentSettings(), getCatalogSettings()]);
   return (
     <>
       <AdminPageHeader eyebrow="مرکز پیکربندی فروشگاه" title="تنظیمات سایت" description="ساختار، محتوای عمومی و قواعد عملیاتی فروشگاه را در یک محل مدیریت کنید." />
-      <AdminSettings initialSettings={settings} initialHomepageSettings={homepageSettings} initialBrandSettings={brandSettings} initialOrderSettings={orderSettings} initialCommerceSettings={commerceSettings} initialContentSettings={contentSettings} paymentProviderLabel={env.PAYMENT_PROVIDER === "zarinpal" ? `زرین‌پال${env.ZARINPAL_SANDBOX ? " (Sandbox)" : ""}` : "درگاه آزمایشی"} />
+      <AdminSettings initialSettings={settings} initialHomepageSettings={homepageSettings} initialBrandSettings={brandSettings} initialOrderSettings={orderSettings} initialCommerceSettings={commerceSettings} initialContentSettings={contentSettings} initialCatalogSettings={catalogSettings} paymentProviderLabel={env.PAYMENT_PROVIDER === "zarinpal" ? `زرین‌پال${env.ZARINPAL_SANDBOX ? " (Sandbox)" : ""}` : "درگاه آزمایشی"} />
     </>
   );
 }

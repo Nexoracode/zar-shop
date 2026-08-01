@@ -300,6 +300,13 @@ model StoreSetting {
   insuredShippingEnabled    Boolean               @default(true)
   inStorePickupEnabled      Boolean               @default(true)
   calculateShippingAfterAddress Boolean           @default(true)
+  catalogLowStockThreshold Int                    @default(3)
+  catalogPageSize          Int                    @default(24)
+  hideOutOfStockProducts   Boolean                @default(true)
+  showProductStock         Boolean                @default(true)
+  goldPriceRefreshSeconds  Int                    @default(60)
+  goldPriceCacheSeconds    Int                    @default(120)
+  goldPriceFallbackMinutes Int                    @default(15)
   faqItems              Json?
   contentPages          Json?
 

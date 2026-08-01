@@ -31,10 +31,12 @@ import {
   TableScrollContainer,
 } from "@/components/hero";
 import { requirePermission } from "@/modules/auth/session";
+import { getCatalogSettings } from "@/modules/settings/catalog-settings";
 
 export default async function AdminPage() {
   const actor = await requirePermission("dashboard:view");
   const isFullAdmin = actor.role === "ADMIN";
+  const catalogSettings = await getCatalogSettings();
   const [activeProducts, customers, actionableOrders, revenue, recentOrders, lowStockProducts] = await Promise.all([
     db.product.count({ where: { status: "ACTIVE" } }),
     db.user.count({ where: { role: "CUSTOMER" } }),
@@ -49,7 +51,7 @@ export default async function AdminPage() {
       take: 6,
     }),
     db.product.findMany({
-      where: { status: "ACTIVE", stock: { lte: 3 } },
+      where: { status: "ACTIVE", stock: { lte: catalogSettings.catalogLowStockThreshold } },
       select: { id: true, name: true, sku: true, stock: true },
       orderBy: [{ stock: "asc" }, { updatedAt: "desc" }],
       take: 6,
@@ -154,7 +156,7 @@ export default async function AdminPage() {
 
         {isFullAdmin ? <div className="grid content-start gap-6">
           <AdminPanel>
-            <div className="flex items-center justify-between border-b border-slate-100 px-4 py-4 sm:px-5"><div className="flex items-center gap-2"><span className="grid h-9 w-9 place-items-center rounded-xl bg-rose-50 text-rose-600"><TriangleAlert size={18} /></span><div><h2 className="m-0 text-sm font-black text-slate-800">هشدار موجودی</h2><p className="m-0 text-[0.68rem] text-slate-400">محصولات با موجودی ۳ عدد یا کمتر</p></div></div></div>
+            <div className="flex items-center justify-between border-b border-slate-100 px-4 py-4 sm:px-5"><div className="flex items-center gap-2"><span className="grid h-9 w-9 place-items-center rounded-xl bg-rose-50 text-rose-600"><TriangleAlert size={18} /></span><div><h2 className="m-0 text-sm font-black text-slate-800">هشدار موجودی</h2><p className="m-0 text-[0.68rem] text-slate-400">محصولات با موجودی {catalogSettings.catalogLowStockThreshold.toLocaleString("fa-IR")} عدد یا کمتر</p></div></div></div>
             {lowStockProducts.length ? <div className="divide-y divide-slate-100">{lowStockProducts.map((product) => <Link href={`/admin/products/${product.id}/edit`} key={product.id} className="flex items-center justify-between gap-3 px-4 py-3 transition hover:bg-slate-50 sm:px-5"><div className="min-w-0"><strong className="block truncate text-xs text-slate-700">{product.name}</strong><span className="text-[0.68rem] text-slate-400" dir="ltr">{product.sku}</span></div><AdminStatusBadge tone={product.stock === 0 ? "danger" : "warning"}>{product.stock === 0 ? "ناموجود" : `${product.stock.toLocaleString("fa-IR")} عدد`}</AdminStatusBadge></Link>)}</div> : <AdminEmptyState title="موجودی محصولات مناسب است" description="محصول کم‌موجودی وجود ندارد." />}
           </AdminPanel>
 

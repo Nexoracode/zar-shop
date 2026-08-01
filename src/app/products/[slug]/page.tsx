@@ -11,15 +11,17 @@ import { parseOptionValues } from "@/modules/products/options";
 import { sanitizeProductDescription } from "@/modules/products/rich-text";
 import { calculateDiscountedPrice } from "@/modules/products/discount";
 import { getGeneralStoreSettings } from "@/modules/settings/general-settings";
+import { getCatalogSettings } from "@/modules/settings/catalog-settings";
 
 export const dynamic = "force-dynamic";
 
 export default async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const [product, gold, settings] = await Promise.all([
+  const settings = await getGeneralStoreSettings();
+  const [product, gold, catalogSettings] = await Promise.all([
     db.product.findFirst({ where: { slug, status: "ACTIVE" }, include: { category: true, media: { include: { media: true }, orderBy: { position: "asc" } }, options: { orderBy: { position: "asc" } }, optionGuide: true } }),
-    getGoldPriceForDisplay(),
-    getGeneralStoreSettings(),
+    settings.industry === "GOLD" ? getGoldPriceForDisplay() : Promise.resolve(null),
+    getCatalogSettings(),
   ]);
   if (!product) notFound();
 
@@ -73,7 +75,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
 
           {/* Specs */}
           <div className="my-[30px] grid grid-cols-3 border-y border-[#e7e6e2]">
-            {(product.storeIndustry === "GOLD" ? [["وزن", `${Number(product.weightGrams)} گرم`], ["عیار", String(product.purity)], ["موجودی", product.stock > 0 ? "موجود" : "ناموجود"]] : [["کد کالا", product.sku], ["نوع محصول", "کالای فروشگاهی"], ["موجودی", product.stock > 0 ? "موجود" : "ناموجود"]]).map(([label, val]) => (
+            {(product.storeIndustry === "GOLD" ? [["وزن", `${Number(product.weightGrams)} گرم`], ["عیار", String(product.purity)], ["موجودی", catalogSettings.showProductStock && product.stock > 0 ? `${product.stock.toLocaleString("fa-IR")} عدد` : product.stock > 0 ? "موجود" : "ناموجود"]] : [["کد کالا", product.sku], ["نوع محصول", "محصول"], ["موجودی", catalogSettings.showProductStock && product.stock > 0 ? `${product.stock.toLocaleString("fa-IR")} عدد` : product.stock > 0 ? "موجود" : "ناموجود"]]).map(([label, val]) => (
               <div key={label} className="py-[17px] px-3 grid gap-[2px] text-center border-l border-[#e7e6e2] last:border-l-0">
                 <span className="text-[#747982] text-[0.75rem]">{label}</span>
                 <strong className="text-[0.9rem]">{val}</strong>

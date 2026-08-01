@@ -12,6 +12,7 @@ import { getGeneralStoreSettings } from "@/modules/settings/general-settings";
 import { getHomepageSettings, type HomepageSectionId } from "@/modules/settings/homepage-settings";
 import { getContentSettings } from "@/modules/settings/content-settings";
 import { StorefrontFaqAccordion } from "@/components/storefront-faq-accordion";
+import { getCatalogSettings } from "@/modules/settings/catalog-settings";
 
 type HomeProduct = Prisma.ProductGetPayload<{ include: { category: true; media: { include: { media: true } } } }>;
 type HomeCategory = Prisma.CategoryGetPayload<{ include: { image: true; children: true; _count: { select: { products: true } } } }>;
@@ -19,10 +20,11 @@ type HomeCategory = Prisma.CategoryGetPayload<{ include: { image: true; children
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
-  const [gold, products, rootCategories, settings, homepage, contentSettings] = await Promise.all([
-    getGoldPriceForDisplay(),
+  const [settings, catalogSettings] = await Promise.all([getGeneralStoreSettings(), getCatalogSettings()]);
+  const [gold, products, rootCategories, homepage, contentSettings] = await Promise.all([
+    settings.industry === "GOLD" ? getGoldPriceForDisplay() : Promise.resolve(null),
     db.product.findMany({
-      where: { status: "ACTIVE" },
+      where: { status: "ACTIVE", ...(catalogSettings.hideOutOfStockProducts ? { stock: { gt: 0 } } : {}) },
       include: { category: true, media: { include: { media: true }, orderBy: { position: "asc" } } },
       orderBy: [{ featured: "desc" }, { createdAt: "desc" }],
       take: 4,
@@ -37,7 +39,6 @@ export default async function Home() {
       orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
       take: 8,
     }),
-    getGeneralStoreSettings(),
     getHomepageSettings(),
     getContentSettings(),
   ]);

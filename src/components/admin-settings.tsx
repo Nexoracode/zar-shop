@@ -20,17 +20,19 @@ import type { BrandSettings as BrandSettingsData } from "@/modules/settings/bran
 import type { OrderSettings as OrderSettingsData } from "@/modules/settings/order-settings";
 import type { CommerceSettings as CommerceSettingsData } from "@/modules/settings/commerce-settings";
 import type { ContentPageId, ContentSettings as ContentSettingsData } from "@/modules/settings/content-settings";
+import type { CatalogSettings as CatalogSettingsData } from "@/modules/settings/catalog-settings";
 import { RichTextEditor } from "@/components/rich-text-editor";
 
 const tabClass = "min-h-11 min-w-0 gap-2 whitespace-nowrap rounded-xl px-2 text-xs font-bold sm:px-3";
 
-export function AdminSettings({ initialSettings, initialHomepageSettings, initialBrandSettings, initialOrderSettings, initialCommerceSettings, initialContentSettings, paymentProviderLabel }: { initialSettings: GeneralStoreSettingsInput; initialHomepageSettings: HomepageSettingsData; initialBrandSettings: BrandSettingsData; initialOrderSettings: OrderSettingsData; initialCommerceSettings: CommerceSettingsData; initialContentSettings: ContentSettingsData; paymentProviderLabel: string }) {
+export function AdminSettings({ initialSettings, initialHomepageSettings, initialBrandSettings, initialOrderSettings, initialCommerceSettings, initialContentSettings, initialCatalogSettings, paymentProviderLabel }: { initialSettings: GeneralStoreSettingsInput; initialHomepageSettings: HomepageSettingsData; initialBrandSettings: BrandSettingsData; initialOrderSettings: OrderSettingsData; initialCommerceSettings: CommerceSettingsData; initialContentSettings: ContentSettingsData; initialCatalogSettings: CatalogSettingsData; paymentProviderLabel: string }) {
   const demoAction = (title: string) => toast.info("نسخه نمایشی تنظیمات", { description: `بخش «${title}» پس از تأیید شما به API و دیتابیس متصل می‌شود.` });
+  const catalogLabel = initialCatalogSettings.industry === "GOLD" ? "محصول و قیمت طلا" : "محصولات";
 
   return (
     <div className="grid gap-5">
       <Alert status="accent" className="rounded-xl border border-blue-200 bg-blue-50 text-blue-900">
-        <Alert.Description>تب‌های «عمومی»، «صفحه اصلی»، «ظاهر و برند»، «سفارش و انقضا»، «ارسال و پرداخت» و «محتوا و FAQ» به دیتابیس و سایت متصل هستند. سایر تب‌ها فعلاً نمونه رابط کاربری هستند و ذخیره نمی‌شوند.</Alert.Description>
+        <Alert.Description>تب‌های «عمومی»، «صفحه اصلی»، «ظاهر و برند»، «سفارش و انقضا»، «{catalogLabel}»، «ارسال و پرداخت» و «محتوا و FAQ» به دیتابیس و سایت متصل هستند. سایر تب‌ها فعلاً نمونه رابط کاربری هستند و ذخیره نمی‌شوند.</Alert.Description>
       </Alert>
 
       <Tabs defaultSelectedKey="general" aria-label="بخش‌های تنظیمات فروشگاه" className="grid gap-5">
@@ -40,7 +42,7 @@ export function AdminSettings({ initialSettings, initialHomepageSettings, initia
             <Tabs.Tab id="homepage" className={tabClass}><LayoutDashboard size={16} />صفحه اصلی</Tabs.Tab>
             <Tabs.Tab id="branding" className={tabClass}><Palette size={16} />ظاهر و برند</Tabs.Tab>
             <Tabs.Tab id="orders" className={tabClass}><PackageCheck size={16} />سفارش و انقضا</Tabs.Tab>
-            <Tabs.Tab id="catalog" className={tabClass}><Boxes size={16} />محصول و طلا</Tabs.Tab>
+            <Tabs.Tab id="catalog" className={tabClass}><Boxes size={16} />{catalogLabel}</Tabs.Tab>
             <Tabs.Tab id="commerce" className={tabClass}><Truck size={16} />ارسال و پرداخت</Tabs.Tab>
             <Tabs.Tab id="content" className={tabClass}><FileQuestion size={16} />محتوا و FAQ</Tabs.Tab>
             <Tabs.Tab id="seo" className={tabClass}><Search size={16} />SEO و اعلان‌ها</Tabs.Tab>
@@ -51,7 +53,7 @@ export function AdminSettings({ initialSettings, initialHomepageSettings, initia
         <Tabs.Panel id="homepage"><HomepageSettings initialSettings={initialHomepageSettings} /></Tabs.Panel>
         <Tabs.Panel id="branding"><BrandSettings initialSettings={initialBrandSettings} /></Tabs.Panel>
         <Tabs.Panel id="orders"><OrderSettings initialSettings={initialOrderSettings} /></Tabs.Panel>
-        <Tabs.Panel id="catalog"><CatalogSettings /></Tabs.Panel>
+        <Tabs.Panel id="catalog"><CatalogSettings initialSettings={initialCatalogSettings} /></Tabs.Panel>
         <Tabs.Panel id="commerce"><CommerceSettings initialSettings={initialCommerceSettings} paymentProviderLabel={paymentProviderLabel} /></Tabs.Panel>
         <Tabs.Panel id="content"><ContentSettings initialSettings={initialContentSettings} /></Tabs.Panel>
         <Tabs.Panel id="seo"><SeoSettings onDemo={demoAction} /></Tabs.Panel>
@@ -349,19 +351,49 @@ function OrderSettings({ initialSettings }: { initialSettings: OrderSettingsData
   </SettingsGrid><Card variant="secondary" className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4 shadow-sm"><div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"><div><strong className="block text-sm">ذخیره تنظیمات سفارش و انقضا</strong><p className="m-0 mt-1 text-xs text-[var(--muted)]">تمام قواعد این تب با هم ذخیره و روی سفارش‌های جدید اعمال می‌شوند.</p></div><Button type="submit" variant="primary" isPending={saving} className="min-h-11 gap-2 px-5"><Save size={16} />ذخیره تنظیمات</Button></div></Card></form>;
 }
 
-function CatalogSettings() {
-  return <SettingsGrid>
-    <SettingCard icon={<Boxes size={19} />} title="موجودی و کاتالوگ" description="قواعد عمومی محصولات و تنوع‌ها">
-      <div className="grid gap-4 sm:grid-cols-2"><Field label="آستانه هشدار موجودی کم"><HeroNumberInput defaultValue="3" min={0} variant="secondary" className={adminFieldClass} /></Field><Field label="تعداد محصولات هر صفحه"><HeroNumberInput defaultValue="24" min={1} variant="secondary" className={adminFieldClass} /></Field></div>
-      <AdminCheckbox defaultSelected description="محصول بدون موجودی در نتایج فروشگاه نمایش داده نشود">مخفی‌کردن محصولات ناموجود</AdminCheckbox><AdminCheckbox defaultSelected description="نمایش امتیاز و دیدگاه تأییدشده در صفحه محصول">دیدگاه و امتیاز مشتریان</AdminCheckbox><AdminCheckbox description="اجازه ثبت سفارش بیشتر از موجودی فعلی">پیش‌فروش / Backorder</AdminCheckbox>
+function CatalogSettings({ initialSettings }: { initialSettings: CatalogSettingsData }) {
+  const [settings, setSettings] = useState(initialSettings);
+  const [saving, setSaving] = useState(false);
+  const isGold = settings.industry === "GOLD";
+  const set = <Key extends keyof CatalogSettingsData>(key: Key, value: CatalogSettingsData[Key]) => setSettings((current) => ({ ...current, [key]: value }));
+
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setSaving(true);
+    try {
+      const common = {
+        catalogLowStockThreshold: settings.catalogLowStockThreshold,
+        catalogPageSize: settings.catalogPageSize,
+        hideOutOfStockProducts: settings.hideOutOfStockProducts,
+        showProductStock: settings.showProductStock,
+      };
+      const payload = isGold ? {
+        ...common,
+        goldPriceRefreshSeconds: settings.goldPriceRefreshSeconds,
+        goldPriceCacheSeconds: settings.goldPriceCacheSeconds,
+        goldPriceFallbackMinutes: settings.goldPriceFallbackMinutes,
+      } : common;
+      const response = await fetch("/api/admin/settings/catalog", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+      const result = await response.json().catch(() => null);
+      if (!response.ok) throw new Error(result?.message ?? "ذخیره تنظیمات محصولات انجام نشد.");
+      setSettings(result as CatalogSettingsData);
+      toast.success(isGold ? "تنظیمات محصول و قیمت طلا ذخیره شد" : "تنظیمات محصولات ذخیره شد", { description: "تغییرات روی فروشگاه و هشدارهای موجودی اعمال شدند." });
+    } catch (reason) {
+      toast.danger("ذخیره تنظیمات محصولات انجام نشد", { description: reason instanceof Error ? reason.message : "خطای ناشناخته" });
+    } finally { setSaving(false); }
+  }
+
+  return <form onSubmit={submit} className="grid gap-5"><SettingsGrid>
+    <SettingCard icon={<Boxes size={19} />} title="موجودی و نمایش محصولات" description="قواعد نمایش کاتالوگ و هشدارهای مدیریت موجودی">
+      <div className="grid gap-4 sm:grid-cols-2"><Field label="آستانه هشدار موجودی کم"><HeroNumberInput value={settings.catalogLowStockThreshold} onValueChange={(value) => set("catalogLowStockThreshold", Number(value))} min={0} max={10000} variant="secondary" className={adminFieldClass} /></Field><Field label="تعداد محصولات هر صفحه"><HeroNumberInput value={settings.catalogPageSize} onValueChange={(value) => set("catalogPageSize", Number(value))} min={4} max={100} variant="secondary" className={adminFieldClass} /></Field></div>
+      <div className="grid gap-3 sm:grid-cols-2"><AdminCheckbox isSelected={settings.hideOutOfStockProducts} onChange={(value) => set("hideOutOfStockProducts", value)} description="محصول بدون موجودی در فهرست و نتایج فروشگاه نمایش داده نشود">مخفی‌کردن محصولات ناموجود</AdminCheckbox><AdminCheckbox isSelected={settings.showProductStock} onChange={(value) => set("showProductStock", value)} description="تعداد دقیق موجودی در مشخصات صفحه محصول نمایش داده شود">نمایش تعداد دقیق موجودی</AdminCheckbox></div>
     </SettingCard>
-    <SettingCard icon={<CircleDollarSign size={19} />} title="نرخ طلا و قیمت‌گذاری" description="رفتار نرخ لحظه‌ای و وضعیت منبع قیمت">
-      <div className="grid gap-4 sm:grid-cols-2"><Field label="فاصله بروزرسانی نرخ (ثانیه)"><HeroNumberInput defaultValue="60" min={10} variant="secondary" className={adminFieldClass} /></Field><Field label="حداکثر عمر نرخ جایگزین (دقیقه)"><HeroNumberInput defaultValue="15" min={1} variant="secondary" className={adminFieldClass} /></Field></div>
-      <HeroSelectField name="gold-source" label="منبع نرخ اصلی" defaultValue="primary" includeEmptyOption={false} options={[{ value: "primary", label: "سرویس نرخ طلای اصلی" }, { value: "manual", label: "نرخ دستی اضطراری" }]} />
-      <AdminCheckbox defaultSelected description="اگر نرخ معتبر در دسترس نبود، امکان ثبت سفارش متوقف شود">توقف فروش هنگام نامعتبر بودن نرخ</AdminCheckbox><AdminCheckbox defaultSelected description="نرخ، وزن، اجرت، سود و مالیات در سفارش ثابت بماند">Snapshot کامل اجزای قیمت</AdminCheckbox>
-      <div className="flex items-center justify-between rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-xs text-emerald-800"><span className="flex items-center gap-2 font-bold"><CheckCircle2 size={16} />منبع نرخ اصلی متصل است</span><Chip size="sm" variant="soft"><Chip.Label>نمونه نمایشی</Chip.Label></Chip></div>
-    </SettingCard>
-  </SettingsGrid>;
+    {isGold && <SettingCard icon={<CircleDollarSign size={19} />} title="نرخ طلا و قیمت‌گذاری" description="بازه بروزرسانی و نگهداری امن نرخ طلا">
+      <div className="grid gap-4 sm:grid-cols-2"><Field label="بروزرسانی نمایش نرخ (ثانیه)"><HeroNumberInput value={settings.goldPriceRefreshSeconds} onValueChange={(value) => set("goldPriceRefreshSeconds", Number(value))} min={15} max={3600} variant="secondary" className={adminFieldClass} /></Field><Field label="عمر کش نرخ (ثانیه)"><HeroNumberInput value={settings.goldPriceCacheSeconds} onValueChange={(value) => set("goldPriceCacheSeconds", Number(value))} min={15} max={3600} variant="secondary" className={adminFieldClass} /></Field></div>
+      <Field label="حداکثر عمر نرخ جایگزین (دقیقه)"><HeroNumberInput value={settings.goldPriceFallbackMinutes} onValueChange={(value) => set("goldPriceFallbackMinutes", Number(value))} min={1} max={1440} variant="secondary" className={adminFieldClass} /></Field>
+      <Alert status="warning"><Alert.Description>اگر نرخ معتبر اصلی یا جایگزین کنترل‌شده در دسترس نباشد، فروش متوقف می‌شود. نرخ و تمام اجزای قیمت نیز هنگام ثبت سفارش به‌صورت ثابت ذخیره می‌شوند.</Alert.Description></Alert>
+    </SettingCard>}
+  </SettingsGrid><Card variant="secondary" className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4 shadow-sm"><div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"><div><strong className="block text-sm">{isGold ? "ذخیره تنظیمات محصول و قیمت طلا" : "ذخیره تنظیمات محصولات"}</strong><p className="m-0 mt-1 text-xs text-[var(--muted)]">تمام تنظیمات این صفحه با هم ذخیره و بلافاصله روی فروشگاه اعمال می‌شوند.</p></div><Button type="submit" variant="primary" isPending={saving} className="min-h-11 gap-2 px-5"><Save size={16} />ذخیره تنظیمات</Button></div></Card></form>;
 }
 
 function CommerceSettings({ initialSettings, paymentProviderLabel }: { initialSettings: CommerceSettingsData; paymentProviderLabel: string }) {

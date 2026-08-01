@@ -9,27 +9,42 @@ import { getGoldPriceForDisplay } from "@/modules/gold/gold-price.service";
 import { calculateProductPrice } from "@/modules/products/pricing";
 import { calculateDiscountedPrice } from "@/modules/products/discount";
 import { getGeneralStoreSettings } from "@/modules/settings/general-settings";
+import { getCatalogSettings } from "@/modules/settings/catalog-settings";
+import type { Metadata } from "next";
 
 type ProductWithRelations = Prisma.ProductGetPayload<{ include: { category: true; media: { include: { media: true } } } }>;
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "محصولات" };
+export async function generateMetadata(): Promise<Metadata> {
+  const settings = await getGeneralStoreSettings();
+  return { title: settings.industry === "GOLD" ? "محصولات طلا" : "محصولات" };
+}
 
-export default async function ProductsPage({ searchParams }: { searchParams: Promise<{ category?: string }> }) {
-  const { category: categorySlug } = await searchParams;
-  const [allCategories, gold, settings] = await Promise.all([
+export default async function ProductsPage({ searchParams }: { searchParams: Promise<{ category?: string; page?: string }> }) {
+  const { category: categorySlug, page: pageParam } = await searchParams;
+  const [allCategories, settings, catalogSettings] = await Promise.all([
     db.category.findMany({ where: { isActive: true }, orderBy: [{ sortOrder: "asc" }, { name: "asc" }] }),
-    getGoldPriceForDisplay(),
     getGeneralStoreSettings(),
+    getCatalogSettings(),
   ]);
   const selectedCategory = categorySlug ? allCategories.find((category) => category.slug === categorySlug) : null;
   if (categorySlug && !selectedCategory) notFound();
   const categoryIds = selectedCategory ? collectCategoryAndDescendantIds(selectedCategory.id, allCategories) : undefined;
-  const products = await db.product.findMany({
-    where: { status: "ACTIVE", ...(categoryIds ? { categoryId: { in: categoryIds } } : {}) },
-    include: { category: true, media: { include: { media: true }, orderBy: { position: "asc" } } },
-    orderBy: { createdAt: "desc" },
-  });
+  const requestedPage = Math.max(1, Number.parseInt(pageParam ?? "1", 10) || 1);
+  const where: Prisma.ProductWhereInput = { status: "ACTIVE", ...(catalogSettings.hideOutOfStockProducts ? { stock: { gt: 0 } } : {}), ...(categoryIds ? { categoryId: { in: categoryIds } } : {}) };
+  const total = await db.product.count({ where });
+  const pageCount = Math.max(1, Math.ceil(total / catalogSettings.catalogPageSize));
+  const page = Math.min(requestedPage, pageCount);
+  const [products, gold] = await Promise.all([
+    db.product.findMany({
+      where,
+      skip: (page - 1) * catalogSettings.catalogPageSize,
+      take: catalogSettings.catalogPageSize,
+      include: { category: true, media: { include: { media: true }, orderBy: { position: "asc" } } },
+      orderBy: { createdAt: "desc" },
+    }),
+    settings.industry === "GOLD" ? getGoldPriceForDisplay() : Promise.resolve(null),
+  ]);
   const childCategories = selectedCategory ? allCategories.filter((category) => category.parentId === selectedCategory.id) : allCategories.filter((category) => !category.parentId);
   const rate = gold ? Number(gold.pricePerGram18) : null;
 
@@ -39,13 +54,13 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
       <section className="bg-[linear-gradient(135deg,#eee1d3,#f8f3ed_50%,#dfe6e2)] px-5 py-14 text-center sm:py-[76px]">
         <div className="mx-auto w-full max-w-[1240px]">
           <span className="text-[var(--brand-accent)] text-[0.8rem]">{selectedCategory ? "دسته‌بندی محصولات" : `کالکشن ${settings.storeName}`}</span>
-          <h1 className="mt-[5px] mb-0 text-[clamp(2.5rem,5vw,4.5rem)] font-medium">{selectedCategory?.name ?? "طلا برای هر لحظه"}</h1>
-          <p className="m-0 text-[#747982]">{selectedCategory?.description ?? "مجموعه‌ای از طراحی‌های مینیمال و ماندگار با قیمت‌گذاری شفاف."}</p>
-          <div className="mt-5 text-[0.78rem]">
+          <h1 className="mt-[5px] mb-0 text-[clamp(2.5rem,5vw,4.5rem)] font-medium">{selectedCategory?.name ?? (settings.industry === "GOLD" ? "طلا برای هر لحظه" : "محصولاتی برای انتخاب شما")}</h1>
+          <p className="m-0 text-[#747982]">{selectedCategory?.description ?? (settings.industry === "GOLD" ? "مجموعه‌ای از طراحی‌های مینیمال و ماندگار با قیمت‌گذاری شفاف." : "مجموعه محصولات فروشگاه با اطلاعات روشن و خرید مطمئن.")}</p>
+          {settings.industry === "GOLD" && <div className="mt-5 text-[0.78rem]">
             نرخ امروز: <strong className="text-[var(--brand-primary)] text-[0.95rem]">
               {rate === null ? "موقتاً در دسترس نیست" : formatMoney(rate, settings.currency)}
             </strong>
-          </div>
+          </div>}
         </div>
       </section>
 
@@ -63,7 +78,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
             </nav>
           )}
           <div className="mb-[25px] pb-[13px] flex justify-between border-b border-[#e7e6e2] text-[#747982] text-[0.8rem]">
-            <span>{products.length.toLocaleString("fa-IR")} محصول</span>
+            <span>{total.toLocaleString("fa-IR")} محصول</span>
             <span>مرتب‌سازی: تازه‌ترین‌ها</span>
           </div>
 
@@ -97,6 +112,14 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
               </div>
             )}
           </div>
+          {pageCount > 1 && <nav aria-label="صفحه‌بندی محصولات" className="mt-10 flex flex-wrap items-center justify-center gap-2">
+            {Array.from({ length: pageCount }, (_, index) => index + 1).map((number) => {
+              const query = new URLSearchParams();
+              if (categorySlug) query.set("category", categorySlug);
+              if (number > 1) query.set("page", String(number));
+              return <Link key={number} href={`/products${query.size ? `?${query.toString()}` : ""}`} aria-current={number === page ? "page" : undefined} className={`grid size-10 place-items-center border text-sm transition ${number === page ? "border-[var(--brand-primary)] bg-[var(--brand-primary)] text-[var(--brand-primary-foreground)]" : "border-[#d9d4cb] bg-white text-[#39445a] hover:border-[var(--brand-accent)]"}`}>{number.toLocaleString("fa-IR")}</Link>;
+            })}
+          </nav>}
         </div>
       </section>
     </main>

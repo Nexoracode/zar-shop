@@ -8,9 +8,10 @@ import type { GeneralStoreSettingsInput } from "@/modules/settings/general-setti
 import { normalizeNumericValue } from "@/lib/persian-numbers";
 import type { BrandSettings } from "@/modules/settings/brand-settings";
 import { StorefrontGoldPrice } from "@/components/storefront-gold-price";
+import { getCatalogSettings } from "@/modules/settings/catalog-settings";
 
 export async function SiteHeader({ settings, brand, user }: { settings: GeneralStoreSettingsInput; brand: BrandSettings; user: User | null }) {
-  const [gold, categories] = await Promise.all([
+  const [gold, categories, catalogSettings] = await Promise.all([
     settings.industry === "GOLD" ? getGoldPriceForDisplay() : Promise.resolve(null),
     db.category.findMany({
       where: { isActive: true, parentId: null },
@@ -18,6 +19,7 @@ export async function SiteHeader({ settings, brand, user }: { settings: GeneralS
       orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
       take: 7,
     }),
+    getCatalogSettings(),
   ]);
 
   return (
@@ -27,7 +29,7 @@ export async function SiteHeader({ settings, brand, user }: { settings: GeneralS
         <div className="relative mx-auto flex w-full max-w-[1240px] items-center justify-center px-4 sm:px-6">
           <span className="hidden sm:inline">ارسال امن و رایگان سفارش‌های ویژه</span>
           {settings.industry === "GOLD" && <strong className="font-medium sm:absolute sm:left-6">
-            <StorefrontGoldPrice initialPrice={gold ? Number(gold.pricePerGram18) : null} currency={settings.currency} live={brand.liveGoldPrice} />
+            <StorefrontGoldPrice initialPrice={gold ? Number(gold.pricePerGram18) : null} currency={settings.currency} live={brand.liveGoldPrice} refreshSeconds={catalogSettings.goldPriceRefreshSeconds} />
           </strong>}
         </div>
       </div>
