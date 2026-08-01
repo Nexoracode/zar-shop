@@ -2,7 +2,7 @@
 
 import { Input } from "@heroui/react";
 import { useState, type ComponentProps } from "react";
-import { formatPersianNumber, normalizeNumericValue, priceToPersianWords } from "@/lib/persian-numbers";
+import { formatPersianNumber, normalizeNumericValue, priceToPersianWords, rialPriceToTomanWords } from "@/lib/persian-numbers";
 
 type InputProps = ComponentProps<typeof Input>;
 
@@ -26,7 +26,7 @@ export function HeroNumberInput({
   defaultValue,
   allowDecimal,
   isPrice = false,
-  currency = "ریال",
+  currency = "تومان",
   containerClassName = "",
   onValueChange,
   min,
@@ -40,7 +40,7 @@ export function HeroNumberInput({
   const controlled = value !== undefined;
   const rawValue = controlled ? normalizeNumericValue(String(value ?? ""), decimalEnabled) : internalValue;
   const displayValue = formatPersianNumber(rawValue, isPrice);
-  const words = isPrice ? priceToPersianWords(rawValue, currency) : "";
+  const words = isPrice ? currency === "تومان" ? rialPriceToTomanWords(rawValue) : priceToPersianWords(rawValue, currency) : "";
 
   function changeValue(nextDisplayValue: string) {
     const nextValue = normalizeNumericValue(nextDisplayValue, decimalEnabled);
