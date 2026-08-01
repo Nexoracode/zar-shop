@@ -300,6 +300,8 @@ model StoreSetting {
   insuredShippingEnabled    Boolean               @default(true)
   inStorePickupEnabled      Boolean               @default(true)
   calculateShippingAfterAddress Boolean           @default(true)
+  faqItems              Json?
+  contentPages          Json?
 
   @@index([heroDesktopMediaId])
   @@index([heroMobileMediaId])

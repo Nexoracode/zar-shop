@@ -10,6 +10,8 @@ import { calculateProductPrice } from "@/modules/products/pricing";
 import { calculateDiscountedPrice } from "@/modules/products/discount";
 import { getGeneralStoreSettings } from "@/modules/settings/general-settings";
 import { getHomepageSettings, type HomepageSectionId } from "@/modules/settings/homepage-settings";
+import { getContentSettings } from "@/modules/settings/content-settings";
+import { StorefrontFaqAccordion } from "@/components/storefront-faq-accordion";
 
 type HomeProduct = Prisma.ProductGetPayload<{ include: { category: true; media: { include: { media: true } } } }>;
 type HomeCategory = Prisma.CategoryGetPayload<{ include: { image: true; children: true; _count: { select: { products: true } } } }>;
@@ -17,7 +19,7 @@ type HomeCategory = Prisma.CategoryGetPayload<{ include: { image: true; children
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
-  const [gold, products, rootCategories, settings, homepage] = await Promise.all([
+  const [gold, products, rootCategories, settings, homepage, contentSettings] = await Promise.all([
     getGoldPriceForDisplay(),
     db.product.findMany({
       where: { status: "ACTIVE" },
@@ -37,6 +39,7 @@ export default async function Home() {
     }),
     getGeneralStoreSettings(),
     getHomepageSettings(),
+    getContentSettings(),
   ]);
   const price = gold ? Number(gold.pricePerGram18) : null;
   const featuredCategories = rootCategories.filter((category) => category.featured);
@@ -47,6 +50,7 @@ export default async function Home() {
     style: { order: sectionPosition.get(id)?.order ?? homepage.sections.length },
   });
   const desktopHeroImage = homepage.heroDesktopMedia?.url ?? "/images/zar-hero-campaign.png";
+  const activeFaqs = contentSettings.faqs.filter((faq) => faq.enabled);
 
   return (
     <main className="flex flex-col overflow-hidden">
@@ -256,6 +260,13 @@ export default async function Home() {
           </div>
         </div>
       </section>
+
+      {activeFaqs.length > 0 && <section id="faq" style={{ order: homepage.sections.length }} className="border-t border-[#e5dfd4] bg-white py-[105px] max-[760px]:py-[76px]" aria-labelledby="faq-title">
+        <div className="mx-auto grid w-[min(1000px,calc(100%-40px))] gap-8 lg:grid-cols-[280px_minmax(0,1fr)] lg:gap-14">
+          <div><span className="mb-[5px] inline-block text-[0.78rem] font-bold tracking-[0.08em] text-[var(--brand-accent)]">راهنمای خرید</span><h2 id="faq-title" className="mb-4 mt-[5px] text-[clamp(2rem,3.5vw,3rem)] font-normal leading-[1.4] text-[var(--brand-primary)]">سوالات متداول</h2><p className="m-0 text-sm leading-7 text-[#7e7b75]">پاسخ پرسش‌های پرتکرار درباره محصولات، سفارش و تحویل.</p></div>
+          <StorefrontFaqAccordion faqs={activeFaqs} />
+        </div>
+      </section>}
     </main>
   );
 }

@@ -19,16 +19,18 @@ import type { HomepageSectionId, HomepageSettings as HomepageSettingsData } from
 import type { BrandSettings as BrandSettingsData } from "@/modules/settings/brand-settings";
 import type { OrderSettings as OrderSettingsData } from "@/modules/settings/order-settings";
 import type { CommerceSettings as CommerceSettingsData } from "@/modules/settings/commerce-settings";
+import type { ContentPageId, ContentSettings as ContentSettingsData } from "@/modules/settings/content-settings";
+import { RichTextEditor } from "@/components/rich-text-editor";
 
 const tabClass = "min-h-11 min-w-0 gap-2 whitespace-nowrap rounded-xl px-2 text-xs font-bold sm:px-3";
 
-export function AdminSettings({ initialSettings, initialHomepageSettings, initialBrandSettings, initialOrderSettings, initialCommerceSettings, paymentProviderLabel }: { initialSettings: GeneralStoreSettingsInput; initialHomepageSettings: HomepageSettingsData; initialBrandSettings: BrandSettingsData; initialOrderSettings: OrderSettingsData; initialCommerceSettings: CommerceSettingsData; paymentProviderLabel: string }) {
+export function AdminSettings({ initialSettings, initialHomepageSettings, initialBrandSettings, initialOrderSettings, initialCommerceSettings, initialContentSettings, paymentProviderLabel }: { initialSettings: GeneralStoreSettingsInput; initialHomepageSettings: HomepageSettingsData; initialBrandSettings: BrandSettingsData; initialOrderSettings: OrderSettingsData; initialCommerceSettings: CommerceSettingsData; initialContentSettings: ContentSettingsData; paymentProviderLabel: string }) {
   const demoAction = (title: string) => toast.info("نسخه نمایشی تنظیمات", { description: `بخش «${title}» پس از تأیید شما به API و دیتابیس متصل می‌شود.` });
 
   return (
     <div className="grid gap-5">
       <Alert status="accent" className="rounded-xl border border-blue-200 bg-blue-50 text-blue-900">
-        <Alert.Description>تب‌های «عمومی»، «صفحه اصلی»، «ظاهر و برند»، «سفارش و انقضا» و «ارسال و پرداخت» به دیتابیس و سایت متصل هستند. سایر تب‌ها فعلاً نمونه رابط کاربری هستند و ذخیره نمی‌شوند.</Alert.Description>
+        <Alert.Description>تب‌های «عمومی»، «صفحه اصلی»، «ظاهر و برند»، «سفارش و انقضا»، «ارسال و پرداخت» و «محتوا و FAQ» به دیتابیس و سایت متصل هستند. سایر تب‌ها فعلاً نمونه رابط کاربری هستند و ذخیره نمی‌شوند.</Alert.Description>
       </Alert>
 
       <Tabs defaultSelectedKey="general" aria-label="بخش‌های تنظیمات فروشگاه" className="grid gap-5">
@@ -51,7 +53,7 @@ export function AdminSettings({ initialSettings, initialHomepageSettings, initia
         <Tabs.Panel id="orders"><OrderSettings initialSettings={initialOrderSettings} /></Tabs.Panel>
         <Tabs.Panel id="catalog"><CatalogSettings /></Tabs.Panel>
         <Tabs.Panel id="commerce"><CommerceSettings initialSettings={initialCommerceSettings} paymentProviderLabel={paymentProviderLabel} /></Tabs.Panel>
-        <Tabs.Panel id="content"><ContentSettings onDemo={demoAction} /></Tabs.Panel>
+        <Tabs.Panel id="content"><ContentSettings initialSettings={initialContentSettings} /></Tabs.Panel>
         <Tabs.Panel id="seo"><SeoSettings onDemo={demoAction} /></Tabs.Panel>
       </Tabs>
     </div>
@@ -396,23 +398,74 @@ function CommerceSettings({ initialSettings, paymentProviderLabel }: { initialSe
   </div><Card variant="secondary" className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4 shadow-sm"><div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"><div><strong className="block text-sm">ذخیره تنظیمات ارسال و پرداخت</strong><p className="m-0 mt-1 text-xs text-[var(--muted)]">وضعیت درگاه و روش‌های تحویل با هم ذخیره می‌شوند.</p></div><Button type="submit" variant="primary" isPending={saving} className="min-h-11 gap-2 px-5"><Save size={16} />ذخیره تنظیمات</Button></div></Card></form>;
 }
 
-const faqs = [
-  ["قیمت محصولات چگونه محاسبه می‌شود؟", "محاسبه بر اساس وزن، نرخ روز طلا، اجرت، سود و مالیات"],
-  ["آیا محصولات فاکتور رسمی دارند؟", "تمام سفارش‌ها همراه فاکتور رسمی فروشگاه ارسال می‌شوند"],
-  ["مدت زمان ارسال سفارش چقدر است؟", "سفارش پس از آماده‌سازی با ارسال بیمه‌شده تحویل می‌شود"],
-];
+function ContentSettings({ initialSettings }: { initialSettings: ContentSettingsData }) {
+  const [faqs, setFaqs] = useState(initialSettings.faqs);
+  const [pages, setPages] = useState(initialSettings.pages);
+  const [selectedPageId, setSelectedPageId] = useState<ContentPageId>(initialSettings.pages[0].id);
+  const [draggedFaqId, setDraggedFaqId] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const selectedPage = pages.find((page) => page.id === selectedPageId) ?? pages[0];
 
-function ContentSettings({ onDemo }: { onDemo: (title: string) => void }) {
-  return <SettingsGrid>
-    <SettingCard icon={<FileQuestion size={19} />} title="سوالات متداول" description="مدیریت سوال‌ها و ترتیب نمایش در سایت" className="lg:col-span-[span_7/span_7]">
-      <div className="grid gap-2">{faqs.map(([question, answer], index) => <div key={question} className="flex items-start gap-3 rounded-xl border border-[var(--border)] bg-[var(--surface-secondary)] p-3"><GripVertical size={16} className="mt-1 shrink-0 text-[var(--muted)]" /><span className="grid size-7 shrink-0 place-items-center rounded-lg bg-[var(--surface)] text-[11px] font-black">{(index + 1).toLocaleString("fa-IR")}</span><div className="min-w-0 flex-1"><strong className="block text-sm">{question}</strong><span className="mt-1 block text-[11px] leading-5 text-[var(--muted)]">{answer}</span></div><Button type="button" isIconOnly size="sm" variant="ghost" aria-label={`ویرایش ${question}`} onPress={() => onDemo(question)}><Settings2 size={15} /></Button></div>)}</div>
-      <Button type="button" variant="secondary" onPress={() => onDemo("افزودن سوال متداول")} className="gap-2"><Plus size={16} />افزودن سوال جدید</Button>
-    </SettingCard>
-    <SettingCard icon={<FileText size={19} />} title="صفحات و قوانین" description="محتوای حقوقی و راهنمای خرید" className="lg:col-span-[span_5/span_5]">
-      {["درباره ما", "تماس با ما", "حریم خصوصی", "شرایط استفاده", "قوانین بازگشت کالا", "شیوه ارسال و تحویل"].map((title, index) => <div key={title} className="flex items-center justify-between gap-3 rounded-xl border border-[var(--border)] p-3"><span className="flex items-center gap-2 text-sm font-bold"><FileText size={15} className="text-[var(--muted)]" />{title}</span><Chip size="sm" variant="soft" className={index < 2 ? "text-emerald-700" : "text-amber-700"}><Chip.Label>{index < 2 ? "منتشرشده" : "نیازمند تکمیل"}</Chip.Label></Chip></div>)}
-      <Button type="button" variant="secondary" onPress={() => onDemo("ویرایش صفحات و قوانین")} className="gap-2"><Settings2 size={16} />مدیریت صفحات</Button>
-    </SettingCard>
-  </SettingsGrid>;
+  const updateFaq = (id: string, patch: Partial<ContentSettingsData["faqs"][number]>) => setFaqs((current) => current.map((faq) => faq.id === id ? { ...faq, ...patch } : faq));
+  const updatePage = (id: ContentPageId, patch: Partial<ContentSettingsData["pages"][number]>) => setPages((current) => current.map((page) => page.id === id ? { ...page, ...patch } : page));
+
+  function dropFaq(targetId: string) {
+    if (!draggedFaqId || draggedFaqId === targetId) return setDraggedFaqId(null);
+    setFaqs((current) => {
+      const source = current.find((faq) => faq.id === draggedFaqId);
+      if (!source) return current;
+      const next = current.filter((faq) => faq.id !== draggedFaqId);
+      const targetIndex = next.findIndex((faq) => faq.id === targetId);
+      next.splice(targetIndex, 0, source);
+      return next;
+    });
+    setDraggedFaqId(null);
+  }
+
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (faqs.some((faq) => faq.question.trim().length < 3 || faq.answer.trim().length < 3)) {
+      toast.warning("سوالات متداول کامل نیستند", { description: "برای هر سوال، متن سوال و پاسخ را کامل کنید." });
+      return;
+    }
+    const incompletePage = pages.find((page) => page.published && !page.content.replace(/<[^>]*>/g, "").trim() && !/<(img|table|hr)\b/i.test(page.content));
+    if (incompletePage) {
+      setSelectedPageId(incompletePage.id);
+      toast.warning("صفحه منتشرشده محتوا ندارد", { description: `محتوای «${incompletePage.title}» را کامل کنید یا آن را به پیش‌نویس برگردانید.` });
+      return;
+    }
+    setSaving(true);
+    try {
+      const response = await fetch("/api/admin/settings/content", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ faqs, pages }) });
+      const result = await response.json().catch(() => null);
+      if (!response.ok) throw new Error(result?.message ?? "ذخیره تنظیمات محتوا انجام نشد.");
+      setFaqs(result.faqs); setPages(result.pages);
+      toast.success("محتوا و سوالات متداول ذخیره شد", { description: "تغییرات صفحات منتشرشده و FAQ در سایت اعمال شدند." });
+    } catch (reason) {
+      toast.danger("ذخیره محتوا انجام نشد", { description: reason instanceof Error ? reason.message : "خطای ناشناخته" });
+    } finally { setSaving(false); }
+  }
+
+  return <form onSubmit={submit} className="grid gap-5">
+    <SettingsGrid>
+      <SettingCard icon={<FileQuestion size={19} />} title="سوالات متداول" description="برای تغییر ترتیب، هر سوال را از دستگیره جابه‌جا کنید" className="lg:col-span-2">
+        <div className="grid gap-3">{faqs.map((faq, index) => <div key={faq.id} onDragOver={(event) => event.preventDefault()} onDrop={() => dropFaq(faq.id)} className={`grid gap-3 rounded-xl border bg-[var(--surface-secondary)] p-3 transition sm:grid-cols-[auto_auto_minmax(0,1fr)_auto] ${draggedFaqId === faq.id ? "border-[var(--accent)] opacity-50" : "border-[var(--border)]"}`}>
+          <span draggable onDragStart={(event) => { event.dataTransfer.effectAllowed = "move"; event.dataTransfer.setData("text/plain", faq.id); setDraggedFaqId(faq.id); }} onDragEnd={() => setDraggedFaqId(null)} className="mt-1 shrink-0 cursor-grab active:cursor-grabbing"><Button type="button" isIconOnly size="sm" variant="ghost" className="pointer-events-none text-[var(--muted)]" aria-label={`جابه‌جایی سوال ${(index + 1).toLocaleString("fa-IR")}`}><GripVertical size={16} /></Button></span>
+          <span className="mt-1 grid size-8 shrink-0 place-items-center rounded-lg bg-[var(--surface)] text-[11px] font-black">{(index + 1).toLocaleString("fa-IR")}</span>
+          <div className="grid min-w-0 gap-3"><Field label="سوال"><Input value={faq.question} onChange={(event) => updateFaq(faq.id, { question: event.target.value })} variant="secondary" className={adminFieldClass} /></Field><Field label="پاسخ"><TextArea value={faq.answer} onChange={(event) => updateFaq(faq.id, { answer: event.target.value })} rows={2} variant="secondary" className={adminFieldClass} /></Field></div>
+          <div className="mt-6 flex items-start gap-1 sm:flex-col"><Button type="button" isIconOnly size="sm" variant="ghost" aria-label={`${faq.enabled ? "غیرفعال‌کردن" : "فعال‌کردن"} سوال`} onPress={() => updateFaq(faq.id, { enabled: !faq.enabled })}>{faq.enabled ? <Eye size={16} className="text-emerald-600" /> : <EyeOff size={16} className="text-[var(--muted)]" />}</Button><Button type="button" isIconOnly size="sm" variant="danger-soft" aria-label="حذف سوال" onPress={() => setFaqs((current) => current.filter((item) => item.id !== faq.id))}><Trash2 size={15} /></Button></div>
+        </div>)}</div>
+        <Button type="button" variant="secondary" onPress={() => setFaqs((current) => [...current, { id: crypto.randomUUID(), question: "", answer: "", enabled: true }])} className="w-fit gap-2"><Plus size={16} />افزودن سوال جدید</Button>
+      </SettingCard>
+      <SettingCard icon={<FileText size={19} />} title="صفحات و قوانین" description="محتوای حقوقی و راهنمای خرید" className="lg:col-span-2">
+        <div className="grid items-start gap-4 lg:grid-cols-[240px_minmax(0,1fr)]">
+          <div className="grid gap-2">{pages.map((page) => <Button key={page.id} type="button" variant={page.id === selectedPage.id ? "primary" : "secondary"} onPress={() => setSelectedPageId(page.id)} className="min-h-12 justify-between gap-3 px-3 text-right"><span className="flex min-w-0 items-center gap-2"><FileText size={15} className="shrink-0" /><span className="truncate">{page.title}</span></span><Chip size="sm" variant="soft" className={page.published ? "text-emerald-700" : "text-amber-700"}><Chip.Label>{page.published ? "منتشر" : "پیش‌نویس"}</Chip.Label></Chip></Button>)}</div>
+          <div className="grid min-w-0 gap-4 rounded-xl border border-[var(--border)] p-4"><div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_220px]"><Field label="عنوان صفحه"><Input value={selectedPage.title} onChange={(event) => updatePage(selectedPage.id, { title: event.target.value })} variant="secondary" className={adminFieldClass} /></Field><AdminCheckbox isSelected={selectedPage.published} onChange={(published) => updatePage(selectedPage.id, { published })} description="صفحه در سایت و فوتر قابل مشاهده باشد">انتشار صفحه</AdminCheckbox></div><div className={adminLabelClass}><Label className="text-xs font-bold text-[var(--muted)]">محتوای صفحه</Label><RichTextEditor key={selectedPage.id} value={selectedPage.content} onChange={(content) => updatePage(selectedPage.id, { content })} /></div></div>
+        </div>
+      </SettingCard>
+    </SettingsGrid>
+    <Card variant="secondary" className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4 shadow-sm"><div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"><div><strong className="block text-sm">ذخیره محتوای سایت</strong><p className="m-0 mt-1 text-xs text-[var(--muted)]">ترتیب FAQ، وضعیت انتشار و محتوای تمام صفحات با هم ذخیره می‌شوند.</p></div><Button type="submit" variant="primary" isPending={saving} className="min-h-11 gap-2 px-5"><Save size={16} />ذخیره تنظیمات محتوا</Button></div></Card>
+  </form>;
 }
 
 function SeoSettings({ onDemo }: { onDemo: (title: string) => void }) {
