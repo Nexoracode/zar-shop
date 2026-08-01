@@ -50,7 +50,7 @@ export default async function Home() {
 
   return (
     <main className="flex flex-col overflow-hidden">
-      <section {...sectionProps("HERO")} className="relative isolate flex min-h-[620px] items-center overflow-hidden bg-[#c8b39f] sm:min-h-[680px] lg:min-h-[calc(100svh-160px)] lg:max-h-[820px]" aria-labelledby="hero-title">
+      <section {...sectionProps("HERO")} className="relative isolate flex min-h-[620px] items-center overflow-hidden bg-[#c8b39f] sm:min-h-[680px] lg:min-h-[calc(100svh-160px)] lg:max-h-[820px]" aria-labelledby={homepage.heroContentMode === "WITH_CONTENT" ? "hero-title" : undefined} aria-label={homepage.heroContentMode === "IMAGE_ONLY" ? "بنر اصلی فروشگاه" : undefined}>
         {homepage.heroMobileMedia && <Image
           src={homepage.heroMobileMedia.url}
           alt={homepage.heroMobileMedia.alt ?? homepage.heroTitle}
@@ -67,6 +67,7 @@ export default async function Home() {
           sizes="100vw"
           className={`object-cover object-[63%_center] sm:object-[60%_center] lg:object-center ${homepage.heroMobileMedia ? "hidden sm:block" : ""}`}
         />
+        {homepage.heroContentMode === "IMAGE_ONLY" ? <Link href={homepage.heroButtonHref} aria-label={`مشاهده ${homepage.heroTitle}`} className="absolute inset-0 z-10 focus-visible:outline-4 focus-visible:outline-offset-[-4px] focus-visible:outline-[#d7b66e]" /> : <>
         <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(16,29,51,0.88)_0%,rgba(16,29,51,0.58)_48%,rgba(16,29,51,0.08)_80%)] max-lg:bg-[linear-gradient(0deg,rgba(16,29,51,0.92)_0%,rgba(16,29,51,0.5)_52%,rgba(16,29,51,0.08)_100%)]" />
         <div className="relative z-10 mx-auto flex w-full max-w-[1240px] items-end px-5 pb-14 pt-56 sm:px-8 sm:pb-20 lg:items-center lg:px-6 lg:py-20">
           <div className="max-w-[610px] text-white">
@@ -81,6 +82,7 @@ export default async function Home() {
         </div>
 
         <div className="absolute bottom-8 right-7 z-10 hidden rotate-180 text-[0.65rem] tracking-[0.24em] text-white/55 [writing-mode:vertical-rl] lg:block" aria-hidden="true">ZAR · FINE GOLD</div>
+        </>}
       </section>
 
       {/* Promises */}

@@ -115,6 +115,10 @@ function toMediaChoice(media: HomepageSettingsData["heroDesktopMedia"]): MediaCh
 function HomepageSettings({ initialSettings }: { initialSettings: HomepageSettingsData }) {
   const [saving, setSaving] = useState(false);
   const [sections, setSections] = useState(initialSettings.sections);
+  const [heroContentMode, setHeroContentMode] = useState(initialSettings.heroContentMode);
+  const [heroTitle, setHeroTitle] = useState(initialSettings.heroTitle);
+  const [heroDescription, setHeroDescription] = useState(initialSettings.heroDescription);
+  const [heroButtonLabel, setHeroButtonLabel] = useState(initialSettings.heroButtonLabel);
   const [desktopMedia, setDesktopMedia] = useState<MediaChoice | null>(() => toMediaChoice(initialSettings.heroDesktopMedia));
   const [mobileMedia, setMobileMedia] = useState<MediaChoice | null>(() => toMediaChoice(initialSettings.heroMobileMedia));
   const [pickerTarget, setPickerTarget] = useState<"desktop" | "mobile" | null>(null);
@@ -166,7 +170,7 @@ function HomepageSettings({ initialSettings }: { initialSettings: HomepageSettin
       const response = await fetch("/api/admin/settings/homepage", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...values, sections, heroDesktopMediaId: desktopMedia?.id ?? null, heroMobileMediaId: mobileMedia?.id ?? null }),
+        body: JSON.stringify({ ...values, sections, heroContentMode, heroTitle, heroDescription, heroButtonLabel, heroDesktopMediaId: desktopMedia?.id ?? null, heroMobileMediaId: mobileMedia?.id ?? null }),
       });
       const result = await response.json().catch(() => null);
       if (!response.ok) throw new Error(result?.message ?? "ذخیره تنظیمات صفحه اصلی انجام نشد.");
@@ -217,9 +221,15 @@ function HomepageSettings({ initialSettings }: { initialSettings: HomepageSettin
         })}</div>
       </SettingCard>
       <SettingCard icon={<Images size={19} />} title="اسلایدر اصلی" description="محتوا و تصاویر واکنش‌گرای ابتدای سایت" className="lg:col-span-[span_5/span_5]">
-        <Field label="عنوان اصلی"><Input name="heroTitle" required defaultValue={initialSettings.heroTitle} variant="secondary" className={adminFieldClass} /></Field>
-        <Field label="متن کوتاه"><TextArea name="heroDescription" required defaultValue={initialSettings.heroDescription} rows={3} variant="secondary" className={adminFieldClass} /></Field>
-        <div className="grid gap-4 sm:grid-cols-2"><Field label="متن دکمه"><Input name="heroButtonLabel" required defaultValue={initialSettings.heroButtonLabel} variant="secondary" className={adminFieldClass} /></Field><Field label="لینک دکمه"><Input name="heroButtonHref" required defaultValue={initialSettings.heroButtonHref} dir="ltr" variant="secondary" className={adminFieldClass} /></Field></div>
+        <HeroSelectField name="heroContentMode" label="نوع نمایش اسلایدر" value={heroContentMode} onValueChange={(value) => setHeroContentMode(value as HomepageSettingsData["heroContentMode"])} includeEmptyOption={false} options={[{ value: "WITH_CONTENT", label: "بنر همراه عنوان، توضیح و دکمه" }, { value: "IMAGE_ONLY", label: "فقط تصویر؛ کل بنر قابل کلیک" }]} />
+        {heroContentMode === "WITH_CONTENT" ? <>
+          <Field label="عنوان اصلی"><Input required value={heroTitle} onChange={(event) => setHeroTitle(event.target.value)} variant="secondary" className={adminFieldClass} /></Field>
+          <Field label="متن کوتاه"><TextArea required value={heroDescription} onChange={(event) => setHeroDescription(event.target.value)} rows={3} variant="secondary" className={adminFieldClass} /></Field>
+          <div className="grid gap-4 sm:grid-cols-2"><Field label="متن دکمه"><Input required value={heroButtonLabel} onChange={(event) => setHeroButtonLabel(event.target.value)} variant="secondary" className={adminFieldClass} /></Field><Field label="لینک دکمه"><Input name="heroButtonHref" required defaultValue={initialSettings.heroButtonHref} dir="ltr" variant="secondary" className={adminFieldClass} /></Field></div>
+        </> : <>
+          <Alert status="accent"><Alert.Description>در این حالت هیچ متن یا دکمه‌ای روی تصویر قرار نمی‌گیرد و تمام سطح بنر به لینک مقصد متصل می‌شود.</Alert.Description></Alert>
+          <Field label="لینک مقصد بنر"><Input name="heroButtonHref" required defaultValue={initialSettings.heroButtonHref} dir="ltr" placeholder="/products یا https://example.com" variant="secondary" className={adminFieldClass} /></Field>
+        </>}
         <div className="grid gap-3 sm:grid-cols-2"><HomepageMediaField label="تصویر دسکتاپ" hint="پیشنهاد: ۱۹۲۰×۹۰۰" media={desktopMedia} onSelect={() => setPickerTarget("desktop")} onClear={() => setDesktopMedia(null)} /><HomepageMediaField label="تصویر موبایل" hint="پیشنهاد: ۹۰۰×۱۲۰۰" media={mobileMedia} onSelect={() => setPickerTarget("mobile")} onClear={() => setMobileMedia(null)} /></div>
       </SettingCard>
     </SettingsGrid>

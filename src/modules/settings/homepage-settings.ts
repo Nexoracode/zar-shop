@@ -22,6 +22,7 @@ export const homepageSettingsInputSchema = z.object({
       context.addIssue({ code: "custom", message: "چینش بخش‌های صفحه اصلی کامل یا معتبر نیست." });
     }
   }),
+  heroContentMode: z.enum(["WITH_CONTENT", "IMAGE_ONLY"]),
   heroTitle: z.string().trim().min(2).max(191),
   heroDescription: z.string().trim().min(10).max(500),
   heroButtonLabel: z.string().trim().min(2).max(80),
@@ -48,6 +49,7 @@ export type HomepageSettings = z.infer<typeof homepageSettingsSchema>;
 
 export const homepageSettingsDefaults: HomepageSettingsInput = {
   sections: homepageSectionIds.map((id) => ({ id, enabled: true })),
+  heroContentMode: "WITH_CONTENT",
   heroTitle: "درخشش ماندگار، انتخابی مطمئن",
   heroDescription: "جدیدترین زیورآلات طلا با قیمت لحظه‌ای و تضمین اصالت",
   heroButtonLabel: "مشاهده محصولات",
@@ -58,6 +60,7 @@ export const homepageSettingsDefaults: HomepageSettingsInput = {
 
 const homepageSelect = {
   homepageSections: true,
+  heroContentMode: true,
   heroTitle: true,
   heroDescription: true,
   heroButtonLabel: true,

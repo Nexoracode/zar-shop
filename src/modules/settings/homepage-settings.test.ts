@@ -19,3 +19,8 @@ test("homepage settings reject duplicated sections", () => {
 test("homepage settings reject unsafe action links", () => {
   assert.equal(homepageSettingsInputSchema.safeParse({ ...homepageSettingsDefaults, heroButtonHref: "javascript:alert(1)" }).success, false);
 });
+
+test("homepage settings accept an image-only clickable hero", () => {
+  const parsed = homepageSettingsInputSchema.parse({ ...homepageSettingsDefaults, heroContentMode: "IMAGE_ONLY", heroButtonHref: "/campaign/summer" });
+  assert.equal(parsed.heroContentMode, "IMAGE_ONLY");
+});
