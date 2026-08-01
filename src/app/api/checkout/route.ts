@@ -14,6 +14,7 @@ import { PromotionValidationError, resolveCheckoutPromotions } from "@/modules/p
 import { getGeneralStoreSettings, isStorefrontAvailable } from "@/modules/settings/general-settings";
 import { getOrderSettings, orderExpiresAt } from "@/modules/settings/order-settings";
 import { expirePendingOrders } from "@/modules/orders/expiration";
+import { baseShippingFee, estimatedReadyAt, getCommerceSettings } from "@/modules/settings/commerce-settings";
 
 type ItemWithProduct = Prisma.CartItemGetPayload<{ include: { product: { include: { options: true } } } }>;
 type PriceParts = ReturnType<typeof calculateProductPrice>;
@@ -27,17 +28,21 @@ const addressSchema = z.object({
   postalCode: z.string().min(5).max(20),
   addressLine: z.string().min(10).max(1000),
   couponCode: z.string().trim().max(64).optional().default(""),
+  deliveryMethod: z.enum(["INSURED_SHIPPING", "STORE_PICKUP"]),
 });
 
 export async function POST(request: Request) {
   try {
     await expirePendingOrders();
-    const [user, generalSettings, orderSettings] = await Promise.all([getCurrentUser(), getGeneralStoreSettings(), getOrderSettings()]);
+    const [user, generalSettings, orderSettings, commerceSettings] = await Promise.all([getCurrentUser(), getGeneralStoreSettings(), getOrderSettings(), getCommerceSettings()]);
     if (!user) return NextResponse.json({ message: "ابتدا وارد حساب شوید." }, { status: 401 });
     if (!isStorefrontAvailable(generalSettings, user.role)) return NextResponse.json({ message: "فروشگاه در حال حاضر امکان ثبت سفارش ندارد." }, { status: 503 });
     if (user.isGuest && !generalSettings.guestCheckout) return NextResponse.json({ message: "برای ادامه خرید وارد حساب شوید." }, { status: 403 });
+    if (!commerceSettings.onlinePaymentEnabled) return NextResponse.json({ message: "پرداخت آنلاین موقتاً غیرفعال است." }, { status: 503 });
     const input = addressSchema.parse(await request.json());
-    const { couponCode, ...address } = input;
+    const { couponCode, deliveryMethod, ...address } = input;
+    if (deliveryMethod === "INSURED_SHIPPING" && !commerceSettings.insuredShippingEnabled) return NextResponse.json({ message: "ارسال بیمه‌شده در حال حاضر فعال نیست." }, { status: 422 });
+    if (deliveryMethod === "STORE_PICKUP" && !commerceSettings.inStorePickupEnabled) return NextResponse.json({ message: "تحویل حضوری در حال حاضر فعال نیست." }, { status: 422 });
     const cart = await db.cart.findUnique({ where: { userId: user.id }, include: { items: { include: { product: { include: { options: true } } } } } });
     if (!cart?.items.length) return NextResponse.json({ message: "سبد خرید خالی است." }, { status: 409 });
     const needsGoldRate = cart.items.some((item) => item.product.storeIndustry === "GOLD");
@@ -83,8 +88,7 @@ export async function POST(request: Request) {
     const productDiscount = lines.reduce((sum: number, line: CheckoutLine) => sum + line.discountAmount * line.item.quantity, 0);
     const tax = lines.reduce((sum: number, line: CheckoutLine) => sum + line.parts.tax * line.item.quantity, 0);
     const order = await db.$transaction(async (tx) => {
-      const settings = await tx.storeSetting.findUnique({ where: { id: "main" }, select: { defaultShippingFee: true } });
-      const shippingFee = Number(settings?.defaultShippingFee ?? 0);
+      const shippingFee = baseShippingFee(commerceSettings, merchandiseAmount, deliveryMethod);
       const promotions = await resolveCheckoutPromotions(tx, { userId: user.id, couponCode, merchandiseAmount, shippingFee, city: address.city });
       const shipping = Math.max(0, shippingFee - promotions.shippingDiscount);
       const total = merchandiseAmount - promotions.promotionDiscount + shipping;
@@ -96,6 +100,9 @@ export async function POST(request: Request) {
           userId: user.id,
           createdAt,
           expiresAt: orderSettings.orderExpirationStart === "CREATED_AT" ? orderExpiresAt(orderSettings, createdAt) : null,
+          deliveryMethod,
+          preparationDaysSnapshot: commerceSettings.preparationDays,
+          estimatedReadyAt: estimatedReadyAt(commerceSettings.preparationDays, createdAt),
           goldPriceSnapshot: rate,
           subtotal,
           productDiscount,

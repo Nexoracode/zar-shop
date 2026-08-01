@@ -18,16 +18,17 @@ import type { GeneralStoreSettingsInput } from "@/modules/settings/general-setti
 import type { HomepageSectionId, HomepageSettings as HomepageSettingsData } from "@/modules/settings/homepage-settings";
 import type { BrandSettings as BrandSettingsData } from "@/modules/settings/brand-settings";
 import type { OrderSettings as OrderSettingsData } from "@/modules/settings/order-settings";
+import type { CommerceSettings as CommerceSettingsData } from "@/modules/settings/commerce-settings";
 
 const tabClass = "min-h-11 min-w-0 gap-2 whitespace-nowrap rounded-xl px-2 text-xs font-bold sm:px-3";
 
-export function AdminSettings({ initialSettings, initialHomepageSettings, initialBrandSettings, initialOrderSettings }: { initialSettings: GeneralStoreSettingsInput; initialHomepageSettings: HomepageSettingsData; initialBrandSettings: BrandSettingsData; initialOrderSettings: OrderSettingsData }) {
+export function AdminSettings({ initialSettings, initialHomepageSettings, initialBrandSettings, initialOrderSettings, initialCommerceSettings, paymentProviderLabel }: { initialSettings: GeneralStoreSettingsInput; initialHomepageSettings: HomepageSettingsData; initialBrandSettings: BrandSettingsData; initialOrderSettings: OrderSettingsData; initialCommerceSettings: CommerceSettingsData; paymentProviderLabel: string }) {
   const demoAction = (title: string) => toast.info("نسخه نمایشی تنظیمات", { description: `بخش «${title}» پس از تأیید شما به API و دیتابیس متصل می‌شود.` });
 
   return (
     <div className="grid gap-5">
       <Alert status="accent" className="rounded-xl border border-blue-200 bg-blue-50 text-blue-900">
-        <Alert.Description>تب‌های «عمومی»، «صفحه اصلی»، «ظاهر و برند» و «سفارش و انقضا» به دیتابیس و سایت متصل هستند. سایر تب‌ها فعلاً نمونه رابط کاربری هستند و ذخیره نمی‌شوند.</Alert.Description>
+        <Alert.Description>تب‌های «عمومی»، «صفحه اصلی»، «ظاهر و برند»، «سفارش و انقضا» و «ارسال و پرداخت» به دیتابیس و سایت متصل هستند. سایر تب‌ها فعلاً نمونه رابط کاربری هستند و ذخیره نمی‌شوند.</Alert.Description>
       </Alert>
 
       <Tabs defaultSelectedKey="general" aria-label="بخش‌های تنظیمات فروشگاه" className="grid gap-5">
@@ -49,7 +50,7 @@ export function AdminSettings({ initialSettings, initialHomepageSettings, initia
         <Tabs.Panel id="branding"><BrandSettings initialSettings={initialBrandSettings} /></Tabs.Panel>
         <Tabs.Panel id="orders"><OrderSettings initialSettings={initialOrderSettings} /></Tabs.Panel>
         <Tabs.Panel id="catalog"><CatalogSettings /></Tabs.Panel>
-        <Tabs.Panel id="commerce"><CommerceSettings onDemo={demoAction} /></Tabs.Panel>
+        <Tabs.Panel id="commerce"><CommerceSettings initialSettings={initialCommerceSettings} paymentProviderLabel={paymentProviderLabel} /></Tabs.Panel>
         <Tabs.Panel id="content"><ContentSettings onDemo={demoAction} /></Tabs.Panel>
         <Tabs.Panel id="seo"><SeoSettings onDemo={demoAction} /></Tabs.Panel>
       </Tabs>
@@ -361,19 +362,37 @@ function CatalogSettings() {
   </SettingsGrid>;
 }
 
-function CommerceSettings({ onDemo }: { onDemo: (title: string) => void }) {
-  return <SettingsGrid>
+function CommerceSettings({ initialSettings, paymentProviderLabel }: { initialSettings: CommerceSettingsData; paymentProviderLabel: string }) {
+  const [settings, setSettings] = useState(initialSettings);
+  const [saving, setSaving] = useState(false);
+  const set = <Key extends keyof CommerceSettingsData>(key: Key, value: CommerceSettingsData[Key]) => setSettings((current) => ({ ...current, [key]: value }));
+
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setSaving(true);
+    try {
+      const response = await fetch("/api/admin/settings/commerce", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(settings) });
+      const result = await response.json().catch(() => null);
+      if (!response.ok) throw new Error(result?.message ?? "ذخیره تنظیمات ارسال و پرداخت انجام نشد.");
+      setSettings(result as CommerceSettingsData);
+      toast.success("تنظیمات ارسال و پرداخت ذخیره شد", { description: "روش‌های تحویل و محاسبه هزینه روی checkout اعمال شدند." });
+    } catch (reason) {
+      toast.danger("ذخیره تنظیمات ارسال و پرداخت انجام نشد", { description: reason instanceof Error ? reason.message : "خطای ناشناخته" });
+    } finally { setSaving(false); }
+  }
+
+  return <form onSubmit={submit} className="grid gap-5"><SettingsGrid>
     <SettingCard icon={<CreditCard size={19} />} title="روش‌های پرداخت" description="درگاه‌ها و ترتیب نمایش در تسویه حساب">
-      <MethodRow icon={<CreditCard size={18} />} title="درگاه پرداخت آنلاین" description="روش اصلی پرداخت سفارش" active /><MethodRow icon={<CircleDollarSign size={18} />} title="پرداخت کارت‌به‌کارت" description="نیازمند تأیید دستی اپراتور" /><MethodRow icon={<Store size={18} />} title="پرداخت حضوری" description="ویژه تحویل از فروشگاه" />
-      <Button type="button" variant="secondary" onPress={() => onDemo("افزودن درگاه پرداخت")} className="gap-2"><Plus size={16} />افزودن درگاه</Button>
+      <AdminCheckbox isSelected={settings.onlinePaymentEnabled} onChange={(value) => set("onlinePaymentEnabled", value)} icon={<CreditCard size={18} />} description="در صورت غیرفعال‌شدن، ایجاد سفارش و انتقال به درگاه متوقف می‌شود">پرداخت آنلاین</AdminCheckbox>
+      <div className="flex items-center justify-between gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-emerald-800"><span className="flex items-center gap-2 text-sm font-bold"><CheckCircle2 size={17} />درگاه پیکربندی‌شده</span><Chip size="sm" variant="soft"><Chip.Label>{paymentProviderLabel}</Chip.Label></Chip></div>
+      <Alert status="accent"><Alert.Description>کارت‌به‌کارت و پرداخت حضوری تا زمان پیاده‌سازی تأیید دستی و رسید پرداخت، به مشتری نمایش داده نمی‌شوند.</Alert.Description></Alert>
     </SettingCard>
     <SettingCard icon={<Truck size={19} />} title="ارسال و تحویل" description="قواعد محاسبه هزینه و زمان آماده‌سازی">
-      <div className="grid gap-4 sm:grid-cols-2"><Field label="ارسال رایگان از مبلغ (ریال)"><HeroNumberInput defaultValue="100000000" isPrice variant="secondary" className={adminFieldClass} /></Field><Field label="زمان آماده‌سازی (روز کاری)"><HeroNumberInput defaultValue="2" min={0} variant="secondary" className={adminFieldClass} /></Field></div>
-      <MethodRow icon={<Truck size={18} />} title="ارسال بیمه‌شده" description="ارسال سراسری با محاسبه هزینه" active /><MethodRow icon={<MapPin size={18} />} title="تحویل حضوری" description="انتخاب شعبه و بازه مراجعه" active />
-      <AdminCheckbox defaultSelected description="تا پیش از ورود نشانی، هزینه ارسال نمایش داده نشود">محاسبه ارسال پس از دریافت نشانی</AdminCheckbox>
-      <DemoFooter onPress={() => onDemo("ارسال و پرداخت")} />
+      <div className="grid items-start gap-4 sm:grid-cols-2 xl:grid-cols-3"><Field label="هزینه پایه ارسال (ریال)"><HeroNumberInput value={settings.defaultShippingFee} onValueChange={(value) => set("defaultShippingFee", Number(value))} isPrice reserveHelperSpace suffix="ریال" variant="secondary" className={adminFieldClass} /></Field><Field label="ارسال رایگان از مبلغ (ریال)"><HeroNumberInput value={settings.freeShippingThreshold ?? ""} onValueChange={(value) => set("freeShippingThreshold", value ? Number(value) : null)} isPrice reserveHelperSpace suffix="ریال" placeholder="غیرفعال" variant="secondary" className={adminFieldClass} /></Field><Field label="زمان آماده‌سازی"><HeroNumberInput value={settings.preparationDays} onValueChange={(value) => set("preparationDays", Number(value))} min={0} max={90} suffix="روز" reserveHelperSpace variant="secondary" className={adminFieldClass} /></Field></div>
+      <div className="grid gap-3 sm:grid-cols-2"><AdminCheckbox isSelected={settings.insuredShippingEnabled} onChange={(value) => set("insuredShippingEnabled", value)} icon={<Truck size={18} />} description="ارسال سراسری با هزینه پایه و امکان ارسال رایگان">ارسال بیمه‌شده</AdminCheckbox><AdminCheckbox isSelected={settings.inStorePickupEnabled} onChange={(value) => set("inStorePickupEnabled", value)} icon={<MapPin size={18} />} description="مشتری سفارش پرداخت‌شده را بدون هزینه ارسال از فروشگاه تحویل می‌گیرد">تحویل حضوری</AdminCheckbox></div>
+      <AdminCheckbox isSelected={settings.calculateShippingAfterAddress} onChange={(value) => set("calculateShippingAfterAddress", value)} description="تا پیش از ورود نشانی، هزینه ارسال به‌صورت قطعی نمایش داده نشود">محاسبه ارسال پس از دریافت نشانی</AdminCheckbox>
     </SettingCard>
-  </SettingsGrid>;
+  </SettingsGrid><Card variant="secondary" className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4 shadow-sm"><div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"><div><strong className="block text-sm">ذخیره تنظیمات ارسال و پرداخت</strong><p className="m-0 mt-1 text-xs text-[var(--muted)]">درگاه، هزینه‌ها و روش‌های تحویل با هم ذخیره می‌شوند.</p></div><Button type="submit" variant="primary" isPending={saving} className="min-h-11 gap-2 px-5"><Save size={16} />ذخیره تنظیمات</Button></div></Card></form>;
 }
 
 const faqs = [
