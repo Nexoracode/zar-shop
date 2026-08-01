@@ -461,13 +461,20 @@ export function ContentSettings({ initialSettings }: { initialSettings: ContentS
 }
 
 export function SeoSettings() {
-  const onDemo = () => toast.info("نسخه نمایشی تنظیمات", { description: "بخش «SEO و اعلان‌ها» پس از تأیید شما به API و دیتابیس متصل می‌شود." });
+  const onDemo = () => toast.info("نسخه نمایشی تنظیمات", { description: "بخش «SEO حرفه‌ای» پس از تأیید شما به API و دیتابیس متصل می‌شود." });
   return <SettingsGrid>
-    <SettingCard icon={<Search size={19} />} title="SEO فروشگاه" description="اطلاعات پیش‌فرض موتورهای جست‌وجو و شبکه‌های اجتماعی">
+    <SettingCard icon={<Search size={19} />} title="SEO حرفه‌ای" description="اطلاعات پیش‌فرض موتورهای جست‌وجو و شبکه‌های اجتماعی" className="lg:col-span-2">
       <Field label="عنوان پیش‌فرض سایت"><Input defaultValue="زر گالری | خرید آنلاین طلا با قیمت روز" variant="secondary" className={adminFieldClass} /></Field><Field label="توضیحات متا"><TextArea defaultValue="خرید آنلاین زیورآلات طلای ۱۸ عیار با قیمت لحظه‌ای، تضمین اصالت و فاکتور رسمی." rows={3} variant="secondary" className={adminFieldClass} /></Field><div className="grid gap-4 sm:grid-cols-2"><Field label="دامنه اصلی"><Input defaultValue="https://zargallery.ir" dir="ltr" variant="secondary" className={adminFieldClass} /></Field><Field label="نشانی Sitemap"><Input defaultValue="/sitemap.xml" dir="ltr" variant="secondary" className={adminFieldClass} /></Field></div>
       <AdminCheckbox defaultSelected description="صفحات منتشرشده امکان ایندکس‌شدن داشته باشند">اجازه ایندکس موتورهای جست‌وجو</AdminCheckbox><AdminCheckbox defaultSelected description="اطلاعات محصول، قیمت و موجودی برای موتور جست‌وجو">Structured Data محصولات</AdminCheckbox>
+      <DemoFooter onPress={onDemo} />
     </SettingCard>
-    <SettingCard icon={<Bell size={19} />} title="اعلان‌ها و پیام‌ها" description="رویدادهایی که برای مدیر یا مشتری پیام ارسال می‌کنند">
+  </SettingsGrid>;
+}
+
+export function NotificationSettings() {
+  const onDemo = () => toast.info("نسخه نمایشی تنظیمات", { description: "بخش «اعلان و پیامک» پس از تأیید شما به API و دیتابیس متصل می‌شود." });
+  return <SettingsGrid>
+    <SettingCard icon={<Bell size={19} />} title="اعلان و پیامک" description="رویدادهایی که برای مدیر یا مشتری پیام ارسال می‌کنند" className="lg:col-span-2">
       <MethodRow icon={<Mail size={18} />} title="سفارش جدید" description="ایمیل برای مدیر فروشگاه" active /><MethodRow icon={<Smartphone size={18} />} title="تأیید سفارش مشتری" description="پیامک پس از پرداخت موفق" active /><MethodRow icon={<Boxes size={18} />} title="هشدار موجودی کم" description="اعلان به مدیر کاتالوگ" active /><MethodRow icon={<Clock3 size={18} />} title="یادآوری پرداخت" description="پیش از منقضی‌شدن سفارش" active /><MethodRow icon={<Megaphone size={18} />} title="سبد خرید رهاشده" description="ارسال خودکار یادآوری به مشتری" />
       <Field label="ایمیل دریافت اعلان‌های مدیریتی"><Input defaultValue="admin@zargallery.ir" dir="ltr" variant="secondary" className={adminFieldClass} /></Field>
       <DemoFooter onPress={onDemo} />

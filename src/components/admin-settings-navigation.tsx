@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import {
+  Bell,
   Boxes,
   ChevronLeft,
   FileQuestion,
@@ -51,7 +52,8 @@ export function AdminSettingsNavigation({ industry }: { industry: StoreIndustry 
       description: "محتوای راهنما، صفحات و ارتباط با مخاطب",
       items: [
         { href: "/admin/settings/content", title: "محتوا و سوالات متداول", description: "FAQ و صفحات راهنما و قوانین", icon: FileQuestion },
-        { href: "/admin/settings/seo", title: "SEO و اعلان‌ها", description: "موتورهای جست‌وجو و پیام‌های سیستمی", icon: Search },
+        { href: "/admin/settings/seo", title: "SEO حرفه‌ای", description: "موتورهای جست‌وجو و ساختار فنی صفحات", icon: Search },
+        { href: "/admin/settings/notifications", title: "اعلان و پیامک", description: "پیام‌های مدیریتی و اطلاع‌رسانی مشتریان", icon: Bell },
       ],
     },
   ];

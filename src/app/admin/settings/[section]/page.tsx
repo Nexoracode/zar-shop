@@ -7,6 +7,7 @@ import {
   ContentSettings,
   GeneralSettings,
   HomepageSettings,
+  NotificationSettings,
   OrderSettings,
   SeoSettings,
 } from "@/components/admin-settings";
@@ -31,7 +32,8 @@ const sectionMeta = {
   orders: { title: "تنظیمات سفارش و انقضا", description: "مهلت پرداخت، شماره‌گذاری و قواعد ثبت سفارش" },
   commerce: { title: "تنظیمات ارسال و پرداخت", description: "روش‌های تحویل سفارش و وضعیت درگاه پرداخت" },
   content: { title: "تنظیمات محتوا و سوالات متداول", description: "مدیریت FAQ و صفحات راهنما و قوانین فروشگاه" },
-  seo: { title: "تنظیمات SEO و اعلان‌ها", description: "تنظیمات دیده‌شدن فروشگاه و پیام‌های سیستمی" },
+  seo: { title: "SEO حرفه‌ای", description: "تنظیمات دیده‌شدن فروشگاه و ساختار فنی صفحات برای موتورهای جست‌وجو" },
+  notifications: { title: "اعلان و پیامک", description: "مدیریت پیام‌های سیستمی، اطلاع‌رسانی سفارش و هشدارهای مدیریتی" },
 } as const;
 
 async function getPageMeta(section: string) {
@@ -66,6 +68,7 @@ export default async function AdminSettingSectionPage({ params }: Context) {
     case "commerce": content = <CommerceSettings initialSettings={await getCommerceSettings()} paymentProviderLabel={env.PAYMENT_PROVIDER === "zarinpal" ? `زرین‌پال${env.ZARINPAL_SANDBOX ? " (Sandbox)" : ""}` : "درگاه آزمایشی"} />; break;
     case "content": content = <ContentSettings initialSettings={await getContentSettings()} />; break;
     case "seo": content = <SeoSettings />; break;
+    case "notifications": content = <NotificationSettings />; break;
     default: notFound();
   }
 
