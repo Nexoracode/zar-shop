@@ -8,6 +8,7 @@ export const productStatusLabels: Record<ProductStatus, string> = {
 
 export const orderStatusLabels: Record<OrderStatus, string> = {
   PENDING_PAYMENT: "در انتظار پرداخت",
+  EXPIRED: "منقضی‌شده",
   PAID: "پرداخت‌شده",
   PROCESSING: "در حال آماده‌سازی",
   SHIPPED: "ارسال‌شده",
@@ -48,6 +49,7 @@ export const productStatusTones: Record<ProductStatus, AdminTone> = {
 
 export const orderStatusTones: Record<OrderStatus, AdminTone> = {
   PENDING_PAYMENT: "warning",
+  EXPIRED: "neutral",
   PAID: "info",
   PROCESSING: "gold",
   SHIPPED: "info",

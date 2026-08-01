@@ -17,16 +17,17 @@ import type { MediaChoice } from "@/components/media-library";
 import type { GeneralStoreSettingsInput } from "@/modules/settings/general-settings";
 import type { HomepageSectionId, HomepageSettings as HomepageSettingsData } from "@/modules/settings/homepage-settings";
 import type { BrandSettings as BrandSettingsData } from "@/modules/settings/brand-settings";
+import type { OrderSettings as OrderSettingsData } from "@/modules/settings/order-settings";
 
 const tabClass = "min-h-11 min-w-0 gap-2 whitespace-nowrap rounded-xl px-2 text-xs font-bold sm:px-3";
 
-export function AdminSettings({ initialSettings, initialHomepageSettings, initialBrandSettings }: { initialSettings: GeneralStoreSettingsInput; initialHomepageSettings: HomepageSettingsData; initialBrandSettings: BrandSettingsData }) {
+export function AdminSettings({ initialSettings, initialHomepageSettings, initialBrandSettings, initialOrderSettings }: { initialSettings: GeneralStoreSettingsInput; initialHomepageSettings: HomepageSettingsData; initialBrandSettings: BrandSettingsData; initialOrderSettings: OrderSettingsData }) {
   const demoAction = (title: string) => toast.info("نسخه نمایشی تنظیمات", { description: `بخش «${title}» پس از تأیید شما به API و دیتابیس متصل می‌شود.` });
 
   return (
     <div className="grid gap-5">
       <Alert status="accent" className="rounded-xl border border-blue-200 bg-blue-50 text-blue-900">
-        <Alert.Description>تب‌های «عمومی»، «صفحه اصلی» و «ظاهر و برند» به دیتابیس و سایت متصل هستند. سایر تب‌ها فعلاً نمونه رابط کاربری هستند و ذخیره نمی‌شوند.</Alert.Description>
+        <Alert.Description>تب‌های «عمومی»، «صفحه اصلی»، «ظاهر و برند» و «سفارش و انقضا» به دیتابیس و سایت متصل هستند. سایر تب‌ها فعلاً نمونه رابط کاربری هستند و ذخیره نمی‌شوند.</Alert.Description>
       </Alert>
 
       <Tabs defaultSelectedKey="general" aria-label="بخش‌های تنظیمات فروشگاه" className="grid gap-5">
@@ -46,7 +47,7 @@ export function AdminSettings({ initialSettings, initialHomepageSettings, initia
         <Tabs.Panel id="general"><GeneralSettings initialSettings={initialSettings} /></Tabs.Panel>
         <Tabs.Panel id="homepage"><HomepageSettings initialSettings={initialHomepageSettings} /></Tabs.Panel>
         <Tabs.Panel id="branding"><BrandSettings initialSettings={initialBrandSettings} /></Tabs.Panel>
-        <Tabs.Panel id="orders"><OrderSettings onDemo={demoAction} /></Tabs.Panel>
+        <Tabs.Panel id="orders"><OrderSettings initialSettings={initialOrderSettings} /></Tabs.Panel>
         <Tabs.Panel id="catalog"><CatalogSettings /></Tabs.Panel>
         <Tabs.Panel id="commerce"><CommerceSettings onDemo={demoAction} /></Tabs.Panel>
         <Tabs.Panel id="content"><ContentSettings onDemo={demoAction} /></Tabs.Panel>
@@ -300,33 +301,49 @@ function BrandSettings({ initialSettings }: { initialSettings: BrandSettingsData
 function BrandColorField({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) { return <Field label={label}><div className="flex items-center gap-2"><span className="relative size-11 shrink-0 overflow-hidden rounded-full border-2 border-[var(--surface)] shadow-sm ring-1 ring-[var(--border)] transition focus-within:ring-2 focus-within:ring-[var(--accent)]" style={{ backgroundColor: value }}><Input type="color" value={value} onChange={(event) => onChange(event.target.value.toUpperCase())} aria-label={`انتخاب ${label}`} variant="secondary" className="absolute inset-0 h-full w-full cursor-pointer opacity-0" /></span><Input value={value} onChange={(event) => onChange(event.target.value)} dir="ltr" maxLength={7} variant="secondary" className={adminFieldClass} /></div></Field>; }
 function BrandAssetRow({ title, hint, media, onSelect, onClear }: { title: string; hint: string; media: MediaChoice | null; onSelect: () => void; onClear: () => void }) { return <div className="flex flex-wrap items-center gap-3 rounded-xl border border-[var(--border)] bg-[var(--surface-secondary)] p-3"><span className="relative grid size-12 shrink-0 place-items-center overflow-hidden rounded-lg bg-[var(--surface)] text-[var(--muted)]">{media ? <Image src={media.url} alt={media.title} fill sizes="48px" className="object-contain p-1" /> : <Images size={18} />}</span><div className="min-w-0 flex-1"><strong className="block text-sm">{title}</strong><span className="mt-0.5 block text-[11px] text-[var(--muted)]">{media?.title ?? hint}</span></div><Button type="button" size="sm" variant="secondary" onPress={onSelect} className="gap-1.5"><Upload size={14} />{media ? "تغییر" : "انتخاب فایل"}</Button>{media && <Button type="button" isIconOnly size="sm" variant="danger-soft" aria-label={`حذف ${title}`} onPress={onClear}><Trash2 size={14} /></Button>}</div>; }
 
-function OrderSettings({ onDemo }: { onDemo: (title: string) => void }) {
-  return <SettingsGrid>
+function OrderSettings({ initialSettings }: { initialSettings: OrderSettingsData }) {
+  const [settings, setSettings] = useState(initialSettings);
+  const [saving, setSaving] = useState(false);
+  const set = <Key extends keyof OrderSettingsData>(key: Key, value: OrderSettingsData[Key]) => setSettings((current) => ({ ...current, [key]: value }));
+
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setSaving(true);
+    try {
+      const response = await fetch("/api/admin/settings/orders", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(settings) });
+      const result = await response.json().catch(() => null);
+      if (!response.ok) throw new Error(result?.message ?? "ذخیره تنظیمات سفارش انجام نشد.");
+      setSettings(result as OrderSettingsData);
+      toast.success("تنظیمات سفارش ذخیره شد", { description: "قواعد جدید روی سفارش‌های بعدی و فرایند انقضا اعمال می‌شوند." });
+    } catch (reason) {
+      toast.danger("ذخیره تنظیمات سفارش انجام نشد", { description: reason instanceof Error ? reason.message : "خطای ناشناخته" });
+    } finally { setSaving(false); }
+  }
+
+  return <form onSubmit={submit} className="grid gap-5"><SettingsGrid>
     <SettingCard icon={<Clock3 size={19} />} title="انقضای سفارش‌های بدون اقدام" description="مانند فروشگاه‌های بزرگ، سفارش پرداخت‌نشده پس از مهلت تعیین‌شده منقضی می‌شود" className="lg:col-span-2">
       <div className="grid gap-5 lg:grid-cols-[minmax(240px,0.7fr)_minmax(0,1.3fr)]">
         <div className="grid content-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-amber-950">
           <span className="grid size-11 place-items-center rounded-xl bg-amber-100 text-amber-700"><Clock3 size={21} /></span>
-          <div><span className="text-xs text-amber-700">مهلت فعلی پرداخت</span><strong className="mt-1 block text-2xl font-black">۱۵ دقیقه</strong></div>
-          <p className="m-0 text-xs leading-6 text-amber-800">اگر مشتری در این زمان پرداخت را کامل نکند، سفارش منقضی و موجودی رزروشده دوباره قابل فروش می‌شود.</p>
+          <div><span className="text-xs text-amber-700">مهلت فعلی پرداخت</span><strong className="mt-1 block text-2xl font-black">{settings.orderExpirationEnabled ? `${settings.orderExpirationMinutes.toLocaleString("fa-IR")} دقیقه` : "غیرفعال"}</strong></div>
+          <p className="m-0 text-xs leading-6 text-amber-800">اگر مشتری در این زمان پرداخت را کامل نکند، سفارش مطابق اقدام انتخاب‌شده پردازش و ظرفیت پروموشن آزاد می‌شود.</p>
           <Chip size="sm" variant="soft" className="w-fit text-amber-800"><Chip.Label>فقط سفارش‌های در انتظار پرداخت</Chip.Label></Chip>
         </div>
         <div className="grid gap-4">
-          <div className="grid gap-4 sm:grid-cols-2"><Field label="زمان انقضا (دقیقه)"><HeroNumberInput defaultValue="15" min={1} max={1440} variant="secondary" className={adminFieldClass} /></Field><Field label="هشدار قبل از انقضا (دقیقه)"><HeroNumberInput defaultValue="5" min={0} variant="secondary" className={adminFieldClass} /></Field></div>
-          <div className="grid gap-4 sm:grid-cols-2"><HeroSelectField name="order-expiration-start" label="شروع شمارش زمان از" defaultValue="CREATED_AT" includeEmptyOption={false} options={[{ value: "CREATED_AT", label: "زمان ایجاد سفارش" }, { value: "PAYMENT_STARTED_AT", label: "زمان ورود به درگاه" }]} /><HeroSelectField name="order-expiration-action" label="اقدام پس از پایان مهلت" defaultValue="EXPIRE" includeEmptyOption={false} options={[{ value: "EXPIRE", label: "منقضی‌کردن خودکار سفارش" }, { value: "CANCEL", label: "لغو خودکار سفارش" }, { value: "NOTIFY", label: "فقط ارسال هشدار به مدیر" }]} /></div>
-          <AdminCheckbox defaultSelected description="شمارش معکوس مهلت پرداخت در صفحه سفارش و پرداخت دیده شود">نمایش شمارش معکوس به مشتری</AdminCheckbox>
+          <div className="grid gap-4 sm:grid-cols-2"><Field label="زمان انقضا (دقیقه)"><HeroNumberInput value={settings.orderExpirationMinutes} onValueChange={(value) => set("orderExpirationMinutes", Number(value))} min={1} max={1440} variant="secondary" className={adminFieldClass} /></Field><Field label="هشدار قبل از انقضا (دقیقه)"><HeroNumberInput value={settings.orderWarningMinutes} onValueChange={(value) => set("orderWarningMinutes", Number(value))} min={0} max={1439} variant="secondary" className={adminFieldClass} /></Field></div>
+          <div className="grid gap-4 sm:grid-cols-2"><HeroSelectField name="order-expiration-start" label="شروع شمارش زمان از" value={settings.orderExpirationStart} onValueChange={(value) => set("orderExpirationStart", value as OrderSettingsData["orderExpirationStart"])} includeEmptyOption={false} options={[{ value: "CREATED_AT", label: "زمان ایجاد سفارش" }, { value: "PAYMENT_STARTED_AT", label: "زمان ورود به درگاه" }]} /><HeroSelectField name="order-expiration-action" label="اقدام پس از پایان مهلت" value={settings.orderExpirationAction} onValueChange={(value) => set("orderExpirationAction", value as OrderSettingsData["orderExpirationAction"])} includeEmptyOption={false} options={[{ value: "EXPIRE", label: "منقضی‌کردن خودکار سفارش" }, { value: "CANCEL", label: "لغو خودکار سفارش" }, { value: "NOTIFY", label: "فقط ثبت هشدار برای مدیر" }]} /></div>
+          <AdminCheckbox isSelected={settings.showOrderCountdown} onChange={(value) => set("showOrderCountdown", value)} description="شمارش معکوس مهلت پرداخت در حساب مشتری دیده شود">نمایش شمارش معکوس به مشتری</AdminCheckbox>
         </div>
       </div>
-      <div className="grid gap-3 md:grid-cols-3"><AdminCheckbox defaultSelected description="پس از پایان زمان، وضعیت سفارش به منقضی‌شده تغییر کند">انقضای خودکار سفارش</AdminCheckbox><AdminCheckbox defaultSelected description="موجودی محصول و تنوع‌ها دوباره آزاد شود">آزادسازی موجودی رزروشده</AdminCheckbox><AdminCheckbox defaultSelected description="کد تخفیف مصرف‌شده دوباره قابل استفاده شود">بازگرداندن ظرفیت کد تخفیف</AdminCheckbox></div>
-      <Alert status="warning"><Alert.Description>در پیاده‌سازی نهایی، پرداخت موفق هم‌زمان با انقضا باید اولویت داشته باشد و لغو سفارش، آزادسازی موجودی و callback پرداخت به‌صورت اتمیک و idempotent اجرا شوند.</Alert.Description></Alert>
-      <DemoFooter onPress={() => onDemo("انقضای سفارش‌های بدون اقدام")} />
+      <div className="grid gap-3 md:grid-cols-3"><AdminCheckbox isSelected={settings.orderExpirationEnabled} onChange={(value) => set("orderExpirationEnabled", value)} description="فقط سفارش‌های در انتظار پرداخت بررسی می‌شوند">انقضای خودکار سفارش</AdminCheckbox><AdminCheckbox isSelected={settings.releaseReservedInventory} onChange={(value) => set("releaseReservedInventory", value)} isDisabled description="موجودی در ساختار فعلی فقط پس از پرداخت کم می‌شود و رزروی برای آزادسازی وجود ندارد">آزادسازی موجودی رزروشده</AdminCheckbox><AdminCheckbox isSelected={settings.restorePromotionOnExpiry} onChange={(value) => set("restorePromotionOnExpiry", value)} description="کد تخفیف یا پاداش رزروشده دوباره قابل استفاده شود">بازگرداندن ظرفیت پروموشن</AdminCheckbox></div>
+      <Alert status="warning"><Alert.Description>پرداخت تأییدشده در رقابت هم‌زمان با انقضا اولویت دارد. پردازش وضعیت سفارش، پرداخت و پروموشن داخل تراکنش و به‌صورت idempotent انجام می‌شود.</Alert.Description></Alert>
     </SettingCard>
     <SettingCard icon={<PackageCheck size={19} />} title="قواعد ثبت سفارش" description="محدودیت‌ها و شماره‌گذاری سفارش">
-      <div className="grid gap-4 sm:grid-cols-2"><Field label="حداقل مبلغ سفارش (ریال)"><HeroNumberInput defaultValue="5000000" isPrice variant="secondary" className={adminFieldClass} /></Field><Field label="پیشوند شماره سفارش"><Input defaultValue="ZG" dir="ltr" variant="secondary" className={adminFieldClass} /></Field></div>
-      <div className="grid gap-4 sm:grid-cols-2"><Field label="حداکثر تعداد هر قلم"><HeroNumberInput defaultValue="5" variant="secondary" className={adminFieldClass} /></Field><HeroSelectField name="order-default-status" label="وضعیت اولیه" defaultValue="PENDING" includeEmptyOption={false} options={[{ value: "PENDING", label: "در انتظار پرداخت" }, { value: "PROCESSING", label: "در حال پردازش" }]} /></div>
-      <AdminCheckbox defaultSelected description="پیش از پرداخت، نرخ و مبلغ سفارش سمت سرور دوباره کنترل شود">بازبینی نرخ طلا هنگام پرداخت</AdminCheckbox>
-      <DemoFooter onPress={() => onDemo("سفارش و سبد خرید")} />
+      <div className="grid gap-4 sm:grid-cols-2"><Field label="حداقل مبلغ سفارش (ریال)"><HeroNumberInput value={settings.minimumOrderAmount} onValueChange={(value) => set("minimumOrderAmount", Number(value))} isPrice variant="secondary" className={adminFieldClass} /></Field><Field label="پیشوند شماره سفارش"><Input value={settings.orderNumberPrefix} onChange={(event) => set("orderNumberPrefix", event.target.value.toUpperCase())} dir="ltr" maxLength={10} variant="secondary" className={adminFieldClass} /></Field></div>
+      <div className="grid gap-4 sm:grid-cols-2"><Field label="حداکثر تعداد هر قلم"><HeroNumberInput value={settings.maxOrderItemQuantity} onValueChange={(value) => set("maxOrderItemQuantity", Number(value))} min={1} max={100} variant="secondary" className={adminFieldClass} /></Field><HeroSelectField name="order-default-status" label="وضعیت اولیه" value="PENDING_PAYMENT" disabled includeEmptyOption={false} options={[{ value: "PENDING_PAYMENT", label: "در انتظار پرداخت (ثابت)" }]} /></div>
+      <AdminCheckbox isSelected={settings.revalidateGoldAtCheckout} onChange={(value) => set("revalidateGoldAtCheckout", value)} description="پیش از ساخت سفارش، نرخ طلا از منبع اصلی دوباره دریافت و مبلغ سمت سرور محاسبه شود">بازبینی نرخ طلا هنگام ثبت سفارش</AdminCheckbox>
     </SettingCard>
-  </SettingsGrid>;
+  </SettingsGrid><Card variant="secondary" className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4 shadow-sm"><div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"><div><strong className="block text-sm">ذخیره تنظیمات سفارش و انقضا</strong><p className="m-0 mt-1 text-xs text-[var(--muted)]">تمام قواعد این تب با هم ذخیره و روی سفارش‌های جدید اعمال می‌شوند.</p></div><Button type="submit" variant="primary" isPending={saving} className="min-h-11 gap-2 px-5"><Save size={16} />ذخیره تنظیمات</Button></div></Card></form>;
 }
 
 function CatalogSettings() {

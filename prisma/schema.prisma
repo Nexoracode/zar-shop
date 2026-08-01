@@ -63,12 +63,24 @@ enum MediaScope {
 
 enum OrderStatus {
   PENDING_PAYMENT
+  EXPIRED
   PAID
   PROCESSING
   SHIPPED
   DELIVERED
   CANCELLED
   REFUNDED
+}
+
+enum OrderExpirationStart {
+  CREATED_AT
+  PAYMENT_STARTED_AT
+}
+
+enum OrderExpirationAction {
+  EXPIRE
+  CANCEL
+  NOTIFY
 }
 
 enum PaymentStatus {
@@ -264,6 +276,18 @@ model StoreSetting {
   darkLogoMedia        MediaAsset?   @relation("BrandDarkLogo", fields: [darkLogoMediaId], references: [id], onDelete: SetNull)
   faviconMedia         MediaAsset?   @relation("BrandFavicon", fields: [faviconMediaId], references: [id], onDelete: SetNull)
   socialImageMedia     MediaAsset?   @relation("BrandSocialImage", fields: [socialImageMediaId], references: [id], onDelete: SetNull)
+  orderExpirationEnabled    Boolean               @default(true)
+  orderExpirationMinutes    Int                   @default(15)
+  orderWarningMinutes       Int                   @default(5)
+  orderExpirationStart      OrderExpirationStart  @default(CREATED_AT)
+  orderExpirationAction     OrderExpirationAction @default(EXPIRE)
+  showOrderCountdown        Boolean               @default(true)
+  releaseReservedInventory  Boolean               @default(true)
+  restorePromotionOnExpiry  Boolean               @default(true)
+  minimumOrderAmount        Decimal               @default(5000000) @db.Decimal(18, 0)
+  orderNumberPrefix         String                @default("ZG") @db.VarChar(10)
+  maxOrderItemQuantity      Int                   @default(5)
+  revalidateGoldAtCheckout  Boolean               @default(true)
 
   @@index([heroDesktopMediaId])
   @@index([heroMobileMediaId])
@@ -444,6 +468,9 @@ model Order {
   total                    Decimal               @db.Decimal(18, 0)
   shippingAddress          Json
   notes                    String?               @db.Text
+  expiresAt                DateTime?
+  expiredAt                DateTime?
+  expirationHandledAt      DateTime?
   createdAt                DateTime              @default(now())
   updatedAt                DateTime              @updatedAt
   user                     User                  @relation(fields: [userId], references: [id])
@@ -456,6 +483,7 @@ model Order {
 
   @@index([userId, createdAt])
   @@index([status, createdAt])
+  @@index([status, expiresAt])
 }
 
 model OrderItem {

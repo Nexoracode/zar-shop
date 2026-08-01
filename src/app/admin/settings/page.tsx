@@ -4,14 +4,15 @@ import { requireAdminUser } from "@/modules/auth/session";
 import { getGeneralStoreSettings } from "@/modules/settings/general-settings";
 import { getHomepageSettings } from "@/modules/settings/homepage-settings";
 import { getBrandSettings } from "@/modules/settings/brand-settings";
+import { getOrderSettings } from "@/modules/settings/order-settings";
 
 export default async function AdminSettingsPage() {
   await requireAdminUser();
-  const [settings, homepageSettings, brandSettings] = await Promise.all([getGeneralStoreSettings(), getHomepageSettings(), getBrandSettings()]);
+  const [settings, homepageSettings, brandSettings, orderSettings] = await Promise.all([getGeneralStoreSettings(), getHomepageSettings(), getBrandSettings(), getOrderSettings()]);
   return (
     <>
       <AdminPageHeader eyebrow="مرکز پیکربندی فروشگاه" title="تنظیمات سایت" description="ساختار، محتوای عمومی و قواعد عملیاتی فروشگاه را در یک محل مدیریت کنید." />
-      <AdminSettings initialSettings={settings} initialHomepageSettings={homepageSettings} initialBrandSettings={brandSettings} />
+      <AdminSettings initialSettings={settings} initialHomepageSettings={homepageSettings} initialBrandSettings={brandSettings} initialOrderSettings={orderSettings} />
     </>
   );
 }

@@ -84,7 +84,7 @@ export function AdminShell({ user, goldPrice, goldFetchedAt, notificationCount, 
                         <div className="grid gap-3">
                           <div className="flex items-start gap-3 rounded-[5px] bg-[var(--surface-secondary)] p-3">
                             <span className="grid h-9 w-9 shrink-0 place-items-center rounded-[5px] bg-[var(--accent)]/10 text-[var(--accent)]"><ShoppingBag size={17} /></span>
-                            <div className="min-w-0 pt-0.5"><strong className="block text-xs">سفارش‌های نیازمند اقدام</strong><span className="mt-1 block text-[11px] leading-5 text-[var(--muted)]">{notificationCount.toLocaleString("fa-IR")} سفارش پرداخت‌شده یا در حال آماده‌سازی است.</span></div>
+                            <div className="min-w-0 pt-0.5"><strong className="block text-xs">سفارش‌های نیازمند اقدام</strong><span className="mt-1 block text-[11px] leading-5 text-[var(--muted)]">{notificationCount.toLocaleString("fa-IR")} سفارش برای بررسی یا آماده‌سازی در انتظار مدیر است.</span></div>
                           </div>
                           <Link href="/admin/orders" className="block border-t border-[var(--border)] pt-3 text-center text-xs font-bold text-[var(--link)]">مشاهده سفارش‌ها</Link>
                         </div>

@@ -36,11 +36,21 @@ export async function GET(request: Request) {
     const verified = await getPaymentProvider().verify(authority, Number(payment.amount));
     await db.$transaction(async (tx) => {
       const transaction = tx as unknown as PrismaClient;
+      const payable = await transaction.order.updateMany({
+        where: {
+          id: payment.orderId,
+          OR: [
+            { status: "PENDING_PAYMENT" },
+            { status: { in: ["EXPIRED", "CANCELLED"] }, expiredAt: { not: null } },
+          ],
+        },
+        data: { status: "PAID", expiredAt: null },
+      });
+      if (payable.count !== 1) throw new Error("وضعیت سفارش اجازه ثبت پرداخت را نمی‌دهد.");
       await transaction.payment.update({
         where: { id: payment.id },
         data: { status: "SUCCESS", referenceId: verified.referenceId, paidAt: new Date() },
       });
-      await transaction.order.update({ where: { id: payment.orderId }, data: { status: "PAID" } });
       await transaction.promotionReward.updateMany({ where: { redeemedOrderId: payment.orderId, redeemedAt: null }, data: { redeemedAt: new Date() } });
       for (const item of payment.order.items) {
         if (item.productId) {

@@ -12,6 +12,8 @@ import type { Prisma } from "@generated/prisma/client";
 import { calculateDiscountedPrice } from "@/modules/products/discount";
 import { PromotionValidationError, resolveCheckoutPromotions } from "@/modules/promotions/service";
 import { getGeneralStoreSettings, isStorefrontAvailable } from "@/modules/settings/general-settings";
+import { getOrderSettings, orderExpiresAt } from "@/modules/settings/order-settings";
+import { expirePendingOrders } from "@/modules/orders/expiration";
 
 type ItemWithProduct = Prisma.CartItemGetPayload<{ include: { product: { include: { options: true } } } }>;
 type PriceParts = ReturnType<typeof calculateProductPrice>;
@@ -29,7 +31,8 @@ const addressSchema = z.object({
 
 export async function POST(request: Request) {
   try {
-    const [user, generalSettings] = await Promise.all([getCurrentUser(), getGeneralStoreSettings()]);
+    await expirePendingOrders();
+    const [user, generalSettings, orderSettings] = await Promise.all([getCurrentUser(), getGeneralStoreSettings(), getOrderSettings()]);
     if (!user) return NextResponse.json({ message: "ابتدا وارد حساب شوید." }, { status: 401 });
     if (!isStorefrontAvailable(generalSettings, user.role)) return NextResponse.json({ message: "فروشگاه در حال حاضر امکان ثبت سفارش ندارد." }, { status: 503 });
     if (user.isGuest && !generalSettings.guestCheckout) return NextResponse.json({ message: "برای ادامه خرید وارد حساب شوید." }, { status: 403 });
@@ -41,7 +44,7 @@ export async function POST(request: Request) {
     let rate = 0;
     if (needsGoldRate) {
       try {
-        const gold = await getGoldPrice({ force: true });
+        const gold = await getGoldPrice({ force: orderSettings.revalidateGoldAtCheckout });
         rate = Number(gold.pricePerGram18);
       } catch (error) {
         console.error("[checkout] Gold price is unavailable; checkout was stopped.", error);
@@ -53,6 +56,7 @@ export async function POST(request: Request) {
     }
     const lines: CheckoutLine[] = cart.items.map((item: ItemWithProduct) => {
       const p = item.product;
+      if (item.quantity > orderSettings.maxOrderItemQuantity) throw new Error(`حداکثر تعداد مجاز برای هر قلم ${orderSettings.maxOrderItemQuantity.toLocaleString("fa-IR")} عدد است.`);
       if (p.status !== "ACTIVE" || p.stock < item.quantity) throw new Error(`موجودی ${p.name} کافی نیست.`);
       if (!isOptionSnapshotValid(p.options, item.selectedOptions, item.quantity, p.stock)) throw new Error(`تنوع انتخاب‌شده برای ${p.name} غیرفعال یا ناموجود است.`);
       const selectedWeight = getSelectedOptionWeight(p.options, item.selectedOptions, Number(p.weightGrams));
@@ -74,6 +78,7 @@ export async function POST(request: Request) {
       return { item, p, parts, originalUnitPrice, discountAmount: pricing.discountAmount, unitPrice, total: unitPrice * item.quantity };
     });
     const merchandiseAmount = lines.reduce((sum: number, line: CheckoutLine) => sum + line.total, 0);
+    if (merchandiseAmount < orderSettings.minimumOrderAmount) return NextResponse.json({ message: `حداقل مبلغ سفارش ${orderSettings.minimumOrderAmount.toLocaleString("fa-IR")} ریال است.` }, { status: 422 });
     const subtotal = lines.reduce((sum: number, line: CheckoutLine) => sum + line.originalUnitPrice * line.item.quantity, 0);
     const productDiscount = lines.reduce((sum: number, line: CheckoutLine) => sum + line.discountAmount * line.item.quantity, 0);
     const tax = lines.reduce((sum: number, line: CheckoutLine) => sum + line.parts.tax * line.item.quantity, 0);
@@ -84,10 +89,13 @@ export async function POST(request: Request) {
       const shipping = Math.max(0, shippingFee - promotions.shippingDiscount);
       const total = merchandiseAmount - promotions.promotionDiscount + shipping;
       if (total <= 0) throw new Error("مبلغ نهایی سفارش معتبر نیست.");
+      const createdAt = new Date();
       const created = await tx.order.create({
         data: {
-          orderNumber: `Z${Date.now()}`,
+          orderNumber: `${orderSettings.orderNumberPrefix}-${Date.now().toString(36).toUpperCase()}-${crypto.randomUUID().slice(0, 6).toUpperCase()}`,
           userId: user.id,
+          createdAt,
+          expiresAt: orderSettings.orderExpirationStart === "CREATED_AT" ? orderExpiresAt(orderSettings, createdAt) : null,
           goldPriceSnapshot: rate,
           subtotal,
           productDiscount,
@@ -125,7 +133,11 @@ export async function POST(request: Request) {
     });
     try {
       const paymentRequest = await getPaymentProvider().request({ amount: Number(order.total), orderId: order.id, callbackUrl: `${env.APP_URL}/api/payment/callback` });
-      await db.payment.create({ data: { orderId: order.id, provider: env.PAYMENT_PROVIDER, authority: paymentRequest.authority, amount: order.total, status: "PENDING" } });
+      await db.$transaction(async (transaction) => {
+        const paymentStartedAt = new Date();
+        await transaction.payment.create({ data: { orderId: order.id, provider: env.PAYMENT_PROVIDER, authority: paymentRequest.authority, amount: order.total, status: "PENDING" } });
+        if (orderSettings.orderExpirationStart === "PAYMENT_STARTED_AT") await transaction.order.update({ where: { id: order.id }, data: { expiresAt: orderExpiresAt(orderSettings, paymentStartedAt) } });
+      });
       return NextResponse.json({ redirectUrl: paymentRequest.redirectUrl });
     } catch (error) {
       await db.$transaction(async (tx) => {
@@ -136,7 +148,7 @@ export async function POST(request: Request) {
     }
   } catch (error) {
     if (error instanceof PromotionValidationError) return NextResponse.json({ message: error.message }, { status: 422 });
-    if (error instanceof Error && (error.message.startsWith("موجودی") || error.message.startsWith("تنوع") || error.message.startsWith("قیمت"))) return NextResponse.json({ message: error.message }, { status: 409 });
+    if (error instanceof Error && (error.message.startsWith("موجودی") || error.message.startsWith("تنوع") || error.message.startsWith("قیمت") || error.message.startsWith("حداکثر تعداد"))) return NextResponse.json({ message: error.message }, { status: 409 });
     return apiError(error);
   }
 }

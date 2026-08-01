@@ -24,6 +24,7 @@ const schema = z.object({
   FTP_SECURE: z.enum(["true", "false"]).default("false").transform((value) => value === "true"),
   FTP_PUBLIC_BASE_URL: z.string().default(""),
   PAYMENT_PROVIDER: z.enum(["mock"]).default("mock"),
+  CRON_SECRET: z.preprocess((value) => value === "" ? undefined : value, z.string().min(32).optional()),
 });
 
 export const env = schema.parse(process.env);
