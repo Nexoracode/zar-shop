@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useState, type DragEvent, type FormEvent, type ReactNode } from "react";
-import { Alert, Button, Card, Chip, Input, Label, Tabs, TextArea, toast } from "@heroui/react";
+import { Alert, Button, Card, Chip, Input, Label, TextArea, toast } from "@heroui/react";
 import {
   Bell, Boxes, CheckCircle2, CircleDollarSign, Clock3, CreditCard, Eye, EyeOff, FileQuestion, FileText,
   Globe2, GripVertical, Images, LayoutDashboard, Mail, MapPin, Megaphone, PackageCheck, Palette, Plus, Save,
@@ -23,46 +23,7 @@ import type { ContentPageId, ContentSettings as ContentSettingsData } from "@/mo
 import type { CatalogSettings as CatalogSettingsData } from "@/modules/settings/catalog-settings";
 import { RichTextEditor } from "@/components/rich-text-editor";
 
-const tabClass = "min-h-11 min-w-0 gap-2 whitespace-nowrap rounded-xl px-2 text-xs font-bold sm:px-3";
-
-export function AdminSettings({ initialSettings, initialHomepageSettings, initialBrandSettings, initialOrderSettings, initialCommerceSettings, initialContentSettings, initialCatalogSettings, paymentProviderLabel }: { initialSettings: GeneralStoreSettingsInput; initialHomepageSettings: HomepageSettingsData; initialBrandSettings: BrandSettingsData; initialOrderSettings: OrderSettingsData; initialCommerceSettings: CommerceSettingsData; initialContentSettings: ContentSettingsData; initialCatalogSettings: CatalogSettingsData; paymentProviderLabel: string }) {
-  const demoAction = (title: string) => toast.info("نسخه نمایشی تنظیمات", { description: `بخش «${title}» پس از تأیید شما به API و دیتابیس متصل می‌شود.` });
-  const catalogLabel = initialCatalogSettings.industry === "GOLD" ? "محصول و قیمت طلا" : "محصولات";
-
-  return (
-    <div className="grid gap-5">
-      <Alert status="accent" className="rounded-xl border border-blue-200 bg-blue-50 text-blue-900">
-        <Alert.Description>تب‌های «عمومی»، «صفحه اصلی»، «ظاهر و برند»، «سفارش و انقضا»، «{catalogLabel}»، «ارسال و پرداخت» و «محتوا و FAQ» به دیتابیس و سایت متصل هستند. سایر تب‌ها فعلاً نمونه رابط کاربری هستند و ذخیره نمی‌شوند.</Alert.Description>
-      </Alert>
-
-      <Tabs defaultSelectedKey="general" aria-label="بخش‌های تنظیمات فروشگاه" className="grid gap-5">
-        <Tabs.ListContainer className="w-full rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-1.5 shadow-sm sm:p-2">
-          <Tabs.List className="grid w-full grid-cols-2 gap-1 p-0 md:grid-cols-4 2xl:grid-cols-8">
-            <Tabs.Tab id="general" className={tabClass}><Store size={16} />عمومی</Tabs.Tab>
-            <Tabs.Tab id="homepage" className={tabClass}><LayoutDashboard size={16} />صفحه اصلی</Tabs.Tab>
-            <Tabs.Tab id="branding" className={tabClass}><Palette size={16} />ظاهر و برند</Tabs.Tab>
-            <Tabs.Tab id="orders" className={tabClass}><PackageCheck size={16} />سفارش و انقضا</Tabs.Tab>
-            <Tabs.Tab id="catalog" className={tabClass}><Boxes size={16} />{catalogLabel}</Tabs.Tab>
-            <Tabs.Tab id="commerce" className={tabClass}><Truck size={16} />ارسال و پرداخت</Tabs.Tab>
-            <Tabs.Tab id="content" className={tabClass}><FileQuestion size={16} />محتوا و FAQ</Tabs.Tab>
-            <Tabs.Tab id="seo" className={tabClass}><Search size={16} />SEO و اعلان‌ها</Tabs.Tab>
-          </Tabs.List>
-        </Tabs.ListContainer>
-
-        <Tabs.Panel id="general"><GeneralSettings initialSettings={initialSettings} /></Tabs.Panel>
-        <Tabs.Panel id="homepage"><HomepageSettings initialSettings={initialHomepageSettings} /></Tabs.Panel>
-        <Tabs.Panel id="branding"><BrandSettings initialSettings={initialBrandSettings} /></Tabs.Panel>
-        <Tabs.Panel id="orders"><OrderSettings initialSettings={initialOrderSettings} /></Tabs.Panel>
-        <Tabs.Panel id="catalog"><CatalogSettings initialSettings={initialCatalogSettings} /></Tabs.Panel>
-        <Tabs.Panel id="commerce"><CommerceSettings initialSettings={initialCommerceSettings} paymentProviderLabel={paymentProviderLabel} /></Tabs.Panel>
-        <Tabs.Panel id="content"><ContentSettings initialSettings={initialContentSettings} /></Tabs.Panel>
-        <Tabs.Panel id="seo"><SeoSettings onDemo={demoAction} /></Tabs.Panel>
-      </Tabs>
-    </div>
-  );
-}
-
-function GeneralSettings({ initialSettings }: { initialSettings: GeneralStoreSettingsInput }) {
+export function GeneralSettings({ initialSettings }: { initialSettings: GeneralStoreSettingsInput }) {
   const [saving, setSaving] = useState(false);
   const [isStoreActive, setIsStoreActive] = useState(initialSettings.isStoreActive);
   const [guestCheckout, setGuestCheckout] = useState(initialSettings.guestCheckout);
@@ -119,7 +80,7 @@ function toMediaChoice(media: HomepageSettingsData["heroDesktopMedia"]): MediaCh
   return media ? { id: media.id, title: media.title || media.alt || "تصویر صفحه اصلی", url: media.url, type: "IMAGE", mimeType: media.mimeType } : null;
 }
 
-function HomepageSettings({ initialSettings }: { initialSettings: HomepageSettingsData }) {
+export function HomepageSettings({ initialSettings }: { initialSettings: HomepageSettingsData }) {
   const [saving, setSaving] = useState(false);
   const [sections, setSections] = useState(initialSettings.sections);
   const [heroContentMode, setHeroContentMode] = useState(initialSettings.heroContentMode);
@@ -268,7 +229,7 @@ function HomepageMediaField({ label, hint, media, onSelect, onClear }: { label: 
   </Card>;
 }
 
-function BrandSettings({ initialSettings }: { initialSettings: BrandSettingsData }) {
+export function BrandSettings({ initialSettings }: { initialSettings: BrandSettingsData }) {
   const [saving, setSaving] = useState(false);
   const [colors, setColors] = useState({ primary: initialSettings.brandPrimaryColor, accent: initialSettings.brandAccentColor, background: initialSettings.brandBackgroundColor, danger: initialSettings.brandDangerColor });
   const [enforceContrast, setEnforceContrast] = useState(initialSettings.enforceColorContrast);
@@ -306,7 +267,7 @@ function BrandSettings({ initialSettings }: { initialSettings: BrandSettingsData
 function BrandColorField({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) { return <Field label={label}><div className="flex items-center gap-2"><span className="relative size-11 shrink-0 overflow-hidden rounded-full border-2 border-[var(--surface)] shadow-sm ring-1 ring-[var(--border)] transition focus-within:ring-2 focus-within:ring-[var(--accent)]" style={{ backgroundColor: value }}><Input type="color" value={value} onChange={(event) => onChange(event.target.value.toUpperCase())} aria-label={`انتخاب ${label}`} variant="secondary" className="absolute inset-0 h-full w-full cursor-pointer opacity-0" /></span><Input value={value} onChange={(event) => onChange(event.target.value)} dir="ltr" maxLength={7} variant="secondary" className={adminFieldClass} /></div></Field>; }
 function BrandAssetRow({ title, hint, media, onSelect, onClear }: { title: string; hint: string; media: MediaChoice | null; onSelect: () => void; onClear: () => void }) { return <div className="flex flex-wrap items-center gap-3 rounded-xl border border-[var(--border)] bg-[var(--surface-secondary)] p-3"><span className="relative grid size-12 shrink-0 place-items-center overflow-hidden rounded-lg bg-[var(--surface)] text-[var(--muted)]">{media ? <Image src={media.url} alt={media.title} fill sizes="48px" className="object-contain p-1" /> : <Images size={18} />}</span><div className="min-w-0 flex-1"><strong className="block text-sm">{title}</strong><span className="mt-0.5 block text-[11px] text-[var(--muted)]">{media?.title ?? hint}</span></div><Button type="button" size="sm" variant="secondary" onPress={onSelect} className="gap-1.5"><Upload size={14} />{media ? "تغییر" : "انتخاب فایل"}</Button>{media && <Button type="button" isIconOnly size="sm" variant="danger-soft" aria-label={`حذف ${title}`} onPress={onClear}><Trash2 size={14} /></Button>}</div>; }
 
-function OrderSettings({ initialSettings }: { initialSettings: OrderSettingsData }) {
+export function OrderSettings({ initialSettings }: { initialSettings: OrderSettingsData }) {
   const [settings, setSettings] = useState(initialSettings);
   const [saving, setSaving] = useState(false);
   const set = <Key extends keyof OrderSettingsData>(key: Key, value: OrderSettingsData[Key]) => setSettings((current) => ({ ...current, [key]: value }));
@@ -351,7 +312,7 @@ function OrderSettings({ initialSettings }: { initialSettings: OrderSettingsData
   </SettingsGrid><Card variant="secondary" className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4 shadow-sm"><div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"><div><strong className="block text-sm">ذخیره تنظیمات سفارش و انقضا</strong><p className="m-0 mt-1 text-xs text-[var(--muted)]">تمام قواعد این تب با هم ذخیره و روی سفارش‌های جدید اعمال می‌شوند.</p></div><Button type="submit" variant="primary" isPending={saving} className="min-h-11 gap-2 px-5"><Save size={16} />ذخیره تنظیمات</Button></div></Card></form>;
 }
 
-function CatalogSettings({ initialSettings }: { initialSettings: CatalogSettingsData }) {
+export function CatalogSettings({ initialSettings }: { initialSettings: CatalogSettingsData }) {
   const [settings, setSettings] = useState(initialSettings);
   const [saving, setSaving] = useState(false);
   const isGold = settings.industry === "GOLD";
@@ -396,7 +357,7 @@ function CatalogSettings({ initialSettings }: { initialSettings: CatalogSettings
   </SettingsGrid><Card variant="secondary" className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4 shadow-sm"><div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"><div><strong className="block text-sm">{isGold ? "ذخیره تنظیمات محصول و قیمت طلا" : "ذخیره تنظیمات محصولات"}</strong><p className="m-0 mt-1 text-xs text-[var(--muted)]">تمام تنظیمات این صفحه با هم ذخیره و بلافاصله روی فروشگاه اعمال می‌شوند.</p></div><Button type="submit" variant="primary" isPending={saving} className="min-h-11 gap-2 px-5"><Save size={16} />ذخیره تنظیمات</Button></div></Card></form>;
 }
 
-function CommerceSettings({ initialSettings, paymentProviderLabel }: { initialSettings: CommerceSettingsData; paymentProviderLabel: string }) {
+export function CommerceSettings({ initialSettings, paymentProviderLabel }: { initialSettings: CommerceSettingsData; paymentProviderLabel: string }) {
   const [settings, setSettings] = useState(initialSettings);
   const [saving, setSaving] = useState(false);
   const set = <Key extends keyof CommerceSettingsData>(key: Key, value: CommerceSettingsData[Key]) => setSettings((current) => ({ ...current, [key]: value }));
@@ -430,7 +391,7 @@ function CommerceSettings({ initialSettings, paymentProviderLabel }: { initialSe
   </div><Card variant="secondary" className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4 shadow-sm"><div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"><div><strong className="block text-sm">ذخیره تنظیمات ارسال و پرداخت</strong><p className="m-0 mt-1 text-xs text-[var(--muted)]">وضعیت درگاه و روش‌های تحویل با هم ذخیره می‌شوند.</p></div><Button type="submit" variant="primary" isPending={saving} className="min-h-11 gap-2 px-5"><Save size={16} />ذخیره تنظیمات</Button></div></Card></form>;
 }
 
-function ContentSettings({ initialSettings }: { initialSettings: ContentSettingsData }) {
+export function ContentSettings({ initialSettings }: { initialSettings: ContentSettingsData }) {
   const [faqs, setFaqs] = useState(initialSettings.faqs);
   const [pages, setPages] = useState(initialSettings.pages);
   const [selectedPageId, setSelectedPageId] = useState<ContentPageId>(initialSettings.pages[0].id);
@@ -500,7 +461,8 @@ function ContentSettings({ initialSettings }: { initialSettings: ContentSettings
   </form>;
 }
 
-function SeoSettings({ onDemo }: { onDemo: (title: string) => void }) {
+export function SeoSettings() {
+  const onDemo = () => toast.info("نسخه نمایشی تنظیمات", { description: "بخش «SEO و اعلان‌ها» پس از تأیید شما به API و دیتابیس متصل می‌شود." });
   return <SettingsGrid>
     <SettingCard icon={<Search size={19} />} title="SEO فروشگاه" description="اطلاعات پیش‌فرض موتورهای جست‌وجو و شبکه‌های اجتماعی">
       <Field label="عنوان پیش‌فرض سایت"><Input defaultValue="زر گالری | خرید آنلاین طلا با قیمت روز" variant="secondary" className={adminFieldClass} /></Field><Field label="توضیحات متا"><TextArea defaultValue="خرید آنلاین زیورآلات طلای ۱۸ عیار با قیمت لحظه‌ای، تضمین اصالت و فاکتور رسمی." rows={3} variant="secondary" className={adminFieldClass} /></Field><div className="grid gap-4 sm:grid-cols-2"><Field label="دامنه اصلی"><Input defaultValue="https://zargallery.ir" dir="ltr" variant="secondary" className={adminFieldClass} /></Field><Field label="نشانی Sitemap"><Input defaultValue="/sitemap.xml" dir="ltr" variant="secondary" className={adminFieldClass} /></Field></div>
@@ -509,7 +471,7 @@ function SeoSettings({ onDemo }: { onDemo: (title: string) => void }) {
     <SettingCard icon={<Bell size={19} />} title="اعلان‌ها و پیام‌ها" description="رویدادهایی که برای مدیر یا مشتری پیام ارسال می‌کنند">
       <MethodRow icon={<Mail size={18} />} title="سفارش جدید" description="ایمیل برای مدیر فروشگاه" active /><MethodRow icon={<Smartphone size={18} />} title="تأیید سفارش مشتری" description="پیامک پس از پرداخت موفق" active /><MethodRow icon={<Boxes size={18} />} title="هشدار موجودی کم" description="اعلان به مدیر کاتالوگ" active /><MethodRow icon={<Clock3 size={18} />} title="یادآوری پرداخت" description="پیش از منقضی‌شدن سفارش" active /><MethodRow icon={<Megaphone size={18} />} title="سبد خرید رهاشده" description="ارسال خودکار یادآوری به مشتری" />
       <Field label="ایمیل دریافت اعلان‌های مدیریتی"><Input defaultValue="admin@zargallery.ir" dir="ltr" variant="secondary" className={adminFieldClass} /></Field>
-      <DemoFooter onPress={() => onDemo("SEO و اعلان‌ها")} />
+      <DemoFooter onPress={onDemo} />
     </SettingCard>
   </SettingsGrid>;
 }

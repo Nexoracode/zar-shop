@@ -1,22 +1,14 @@
-import { AdminSettings } from "@/components/admin-settings";
 import { AdminPageHeader } from "@/components/admin-ui";
+import { AdminSettingsNavigation } from "@/components/admin-settings-navigation";
 import { requireAdminUser } from "@/modules/auth/session";
-import { getGeneralStoreSettings } from "@/modules/settings/general-settings";
-import { getHomepageSettings } from "@/modules/settings/homepage-settings";
-import { getBrandSettings } from "@/modules/settings/brand-settings";
-import { getOrderSettings } from "@/modules/settings/order-settings";
-import { getCommerceSettings } from "@/modules/settings/commerce-settings";
-import { getContentSettings } from "@/modules/settings/content-settings";
-import { getCatalogSettings } from "@/modules/settings/catalog-settings";
-import { env } from "@/lib/env";
+import { getStoreIndustry } from "@/modules/settings/store-settings";
 
 export default async function AdminSettingsPage() {
   await requireAdminUser();
-  const [settings, homepageSettings, brandSettings, orderSettings, commerceSettings, contentSettings, catalogSettings] = await Promise.all([getGeneralStoreSettings(), getHomepageSettings(), getBrandSettings(), getOrderSettings(), getCommerceSettings(), getContentSettings(), getCatalogSettings()]);
-  return (
-    <>
-      <AdminPageHeader eyebrow="مرکز پیکربندی فروشگاه" title="تنظیمات سایت" description="ساختار، محتوای عمومی و قواعد عملیاتی فروشگاه را در یک محل مدیریت کنید." />
-      <AdminSettings initialSettings={settings} initialHomepageSettings={homepageSettings} initialBrandSettings={brandSettings} initialOrderSettings={orderSettings} initialCommerceSettings={commerceSettings} initialContentSettings={contentSettings} initialCatalogSettings={catalogSettings} paymentProviderLabel={env.PAYMENT_PROVIDER === "zarinpal" ? `زرین‌پال${env.ZARINPAL_SANDBOX ? " (Sandbox)" : ""}` : "درگاه آزمایشی"} />
-    </>
-  );
+  const industry = await getStoreIndustry();
+
+  return <>
+    <AdminPageHeader eyebrow="مرکز پیکربندی فروشگاه" title="تنظیمات سایت" description="بخش موردنظر را انتخاب کنید تا تنظیمات آن را در صفحه‌ای مستقل مدیریت کنید." />
+    <AdminSettingsNavigation industry={industry} />
+  </>;
 }
