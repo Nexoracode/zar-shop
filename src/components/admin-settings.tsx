@@ -1,27 +1,31 @@
 "use client";
 
+import Image from "next/image";
 import { useState, type FormEvent, type ReactNode } from "react";
 import { Alert, Button, Card, Chip, Input, Label, Tabs, TextArea, toast } from "@heroui/react";
 import {
-  Bell, Boxes, CheckCircle2, ChevronDown, CircleDollarSign, Clock3, CreditCard, FileQuestion, FileText,
+  ArrowDown, ArrowUp, Bell, Boxes, CheckCircle2, CircleDollarSign, Clock3, CreditCard, Eye, EyeOff, FileQuestion, FileText,
   Globe2, GripVertical, Images, LayoutDashboard, Mail, MapPin, Megaphone, PackageCheck, Palette, Plus, Save,
-  Search, Settings2, ShieldCheck, Smartphone, Sparkles, Store, Truck, Upload, Users,
+  Search, Settings2, ShieldCheck, Smartphone, Sparkles, Store, Trash2, Truck, Upload, Users,
 } from "lucide-react";
 import { AdminCheckbox } from "@/components/admin-checkbox";
 import { HeroSelectField } from "@/components/hero-select-field";
 import { adminFieldClass, adminLabelClass } from "@/components/admin-ui";
 import { HeroNumberInput } from "@/components/hero-number-input";
+import { MediaPickerDialog } from "@/components/media-picker-dialog";
+import type { MediaChoice } from "@/components/media-library";
 import type { GeneralStoreSettingsInput } from "@/modules/settings/general-settings";
+import type { HomepageSectionId, HomepageSettings as HomepageSettingsData } from "@/modules/settings/homepage-settings";
 
 const tabClass = "min-h-11 min-w-0 gap-2 whitespace-nowrap rounded-xl px-2 text-xs font-bold sm:px-3";
 
-export function AdminSettings({ initialSettings }: { initialSettings: GeneralStoreSettingsInput }) {
+export function AdminSettings({ initialSettings, initialHomepageSettings }: { initialSettings: GeneralStoreSettingsInput; initialHomepageSettings: HomepageSettingsData }) {
   const demoAction = (title: string) => toast.info("نسخه نمایشی تنظیمات", { description: `بخش «${title}» پس از تأیید شما به API و دیتابیس متصل می‌شود.` });
 
   return (
     <div className="grid gap-5">
       <Alert status="accent" className="rounded-xl border border-blue-200 bg-blue-50 text-blue-900">
-        <Alert.Description>تب «عمومی» به سایت، فاکتور و فرایند خرید متصل است. سایر تب‌ها فعلاً نمونه رابط کاربری هستند و ذخیره نمی‌شوند.</Alert.Description>
+        <Alert.Description>تب‌های «عمومی» و «صفحه اصلی» به دیتابیس و سایت متصل هستند. سایر تب‌ها فعلاً نمونه رابط کاربری هستند و ذخیره نمی‌شوند.</Alert.Description>
       </Alert>
 
       <Tabs defaultSelectedKey="general" aria-label="بخش‌های تنظیمات فروشگاه" className="grid gap-5">
@@ -39,7 +43,7 @@ export function AdminSettings({ initialSettings }: { initialSettings: GeneralSto
         </Tabs.ListContainer>
 
         <Tabs.Panel id="general"><GeneralSettings initialSettings={initialSettings} /></Tabs.Panel>
-        <Tabs.Panel id="homepage"><HomepageSettings onDemo={demoAction} /></Tabs.Panel>
+        <Tabs.Panel id="homepage"><HomepageSettings initialSettings={initialHomepageSettings} /></Tabs.Panel>
         <Tabs.Panel id="branding"><BrandSettings onDemo={demoAction} /></Tabs.Panel>
         <Tabs.Panel id="orders"><OrderSettings onDemo={demoAction} /></Tabs.Panel>
         <Tabs.Panel id="catalog"><CatalogSettings /></Tabs.Panel>
@@ -95,23 +99,90 @@ function GeneralSettings({ initialSettings }: { initialSettings: GeneralStoreSet
   </SettingsGrid></form>;
 }
 
-const homeSections = [
-  ["اسلایدر اصلی", "بنر، عنوان، توضیح و دکمه اقدام", "فعال"], ["دسته‌بندی‌های منتخب", "نمایش ۶ دسته‌بندی اصلی", "فعال"],
-  ["محصولات ویژه", "محصولات علامت‌گذاری‌شده توسط مدیر", "فعال"], ["مزیت‌های خرید", "ضمانت اصالت، ارسال امن و فاکتور رسمی", "فعال"],
-  ["محصولات جدید", "آخرین محصولات منتشرشده", "فعال"], ["سوالات متداول", "۶ سوال منتخب در انتهای صفحه", "غیرفعال"],
-];
+const homeSectionMeta: Record<HomepageSectionId, { title: string; description: string }> = {
+  HERO: { title: "اسلایدر اصلی", description: "بنر، عنوان، توضیح و دکمه اقدام" },
+  PROMISES: { title: "مزیت‌های خرید", description: "ضمانت اصالت، ارسال امن و قیمت‌گذاری شفاف" },
+  CATEGORIES: { title: "دسته‌بندی‌های منتخب", description: "دسته‌بندی‌های شاخص و فعال فروشگاه" },
+  PRODUCTS: { title: "محصولات منتخب", description: "محصولات ویژه و تازه منتشرشده" },
+  ABOUT: { title: "معرفی فروشگاه", description: "داستان، ارزش‌ها و شفافیت فروشگاه" },
+  CONCIERGE: { title: "خدمات اختصاصی", description: "تضمین اصالت، تحویل و مشاوره انتخاب" },
+};
 
-function HomepageSettings({ onDemo }: { onDemo: (title: string) => void }) {
-  return <SettingsGrid>
-    <SettingCard icon={<LayoutDashboard size={19} />} title="چینش صفحه اصلی" description="ترتیب نمایش بخش‌ها؛ دستگیره‌ها برای جابه‌جایی در نسخه نهایی" className="lg:col-span-[span_7/span_7]">
-      <div className="grid gap-2">{homeSections.map(([title, description, status], index) => <div key={title} className="flex items-center gap-3 rounded-xl border border-[var(--border)] bg-[var(--surface-secondary)] p-3"><GripVertical size={17} className="shrink-0 cursor-grab text-[var(--muted)]" /><span className="grid size-8 shrink-0 place-items-center rounded-lg bg-[var(--surface)] text-xs font-black text-[var(--muted)]">{(index + 1).toLocaleString("fa-IR")}</span><div className="min-w-0 flex-1"><strong className="block text-sm">{title}</strong><span className="mt-0.5 block truncate text-[11px] text-[var(--muted)]">{description}</span></div><Chip size="sm" variant="soft" className={status === "فعال" ? "text-emerald-700" : "text-slate-500"}><Chip.Label>{status}</Chip.Label></Chip><Button type="button" isIconOnly size="sm" variant="ghost" aria-label={`نمایش تنظیمات ${title}`} onPress={() => onDemo(title)}><ChevronDown size={15} /></Button></div>)}</div>
-      <Button type="button" variant="secondary" onPress={() => onDemo("افزودن بخش صفحه اصلی")} className="min-h-11 gap-2 border-2 border-dashed border-[var(--border)]"><Plus size={16} />افزودن بخش جدید</Button>
-    </SettingCard>
-    <SettingCard icon={<Images size={19} />} title="اسلایدر اصلی" description="نمونه تنظیمات بخش انتخاب‌شده" className="lg:col-span-[span_5/span_5]">
-      <Field label="عنوان اصلی"><Input defaultValue="درخشش ماندگار، انتخابی مطمئن" variant="secondary" className={adminFieldClass} /></Field><Field label="متن کوتاه"><TextArea defaultValue="جدیدترین زیورآلات طلا با قیمت لحظه‌ای" rows={3} variant="secondary" className={adminFieldClass} /></Field><div className="grid gap-4 sm:grid-cols-2"><Field label="متن دکمه"><Input defaultValue="مشاهده محصولات" variant="secondary" className={adminFieldClass} /></Field><Field label="لینک دکمه"><Input defaultValue="/products" dir="ltr" variant="secondary" className={adminFieldClass} /></Field></div><Button type="button" variant="secondary" onPress={() => onDemo("تصویر اسلایدر")} className="gap-2"><Upload size={16} />انتخاب تصویر دسکتاپ و موبایل</Button>
-      <DemoFooter onPress={() => onDemo("چینش صفحه اصلی")} />
-    </SettingCard>
-  </SettingsGrid>;
+function toMediaChoice(media: HomepageSettingsData["heroDesktopMedia"]): MediaChoice | null {
+  return media ? { id: media.id, title: media.title || media.alt || "تصویر صفحه اصلی", url: media.url, type: "IMAGE" } : null;
+}
+
+function HomepageSettings({ initialSettings }: { initialSettings: HomepageSettingsData }) {
+  const [saving, setSaving] = useState(false);
+  const [sections, setSections] = useState(initialSettings.sections);
+  const [desktopMedia, setDesktopMedia] = useState<MediaChoice | null>(() => toMediaChoice(initialSettings.heroDesktopMedia));
+  const [mobileMedia, setMobileMedia] = useState<MediaChoice | null>(() => toMediaChoice(initialSettings.heroMobileMedia));
+  const [pickerTarget, setPickerTarget] = useState<"desktop" | "mobile" | null>(null);
+
+  function moveSection(index: number, direction: -1 | 1) {
+    const target = index + direction;
+    if (target < 0 || target >= sections.length) return;
+    setSections((current) => {
+      const next = [...current];
+      [next[index], next[target]] = [next[target], next[index]];
+      return next;
+    });
+  }
+
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setSaving(true);
+    try {
+      const values = Object.fromEntries(new FormData(event.currentTarget));
+      const response = await fetch("/api/admin/settings/homepage", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...values, sections, heroDesktopMediaId: desktopMedia?.id ?? null, heroMobileMediaId: mobileMedia?.id ?? null }),
+      });
+      const result = await response.json().catch(() => null);
+      if (!response.ok) throw new Error(result?.message ?? "ذخیره تنظیمات صفحه اصلی انجام نشد.");
+      toast.success("تنظیمات صفحه اصلی ذخیره شد", { description: "چینش، محتوای اسلایدر و تصاویر در سایت اعمال شدند." });
+    } catch (reason) {
+      toast.danger("ذخیره تنظیمات صفحه اصلی انجام نشد", { description: reason instanceof Error ? reason.message : "خطای ناشناخته" });
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return <>
+    <form onSubmit={submit} className="grid gap-5"><SettingsGrid>
+      <SettingCard icon={<LayoutDashboard size={19} />} title="چینش صفحه اصلی" description="ترتیب و وضعیت نمایش بخش‌های واقعی سایت" className="lg:col-span-[span_7/span_7]">
+        <div className="grid gap-2">{sections.map((section, index) => {
+          const meta = homeSectionMeta[section.id];
+          return <div key={section.id} className="flex items-center gap-2 rounded-xl border border-[var(--border)] bg-[var(--surface-secondary)] p-3 sm:gap-3">
+            <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-[var(--surface)] text-xs font-black text-[var(--muted)]">{(index + 1).toLocaleString("fa-IR")}</span>
+            <div className="min-w-0 flex-1"><strong className="block text-sm">{meta.title}</strong><span className="mt-0.5 block truncate text-[11px] text-[var(--muted)]">{meta.description}</span></div>
+            <Chip size="sm" variant="soft" className={section.enabled ? "text-emerald-700" : "text-slate-500"}><Chip.Label>{section.enabled ? "فعال" : "غیرفعال"}</Chip.Label></Chip>
+            <div className="flex shrink-0 items-center gap-0.5">
+              <Button type="button" isIconOnly size="sm" variant="ghost" isDisabled={index === 0} aria-label={`انتقال ${meta.title} به بالا`} onPress={() => moveSection(index, -1)}><ArrowUp size={14} /></Button>
+              <Button type="button" isIconOnly size="sm" variant="ghost" isDisabled={index === sections.length - 1} aria-label={`انتقال ${meta.title} به پایین`} onPress={() => moveSection(index, 1)}><ArrowDown size={14} /></Button>
+              <Button type="button" isIconOnly size="sm" variant="ghost" aria-label={`${section.enabled ? "غیرفعال کردن" : "فعال کردن"} ${meta.title}`} onPress={() => setSections((current) => current.map((item) => item.id === section.id ? { ...item, enabled: !item.enabled } : item))}>{section.enabled ? <Eye size={15} /> : <EyeOff size={15} />}</Button>
+            </div>
+          </div>;
+        })}</div>
+      </SettingCard>
+      <SettingCard icon={<Images size={19} />} title="اسلایدر اصلی" description="محتوا و تصاویر واکنش‌گرای ابتدای سایت" className="lg:col-span-[span_5/span_5]">
+        <Field label="عنوان اصلی"><Input name="heroTitle" required defaultValue={initialSettings.heroTitle} variant="secondary" className={adminFieldClass} /></Field>
+        <Field label="متن کوتاه"><TextArea name="heroDescription" required defaultValue={initialSettings.heroDescription} rows={3} variant="secondary" className={adminFieldClass} /></Field>
+        <div className="grid gap-4 sm:grid-cols-2"><Field label="متن دکمه"><Input name="heroButtonLabel" required defaultValue={initialSettings.heroButtonLabel} variant="secondary" className={adminFieldClass} /></Field><Field label="لینک دکمه"><Input name="heroButtonHref" required defaultValue={initialSettings.heroButtonHref} dir="ltr" variant="secondary" className={adminFieldClass} /></Field></div>
+        <div className="grid gap-3 sm:grid-cols-2"><HomepageMediaField label="تصویر دسکتاپ" hint="پیشنهاد: ۱۹۲۰×۹۰۰" media={desktopMedia} onSelect={() => setPickerTarget("desktop")} onClear={() => setDesktopMedia(null)} /><HomepageMediaField label="تصویر موبایل" hint="پیشنهاد: ۹۰۰×۱۲۰۰" media={mobileMedia} onSelect={() => setPickerTarget("mobile")} onClear={() => setMobileMedia(null)} /></div>
+        <div className="flex justify-end border-t border-[var(--border)] pt-4"><Button type="submit" variant="primary" isPending={saving} className="min-w-32">ذخیره تنظیمات</Button></div>
+      </SettingCard>
+    </SettingsGrid></form>
+    <MediaPickerDialog open={pickerTarget !== null} scope="HOMEPAGE" allowedTypes={["IMAGE"]} selected={(pickerTarget === "desktop" ? desktopMedia : mobileMedia) ? [(pickerTarget === "desktop" ? desktopMedia : mobileMedia)!] : []} onClose={() => setPickerTarget(null)} onConfirm={(items) => { if (pickerTarget === "desktop") setDesktopMedia(items[0] ?? null); else if (pickerTarget === "mobile") setMobileMedia(items[0] ?? null); }} />
+  </>;
+}
+
+function HomepageMediaField({ label, hint, media, onSelect, onClear }: { label: string; hint: string; media: MediaChoice | null; onSelect: () => void; onClear: () => void }) {
+  return <Card variant="secondary" className="overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface-secondary)] shadow-none">
+    <div className="relative aspect-[16/9] bg-[var(--surface)]">{media ? <Image src={media.url} alt={media.title} fill sizes="(max-width: 640px) 100vw, 320px" className="object-cover" /> : <span className="grid h-full place-items-center text-[var(--muted)]"><Images size={28} /></span>}</div>
+    <div className="grid gap-2 p-3"><div><strong className="block text-xs">{label}</strong><span className="text-[10px] text-[var(--muted)]">{media?.title || hint}</span></div><div className="flex gap-2"><Button type="button" size="sm" variant="secondary" onPress={onSelect} className="flex-1 gap-1 text-xs"><Upload size={13} />{media ? "تغییر" : "انتخاب"}</Button>{media && <Button type="button" size="sm" isIconOnly variant="danger-soft" aria-label={`حذف ${label}`} onPress={onClear}><Trash2 size={13} /></Button>}</div></div>
+  </Card>;
 }
 
 function BrandSettings({ onDemo }: { onDemo: (title: string) => void }) {

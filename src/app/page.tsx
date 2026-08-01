@@ -9,6 +9,7 @@ import { getGoldPriceForDisplay } from "@/modules/gold/gold-price.service";
 import { calculateProductPrice } from "@/modules/products/pricing";
 import { calculateDiscountedPrice } from "@/modules/products/discount";
 import { getGeneralStoreSettings } from "@/modules/settings/general-settings";
+import { getHomepageSettings, type HomepageSectionId } from "@/modules/settings/homepage-settings";
 
 type HomeProduct = Prisma.ProductGetPayload<{ include: { category: true; media: { include: { media: true } } } }>;
 type HomeCategory = Prisma.CategoryGetPayload<{ include: { image: true; children: true; _count: { select: { products: true } } } }>;
@@ -16,7 +17,7 @@ type HomeCategory = Prisma.CategoryGetPayload<{ include: { image: true; children
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
-  const [gold, products, rootCategories, settings] = await Promise.all([
+  const [gold, products, rootCategories, settings, homepage] = await Promise.all([
     getGoldPriceForDisplay(),
     db.product.findMany({
       where: { status: "ACTIVE" },
@@ -35,30 +36,45 @@ export default async function Home() {
       take: 8,
     }),
     getGeneralStoreSettings(),
+    getHomepageSettings(),
   ]);
   const price = gold ? Number(gold.pricePerGram18) : null;
   const featuredCategories = rootCategories.filter((category) => category.featured);
   const homeCategories = (featuredCategories.length ? featuredCategories : rootCategories).slice(0, 4);
+  const sectionPosition = new Map(homepage.sections.map((section, index) => [section.id, { enabled: section.enabled, order: index }]));
+  const sectionProps = (id: HomepageSectionId) => ({
+    hidden: sectionPosition.get(id)?.enabled === false,
+    style: { order: sectionPosition.get(id)?.order ?? homepage.sections.length },
+  });
+  const desktopHeroImage = homepage.heroDesktopMedia?.url ?? "/images/zar-hero-campaign.png";
 
   return (
-    <main className="overflow-hidden">
-      <section className="relative isolate flex min-h-[620px] items-center overflow-hidden bg-[#c8b39f] sm:min-h-[680px] lg:min-h-[calc(100svh-160px)] lg:max-h-[820px]" aria-labelledby="hero-title">
-        <Image
-          src="/images/zar-hero-campaign.png"
-          alt={`محصولات منتخب ${settings.storeName}`}
+    <main className="flex flex-col overflow-hidden">
+      <section {...sectionProps("HERO")} className="relative isolate flex min-h-[620px] items-center overflow-hidden bg-[#c8b39f] sm:min-h-[680px] lg:min-h-[calc(100svh-160px)] lg:max-h-[820px]" aria-labelledby="hero-title">
+        {homepage.heroMobileMedia && <Image
+          src={homepage.heroMobileMedia.url}
+          alt={homepage.heroMobileMedia.alt ?? homepage.heroTitle}
           fill
           priority
           sizes="100vw"
-          className="object-cover object-[63%_center] sm:object-[60%_center] lg:object-center"
+          className="object-cover sm:hidden"
+        />}
+        <Image
+          src={desktopHeroImage}
+          alt={homepage.heroDesktopMedia?.alt ?? `محصولات منتخب ${settings.storeName}`}
+          fill
+          priority
+          sizes="100vw"
+          className={`object-cover object-[63%_center] sm:object-[60%_center] lg:object-center ${homepage.heroMobileMedia ? "hidden sm:block" : ""}`}
         />
         <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(16,29,51,0.88)_0%,rgba(16,29,51,0.58)_48%,rgba(16,29,51,0.08)_80%)] max-lg:bg-[linear-gradient(0deg,rgba(16,29,51,0.92)_0%,rgba(16,29,51,0.5)_52%,rgba(16,29,51,0.08)_100%)]" />
         <div className="relative z-10 mx-auto flex w-full max-w-[1240px] items-end px-5 pb-14 pt-56 sm:px-8 sm:pb-20 lg:items-center lg:px-6 lg:py-20">
           <div className="max-w-[610px] text-white">
             <span className="mb-4 inline-flex items-center gap-2 text-xs font-bold tracking-[0.08em] text-[#ead39f] sm:text-sm"><i className="h-px w-8 bg-[#d7b66e]" /> کالکشن امضای زر · ۱۴۰۵</span>
-            <h1 id="hero-title" className="m-0 max-w-3xl text-[clamp(2.55rem,7vw,5.5rem)] font-normal leading-[1.25] tracking-[-0.04em]">{settings.tagline}</h1>
-            <p className="mb-0 mt-5 max-w-[540px] text-sm leading-8 text-white/80 sm:text-base sm:leading-9">زیورآلاتی برای لحظه‌هایی که می‌مانند؛ با طراحی اصیل، قیمت‌گذاری شفاف و تضمین همیشگی اصالت.</p>
+            <h1 id="hero-title" className="m-0 max-w-3xl text-[clamp(2.55rem,7vw,5.5rem)] font-normal leading-[1.25] tracking-[-0.04em]">{homepage.heroTitle}</h1>
+            <p className="mb-0 mt-5 max-w-[540px] text-sm leading-8 text-white/80 sm:text-base sm:leading-9">{homepage.heroDescription}</p>
             <div className="mt-8 flex flex-wrap items-center gap-5 sm:mt-10">
-              <Link className="inline-flex min-h-12 items-center justify-center gap-2 bg-[#b5904c] px-6 text-sm text-white transition hover:-translate-y-0.5 hover:bg-[#9f7938]" href="/products">مشاهده کالکشن <ArrowLeft size={17} /></Link>
+              <Link className="inline-flex min-h-12 items-center justify-center gap-2 bg-[#b5904c] px-6 text-sm text-white transition hover:-translate-y-0.5 hover:bg-[#9f7938]" href={homepage.heroButtonHref}>{homepage.heroButtonLabel} <ArrowLeft size={17} /></Link>
               <Link className="border-b border-white/50 pb-1 text-sm text-white transition hover:border-white" href="#about">قصه {settings.storeName}</Link>
             </div>
           </div>
@@ -68,7 +84,7 @@ export default async function Home() {
       </section>
 
       {/* Promises */}
-      <section className="border-b border-[#e5dfd4] bg-white" aria-label={`مزایای خرید از ${settings.storeName}`}>
+      <section {...sectionProps("PROMISES")} className="border-b border-[#e5dfd4] bg-white" aria-label={`مزایای خرید از ${settings.storeName}`}>
         <div className="w-[min(1240px,calc(100%-40px))] mx-auto min-h-[104px] grid grid-cols-3 items-center max-[760px]:grid-cols-1 max-[760px]:py-2">
           {[
             { icon: <Gem size={19} strokeWidth={1.4} />, title: "طلای ۱۸ عیار", sub: "تضمین اصالت هر قطعه" },
@@ -87,7 +103,7 @@ export default async function Home() {
       </section>
 
       {/* Categories */}
-      <section className="py-[112px] max-[760px]:py-[76px]" aria-labelledby="category-title">
+      <section {...sectionProps("CATEGORIES")} className="py-[112px] max-[760px]:py-[76px]" aria-labelledby="category-title">
         <div className="w-[min(1240px,calc(100%-40px))] mx-auto">
           <div className="flex items-end justify-between gap-8 mb-[46px] max-[760px]:flex-col max-[760px]:items-start max-[760px]:mb-[34px]">
             <div>
@@ -130,7 +146,7 @@ export default async function Home() {
       </section>
 
       {/* Products */}
-      <section className="py-[112px] bg-[#f0ede7] max-[760px]:py-[76px]">
+      <section {...sectionProps("PRODUCTS")} className="py-[112px] bg-[#f0ede7] max-[760px]:py-[76px]">
         <div className="w-[min(1240px,calc(100%-40px))] mx-auto">
           <div className="flex items-end justify-between gap-8 mb-[42px] max-[760px]:flex-col max-[760px]:items-start max-[760px]:mb-[34px]">
             <div>
@@ -184,7 +200,7 @@ export default async function Home() {
       </section>
 
       {/* About / Editorial */}
-      <section id="about" className="w-[min(1320px,calc(100%-48px))] mx-auto my-[116px] min-h-[590px] grid grid-cols-[0.9fr_1.1fr] bg-[#142640] max-[760px]:my-[76px] max-[760px]:grid-cols-1">
+      <section {...sectionProps("ABOUT")} id="about" className="w-[min(1320px,calc(100%-48px))] mx-auto my-[116px] min-h-[590px] grid grid-cols-[0.9fr_1.1fr] bg-[#142640] max-[760px]:my-[76px] max-[760px]:grid-cols-1">
         <div className="min-h-[590px] relative grid place-items-center overflow-hidden bg-[radial-gradient(circle_at_51%_48%,rgba(236,210,159,0.22),transparent_29%),linear-gradient(145deg,#c7b79f,#e8dfd2)] text-[#15304c] max-[760px]:min-h-[360px]" aria-hidden="true">
           <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 font-[Georgia,serif] text-[17rem] opacity-20 text-white">Z</span>
           <span className="absolute border border-[rgba(155,111,45,0.48)] rounded-full w-[47%] aspect-square" />
@@ -216,7 +232,7 @@ export default async function Home() {
       </section>
 
       {/* Concierge */}
-      <section id="guide" className="py-[105px] border-t border-[#e5dfd4] bg-[#fbfaf7] max-[760px]:py-[76px]">
+      <section {...sectionProps("CONCIERGE")} id="guide" className="py-[105px] border-t border-[#e5dfd4] bg-[#fbfaf7] max-[760px]:py-[76px]">
         <div className="w-[min(1240px,calc(100%-40px))] mx-auto grid grid-cols-[0.8fr_1.2fr] gap-[clamp(55px,8vw,120px)] items-start max-[1000px]:grid-cols-1">
           <div>
             <span className="inline-block text-[#9a6e2d] text-[0.78rem] font-bold tracking-[0.08em] mb-[5px]">خدمات اختصاصی</span>

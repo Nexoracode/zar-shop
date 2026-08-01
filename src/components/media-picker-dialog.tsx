@@ -7,7 +7,7 @@ import { Check, FileText, Film, ImageIcon, RefreshCw, Search, Trash2, Upload, X 
 import type { MediaChoice, MediaScope } from "@/components/media-library";
 import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
 
-type PickerItem = MediaChoice & { _count: { products: number; optionGuideProducts: number; categories: number } };
+type PickerItem = MediaChoice & { _count: { products: number; optionGuideProducts: number; categories: number; homepageHeroDesktop: number; homepageHeroMobile: number } };
 type Props = { open: boolean; scope: MediaScope; multiple?: boolean; allowedTypes?: MediaChoice["type"][]; selected: MediaChoice[]; onClose: () => void; onConfirm: (items: MediaChoice[]) => void };
 
 export function MediaPickerDialog({ open, scope, multiple = false, allowedTypes, selected, onClose, onConfirm }: Props) {
@@ -21,11 +21,11 @@ export function MediaPickerDialog({ open, scope, multiple = false, allowedTypes,
   const [error, setError] = useState("");
   const [uploadFileName, setUploadFileName] = useState("");
 
-  const scopeLabel = scope === "CATEGORY" ? "دسته‌بندی" : "محصول";
+  const scopeLabel = scope === "CATEGORY" ? "دسته‌بندی" : scope === "HOMEPAGE" ? "صفحه اصلی" : "محصول";
   const allowedTypeKey = (allowedTypes ?? (scope === "CATEGORY" ? ["IMAGE"] : ["IMAGE", "VIDEO"])).join(",");
   const acceptedFiles = allowedTypeKey.includes("DOCUMENT")
     ? "image/jpeg,image/png,image/webp,application/pdf"
-    : scope === "CATEGORY" ? "image/jpeg,image/png,image/webp" : "image/jpeg,image/png,image/webp,video/mp4,video/webm";
+    : scope !== "PRODUCT" ? "image/jpeg,image/png,image/webp" : "image/jpeg,image/png,image/webp,video/mp4,video/webm";
 
   const load = useCallback(async (signal?: AbortSignal) => {
     setLoading(true);
@@ -103,7 +103,7 @@ export function MediaPickerDialog({ open, scope, multiple = false, allowedTypes,
   }
 
   async function remove(item: PickerItem) {
-    const usage = item._count.products + item._count.optionGuideProducts + item._count.categories;
+    const usage = item._count.products + item._count.optionGuideProducts + item._count.categories + item._count.homepageHeroDesktop + item._count.homepageHeroMobile;
     if (usage) {
       setError("این رسانه در حال استفاده است؛ ابتدا آن را از محصول یا دسته‌بندی مربوط جدا کنید.");
       return;
@@ -156,7 +156,7 @@ export function MediaPickerDialog({ open, scope, multiple = false, allowedTypes,
                     <span className="hidden h-10 w-10 place-items-center rounded-xl bg-[#f4ead8] text-[#8b682b] sm:grid"><Upload size={19} /></span>
                     <label className="grid min-w-0 cursor-pointer gap-1 rounded-xl border border-slate-200 bg-white px-3 py-2 transition hover:border-[#c8a867]">
                       <span className="text-xs font-bold text-slate-700">بارگذاری فایل جدید</span>
-                      <span className="truncate text-[11px] text-slate-400">{uploadFileName || (allowedTypeKey.includes("DOCUMENT") ? "انتخاب تصویر یا فایل PDF راهنمای سایز" : scope === "CATEGORY" ? "انتخاب یک یا چند تصویر JPG، PNG یا WebP" : "انتخاب یک یا چند تصویر یا ویدیوی محصول")}</span>
+                      <span className="truncate text-[11px] text-slate-400">{uploadFileName || (allowedTypeKey.includes("DOCUMENT") ? "انتخاب تصویر یا فایل PDF راهنمای سایز" : scope === "CATEGORY" ? "انتخاب یک یا چند تصویر JPG، PNG یا WebP" : scope === "HOMEPAGE" ? "انتخاب تصویر JPG، PNG یا WebP برای صفحه اصلی" : "انتخاب یک یا چند تصویر یا ویدیوی محصول")}</span>
                       <input name="file" type="file" multiple required accept={acceptedFiles} className="sr-only" onChange={(event) => { const files = event.target.files; setUploadFileName(files?.length ? (files.length === 1 ? files[0].name : `${files.length.toLocaleString("fa-IR")} فایل انتخاب شد`) : ""); }} />
                     </label>
                     <Button type="submit" isPending={uploading} variant="primary" className="min-h-10 gap-2 bg-[#b5904c] px-4 text-xs font-bold text-white">{({ isPending }) => <>{isPending ? <Spinner color="current" size="sm" /> : <Upload size={15} />}{isPending ? "در حال بارگذاری" : "بارگذاری"}</>}</Button>
@@ -177,7 +177,7 @@ export function MediaPickerDialog({ open, scope, multiple = false, allowedTypes,
                   <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
                     {visibleItems.map((item) => {
                       const chosenIndex = draft.findIndex((chosen) => chosen.id === item.id);
-                      const usage = item._count.products + item._count.optionGuideProducts + item._count.categories;
+                      const usage = item._count.products + item._count.optionGuideProducts + item._count.categories + item._count.homepageHeroDesktop + item._count.homepageHeroMobile;
                       const chosen = chosenIndex >= 0;
                       return (
                         <Card key={item.id} variant="secondary" className={`group relative min-w-0 overflow-hidden rounded-2xl border-2 bg-white shadow-sm transition ${chosen ? "border-[#b5904c] ring-2 ring-[#b5904c]/15" : "border-transparent hover:border-slate-300 hover:shadow-md"}`}>

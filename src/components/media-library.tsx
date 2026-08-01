@@ -7,7 +7,7 @@ import { Alert, Button, Card, Input, Spinner, toast } from "@heroui/react";
 import { AdminEmptyState, adminFieldClass, adminLabelClass } from "@/components/admin-ui";
 import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
 
-export type MediaScope = "CATEGORY" | "PRODUCT";
+export type MediaScope = "CATEGORY" | "PRODUCT" | "HOMEPAGE";
 export type MediaChoice = {
   id: string;
   title: string;
@@ -17,7 +17,7 @@ export type MediaChoice = {
 
 type MediaItem = MediaChoice & {
   storageKey: string;
-  _count: { products: number; optionGuideProducts: number; categories: number };
+  _count: { products: number; optionGuideProducts: number; categories: number; homepageHeroDesktop: number; homepageHeroMobile: number };
 };
 
 const fieldClass = adminFieldClass;
@@ -101,17 +101,17 @@ export function MediaLibrary() {
   return (
     <div className="grid gap-6">
       <div className="flex w-fit max-w-full justify-self-start gap-1 overflow-hidden rounded-2xl border border-slate-200 bg-white p-1.5 shadow-sm">
-        {(["CATEGORY", "PRODUCT"] as const).map((value) => (
+        {(["CATEGORY", "PRODUCT", "HOMEPAGE"] as const).map((value) => (
           <Button key={value} type="button" onPress={() => { setLoading(true); setMessage(""); setScope(value); }} variant={scope === value ? "primary" : "ghost"} className={`min-h-11 shrink-0 rounded-xl px-4 text-sm font-bold ${scope === value ? "bg-slate-900 text-white shadow-sm" : "text-slate-600"}`}>
-            {value === "CATEGORY" ? "تصاویر دسته‌بندی" : "رسانه محصولات"}
+            {value === "CATEGORY" ? "تصاویر دسته‌بندی" : value === "HOMEPAGE" ? "تصاویر صفحه اصلی" : "رسانه محصولات"}
           </Button>
         ))}
       </div>
 
       <form onSubmit={upload} className="grid gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] sm:items-end sm:p-5">
         <label className={adminLabelClass}>
-          {scope === "CATEGORY" ? "تصویر دسته‌بندی" : "تصویر، ویدیو یا PDF محصول"}
-          <Input name="file" type="file" multiple required fullWidth variant="secondary" accept={scope === "CATEGORY" ? "image/jpeg,image/png,image/webp" : "image/jpeg,image/png,image/webp,video/mp4,video/webm,application/pdf"} className={fieldClass} />
+          {scope === "CATEGORY" ? "تصویر دسته‌بندی" : scope === "HOMEPAGE" ? "تصویر صفحه اصلی" : "تصویر، ویدیو یا PDF محصول"}
+          <Input name="file" type="file" multiple required fullWidth variant="secondary" accept={scope === "PRODUCT" ? "image/jpeg,image/png,image/webp,video/mp4,video/webm,application/pdf" : "image/jpeg,image/png,image/webp"} className={fieldClass} />
         </label>
         <label className={adminLabelClass}>عنوان فایل<Input name="title" fullWidth variant="secondary" className={fieldClass} placeholder="مثلاً نمای روبه‌روی محصول" /></label>
         <Button type="submit" isPending={uploading} variant="primary" className="min-h-[46px] gap-2 rounded-xl bg-amber-600 px-6 text-sm font-bold text-white">
@@ -126,7 +126,7 @@ export function MediaLibrary() {
       {loading ? <div className="rounded-2xl border border-slate-200 bg-white py-14 text-center text-sm text-slate-500">در حال دریافت گالری...</div> : filteredItems.length ? (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
           {filteredItems.map((item) => {
-            const usage = item._count.products + item._count.optionGuideProducts + item._count.categories;
+            const usage = item._count.products + item._count.optionGuideProducts + item._count.categories + item._count.homepageHeroDesktop + item._count.homepageHeroMobile;
             return (
               <Card key={item.id} variant="secondary" className="min-w-0 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
                 <div className="relative aspect-square bg-[#f5f3ee]">
