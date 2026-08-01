@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { generalStoreSettingsDefaults, generalStoreSettingsSchema, isStorefrontAvailable } from "./general-settings";
+import { generalStoreSettingsDefaults, generalStoreSettingsSchema, generalStoreSettingsUpdateSchema, isStorefrontAvailable } from "./general-settings";
 
 test("accepts complete general store settings", () => {
   assert.equal(generalStoreSettingsSchema.parse(generalStoreSettingsDefaults).storeName, "زر گالری");
@@ -9,6 +9,13 @@ test("accepts complete general store settings", () => {
 test("accepts gold and general store industries", () => {
   assert.equal(generalStoreSettingsSchema.parse({ ...generalStoreSettingsDefaults, industry: "GOLD" }).industry, "GOLD");
   assert.equal(generalStoreSettingsSchema.parse({ ...generalStoreSettingsDefaults, industry: "GENERAL" }).industry, "GENERAL");
+});
+
+test("general settings updates cannot overwrite store industry", () => {
+  const { industry: _industry, ...editableSettings } = generalStoreSettingsDefaults;
+  void _industry;
+  const result = generalStoreSettingsUpdateSchema.parse({ ...editableSettings, industry: "GENERAL" });
+  assert.equal("industry" in result, false);
 });
 
 test("normalizes optional general values", () => {

@@ -23,6 +23,8 @@ export const generalStoreSettingsSchema = z.object({
   maintenanceMode: z.boolean(),
 });
 
+export const generalStoreSettingsUpdateSchema = generalStoreSettingsSchema.omit({ industry: true });
+
 export type GeneralStoreSettingsInput = z.infer<typeof generalStoreSettingsSchema>;
 
 export const generalStoreSettingsDefaults: GeneralStoreSettingsInput = {
