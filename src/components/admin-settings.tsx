@@ -208,7 +208,7 @@ function HomepageSettings({ initialSettings }: { initialSettings: HomepageSettin
                 variant="ghost"
                 aria-label={`جابه‌جایی ${meta.title}؛ با کشیدن یا کلیدهای بالا و پایین`}
                 onKeyDown={(event) => { if (event.key === "ArrowUp") { event.preventDefault(); moveSection(index, -1); } else if (event.key === "ArrowDown") { event.preventDefault(); moveSection(index, 1); } }}
-                className="cursor-grab text-[var(--muted)] active:cursor-grabbing"
+                className="pointer-events-none cursor-grab text-[var(--muted)] active:cursor-grabbing"
               ><GripVertical size={17} /></Button>
             </span>
             <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-[var(--surface)] text-xs font-black text-[var(--muted)]">{(index + 1).toLocaleString("fa-IR")}</span>
