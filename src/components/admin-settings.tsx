@@ -90,8 +90,9 @@ function GeneralSettings({ initialSettings }: { initialSettings: GeneralStoreSet
     </SettingCard>
     <SettingCard icon={<Settings2 size={19} />} title="وضعیت و دسترسی فروشگاه" description="کنترل نمایش عمومی و تجربه حساب کاربری" className="lg:col-span-2">
       <div className="grid gap-3 md:grid-cols-3"><AdminCheckbox isSelected={isStoreActive} onChange={setIsStoreActive} icon={<Globe2 size={17} />} description="فروشگاه برای کاربران قابل مشاهده باشد">فروشگاه فعال</AdminCheckbox><AdminCheckbox isSelected={guestCheckout} onChange={setGuestCheckout} icon={<Users size={17} />} description="خرید بدون ساخت حساب امکان‌پذیر باشد">خرید مهمان</AdminCheckbox><AdminCheckbox isSelected={maintenanceMode} onChange={setMaintenanceMode} icon={<ShieldCheck size={17} />} description="نمایش صفحه در حال بروزرسانی به بازدیدکنندگان">حالت تعمیر و نگهداری</AdminCheckbox></div>
+      <div className="flex justify-end border-t border-[var(--border)] pt-4"><Button type="submit" variant="primary" isPending={saving} className="min-w-32">ذخیره تنظیمات</Button></div>
     </SettingCard>
-  </SettingsGrid><div className="flex justify-end rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4"><Button type="submit" variant="primary" isPending={saving} className="gap-2"><Save size={16} />{saving ? "در حال ذخیره..." : "ذخیره تنظیمات عمومی"}</Button></div></form>;
+  </SettingsGrid></form>;
 }
 
 const homeSections = [
