@@ -42,6 +42,18 @@ body {
   line-height: 1.8;
 }
 
+.storefront-shell {
+  min-height: 100dvh;
+  background: var(--brand-background, #f7f6f3);
+  color: var(--foreground);
+}
+
+@media (max-width: 639px) {
+  .storefront-shell[data-compact-mobile-grid="false"] .storefront-product-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+}
+
 @layer base {
   [data-theme="zar"] {
     color-scheme: light;

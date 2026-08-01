@@ -67,7 +67,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
             <span>مرتب‌سازی: تازه‌ترین‌ها</span>
           </div>
 
-          <div className="grid grid-cols-2 gap-x-3 gap-y-6 sm:gap-x-4 lg:grid-cols-3 xl:grid-cols-4">
+          <div className="storefront-product-grid grid grid-cols-2 gap-x-3 gap-y-6 sm:gap-x-4 lg:grid-cols-3 xl:grid-cols-4">
             {products.map((product: ProductWithRelations) => {
               const baseAmount = product.fixedPrice
                 ? Number(product.fixedPrice)

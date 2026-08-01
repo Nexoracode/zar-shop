@@ -1,13 +1,15 @@
 import Link from "next/link";
+import Image from "next/image";
 import { Headphones, LayoutDashboard, Search, ShoppingBag, UserRound } from "lucide-react";
 import { db } from "@/lib/db";
-import { formatMoney } from "@/lib/format";
 import { getGoldPriceForDisplay } from "@/modules/gold/gold-price.service";
 import type { User } from "@generated/prisma/client";
 import type { GeneralStoreSettingsInput } from "@/modules/settings/general-settings";
 import { normalizeNumericValue } from "@/lib/persian-numbers";
+import type { BrandSettings } from "@/modules/settings/brand-settings";
+import { StorefrontGoldPrice } from "@/components/storefront-gold-price";
 
-export async function SiteHeader({ settings, user }: { settings: GeneralStoreSettingsInput; user: User | null }) {
+export async function SiteHeader({ settings, brand, user }: { settings: GeneralStoreSettingsInput; brand: BrandSettings; user: User | null }) {
   const [gold, categories] = await Promise.all([
     getGoldPriceForDisplay(),
     db.category.findMany({
@@ -19,13 +21,13 @@ export async function SiteHeader({ settings, user }: { settings: GeneralStoreSet
   ]);
 
   return (
-    <header className="relative z-50 bg-white shadow-[0_5px_24px_rgba(20,35,61,0.06)] lg:sticky lg:top-0">
+    <header className={`relative z-50 bg-white shadow-[0_5px_24px_rgba(20,35,61,0.06)] ${brand.stickyStoreHeader ? "lg:sticky lg:top-0" : ""}`}>
       {/* Announcement bar */}
-      <div className="flex min-h-9 items-center bg-[#1c3155] text-[0.72rem] text-white sm:min-h-10 sm:text-[0.8rem]">
+      <div className="flex min-h-9 items-center bg-[var(--brand-primary)] text-[0.72rem] text-[var(--brand-primary-foreground)] sm:min-h-10 sm:text-[0.8rem]">
         <div className="relative mx-auto flex w-full max-w-[1240px] items-center justify-center px-4 sm:px-6">
           <span className="hidden sm:inline">ارسال امن و رایگان سفارش‌های ویژه</span>
           <strong className="font-medium sm:absolute sm:left-6">
-            {gold ? `طلای ۱۸ عیار: ${formatMoney(Number(gold.pricePerGram18), settings.currency)}` : "نرخ طلا موقتاً در دسترس نیست"}
+            <StorefrontGoldPrice initialPrice={gold ? Number(gold.pricePerGram18) : null} currency={settings.currency} live={brand.liveGoldPrice} />
           </strong>
         </div>
       </div>
@@ -50,13 +52,15 @@ export async function SiteHeader({ settings, user }: { settings: GeneralStoreSet
 
           {/* Brand */}
           <Link href="/" className="flex items-center justify-center gap-3 leading-[1.15]" aria-label={`${settings.storeName}، صفحه اصلی`}>
-            <span className="grid h-9 w-9 rotate-45 place-items-center border border-[#1c3155] sm:h-[43px] sm:w-[43px]">
-              <span className="-rotate-45 text-[#1c3155] text-sm font-bold">{settings.storeName.slice(0, 2)}</span>
+            {brand.mainLogoMedia ? <span className="relative block h-11 w-36 sm:w-44"><Image src={brand.mainLogoMedia.url} alt={brand.mainLogoMedia.alt ?? settings.storeName} fill sizes="176px" className="object-contain" /></span> : <>
+            <span className="grid h-9 w-9 rotate-45 place-items-center border border-[var(--brand-primary)] sm:h-[43px] sm:w-[43px]">
+              <span className="-rotate-45 text-[var(--brand-primary)] text-sm font-bold">{settings.storeName.slice(0, 2)}</span>
             </span>
             <span className="hidden gap-[2px] md:grid">
               <strong className="text-[1.15rem]">{settings.storeName}</strong>
               <small className="text-[#747982] text-[0.62rem]">{settings.tagline}</small>
             </span>
+            </>}
           </Link>
 
           {/* Tools */}

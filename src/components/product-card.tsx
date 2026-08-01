@@ -45,7 +45,7 @@ export function ProductCard({ href, name, category, industry, weight, purity, pr
         <span className="text-[#747982] text-[0.74rem]">{industry === "GOLD" ? `${category} · ${weight} گرم` : category}</span>
         <h3 className="mb-[7px] mt-[5px] min-h-8 text-[0.82rem] font-medium sm:text-[0.95rem]">{name}</h3>
         {originalPrice && <span className="ml-2 text-[0.7rem] text-slate-400 line-through">{originalPrice}</span>}
-        <strong className="text-[0.76rem] text-[#1c3155] sm:text-[0.92rem]">{price}</strong>
+        <strong className="text-[0.76rem] text-[var(--brand-primary)] sm:text-[0.92rem]">{price}</strong>
       </div>
     </Link>
   );

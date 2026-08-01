@@ -7,7 +7,7 @@ import { Check, FileText, Film, ImageIcon, RefreshCw, Search, Trash2, Upload, X 
 import type { MediaChoice, MediaScope } from "@/components/media-library";
 import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
 
-type PickerItem = MediaChoice & { _count: { products: number; optionGuideProducts: number; categories: number; homepageHeroDesktop: number; homepageHeroMobile: number; homepagePromoDesktop: number; homepagePromoMobile: number } };
+type PickerItem = MediaChoice & { _count: { products: number; optionGuideProducts: number; categories: number; homepageHeroDesktop: number; homepageHeroMobile: number; homepagePromoDesktop: number; homepagePromoMobile: number; brandMainLogo: number; brandDarkLogo: number; brandFavicon: number; brandSocialImage: number } };
 type Props = { open: boolean; scope: MediaScope; multiple?: boolean; allowedTypes?: MediaChoice["type"][]; selected: MediaChoice[]; onClose: () => void; onConfirm: (items: MediaChoice[]) => void };
 
 export function MediaPickerDialog({ open, scope, multiple = false, allowedTypes, selected, onClose, onConfirm }: Props) {
@@ -21,11 +21,11 @@ export function MediaPickerDialog({ open, scope, multiple = false, allowedTypes,
   const [error, setError] = useState("");
   const [uploadFileName, setUploadFileName] = useState("");
 
-  const scopeLabel = scope === "CATEGORY" ? "دسته‌بندی" : scope === "HOMEPAGE" ? "صفحه اصلی" : "محصول";
+  const scopeLabel = scope === "CATEGORY" ? "دسته‌بندی" : scope === "HOMEPAGE" ? "صفحه اصلی" : scope === "BRAND" ? "هویت بصری" : "محصول";
   const allowedTypeKey = (allowedTypes ?? (scope === "CATEGORY" ? ["IMAGE"] : ["IMAGE", "VIDEO"])).join(",");
   const acceptedFiles = allowedTypeKey.includes("DOCUMENT")
     ? "image/jpeg,image/png,image/webp,application/pdf"
-    : scope === "HOMEPAGE" ? "image/jpeg,image/png,image/webp,image/gif" : scope === "CATEGORY" ? "image/jpeg,image/png,image/webp" : "image/jpeg,image/png,image/webp,video/mp4,video/webm";
+    : scope === "HOMEPAGE" ? "image/jpeg,image/png,image/webp,image/gif" : scope === "CATEGORY" || scope === "BRAND" ? "image/jpeg,image/png,image/webp" : "image/jpeg,image/png,image/webp,video/mp4,video/webm";
 
   const load = useCallback(async (signal?: AbortSignal) => {
     setLoading(true);
@@ -103,7 +103,7 @@ export function MediaPickerDialog({ open, scope, multiple = false, allowedTypes,
   }
 
   async function remove(item: PickerItem) {
-    const usage = item._count.products + item._count.optionGuideProducts + item._count.categories + item._count.homepageHeroDesktop + item._count.homepageHeroMobile + item._count.homepagePromoDesktop + item._count.homepagePromoMobile;
+    const usage = item._count.products + item._count.optionGuideProducts + item._count.categories + item._count.homepageHeroDesktop + item._count.homepageHeroMobile + item._count.homepagePromoDesktop + item._count.homepagePromoMobile + item._count.brandMainLogo + item._count.brandDarkLogo + item._count.brandFavicon + item._count.brandSocialImage;
     if (usage) {
       setError("این رسانه در حال استفاده است؛ ابتدا آن را از محصول یا دسته‌بندی مربوط جدا کنید.");
       return;
@@ -177,7 +177,7 @@ export function MediaPickerDialog({ open, scope, multiple = false, allowedTypes,
                   <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
                     {visibleItems.map((item) => {
                       const chosenIndex = draft.findIndex((chosen) => chosen.id === item.id);
-                      const usage = item._count.products + item._count.optionGuideProducts + item._count.categories + item._count.homepageHeroDesktop + item._count.homepageHeroMobile + item._count.homepagePromoDesktop + item._count.homepagePromoMobile;
+                      const usage = item._count.products + item._count.optionGuideProducts + item._count.categories + item._count.homepageHeroDesktop + item._count.homepageHeroMobile + item._count.homepagePromoDesktop + item._count.homepagePromoMobile + item._count.brandMainLogo + item._count.brandDarkLogo + item._count.brandFavicon + item._count.brandSocialImage;
                       const chosen = chosenIndex >= 0;
                       return (
                         <Card key={item.id} variant="secondary" className={`group relative min-w-0 overflow-hidden rounded-2xl border-2 bg-white shadow-sm transition ${chosen ? "border-[#b5904c] ring-2 ring-[#b5904c]/15" : "border-transparent hover:border-slate-300 hover:shadow-md"}`}>

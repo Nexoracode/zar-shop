@@ -16,16 +16,17 @@ import { MediaPickerDialog } from "@/components/media-picker-dialog";
 import type { MediaChoice } from "@/components/media-library";
 import type { GeneralStoreSettingsInput } from "@/modules/settings/general-settings";
 import type { HomepageSectionId, HomepageSettings as HomepageSettingsData } from "@/modules/settings/homepage-settings";
+import type { BrandSettings as BrandSettingsData } from "@/modules/settings/brand-settings";
 
 const tabClass = "min-h-11 min-w-0 gap-2 whitespace-nowrap rounded-xl px-2 text-xs font-bold sm:px-3";
 
-export function AdminSettings({ initialSettings, initialHomepageSettings }: { initialSettings: GeneralStoreSettingsInput; initialHomepageSettings: HomepageSettingsData }) {
+export function AdminSettings({ initialSettings, initialHomepageSettings, initialBrandSettings }: { initialSettings: GeneralStoreSettingsInput; initialHomepageSettings: HomepageSettingsData; initialBrandSettings: BrandSettingsData }) {
   const demoAction = (title: string) => toast.info("نسخه نمایشی تنظیمات", { description: `بخش «${title}» پس از تأیید شما به API و دیتابیس متصل می‌شود.` });
 
   return (
     <div className="grid gap-5">
       <Alert status="accent" className="rounded-xl border border-blue-200 bg-blue-50 text-blue-900">
-        <Alert.Description>تب‌های «عمومی» و «صفحه اصلی» به دیتابیس و سایت متصل هستند. سایر تب‌ها فعلاً نمونه رابط کاربری هستند و ذخیره نمی‌شوند.</Alert.Description>
+        <Alert.Description>تب‌های «عمومی»، «صفحه اصلی» و «ظاهر و برند» به دیتابیس و سایت متصل هستند. سایر تب‌ها فعلاً نمونه رابط کاربری هستند و ذخیره نمی‌شوند.</Alert.Description>
       </Alert>
 
       <Tabs defaultSelectedKey="general" aria-label="بخش‌های تنظیمات فروشگاه" className="grid gap-5">
@@ -44,7 +45,7 @@ export function AdminSettings({ initialSettings, initialHomepageSettings }: { in
 
         <Tabs.Panel id="general"><GeneralSettings initialSettings={initialSettings} /></Tabs.Panel>
         <Tabs.Panel id="homepage"><HomepageSettings initialSettings={initialHomepageSettings} /></Tabs.Panel>
-        <Tabs.Panel id="branding"><BrandSettings onDemo={demoAction} /></Tabs.Panel>
+        <Tabs.Panel id="branding"><BrandSettings initialSettings={initialBrandSettings} /></Tabs.Panel>
         <Tabs.Panel id="orders"><OrderSettings onDemo={demoAction} /></Tabs.Panel>
         <Tabs.Panel id="catalog"><CatalogSettings /></Tabs.Panel>
         <Tabs.Panel id="commerce"><CommerceSettings onDemo={demoAction} /></Tabs.Panel>
@@ -261,20 +262,43 @@ function HomepageMediaField({ label, hint, media, onSelect, onClear }: { label: 
   </Card>;
 }
 
-function BrandSettings({ onDemo }: { onDemo: (title: string) => void }) {
-  return <SettingsGrid>
+function BrandSettings({ initialSettings }: { initialSettings: BrandSettingsData }) {
+  const [saving, setSaving] = useState(false);
+  const [colors, setColors] = useState({ primary: initialSettings.brandPrimaryColor, accent: initialSettings.brandAccentColor, background: initialSettings.brandBackgroundColor, danger: initialSettings.brandDangerColor });
+  const [enforceContrast, setEnforceContrast] = useState(initialSettings.enforceColorContrast);
+  const [stickyHeader, setStickyHeader] = useState(initialSettings.stickyStoreHeader);
+  const [compactGrid, setCompactGrid] = useState(initialSettings.compactMobileGrid);
+  const [livePrice, setLivePrice] = useState(initialSettings.liveGoldPrice);
+  const [assets, setAssets] = useState({ main: toMediaChoice(initialSettings.mainLogoMedia), dark: toMediaChoice(initialSettings.darkLogoMedia), favicon: toMediaChoice(initialSettings.faviconMedia), social: toMediaChoice(initialSettings.socialImageMedia) });
+  const [picker, setPicker] = useState<keyof typeof assets | null>(null);
+
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault(); setSaving(true);
+    try {
+      const response = await fetch("/api/admin/settings/brand", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ brandPrimaryColor: colors.primary, brandAccentColor: colors.accent, brandBackgroundColor: colors.background, brandDangerColor: colors.danger, enforceColorContrast: enforceContrast, stickyStoreHeader: stickyHeader, compactMobileGrid: compactGrid, liveGoldPrice: livePrice, mainLogoMediaId: assets.main?.id ?? null, darkLogoMediaId: assets.dark?.id ?? null, faviconMediaId: assets.favicon?.id ?? null, socialImageMediaId: assets.social?.id ?? null }) });
+      const result = await response.json().catch(() => null); if (!response.ok) throw new Error(result?.message ?? "ذخیره ظاهر و برند انجام نشد.");
+      toast.success("تنظیمات ظاهر و برند ذخیره شد", { description: "رنگ‌ها، هویت تصویری و قواعد نمایش روی سایت اعمال شدند." });
+    } catch (reason) { toast.danger("ذخیره ظاهر و برند انجام نشد", { description: reason instanceof Error ? reason.message : "خطای ناشناخته" }); } finally { setSaving(false); }
+  }
+
+  return <><form onSubmit={submit} className="grid gap-5"><SettingsGrid>
     <SettingCard icon={<Palette size={19} />} title="رنگ‌های برند" description="رنگ‌های اصلی رابط فروشگاه">
-      <div className="grid gap-3 sm:grid-cols-2"><ColorFieldPreview label="رنگ اصلی" value="#172B4D" /><ColorFieldPreview label="رنگ طلایی" value="#B5904C" /><ColorFieldPreview label="پس‌زمینه" value="#F7F6F3" /><ColorFieldPreview label="رنگ خطر" value="#D31736" /></div>
-      <AdminCheckbox defaultSelected description="کنتراست متن و پس‌زمینه پیش از ذخیره بررسی شود">کنترل خودکار دسترس‌پذیری رنگ</AdminCheckbox>
+      <div className="grid gap-3 sm:grid-cols-2"><BrandColorField label="رنگ اصلی" value={colors.primary} onChange={(value) => setColors((current) => ({ ...current, primary: value }))} /><BrandColorField label="رنگ طلایی" value={colors.accent} onChange={(value) => setColors((current) => ({ ...current, accent: value }))} /><BrandColorField label="پس‌زمینه" value={colors.background} onChange={(value) => setColors((current) => ({ ...current, background: value }))} /><BrandColorField label="رنگ خطر" value={colors.danger} onChange={(value) => setColors((current) => ({ ...current, danger: value }))} /></div>
+      <AdminCheckbox isSelected={enforceContrast} onChange={setEnforceContrast} description="رنگ متن روی رنگ اصلی به‌صورت خودکار خوانا انتخاب شود">کنترل خودکار دسترس‌پذیری رنگ</AdminCheckbox>
     </SettingCard>
     <SettingCard icon={<Sparkles size={19} />} title="لوگو و هویت تصویری" description="دارایی‌های اصلی برند در سایت و شبکه‌های اجتماعی">
-      <AssetRow title="لوگوی اصلی" hint="SVG یا PNG شفاف، حداقل عرض ۴۰۰ پیکسل" /><AssetRow title="لوگوی نسخه تیره" hint="برای فوتر و پس‌زمینه‌های تیره" /><AssetRow title="Favicon" hint="PNG یا ICO مربع، حداقل ۵۱۲×۵۱۲" /><AssetRow title="تصویر اشتراک‌گذاری" hint="برای شبکه‌های اجتماعی، ۱۲۰۰×۶۳۰" />
+      <BrandAssetRow title="لوگوی اصلی" hint="PNG یا WebP شفاف، حداقل عرض ۴۰۰ پیکسل" media={assets.main} onSelect={() => setPicker("main")} onClear={() => setAssets((current) => ({ ...current, main: null }))} /><BrandAssetRow title="لوگوی نسخه تیره" hint="برای فوتر و پس‌زمینه‌های تیره" media={assets.dark} onSelect={() => setPicker("dark")} onClear={() => setAssets((current) => ({ ...current, dark: null }))} /><BrandAssetRow title="Favicon" hint="PNG یا WebP مربع، حداقل ۵۱۲×۵۱۲" media={assets.favicon} onSelect={() => setPicker("favicon")} onClear={() => setAssets((current) => ({ ...current, favicon: null }))} /><BrandAssetRow title="تصویر اشتراک‌گذاری" hint="پیشنهاد: ۱۲۰۰×۶۳۰" media={assets.social} onSelect={() => setPicker("social")} onClear={() => setAssets((current) => ({ ...current, social: null }))} />
     </SettingCard>
     <SettingCard icon={<Smartphone size={19} />} title="قواعد نمایش" description="ظاهر مشترک صفحات محصول و فهرست" className="lg:col-span-2">
-      <div className="grid gap-3 md:grid-cols-3"><AdminCheckbox defaultSelected description="هدر هنگام اسکرول در دسترس بماند">هدر چسبان</AdminCheckbox><AdminCheckbox defaultSelected description="محصولات در موبایل دو ستونه باشند">گرید فشرده موبایل</AdminCheckbox><AdminCheckbox defaultSelected description="قیمت و موجودی بدون رفرش بروزرسانی شوند">بروزرسانی زنده قیمت</AdminCheckbox></div><DemoFooter onPress={() => onDemo("ظاهر و برند")} />
+      <div className="grid gap-3 md:grid-cols-3"><AdminCheckbox isSelected={stickyHeader} onChange={setStickyHeader} description="هدر هنگام اسکرول در دسترس بماند">هدر چسبان</AdminCheckbox><AdminCheckbox isSelected={compactGrid} onChange={setCompactGrid} description="محصولات در موبایل دو ستونه باشند">گرید فشرده موبایل</AdminCheckbox><AdminCheckbox isSelected={livePrice} onChange={setLivePrice} description="نرخ طلا بدون رفرش بروزرسانی شود">بروزرسانی زنده قیمت</AdminCheckbox></div>
     </SettingCard>
-  </SettingsGrid>;
+  </SettingsGrid><Card variant="secondary" className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4 shadow-sm"><div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"><div><strong className="block text-sm">ذخیره ظاهر و برند سایت</strong><p className="m-0 mt-1 text-xs text-[var(--muted)]">رنگ‌ها، لوگوها و قواعد نمایش با هم ذخیره می‌شوند.</p></div><Button type="submit" variant="primary" isPending={saving} className="min-h-11 gap-2 px-5"><Save size={16} />ذخیره تنظیمات ظاهر و برند</Button></div></Card></form>
+    <MediaPickerDialog open={picker !== null} scope="BRAND" allowedTypes={["IMAGE"]} selected={picker && assets[picker] ? [assets[picker]!] : []} onClose={() => setPicker(null)} onConfirm={(items) => { if (picker) setAssets((current) => ({ ...current, [picker]: items[0] ?? null })); }} />
+  </>;
 }
+
+function BrandColorField({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) { return <Field label={label}><div className="flex items-center gap-2"><Input type="color" value={value} onChange={(event) => onChange(event.target.value.toUpperCase())} aria-label={`انتخاب ${label}`} variant="secondary" className="h-11 w-14 shrink-0 p-1" /><Input value={value} onChange={(event) => onChange(event.target.value)} dir="ltr" maxLength={7} variant="secondary" className={adminFieldClass} /></div></Field>; }
+function BrandAssetRow({ title, hint, media, onSelect, onClear }: { title: string; hint: string; media: MediaChoice | null; onSelect: () => void; onClear: () => void }) { return <div className="flex flex-wrap items-center gap-3 rounded-xl border border-[var(--border)] bg-[var(--surface-secondary)] p-3"><span className="relative grid size-12 shrink-0 place-items-center overflow-hidden rounded-lg bg-[var(--surface)] text-[var(--muted)]">{media ? <Image src={media.url} alt={media.title} fill sizes="48px" className="object-contain p-1" /> : <Images size={18} />}</span><div className="min-w-0 flex-1"><strong className="block text-sm">{title}</strong><span className="mt-0.5 block text-[11px] text-[var(--muted)]">{media?.title ?? hint}</span></div><Button type="button" size="sm" variant="secondary" onPress={onSelect} className="gap-1.5"><Upload size={14} />{media ? "تغییر" : "انتخاب فایل"}</Button>{media && <Button type="button" isIconOnly size="sm" variant="danger-soft" aria-label={`حذف ${title}`} onPress={onClear}><Trash2 size={14} /></Button>}</div>; }
 
 function OrderSettings({ onDemo }: { onDemo: (title: string) => void }) {
   return <SettingsGrid>
@@ -377,9 +401,5 @@ function SettingCard({ icon, title, description, children, className = "" }: { i
 function Field({ label, children }: { label: string; children: ReactNode }) { return <div className={adminLabelClass}><Label className="text-xs font-bold text-[var(--muted)]">{label}</Label>{children}</div>; }
 
 function DemoFooter({ onPress }: { onPress: () => void }) { return <div className="flex justify-end border-t border-[var(--border)] pt-4"><Button type="button" variant="primary" onPress={onPress} className="gap-2"><Save size={16} />ذخیره تنظیمات</Button></div>; }
-
-function ColorFieldPreview({ label, value }: { label: string; value: string }) { return <Field label={label}><div className="flex items-center gap-2"><span className="size-11 shrink-0 rounded-xl border border-[var(--border)] shadow-sm" style={{ backgroundColor: value }} /><Input defaultValue={value} dir="ltr" variant="secondary" className={adminFieldClass} /></div></Field>; }
-
-function AssetRow({ title, hint }: { title: string; hint: string }) { return <div className="flex flex-wrap items-center gap-3 rounded-xl border border-[var(--border)] bg-[var(--surface-secondary)] p-3"><span className="grid size-10 shrink-0 place-items-center rounded-lg bg-[var(--surface)] text-[var(--muted)]"><Images size={18} /></span><div className="min-w-0 flex-1"><strong className="block text-sm">{title}</strong><span className="mt-0.5 block text-[11px] text-[var(--muted)]">{hint}</span></div><Button type="button" size="sm" variant="secondary" className="gap-1.5"><Upload size={14} />انتخاب فایل</Button></div>; }
 
 function MethodRow({ icon, title, description, active = false }: { icon: ReactNode; title: string; description: string; active?: boolean }) { return <div className="flex items-center gap-3 rounded-xl border border-[var(--border)] bg-[var(--surface-secondary)] p-3"><span className="grid size-9 shrink-0 place-items-center rounded-lg bg-[var(--surface)] text-[var(--muted)]">{icon}</span><div className="min-w-0 flex-1"><strong className="block text-sm">{title}</strong><span className="mt-0.5 block text-[11px] text-[var(--muted)]">{description}</span></div><Chip size="sm" variant="soft" className={active ? "text-emerald-700" : "text-slate-500"}><Chip.Label>{active ? "فعال" : "غیرفعال"}</Chip.Label></Chip></div>; }

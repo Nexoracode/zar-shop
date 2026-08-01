@@ -58,6 +58,7 @@ enum MediaScope {
   CATEGORY
   PRODUCT
   HOMEPAGE
+  BRAND
 }
 
 enum OrderStatus {
@@ -213,45 +214,65 @@ model Product {
 }
 
 model StoreSetting {
-  id                  String        @id @default("main") @db.VarChar(20)
-  industry            StoreIndustry @default(GOLD)
-  storeName           String        @default("زر گالری") @db.VarChar(120)
-  tagline             String        @default("طلا، روایت ماندگار شما") @db.VarChar(191)
-  shortDescription    String        @default("فروش آنلاین زیورآلات طلای ۱۸ عیار با قیمت روز و فاکتور رسمی") @db.VarChar(500)
-  currency            String        @default("IRR") @db.VarChar(3)
-  timezone            String        @default("Asia/Tehran") @db.VarChar(50)
-  supportPhone        String?       @db.VarChar(30)
-  supportEmail        String?       @db.VarChar(191)
-  storeAddress        String?       @db.Text
-  legalIdentifier     String?       @db.VarChar(80)
-  supportHours        String?       @db.VarChar(191)
-  isStoreActive       Boolean       @default(true)
-  guestCheckout       Boolean       @default(true)
-  maintenanceMode     Boolean       @default(false)
-  defaultShippingFee  Decimal       @default(0) @db.Decimal(18, 0)
-  homepageSections    Json?
-  heroContentMode     String        @default("WITH_CONTENT") @db.VarChar(20)
-  heroTitle           String        @default("درخشش ماندگار، انتخابی مطمئن") @db.VarChar(191)
-  heroDescription     String        @default("جدیدترین زیورآلات طلا با قیمت لحظه‌ای") @db.VarChar(500)
-  heroButtonLabel     String        @default("مشاهده محصولات") @db.VarChar(80)
-  heroButtonHref      String        @default("/products") @db.VarChar(500)
-  heroDesktopMediaId  String?
-  heroMobileMediaId   String?
-  promoBannerEnabled  Boolean       @default(false)
-  promoBannerHref     String?       @db.VarChar(500)
-  promoDesktopMediaId String?
-  promoMobileMediaId  String?
-  createdAt           DateTime      @default(now())
-  updatedAt           DateTime      @updatedAt
-  heroDesktopMedia    MediaAsset?   @relation("HomepageHeroDesktop", fields: [heroDesktopMediaId], references: [id], onDelete: SetNull)
-  heroMobileMedia     MediaAsset?   @relation("HomepageHeroMobile", fields: [heroMobileMediaId], references: [id], onDelete: SetNull)
-  promoDesktopMedia   MediaAsset?   @relation("HomepagePromoDesktop", fields: [promoDesktopMediaId], references: [id], onDelete: SetNull)
-  promoMobileMedia    MediaAsset?   @relation("HomepagePromoMobile", fields: [promoMobileMediaId], references: [id], onDelete: SetNull)
+  id                   String        @id @default("main") @db.VarChar(20)
+  industry             StoreIndustry @default(GOLD)
+  storeName            String        @default("زر گالری") @db.VarChar(120)
+  tagline              String        @default("طلا، روایت ماندگار شما") @db.VarChar(191)
+  shortDescription     String        @default("فروش آنلاین زیورآلات طلای ۱۸ عیار با قیمت روز و فاکتور رسمی") @db.VarChar(500)
+  currency             String        @default("IRR") @db.VarChar(3)
+  timezone             String        @default("Asia/Tehran") @db.VarChar(50)
+  supportPhone         String?       @db.VarChar(30)
+  supportEmail         String?       @db.VarChar(191)
+  storeAddress         String?       @db.Text
+  legalIdentifier      String?       @db.VarChar(80)
+  supportHours         String?       @db.VarChar(191)
+  isStoreActive        Boolean       @default(true)
+  guestCheckout        Boolean       @default(true)
+  maintenanceMode      Boolean       @default(false)
+  defaultShippingFee   Decimal       @default(0) @db.Decimal(18, 0)
+  homepageSections     Json?
+  heroContentMode      String        @default("WITH_CONTENT") @db.VarChar(20)
+  heroTitle            String        @default("درخشش ماندگار، انتخابی مطمئن") @db.VarChar(191)
+  heroDescription      String        @default("جدیدترین زیورآلات طلا با قیمت لحظه‌ای") @db.VarChar(500)
+  heroButtonLabel      String        @default("مشاهده محصولات") @db.VarChar(80)
+  heroButtonHref       String        @default("/products") @db.VarChar(500)
+  heroDesktopMediaId   String?
+  heroMobileMediaId    String?
+  promoBannerEnabled   Boolean       @default(false)
+  promoBannerHref      String?       @db.VarChar(500)
+  promoDesktopMediaId  String?
+  promoMobileMediaId   String?
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
+  heroDesktopMedia     MediaAsset?   @relation("HomepageHeroDesktop", fields: [heroDesktopMediaId], references: [id], onDelete: SetNull)
+  heroMobileMedia      MediaAsset?   @relation("HomepageHeroMobile", fields: [heroMobileMediaId], references: [id], onDelete: SetNull)
+  promoDesktopMedia    MediaAsset?   @relation("HomepagePromoDesktop", fields: [promoDesktopMediaId], references: [id], onDelete: SetNull)
+  promoMobileMedia     MediaAsset?   @relation("HomepagePromoMobile", fields: [promoMobileMediaId], references: [id], onDelete: SetNull)
+  brandPrimaryColor    String        @default("#1C3155") @db.VarChar(7)
+  brandAccentColor     String        @default("#B5904C") @db.VarChar(7)
+  brandBackgroundColor String        @default("#F7F6F3") @db.VarChar(7)
+  brandDangerColor     String        @default("#B8423A") @db.VarChar(7)
+  enforceColorContrast Boolean       @default(true)
+  stickyStoreHeader    Boolean       @default(true)
+  compactMobileGrid    Boolean       @default(true)
+  liveGoldPrice        Boolean       @default(true)
+  mainLogoMediaId      String?
+  darkLogoMediaId      String?
+  faviconMediaId       String?
+  socialImageMediaId   String?
+  mainLogoMedia        MediaAsset?   @relation("BrandMainLogo", fields: [mainLogoMediaId], references: [id], onDelete: SetNull)
+  darkLogoMedia        MediaAsset?   @relation("BrandDarkLogo", fields: [darkLogoMediaId], references: [id], onDelete: SetNull)
+  faviconMedia         MediaAsset?   @relation("BrandFavicon", fields: [faviconMediaId], references: [id], onDelete: SetNull)
+  socialImageMedia     MediaAsset?   @relation("BrandSocialImage", fields: [socialImageMediaId], references: [id], onDelete: SetNull)
 
   @@index([heroDesktopMediaId])
   @@index([heroMobileMediaId])
   @@index([promoDesktopMediaId])
   @@index([promoMobileMediaId])
+  @@index([mainLogoMediaId])
+  @@index([darkLogoMediaId])
+  @@index([faviconMediaId])
+  @@index([socialImageMediaId])
 }
 
 model Promotion {
@@ -340,6 +361,10 @@ model MediaAsset {
   homepageHeroMobile   StoreSetting[] @relation("HomepageHeroMobile")
   homepagePromoDesktop StoreSetting[] @relation("HomepagePromoDesktop")
   homepagePromoMobile  StoreSetting[] @relation("HomepagePromoMobile")
+  brandMainLogo        StoreSetting[] @relation("BrandMainLogo")
+  brandDarkLogo        StoreSetting[] @relation("BrandDarkLogo")
+  brandFavicon         StoreSetting[] @relation("BrandFavicon")
+  brandSocialImage     StoreSetting[] @relation("BrandSocialImage")
 
   @@index([scope, createdAt])
 }
