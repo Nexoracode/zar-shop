@@ -24,3 +24,8 @@ test("homepage settings accept an image-only clickable hero", () => {
   const parsed = homepageSettingsInputSchema.parse({ ...homepageSettingsDefaults, heroContentMode: "IMAGE_ONLY", heroButtonHref: "/campaign/summer" });
   assert.equal(parsed.heroContentMode, "IMAGE_ONLY");
 });
+
+test("homepage settings normalize an empty promo link", () => {
+  const parsed = homepageSettingsInputSchema.parse({ ...homepageSettingsDefaults, promoBannerEnabled: true, promoBannerHref: "" });
+  assert.equal(parsed.promoBannerHref, null);
+});

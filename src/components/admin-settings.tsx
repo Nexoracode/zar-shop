@@ -109,7 +109,7 @@ const homeSectionMeta: Record<HomepageSectionId, { title: string; description: s
 };
 
 function toMediaChoice(media: HomepageSettingsData["heroDesktopMedia"]): MediaChoice | null {
-  return media ? { id: media.id, title: media.title || media.alt || "تصویر صفحه اصلی", url: media.url, type: "IMAGE" } : null;
+  return media ? { id: media.id, title: media.title || media.alt || "تصویر صفحه اصلی", url: media.url, type: "IMAGE", mimeType: media.mimeType } : null;
 }
 
 function HomepageSettings({ initialSettings }: { initialSettings: HomepageSettingsData }) {
@@ -121,7 +121,10 @@ function HomepageSettings({ initialSettings }: { initialSettings: HomepageSettin
   const [heroButtonLabel, setHeroButtonLabel] = useState(initialSettings.heroButtonLabel);
   const [desktopMedia, setDesktopMedia] = useState<MediaChoice | null>(() => toMediaChoice(initialSettings.heroDesktopMedia));
   const [mobileMedia, setMobileMedia] = useState<MediaChoice | null>(() => toMediaChoice(initialSettings.heroMobileMedia));
-  const [pickerTarget, setPickerTarget] = useState<"desktop" | "mobile" | null>(null);
+  const [promoBannerEnabled, setPromoBannerEnabled] = useState(initialSettings.promoBannerEnabled);
+  const [promoDesktopMedia, setPromoDesktopMedia] = useState<MediaChoice | null>(() => toMediaChoice(initialSettings.promoDesktopMedia));
+  const [promoMobileMedia, setPromoMobileMedia] = useState<MediaChoice | null>(() => toMediaChoice(initialSettings.promoMobileMedia));
+  const [pickerTarget, setPickerTarget] = useState<"heroDesktop" | "heroMobile" | "promoDesktop" | "promoMobile" | null>(null);
   const [draggedSectionId, setDraggedSectionId] = useState<HomepageSectionId | null>(null);
   const [dropTarget, setDropTarget] = useState<{ id: HomepageSectionId; after: boolean } | null>(null);
 
@@ -170,7 +173,7 @@ function HomepageSettings({ initialSettings }: { initialSettings: HomepageSettin
       const response = await fetch("/api/admin/settings/homepage", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...values, sections, heroContentMode, heroTitle, heroDescription, heroButtonLabel, heroDesktopMediaId: desktopMedia?.id ?? null, heroMobileMediaId: mobileMedia?.id ?? null }),
+        body: JSON.stringify({ ...values, sections, heroContentMode, heroTitle, heroDescription, heroButtonLabel, heroDesktopMediaId: desktopMedia?.id ?? null, heroMobileMediaId: mobileMedia?.id ?? null, promoBannerEnabled, promoDesktopMediaId: promoDesktopMedia?.id ?? null, promoMobileMediaId: promoMobileMedia?.id ?? null }),
       });
       const result = await response.json().catch(() => null);
       if (!response.ok) throw new Error(result?.message ?? "ذخیره تنظیمات صفحه اصلی انجام نشد.");
@@ -230,23 +233,30 @@ function HomepageSettings({ initialSettings }: { initialSettings: HomepageSettin
           <Alert status="accent"><Alert.Description>در این حالت هیچ متن یا دکمه‌ای روی تصویر قرار نمی‌گیرد و تمام سطح بنر به لینک مقصد متصل می‌شود.</Alert.Description></Alert>
           <Field label="لینک مقصد بنر"><Input name="heroButtonHref" required defaultValue={initialSettings.heroButtonHref} dir="ltr" placeholder="/products یا https://example.com" variant="secondary" className={adminFieldClass} /></Field>
         </>}
-        <div className="grid gap-3 sm:grid-cols-2"><HomepageMediaField label="تصویر دسکتاپ" hint="پیشنهاد: ۱۹۲۰×۹۰۰" media={desktopMedia} onSelect={() => setPickerTarget("desktop")} onClear={() => setDesktopMedia(null)} /><HomepageMediaField label="تصویر موبایل" hint="پیشنهاد: ۹۰۰×۱۲۰۰" media={mobileMedia} onSelect={() => setPickerTarget("mobile")} onClear={() => setMobileMedia(null)} /></div>
+        <div className="grid gap-3 sm:grid-cols-2"><HomepageMediaField label="تصویر دسکتاپ" hint="پیشنهاد: ۱۹۲۰×۹۰۰" media={desktopMedia} onSelect={() => setPickerTarget("heroDesktop")} onClear={() => setDesktopMedia(null)} /><HomepageMediaField label="تصویر موبایل" hint="پیشنهاد: ۹۰۰×۱۲۰۰" media={mobileMedia} onSelect={() => setPickerTarget("heroMobile")} onClear={() => setMobileMedia(null)} /></div>
+      </SettingCard>
+      <SettingCard icon={<Megaphone size={19} />} title="پروموبنر بالای سایت" description="بنر اختیاری پیش از هدر؛ پشتیبانی از تصویر ثابت و GIF" className="lg:col-span-2">
+        <AdminCheckbox isSelected={promoBannerEnabled} onChange={setPromoBannerEnabled} icon={<Megaphone size={17} />} description="در صورت غیرفعال‌بودن یا نداشتن تصویر، هیچ فضایی بالای سایت اشغال نمی‌شود">نمایش پروموبنر</AdminCheckbox>
+        <div className={`grid gap-4 transition ${promoBannerEnabled ? "opacity-100" : "pointer-events-none opacity-45"}`} aria-disabled={!promoBannerEnabled}>
+          <Field label="لینک مقصد اختیاری"><Input name="promoBannerHref" defaultValue={initialSettings.promoBannerHref ?? ""} dir="ltr" placeholder="/products یا https://example.com" variant="secondary" className={adminFieldClass} /></Field>
+          <div className="grid gap-3 sm:grid-cols-2"><HomepageMediaField label="بنر دسکتاپ" hint="پیشنهاد: ۱۹۲۰×۱۲۰؛ JPG، PNG، WebP یا GIF" media={promoDesktopMedia} onSelect={() => setPickerTarget("promoDesktop")} onClear={() => setPromoDesktopMedia(null)} /><HomepageMediaField label="بنر موبایل" hint="پیشنهاد: ۹۰۰×۱۸۰؛ JPG، PNG، WebP یا GIF" media={promoMobileMedia} onSelect={() => setPickerTarget("promoMobile")} onClear={() => setPromoMobileMedia(null)} /></div>
+        </div>
       </SettingCard>
     </SettingsGrid>
       <Card variant="secondary" className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4 shadow-sm">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div><strong className="block text-sm">ذخیره تغییرات صفحه اصلی</strong><p className="m-0 mt-1 text-xs text-[var(--muted)]">چینش بخش‌ها، وضعیت نمایش، محتوای اسلایدر و تصاویر با هم ذخیره می‌شوند.</p></div>
+          <div><strong className="block text-sm">ذخیره تغییرات صفحه اصلی</strong><p className="m-0 mt-1 text-xs text-[var(--muted)]">چینش بخش‌ها، اسلایدر، تصاویر و پروموبنر با هم ذخیره می‌شوند.</p></div>
           <Button type="submit" variant="primary" isPending={saving} className="min-h-11 shrink-0 gap-2 px-5"><Save size={16} />ذخیره تنظیمات صفحه اصلی</Button>
         </div>
       </Card>
     </form>
-    <MediaPickerDialog open={pickerTarget !== null} scope="HOMEPAGE" allowedTypes={["IMAGE"]} selected={(pickerTarget === "desktop" ? desktopMedia : mobileMedia) ? [(pickerTarget === "desktop" ? desktopMedia : mobileMedia)!] : []} onClose={() => setPickerTarget(null)} onConfirm={(items) => { if (pickerTarget === "desktop") setDesktopMedia(items[0] ?? null); else if (pickerTarget === "mobile") setMobileMedia(items[0] ?? null); }} />
+    <MediaPickerDialog open={pickerTarget !== null} scope="HOMEPAGE" allowedTypes={["IMAGE"]} selected={pickerTarget === "heroDesktop" ? (desktopMedia ? [desktopMedia] : []) : pickerTarget === "heroMobile" ? (mobileMedia ? [mobileMedia] : []) : pickerTarget === "promoDesktop" ? (promoDesktopMedia ? [promoDesktopMedia] : []) : pickerTarget === "promoMobile" ? (promoMobileMedia ? [promoMobileMedia] : []) : []} onClose={() => setPickerTarget(null)} onConfirm={(items) => { const media = items[0] ?? null; if (pickerTarget === "heroDesktop") setDesktopMedia(media); else if (pickerTarget === "heroMobile") setMobileMedia(media); else if (pickerTarget === "promoDesktop") setPromoDesktopMedia(media); else if (pickerTarget === "promoMobile") setPromoMobileMedia(media); }} />
   </>;
 }
 
 function HomepageMediaField({ label, hint, media, onSelect, onClear }: { label: string; hint: string; media: MediaChoice | null; onSelect: () => void; onClear: () => void }) {
   return <Card variant="secondary" className="overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface-secondary)] shadow-none">
-    <div className="relative aspect-[16/9] bg-[var(--surface)]">{media ? <Image src={media.url} alt={media.title} fill sizes="(max-width: 640px) 100vw, 320px" className="object-cover" /> : <span className="grid h-full place-items-center text-[var(--muted)]"><Images size={28} /></span>}</div>
+    <div className="relative aspect-[16/9] bg-[var(--surface)]">{media ? <Image src={media.url} alt={media.title} fill unoptimized={media.mimeType === "image/gif"} sizes="(max-width: 640px) 100vw, 320px" className="object-cover" /> : <span className="grid h-full place-items-center text-[var(--muted)]"><Images size={28} /></span>}</div>
     <div className="grid gap-2 p-3"><div><strong className="block text-xs">{label}</strong><span className="text-[10px] text-[var(--muted)]">{media?.title || hint}</span></div><div className="flex gap-2"><Button type="button" size="sm" variant="secondary" onPress={onSelect} className="flex-1 gap-1 text-xs"><Upload size={13} />{media ? "تغییر" : "انتخاب"}</Button>{media && <Button type="button" size="sm" isIconOnly variant="danger-soft" aria-label={`حذف ${label}`} onPress={onClear}><Trash2 size={13} /></Button>}</div></div>
   </Card>;
 }

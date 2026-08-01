@@ -14,6 +14,7 @@ const safeHrefSchema = z.string().trim().min(1).max(500).refine(
   (value) => (/^\/(?!\/)/.test(value) || /^https:\/\//i.test(value)),
   "لینک دکمه باید یک مسیر داخلی یا نشانی امن HTTPS باشد.",
 );
+const optionalSafeHrefSchema = z.union([z.null(), z.literal(""), safeHrefSchema]).transform((value) => value || null);
 
 export const homepageSettingsInputSchema = z.object({
   sections: z.array(sectionSchema).length(homepageSectionIds.length).superRefine((sections, context) => {
@@ -29,6 +30,10 @@ export const homepageSettingsInputSchema = z.object({
   heroButtonHref: safeHrefSchema,
   heroDesktopMediaId: z.string().trim().min(1).nullable(),
   heroMobileMediaId: z.string().trim().min(1).nullable(),
+  promoBannerEnabled: z.boolean(),
+  promoBannerHref: optionalSafeHrefSchema,
+  promoDesktopMediaId: z.string().trim().min(1).nullable(),
+  promoMobileMediaId: z.string().trim().min(1).nullable(),
 });
 
 const mediaSchema = z.object({
@@ -37,11 +42,14 @@ const mediaSchema = z.object({
   alt: z.string().nullable(),
   url: z.string(),
   type: z.literal("IMAGE"),
+  mimeType: z.string(),
 });
 
 export const homepageSettingsSchema = homepageSettingsInputSchema.extend({
   heroDesktopMedia: mediaSchema.nullable(),
   heroMobileMedia: mediaSchema.nullable(),
+  promoDesktopMedia: mediaSchema.nullable(),
+  promoMobileMedia: mediaSchema.nullable(),
 });
 
 export type HomepageSettingsInput = z.infer<typeof homepageSettingsInputSchema>;
@@ -56,6 +64,10 @@ export const homepageSettingsDefaults: HomepageSettingsInput = {
   heroButtonHref: "/products",
   heroDesktopMediaId: null,
   heroMobileMediaId: null,
+  promoBannerEnabled: false,
+  promoBannerHref: null,
+  promoDesktopMediaId: null,
+  promoMobileMediaId: null,
 };
 
 const homepageSelect = {
@@ -67,8 +79,14 @@ const homepageSelect = {
   heroButtonHref: true,
   heroDesktopMediaId: true,
   heroMobileMediaId: true,
-  heroDesktopMedia: { select: { id: true, title: true, alt: true, url: true, type: true } },
-  heroMobileMedia: { select: { id: true, title: true, alt: true, url: true, type: true } },
+  promoBannerEnabled: true,
+  promoBannerHref: true,
+  promoDesktopMediaId: true,
+  promoMobileMediaId: true,
+  heroDesktopMedia: { select: { id: true, title: true, alt: true, url: true, type: true, mimeType: true } },
+  heroMobileMedia: { select: { id: true, title: true, alt: true, url: true, type: true, mimeType: true } },
+  promoDesktopMedia: { select: { id: true, title: true, alt: true, url: true, type: true, mimeType: true } },
+  promoMobileMedia: { select: { id: true, title: true, alt: true, url: true, type: true, mimeType: true } },
 } as const;
 
 export async function getHomepageSettings(): Promise<HomepageSettings> {

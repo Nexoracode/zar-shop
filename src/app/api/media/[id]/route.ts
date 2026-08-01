@@ -14,10 +14,10 @@ export async function DELETE(_request: Request, context: Context) {
     const { id } = await context.params;
     const media = await db.mediaAsset.findUnique({
       where: { id },
-      include: { _count: { select: { products: true, optionGuideProducts: true, categories: true, homepageHeroDesktop: true, homepageHeroMobile: true } } },
+      include: { _count: { select: { products: true, optionGuideProducts: true, categories: true, homepageHeroDesktop: true, homepageHeroMobile: true, homepagePromoDesktop: true, homepagePromoMobile: true } } },
     });
     if (!media) return NextResponse.json({ message: "رسانه پیدا نشد." }, { status: 404 });
-    if (media._count.products > 0 || media._count.optionGuideProducts > 0 || media._count.categories > 0 || media._count.homepageHeroDesktop > 0 || media._count.homepageHeroMobile > 0) {
+    if (media._count.products > 0 || media._count.optionGuideProducts > 0 || media._count.categories > 0 || media._count.homepageHeroDesktop > 0 || media._count.homepageHeroMobile > 0 || media._count.homepagePromoDesktop > 0 || media._count.homepagePromoMobile > 0) {
       return NextResponse.json({ message: "این رسانه در سایت استفاده شده و ابتدا باید از بخش مربوط جدا شود." }, { status: 409 });
     }
 

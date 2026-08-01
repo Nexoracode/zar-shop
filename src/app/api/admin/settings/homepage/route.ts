@@ -17,7 +17,7 @@ export async function PATCH(request: Request) {
     const actor = await getCurrentUser();
     if (!actor || !isAdminRole(actor.role)) return NextResponse.json({ message: "دسترسی غیرمجاز است." }, { status: 403 });
     const input = homepageSettingsInputSchema.parse(await request.json());
-    const mediaIds = [...new Set([input.heroDesktopMediaId, input.heroMobileMediaId].filter((id): id is string => Boolean(id)))];
+    const mediaIds = [...new Set([input.heroDesktopMediaId, input.heroMobileMediaId, input.promoDesktopMediaId, input.promoMobileMediaId].filter((id): id is string => Boolean(id)))];
     if (mediaIds.length) {
       const media = await db.mediaAsset.findMany({ where: { id: { in: mediaIds }, scope: "HOMEPAGE", type: "IMAGE" }, select: { id: true } });
       if (media.length !== mediaIds.length) return NextResponse.json({ message: "یکی از تصاویر انتخاب‌شده برای صفحه اصلی معتبر نیست." }, { status: 422 });

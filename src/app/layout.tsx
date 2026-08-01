@@ -2,10 +2,12 @@ import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
+import { SitePromoBanner } from "@/components/site-promo-banner";
 import { AppChrome } from "@/components/app-chrome";
 import { AppToasts } from "@/components/app-toasts";
 import { getCurrentUser } from "@/modules/auth/session";
 import { getGeneralStoreSettings, isStorefrontAvailable } from "@/modules/settings/general-settings";
+import { getHomepageSettings } from "@/modules/settings/homepage-settings";
 import "./globals.css";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -24,12 +26,12 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  const [settings, user] = await Promise.all([getGeneralStoreSettings(), getCurrentUser()]);
+  const [settings, homepageSettings, user] = await Promise.all([getGeneralStoreSettings(), getHomepageSettings(), getCurrentUser()]);
   return (
     <html lang="fa" dir="rtl" data-theme="zar" data-scroll-behavior="smooth">
       <body>
         <AppChrome
-          header={<SiteHeader settings={settings} user={user} />}
+          header={<><SitePromoBanner settings={homepageSettings} /><SiteHeader settings={settings} user={user} /></>}
           footer={<SiteFooter settings={settings} />}
           storefrontAvailable={isStorefrontAvailable(settings, user?.role)}
           maintenanceMode={settings.maintenanceMode}
