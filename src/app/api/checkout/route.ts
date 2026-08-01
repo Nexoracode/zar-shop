@@ -132,7 +132,7 @@ export async function POST(request: Request) {
       return created;
     });
     try {
-      const paymentRequest = await getPaymentProvider().request({ amount: Number(order.total), orderId: order.id, callbackUrl: `${env.APP_URL}/api/payment/callback` });
+      const paymentRequest = await getPaymentProvider().request({ amount: Number(order.total), orderId: order.id, callbackUrl: `${env.APP_URL}/api/payment/callback`, description: `پرداخت سفارش ${order.orderNumber}` });
       await db.$transaction(async (transaction) => {
         const paymentStartedAt = new Date();
         await transaction.payment.create({ data: { orderId: order.id, provider: env.PAYMENT_PROVIDER, authority: paymentRequest.authority, amount: order.total, status: "PENDING" } });

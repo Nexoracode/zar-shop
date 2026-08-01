@@ -9,8 +9,8 @@ import { generalStoreSettingsDefaults } from "@/modules/settings/general-setting
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
-  const authority = url.searchParams.get("authority");
-  const status = url.searchParams.get("status");
+  const authority = url.searchParams.get("Authority") ?? url.searchParams.get("authority");
+  const status = url.searchParams.get("Status") ?? url.searchParams.get("status");
   if (!authority || status !== "OK") {
     if (authority) {
       const cancelled = await db.payment.findUnique({ where: { authority }, select: { id: true, orderId: true, status: true } });
@@ -33,7 +33,7 @@ export async function GET(request: Request) {
   if (payment.status === "SUCCESS") return NextResponse.redirect(`${env.APP_URL}/invoices/${payment.orderId}`);
 
   try {
-    const verified = await getPaymentProvider().verify(authority, Number(payment.amount));
+    const verified = await getPaymentProvider(payment.provider).verify(authority, Number(payment.amount));
     await db.$transaction(async (tx) => {
       const transaction = tx as unknown as PrismaClient;
       const payable = await transaction.order.updateMany({
