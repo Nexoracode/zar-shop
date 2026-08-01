@@ -6,7 +6,7 @@ const schema = z.object({
   DATABASE_PORT: z.coerce.number().int().positive().default(3306),
   DATABASE_USER: z.string().default("root"),
   DATABASE_PASSWORD: z.string().default(""),
-  DATABASE_NAME: z.string().default("zar_store"),
+  DATABASE_NAME: z.string().default("store_db"),
   AUTH_SECRET: z.string().min(32).default("development-only-secret-change-me-now"),
   APP_URL: z.url().default("http://localhost:3000"),
   GOLD_PRICE_PROVIDER: z.enum(["mock", "tgju", "http"]).default("tgju"),

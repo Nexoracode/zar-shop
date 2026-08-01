@@ -8,7 +8,7 @@ const adapter = new PrismaMariaDb({
   port: Number(process.env.DATABASE_PORT ?? 3306),
   user: process.env.DATABASE_USER ?? "root",
   password: process.env.DATABASE_PASSWORD ?? "",
-  database: process.env.DATABASE_NAME ?? "zar_store",
+  database: process.env.DATABASE_NAME ?? "store_db",
   connectionLimit: 2,
 });
 const db = new PrismaClient({ adapter });
