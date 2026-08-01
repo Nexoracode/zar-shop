@@ -32,6 +32,7 @@ import {
 } from "@/components/hero";
 import { requirePermission } from "@/modules/auth/session";
 import { getCatalogSettings } from "@/modules/settings/catalog-settings";
+import { AdminTableRefreshButton } from "@/components/admin-table-refresh";
 
 export default async function AdminPage() {
   const actor = await requirePermission("dashboard:view");
@@ -126,7 +127,7 @@ export default async function AdminPage() {
         <AdminPanel>
           <div className="flex items-center justify-between gap-3 border-b border-slate-100 px-4 py-4 sm:px-5">
             <div><h2 className="m-0 text-base font-black text-slate-800">آخرین سفارش‌ها</h2><p className="m-0 text-xs text-slate-400">جدیدترین فعالیت‌های خرید فروشگاه</p></div>
-            <Link href="/admin/orders" className="inline-flex items-center gap-1 text-xs font-bold text-[#846325]">همه سفارش‌ها<ArrowLeft size={14} /></Link>
+            <div className="flex items-center gap-2"><AdminTableRefreshButton /><Link href="/admin/orders" className="inline-flex items-center gap-1 text-xs font-bold text-[#846325]">همه سفارش‌ها<ArrowLeft size={14} /></Link></div>
           </div>
           {recentOrders.length ? (
             <>

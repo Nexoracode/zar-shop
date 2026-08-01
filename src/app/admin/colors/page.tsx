@@ -8,6 +8,6 @@ export default async function ColorsPage() {
   const colors = await db.color.findMany({ orderBy: [{ sortOrder: "asc" }, { name: "asc" }] });
   return <>
     <AdminPageHeader eyebrow="مدیریت کاتالوگ" title="رنگ‌ها" description="رنگ‌های قابل انتخاب برای تنوع محصولات را تعریف و مدیریت کنید." />
-    <ColorManager initialColors={colors} />
+    <ColorManager key={colors.map((color) => `${color.id}:${color.updatedAt.getTime()}`).join("|")} initialColors={colors} />
   </>;
 }
