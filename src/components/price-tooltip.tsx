@@ -6,13 +6,13 @@ export function PriceTooltip() {
   return (
     <Tooltip delay={150} closeDelay={100}>
       <Tooltip.Trigger>
-      <Button type="button" variant="ghost" size="sm" className="h-auto min-h-0 px-0 text-[#785b27] hover:text-[#b5904c]">
+      <Button type="button" variant="ghost" size="sm" className="h-auto min-h-0 px-0 text-[var(--brand-accent)] hover:brightness-110">
         <Info size={13} className="shrink-0" />
         نحوه محاسبه قیمت
       </Button>
       </Tooltip.Trigger>
-      <Tooltip.Content showArrow className="z-50 w-[270px] border-r-[3px] border-[#b5904c] bg-[#132542] p-4 text-white shadow-2xl">
-          <span className="text-[0.73rem] font-bold text-[#b5904c] tracking-[0.03em] pb-2 border-b border-white/10">
+      <Tooltip.Content showArrow className="z-50 w-[270px] border-r-[3px] border-[var(--brand-accent)] bg-[var(--brand-primary)] p-4 text-[var(--brand-primary-foreground)] shadow-2xl">
+          <span className="text-[0.73rem] font-bold text-[var(--brand-accent)] tracking-[0.03em] pb-2 border-b border-white/10">
             فرمول محاسبه قیمت طلا
           </span>
           <span className="flex flex-col gap-[7px]">

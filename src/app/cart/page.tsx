@@ -45,7 +45,7 @@ export default async function CartPage() {
         {/* Panel head */}
         <div className="flex justify-between items-center gap-5 mb-6">
           <div>
-            <span className="inline-block text-[#785b27] text-[0.78rem] font-bold tracking-[0.03em] mb-[5px]">خرید امن</span>
+            <span className="inline-block text-[var(--brand-accent)] text-[0.78rem] font-bold tracking-[0.03em] mb-[5px]">خرید امن</span>
             <h1 className="mt-0 mb-0">سبد خرید</h1>
           </div>
           {hasGoldItems && <ChipRoot variant="soft" className="bg-[#efe5d1] text-[#785b27]"><ChipLabel>نرخ مبنا: {rate === null ? "موقتاً در دسترس نیست" : formatMoney(rate, settings.currency)}</ChipLabel></ChipRoot>}
@@ -55,7 +55,7 @@ export default async function CartPage() {
           <Card variant="secondary" className="py-12 text-center border border-[#e7e6e2] bg-white text-[#747982]">
             سبد خرید خالی است.
             <br />
-            <Link href="/products" className="min-h-[46px] mt-4 px-6 py-[9px] inline-flex items-center justify-center border border-[#17233b] rounded-sm transition-all hover:-translate-y-[2px]">
+            <Link href="/products" className="min-h-[46px] mt-4 px-6 py-[9px] inline-flex items-center justify-center border border-[var(--brand-primary)] text-[var(--brand-primary)] rounded-sm transition-all hover:-translate-y-[2px]">
               مشاهده محصولات
             </Link>
           </Card>

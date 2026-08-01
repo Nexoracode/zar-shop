@@ -23,7 +23,7 @@ export function CheckoutForm() {
     window.setTimeout(() => window.location.assign(data.redirectUrl), 500);
   }
 
-  const fieldClass = "w-full border border-[#e7e6e2] rounded-sm bg-white px-[13px] py-3 outline-none focus:border-[#b5904c] focus:shadow-[0_0_0_3px_rgba(181,144,76,0.1)]";
+  const fieldClass = "w-full border border-[#e7e6e2] rounded-sm bg-white px-[13px] py-3 outline-none focus:border-[var(--brand-accent)] focus:ring-2 focus:ring-[var(--brand-accent)]/20";
   const labelClass = "text-[#4b5160] text-[0.84rem] font-bold";
 
   return (
@@ -76,7 +76,7 @@ export function CheckoutForm() {
         type="submit"
         fullWidth
         variant="primary"
-        className="min-h-[46px] px-6 py-[9px] inline-flex items-center justify-center bg-[#b5904c] text-white border border-[#b5904c] rounded-sm transition-all hover:-translate-y-[2px] hover:shadow-[0_8px_20px_rgba(20,35,61,0.12)] disabled:opacity-60 disabled:cursor-not-allowed"
+        className="min-h-[46px] px-6 py-[9px] inline-flex items-center justify-center bg-[var(--brand-primary)] text-[var(--brand-primary-foreground)] border border-[var(--brand-primary)] rounded-sm transition-all hover:-translate-y-[2px] hover:brightness-110 hover:shadow-[0_8px_20px_rgba(20,35,61,0.12)] disabled:opacity-60 disabled:cursor-not-allowed"
         isPending={loading}
       >
         {({ isPending }) => <>{isPending && <Spinner color="current" size="sm" />}{isPending ? "در حال ایجاد سفارش..." : "ثبت سفارش و پرداخت"}</>}

@@ -18,7 +18,7 @@ export default async function AccountPage() {
         {/* Panel head */}
         <div className="mb-6 flex flex-col items-start justify-between gap-5 sm:flex-row sm:items-center">
           <div>
-            <span className="inline-block text-[#785b27] text-[0.78rem] font-bold tracking-[0.03em] mb-[5px]">حساب مشتری</span>
+            <span className="inline-block text-[var(--brand-accent)] text-[0.78rem] font-bold tracking-[0.03em] mb-[5px]">حساب مشتری</span>
             <h1 className="mt-0 mb-0">{displayName}</h1>
           </div>
           <form action="/api/auth/logout" method="post">

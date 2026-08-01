@@ -40,12 +40,12 @@ export async function SiteHeader({ settings, brand, user }: { settings: GeneralS
             <Link
               href={user ? (user.isGuest ? "/cart" : "/account") : "/login"}
               aria-label={user ? (user.isGuest ? "خرید مهمان" : "حساب من") : "ورود و عضویت"}
-              className="inline-flex items-center gap-[7px] text-[#39445a] text-[0.82rem] transition-colors hover:text-[#785b27]"
+              className="inline-flex items-center gap-[7px] text-[var(--brand-primary)] text-[0.82rem] transition-colors hover:text-[var(--brand-accent)]"
             >
               <UserRound size={21} />
               <span className="hidden lg:inline">{user ? (user.isGuest ? "خرید مهمان" : "حساب من") : "ورود / عضویت"}</span>
             </Link>
-            <Link href="/cart" aria-label="سبد خرید" className="text-[#39445a] transition-colors hover:text-[#785b27]">
+            <Link href="/cart" aria-label="سبد خرید" className="text-[var(--brand-primary)] transition-colors hover:text-[var(--brand-accent)]">
               <ShoppingBag size={21} />
             </Link>
           </div>
@@ -68,20 +68,20 @@ export async function SiteHeader({ settings, brand, user }: { settings: GeneralS
             <Link
               href="/products"
               aria-label="جستجوی محصولات"
-              className="inline-flex items-center gap-[7px] text-[#39445a] text-[0.82rem] transition-colors hover:text-[#785b27]"
+              className="inline-flex items-center gap-[7px] text-[var(--brand-primary)] text-[0.82rem] transition-colors hover:text-[var(--brand-accent)]"
             >
               <Search size={20} />
               <span className="hidden lg:inline">جستجو</span>
             </Link>
             {settings.supportPhone ? <a
               href={`tel:${normalizeNumericValue(settings.supportPhone, false)}`}
-              className="hidden items-center gap-[7px] text-[#39445a] text-[0.82rem] transition-colors hover:text-[#785b27] sm:inline-flex"
+              className="hidden items-center gap-[7px] text-[var(--brand-primary)] text-[0.82rem] transition-colors hover:text-[var(--brand-accent)] sm:inline-flex"
             >
               <Headphones size={20} />
               <span className="hidden lg:inline">تماس با ما</span>
             </a> : null}
             {user?.role !== "CUSTOMER" && user && (
-              <Link href="/admin" aria-label="پنل مدیریت" className="text-[#39445a] transition-colors hover:text-[#785b27]">
+              <Link href="/admin" aria-label="پنل مدیریت" className="text-[var(--brand-primary)] transition-colors hover:text-[var(--brand-accent)]">
                 <LayoutDashboard size={20} />
               </Link>
             )}
@@ -94,13 +94,13 @@ export async function SiteHeader({ settings, brand, user }: { settings: GeneralS
         <div className="mx-auto flex min-h-11 min-w-max items-center justify-start gap-7 px-4 sm:min-h-12 sm:px-6 lg:max-w-[1240px] lg:justify-center lg:gap-[clamp(22px,3vw,48px)]">
           {categories.map((category) => (
             <div key={category.id} className="group relative flex min-h-11 items-center sm:min-h-12">
-              <Link href={`/products?category=${category.slug}`} className="text-[0.88rem] transition-colors hover:text-[#785b27]">
+              <Link href={`/products?category=${category.slug}`} className="text-[0.88rem] transition-colors hover:text-[var(--brand-accent)]">
                 {category.name}
               </Link>
               {category.children.length > 0 && (
                 <div className="invisible absolute right-0 top-full z-50 hidden min-w-52 translate-y-2 border border-[#e7e6e2] bg-white p-2 opacity-0 shadow-[0_16px_40px_rgba(20,35,61,0.12)] transition-all group-hover:visible group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:visible group-focus-within:translate-y-0 group-focus-within:opacity-100 lg:block">
                   {category.children.map((child) => (
-                    <Link key={child.id} href={`/products?category=${child.slug}`} className="block px-3 py-2 text-sm text-[#4b5160] transition-colors hover:bg-[#f8f5ef] hover:text-[#785b27]">
+                    <Link key={child.id} href={`/products?category=${child.slug}`} className="block px-3 py-2 text-sm text-[#4b5160] transition-colors hover:bg-[#f8f5ef] hover:text-[var(--brand-accent)]">
                       {child.name}
                     </Link>
                   ))}
@@ -108,7 +108,7 @@ export async function SiteHeader({ settings, brand, user }: { settings: GeneralS
               )}
             </div>
           ))}
-          <Link href="/products" className="text-[0.88rem] text-[#785b27] transition-colors before:content-['✦'] before:ml-[5px] before:text-[#b5904c]">
+          <Link href="/products" className="text-[0.88rem] text-[var(--brand-primary)] transition-colors hover:text-[var(--brand-accent)] before:content-['✦'] before:ml-[5px] before:text-[var(--brand-accent)]">
             پیشنهاد ویژه
           </Link>
         </div>

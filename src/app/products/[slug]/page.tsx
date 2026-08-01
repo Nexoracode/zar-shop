@@ -65,7 +65,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
 
         {/* Info */}
         <div className="pt-0 md:pt-7">
-          <span className="inline-block text-[#785b27] text-[0.78rem] font-bold tracking-[0.03em] mb-[5px]">
+          <span className="inline-block text-[var(--brand-accent)] text-[0.78rem] font-bold tracking-[0.03em] mb-[5px]">
             {product.category?.name ?? "مجموعه طلا"}
           </span>
           <h1 className="mt-[5px] mb-[14px] text-[clamp(2.2rem,4vw,3.5rem)] leading-[1.3] font-medium">{product.name}</h1>
@@ -82,7 +82,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
           </div>
 
           {/* Purchase card */}
-          <div className="p-6 grid gap-[15px] bg-[#f5f5f3] border-r-[3px] border-[#b5904c]">
+          <div className="p-6 grid gap-[15px] bg-[#f5f5f3] border-r-[3px] border-[var(--brand-accent)]">
             <span className="text-[#747982] text-[0.82rem]">
               {product.storeIndustry === "GENERAL"
                 ? "قیمت فروش محصول"
@@ -93,7 +93,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
                   : `قیمت نهایی بر اساس نرخ ${formatMoney(rate, settings.currency)}`}
             </span>
             {product.storeIndustry === "GOLD" && rate !== null && <PriceTooltip />}
-            <strong className="text-[#1c3155] text-[1.55rem]">
+            <strong className="text-[var(--brand-primary)] text-[1.55rem]">
               {total === null ? "امکان محاسبه قیمت وجود ندارد" : formatMoney(total, settings.currency)}
             </strong>
             {discounted?.isActive && <div className="flex flex-wrap items-center gap-2"><span className="text-sm text-slate-400 line-through">{formatMoney(discounted.originalPrice, settings.currency)}</span><span className="inline-flex items-center gap-1 rounded-lg bg-rose-50 px-2 py-1 text-xs font-bold text-rose-600"><BadgePercent size={14} />{product.discountType === "PERCENT" ? `${Number(product.discountValue).toLocaleString("fa-IR")}٪ تخفیف` : `${formatMoney(discounted.discountAmount, settings.currency)} تخفیف`}</span></div>}
@@ -114,7 +114,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
               [<ShieldCheck key="s" />, "پرداخت امن"],
               [<PackageCheck key="p" />, "ارسال قابل پیگیری"],
             ].map(([icon, label]) => (
-              <span key={String(label)} className="inline-flex items-center gap-[5px] [&>svg]:w-[17px] [&>svg]:text-[#785b27]">
+              <span key={String(label)} className="inline-flex items-center gap-[5px] [&>svg]:w-[17px] [&>svg]:text-[var(--brand-accent)]">
                 {icon} {label}
               </span>
             ))}

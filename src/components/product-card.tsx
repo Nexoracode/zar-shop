@@ -35,7 +35,7 @@ export function ProductCard({ href, name, category, industry, weight, purity, pr
             <span className="absolute top-[27%] right-[29%] text-white text-2xl drop-shadow-[0_0_14px_#fff]">✦</span>
           </div>
         )}
-        <span className="absolute right-3 top-3 border border-[#efe5d1] bg-white/90 px-2 py-1 text-[0.68rem] text-[#785b27]">
+        <span className="absolute right-3 top-3 border border-[var(--brand-accent)]/30 bg-white/90 px-2 py-1 text-[0.68rem] text-[var(--brand-accent)]">
           {industry === "GOLD" ? `طلای ${purity}` : "محصول فروشگاهی"}
         </span>
       </div>

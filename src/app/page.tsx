@@ -75,7 +75,7 @@ export default async function Home() {
             <h1 id="hero-title" className="m-0 max-w-3xl text-[clamp(2.55rem,7vw,5.5rem)] font-normal leading-[1.25] tracking-[-0.04em]">{homepage.heroTitle}</h1>
             <p className="mb-0 mt-5 max-w-[540px] text-sm leading-8 text-white/80 sm:text-base sm:leading-9">{homepage.heroDescription}</p>
             <div className="mt-8 flex flex-wrap items-center gap-5 sm:mt-10">
-              <Link className="inline-flex min-h-12 items-center justify-center gap-2 bg-[#b5904c] px-6 text-sm text-white transition hover:-translate-y-0.5 hover:bg-[#9f7938]" href={homepage.heroButtonHref}>{homepage.heroButtonLabel} <ArrowLeft size={17} /></Link>
+              <Link className="inline-flex min-h-12 items-center justify-center gap-2 bg-[var(--brand-primary)] px-6 text-sm text-[var(--brand-primary-foreground)] transition hover:-translate-y-0.5 hover:brightness-110" href={homepage.heroButtonHref}>{homepage.heroButtonLabel} <ArrowLeft size={17} /></Link>
               <Link className="border-b border-white/50 pb-1 text-sm text-white transition hover:border-white" href="#about">قصه {settings.storeName}</Link>
             </div>
           </div>
@@ -94,9 +94,9 @@ export default async function Home() {
             { icon: <Truck size={19} strokeWidth={1.4} />, title: "ارسال امن و ویژه", sub: "بسته‌بندی درخور یک هدیه" },
           ].map(({ icon, title, sub }) => (
             <div key={title} className="min-h-[52px] flex items-center justify-center gap-[14px] border-l border-[#e5dfd4] last:border-l-0 max-[760px]:min-h-[78px] max-[760px]:justify-start max-[760px]:border-l-0 max-[760px]:border-b max-[760px]:last:border-b-0">
-              <span className="text-[#a67b39]">{icon}</span>
+              <span className="text-[var(--brand-accent)]">{icon}</span>
               <span className="grid text-[#858079] text-[0.68rem] leading-[1.65]">
-                <strong className="text-[#152740] text-[0.82rem] font-semibold">{title}</strong>
+                <strong className="text-[var(--brand-primary)] text-[0.82rem] font-semibold">{title}</strong>
                 {sub}
               </span>
             </div>
@@ -109,8 +109,8 @@ export default async function Home() {
         <div className="w-[min(1240px,calc(100%-40px))] mx-auto">
           <div className="flex items-end justify-between gap-8 mb-[46px] max-[760px]:flex-col max-[760px]:items-start max-[760px]:mb-[34px]">
             <div>
-              <span className="inline-block text-[#9a6e2d] text-[0.78rem] font-bold tracking-[0.08em] mb-[5px]">جهان زر</span>
-              <h2 id="category-title" className="mt-[5px] mb-0 text-[#152740] text-[clamp(2rem,3.6vw,3.2rem)] font-normal tracking-[-0.035em] leading-[1.35]">انتخابی به وسعت سلیقه شما</h2>
+              <span className="inline-block text-[var(--brand-accent)] text-[0.78rem] font-bold tracking-[0.08em] mb-[5px]">جهان زر</span>
+              <h2 id="category-title" className="mt-[5px] mb-0 text-[var(--brand-primary)] text-[clamp(2rem,3.6vw,3.2rem)] font-normal tracking-[-0.035em] leading-[1.35]">انتخابی به وسعت سلیقه شما</h2>
             </div>
             <p className="w-[min(340px,100%)] m-0 text-[#7d7a74] text-[0.84rem]">هر قطعه، ترکیبی از ظرافت معاصر و ارزش ماندگار طلاست.</p>
           </div>
@@ -134,7 +134,7 @@ export default async function Home() {
                     </span>
                   </span>
                   <span className="grid gap-[2px] px-1">
-                    <strong className="text-[#172840] text-[1.02rem] font-semibold max-[480px]:text-[0.9rem]">{category.name}</strong>
+                    <strong className="text-[var(--brand-primary)] text-[1.02rem] font-semibold max-[480px]:text-[0.9rem]">{category.name}</strong>
                     <small className="text-[#8b8780] text-[0.69rem] max-[480px]:hidden">{subtitle}</small>
                   </span>
                 </Link>
@@ -152,8 +152,8 @@ export default async function Home() {
         <div className="w-[min(1240px,calc(100%-40px))] mx-auto">
           <div className="flex items-end justify-between gap-8 mb-[42px] max-[760px]:flex-col max-[760px]:items-start max-[760px]:mb-[34px]">
             <div>
-              <span className="inline-block text-[#9a6e2d] text-[0.78rem] font-bold tracking-[0.08em] mb-[5px]">منتخب این هفته</span>
-              <h2 className="mt-[5px] mb-0 text-[#152740] text-[clamp(2rem,3.6vw,3.2rem)] font-normal tracking-[-0.035em]">قطعه‌هایی برای همیشه</h2>
+              <span className="inline-block text-[var(--brand-accent)] text-[0.78rem] font-bold tracking-[0.08em] mb-[5px]">منتخب این هفته</span>
+              <h2 className="mt-[5px] mb-0 text-[var(--brand-primary)] text-[clamp(2rem,3.6vw,3.2rem)] font-normal tracking-[-0.035em]">قطعه‌هایی برای همیشه</h2>
             </div>
             <div className="grid justify-items-end gap-[13px] max-[760px]:justify-items-start">
               <p className="w-[min(340px,100%)] m-0 text-[#7d7a74] text-[0.84rem]">قیمت نهایی هر محصول با نرخ لحظه‌ای امروز محاسبه می‌شود.</p>
@@ -192,27 +192,27 @@ export default async function Home() {
             </div>
           ) : (
             <div className="min-h-[310px] grid place-items-center content-center gap-2 text-center bg-[#f8f6f1] border border-[#e2ddd4]">
-              <Gem size={38} className="text-[#a67b39]" />
-              <h3 className="mt-[5px] mb-0 text-[#172840] text-[1.45rem] font-medium">کالکشن تازه در راه است</h3>
+              <Gem size={38} className="text-[var(--brand-accent)]" />
+              <h3 className="mt-[5px] mb-0 text-[var(--brand-primary)] text-[1.45rem] font-medium">کالکشن تازه در راه است</h3>
               <p className="m-0 mb-3 text-[#817d76] text-[0.8rem]">به‌زودی محصولات جدید {settings.storeName} را اینجا خواهید دید.</p>
-              <Link className="min-h-[46px] px-6 py-[9px] inline-flex items-center justify-center bg-[#1c3155] text-white border border-[#1c3155] rounded-sm" href="/products">مشاهده فروشگاه</Link>
+              <Link className="min-h-[46px] px-6 py-[9px] inline-flex items-center justify-center bg-[var(--brand-primary)] text-[var(--brand-primary-foreground)] border border-[var(--brand-primary)] rounded-sm" href="/products">مشاهده فروشگاه</Link>
             </div>
           )}
         </div>
       </section>
 
       {/* About / Editorial */}
-      <section {...sectionProps("ABOUT")} id="about" className="w-[min(1320px,calc(100%-48px))] mx-auto my-[116px] min-h-[590px] grid grid-cols-[0.9fr_1.1fr] bg-[#142640] max-[760px]:my-[76px] max-[760px]:grid-cols-1">
+      <section {...sectionProps("ABOUT")} id="about" className="w-[min(1320px,calc(100%-48px))] mx-auto my-[116px] min-h-[590px] grid grid-cols-[0.9fr_1.1fr] bg-[var(--brand-primary)] text-[var(--brand-primary-foreground)] max-[760px]:my-[76px] max-[760px]:grid-cols-1">
         <div className="min-h-[590px] relative grid place-items-center overflow-hidden bg-[radial-gradient(circle_at_51%_48%,rgba(236,210,159,0.22),transparent_29%),linear-gradient(145deg,#c7b79f,#e8dfd2)] text-[#15304c] max-[760px]:min-h-[360px]" aria-hidden="true">
           <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 font-[Georgia,serif] text-[17rem] opacity-20 text-white">Z</span>
           <span className="absolute border border-[rgba(155,111,45,0.48)] rounded-full w-[47%] aspect-square" />
           <span className="absolute border border-white/55 rounded-full w-[63%] aspect-square" />
-          <span className="relative z-[3] text-[#9a6e2d]"><Gem size={84} strokeWidth={1} /></span>
+          <span className="relative z-[3] text-[var(--brand-accent)]"><Gem size={84} strokeWidth={1} /></span>
           <small className="absolute right-[53px] bottom-[47px] font-[Georgia,serif] text-[0.62rem] tracking-[0.18em]">۱۸K · FINE GOLD</small>
         </div>
 
         <div className="p-[clamp(52px,7vw,100px)] text-white self-center max-[760px]:p-7 max-[760px]:pb-[55px]">
-          <span className="inline-block text-[#9a6e2d] text-[0.78rem] font-bold tracking-[0.08em] mb-[5px]">فلسفه {settings.storeName}</span>
+          <span className="inline-block text-[var(--brand-accent)] text-[0.78rem] font-bold tracking-[0.08em] mb-[5px]">فلسفه {settings.storeName}</span>
           <h2 className="mt-[6px] mb-5 text-[clamp(2.7rem,4.5vw,4.6rem)] font-normal leading-[1.3]">
             زیبایی امروز،<br />ارزش ماندگار فردا
           </h2>
@@ -237,8 +237,8 @@ export default async function Home() {
       <section {...sectionProps("CONCIERGE")} id="guide" className="py-[105px] border-t border-[#e5dfd4] bg-[#fbfaf7] max-[760px]:py-[76px]">
         <div className="w-[min(1240px,calc(100%-40px))] mx-auto grid grid-cols-[0.8fr_1.2fr] gap-[clamp(55px,8vw,120px)] items-start max-[1000px]:grid-cols-1">
           <div>
-            <span className="inline-block text-[#9a6e2d] text-[0.78rem] font-bold tracking-[0.08em] mb-[5px]">خدمات اختصاصی</span>
-            <h2 className="mt-[5px] mb-4 text-[#152740] text-[clamp(2rem,3.5vw,3.1rem)] font-normal leading-[1.4]">آرامش، از انتخاب تا تحویل</h2>
+            <span className="inline-block text-[var(--brand-accent)] text-[0.78rem] font-bold tracking-[0.08em] mb-[5px]">خدمات اختصاصی</span>
+            <h2 className="mt-[5px] mb-4 text-[var(--brand-primary)] text-[clamp(2rem,3.5vw,3.1rem)] font-normal leading-[1.4]">آرامش، از انتخاب تا تحویل</h2>
             <p className="text-[#7e7b75] text-[0.82rem]">تیم زر در تمام مسیر خرید کنار شماست؛ از انتخاب هدیه تا پیگیری سفارش.</p>
           </div>
           <div className="grid grid-cols-3 gap-5 max-[760px]:grid-cols-1">
@@ -248,8 +248,8 @@ export default async function Home() {
               { icon: <Sparkles strokeWidth={1.3} />, title: "مشاوره انتخاب", desc: "همراهی برای انتخاب قطعه مناسب شما یا هدیه" },
             ].map(({ icon, title, desc }) => (
               <div key={title} className="min-h-[205px] p-[30px_24px] flex flex-col items-start border border-[#dfd9cf] bg-white max-[760px]:min-h-auto">
-                <span className="mb-[30px] text-[#a67b39]">{icon}</span>
-                <strong className="mb-[6px] text-[#172840] text-[0.9rem]">{title}</strong>
+                <span className="mb-[30px] text-[var(--brand-accent)]">{icon}</span>
+                <strong className="mb-[6px] text-[var(--brand-primary)] text-[0.9rem]">{title}</strong>
                 <span className="text-[#88837b] text-[0.68rem] leading-[1.8]">{desc}</span>
               </div>
             ))}
