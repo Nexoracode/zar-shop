@@ -6,7 +6,6 @@ import { completeProductSchema } from "@/modules/products/schemas";
 import { hasPermission } from "@/modules/auth/permissions";
 import { areOptionColorsValid } from "@/modules/products/color-validation";
 import { sanitizeProductDescription } from "@/modules/products/rich-text";
-import { getStoreIndustry } from "@/modules/settings/store-settings";
 import { tehranDateEnd, tehranDateStart } from "@/modules/products/discount";
 import { getGeneralStoreSettings, isStorefrontAvailable } from "@/modules/settings/general-settings";
 
@@ -27,8 +26,7 @@ export async function POST(request: Request) {
     if (!actor || !hasPermission(actor.role, "catalog:manage")) {
       return NextResponse.json({ message: "دسترسی غیرمجاز است." }, { status: 403 });
     }
-    const storeIndustry = await getStoreIndustry();
-    const { mediaIds, options, optionGuideId, ...input } = completeProductSchema.parse({ ...(await request.json()), storeIndustry });
+    const { mediaIds, options, optionGuideId, ...input } = completeProductSchema.parse({ ...(await request.json()), storeIndustry: "GOLD" });
     if (!await areOptionColorsValid(options)) return NextResponse.json({ message: "یک یا چند رنگ انتخاب‌شده معتبر یا فعال نیست." }, { status: 422 });
     const media = mediaIds.length ? await db.mediaAsset.findMany({ where: { id: { in: mediaIds }, scope: "PRODUCT", type: { in: ["IMAGE", "VIDEO"] } }, select: { id: true } }) : [];
     if (media.length !== new Set(mediaIds).size) return NextResponse.json({ message: "یک یا چند رسانه محصول معتبر نیست." }, { status: 422 });

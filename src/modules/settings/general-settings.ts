@@ -7,7 +7,6 @@ import { STORE_SETTING_ID } from "@/modules/settings/store-settings";
 const optionalText = (max: number) => z.union([z.null(), z.string().trim().max(max)]).transform((value) => value || null);
 
 export const generalStoreSettingsSchema = z.object({
-  industry: z.enum(["GOLD", "GENERAL"]),
   storeName: z.string().trim().min(2).max(120),
   tagline: z.string().trim().min(2).max(191),
   shortDescription: z.string().trim().min(10).max(500),
@@ -26,7 +25,6 @@ export const generalStoreSettingsSchema = z.object({
 export type GeneralStoreSettingsInput = z.infer<typeof generalStoreSettingsSchema>;
 
 export const generalStoreSettingsDefaults: GeneralStoreSettingsInput = {
-  industry: "GOLD",
   storeName: "زر گالری",
   tagline: "طلا، روایت ماندگار شما",
   shortDescription: "فروش آنلاین زیورآلات طلای ۱۸ عیار با قیمت روز و فاکتور رسمی",
@@ -43,7 +41,6 @@ export const generalStoreSettingsDefaults: GeneralStoreSettingsInput = {
 };
 
 const generalSelect = {
-  industry: true,
   storeName: true,
   tagline: true,
   shortDescription: true,

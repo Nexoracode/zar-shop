@@ -58,7 +58,7 @@ export async function GET(request: Request) {
       }
       const sellerSettings = await transaction.storeSetting.findUnique({
         where: { id: "main" },
-        select: { industry: true, storeName: true, supportPhone: true, supportEmail: true, storeAddress: true, legalIdentifier: true, currency: true, timezone: true },
+        select: { storeName: true, supportPhone: true, supportEmail: true, storeAddress: true, legalIdentifier: true, currency: true, timezone: true },
       });
       await transaction.invoice.create({
         data: {
@@ -73,7 +73,7 @@ export async function GET(request: Request) {
             economicCode: sellerSettings?.legalIdentifier,
             currency: sellerSettings?.currency ?? generalStoreSettingsDefaults.currency,
             timezone: sellerSettings?.timezone ?? generalStoreSettingsDefaults.timezone,
-            industry: sellerSettings?.industry ?? generalStoreSettingsDefaults.industry,
+            industry: "GOLD",
           },
           buyerData: {
             name: payment.order.user.isGuest ? String((payment.order.shippingAddress as { recipient?: string } | null)?.recipient ?? "") : `${payment.order.user.firstName ?? ""} ${payment.order.user.lastName ?? ""}`.trim(),
