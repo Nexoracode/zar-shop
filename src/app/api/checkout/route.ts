@@ -87,6 +87,7 @@ export async function POST(request: Request) {
     const subtotal = lines.reduce((sum: number, line: CheckoutLine) => sum + line.originalUnitPrice * line.item.quantity, 0);
     const productDiscount = lines.reduce((sum: number, line: CheckoutLine) => sum + line.discountAmount * line.item.quantity, 0);
     const tax = lines.reduce((sum: number, line: CheckoutLine) => sum + line.parts.tax * line.item.quantity, 0);
+    const preparationDays = Math.max(...lines.map((line) => line.p.preparationDays));
     const order = await db.$transaction(async (tx) => {
       const shippingFee = baseShippingFee(commerceSettings, merchandiseAmount, deliveryMethod);
       const promotions = await resolveCheckoutPromotions(tx, { userId: user.id, couponCode, merchandiseAmount, shippingFee, city: address.city });
@@ -101,8 +102,8 @@ export async function POST(request: Request) {
           createdAt,
           expiresAt: orderSettings.orderExpirationStart === "CREATED_AT" ? orderExpiresAt(orderSettings, createdAt) : null,
           deliveryMethod,
-          preparationDaysSnapshot: commerceSettings.preparationDays,
-          estimatedReadyAt: estimatedReadyAt(commerceSettings.preparationDays, createdAt),
+          preparationDaysSnapshot: preparationDays,
+          estimatedReadyAt: estimatedReadyAt(preparationDays, createdAt),
           goldPriceSnapshot: rate,
           subtotal,
           productDiscount,

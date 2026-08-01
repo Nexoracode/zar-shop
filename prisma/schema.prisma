@@ -214,6 +214,7 @@ model Product {
   discountStartsAt DateTime?
   discountEndsAt   DateTime?
   stock            Int                  @default(0)
+  preparationDays  Int                  @default(2)
   featured         Boolean              @default(false)
   createdAt        DateTime             @default(now())
   updatedAt        DateTime             @updatedAt

@@ -41,6 +41,7 @@ export const productSchema = z.object({
   discountStartsAt: dateOnlySchema.nullable().default(null),
   discountEndsAt: dateOnlySchema.nullable().default(null),
   stock: z.coerce.number().int().nonnegative(),
+  preparationDays: z.coerce.number().int().min(0).max(90).default(2),
   status: z.enum(["DRAFT", "ACTIVE", "ARCHIVED"]).default("DRAFT"),
   featured: z.boolean().default(false),
   mediaIds: z.array(z.string().cuid()).max(20).refine((ids) => new Set(ids).size === ids.length, "رسانه تکراری مجاز نیست.").default([]),

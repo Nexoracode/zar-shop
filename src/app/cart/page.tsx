@@ -10,7 +10,7 @@ import type { Prisma } from "@generated/prisma/client";
 import { getSelectedOptionPrice, getSelectedOptionWeight, optionEntries } from "@/modules/products/options";
 import { calculateDiscountedPrice } from "@/modules/products/discount";
 import { getGeneralStoreSettings } from "@/modules/settings/general-settings";
-import { baseShippingFee, getCommerceSettings } from "@/modules/settings/commerce-settings";
+import { getCommerceSettings } from "@/modules/settings/commerce-settings";
 
 type CartItemRow = Prisma.CartItemGetPayload<{ include: { product: { include: { options: true } } } }>;
 
@@ -40,6 +40,7 @@ export default async function CartPage() {
   const total = itemAmounts.some((amount) => amount === null)
     ? null
     : itemAmounts.reduce<number>((sum, amount, index) => sum + Number(amount) * items[index].quantity, 0);
+  const preparationDays = items.length ? Math.max(...items.map((item) => item.product.preparationDays)) : 0;
 
   return (
     <main className="px-5 py-12 sm:px-6 sm:py-[86px]">
@@ -92,7 +93,7 @@ export default async function CartPage() {
             {total === null ? (
               <AlertRoot status="warning" className="self-start"><AlertDescription>نرخ لحظه‌ای طلا موقتاً در دسترس نیست. سبد خرید شما حفظ شده است و پس از برقراری سرویس می‌توانید پرداخت را ادامه دهید.</AlertDescription></AlertRoot>
             ) : (
-              <div className="grid self-start gap-3"><Card variant="secondary" className="rounded-xl border border-[var(--brand-accent)]/20 bg-white p-3 text-xs text-[#606774]"><div className="flex justify-between gap-3"><span>{commerceSettings.calculateShippingAfterAddress ? "هزینه ارسال پس از دریافت نشانی محاسبه می‌شود" : "هزینه ارسال بیمه‌شده"}</span>{!commerceSettings.calculateShippingAfterAddress && commerceSettings.insuredShippingEnabled ? <strong>{formatMoney(baseShippingFee(commerceSettings, total, "INSURED_SHIPPING"), settings.currency)}</strong> : null}</div>{commerceSettings.freeShippingThreshold !== null && <p className="mb-0 mt-2 text-[11px] text-[var(--brand-accent)]">ارسال بیمه‌شده از مبلغ {formatMoney(commerceSettings.freeShippingThreshold, settings.currency)} رایگان است.</p>}<p className="mb-0 mt-2 text-[11px]">زمان آماده‌سازی: {commerceSettings.preparationDays.toLocaleString("fa-IR")} روز</p></Card><CheckoutForm settings={commerceSettings} /></div>
+              <div className="grid self-start gap-3"><Card variant="secondary" className="rounded-xl border border-[var(--brand-accent)]/20 bg-white p-3 text-xs text-[#606774]"><p className="m-0">هزینه ارسال پس از دریافت نشانی و بر اساس وزن مرسوله محاسبه می‌شود.</p><p className="mb-0 mt-2 text-[11px]">زمان آماده‌سازی سفارش: {preparationDays.toLocaleString("fa-IR")} روز</p></Card><CheckoutForm settings={commerceSettings} /></div>
             )}
           </div>
         )}

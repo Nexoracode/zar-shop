@@ -50,6 +50,7 @@ export default async function EditProductPage({ params }: Context) {
           discountStartsAt: formatTehranDateInput(product.discountStartsAt),
           discountEndsAt: formatTehranDateInput(product.discountEndsAt),
           stock: product.stock,
+          preparationDays: product.preparationDays,
           status: product.status,
           featured: product.featured,
           options: product.options.map((option) => ({ name: option.name, values: parseOptionValues(option.values) })),
