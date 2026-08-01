@@ -1,10 +1,10 @@
 "use client";
 
 import Image from "next/image";
-import { useState, type FormEvent, type ReactNode } from "react";
+import { useState, type DragEvent, type FormEvent, type ReactNode } from "react";
 import { Alert, Button, Card, Chip, Input, Label, Tabs, TextArea, toast } from "@heroui/react";
 import {
-  ArrowDown, ArrowUp, Bell, Boxes, CheckCircle2, CircleDollarSign, Clock3, CreditCard, Eye, EyeOff, FileQuestion, FileText,
+  Bell, Boxes, CheckCircle2, CircleDollarSign, Clock3, CreditCard, Eye, EyeOff, FileQuestion, FileText,
   Globe2, GripVertical, Images, LayoutDashboard, Mail, MapPin, Megaphone, PackageCheck, Palette, Plus, Save,
   Search, Settings2, ShieldCheck, Smartphone, Sparkles, Store, Trash2, Truck, Upload, Users,
 } from "lucide-react";
@@ -118,6 +118,8 @@ function HomepageSettings({ initialSettings }: { initialSettings: HomepageSettin
   const [desktopMedia, setDesktopMedia] = useState<MediaChoice | null>(() => toMediaChoice(initialSettings.heroDesktopMedia));
   const [mobileMedia, setMobileMedia] = useState<MediaChoice | null>(() => toMediaChoice(initialSettings.heroMobileMedia));
   const [pickerTarget, setPickerTarget] = useState<"desktop" | "mobile" | null>(null);
+  const [draggedSectionId, setDraggedSectionId] = useState<HomepageSectionId | null>(null);
+  const [dropTarget, setDropTarget] = useState<{ id: HomepageSectionId; after: boolean } | null>(null);
 
   function moveSection(index: number, direction: -1 | 1) {
     const target = index + direction;
@@ -127,6 +129,33 @@ function HomepageSettings({ initialSettings }: { initialSettings: HomepageSettin
       [next[index], next[target]] = [next[target], next[index]];
       return next;
     });
+  }
+
+  function updateDropTarget(event: DragEvent<HTMLDivElement>, id: HomepageSectionId) {
+    event.preventDefault();
+    event.dataTransfer.dropEffect = "move";
+    const bounds = event.currentTarget.getBoundingClientRect();
+    setDropTarget({ id, after: event.clientY > bounds.top + bounds.height / 2 });
+  }
+
+  function dropSection(event: DragEvent<HTMLDivElement>, targetId: HomepageSectionId) {
+    event.preventDefault();
+    const sourceId = draggedSectionId ?? event.dataTransfer.getData("text/plain") as HomepageSectionId;
+    const target = dropTarget?.id === targetId ? dropTarget : { id: targetId, after: false };
+    if (sourceId && sourceId !== target.id) {
+      setSections((current) => {
+        const source = current.find((section) => section.id === sourceId);
+        if (!source) return current;
+        const remaining = current.filter((section) => section.id !== sourceId);
+        const targetIndex = remaining.findIndex((section) => section.id === target.id);
+        if (targetIndex < 0) return current;
+        const next = [...remaining];
+        next.splice(targetIndex + (target.after ? 1 : 0), 0, source);
+        return next;
+      });
+    }
+    setDraggedSectionId(null);
+    setDropTarget(null);
   }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
@@ -151,16 +180,37 @@ function HomepageSettings({ initialSettings }: { initialSettings: HomepageSettin
 
   return <>
     <form onSubmit={submit} className="grid gap-5"><SettingsGrid>
-      <SettingCard icon={<LayoutDashboard size={19} />} title="چینش صفحه اصلی" description="ترتیب و وضعیت نمایش بخش‌های واقعی سایت" className="lg:col-span-[span_7/span_7]">
+      <SettingCard icon={<LayoutDashboard size={19} />} title="چینش صفحه اصلی" description="برای تغییر ترتیب، هر ردیف را از دستگیره بگیرید و جابه‌جا کنید" className="lg:col-span-[span_7/span_7]">
         <div className="grid gap-2">{sections.map((section, index) => {
           const meta = homeSectionMeta[section.id];
-          return <div key={section.id} className="flex items-center gap-2 rounded-xl border border-[var(--border)] bg-[var(--surface-secondary)] p-3 sm:gap-3">
+          const isDropBefore = dropTarget?.id === section.id && !dropTarget.after && draggedSectionId !== section.id;
+          const isDropAfter = dropTarget?.id === section.id && dropTarget.after && draggedSectionId !== section.id;
+          return <div
+            key={section.id}
+            onDragOver={(event) => updateDropTarget(event, section.id)}
+            onDrop={(event) => dropSection(event, section.id)}
+            className={`relative flex items-center gap-2 rounded-xl border bg-[var(--surface-secondary)] p-3 transition sm:gap-3 ${draggedSectionId === section.id ? "border-[var(--accent)] opacity-45" : "border-[var(--border)]"} ${isDropBefore ? "before:absolute before:inset-x-2 before:-top-1.5 before:h-0.5 before:rounded-full before:bg-[var(--accent)]" : ""} ${isDropAfter ? "after:absolute after:inset-x-2 after:-bottom-1.5 after:h-0.5 after:rounded-full after:bg-[var(--accent)]" : ""}`}
+          >
+            <span
+              draggable
+              onDragStart={(event: DragEvent<HTMLSpanElement>) => { event.dataTransfer.effectAllowed = "move"; event.dataTransfer.setData("text/plain", section.id); setDraggedSectionId(section.id); }}
+              onDragEnd={() => { setDraggedSectionId(null); setDropTarget(null); }}
+              className="shrink-0 cursor-grab active:cursor-grabbing"
+            >
+              <Button
+                type="button"
+                isIconOnly
+                size="sm"
+                variant="ghost"
+                aria-label={`جابه‌جایی ${meta.title}؛ با کشیدن یا کلیدهای بالا و پایین`}
+                onKeyDown={(event) => { if (event.key === "ArrowUp") { event.preventDefault(); moveSection(index, -1); } else if (event.key === "ArrowDown") { event.preventDefault(); moveSection(index, 1); } }}
+                className="cursor-grab text-[var(--muted)] active:cursor-grabbing"
+              ><GripVertical size={17} /></Button>
+            </span>
             <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-[var(--surface)] text-xs font-black text-[var(--muted)]">{(index + 1).toLocaleString("fa-IR")}</span>
             <div className="min-w-0 flex-1"><strong className="block text-sm">{meta.title}</strong><span className="mt-0.5 block truncate text-[11px] text-[var(--muted)]">{meta.description}</span></div>
             <Chip size="sm" variant="soft" className={section.enabled ? "text-emerald-700" : "text-slate-500"}><Chip.Label>{section.enabled ? "فعال" : "غیرفعال"}</Chip.Label></Chip>
             <div className="flex shrink-0 items-center gap-0.5">
-              <Button type="button" isIconOnly size="sm" variant="ghost" isDisabled={index === 0} aria-label={`انتقال ${meta.title} به بالا`} onPress={() => moveSection(index, -1)}><ArrowUp size={14} /></Button>
-              <Button type="button" isIconOnly size="sm" variant="ghost" isDisabled={index === sections.length - 1} aria-label={`انتقال ${meta.title} به پایین`} onPress={() => moveSection(index, 1)}><ArrowDown size={14} /></Button>
               <Button type="button" isIconOnly size="sm" variant="ghost" aria-label={`${section.enabled ? "غیرفعال کردن" : "فعال کردن"} ${meta.title}`} onPress={() => setSections((current) => current.map((item) => item.id === section.id ? { ...item, enabled: !item.enabled } : item))}>{section.enabled ? <Eye size={15} /> : <EyeOff size={15} />}</Button>
             </div>
           </div>;
@@ -171,9 +221,15 @@ function HomepageSettings({ initialSettings }: { initialSettings: HomepageSettin
         <Field label="متن کوتاه"><TextArea name="heroDescription" required defaultValue={initialSettings.heroDescription} rows={3} variant="secondary" className={adminFieldClass} /></Field>
         <div className="grid gap-4 sm:grid-cols-2"><Field label="متن دکمه"><Input name="heroButtonLabel" required defaultValue={initialSettings.heroButtonLabel} variant="secondary" className={adminFieldClass} /></Field><Field label="لینک دکمه"><Input name="heroButtonHref" required defaultValue={initialSettings.heroButtonHref} dir="ltr" variant="secondary" className={adminFieldClass} /></Field></div>
         <div className="grid gap-3 sm:grid-cols-2"><HomepageMediaField label="تصویر دسکتاپ" hint="پیشنهاد: ۱۹۲۰×۹۰۰" media={desktopMedia} onSelect={() => setPickerTarget("desktop")} onClear={() => setDesktopMedia(null)} /><HomepageMediaField label="تصویر موبایل" hint="پیشنهاد: ۹۰۰×۱۲۰۰" media={mobileMedia} onSelect={() => setPickerTarget("mobile")} onClear={() => setMobileMedia(null)} /></div>
-        <div className="flex justify-end border-t border-[var(--border)] pt-4"><Button type="submit" variant="primary" isPending={saving} className="min-w-32">ذخیره تنظیمات</Button></div>
       </SettingCard>
-    </SettingsGrid></form>
+    </SettingsGrid>
+      <Card variant="secondary" className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4 shadow-sm">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div><strong className="block text-sm">ذخیره تغییرات صفحه اصلی</strong><p className="m-0 mt-1 text-xs text-[var(--muted)]">چینش بخش‌ها، وضعیت نمایش، محتوای اسلایدر و تصاویر با هم ذخیره می‌شوند.</p></div>
+          <Button type="submit" variant="primary" isPending={saving} className="min-h-11 shrink-0 gap-2 px-5"><Save size={16} />ذخیره تنظیمات صفحه اصلی</Button>
+        </div>
+      </Card>
+    </form>
     <MediaPickerDialog open={pickerTarget !== null} scope="HOMEPAGE" allowedTypes={["IMAGE"]} selected={(pickerTarget === "desktop" ? desktopMedia : mobileMedia) ? [(pickerTarget === "desktop" ? desktopMedia : mobileMedia)!] : []} onClose={() => setPickerTarget(null)} onConfirm={(items) => { if (pickerTarget === "desktop") setDesktopMedia(items[0] ?? null); else if (pickerTarget === "mobile") setMobileMedia(items[0] ?? null); }} />
   </>;
 }
