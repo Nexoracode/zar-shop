@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { AdminPromotions } from "@/components/admin-promotions";
-import { AdminPageHeader } from "@/components/admin-ui";
+import { AdminBackLink, AdminPageHeader } from "@/components/admin-ui";
 import { db } from "@/lib/db";
 import { requirePermission } from "@/modules/auth/session";
 import { serializePromotion } from "@/modules/promotions/admin";
@@ -23,6 +23,7 @@ export default async function EditPromotionPage({ params }: Context) {
         eyebrow="بازاریابی و فروش"
         title="ویرایش پروموشن"
         description={`شرایط و وضعیت «${promotion.title}» را ویرایش کنید.`}
+        action={<AdminBackLink href="/admin/promotions">بازگشت به پروموشن‌ها</AdminBackLink>}
       />
       <AdminPromotions mode="form" initialEditing={serializePromotion(promotion)} />
     </>

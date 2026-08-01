@@ -2,8 +2,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Prisma } from "@generated/prisma/client";
-import { ArrowRight, CalendarDays, CreditCard, FileText, MapPin, Package, Truck, UserRound } from "lucide-react";
-import { AdminPageHeader, AdminPanel, AdminStatusBadge } from "@/components/admin-ui";
+import { CalendarDays, CreditCard, FileText, MapPin, Package, Truck, UserRound } from "lucide-react";
+import { AdminBackLink, AdminPageHeader, AdminPanel, AdminStatusBadge } from "@/components/admin-ui";
 import { db } from "@/lib/db";
 import { formatDateTime, formatMoney } from "@/lib/format";
 import {
@@ -85,9 +85,7 @@ export default async function OrderDetailsPage({ params }: { params: PageParams 
 
   return (
     <>
-      <Link href="/admin/orders" className="mb-4 inline-flex items-center gap-2 text-sm font-bold text-slate-500 transition hover:text-[#172b4d]">
-        <ArrowRight size={17} /> بازگشت به سفارش‌ها
-      </Link>
+      <div className="mb-4"><AdminBackLink href="/admin/orders">بازگشت به سفارش‌ها</AdminBackLink></div>
 
       <AdminPageHeader
         eyebrow="جزئیات سفارش"

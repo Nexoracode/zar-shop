@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { AdminPageHeader } from "@/components/admin-ui";
+import { AdminBackLink, AdminPageHeader } from "@/components/admin-ui";
 import { ProductOptionsForm } from "@/components/product-options-form";
 import { requirePermission } from "@/modules/auth/session";
 import { getProductOptionManagement } from "@/modules/products/option-management";
@@ -13,7 +13,7 @@ export default async function ProductOptionsPage({ params }: Context) {
   if (!data) notFound();
 
   return <>
-    <AdminPageHeader eyebrow={`محصول ${data.productSku}`} title={`مدیریت تنوع «${data.productName}»`} description="رنگ، سایز و سایر گزینه‌های قابل انتخاب این محصول را در این صفحه مدیریت کنید." />
+    <AdminPageHeader eyebrow={`محصول ${data.productSku}`} title={`مدیریت تنوع «${data.productName}»`} description="رنگ، سایز و سایر گزینه‌های قابل انتخاب این محصول را در این صفحه مدیریت کنید." action={<AdminBackLink href="/admin/products">بازگشت به محصولات</AdminBackLink>} />
     <ProductOptionsForm productId={data.productId} productStock={data.productStock} storeIndustry={data.storeIndustry} colors={data.colors} initialOptions={data.initialOptions} />
   </>;
 }
