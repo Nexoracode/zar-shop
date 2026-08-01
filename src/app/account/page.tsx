@@ -9,6 +9,7 @@ import { getGeneralStoreSettings } from "@/modules/settings/general-settings";
 import { getOrderSettings } from "@/modules/settings/order-settings";
 import { expirePendingOrders } from "@/modules/orders/expiration";
 import { OrderExpiryCountdown } from "@/components/order-expiry-countdown";
+import { SmsConsentPreference } from "@/components/sms-consent-preference";
 
 export default async function AccountPage() {
   const user = await requireUser();
@@ -46,6 +47,8 @@ export default async function AccountPage() {
             </Card>
           ))}
         </div>
+
+        {!user.isGuest && <SmsConsentPreference initialValue={user.smsMarketingConsent} />}
 
         {/* Orders */}
         <div className="flex items-end justify-between gap-6 mt-[45px] mb-[34px]">

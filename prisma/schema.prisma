@@ -120,6 +120,7 @@ model User {
   emailVerifiedAt      DateTime?
   lastLoginAt          DateTime?
   isGuest              Boolean               @default(false)
+  smsMarketingConsent  Boolean               @default(false)
   createdAt            DateTime              @default(now())
   updatedAt            DateTime              @updatedAt
   addresses            Address[]
@@ -460,6 +461,53 @@ model PaymentGatewayConfig {
   updatedAt           DateTime @updatedAt
 
   @@index([updatedAt])
+}
+
+model SmsProviderConfig {
+  id                   String   @id @default(cuid())
+  provider             String   @unique @db.VarChar(40)
+  displayName          String   @db.VarChar(100)
+  credentialsEncrypted String   @db.Text
+  credentialMasked     String   @db.VarChar(80)
+  senderNumber         String   @db.VarChar(40)
+  isActive             Boolean  @default(false)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  @@index([isActive, updatedAt])
+}
+
+model CommunicationSetting {
+  id                    String   @id @default("main")
+  smsEnabled            Boolean  @default(false)
+  inAppEnabled          Boolean  @default(true)
+  adminPhone            String?  @db.VarChar(20)
+  orderCreatedSms       Boolean  @default(false)
+  paymentSuccessSms     Boolean  @default(true)
+  orderShippedSms       Boolean  @default(true)
+  orderExpiredSms       Boolean  @default(false)
+  lowStockAdminSms      Boolean  @default(false)
+  templates             Json?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+}
+
+model SmsCampaign {
+  id              String   @id @default(cuid())
+  actorId         String?  @db.VarChar(191)
+  provider        String   @db.VarChar(40)
+  audience        String   @db.VarChar(50)
+  message         String   @db.Text
+  recipientCount  Int      @default(0)
+  successfulCount Int      @default(0)
+  failedCount     Int      @default(0)
+  status          String   @db.VarChar(30)
+  providerData    Json?
+  errorMessage    String?  @db.Text
+  createdAt       DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([actorId, createdAt])
 }
 
 model Cart {

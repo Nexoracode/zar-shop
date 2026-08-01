@@ -15,6 +15,7 @@ import { getGeneralStoreSettings, isStorefrontAvailable } from "@/modules/settin
 import { getOrderSettings, orderExpiresAt } from "@/modules/settings/order-settings";
 import { expirePendingOrders } from "@/modules/orders/expiration";
 import { baseShippingFee, estimatedReadyAt, getCommerceSettings } from "@/modules/settings/commerce-settings";
+import { sendAutomatedSms } from "@/modules/communications/sms-service";
 
 type ItemWithProduct = Prisma.CartItemGetPayload<{ include: { product: { include: { options: true } } } }>;
 type PriceParts = ReturnType<typeof calculateProductPrice>;
@@ -146,6 +147,7 @@ export async function POST(request: Request) {
         await transaction.payment.create({ data: { orderId: order.id, provider: env.PAYMENT_PROVIDER, authority: paymentRequest.authority, amount: order.total, status: "PENDING" } });
         if (orderSettings.orderExpirationStart === "PAYMENT_STARTED_AT") await transaction.order.update({ where: { id: order.id }, data: { expiresAt: orderExpiresAt(orderSettings, paymentStartedAt) } });
       });
+      try { await sendAutomatedSms("orderCreated", input.phone, { orderNumber: order.orderNumber }); } catch (smsError) { console.error("[sms] Order-created notification failed.", smsError); }
       return NextResponse.json({ redirectUrl: paymentRequest.redirectUrl });
     } catch (error) {
       await db.$transaction(async (tx) => {

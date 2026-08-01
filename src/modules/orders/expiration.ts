@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
 import { getOrderSettings } from "@/modules/settings/order-settings";
+import { sendAutomatedSms } from "@/modules/communications/sms-service";
 
 export type ExpirationRunResult = { inspected: number; expired: number; cancelled: number; notified: number };
 
@@ -10,7 +11,7 @@ export async function expirePendingOrders(now = new Date()): Promise<ExpirationR
 
   const candidates = await db.order.findMany({
     where: { status: "PENDING_PAYMENT", expiresAt: { lte: now }, expirationHandledAt: null, payments: { none: { status: "SUCCESS" } } },
-    select: { id: true, orderNumber: true },
+    select: { id: true, orderNumber: true, user: { select: { phone: true } } },
     take: 100,
     orderBy: { expiresAt: "asc" },
   });
@@ -43,6 +44,7 @@ export async function expirePendingOrders(now = new Date()): Promise<ExpirationR
       return true;
     });
     if (!handled) continue;
+    try { await sendAutomatedSms("orderExpired", order.user.phone, { orderNumber: order.orderNumber }); } catch (smsError) { console.error("[sms] Order-expired notification failed.", smsError); }
     if (settings.orderExpirationAction === "EXPIRE") result.expired += 1;
     else if (settings.orderExpirationAction === "CANCEL") result.cancelled += 1;
     else result.notified += 1;

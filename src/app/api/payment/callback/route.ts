@@ -6,6 +6,7 @@ import { decrementSelectedOptionStocks } from "@/modules/products/options";
 import type { PrismaClient } from "@generated/prisma/client";
 import { issueNextPurchaseRewards } from "@/modules/promotions/service";
 import { generalStoreSettingsDefaults } from "@/modules/settings/general-settings";
+import { sendAutomatedSms } from "@/modules/communications/sms-service";
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
@@ -101,6 +102,7 @@ export async function GET(request: Request) {
       });
       await transaction.cartItem.deleteMany({ where: { cart: { userId: payment.order.userId } } });
     });
+    try { await sendAutomatedSms("paymentSuccess", (payment.order.shippingAddress as { phone?: string } | null)?.phone, { orderNumber: payment.order.orderNumber }); } catch (smsError) { console.error("[sms] Payment-success notification failed.", smsError); }
     return NextResponse.redirect(`${env.APP_URL}/invoices/${payment.orderId}`);
   } catch {
     await db.$transaction(async (tx) => {

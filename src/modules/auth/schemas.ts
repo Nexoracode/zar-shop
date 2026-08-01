@@ -5,6 +5,7 @@ export const registerSchema = z.object({
   lastName: z.string().trim().min(2).max(100),
   email: z.email().transform((v) => v.toLowerCase()),
   phone: z.string().regex(/^09\d{9}$/),
+  smsMarketingConsent: z.boolean().default(false),
   password: z.string().min(8).max(72).regex(/[A-Za-z]/).regex(/\d/),
 });
 

@@ -2,18 +2,20 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Alert, Button, Input, Spinner, toast } from "@heroui/react";
+import { AdminCheckbox } from "@/components/admin-checkbox";
 
 export function AuthForm({ mode }: { mode: "login" | "register" }) {
   const router = useRouter();
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [smsMarketingConsent, setSmsMarketingConsent] = useState(false);
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setLoading(true);
     setError("");
     const form = new FormData(event.currentTarget);
-    const body = Object.fromEntries(form);
+    const body = { ...Object.fromEntries(form), ...(mode === "register" ? { smsMarketingConsent } : {}) };
     const response = await fetch(`/api/auth/${mode}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -55,6 +57,8 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
           <Input id="phone" name="phone" inputMode="tel" dir="ltr" placeholder="09123456789" required fullWidth variant="secondary" className={fieldClass} />
         </div>
       )}
+
+      {mode === "register" && <AdminCheckbox isSelected={smsMarketingConsent} onChange={setSmsMarketingConsent} description="برای تخفیف‌ها و خبرهای فروشگاه؛ هر زمان قابل لغو است">مایلم پیامک‌های اطلاع‌رسانی فروشگاه را دریافت کنم</AdminCheckbox>}
 
       <div className="grid gap-[7px]">
         <label htmlFor="password" className={labelClass}>رمز عبور</label>

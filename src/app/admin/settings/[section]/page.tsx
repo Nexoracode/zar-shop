@@ -7,7 +7,6 @@ import {
   ContentSettings,
   GeneralSettings,
   HomepageSettings,
-  NotificationSettings,
   OrderSettings,
   SeoSettings,
 } from "@/components/admin-settings";
@@ -33,7 +32,6 @@ const sectionMeta = {
   commerce: { title: "تنظیمات ارسال و پرداخت", description: "روش‌های تحویل سفارش و وضعیت درگاه پرداخت" },
   content: { title: "تنظیمات محتوا و سوالات متداول", description: "مدیریت FAQ و صفحات راهنما و قوانین فروشگاه" },
   seo: { title: "SEO حرفه‌ای", description: "تنظیمات دیده‌شدن فروشگاه و ساختار فنی صفحات برای موتورهای جست‌وجو" },
-  notifications: { title: "اعلان و پیامک", description: "مدیریت پیام‌های سیستمی، اطلاع‌رسانی سفارش و هشدارهای مدیریتی" },
 } as const;
 
 async function getPageMeta(section: string) {
@@ -72,7 +70,6 @@ export default async function AdminSettingSectionPage({ params }: Context) {
     }
     case "content": content = <ContentSettings initialSettings={await getContentSettings()} />; break;
     case "seo": content = <SeoSettings />; break;
-    case "notifications": content = <NotificationSettings />; break;
     default: notFound();
   }
 
