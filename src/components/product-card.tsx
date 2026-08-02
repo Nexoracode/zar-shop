@@ -11,16 +11,18 @@ type ProductCardProps = {
   price: string;
   originalPrice?: string;
   image?: { src: string; alt: string };
+  storefrontVariant?: "default" | "gallery";
 };
 
-export function ProductCard({ href, name, category, industry, weight, purity, price, originalPrice, image }: ProductCardProps) {
+export function ProductCard({ href, name, category, industry, weight, purity, price, originalPrice, image, storefrontVariant = "default" }: ProductCardProps) {
+  const isGallery = storefrontVariant === "gallery";
   return (
     <Link
-      className="group min-w-0 bg-white transition-all duration-[250ms] ease-out hover:-translate-y-[5px] hover:shadow-[0_18px_42px_rgba(23,35,59,0.09)]"
+      className={`group min-w-0 bg-white transition-all duration-[250ms] ease-out hover:-translate-y-[5px] hover:shadow-[0_18px_42px_rgba(23,35,59,0.09)] ${isGallery ? "overflow-hidden rounded-[1.1rem] border border-[#ece8e1]" : ""}`}
       href={href}
     >
       {/* Media */}
-      <div className="aspect-[1/1.08] relative overflow-hidden bg-[#f9f9f8]">
+      <div className={`relative overflow-hidden bg-[#f9f9f8] ${isGallery ? "aspect-square" : "aspect-[1/1.08]"}`}>
         {image ? (
           <Image
             src={image.src}
@@ -35,14 +37,13 @@ export function ProductCard({ href, name, category, industry, weight, purity, pr
             <span className="absolute top-[27%] right-[29%] text-white text-2xl drop-shadow-[0_0_14px_#fff]">✦</span>
           </div>
         )}
-        <span className="absolute right-3 top-3 border border-[var(--brand-accent)]/30 bg-white/90 px-2 py-1 text-[0.68rem] text-[var(--brand-accent)]">
-          {industry === "GOLD" ? `طلای ${purity}` : "محصول فروشگاهی"}
-        </span>
+        <span className={`absolute right-3 top-3 bg-white/90 px-2 py-1 text-[0.65rem] text-[var(--brand-accent)] ${isGallery ? "rounded-full shadow-sm" : "border border-[var(--brand-accent)]/30"}`}>{industry === "GOLD" ? (isGallery ? `${weight} گرم` : `طلای ${purity}`) : "محصول فروشگاهی"}</span>
+        {isGallery && industry === "GOLD" && <span className="absolute left-3 top-3 rounded-full bg-[var(--brand-primary)]/90 px-2 py-1 text-[0.62rem] text-white">عیار {purity}</span>}
       </div>
 
       {/* Content */}
-      <div className="px-2.5 pb-4 pt-3 text-center sm:px-[15px] sm:pb-5 sm:pt-[17px]">
-        <span className="text-[#747982] text-[0.74rem]">{industry === "GOLD" ? `${category} · ${weight} گرم` : category}</span>
+      <div className={`px-2.5 pb-4 pt-3 sm:px-[15px] sm:pb-5 sm:pt-[17px] ${isGallery ? "text-right" : "text-center"}`}>
+        <span className="text-[#747982] text-[0.7rem]">{industry === "GOLD" && !isGallery ? `${category} · ${weight} گرم` : category}</span>
         <h3 className="mb-[7px] mt-[5px] min-h-8 text-[0.82rem] font-medium sm:text-[0.95rem]">{name}</h3>
         {originalPrice && <span className="ml-2 text-[0.7rem] text-slate-400 line-through">{originalPrice}</span>}
         <strong className="text-[0.76rem] text-[var(--brand-primary)] sm:text-[0.92rem]">{price}</strong>
