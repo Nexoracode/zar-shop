@@ -86,6 +86,7 @@ export async function getStorefrontProductFeed(input: { sort: StorefrontProductS
         industry: product.storeIndustry,
         weight: Number(product.weightGrams),
         purity: product.purity,
+        makingFee: product.storeIndustry === "GOLD" ? { type: product.makingFeeType === "FIXED" ? "FIXED" as const : "PERCENT" as const, value: Number(product.makingFeeValue) } : undefined,
         discountPercent: discounted?.isActive && product.discountType === "PERCENT" ? Number(product.discountValue ?? 0) : undefined,
         price: discounted ? formatMoney(discounted.finalPrice, settings.currency) : "قیمت موقتاً در دسترس نیست",
         originalPrice: discounted?.isActive ? formatMoney(discounted.originalPrice, settings.currency) : undefined,

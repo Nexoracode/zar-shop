@@ -16,6 +16,7 @@ export type StorefrontProductCardItem = {
   industry: "GOLD" | "GENERAL";
   weight: number;
   purity: number;
+  makingFee?: { type: "PERCENT" | "FIXED"; value: number };
   discountPercent?: number;
   price: string;
   originalPrice?: string;

@@ -9,6 +9,7 @@ type ProductCardProps = {
   industry: "GOLD" | "GENERAL";
   weight: number;
   purity: number;
+  makingFee?: { type: "PERCENT" | "FIXED"; value: number };
   discountPercent?: number;
   price: string;
   originalPrice?: string;
@@ -16,7 +17,7 @@ type ProductCardProps = {
   storefrontVariant?: "default" | "gallery";
 };
 
-export function ProductCard({ href, name, category, industry, weight, purity, discountPercent, price, originalPrice, image, storefrontVariant = "default" }: ProductCardProps) {
+export function ProductCard({ href, name, category, industry, weight, purity, makingFee, discountPercent, price, originalPrice, image, storefrontVariant = "default" }: ProductCardProps) {
   const isGallery = storefrontVariant === "gallery";
   return (
     <Link
@@ -41,7 +42,7 @@ export function ProductCard({ href, name, category, industry, weight, purity, di
         )}
         <span className={`absolute top-2.5 bg-white/90 px-2 py-1 text-[0.62rem] ${isGallery ? "left-2.5 rounded-[4px] text-[#555]" : "right-2.5 border border-[var(--brand-accent)]/30 text-[var(--brand-accent)]"}`}>{industry === "GOLD" ? (isGallery ? `${weight} گرم` : `طلای ${purity}`) : "محصول فروشگاهی"}</span>
         {isGallery && <span className="absolute right-2.5 top-2.5 grid size-7 place-items-center rounded-full bg-white/90 text-[#777]"><Heart size={15} /></span>}
-        {isGallery && discountPercent !== undefined && discountPercent > 0 && <span className="absolute bottom-2.5 right-2.5 rounded-full bg-rose-600 px-2 py-1 text-[0.6rem] font-bold text-white">٪{discountPercent.toLocaleString("fa-IR")}</span>}
+        {isGallery && makingFee ? <span className="absolute bottom-2.5 right-2.5 rounded-full bg-slate-100 px-2 py-1 text-[0.6rem] font-bold text-slate-600 shadow-sm">{makingFee.type === "PERCENT" ? <>اجرت {makingFee.value.toLocaleString("fa-IR")}٪{makingFee.value < 5 && " | کم‌اجرت"}</> : "اجرت ثابت"}</span> : isGallery && discountPercent !== undefined && discountPercent > 0 ? <span className="absolute bottom-2.5 right-2.5 rounded-full bg-rose-600 px-2 py-1 text-[0.6rem] font-bold text-white">٪{discountPercent.toLocaleString("fa-IR")}</span> : null}
       </div>
 
       {/* Content */}
