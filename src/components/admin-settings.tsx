@@ -171,6 +171,13 @@ export function HomepageSettings({ initialSettings, menuCategories }: { initialS
       <SettingCard icon={<Images size={19} />} title="هیرو صفحه اصلی" description="مدیریت محتوای هیرو، تصاویر اسلایدر و لینک اختصاصی هر تصویر" className="lg:col-span-2">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"><div><strong className="block text-sm">مدیریت مستقل هیرو</strong><span className="mt-1 block text-xs text-[var(--muted)]">این بخش به‌دلیل تعداد تنظیمات و اسلایدها در صفحه‌ای مستقل مدیریت می‌شود.</span></div><Link href="/admin/settings/homepage/hero" className={buttonVariants({ variant: "primary", size: "md", className: "min-h-11 shrink-0 gap-2 rounded-xl px-5 text-sm font-bold" })}>مدیریت هیرو<ChevronLeft size={16} /></Link></div>
       </SettingCard>
+      <SettingCard icon={<Megaphone size={19} />} title="پروموبنر بالای سایت" description="بنر اختیاری پیش از هدر؛ پشتیبانی از تصویر ثابت و GIF" className="lg:col-span-2">
+        <AdminCheckbox isSelected={promoBannerEnabled} onChange={setPromoBannerEnabled} icon={<Megaphone size={17} />} description="در صورت غیرفعال‌بودن یا نداشتن تصویر، هیچ فضایی بالای سایت اشغال نمی‌شود">نمایش پروموبنر</AdminCheckbox>
+        {promoBannerEnabled && <div className="grid gap-3">
+          <Field label="لینک مقصد اختیاری"><Input name="promoBannerHref" value={promoBannerHref} onChange={(event) => setPromoBannerHref(event.target.value)} dir="ltr" placeholder="/products یا https://example.com" variant="secondary" className={adminFieldClass} /></Field>
+          <div className="grid gap-3 sm:grid-cols-2"><HomepageMediaField label="بنر دسکتاپ" hint="۱۹۲۰×۱۲۰؛ تصویر یا GIF" media={promoDesktopMedia} onSelect={() => setPickerTarget("promoDesktop")} onClear={() => setPromoDesktopMedia(null)} aspectClass="aspect-[3/1]" /><HomepageMediaField label="بنر موبایل" hint="۹۰۰×۱۸۰؛ تصویر یا GIF" media={promoMobileMedia} onSelect={() => setPickerTarget("promoMobile")} onClear={() => setPromoMobileMedia(null)} aspectClass="aspect-[3/1]" /></div>
+        </div>}
+      </SettingCard>
       <SettingCard icon={<LayoutDashboard size={19} />} title="چینش صفحه اصلی" description="برای تغییر ترتیب، هر ردیف را از دستگیره بگیرید و جابه‌جا کنید" className="lg:col-span-[span_7/span_7]">
         <div className="grid gap-2">{sections.map((section, index) => {
           const meta = homeSectionMeta[section.id];
@@ -227,13 +234,6 @@ export function HomepageSettings({ initialSettings, menuCategories }: { initialS
             <span className="flex w-full items-center gap-3"><span className={`grid size-8 shrink-0 place-items-center rounded-lg ${selected ? "bg-[var(--accent)] text-[var(--accent-foreground)]" : "bg-[var(--surface-secondary)] text-[var(--muted)]"}`}>{selected ? <CheckCircle2 size={16} /> : <Boxes size={16} />}</span><span className="min-w-0 flex-1"><strong className="block truncate text-xs">{category.name}</strong><small className="mt-1 block text-[10px] opacity-70">{category.childrenCount.toLocaleString("fa-IR")} زیردسته فعال</small></span></span>
           </Button>;
         })}</div> : <Alert status="warning"><Alert.Description>دسته فعال سطح اولی برای انتخاب وجود ندارد. ابتدا از بخش دسته‌بندی‌ها یک دسته فعال بسازید.</Alert.Description></Alert>}
-      </SettingCard>
-      <SettingCard icon={<Megaphone size={19} />} title="پروموبنر بالای سایت" description="بنر اختیاری پیش از هدر؛ پشتیبانی از تصویر ثابت و GIF">
-        <AdminCheckbox isSelected={promoBannerEnabled} onChange={setPromoBannerEnabled} icon={<Megaphone size={17} />} description="در صورت غیرفعال‌بودن یا نداشتن تصویر، هیچ فضایی بالای سایت اشغال نمی‌شود">نمایش پروموبنر</AdminCheckbox>
-        {promoBannerEnabled && <div className="grid gap-3">
-          <Field label="لینک مقصد اختیاری"><Input name="promoBannerHref" value={promoBannerHref} onChange={(event) => setPromoBannerHref(event.target.value)} dir="ltr" placeholder="/products یا https://example.com" variant="secondary" className={adminFieldClass} /></Field>
-          <div className="grid gap-3 sm:grid-cols-2"><HomepageMediaField label="بنر دسکتاپ" hint="۱۹۲۰×۱۲۰؛ تصویر یا GIF" media={promoDesktopMedia} onSelect={() => setPickerTarget("promoDesktop")} onClear={() => setPromoDesktopMedia(null)} aspectClass="aspect-[3/1]" /><HomepageMediaField label="بنر موبایل" hint="۹۰۰×۱۸۰؛ تصویر یا GIF" media={promoMobileMedia} onSelect={() => setPickerTarget("promoMobile")} onClear={() => setPromoMobileMedia(null)} aspectClass="aspect-[3/1]" /></div>
-        </div>}
       </SettingCard>
       <SettingCard icon={<Images size={19} />} title="تصاویر گنجینه زرگالری" description="تصویر چهار کارت خرید براساس بازه قیمت" className="lg:col-span-2">
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">{treasureCards.map((card) => {
