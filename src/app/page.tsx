@@ -64,7 +64,7 @@ export default async function Home() {
     const baseAmount = product.fixedPrice ? Number(product.fixedPrice) : calculated?.total ?? null;
     const discounted = baseAmount === null ? null : calculateDiscountedPrice(baseAmount, product);
     const media = product.media[0]?.media;
-    return <ProductCard key={product.id} href={`/products/${product.slug}`} name={product.name} industry={product.storeIndustry} category={product.category?.name ?? "طلا"} weight={Number(product.weightGrams)} purity={product.purity} makingFeePercent={product.makingFeeType === "PERCENT" ? Number(product.makingFeeValue) : undefined} price={discounted ? formatMoney(discounted.finalPrice, settings.currency) : "قیمت موقتاً در دسترس نیست"} originalPrice={discounted?.isActive ? formatMoney(discounted.originalPrice, settings.currency) : undefined} image={media?.type === "IMAGE" ? { src: media.url, alt: media.alt ?? product.name } : undefined} storefrontVariant="gallery" />;
+    return <ProductCard key={product.id} href={`/products/${product.slug}`} name={product.name} industry={product.storeIndustry} category={product.category?.name ?? "طلا"} weight={Number(product.weightGrams)} purity={product.purity} discountPercent={discounted?.isActive && product.discountType === "PERCENT" ? Number(product.discountValue ?? 0) : undefined} price={discounted ? formatMoney(discounted.finalPrice, settings.currency) : "قیمت موقتاً در دسترس نیست"} originalPrice={discounted?.isActive ? formatMoney(discounted.originalPrice, settings.currency) : undefined} image={media?.type === "IMAGE" ? { src: media.url, alt: media.alt ?? product.name } : undefined} storefrontVariant="gallery" />;
   };
 
   return <main className="flex flex-col overflow-hidden bg-[#f7f4f2] pb-[66px] lg:pb-0">

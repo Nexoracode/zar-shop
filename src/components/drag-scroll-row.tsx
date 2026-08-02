@@ -16,16 +16,19 @@ export function DragScrollRow({ children, className = "", ariaLabel }: Props) {
   function pointerDown(event: PointerEvent<HTMLDivElement>) {
     if (event.pointerType !== "mouse" || event.button !== 0 || !rowRef.current) return;
     drag.current = { active: true, moved: false, pointerId: event.pointerId, startX: event.clientX, startScrollLeft: rowRef.current.scrollLeft };
-    rowRef.current.setPointerCapture(event.pointerId);
-    setIsDragging(true);
   }
 
   function pointerMove(event: PointerEvent<HTMLDivElement>) {
     if (!drag.current.active || !rowRef.current) return;
     const distance = event.clientX - drag.current.startX;
-    if (Math.abs(distance) > 4) drag.current.moved = true;
+    if (!drag.current.moved && Math.abs(distance) <= 10) return;
+    if (!drag.current.moved) {
+      drag.current.moved = true;
+      rowRef.current.setPointerCapture(event.pointerId);
+      setIsDragging(true);
+    }
     rowRef.current.scrollLeft = drag.current.startScrollLeft - distance;
-    if (drag.current.moved) event.preventDefault();
+    event.preventDefault();
   }
 
   function finishDrag(event: PointerEvent<HTMLDivElement>) {
