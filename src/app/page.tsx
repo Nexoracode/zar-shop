@@ -3,6 +3,7 @@ import Link from "next/link";
 import { BadgeCheck, Gem, PackageCheck, ReceiptText, ShieldCheck, Sparkles, Truck } from "lucide-react";
 import type { Prisma } from "@generated/prisma/client";
 import { ProductCard } from "@/components/product-card";
+import { DragScrollRow } from "@/components/drag-scroll-row";
 import { StorefrontFaqAccordion } from "@/components/storefront-faq-accordion";
 import { db } from "@/lib/db";
 import { formatMoney } from "@/lib/format";
@@ -28,7 +29,7 @@ export default async function Home() {
       where: { status: "ACTIVE", ...(catalogSettings.hideOutOfStockProducts ? { stock: { gt: 0 } } : {}) },
       include: { category: true, media: { include: { media: true }, orderBy: { position: "asc" } } },
       orderBy: [{ featured: "desc" }, { createdAt: "desc" }],
-      take: 12,
+      take: 10,
     }),
     db.category.findMany({
       where: { isActive: true, parentId: null },
@@ -63,7 +64,7 @@ export default async function Home() {
     const baseAmount = product.fixedPrice ? Number(product.fixedPrice) : calculated?.total ?? null;
     const discounted = baseAmount === null ? null : calculateDiscountedPrice(baseAmount, product);
     const media = product.media[0]?.media;
-    return <ProductCard key={product.id} href={`/products/${product.slug}`} name={product.name} industry={product.storeIndustry} category={product.category?.name ?? "طلا"} weight={Number(product.weightGrams)} purity={product.purity} price={discounted ? formatMoney(discounted.finalPrice, settings.currency) : "قیمت موقتاً در دسترس نیست"} originalPrice={discounted?.isActive ? formatMoney(discounted.originalPrice, settings.currency) : undefined} image={media?.type === "IMAGE" ? { src: media.url, alt: media.alt ?? product.name } : undefined} storefrontVariant="gallery" />;
+    return <ProductCard key={product.id} href={`/products/${product.slug}`} name={product.name} industry={product.storeIndustry} category={product.category?.name ?? "طلا"} weight={Number(product.weightGrams)} purity={product.purity} makingFeePercent={product.makingFeeType === "PERCENT" ? Number(product.makingFeeValue) : undefined} price={discounted ? formatMoney(discounted.finalPrice, settings.currency) : "قیمت موقتاً در دسترس نیست"} originalPrice={discounted?.isActive ? formatMoney(discounted.originalPrice, settings.currency) : undefined} image={media?.type === "IMAGE" ? { src: media.url, alt: media.alt ?? product.name } : undefined} storefrontVariant="gallery" />;
   };
 
   return <main className="flex flex-col overflow-hidden bg-[#f7f4f2] pb-[66px] lg:pb-0">
@@ -98,9 +99,9 @@ export default async function Home() {
       <div className={container}>
         <div className="mb-7 flex items-end justify-between gap-4">
           <nav className="flex gap-2" aria-label="مرتب‌سازی محصولات"><Link id="latest-products" href="/products" className="rounded-full bg-[#f8ead1] px-5 py-2.5 text-xs font-bold text-[var(--brand-primary)]">جدیدترین‌ها</Link><Link href="/products" className="rounded-full bg-[#fafafa] px-5 py-2.5 text-xs">محبوب‌ترین‌ها</Link><Link href="/products" className="hidden rounded-full bg-[#fafafa] px-5 py-2.5 text-xs sm:block">کم‌اجرت‌ها</Link></nav>
-          <Link href="/products" className="border-b-2 border-[var(--brand-primary)] pb-1 text-xs font-bold text-[var(--brand-primary)]">مشاهده بیشتر</Link>
+          <Link href="/products" className="border-b-2 border-[var(--brand-primary)] pb-1 text-sm font-bold text-[var(--brand-primary)]">مشاهده بیشتر</Link>
         </div>
-        {products.length ? <div className="flex gap-4 overflow-x-auto pb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">{products.map((product) => <div key={product.id} className="w-[calc(50%-8px)] min-w-[calc(50%-8px)] sm:w-[220px] sm:min-w-[220px] lg:w-[224px] lg:min-w-[224px]">{renderProduct(product)}</div>)}</div> : <div className="grid h-[260px] place-items-center rounded-[7px] bg-[#f8f8f8] text-sm text-[#777]">محصولات تازه به‌زودی نمایش داده می‌شوند.</div>}
+        {products.length ? <DragScrollRow ariaLabel="محصولات جدید" className="flex gap-4 overflow-x-auto pb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">{products.map((product) => <div key={product.id} className="w-[calc(50%-8px)] min-w-[calc(50%-8px)] sm:w-[220px] sm:min-w-[220px] lg:w-[224px] lg:min-w-[224px]">{renderProduct(product)}</div>)}</DragScrollRow> : <div className="grid h-[260px] place-items-center rounded-[7px] bg-[#f8f8f8] text-sm text-[#777]">محصولات تازه به‌زودی نمایش داده می‌شوند.</div>}
       </div>
     </section>
 

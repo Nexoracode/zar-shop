@@ -9,13 +9,14 @@ type ProductCardProps = {
   industry: "GOLD" | "GENERAL";
   weight: number;
   purity: number;
+  makingFeePercent?: number;
   price: string;
   originalPrice?: string;
   image?: { src: string; alt: string };
   storefrontVariant?: "default" | "gallery";
 };
 
-export function ProductCard({ href, name, category, industry, weight, purity, price, originalPrice, image, storefrontVariant = "default" }: ProductCardProps) {
+export function ProductCard({ href, name, category, industry, weight, purity, makingFeePercent, price, originalPrice, image, storefrontVariant = "default" }: ProductCardProps) {
   const isGallery = storefrontVariant === "gallery";
   return (
     <Link
@@ -38,15 +39,15 @@ export function ProductCard({ href, name, category, industry, weight, purity, pr
             <span className="absolute top-[27%] right-[29%] text-white text-2xl drop-shadow-[0_0_14px_#fff]">✦</span>
           </div>
         )}
-        <span className={`absolute right-2.5 top-2.5 bg-white/90 px-2 py-1 text-[0.62rem] ${isGallery ? "rounded-[4px] text-[#555]" : "border border-[var(--brand-accent)]/30 text-[var(--brand-accent)]"}`}>{industry === "GOLD" ? (isGallery ? `${weight} گرم` : `طلای ${purity}`) : "محصول فروشگاهی"}</span>
-        {isGallery && <span className="absolute left-2.5 top-2.5 grid size-7 place-items-center rounded-full bg-white/90 text-[#777]"><Heart size={15} /></span>}
-        {isGallery && industry === "GOLD" && <span className="absolute bottom-2.5 right-2.5 rounded-full bg-[#eef6f3] px-2 py-1 text-[0.6rem] font-bold text-[var(--brand-primary)]">عیار {purity}</span>}
+        <span className={`absolute top-2.5 bg-white/90 px-2 py-1 text-[0.62rem] ${isGallery ? "left-2.5 rounded-[4px] text-[#555]" : "right-2.5 border border-[var(--brand-accent)]/30 text-[var(--brand-accent)]"}`}>{industry === "GOLD" ? (isGallery ? `${weight} گرم` : `طلای ${purity}`) : "محصول فروشگاهی"}</span>
+        {isGallery && <span className="absolute right-2.5 top-2.5 grid size-7 place-items-center rounded-full bg-white/90 text-[#777]"><Heart size={15} /></span>}
+        {isGallery && industry === "GOLD" && makingFeePercent !== undefined && makingFeePercent > 0 && <span className="absolute bottom-2.5 right-2.5 rounded-full bg-[#eef6f3] px-2 py-1 text-[0.6rem] font-bold text-[var(--brand-primary)]">٪{makingFeePercent.toLocaleString("fa-IR")}</span>}
       </div>
 
       {/* Content */}
       <div className={`px-1 pb-4 pt-2.5 sm:pb-5 ${isGallery ? "text-right" : "px-2.5 text-center sm:px-[15px] sm:pt-[17px]"}`}>
-        <span className="text-[#747982] text-[0.7rem]">{industry === "GOLD" && !isGallery ? `${category} · ${weight} گرم` : category}</span>
-        <h3 className={`mb-[7px] mt-[5px] min-h-8 font-medium ${isGallery ? "text-[0.76rem] sm:text-[0.82rem]" : "text-[0.82rem] sm:text-[0.95rem]"}`}>{name}</h3>
+        {!isGallery && <span className="text-[#747982] text-[0.7rem]">{industry === "GOLD" ? `${category} · ${weight} گرم` : category}</span>}
+        <h3 className={`min-h-8 font-medium ${isGallery ? "mb-1 mt-0 text-[0.76rem] sm:text-[0.82rem]" : "mb-[7px] mt-[5px] text-[0.82rem] sm:text-[0.95rem]"}`}>{name}</h3>
         {originalPrice && <span className="ml-2 text-[0.7rem] text-slate-400 line-through">{originalPrice}</span>}
         <strong className={`${isGallery ? "text-[0.72rem]" : "text-[0.76rem] sm:text-[0.92rem]"} text-[var(--brand-primary)]`}>{price}</strong>
       </div>
