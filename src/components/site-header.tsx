@@ -41,7 +41,7 @@ export async function SiteHeader({ settings, brand, user }: { settings: GeneralS
   );
 
   return <>
-    <header className={`relative z-50 bg-white shadow-[0_2px_10px_rgba(0,0,0,.04)] ${brand.stickyStoreHeader ? "sticky top-0" : ""}`}>
+    <header className={`relative z-50 bg-white [--success:var(--brand-primary)] shadow-[0_2px_10px_rgba(0,0,0,.04)] ${brand.stickyStoreHeader ? "sticky top-0" : ""}`}>
       <div className="hidden h-10 bg-[#fdf9f2] lg:block">
         <div className="flex h-full w-full items-center justify-between px-4 text-[0.68rem] text-[#4d4b47]">
           <strong className="font-normal">قیمت لحظه‌ای طلای ۱۸ عیار: <span className="font-bold text-[var(--brand-primary)]">{goldPrice}</span></strong>
