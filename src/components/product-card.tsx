@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { Heart } from "lucide-react";
 
 type ProductCardProps = {
   href: string;
@@ -18,11 +19,11 @@ export function ProductCard({ href, name, category, industry, weight, purity, pr
   const isGallery = storefrontVariant === "gallery";
   return (
     <Link
-      className={`group min-w-0 bg-white transition-all duration-[250ms] ease-out hover:-translate-y-[5px] hover:shadow-[0_18px_42px_rgba(23,35,59,0.09)] ${isGallery ? "overflow-hidden rounded-[1.1rem] border border-[#ece8e1]" : ""}`}
+      className={`group min-w-0 bg-white transition-all duration-[250ms] ease-out ${isGallery ? "block" : "hover:-translate-y-[5px] hover:shadow-[0_18px_42px_rgba(23,35,59,0.09)]"}`}
       href={href}
     >
       {/* Media */}
-      <div className={`relative overflow-hidden bg-[#f9f9f8] ${isGallery ? "aspect-square" : "aspect-[1/1.08]"}`}>
+      <div className={`relative overflow-hidden bg-[#f3f3f3] ${isGallery ? "aspect-square rounded-[7px]" : "aspect-[1/1.08]"}`}>
         {image ? (
           <Image
             src={image.src}
@@ -37,16 +38,17 @@ export function ProductCard({ href, name, category, industry, weight, purity, pr
             <span className="absolute top-[27%] right-[29%] text-white text-2xl drop-shadow-[0_0_14px_#fff]">✦</span>
           </div>
         )}
-        <span className={`absolute right-3 top-3 bg-white/90 px-2 py-1 text-[0.65rem] text-[var(--brand-accent)] ${isGallery ? "rounded-full shadow-sm" : "border border-[var(--brand-accent)]/30"}`}>{industry === "GOLD" ? (isGallery ? `${weight} گرم` : `طلای ${purity}`) : "محصول فروشگاهی"}</span>
-        {isGallery && industry === "GOLD" && <span className="absolute left-3 top-3 rounded-full bg-[var(--brand-primary)]/90 px-2 py-1 text-[0.62rem] text-white">عیار {purity}</span>}
+        <span className={`absolute right-2.5 top-2.5 bg-white/90 px-2 py-1 text-[0.62rem] ${isGallery ? "rounded-[4px] text-[#555]" : "border border-[var(--brand-accent)]/30 text-[var(--brand-accent)]"}`}>{industry === "GOLD" ? (isGallery ? `${weight} گرم` : `طلای ${purity}`) : "محصول فروشگاهی"}</span>
+        {isGallery && <span className="absolute left-2.5 top-2.5 grid size-7 place-items-center rounded-full bg-white/90 text-[#777]"><Heart size={15} /></span>}
+        {isGallery && industry === "GOLD" && <span className="absolute bottom-2.5 right-2.5 rounded-full bg-[#eef6f3] px-2 py-1 text-[0.6rem] font-bold text-[var(--brand-primary)]">عیار {purity}</span>}
       </div>
 
       {/* Content */}
-      <div className={`px-2.5 pb-4 pt-3 sm:px-[15px] sm:pb-5 sm:pt-[17px] ${isGallery ? "text-right" : "text-center"}`}>
+      <div className={`px-1 pb-4 pt-2.5 sm:pb-5 ${isGallery ? "text-right" : "px-2.5 text-center sm:px-[15px] sm:pt-[17px]"}`}>
         <span className="text-[#747982] text-[0.7rem]">{industry === "GOLD" && !isGallery ? `${category} · ${weight} گرم` : category}</span>
-        <h3 className="mb-[7px] mt-[5px] min-h-8 text-[0.82rem] font-medium sm:text-[0.95rem]">{name}</h3>
+        <h3 className={`mb-[7px] mt-[5px] min-h-8 font-medium ${isGallery ? "text-[0.76rem] sm:text-[0.82rem]" : "text-[0.82rem] sm:text-[0.95rem]"}`}>{name}</h3>
         {originalPrice && <span className="ml-2 text-[0.7rem] text-slate-400 line-through">{originalPrice}</span>}
-        <strong className="text-[0.76rem] text-[var(--brand-primary)] sm:text-[0.92rem]">{price}</strong>
+        <strong className={`${isGallery ? "text-[0.72rem]" : "text-[0.76rem] sm:text-[0.92rem]"} text-[var(--brand-primary)]`}>{price}</strong>
       </div>
     </Link>
   );
