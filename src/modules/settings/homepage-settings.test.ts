@@ -39,3 +39,15 @@ test("homepage settings reject duplicate or excessive menu categories", () => {
   assert.equal(homepageSettingsInputSchema.safeParse({ ...homepageSettingsDefaults, menuCategoryIds: ["same", "same"] }).success, false);
   assert.equal(homepageSettingsInputSchema.safeParse({ ...homepageSettingsDefaults, menuCategoryIds: Array.from({ length: 7 }, (_, index) => `category-${index}`) }).success, false);
 });
+
+test("homepage settings accept one optional image per treasure card", () => {
+  const treasureCards = homepageSettingsDefaults.treasureCards.map((card, index) => ({ ...card, mediaId: index === 0 ? "media-1" : null }));
+  const parsed = homepageSettingsInputSchema.parse({ ...homepageSettingsDefaults, treasureCards });
+  assert.equal(parsed.treasureCards[0].mediaId, "media-1");
+});
+
+test("homepage settings reject duplicate treasure card identifiers", () => {
+  const treasureCards = homepageSettingsDefaults.treasureCards.map((card) => ({ ...card }));
+  treasureCards[1].id = treasureCards[0].id;
+  assert.equal(homepageSettingsInputSchema.safeParse({ ...homepageSettingsDefaults, treasureCards }).success, false);
+});

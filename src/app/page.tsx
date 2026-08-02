@@ -8,7 +8,7 @@ import { db } from "@/lib/db";
 import { getStorefrontProductFeed } from "@/modules/products/storefront-feed";
 import { getContentSettings } from "@/modules/settings/content-settings";
 import { getGeneralStoreSettings } from "@/modules/settings/general-settings";
-import { getHomepageSettings, type HomepageSectionId } from "@/modules/settings/homepage-settings";
+import { getHomepageSettings, type HomepageSectionId, type HomepageTreasureCardId } from "@/modules/settings/homepage-settings";
 
 type HomeCategory = Prisma.CategoryGetPayload<{ include: { image: true; children: true; _count: { select: { products: true } } } }>;
 
@@ -41,6 +41,13 @@ export default async function Home() {
     ...rootCategories.map((category) => ({ title: category.name, href: `/products?category=${category.slug}`, image: categoryImage(category) })),
   ].slice(0, 10);
   const stories = storySource.length ? Array.from({ length: 10 }, (_, index) => storySource[index % storySource.length]) : [];
+  const treasureItems: Array<{ id: HomepageTreasureCardId; title: string; subtitle: string; query: string }> = [
+    { id: "UNDER_20", title: "کمتر از ۲۰ میلیون تومان", subtitle: "محصولات مینیمال", query: "sortby=newest&MaxPrice=20000000" },
+    { id: "FROM_20_TO_60", title: "۲۰ تا ۶۰ میلیون تومان", subtitle: "محصولات روزانه", query: "sortby=newest&MinPrice=20000000&MaxPrice=60000000" },
+    { id: "FROM_60_TO_100", title: "۶۰ تا ۱۰۰ میلیون تومان", subtitle: "محصولات ویژه", query: "sortby=newest&MinPrice=60000000&MaxPrice=100000000" },
+    { id: "OVER_100", title: "بالاتر از ۱۰۰ میلیون تومان", subtitle: "محصولات لوکس", query: "sortby=newest&MinPrice=100000000" },
+  ];
+  const treasureMedia = new Map(homepage.treasureCards.map((card) => [card.id, card.media]));
 
   return <main className="flex flex-col overflow-hidden bg-[#f7f4f2] pb-[66px] lg:pb-0">
     <section {...sectionProps("HERO")} className="bg-white">
@@ -83,7 +90,7 @@ export default async function Home() {
       </div>
 
       <div className={`${container} mt-10 grid gap-0 overflow-hidden rounded-[7px] sm:grid-cols-2 lg:grid-cols-4`} aria-label="خرید بر اساس بودجه">
-        {[["کمتر از ۲۰ میلیون تومان", "محصولات مینیمال", "sortby=newest&MaxPrice=20000000"], ["۲۰ تا ۶۰ میلیون تومان", "محصولات روزانه", "sortby=newest&MinPrice=20000000&MaxPrice=60000000"], ["۶۰ تا ۱۰۰ میلیون تومان", "محصولات ویژه", "sortby=newest&MinPrice=60000000&MaxPrice=100000000"], ["بالاتر از ۱۰۰ میلیون تومان", "محصولات لوکس", "sortby=newest&MinPrice=100000000"]].map(([title, sub, query], index) => <Link key={title} href={`/products?${query}`} className="group relative h-[280px] overflow-hidden lg:h-[400px]"><Image src={categoryImage(categories[index])} alt={title} fill sizes="(max-width:640px) 100vw, (max-width:1024px) 50vw, 25vw" className={`object-cover transition duration-500 group-hover:scale-105 ${index % 2 ? "object-left" : "object-right"}`} /><span className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/10 to-transparent" /><span className="absolute inset-x-5 bottom-6 text-white"><strong className="block text-base">{title}</strong><small className="mt-1 block text-white/80">{sub}</small></span></Link>)}
+        {treasureItems.map(({ id, title, subtitle, query }, index) => <Link key={id} href={`/products?${query}`} className="group relative h-[280px] overflow-hidden lg:h-[400px]"><Image src={treasureMedia.get(id)?.url ?? categoryImage(categories[index])} alt={treasureMedia.get(id)?.alt ?? title} fill sizes="(max-width:640px) 100vw, (max-width:1024px) 50vw, 25vw" className={`object-cover transition duration-500 group-hover:scale-105 ${index % 2 ? "object-left" : "object-right"}`} /><span className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/10 to-transparent" /><span className="absolute inset-x-5 bottom-6 text-white"><strong className="block text-base">{title}</strong><small className="mt-1 block text-white/80">{subtitle}</small></span></Link>)}
       </div>
 
       <div className={`${container} mt-[120px] grid gap-3 lg:grid-cols-3`}>

@@ -16,7 +16,7 @@ import { HeroNumberInput } from "@/components/hero-number-input";
 import { MediaPickerDialog } from "@/components/media-picker-dialog";
 import type { MediaChoice } from "@/components/media-library";
 import type { GeneralStoreSettingsInput } from "@/modules/settings/general-settings";
-import type { HomepageMenuCategoryOption, HomepageSectionId, HomepageSettings as HomepageSettingsData } from "@/modules/settings/homepage-settings";
+import type { HomepageMenuCategoryOption, HomepageSectionId, HomepageSettings as HomepageSettingsData, HomepageTreasureCardId } from "@/modules/settings/homepage-settings";
 import type { BrandSettings as BrandSettingsData } from "@/modules/settings/brand-settings";
 import type { OrderSettings as OrderSettingsData } from "@/modules/settings/order-settings";
 import type { CommerceSettings as CommerceSettingsData } from "@/modules/settings/commerce-settings";
@@ -76,6 +76,15 @@ const homeSectionMeta: Record<HomepageSectionId, { title: string; description: s
   CONCIERGE: { title: "خدمات اختصاصی", description: "تضمین اصالت، تحویل و مشاوره انتخاب" },
 };
 
+const treasureCardMeta: Record<HomepageTreasureCardId, { title: string; hint: string }> = {
+  UNDER_20: { title: "کمتر از ۲۰ میلیون", hint: "تصویر محصولات مینیمال" },
+  FROM_20_TO_60: { title: "۲۰ تا ۶۰ میلیون", hint: "تصویر محصولات روزانه" },
+  FROM_60_TO_100: { title: "۶۰ تا ۱۰۰ میلیون", hint: "تصویر محصولات ویژه" },
+  OVER_100: { title: "بالاتر از ۱۰۰ میلیون", hint: "تصویر محصولات لوکس" },
+};
+
+type HomepagePickerTarget = "heroDesktop" | "heroMobile" | "promoDesktop" | "promoMobile" | `treasure:${HomepageTreasureCardId}`;
+
 function toMediaChoice(media: HomepageSettingsData["heroDesktopMedia"]): MediaChoice | null {
   return media ? { id: media.id, title: media.title || media.alt || "تصویر صفحه اصلی", url: media.url, type: "IMAGE", mimeType: media.mimeType } : null;
 }
@@ -84,6 +93,7 @@ export function HomepageSettings({ initialSettings, menuCategories }: { initialS
   const [saving, setSaving] = useState(false);
   const [sections, setSections] = useState(initialSettings.sections);
   const [menuCategoryIds, setMenuCategoryIds] = useState(initialSettings.menuCategoryIds);
+  const [treasureCards, setTreasureCards] = useState(() => initialSettings.treasureCards.map((card) => ({ id: card.id, mediaId: card.mediaId, media: toMediaChoice(card.media) })));
   const [heroContentMode, setHeroContentMode] = useState(initialSettings.heroContentMode);
   const [heroTitle, setHeroTitle] = useState(initialSettings.heroTitle);
   const [heroDescription, setHeroDescription] = useState(initialSettings.heroDescription);
@@ -93,7 +103,7 @@ export function HomepageSettings({ initialSettings, menuCategories }: { initialS
   const [promoBannerEnabled, setPromoBannerEnabled] = useState(initialSettings.promoBannerEnabled);
   const [promoDesktopMedia, setPromoDesktopMedia] = useState<MediaChoice | null>(() => toMediaChoice(initialSettings.promoDesktopMedia));
   const [promoMobileMedia, setPromoMobileMedia] = useState<MediaChoice | null>(() => toMediaChoice(initialSettings.promoMobileMedia));
-  const [pickerTarget, setPickerTarget] = useState<"heroDesktop" | "heroMobile" | "promoDesktop" | "promoMobile" | null>(null);
+  const [pickerTarget, setPickerTarget] = useState<HomepagePickerTarget | null>(null);
   const [draggedSectionId, setDraggedSectionId] = useState<HomepageSectionId | null>(null);
   const [dropTarget, setDropTarget] = useState<{ id: HomepageSectionId; after: boolean } | null>(null);
 
@@ -142,7 +152,7 @@ export function HomepageSettings({ initialSettings, menuCategories }: { initialS
       const response = await fetch("/api/admin/settings/homepage", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...values, sections, menuCategoryIds, heroContentMode, heroTitle, heroDescription, heroButtonLabel, heroDesktopMediaId: desktopMedia?.id ?? null, heroMobileMediaId: mobileMedia?.id ?? null, promoBannerEnabled, promoDesktopMediaId: promoDesktopMedia?.id ?? null, promoMobileMediaId: promoMobileMedia?.id ?? null }),
+        body: JSON.stringify({ ...values, sections, menuCategoryIds, treasureCards: treasureCards.map((card) => ({ id: card.id, mediaId: card.media?.id ?? null })), heroContentMode, heroTitle, heroDescription, heroButtonLabel, heroDesktopMediaId: desktopMedia?.id ?? null, heroMobileMediaId: mobileMedia?.id ?? null, promoBannerEnabled, promoDesktopMediaId: promoDesktopMedia?.id ?? null, promoMobileMediaId: promoMobileMedia?.id ?? null }),
       });
       const result = await response.json().catch(() => null);
       if (!response.ok) throw new Error(result?.message ?? "ذخیره تنظیمات صفحه اصلی انجام نشد.");
@@ -153,6 +163,15 @@ export function HomepageSettings({ initialSettings, menuCategories }: { initialS
       setSaving(false);
     }
   }
+
+  const treasurePickerCard = pickerTarget?.startsWith("treasure:")
+    ? treasureCards.find((card) => `treasure:${card.id}` === pickerTarget)
+    : null;
+  const selectedPickerMedia = pickerTarget === "heroDesktop" ? desktopMedia
+    : pickerTarget === "heroMobile" ? mobileMedia
+      : pickerTarget === "promoDesktop" ? promoDesktopMedia
+        : pickerTarget === "promoMobile" ? promoMobileMedia
+          : treasurePickerCard?.media ?? null;
 
   return <>
     <form onSubmit={submit} className="grid gap-5"><SettingsGrid>
@@ -192,12 +211,12 @@ export function HomepageSettings({ initialSettings, menuCategories }: { initialS
           </div>;
         })}</div>
       </SettingCard>
-      <SettingCard icon={<ListTree size={19} />} title="منوی بالا و مگامنو" description="دسته‌های سطح اولی که در نوار اصلی و مگامنو نمایش داده می‌شوند" className="lg:col-span-2">
-        <div className="flex items-center justify-between gap-3 rounded-xl border border-[var(--border)] bg-[var(--surface-secondary)] px-4 py-3">
+      <SettingCard icon={<ListTree size={19} />} title="منوی بالا و مگامنو" description="دسته‌های سطح اولی که در نوار اصلی و مگامنو نمایش داده می‌شوند">
+        <div className="flex items-center justify-between gap-3 rounded-xl border border-[var(--border)] bg-[var(--surface-secondary)] px-3 py-2.5">
           <div><strong className="block text-xs">دسته‌های قابل نمایش</strong><span className="mt-1 block text-[11px] text-[var(--muted)]">حداکثر ۶ دسته را انتخاب کنید؛ زیر‌دسته‌های هر مورد داخل مگامنو نمایش داده می‌شوند.</span></div>
           <Chip size="sm" variant="soft" className="shrink-0 text-[var(--accent)]"><Chip.Label>{menuCategoryIds.length.toLocaleString("fa-IR")} از ۶</Chip.Label></Chip>
         </div>
-        {menuCategories.length ? <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">{menuCategories.map((category) => {
+        {menuCategories.length ? <div className="grid max-h-64 gap-2 overflow-y-auto pl-1 sm:grid-cols-2">{menuCategories.map((category) => {
           const selected = menuCategoryIds.includes(category.id);
           const disabled = !selected && menuCategoryIds.length >= 6;
           return <Button
@@ -207,7 +226,7 @@ export function HomepageSettings({ initialSettings, menuCategories }: { initialS
             isDisabled={disabled}
             aria-pressed={selected}
             onPress={() => setMenuCategoryIds((current) => selected ? current.filter((id) => id !== category.id) : [...current, category.id])}
-            className={`h-auto min-h-16 w-full justify-start rounded-xl border p-3 text-right transition ${selected ? "border-[var(--accent)] bg-[var(--accent)]/8 text-[var(--accent)] ring-1 ring-[var(--accent)]/20" : "border-[var(--border)] bg-[var(--surface)] text-[var(--foreground)] hover:border-[var(--accent)]/40"}`}
+            className={`h-auto min-h-14 w-full justify-start rounded-xl border px-3 py-2 text-right transition ${selected ? "border-[var(--accent)] bg-[var(--accent)]/8 text-[var(--accent)] ring-1 ring-[var(--accent)]/20" : "border-[var(--border)] bg-[var(--surface)] text-[var(--foreground)] hover:border-[var(--accent)]/40"}`}
           >
             <span className="flex w-full items-center gap-3"><span className={`grid size-8 shrink-0 place-items-center rounded-lg ${selected ? "bg-[var(--accent)] text-[var(--accent-foreground)]" : "bg-[var(--surface-secondary)] text-[var(--muted)]"}`}>{selected ? <CheckCircle2 size={16} /> : <Boxes size={16} />}</span><span className="min-w-0 flex-1"><strong className="block truncate text-xs">{category.name}</strong><small className="mt-1 block text-[10px] opacity-70">{category.childrenCount.toLocaleString("fa-IR")} زیردسته فعال</small></span></span>
           </Button>;
@@ -225,12 +244,18 @@ export function HomepageSettings({ initialSettings, menuCategories }: { initialS
         </>}
         <div className="grid gap-3 sm:grid-cols-2"><HomepageMediaField label="تصویر دسکتاپ" hint="پیشنهاد: ۱۹۲۰×۹۰۰" media={desktopMedia} onSelect={() => setPickerTarget("heroDesktop")} onClear={() => setDesktopMedia(null)} /><HomepageMediaField label="تصویر موبایل" hint="پیشنهاد: ۹۰۰×۱۲۰۰" media={mobileMedia} onSelect={() => setPickerTarget("heroMobile")} onClear={() => setMobileMedia(null)} /></div>
       </SettingCard>
-      <SettingCard icon={<Megaphone size={19} />} title="پروموبنر بالای سایت" description="بنر اختیاری پیش از هدر؛ پشتیبانی از تصویر ثابت و GIF" className="lg:col-span-2">
+      <SettingCard icon={<Megaphone size={19} />} title="پروموبنر بالای سایت" description="بنر اختیاری پیش از هدر؛ پشتیبانی از تصویر ثابت و GIF">
         <AdminCheckbox isSelected={promoBannerEnabled} onChange={setPromoBannerEnabled} icon={<Megaphone size={17} />} description="در صورت غیرفعال‌بودن یا نداشتن تصویر، هیچ فضایی بالای سایت اشغال نمی‌شود">نمایش پروموبنر</AdminCheckbox>
-        <div className={`grid gap-4 transition ${promoBannerEnabled ? "opacity-100" : "pointer-events-none opacity-45"}`} aria-disabled={!promoBannerEnabled}>
+        {promoBannerEnabled && <div className="grid gap-3">
           <Field label="لینک مقصد اختیاری"><Input name="promoBannerHref" defaultValue={initialSettings.promoBannerHref ?? ""} dir="ltr" placeholder="/products یا https://example.com" variant="secondary" className={adminFieldClass} /></Field>
-          <div className="grid gap-3 sm:grid-cols-2"><HomepageMediaField label="بنر دسکتاپ" hint="پیشنهاد: ۱۹۲۰×۱۲۰؛ JPG، PNG، WebP یا GIF" media={promoDesktopMedia} onSelect={() => setPickerTarget("promoDesktop")} onClear={() => setPromoDesktopMedia(null)} /><HomepageMediaField label="بنر موبایل" hint="پیشنهاد: ۹۰۰×۱۸۰؛ JPG، PNG، WebP یا GIF" media={promoMobileMedia} onSelect={() => setPickerTarget("promoMobile")} onClear={() => setPromoMobileMedia(null)} /></div>
-        </div>
+          <div className="grid gap-3 sm:grid-cols-2"><HomepageMediaField label="بنر دسکتاپ" hint="۱۹۲۰×۱۲۰؛ تصویر یا GIF" media={promoDesktopMedia} onSelect={() => setPickerTarget("promoDesktop")} onClear={() => setPromoDesktopMedia(null)} aspectClass="aspect-[3/1]" /><HomepageMediaField label="بنر موبایل" hint="۹۰۰×۱۸۰؛ تصویر یا GIF" media={promoMobileMedia} onSelect={() => setPickerTarget("promoMobile")} onClear={() => setPromoMobileMedia(null)} aspectClass="aspect-[3/1]" /></div>
+        </div>}
+      </SettingCard>
+      <SettingCard icon={<Images size={19} />} title="تصاویر گنجینه زرگالری" description="تصویر چهار کارت خرید براساس بازه قیمت" className="lg:col-span-2">
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">{treasureCards.map((card) => {
+          const meta = treasureCardMeta[card.id];
+          return <HomepageMediaField key={card.id} label={meta.title} hint={meta.hint} media={card.media} onSelect={() => setPickerTarget(`treasure:${card.id}`)} onClear={() => setTreasureCards((current) => current.map((item) => item.id === card.id ? { ...item, mediaId: null, media: null } : item))} aspectClass="aspect-[4/3]" />;
+        })}</div>
       </SettingCard>
     </SettingsGrid>
       <Card variant="secondary" className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4 shadow-sm">
@@ -240,13 +265,13 @@ export function HomepageSettings({ initialSettings, menuCategories }: { initialS
         </div>
       </Card>
     </form>
-    <MediaPickerDialog open={pickerTarget !== null} scope="HOMEPAGE" allowedTypes={["IMAGE"]} selected={pickerTarget === "heroDesktop" ? (desktopMedia ? [desktopMedia] : []) : pickerTarget === "heroMobile" ? (mobileMedia ? [mobileMedia] : []) : pickerTarget === "promoDesktop" ? (promoDesktopMedia ? [promoDesktopMedia] : []) : pickerTarget === "promoMobile" ? (promoMobileMedia ? [promoMobileMedia] : []) : []} onClose={() => setPickerTarget(null)} onConfirm={(items) => { const media = items[0] ?? null; if (pickerTarget === "heroDesktop") setDesktopMedia(media); else if (pickerTarget === "heroMobile") setMobileMedia(media); else if (pickerTarget === "promoDesktop") setPromoDesktopMedia(media); else if (pickerTarget === "promoMobile") setPromoMobileMedia(media); }} />
+    <MediaPickerDialog open={pickerTarget !== null} scope="HOMEPAGE" allowedTypes={["IMAGE"]} selected={selectedPickerMedia ? [selectedPickerMedia] : []} onClose={() => setPickerTarget(null)} onConfirm={(items) => { const media = items[0] ?? null; if (pickerTarget === "heroDesktop") setDesktopMedia(media); else if (pickerTarget === "heroMobile") setMobileMedia(media); else if (pickerTarget === "promoDesktop") setPromoDesktopMedia(media); else if (pickerTarget === "promoMobile") setPromoMobileMedia(media); else if (pickerTarget?.startsWith("treasure:")) { const id = pickerTarget.slice("treasure:".length) as HomepageTreasureCardId; setTreasureCards((current) => current.map((card) => card.id === id ? { ...card, mediaId: media?.id ?? null, media } : card)); } }} />
   </>;
 }
 
-function HomepageMediaField({ label, hint, media, onSelect, onClear }: { label: string; hint: string; media: MediaChoice | null; onSelect: () => void; onClear: () => void }) {
+function HomepageMediaField({ label, hint, media, onSelect, onClear, aspectClass = "aspect-[16/9]" }: { label: string; hint: string; media: MediaChoice | null; onSelect: () => void; onClear: () => void; aspectClass?: string }) {
   return <Card variant="secondary" className="overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface-secondary)] shadow-none">
-    <div className="relative aspect-[16/9] bg-[var(--surface)]">{media ? <Image src={media.url} alt={media.title} fill unoptimized={media.mimeType === "image/gif"} sizes="(max-width: 640px) 100vw, 320px" className="object-cover" /> : <span className="grid h-full place-items-center text-[var(--muted)]"><Images size={28} /></span>}</div>
+    <div className={`relative ${aspectClass} bg-[var(--surface)]`}>{media ? <Image src={media.url} alt={media.title} fill unoptimized={media.mimeType === "image/gif"} sizes="(max-width: 640px) 100vw, 320px" className="object-cover" /> : <span className="grid h-full place-items-center text-[var(--muted)]"><Images size={24} /></span>}</div>
     <div className="grid gap-2 p-3"><div><strong className="block text-xs">{label}</strong><span className="text-[10px] text-[var(--muted)]">{media?.title || hint}</span></div><div className="flex gap-2"><Button type="button" size="sm" variant="secondary" onPress={onSelect} className="flex-1 gap-1 text-xs"><Upload size={13} />{media ? "تغییر" : "انتخاب"}</Button>{media && <Button type="button" size="sm" isIconOnly variant="danger-soft" aria-label={`حذف ${label}`} onPress={onClear}><Trash2 size={13} /></Button>}</div></div>
   </Card>;
 }
