@@ -52,6 +52,26 @@ test("homepage settings reject duplicate treasure card identifiers", () => {
   assert.equal(homepageSettingsInputSchema.safeParse({ ...homepageSettingsDefaults, treasureCards }).success, false);
 });
 
+test("homepage settings accept license images and optional safe links", () => {
+  const licenses = homepageSettingsDefaults.licenses.map((license, index) => ({
+    ...license,
+    mediaId: `license-media-${index + 1}`,
+    href: index === 0 ? "/pages/licenses" : index === 1 ? "https://example.com/license" : "",
+  }));
+  const parsed = homepageOverviewSettingsInputSchema.parse({ ...homepageSettingsDefaults, licenses });
+  assert.equal(parsed.licenses[0].mediaId, "license-media-1");
+  assert.equal(parsed.licenses[1].href, "https://example.com/license");
+  assert.equal(parsed.licenses[2].href, null);
+});
+
+test("homepage settings reject duplicate licenses and unsafe license links", () => {
+  const duplicated = homepageSettingsDefaults.licenses.map((license) => ({ ...license }));
+  duplicated[1].id = duplicated[0].id;
+  assert.equal(homepageOverviewSettingsInputSchema.safeParse({ ...homepageSettingsDefaults, licenses: duplicated }).success, false);
+  const unsafe = homepageSettingsDefaults.licenses.map((license, index) => ({ ...license, href: index === 0 ? "javascript:alert(1)" : null }));
+  assert.equal(homepageOverviewSettingsInputSchema.safeParse({ ...homepageSettingsDefaults, licenses: unsafe }).success, false);
+});
+
 test("homepage settings accept multiple hero image pairs", () => {
   const heroSlides = [
     { id: "slide-1", desktopMediaId: "desktop-1", mobileMediaId: "mobile-1", href: "/products/one" },

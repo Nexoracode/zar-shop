@@ -106,7 +106,7 @@ export default async function Home() {
 
       {activeFaqs.length > 0 && <div id="faq" className={`${container} mt-[90px]`}><div className="mx-auto mb-9 max-w-xl text-center"><span className="text-xs font-bold text-[var(--brand-primary)]">راهنمای خرید</span><h2 className="mb-3 mt-2 text-3xl font-black text-[#222]">سوالات متداول</h2><p className="m-0 text-sm leading-8 text-[#777]">پاسخ پرسش‌های پرتکرار درباره سفارش، پرداخت و تحویل.</p></div><StorefrontFaqAccordion faqs={activeFaqs} /></div>}
 
-      <StorefrontLicenses storeName={settings.storeName} />
+      <StorefrontLicenses storeName={settings.storeName} settings={homepage.licenses} />
     </section>
   </main>;
 }

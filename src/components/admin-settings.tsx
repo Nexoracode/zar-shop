@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useState, type DragEvent, type FormEvent, type ReactNode } from "react";
-import { Alert, Button, Card, Chip, Input, Label, TextArea, buttonVariants, toast } from "@heroui/react";
+import { Alert, Button, Card, Chip, Input, Label, Tabs, TextArea, buttonVariants, toast } from "@heroui/react";
 import {
   Bell, Boxes, CheckCircle2, CircleDollarSign, Clock3, CreditCard, Eye, EyeOff, FileQuestion, FileText,
   Globe2, GripVertical, Images, LayoutDashboard, Mail, MapPin, Megaphone, PackageCheck, Palette, Plus, Save,
@@ -16,7 +16,7 @@ import { HeroNumberInput } from "@/components/hero-number-input";
 import { MediaPickerDialog } from "@/components/media-picker-dialog";
 import type { MediaChoice } from "@/components/media-library";
 import type { GeneralStoreSettingsInput } from "@/modules/settings/general-settings";
-import type { HomepageMenuCategoryOption, HomepageSectionId, HomepageSettings as HomepageSettingsData, HomepageTreasureCardId } from "@/modules/settings/homepage-settings";
+import type { HomepageLicenseId, HomepageMenuCategoryOption, HomepageSectionId, HomepageSettings as HomepageSettingsData, HomepageTreasureCardId } from "@/modules/settings/homepage-settings";
 import type { BrandSettings as BrandSettingsData } from "@/modules/settings/brand-settings";
 import type { OrderSettings as OrderSettingsData } from "@/modules/settings/order-settings";
 import type { CommerceSettings as CommerceSettingsData } from "@/modules/settings/commerce-settings";
@@ -83,7 +83,13 @@ const treasureCardMeta: Record<HomepageTreasureCardId, { title: string; hint: st
   OVER_100: { title: "بالاتر از ۱۰۰ میلیون", hint: "تصویر محصولات لوکس" },
 };
 
-type HomepagePickerTarget = "promoDesktop" | "promoMobile" | `treasure:${HomepageTreasureCardId}`;
+const homepageLicenseMeta: Record<HomepageLicenseId, { title: string; hint: string }> = {
+  SALES: { title: "پروانه فروشندگی طلا", hint: "تصویر پروانه کسب فروشندگی طلا" },
+  ONLINE: { title: "پروانه معاملات آنلاین طلا", hint: "تصویر پروانه معاملات آنلاین طلا و جواهر" },
+  ENAMAD: { title: "اینماد", hint: "تصویر نماد اعتماد الکترونیکی" },
+};
+
+type HomepagePickerTarget = "promoDesktop" | "promoMobile" | `treasure:${HomepageTreasureCardId}` | `license:${HomepageLicenseId}`;
 
 function toMediaChoice(media: HomepageSettingsData["heroDesktopMedia"]): MediaChoice | null {
   return media ? { id: media.id, title: media.title || media.alt || "تصویر صفحه اصلی", url: media.url, type: "IMAGE", mimeType: media.mimeType } : null;
@@ -94,6 +100,8 @@ export function HomepageSettings({ initialSettings, menuCategories }: { initialS
   const [sections, setSections] = useState(initialSettings.sections);
   const [menuCategoryIds, setMenuCategoryIds] = useState(initialSettings.menuCategoryIds);
   const [treasureCards, setTreasureCards] = useState(() => initialSettings.treasureCards.map((card) => ({ id: card.id, mediaId: card.mediaId, media: toMediaChoice(card.media) })));
+  const [licenses, setLicenses] = useState(() => initialSettings.licenses.map((license) => ({ id: license.id, href: license.href ?? "", media: toMediaChoice(license.media) })));
+  const [selectedLicenseId, setSelectedLicenseId] = useState<HomepageLicenseId>("ONLINE");
   const [promoBannerEnabled, setPromoBannerEnabled] = useState(initialSettings.promoBannerEnabled);
   const [promoBannerHref, setPromoBannerHref] = useState(initialSettings.promoBannerHref ?? "");
   const [promoDesktopMedia, setPromoDesktopMedia] = useState<MediaChoice | null>(() => toMediaChoice(initialSettings.promoDesktopMedia));
@@ -147,7 +155,7 @@ export function HomepageSettings({ initialSettings, menuCategories }: { initialS
       const response = await fetch("/api/admin/settings/homepage", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...values, sections, menuCategoryIds, treasureCards: treasureCards.map((card) => ({ id: card.id, mediaId: card.media?.id ?? null })), promoBannerEnabled, promoBannerHref, promoDesktopMediaId: promoDesktopMedia?.id ?? null, promoMobileMediaId: promoMobileMedia?.id ?? null }),
+        body: JSON.stringify({ ...values, sections, menuCategoryIds, treasureCards: treasureCards.map((card) => ({ id: card.id, mediaId: card.media?.id ?? null })), licenses: licenses.map((license) => ({ id: license.id, mediaId: license.media?.id ?? null, href: license.href })), promoBannerEnabled, promoBannerHref, promoDesktopMediaId: promoDesktopMedia?.id ?? null, promoMobileMediaId: promoMobileMedia?.id ?? null }),
       });
       const result = await response.json().catch(() => null);
       if (!response.ok) throw new Error(result?.message ?? "ذخیره تنظیمات صفحه اصلی انجام نشد.");
@@ -164,7 +172,10 @@ export function HomepageSettings({ initialSettings, menuCategories }: { initialS
     : null;
   const selectedPickerMedia = pickerTarget === "promoDesktop" ? promoDesktopMedia
     : pickerTarget === "promoMobile" ? promoMobileMedia
-      : treasurePickerCard?.media ?? null;
+      : pickerTarget?.startsWith("license:")
+        ? licenses.find((license) => `license:${license.id}` === pickerTarget)?.media ?? null
+        : treasurePickerCard?.media ?? null;
+  const selectedLicense = licenses.find((license) => license.id === selectedLicenseId) ?? licenses[1];
 
   return <>
     <form onSubmit={submit} className="grid gap-5"><SettingsGrid>
@@ -241,6 +252,19 @@ export function HomepageSettings({ initialSettings, menuCategories }: { initialS
           return <HomepageMediaField key={card.id} label={meta.title} hint={meta.hint} media={card.media} onSelect={() => setPickerTarget(`treasure:${card.id}`)} onClear={() => setTreasureCards((current) => current.map((item) => item.id === card.id ? { ...item, mediaId: null, media: null } : item))} aspectClass="aspect-[4/3]" />;
         })}</div>
       </SettingCard>
+      <SettingCard icon={<ShieldCheck size={19} />} title="مجوزهای فروشگاه" description="تصویر و لینک اختیاری سه مجوز نمایش‌داده‌شده در صفحه اصلی" className="lg:col-span-2">
+        <Tabs selectedKey={selectedLicenseId} onSelectionChange={(key) => setSelectedLicenseId(String(key) as HomepageLicenseId)} className="w-full">
+          <Tabs.List aria-label="مدیریت مجوزهای فروشگاه" className="grid w-full grid-cols-[1fr_1.55fr_0.55fr] gap-2 bg-transparent p-0">
+            {licenses.map((license) => <Tabs.Tab key={license.id} id={license.id} className="min-h-11 min-w-0 rounded-lg border border-[var(--border)] bg-[var(--surface)] px-2 text-xs font-bold outline-none transition hover:bg-[var(--surface-secondary)] data-[selected]:border-[var(--accent)] data-[selected]:bg-[var(--accent)]/8 data-[selected]:text-[var(--accent)] sm:px-4">{homepageLicenseMeta[license.id].title}</Tabs.Tab>)}
+          </Tabs.List>
+          {selectedLicense && <Tabs.Panel id={selectedLicenseId} className="pt-4">
+            <div className="grid items-start gap-4 lg:grid-cols-[minmax(260px,0.8fr)_minmax(0,1.2fr)]">
+              <HomepageMediaField label={homepageLicenseMeta[selectedLicense.id].title} hint={homepageLicenseMeta[selectedLicense.id].hint} media={selectedLicense.media} onSelect={() => setPickerTarget(`license:${selectedLicense.id}`)} onClear={() => setLicenses((current) => current.map((license) => license.id === selectedLicense.id ? { ...license, media: null } : license))} aspectClass="aspect-[1.42/1]" />
+              <Field label="لینک اختیاری مجوز"><Input value={selectedLicense.href} onChange={(event) => setLicenses((current) => current.map((license) => license.id === selectedLicense.id ? { ...license, href: event.target.value } : license))} dir="ltr" placeholder="/pages/licenses یا https://example.com" variant="secondary" className={adminFieldClass} /><span className="mt-1 block text-[11px] leading-5 text-[var(--muted)]">اگر لینک خالی باشد، تصویر مجوز در سایت قابل کلیک نخواهد بود.</span></Field>
+            </div>
+          </Tabs.Panel>}
+        </Tabs>
+      </SettingCard>
     </SettingsGrid>
       <Card variant="secondary" className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4 shadow-sm">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -249,7 +273,7 @@ export function HomepageSettings({ initialSettings, menuCategories }: { initialS
         </div>
       </Card>
     </form>
-    <MediaPickerDialog open={pickerTarget !== null} scope="HOMEPAGE" allowedTypes={["IMAGE"]} selected={selectedPickerMedia ? [selectedPickerMedia] : []} onClose={() => setPickerTarget(null)} onConfirm={(items) => { const media = items[0] ?? null; if (pickerTarget === "promoDesktop") setPromoDesktopMedia(media); else if (pickerTarget === "promoMobile") setPromoMobileMedia(media); else if (pickerTarget?.startsWith("treasure:")) { const id = pickerTarget.slice("treasure:".length) as HomepageTreasureCardId; setTreasureCards((current) => current.map((card) => card.id === id ? { ...card, mediaId: media?.id ?? null, media } : card)); } }} />
+    <MediaPickerDialog open={pickerTarget !== null} scope="HOMEPAGE" allowedTypes={["IMAGE"]} selected={selectedPickerMedia ? [selectedPickerMedia] : []} onClose={() => setPickerTarget(null)} onConfirm={(items) => { const media = items[0] ?? null; if (pickerTarget === "promoDesktop") setPromoDesktopMedia(media); else if (pickerTarget === "promoMobile") setPromoMobileMedia(media); else if (pickerTarget?.startsWith("treasure:")) { const id = pickerTarget.slice("treasure:".length) as HomepageTreasureCardId; setTreasureCards((current) => current.map((card) => card.id === id ? { ...card, mediaId: media?.id ?? null, media } : card)); } else if (pickerTarget?.startsWith("license:")) { const id = pickerTarget.slice("license:".length) as HomepageLicenseId; setLicenses((current) => current.map((license) => license.id === id ? { ...license, media } : license)); } }} />
   </>;
 }
 

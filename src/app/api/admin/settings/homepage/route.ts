@@ -30,18 +30,19 @@ export async function PATCH(request: Request) {
       input.promoDesktopMediaId,
       input.promoMobileMediaId,
       ...input.treasureCards.map((card) => card.mediaId),
+      ...input.licenses.map((license) => license.mediaId),
     ].filter((id): id is string => Boolean(id)))];
     if (mediaIds.length) {
       const media = await db.mediaAsset.findMany({ where: { id: { in: mediaIds }, scope: "HOMEPAGE", type: "IMAGE" }, select: { id: true } });
       if (media.length !== mediaIds.length) return NextResponse.json({ message: "یکی از تصاویر انتخاب‌شده برای صفحه اصلی معتبر نیست." }, { status: 422 });
     }
 
-    const { sections, treasureCards, ...homepageFields } = input;
+    const { sections, treasureCards, licenses, ...homepageFields } = input;
     await db.$transaction(async (transaction) => {
       await transaction.storeSetting.upsert({
         where: { id: STORE_SETTING_ID },
-        create: { id: STORE_SETTING_ID, ...homepageFields, homepageSections: sections, homepageTreasureCards: treasureCards },
-        update: { ...homepageFields, homepageSections: sections, homepageTreasureCards: treasureCards },
+        create: { id: STORE_SETTING_ID, ...homepageFields, homepageSections: sections, homepageTreasureCards: treasureCards, homepageLicenses: licenses },
+        update: { ...homepageFields, homepageSections: sections, homepageTreasureCards: treasureCards, homepageLicenses: licenses },
       });
       await transaction.auditLog.create({
         data: {
@@ -49,7 +50,7 @@ export async function PATCH(request: Request) {
           action: "HOMEPAGE_SETTINGS_UPDATE",
           entityType: "StoreSetting",
           entityId: STORE_SETTING_ID,
-          metadata: { sectionOrder: input.sections.map((section) => section.id), menuCategoryIds: input.menuCategoryIds, treasureMediaIds: treasureCards.map((card) => card.mediaId) },
+          metadata: { sectionOrder: input.sections.map((section) => section.id), menuCategoryIds: input.menuCategoryIds, treasureMediaIds: treasureCards.map((card) => card.mediaId), licenseMediaIds: licenses.map((license) => license.mediaId) },
         },
       });
     });

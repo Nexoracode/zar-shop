@@ -253,6 +253,7 @@ model StoreSetting {
   menuCategoryIds      Json?
   homepageTreasureCards Json?
   homepageHeroSlides   Json?
+  homepageLicenses     Json?
   heroContentMode      String        @default("WITH_CONTENT") @db.VarChar(20)
   heroTitle            String        @default("درخشش ماندگار، انتخابی مطمئن") @db.VarChar(191)
   heroDescription      String        @default("جدیدترین زیورآلات طلا با قیمت لحظه‌ای") @db.VarChar(500)

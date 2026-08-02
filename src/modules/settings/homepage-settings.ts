@@ -6,6 +6,8 @@ export const homepageSectionIds = ["HERO", "PROMISES", "CATEGORIES", "PRODUCTS",
 export type HomepageSectionId = (typeof homepageSectionIds)[number];
 export const homepageTreasureCardIds = ["UNDER_20", "FROM_20_TO_60", "FROM_60_TO_100", "OVER_100"] as const;
 export type HomepageTreasureCardId = (typeof homepageTreasureCardIds)[number];
+export const homepageLicenseIds = ["SALES", "ONLINE", "ENAMAD"] as const;
+export type HomepageLicenseId = (typeof homepageLicenseIds)[number];
 
 const sectionSchema = z.object({
   id: z.enum(homepageSectionIds),
@@ -35,6 +37,19 @@ const safeHrefSchema = z.string().trim().min(1).max(500).refine(
 );
 const optionalSafeHrefSchema = z.union([z.null(), z.literal(""), safeHrefSchema]).transform((value) => value || null);
 
+const homepageLicenseSchema = z.object({
+  id: z.enum(homepageLicenseIds),
+  mediaId: z.string().trim().min(1).nullable(),
+  href: optionalSafeHrefSchema,
+});
+
+const homepageLicensesSchema = z.array(homepageLicenseSchema).length(homepageLicenseIds.length).superRefine((licenses, context) => {
+  const ids = new Set(licenses.map((license) => license.id));
+  if (ids.size !== homepageLicenseIds.length || homepageLicenseIds.some((id) => !ids.has(id))) {
+    context.addIssue({ code: "custom", message: "تنظیمات مجوزهای فروشگاه کامل یا معتبر نیست." });
+  }
+});
+
 const heroSlideSchema = z.object({
   id: z.string().trim().min(1).max(80),
   desktopMediaId: z.string().trim().min(1).nullable(),
@@ -61,6 +76,7 @@ export const homepageOverviewSettingsInputSchema = z.object({
   }),
   menuCategoryIds: menuCategoryIdsSchema,
   treasureCards: treasureCardsSchema,
+  licenses: homepageLicensesSchema,
   promoBannerEnabled: z.boolean(),
   promoBannerHref: optionalSafeHrefSchema,
   promoDesktopMediaId: z.string().trim().min(1).nullable(),
@@ -91,6 +107,7 @@ const mediaSchema = z.object({
 
 export const homepageSettingsSchema = homepageSettingsInputSchema.extend({
   treasureCards: z.array(treasureCardSchema.extend({ media: mediaSchema.nullable() })).length(homepageTreasureCardIds.length),
+  licenses: z.array(homepageLicenseSchema.extend({ media: mediaSchema.nullable() })).length(homepageLicenseIds.length),
   heroSlides: z.array(heroSlideSchema.extend({ desktopMedia: mediaSchema.nullable(), mobileMedia: mediaSchema.nullable() })).max(10),
   heroDesktopMedia: mediaSchema.nullable(),
   heroMobileMedia: mediaSchema.nullable(),
@@ -105,6 +122,7 @@ export const homepageSettingsDefaults: HomepageSettingsInput = {
   sections: homepageSectionIds.map((id) => ({ id, enabled: true })),
   menuCategoryIds: [],
   treasureCards: homepageTreasureCardIds.map((id) => ({ id, mediaId: null })),
+  licenses: homepageLicenseIds.map((id) => ({ id, mediaId: null, href: null })),
   heroSlides: [],
   heroContentMode: "WITH_CONTENT",
   heroTitle: "درخشش ماندگار، انتخابی مطمئن",
@@ -124,6 +142,7 @@ const homepageSelect = {
   menuCategoryIds: true,
   homepageTreasureCards: true,
   homepageHeroSlides: true,
+  homepageLicenses: true,
   heroContentMode: true,
   heroTitle: true,
   heroDescription: true,
@@ -143,10 +162,10 @@ const homepageSelect = {
 
 export async function getHomepageSettings(): Promise<HomepageSettings> {
   const existing = await db.storeSetting.findUnique({ where: { id: STORE_SETTING_ID }, select: homepageSelect });
-  const { sections, treasureCards: defaultTreasureCards, heroSlides: defaultHeroSlides, ...homepageDefaults } = homepageSettingsDefaults;
+  const { sections, treasureCards: defaultTreasureCards, heroSlides: defaultHeroSlides, licenses: defaultLicenses, ...homepageDefaults } = homepageSettingsDefaults;
   const settings = existing ?? await db.storeSetting.upsert({
     where: { id: STORE_SETTING_ID },
-    create: { id: STORE_SETTING_ID, ...homepageDefaults, menuCategoryIds: undefined, homepageSections: sections, homepageTreasureCards: defaultTreasureCards, homepageHeroSlides: defaultHeroSlides },
+    create: { id: STORE_SETTING_ID, ...homepageDefaults, menuCategoryIds: undefined, homepageSections: sections, homepageTreasureCards: defaultTreasureCards, homepageHeroSlides: defaultHeroSlides, homepageLicenses: defaultLicenses },
     update: {},
     select: homepageSelect,
   });
@@ -161,6 +180,14 @@ export async function getHomepageSettings(): Promise<HomepageSettings> {
     select: { id: true, title: true, alt: true, url: true, type: true, mimeType: true },
   }) : [];
   const treasureMediaById = new Map(treasureMedia.map((media) => [media.id, media]));
+  const parsedLicenses = homepageLicensesSchema.safeParse(settings.homepageLicenses);
+  const licenses = parsedLicenses.success ? parsedLicenses.data : homepageSettingsDefaults.licenses;
+  const licenseMediaIds = licenses.map((license) => license.mediaId).filter((id): id is string => Boolean(id));
+  const licenseMedia = licenseMediaIds.length ? await db.mediaAsset.findMany({
+    where: { id: { in: licenseMediaIds }, scope: "HOMEPAGE", type: "IMAGE" },
+    select: { id: true, title: true, alt: true, url: true, type: true, mimeType: true },
+  }) : [];
+  const licenseMediaById = new Map(licenseMedia.map((media) => [media.id, media]));
   const parsedHeroSlides = storedHeroSlidesSchema.safeParse(settings.homepageHeroSlides);
   const heroSlides = parsedHeroSlides.success
     ? parsedHeroSlides.data.map((slide) => ({ ...slide, href: slide.href ?? settings.heroButtonHref }))
@@ -186,6 +213,7 @@ export async function getHomepageSettings(): Promise<HomepageSettings> {
     sections: parsedSections.success ? parsedSections.data : homepageSettingsDefaults.sections,
     menuCategoryIds,
     treasureCards: treasureCards.map((card) => ({ ...card, media: card.mediaId ? treasureMediaById.get(card.mediaId) ?? null : null })),
+    licenses: licenses.map((license) => ({ ...license, media: license.mediaId ? licenseMediaById.get(license.mediaId) ?? null : null })),
     heroSlides: heroSlides.map((slide) => ({ ...slide, desktopMedia: slide.desktopMediaId ? heroSlideMediaById.get(slide.desktopMediaId) ?? null : null, mobileMedia: slide.mobileMediaId ? heroSlideMediaById.get(slide.mobileMediaId) ?? null : null })),
   };
   return homepageSettingsSchema.parse(input);
