@@ -14,11 +14,11 @@ import { getHomepageSettings, type HomepageSectionId, type HomepageTreasureCardI
 type HomeCategory = Prisma.CategoryGetPayload<{ include: { image: true; children: true; _count: { select: { products: true } } } }>;
 
 export const dynamic = "force-dynamic";
-const container = "mx-auto w-[min(1184px,calc(100%-32px))] lg:w-[min(1184px,calc(100%-80px))]";
+const container = "mx-auto w-[min(1440px,calc(100%-32px))] lg:w-[min(1440px,calc(100%-80px))]";
 
 export default async function Home() {
   const settings = await getGeneralStoreSettings();
-  const [productFeed, rootCategories, homepage, contentSettings] = await Promise.all([
+  const [productFeed, rootCategories, homepageCategories, homepage, contentSettings] = await Promise.all([
     getStorefrontProductFeed({ sort: "LATEST", page: 1 }),
     db.category.findMany({
       where: { isActive: true, parentId: null },
@@ -26,23 +26,27 @@ export default async function Home() {
       orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
       take: 10,
     }),
+    db.category.findMany({
+      where: { isActive: true, featured: true },
+      include: { image: true, children: { where: { isActive: true }, orderBy: [{ sortOrder: "asc" }, { name: "asc" }] }, _count: { select: { products: true } } },
+      orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
+    }),
     getHomepageSettings(),
     getContentSettings(),
   ]);
 
-  const featuredCategories = rootCategories.filter((category) => category.featured);
-  const categories = (featuredCategories.length ? featuredCategories : rootCategories).slice(0, 5);
+  const categories = homepageCategories;
   const desktopHeroImage = homepage.heroDesktopMedia?.url ?? "/images/zar-hero-campaign.png";
-  const activeFaqs = contentSettings.faqs.filter((faq) => faq.enabled);
-  const sectionState = new Map(homepage.sections.map((section) => [section.id, section.enabled]));
-  const sectionProps = (id: HomepageSectionId) => ({ hidden: sectionState.get(id) === false });
-  const categoryImage = (category: HomeCategory | undefined) => category?.image?.type === "IMAGE" ? category.image.url : "/images/zar-hero-campaign.png";
   const configuredHeroSlides: StorefrontHeroSlide[] = homepage.heroSlides.flatMap((slide) => slide.desktopMedia ? [{
     id: slide.id,
     desktop: { src: slide.desktopMedia.url, alt: slide.desktopMedia.alt ?? homepage.heroTitle },
     mobile: slide.mobileMedia ? { src: slide.mobileMedia.url, alt: slide.mobileMedia.alt ?? homepage.heroTitle } : undefined,
   }] : []);
   const heroSlides: StorefrontHeroSlide[] = configuredHeroSlides.length ? configuredHeroSlides : [{ id: "fallback", desktop: { src: desktopHeroImage, alt: homepage.heroDesktopMedia?.alt ?? homepage.heroTitle }, mobile: homepage.heroMobileMedia ? { src: homepage.heroMobileMedia.url, alt: homepage.heroMobileMedia.alt ?? homepage.heroTitle } : undefined }];
+  const activeFaqs = contentSettings.faqs.filter((faq) => faq.enabled);
+  const sectionState = new Map(homepage.sections.map((section) => [section.id, section.enabled]));
+  const sectionProps = (id: HomepageSectionId) => ({ hidden: sectionState.get(id) === false });
+  const categoryImage = (category: HomeCategory | undefined) => category?.image?.type === "IMAGE" ? category.image.url : "/images/zar-hero-campaign.png";
   const storySource = [
     ...productFeed.items.map((product) => ({ title: product.name, href: product.href, image: product.image?.src ?? "/images/zar-hero-campaign.png" })),
     ...rootCategories.map((category) => ({ title: category.name, href: `/products?category=${category.slug}`, image: categoryImage(category) })),
@@ -67,15 +71,15 @@ export default async function Home() {
       <StorefrontHeroSlider slides={heroSlides} contentMode={homepage.heroContentMode} title={homepage.heroTitle} description={homepage.heroDescription} buttonLabel={homepage.heroButtonLabel} buttonHref={homepage.heroButtonHref} />
     </section>
 
-    <section {...sectionProps("CATEGORIES")} className="bg-white py-5 lg:py-[60px]" aria-label="دسته‌بندی محصولات">
-      <div className={`${container} grid grid-cols-1 gap-4 lg:grid-cols-4`}>
-        {categories.length ? categories.map((category, index) => <Link key={category.id} href={`/products?category=${category.slug}`} className="group relative h-[350px] overflow-hidden rounded-[7px] bg-[#e8e2dc] lg:h-[286px]">
+    {categories.length > 0 && <section {...sectionProps("CATEGORIES")} className="bg-white py-5 lg:py-[60px]" aria-label="دسته‌بندی محصولات">
+      <div className={`${container} grid grid-cols-1 gap-4 lg:grid-cols-5`}>
+        {categories.map((category, index) => <Link key={category.id} href={`/products?category=${category.slug}`} className="group relative h-[350px] overflow-hidden rounded-[7px] bg-[#e8e2dc] lg:h-[286px]">
           <Image src={categoryImage(category)} alt={category.name} fill sizes="(max-width:1024px) 100vw, 25vw" className={`object-cover transition duration-500 group-hover:scale-[1.03] ${category.image?.type === "IMAGE" ? "" : index % 2 ? "object-left" : "object-right"}`} />
           <span className="absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-transparent" />
           <strong className="absolute inset-x-0 bottom-4 text-center text-base text-white">{category.name}</strong>
-        </Link>) : Array.from({ length: 5 }, (_, index) => <Link key={index} href="/products" className="relative h-[350px] overflow-hidden rounded-[7px] bg-[#e8e2dc] lg:h-[286px]"><Image src={desktopHeroImage} alt="محصولات طلا" fill sizes="(max-width:1024px) 100vw, 25vw" className={index % 2 ? "object-cover object-left" : "object-cover object-right"} /><span className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" /><strong className="absolute inset-x-0 bottom-4 text-center text-white">محصولات طلا</strong></Link>)}
+        </Link>)}
       </div>
-    </section>
+    </section>}
 
     <section {...sectionProps("PRODUCTS")} className="bg-white py-[30px] lg:py-[60px]" aria-labelledby="latest-products">
       <div className={container}>
