@@ -1,4 +1,3 @@
-import type { Prisma } from "@generated/prisma/client";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ProductCard } from "@/components/product-card";
@@ -6,13 +5,12 @@ import { db } from "@/lib/db";
 import { formatMoney } from "@/lib/format";
 import { collectCategoryAndDescendantIds } from "@/modules/categories/category-tree";
 import { getGoldPriceForDisplay } from "@/modules/gold/gold-price.service";
-import { calculateProductPrice } from "@/modules/products/pricing";
-import { calculateDiscountedPrice } from "@/modules/products/discount";
+import { getStorefrontCatalog } from "@/modules/products/storefront-catalog";
+import { storefrontCatalogQuerySchema } from "@/modules/products/storefront-catalog-contract";
 import { getGeneralStoreSettings } from "@/modules/settings/general-settings";
-import { getCatalogSettings } from "@/modules/settings/catalog-settings";
 import type { Metadata } from "next";
 
-type ProductWithRelations = Prisma.ProductGetPayload<{ include: { category: true; media: { include: { media: true } } } }>;
+type ProductSearchParams = { category?: string; page?: string; sortby?: string; MinPrice?: string; MaxPrice?: string };
 
 export const dynamic = "force-dynamic";
 export async function generateMetadata(): Promise<Metadata> {
@@ -20,33 +18,37 @@ export async function generateMetadata(): Promise<Metadata> {
   return { title: settings.industry === "GOLD" ? "محصولات طلا" : "محصولات" };
 }
 
-export default async function ProductsPage({ searchParams }: { searchParams: Promise<{ category?: string; page?: string }> }) {
-  const { category: categorySlug, page: pageParam } = await searchParams;
-  const [allCategories, settings, catalogSettings] = await Promise.all([
+export default async function ProductsPage({ searchParams }: { searchParams: Promise<ProductSearchParams> }) {
+  const params = await searchParams;
+  const parsedQuery = storefrontCatalogQuerySchema.safeParse(params);
+  if (!parsedQuery.success) notFound();
+  const query = parsedQuery.data;
+  const [allCategories, settings] = await Promise.all([
     db.category.findMany({ where: { isActive: true }, orderBy: [{ sortOrder: "asc" }, { name: "asc" }] }),
     getGeneralStoreSettings(),
-    getCatalogSettings(),
   ]);
-  const selectedCategory = categorySlug ? allCategories.find((category) => category.slug === categorySlug) : null;
-  if (categorySlug && !selectedCategory) notFound();
+  const selectedCategory = query.category ? allCategories.find((category) => category.slug === query.category) : null;
+  if (query.category && !selectedCategory) notFound();
   const categoryIds = selectedCategory ? collectCategoryAndDescendantIds(selectedCategory.id, allCategories) : undefined;
-  const requestedPage = Math.max(1, Number.parseInt(pageParam ?? "1", 10) || 1);
-  const where: Prisma.ProductWhereInput = { status: "ACTIVE", ...(catalogSettings.hideOutOfStockProducts ? { stock: { gt: 0 } } : {}), ...(categoryIds ? { categoryId: { in: categoryIds } } : {}) };
-  const total = await db.product.count({ where });
-  const pageCount = Math.max(1, Math.ceil(total / catalogSettings.catalogPageSize));
-  const page = Math.min(requestedPage, pageCount);
-  const [products, gold] = await Promise.all([
-    db.product.findMany({
-      where,
-      skip: (page - 1) * catalogSettings.catalogPageSize,
-      take: catalogSettings.catalogPageSize,
-      include: { category: true, media: { include: { media: true }, orderBy: { position: "asc" } } },
-      orderBy: { createdAt: "desc" },
-    }),
+  const [catalog, gold] = await Promise.all([
+    getStorefrontCatalog(query, categoryIds),
     settings.industry === "GOLD" ? getGoldPriceForDisplay() : Promise.resolve(null),
   ]);
   const childCategories = selectedCategory ? allCategories.filter((category) => category.parentId === selectedCategory.id) : allCategories.filter((category) => !category.parentId);
   const rate = gold ? Number(gold.pricePerGram18) : null;
+  const { page, totalPages: pageCount, totalItems: total } = catalog.pagination;
+  const sortLabels = { newest: "تازه‌ترین‌ها", oldest: "قدیمی‌ترین‌ها", "price-asc": "ارزان‌ترین‌ها", "price-desc": "گران‌ترین‌ها", popular: "محبوب‌ترین‌ها" } as const;
+
+  function productsHref(overrides: Partial<ProductSearchParams>) {
+    const next = new URLSearchParams();
+    const values = { category: query.category, sortby: query.sortby, MinPrice: query.MinPrice?.toString(), MaxPrice: query.MaxPrice?.toString(), ...overrides };
+    if (values.category) next.set("category", values.category);
+    if (values.sortby) next.set("sortby", values.sortby);
+    if (values.MinPrice) next.set("MinPrice", values.MinPrice);
+    if (values.MaxPrice) next.set("MaxPrice", values.MaxPrice);
+    if (values.page && values.page !== "1") next.set("page", values.page);
+    return `/products?${next.toString()}`;
+  }
 
   return (
     <main>
@@ -69,9 +71,9 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
         <div className="mx-auto w-full max-w-[1240px]">
           {childCategories.length > 0 && (
             <nav className="mb-8 flex gap-2 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" aria-label="زیردسته‌ها">
-              {!selectedCategory && <Link href="/products" className="shrink-0 border border-[var(--brand-primary)] bg-[var(--brand-primary)] px-4 py-2 text-xs text-[var(--brand-primary-foreground)]">همه محصولات</Link>}
+              {!selectedCategory && <Link href={productsHref({ category: undefined, page: undefined })} className="shrink-0 border border-[var(--brand-primary)] bg-[var(--brand-primary)] px-4 py-2 text-xs text-[var(--brand-primary-foreground)]">همه محصولات</Link>}
               {childCategories.map((category) => (
-                <Link key={category.id} href={`/products?category=${category.slug}`} className="shrink-0 border border-[#d9d4cb] bg-white px-4 py-2 text-xs text-[#39445a] transition hover:border-[var(--brand-accent)] hover:text-[var(--brand-accent)]">
+                <Link key={category.id} href={productsHref({ category: category.slug, page: undefined })} className="shrink-0 border border-[#d9d4cb] bg-white px-4 py-2 text-xs text-[#39445a] transition hover:border-[var(--brand-accent)] hover:text-[var(--brand-accent)]">
                   {category.name}
                 </Link>
               ))}
@@ -79,34 +81,12 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
           )}
           <div className="mb-[25px] pb-[13px] flex justify-between border-b border-[#e7e6e2] text-[#747982] text-[0.8rem]">
             <span>{total.toLocaleString("fa-IR")} محصول</span>
-            <span>مرتب‌سازی: تازه‌ترین‌ها</span>
+            <span>مرتب‌سازی: {sortLabels[query.sortby]}</span>
           </div>
 
           <div className="storefront-product-grid grid grid-cols-2 gap-x-3 gap-y-6 sm:gap-x-4 lg:grid-cols-3 xl:grid-cols-4">
-            {products.map((product: ProductWithRelations) => {
-              const baseAmount = product.fixedPrice
-                ? Number(product.fixedPrice)
-                : rate === null
-                  ? null
-                  : calculateProductPrice({ goldPricePerGram18: rate, weightGrams: Number(product.weightGrams), purity: product.purity, makingFeeType: product.makingFeeType, makingFeeValue: Number(product.makingFeeValue), profitPercent: Number(product.profitPercent), taxPercent: Number(product.taxPercent) }).total;
-              const discounted = baseAmount === null ? null : calculateDiscountedPrice(baseAmount, product);
-              const media = product.media[0]?.media;
-              return (
-                <ProductCard
-                  key={product.id}
-                  href={`/products/${product.slug}`}
-                  name={product.name}
-                  industry={product.storeIndustry}
-                  category={product.category?.name ?? "طلا"}
-                  weight={Number(product.weightGrams)}
-                  purity={product.purity}
-                  price={discounted === null ? "قیمت موقتاً در دسترس نیست" : formatMoney(discounted.finalPrice, settings.currency)}
-                  originalPrice={discounted?.isActive ? formatMoney(discounted.originalPrice, settings.currency) : undefined}
-                  image={media?.type === "IMAGE" ? { src: media.url, alt: media.alt ?? product.name } : undefined}
-                />
-              );
-            })}
-            {!products.length && (
+            {catalog.items.map((product) => <ProductCard key={product.id} {...product} />)}
+            {!catalog.items.length && (
               <div className="col-span-full py-12 text-center text-[#747982]">
                 هنوز محصولی منتشر نشده است.
               </div>
@@ -114,10 +94,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
           </div>
           {pageCount > 1 && <nav aria-label="صفحه‌بندی محصولات" className="mt-10 flex flex-wrap items-center justify-center gap-2">
             {Array.from({ length: pageCount }, (_, index) => index + 1).map((number) => {
-              const query = new URLSearchParams();
-              if (categorySlug) query.set("category", categorySlug);
-              if (number > 1) query.set("page", String(number));
-              return <Link key={number} href={`/products${query.size ? `?${query.toString()}` : ""}`} aria-current={number === page ? "page" : undefined} className={`grid size-10 place-items-center border text-sm transition ${number === page ? "border-[var(--brand-primary)] bg-[var(--brand-primary)] text-[var(--brand-primary-foreground)]" : "border-[#d9d4cb] bg-white text-[#39445a] hover:border-[var(--brand-accent)]"}`}>{number.toLocaleString("fa-IR")}</Link>;
+              return <Link key={number} href={productsHref({ page: number.toString() })} aria-current={number === page ? "page" : undefined} className={`grid size-10 place-items-center border text-sm transition ${number === page ? "border-[var(--brand-primary)] bg-[var(--brand-primary)] text-[var(--brand-primary-foreground)]" : "border-[#d9d4cb] bg-white text-[#39445a] hover:border-[var(--brand-accent)]"}`}>{number.toLocaleString("fa-IR")}</Link>;
             })}
           </nav>}
         </div>
