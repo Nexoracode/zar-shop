@@ -54,17 +54,23 @@ test("homepage settings reject duplicate treasure card identifiers", () => {
 
 test("homepage settings accept multiple hero image pairs", () => {
   const heroSlides = [
-    { id: "slide-1", desktopMediaId: "desktop-1", mobileMediaId: "mobile-1" },
-    { id: "slide-2", desktopMediaId: "desktop-2", mobileMediaId: null },
+    { id: "slide-1", desktopMediaId: "desktop-1", mobileMediaId: "mobile-1", href: "/products/one" },
+    { id: "slide-2", desktopMediaId: "desktop-2", mobileMediaId: null, href: "https://example.com/campaign" },
   ];
   const parsed = homepageSettingsInputSchema.parse({ ...homepageSettingsDefaults, heroSlides });
   assert.equal(parsed.heroSlides.length, 2);
+  assert.equal(parsed.heroSlides[1].href, "https://example.com/campaign");
 });
 
 test("homepage settings reject duplicate hero slide identifiers", () => {
   const heroSlides = [
-    { id: "same", desktopMediaId: "desktop-1", mobileMediaId: null },
-    { id: "same", desktopMediaId: "desktop-2", mobileMediaId: null },
+    { id: "same", desktopMediaId: "desktop-1", mobileMediaId: null, href: "/one" },
+    { id: "same", desktopMediaId: "desktop-2", mobileMediaId: null, href: "/two" },
   ];
+  assert.equal(homepageSettingsInputSchema.safeParse({ ...homepageSettingsDefaults, heroSlides }).success, false);
+});
+
+test("homepage settings reject an unsafe per-slide link", () => {
+  const heroSlides = [{ id: "slide-1", desktopMediaId: "desktop-1", mobileMediaId: null, href: "javascript:alert(1)" }];
   assert.equal(homepageSettingsInputSchema.safeParse({ ...homepageSettingsDefaults, heroSlides }).success, false);
 });

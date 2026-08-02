@@ -39,10 +39,11 @@ export default async function Home() {
   const desktopHeroImage = homepage.heroDesktopMedia?.url ?? "/images/zar-hero-campaign.png";
   const configuredHeroSlides: StorefrontHeroSlide[] = homepage.heroSlides.flatMap((slide) => slide.desktopMedia ? [{
     id: slide.id,
+    href: slide.href,
     desktop: { src: slide.desktopMedia.url, alt: slide.desktopMedia.alt ?? homepage.heroTitle },
     mobile: slide.mobileMedia ? { src: slide.mobileMedia.url, alt: slide.mobileMedia.alt ?? homepage.heroTitle } : undefined,
   }] : []);
-  const heroSlides: StorefrontHeroSlide[] = configuredHeroSlides.length ? configuredHeroSlides : [{ id: "fallback", desktop: { src: desktopHeroImage, alt: homepage.heroDesktopMedia?.alt ?? homepage.heroTitle }, mobile: homepage.heroMobileMedia ? { src: homepage.heroMobileMedia.url, alt: homepage.heroMobileMedia.alt ?? homepage.heroTitle } : undefined }];
+  const heroSlides: StorefrontHeroSlide[] = configuredHeroSlides.length ? configuredHeroSlides : [{ id: "fallback", href: homepage.heroButtonHref, desktop: { src: desktopHeroImage, alt: homepage.heroDesktopMedia?.alt ?? homepage.heroTitle }, mobile: homepage.heroMobileMedia ? { src: homepage.heroMobileMedia.url, alt: homepage.heroMobileMedia.alt ?? homepage.heroTitle } : undefined }];
   const activeFaqs = contentSettings.faqs.filter((faq) => faq.enabled);
   const sectionState = new Map(homepage.sections.map((section) => [section.id, section.enabled]));
   const sectionProps = (id: HomepageSectionId) => ({ hidden: sectionState.get(id) === false });
@@ -68,7 +69,7 @@ export default async function Home() {
         </Link>) : Array.from({ length: 9 }, (_, index) => <span key={index} className="grid aspect-square h-[76px] shrink-0 place-items-center rounded-full border-[3px] border-[var(--brand-primary)] bg-[#f1ede8] text-[var(--brand-accent)] lg:h-[102px]"><Gem size={28} strokeWidth={1} /></span>)}
       </div>
 
-      <StorefrontHeroSlider slides={heroSlides} contentMode={homepage.heroContentMode} title={homepage.heroTitle} description={homepage.heroDescription} buttonLabel={homepage.heroButtonLabel} buttonHref={homepage.heroButtonHref} />
+      <StorefrontHeroSlider slides={heroSlides} contentMode={homepage.heroContentMode} title={homepage.heroTitle} description={homepage.heroDescription} buttonLabel={homepage.heroButtonLabel} />
     </section>
 
     {categories.length > 0 && <section {...sectionProps("CATEGORIES")} className="bg-white py-5 lg:py-[60px]" aria-label="دسته‌بندی محصولات">

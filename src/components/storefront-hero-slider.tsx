@@ -8,6 +8,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 
 export type StorefrontHeroSlide = {
   id: string;
+  href: string;
   desktop: { src: string; alt: string };
   mobile?: { src: string; alt: string };
 };
@@ -18,10 +19,9 @@ type Props = {
   title: string;
   description: string;
   buttonLabel: string;
-  buttonHref: string;
 };
 
-export function StorefrontHeroSlider({ slides, contentMode, title, description, buttonLabel, buttonHref }: Props) {
+export function StorefrontHeroSlider({ slides, contentMode, title, description, buttonLabel }: Props) {
   const [activeIndex, setActiveIndex] = useState(0);
   const [paused, setPaused] = useState(false);
   const hasMultipleSlides = slides.length > 1;
@@ -42,14 +42,14 @@ export function StorefrontHeroSlider({ slides, contentMode, title, description, 
 
   return (
     <div className="relative h-[440px] overflow-hidden bg-[#e8dfd5]" onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)}>
-      {slides.map((slide, index) => <div key={slide.id} aria-hidden={index !== activeIndex} className={`absolute inset-0 transition-opacity duration-700 ${index === activeIndex ? "z-0 opacity-100" : "pointer-events-none opacity-0"}`}>
+      {slides.map((slide, index) => <Link href={slide.href} key={slide.id} aria-hidden={index !== activeIndex} tabIndex={index === activeIndex ? 0 : -1} aria-label={`مشاهده ${slide.desktop.alt}`} className={`absolute inset-0 transition-opacity duration-700 ${index === activeIndex ? "z-0 opacity-100" : "pointer-events-none opacity-0"}`}>
         {slide.mobile && <Image src={slide.mobile.src} alt={slide.mobile.alt} fill priority={index === 0} sizes="(max-width: 639px) 100vw, 0px" className="object-cover sm:hidden" />}
         <Image src={slide.desktop.src} alt={slide.desktop.alt} fill priority={index === 0} sizes="100vw" className={`object-cover ${slide.mobile ? "hidden sm:block" : ""}`} />
-      </div>)}
+      </Link>)}
 
-      {contentMode === "IMAGE_ONLY" ? <Link href={buttonHref} aria-label={`مشاهده ${title}`} className="absolute inset-0 z-10" /> : <>
-        <span className="absolute inset-0 z-10 bg-gradient-to-l from-black/35 via-transparent to-transparent" />
-        <div className="relative z-20 mx-auto flex h-full w-[min(1440px,calc(100%-32px))] items-center lg:w-[min(1440px,calc(100%-80px))]"><div className="max-w-[480px] text-white"><h1 className="m-0 text-[clamp(2.2rem,5vw,4.4rem)] font-black leading-[1.25]">{title}</h1><p className="mb-6 mt-3 text-sm text-white/85">{description}</p><Link href={buttonHref} className="inline-flex h-11 items-center rounded-md bg-[var(--brand-primary)] px-6 text-xs text-[var(--brand-primary-foreground)]">{buttonLabel}</Link></div></div>
+      {contentMode === "WITH_CONTENT" && <>
+        <span className="pointer-events-none absolute inset-0 z-10 bg-gradient-to-l from-black/35 via-transparent to-transparent" />
+        <div className="pointer-events-none relative z-20 mx-auto flex h-full w-[min(1440px,calc(100%-32px))] items-center lg:w-[min(1440px,calc(100%-80px))]"><div className="max-w-[480px] text-white"><h1 className="m-0 text-[clamp(2.2rem,5vw,4.4rem)] font-black leading-[1.25]">{title}</h1><p className="mb-6 mt-3 text-sm text-white/85">{description}</p><Link href={slides[activeIndex]?.href ?? "/products"} className="pointer-events-auto inline-flex h-11 items-center rounded-md bg-[var(--brand-primary)] px-6 text-xs text-[var(--brand-primary-foreground)]">{buttonLabel}</Link></div></div>
       </>}
 
       {hasMultipleSlides && <>

@@ -29,10 +29,17 @@ const treasureCardsSchema = z.array(treasureCardSchema).length(homepageTreasureC
   }
 });
 
+const safeHrefSchema = z.string().trim().min(1).max(500).refine(
+  (value) => (/^\/(?!\/)/.test(value) || /^https:\/\//i.test(value)),
+  "لینک دکمه باید یک مسیر داخلی یا نشانی امن HTTPS باشد.",
+);
+const optionalSafeHrefSchema = z.union([z.null(), z.literal(""), safeHrefSchema]).transform((value) => value || null);
+
 const heroSlideSchema = z.object({
   id: z.string().trim().min(1).max(80),
   desktopMediaId: z.string().trim().min(1).nullable(),
   mobileMediaId: z.string().trim().min(1).nullable(),
+  href: safeHrefSchema,
 });
 
 const heroSlidesSchema = z.array(heroSlideSchema).max(10).refine(
@@ -40,11 +47,10 @@ const heroSlidesSchema = z.array(heroSlideSchema).max(10).refine(
   "شناسه اسلایدها نباید تکراری باشد.",
 );
 
-const safeHrefSchema = z.string().trim().min(1).max(500).refine(
-  (value) => (/^\/(?!\/)/.test(value) || /^https:\/\//i.test(value)),
-  "لینک دکمه باید یک مسیر داخلی یا نشانی امن HTTPS باشد.",
+const storedHeroSlidesSchema = z.array(heroSlideSchema.extend({ href: safeHrefSchema.optional() })).max(10).refine(
+  (slides) => new Set(slides.map((slide) => slide.id)).size === slides.length,
+  "شناسه اسلایدها نباید تکراری باشد.",
 );
-const optionalSafeHrefSchema = z.union([z.null(), z.literal(""), safeHrefSchema]).transform((value) => value || null);
 
 export const homepageSettingsInputSchema = z.object({
   sections: z.array(sectionSchema).length(homepageSectionIds.length).superRefine((sections, context) => {
@@ -150,11 +156,11 @@ export async function getHomepageSettings(): Promise<HomepageSettings> {
     select: { id: true, title: true, alt: true, url: true, type: true, mimeType: true },
   }) : [];
   const treasureMediaById = new Map(treasureMedia.map((media) => [media.id, media]));
-  const parsedHeroSlides = heroSlidesSchema.safeParse(settings.homepageHeroSlides);
+  const parsedHeroSlides = storedHeroSlidesSchema.safeParse(settings.homepageHeroSlides);
   const heroSlides = parsedHeroSlides.success
-    ? parsedHeroSlides.data
+    ? parsedHeroSlides.data.map((slide) => ({ ...slide, href: slide.href ?? settings.heroButtonHref }))
     : settings.heroDesktopMediaId
-      ? [{ id: "legacy-slide", desktopMediaId: settings.heroDesktopMediaId, mobileMediaId: settings.heroMobileMediaId }]
+      ? [{ id: "legacy-slide", desktopMediaId: settings.heroDesktopMediaId, mobileMediaId: settings.heroMobileMediaId, href: settings.heroButtonHref }]
       : [];
   const heroSlideMediaIds = [...new Set(heroSlides.flatMap((slide) => [slide.desktopMediaId, slide.mobileMediaId]).filter((id): id is string => Boolean(id)))];
   const heroSlideMedia = heroSlideMediaIds.length ? await db.mediaAsset.findMany({
