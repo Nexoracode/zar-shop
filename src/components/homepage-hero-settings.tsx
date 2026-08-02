@@ -32,6 +32,8 @@ export function HomepageHeroSettings({ initialSettings }: { initialSettings: Hom
   const [orderOpen, setOrderOpen] = useState(false);
   const [draftOrder, setDraftOrder] = useState<string[]>([]);
   const [draggedSlideId, setDraggedSlideId] = useState<string | null>(null);
+  const [draggedCardSlideId, setDraggedCardSlideId] = useState<string | null>(null);
+  const [cardDropTarget, setCardDropTarget] = useState<{ id: string; after: boolean } | null>(null);
 
   function openOrderEditor() {
     setDraftOrder(slides.map((slide) => slide.id));
@@ -62,6 +64,21 @@ export function HomepageHeroSettings({ initialSettings }: { initialSettings: Hom
     }));
     setOrderOpen(false);
     setDraggedSlideId(null);
+  }
+
+  function reorderSlides(sourceId: string, targetId: string, after: boolean) {
+    if (sourceId === targetId) return;
+    setSlides((current) => {
+      const sourceIndex = current.findIndex((slide) => slide.id === sourceId);
+      const targetIndex = current.findIndex((slide) => slide.id === targetId);
+      if (sourceIndex < 0 || targetIndex < 0) return current;
+      const next = [...current];
+      const [source] = next.splice(sourceIndex, 1);
+      let insertIndex = targetIndex + (after ? 1 : 0);
+      if (sourceIndex < insertIndex) insertIndex -= 1;
+      next.splice(insertIndex, 0, source);
+      return next;
+    });
   }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
@@ -122,11 +139,15 @@ export function HomepageHeroSettings({ initialSettings }: { initialSettings: Hom
           <div className="flex shrink-0 items-center gap-2"><Button type="button" isIconOnly size="sm" variant="secondary" isDisabled={slides.length < 2} aria-label="ویرایش ترتیب اسلایدها" onPress={openOrderEditor}><ListOrdered size={16} /></Button><Button type="button" size="sm" variant="secondary" isDisabled={slides.length >= 10} onPress={() => setSlides((current) => [...current, { id: crypto.randomUUID(), href: "/products", desktopMedia: null, mobileMedia: null }])} className="shrink-0 gap-1.5 text-xs"><Plus size={14} />افزودن اسلاید</Button></div>
         </Card.Header>
         <Card.Content className="p-5">
-          {slides.length ? <div className="grid gap-4 xl:grid-cols-2">{slides.map((slide, index) => <Card key={slide.id} variant="secondary" className="rounded-xl border border-[var(--border)] bg-[var(--surface-secondary)] p-4 shadow-none">
-            <div className="mb-3 flex items-center justify-between gap-2"><strong className="text-xs">اسلاید {(index + 1).toLocaleString("fa-IR")}</strong><Button type="button" isIconOnly size="sm" variant="danger-soft" aria-label={`حذف اسلاید ${index + 1}`} onPress={() => setSlides((current) => current.filter((item) => item.id !== slide.id))}><Trash2 size={14} /></Button></div>
+          {slides.length ? <div className="grid gap-4 xl:grid-cols-2">{slides.map((slide, index) => {
+            const isDropBefore = cardDropTarget?.id === slide.id && !cardDropTarget.after && draggedCardSlideId !== slide.id;
+            const isDropAfter = cardDropTarget?.id === slide.id && cardDropTarget.after && draggedCardSlideId !== slide.id;
+            return <div key={slide.id} onDragOver={(event) => { event.preventDefault(); event.dataTransfer.dropEffect = "move"; const bounds = event.currentTarget.getBoundingClientRect(); setCardDropTarget({ id: slide.id, after: event.clientY > bounds.top + bounds.height / 2 }); }} onDrop={(event) => { event.preventDefault(); const sourceId = draggedCardSlideId ?? event.dataTransfer.getData("text/plain"); if (sourceId) reorderSlides(sourceId, slide.id, cardDropTarget?.id === slide.id ? cardDropTarget.after : false); setDraggedCardSlideId(null); setCardDropTarget(null); }} className={`relative ${isDropBefore ? "before:absolute before:inset-x-2 before:-top-2 before:z-10 before:h-0.5 before:rounded-full before:bg-[var(--accent)]" : ""} ${isDropAfter ? "after:absolute after:inset-x-2 after:-bottom-2 after:z-10 after:h-0.5 after:rounded-full after:bg-[var(--accent)]" : ""}`}><Card variant="secondary" className={`rounded-xl border bg-[var(--surface-secondary)] p-4 shadow-none transition ${draggedCardSlideId === slide.id ? "border-[var(--accent)] opacity-50" : "border-[var(--border)]"}`}>
+            <div className="mb-3 flex items-center justify-between gap-2"><div className="flex items-center gap-1"><span draggable onDragStart={(event: DragEvent<HTMLSpanElement>) => { event.dataTransfer.effectAllowed = "move"; event.dataTransfer.setData("text/plain", slide.id); setDraggedCardSlideId(slide.id); }} onDragEnd={() => { setDraggedCardSlideId(null); setCardDropTarget(null); }} className="shrink-0 cursor-grab active:cursor-grabbing"><Button type="button" isIconOnly size="sm" variant="ghost" aria-label={`جابه‌جایی اسلاید ${index + 1}`} className="pointer-events-none cursor-grab text-[var(--muted)] active:cursor-grabbing"><GripVertical size={16} /></Button></span><strong className="text-xs">اسلاید {(index + 1).toLocaleString("fa-IR")}</strong></div><Button type="button" isIconOnly size="sm" variant="danger-soft" aria-label={`حذف اسلاید ${index + 1}`} onPress={() => setSlides((current) => current.filter((item) => item.id !== slide.id))}><Trash2 size={14} /></Button></div>
             <div className="grid gap-3 sm:grid-cols-2"><HeroMediaField label="تصویر دسکتاپ" hint="پیشنهاد: ۱۹۲۰×۹۰۰" media={slide.desktopMedia} onSelect={() => setPickerTarget(`desktop:${slide.id}`)} onClear={() => setSlides((current) => current.map((item) => item.id === slide.id ? { ...item, desktopMedia: null } : item))} /><HeroMediaField label="تصویر موبایل" hint="اختیاری؛ ۹۰۰×۱۲۰۰" media={slide.mobileMedia} onSelect={() => setPickerTarget(`mobile:${slide.id}`)} onClear={() => setSlides((current) => current.map((item) => item.id === slide.id ? { ...item, mobileMedia: null } : item))} /></div>
             <div className="mt-3"><Field label="لینک اختصاصی اسلاید"><Input required value={slide.href} onChange={(event) => setSlides((current) => current.map((item) => item.id === slide.id ? { ...item, href: event.target.value } : item))} dir="ltr" placeholder="/products یا https://example.com" variant="secondary" className={adminFieldClass} /></Field></div>
-          </Card>)}</div> : <Alert status="warning"><Alert.Description>هنوز اسلایدی اضافه نشده است؛ تا زمان افزودن تصویر، بنر پیش‌فرض سایت نمایش داده می‌شود.</Alert.Description></Alert>}
+          </Card></div>;
+          })}</div> : <Alert status="warning"><Alert.Description>هنوز اسلایدی اضافه نشده است؛ تا زمان افزودن تصویر، بنر پیش‌فرض سایت نمایش داده می‌شود.</Alert.Description></Alert>}
         </Card.Content>
       </Card>
 
