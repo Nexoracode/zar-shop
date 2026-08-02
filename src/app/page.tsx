@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { BadgeCheck, Gem, PackageCheck, ReceiptText, ShieldCheck, Sparkles, Truck } from "lucide-react";
+import { BadgeCheck, PackageCheck, ReceiptText, ShieldCheck, Sparkles, Truck } from "lucide-react";
 import type { Prisma } from "@generated/prisma/client";
 import { HomepageProductFeed } from "@/components/homepage-product-feed";
 import { StorefrontHeroSlider, type StorefrontHeroSlide } from "@/components/storefront-hero-slider";
@@ -18,14 +18,8 @@ const container = "mx-auto w-[min(1440px,calc(100%-32px))] lg:w-[min(1440px,calc
 
 export default async function Home() {
   const settings = await getGeneralStoreSettings();
-  const [productFeed, rootCategories, homepageCategories, homepage, contentSettings] = await Promise.all([
+  const [productFeed, homepageCategories, homepage, contentSettings] = await Promise.all([
     getStorefrontProductFeed({ sort: "LATEST", page: 1 }),
-    db.category.findMany({
-      where: { isActive: true, parentId: null },
-      include: { image: true, children: { where: { isActive: true }, orderBy: [{ sortOrder: "asc" }, { name: "asc" }] }, _count: { select: { products: true } } },
-      orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
-      take: 10,
-    }),
     db.category.findMany({
       where: { isActive: true, featured: true },
       include: { image: true, children: { where: { isActive: true }, orderBy: [{ sortOrder: "asc" }, { name: "asc" }] }, _count: { select: { products: true } } },
@@ -48,11 +42,6 @@ export default async function Home() {
   const sectionState = new Map(homepage.sections.map((section) => [section.id, section.enabled]));
   const sectionProps = (id: HomepageSectionId) => ({ hidden: sectionState.get(id) === false });
   const categoryImage = (category: HomeCategory | undefined) => category?.image?.type === "IMAGE" ? category.image.url : "/images/zar-hero-campaign.png";
-  const storySource = [
-    ...productFeed.items.map((product) => ({ title: product.name, href: product.href, image: product.image?.src ?? "/images/zar-hero-campaign.png" })),
-    ...rootCategories.map((category) => ({ title: category.name, href: `/products?category=${category.slug}`, image: categoryImage(category) })),
-  ].slice(0, 10);
-  const stories = storySource.length ? Array.from({ length: 10 }, (_, index) => storySource[index % storySource.length]) : [];
   const treasureItems: Array<{ id: HomepageTreasureCardId; title: string; subtitle: string; query: string }> = [
     { id: "UNDER_20", title: "کمتر از ۲۰ میلیون تومان", subtitle: "محصولات مینیمال", query: "sortby=newest&MaxPrice=20000000" },
     { id: "FROM_20_TO_60", title: "۲۰ تا ۶۰ میلیون تومان", subtitle: "محصولات روزانه", query: "sortby=newest&MinPrice=20000000&MaxPrice=60000000" },
@@ -63,12 +52,6 @@ export default async function Home() {
 
   return <main className="flex flex-col overflow-hidden bg-[#f7f4f2] pb-[66px] lg:pb-0">
     <section {...sectionProps("HERO")} className="bg-white">
-      <div className="flex h-[93px] items-center gap-3 overflow-x-auto px-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden lg:h-[153px] lg:gap-4 lg:px-4" aria-label="تازه‌های فروشگاه">
-        {stories.length ? stories.map((story, index) => <Link href={story.href} key={`${story.href}-${story.title}-${index}`} className="group relative aspect-square h-[76px] shrink-0 rounded-full border-[3px] border-[var(--brand-primary)] p-[3px] lg:h-[102px]">
-          <span className="relative block size-full overflow-hidden rounded-full bg-[#eee9e5]"><Image src={story.image} alt={story.title} fill sizes="102px" loading="eager" style={{ objectPosition: `${20 + (index % 5) * 15}% center` }} className="object-cover transition duration-300 group-hover:scale-105" /></span>
-        </Link>) : Array.from({ length: 9 }, (_, index) => <span key={index} className="grid aspect-square h-[76px] shrink-0 place-items-center rounded-full border-[3px] border-[var(--brand-primary)] bg-[#f1ede8] text-[var(--brand-accent)] lg:h-[102px]"><Gem size={28} strokeWidth={1} /></span>)}
-      </div>
-
       <StorefrontHeroSlider slides={heroSlides} contentMode={homepage.heroContentMode} title={homepage.heroTitle} description={homepage.heroDescription} buttonLabel={homepage.heroButtonLabel} />
     </section>
 
