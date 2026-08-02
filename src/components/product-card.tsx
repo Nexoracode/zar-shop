@@ -2,6 +2,13 @@ import Image from "next/image";
 import Link from "next/link";
 import { Heart } from "lucide-react";
 
+const galleryImageBackgrounds = [
+  "bg-[linear-gradient(145deg,#fcfcfc,#f3f3f3)]",
+  "bg-[linear-gradient(145deg,#f8f8f8,#ebebeb)]",
+  "bg-[linear-gradient(145deg,#f3f3f3,#e2e2e2)]",
+  "bg-[linear-gradient(145deg,#eeeeee,#d8d8d8)]",
+] as const;
+
 type ProductCardProps = {
   href: string;
   name: string;
@@ -15,17 +22,19 @@ type ProductCardProps = {
   originalPrice?: string;
   image?: { src: string; alt: string };
   storefrontVariant?: "default" | "gallery";
+  imageTone?: number;
 };
 
-export function ProductCard({ href, name, category, industry, weight, purity, makingFee, discountPercent, price, originalPrice, image, storefrontVariant = "default" }: ProductCardProps) {
+export function ProductCard({ href, name, category, industry, weight, purity, makingFee, discountPercent, price, originalPrice, image, storefrontVariant = "default", imageTone = 0 }: ProductCardProps) {
   const isGallery = storefrontVariant === "gallery";
+  const imageBackground = galleryImageBackgrounds[Math.abs(imageTone) % galleryImageBackgrounds.length];
   return (
     <Link
       className={`group min-w-0 bg-white transition-all duration-[250ms] ease-out ${isGallery ? "block" : "hover:-translate-y-[5px] hover:shadow-[0_18px_42px_rgba(23,35,59,0.09)]"}`}
       href={href}
     >
       {/* Media */}
-      <div className={`relative overflow-hidden bg-[#f3f3f3] ${isGallery ? "aspect-square rounded-[7px]" : "aspect-[1/1.08]"}`}>
+      <div className={`relative overflow-hidden ${isGallery ? `aspect-square rounded-[7px] ${imageBackground}` : "aspect-[1/1.08] bg-[#f3f3f3]"}`}>
         {image ? (
           <Image
             src={image.src}

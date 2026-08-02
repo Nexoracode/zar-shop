@@ -59,7 +59,7 @@ export function HomepageProductFeed({ initialFeed }: Props) {
 
         {error ? <Alert status="danger" className="min-h-[180px] place-content-center text-right"><Alert.Description><span className="block">{error}</span><Button type="button" size="sm" variant="secondary" onPress={() => void load(feed.sort, feed.pagination.page)} className="mt-3 gap-2"><RotateCw size={14} />تلاش دوباره</Button></Alert.Description></Alert> : feed.items.length ? (
           <DragScrollRow key={`${feed.sort}-${feed.pagination.page}`} ariaLabel="محصولات فروشگاه" className="flex gap-4 overflow-x-auto pb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            {feed.items.map((product) => <div key={product.id} className="w-[calc(50%-8px)] min-w-[calc(50%-8px)] sm:w-[220px] sm:min-w-[220px] lg:w-[224px] lg:min-w-[224px]"><ProductCard {...product} storefrontVariant="gallery" /></div>)}
+            {feed.items.map((product, index) => <div key={product.id} className="w-[calc(50%-8px)] min-w-[calc(50%-8px)] sm:w-[220px] sm:min-w-[220px] lg:w-[224px] lg:min-w-[224px]"><ProductCard {...product} storefrontVariant="gallery" imageTone={index % 4} /></div>)}
           </DragScrollRow>
         ) : <div className="grid h-[260px] place-items-center rounded-[7px] bg-[#f8f8f8] text-sm text-[#777]">محصولی برای نمایش وجود ندارد.</div>}
       </div>
