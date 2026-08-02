@@ -1,9 +1,9 @@
 "use client";
 
 import Image from "next/image";
-import { useState, type FormEvent, type ReactNode } from "react";
-import { Alert, Button, Card, Input, Label, TextArea, toast } from "@heroui/react";
-import { ChevronDown, ChevronUp, Images, Plus, Save, Sparkles, Trash2, Upload } from "lucide-react";
+import { useState, type DragEvent, type FormEvent, type ReactNode } from "react";
+import { Alert, Button, Card, Input, Label, Modal, TextArea, toast } from "@heroui/react";
+import { GripVertical, Images, ListOrdered, Plus, Save, Sparkles, Trash2, Upload, X } from "lucide-react";
 import { adminFieldClass, adminLabelClass } from "@/components/admin-ui";
 import { HeroSelectField } from "@/components/hero-select-field";
 import { MediaPickerDialog } from "@/components/media-picker-dialog";
@@ -29,15 +29,39 @@ export function HomepageHeroSettings({ initialSettings }: { initialSettings: Hom
     mobileMedia: toMediaChoice(slide.mobileMedia),
   })));
   const [pickerTarget, setPickerTarget] = useState<PickerTarget | null>(null);
+  const [orderOpen, setOrderOpen] = useState(false);
+  const [draftOrder, setDraftOrder] = useState<string[]>([]);
+  const [draggedSlideId, setDraggedSlideId] = useState<string | null>(null);
 
-  function moveSlide(index: number, direction: -1 | 1) {
-    const target = index + direction;
-    if (target < 0 || target >= slides.length) return;
-    setSlides((current) => {
+  function openOrderEditor() {
+    setDraftOrder(slides.map((slide) => slide.id));
+    setDraggedSlideId(null);
+    setOrderOpen(true);
+  }
+
+  function moveDraftSlide(targetId: string, after: boolean) {
+    if (!draggedSlideId || draggedSlideId === targetId) return;
+    setDraftOrder((current) => {
+      const sourceIndex = current.indexOf(draggedSlideId);
+      const targetIndex = current.indexOf(targetId);
+      if (sourceIndex < 0 || targetIndex < 0) return current;
       const next = [...current];
-      [next[index], next[target]] = [next[target], next[index]];
+      const [source] = next.splice(sourceIndex, 1);
+      let insertIndex = targetIndex + (after ? 1 : 0);
+      if (sourceIndex < insertIndex) insertIndex -= 1;
+      next.splice(insertIndex, 0, source);
       return next;
     });
+  }
+
+  function applyOrder() {
+    const slideById = new Map(slides.map((slide) => [slide.id, slide]));
+    setSlides(draftOrder.flatMap((id) => {
+      const slide = slideById.get(id);
+      return slide ? [slide] : [];
+    }));
+    setOrderOpen(false);
+    setDraggedSlideId(null);
   }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
@@ -95,11 +119,11 @@ export function HomepageHeroSettings({ initialSettings }: { initialSettings: Hom
       <Card variant="secondary" className="overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-sm">
         <Card.Header className="flex-row items-center justify-between gap-3 border-b border-[var(--border)] p-5">
           <div className="flex items-center gap-3"><span className="grid size-11 shrink-0 place-items-center rounded-xl bg-[var(--accent)]/10 text-[var(--accent)]"><Images size={19} /></span><div><Card.Title className="text-base font-black">اسلایدهای هیرو</Card.Title><Card.Description className="mt-1 text-xs text-[var(--muted)]">حداکثر ۱۰ تصویر با لینک مقصد اختصاصی</Card.Description></div></div>
-          <Button type="button" size="sm" variant="secondary" isDisabled={slides.length >= 10} onPress={() => setSlides((current) => [...current, { id: crypto.randomUUID(), href: "/products", desktopMedia: null, mobileMedia: null }])} className="shrink-0 gap-1.5 text-xs"><Plus size={14} />افزودن اسلاید</Button>
+          <div className="flex shrink-0 items-center gap-2"><Button type="button" isIconOnly size="sm" variant="secondary" isDisabled={slides.length < 2} aria-label="ویرایش ترتیب اسلایدها" onPress={openOrderEditor}><ListOrdered size={16} /></Button><Button type="button" size="sm" variant="secondary" isDisabled={slides.length >= 10} onPress={() => setSlides((current) => [...current, { id: crypto.randomUUID(), href: "/products", desktopMedia: null, mobileMedia: null }])} className="shrink-0 gap-1.5 text-xs"><Plus size={14} />افزودن اسلاید</Button></div>
         </Card.Header>
         <Card.Content className="p-5">
           {slides.length ? <div className="grid gap-4 xl:grid-cols-2">{slides.map((slide, index) => <Card key={slide.id} variant="secondary" className="rounded-xl border border-[var(--border)] bg-[var(--surface-secondary)] p-4 shadow-none">
-            <div className="mb-3 flex items-center justify-between gap-2"><strong className="text-xs">اسلاید {(index + 1).toLocaleString("fa-IR")}</strong><div className="flex gap-1"><Button type="button" isIconOnly size="sm" variant="ghost" isDisabled={index === 0} aria-label="انتقال اسلاید به بالا" onPress={() => moveSlide(index, -1)}><ChevronUp size={14} /></Button><Button type="button" isIconOnly size="sm" variant="ghost" isDisabled={index === slides.length - 1} aria-label="انتقال اسلاید به پایین" onPress={() => moveSlide(index, 1)}><ChevronDown size={14} /></Button><Button type="button" isIconOnly size="sm" variant="danger-soft" aria-label={`حذف اسلاید ${index + 1}`} onPress={() => setSlides((current) => current.filter((item) => item.id !== slide.id))}><Trash2 size={14} /></Button></div></div>
+            <div className="mb-3 flex items-center justify-between gap-2"><strong className="text-xs">اسلاید {(index + 1).toLocaleString("fa-IR")}</strong><Button type="button" isIconOnly size="sm" variant="danger-soft" aria-label={`حذف اسلاید ${index + 1}`} onPress={() => setSlides((current) => current.filter((item) => item.id !== slide.id))}><Trash2 size={14} /></Button></div>
             <div className="grid gap-3 sm:grid-cols-2"><HeroMediaField label="تصویر دسکتاپ" hint="پیشنهاد: ۱۹۲۰×۹۰۰" media={slide.desktopMedia} onSelect={() => setPickerTarget(`desktop:${slide.id}`)} onClear={() => setSlides((current) => current.map((item) => item.id === slide.id ? { ...item, desktopMedia: null } : item))} /><HeroMediaField label="تصویر موبایل" hint="اختیاری؛ ۹۰۰×۱۲۰۰" media={slide.mobileMedia} onSelect={() => setPickerTarget(`mobile:${slide.id}`)} onClear={() => setSlides((current) => current.map((item) => item.id === slide.id ? { ...item, mobileMedia: null } : item))} /></div>
             <div className="mt-3"><Field label="لینک اختصاصی اسلاید"><Input required value={slide.href} onChange={(event) => setSlides((current) => current.map((item) => item.id === slide.id ? { ...item, href: event.target.value } : item))} dir="ltr" placeholder="/products یا https://example.com" variant="secondary" className={adminFieldClass} /></Field></div>
           </Card>)}</div> : <Alert status="warning"><Alert.Description>هنوز اسلایدی اضافه نشده است؛ تا زمان افزودن تصویر، بنر پیش‌فرض سایت نمایش داده می‌شود.</Alert.Description></Alert>}
@@ -109,6 +133,24 @@ export function HomepageHeroSettings({ initialSettings }: { initialSettings: Hom
       <Card variant="secondary" className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4 shadow-sm"><div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"><div><strong className="block text-sm">ذخیره تنظیمات هیرو</strong><p className="m-0 mt-1 text-xs text-[var(--muted)]">محتوا، ترتیب تصاویر و لینک‌های اختصاصی با هم ذخیره می‌شوند.</p></div><Button type="submit" variant="primary" isPending={saving} className="min-h-11 shrink-0 gap-2 px-5"><Save size={16} />ذخیره تنظیمات هیرو</Button></div></Card>
     </form>
     <MediaPickerDialog open={pickerTarget !== null} scope="HOMEPAGE" allowedTypes={["IMAGE"]} selected={selectedMedia ? [selectedMedia] : []} onClose={() => setPickerTarget(null)} onConfirm={(items) => { const media = items[0] ?? null; if (!pickerTarget) return; const id = pickerTarget.slice(pickerTarget.indexOf(":") + 1); setSlides((current) => current.map((slide) => slide.id === id ? pickerTarget.startsWith("desktop:") ? { ...slide, desktopMedia: media } : { ...slide, mobileMedia: media } : slide)); }} />
+    <Modal.Backdrop isOpen={orderOpen} onOpenChange={(open) => { setOrderOpen(open); if (!open) setDraggedSlideId(null); }} variant="blur">
+      <Modal.Container size="lg" placement="center" scroll="inside">
+        <Modal.Dialog aria-label="ویرایش ترتیب اسلایدهای هیرو" dir="rtl" className="mx-3 max-h-[calc(100dvh-32px)] overflow-hidden bg-[var(--surface)] text-[var(--foreground)]">
+          <Modal.Header className="flex-row items-center justify-between border-b border-[var(--border)] p-5"><div><Modal.Heading className="text-base font-black">ترتیب اسلایدها</Modal.Heading><p className="mb-0 mt-1 text-xs text-[var(--muted)]">هر اسلاید را بگیرید و در جایگاه موردنظر رها کنید.</p></div><Modal.CloseTrigger aria-label="بستن" className="grid size-9 place-items-center rounded-lg text-[var(--muted)] transition hover:bg-[var(--surface-secondary)]"><X size={18} /></Modal.CloseTrigger></Modal.Header>
+          <Modal.Body className="grid gap-2 p-5">{draftOrder.map((id, index) => {
+            const slide = slides.find((item) => item.id === id);
+            if (!slide) return null;
+            return <div key={id} draggable onDragStart={(event: DragEvent<HTMLDivElement>) => { event.dataTransfer.effectAllowed = "move"; event.dataTransfer.setData("text/plain", id); setDraggedSlideId(id); }} onDragOver={(event) => { event.preventDefault(); event.dataTransfer.dropEffect = "move"; const bounds = event.currentTarget.getBoundingClientRect(); moveDraftSlide(id, event.clientY > bounds.top + bounds.height / 2); }} onDrop={(event) => { event.preventDefault(); setDraggedSlideId(null); }} onDragEnd={() => setDraggedSlideId(null)} className={`flex cursor-grab items-center gap-3 rounded-xl border p-3 transition active:cursor-grabbing ${draggedSlideId === id ? "border-[var(--accent)] bg-[var(--accent)]/5 opacity-55" : "border-[var(--border)] bg-[var(--surface-secondary)]"}`}>
+              <GripVertical size={18} className="shrink-0 text-[var(--muted)]" />
+              <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-[var(--surface)] text-xs font-black text-[var(--muted)]">{(index + 1).toLocaleString("fa-IR")}</span>
+              <span className="relative h-14 w-24 shrink-0 overflow-hidden rounded-lg bg-[var(--surface)]">{slide.desktopMedia ? <Image src={slide.desktopMedia.url} alt={slide.desktopMedia.title} fill sizes="96px" className="object-cover" /> : <span className="grid h-full place-items-center text-[var(--muted)]"><Images size={18} /></span>}</span>
+              <span className="min-w-0 flex-1"><strong className="block text-sm">اسلاید {(index + 1).toLocaleString("fa-IR")}</strong><small className="mt-1 block truncate text-[10px] text-[var(--muted)]" dir="ltr">{slide.href}</small></span>
+            </div>;
+          })}</Modal.Body>
+          <Modal.Footer className="flex-row justify-start gap-2 border-t border-[var(--border)] p-4"><Button type="button" variant="primary" onPress={applyOrder}>اعمال ترتیب</Button><Button type="button" variant="secondary" onPress={() => setOrderOpen(false)}>انصراف</Button></Modal.Footer>
+        </Modal.Dialog>
+      </Modal.Container>
+    </Modal.Backdrop>
   </>;
 }
 
