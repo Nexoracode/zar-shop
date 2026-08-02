@@ -1,10 +1,11 @@
 import Image from "next/image";
 import Link from "next/link";
-import { BadgeCheck, PackageCheck, ReceiptText, ShieldCheck, Sparkles, Truck } from "lucide-react";
+import { BadgeCheck, PackageCheck, ReceiptText, Truck } from "lucide-react";
 import type { Prisma } from "@generated/prisma/client";
 import { HomepageProductFeed } from "@/components/homepage-product-feed";
 import { StorefrontHeroSlider, type StorefrontHeroSlide } from "@/components/storefront-hero-slider";
 import { StorefrontFaqAccordion } from "@/components/storefront-faq-accordion";
+import { StorefrontLicenses } from "@/components/storefront-licenses";
 import { db } from "@/lib/db";
 import { getStorefrontProductFeed } from "@/modules/products/storefront-feed";
 import { getContentSettings } from "@/modules/settings/content-settings";
@@ -105,7 +106,7 @@ export default async function Home() {
 
       {activeFaqs.length > 0 && <div id="faq" className={`${container} mt-[90px]`}><div className="mx-auto mb-9 max-w-xl text-center"><span className="text-xs font-bold text-[var(--brand-primary)]">راهنمای خرید</span><h2 className="mb-3 mt-2 text-3xl font-black text-[#222]">سوالات متداول</h2><p className="m-0 text-sm leading-8 text-[#777]">پاسخ پرسش‌های پرتکرار درباره سفارش، پرداخت و تحویل.</p></div><StorefrontFaqAccordion faqs={activeFaqs} /></div>}
 
-      <div className="mt-[90px] bg-[#fdf8f1] py-[60px]"><div className={`${container} grid gap-8 lg:grid-cols-[280px_1fr]`}><div><h2 className="m-0 text-2xl font-black">مجوزها و ضمانت خرید</h2></div><div className="grid gap-3 sm:grid-cols-3">{[["مجوز فعالیت", <ShieldCheck key="a" />], ["فاکتور رسمی", <ReceiptText key="b" />], ["تضمین اصالت", <Sparkles key="c" />]].map(([title, icon]) => <div key={String(title)} className="rounded-[7px] border border-[#eadfce] bg-white p-5 text-center"><span className="mx-auto mb-3 block w-fit text-[var(--brand-primary)]">{icon}</span><strong className="text-sm">{String(title)}</strong></div>)}</div></div></div>
+      <StorefrontLicenses />
     </section>
   </main>;
 }
