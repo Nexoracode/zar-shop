@@ -1,0 +1,121 @@
+"use client";
+
+import Image from "next/image";
+import { useState, type FormEvent, type ReactNode } from "react";
+import { Alert, Button, Card, Input, Label, TextArea, toast } from "@heroui/react";
+import { ChevronDown, ChevronUp, Images, Plus, Save, Sparkles, Trash2, Upload } from "lucide-react";
+import { adminFieldClass, adminLabelClass } from "@/components/admin-ui";
+import { HeroSelectField } from "@/components/hero-select-field";
+import { MediaPickerDialog } from "@/components/media-picker-dialog";
+import type { MediaChoice } from "@/components/media-library";
+import type { HomepageSettings } from "@/modules/settings/homepage-settings";
+
+type PickerTarget = `desktop:${string}` | `mobile:${string}`;
+
+function toMediaChoice(media: HomepageSettings["heroDesktopMedia"]): MediaChoice | null {
+  return media ? { id: media.id, title: media.title || media.alt || "تصویر هیرو", url: media.url, type: "IMAGE", mimeType: media.mimeType } : null;
+}
+
+export function HomepageHeroSettings({ initialSettings }: { initialSettings: HomepageSettings }) {
+  const [saving, setSaving] = useState(false);
+  const [contentMode, setContentMode] = useState(initialSettings.heroContentMode);
+  const [title, setTitle] = useState(initialSettings.heroTitle);
+  const [description, setDescription] = useState(initialSettings.heroDescription);
+  const [buttonLabel, setButtonLabel] = useState(initialSettings.heroButtonLabel);
+  const [slides, setSlides] = useState(() => initialSettings.heroSlides.map((slide) => ({
+    id: slide.id,
+    href: slide.href,
+    desktopMedia: toMediaChoice(slide.desktopMedia),
+    mobileMedia: toMediaChoice(slide.mobileMedia),
+  })));
+  const [pickerTarget, setPickerTarget] = useState<PickerTarget | null>(null);
+
+  function moveSlide(index: number, direction: -1 | 1) {
+    const target = index + direction;
+    if (target < 0 || target >= slides.length) return;
+    setSlides((current) => {
+      const next = [...current];
+      [next[index], next[target]] = [next[target], next[index]];
+      return next;
+    });
+  }
+
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setSaving(true);
+    try {
+      const response = await fetch("/api/admin/settings/homepage/hero", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          heroContentMode: contentMode,
+          heroTitle: title,
+          heroDescription: description,
+          heroButtonLabel: buttonLabel,
+          heroButtonHref: slides[0]?.href ?? initialSettings.heroButtonHref,
+          heroDesktopMediaId: slides[0]?.desktopMedia?.id ?? null,
+          heroMobileMediaId: slides[0]?.mobileMedia?.id ?? null,
+          heroSlides: slides.map((slide) => ({
+            id: slide.id,
+            href: slide.href,
+            desktopMediaId: slide.desktopMedia?.id ?? null,
+            mobileMediaId: slide.mobileMedia?.id ?? null,
+          })),
+        }),
+      });
+      const result = await response.json().catch(() => null);
+      if (!response.ok) throw new Error(result?.message ?? "ذخیره تنظیمات هیرو انجام نشد.");
+      toast.success("تنظیمات هیرو ذخیره شد", { description: "تصاویر، لینک‌ها و محتوای اسلایدر در سایت اعمال شدند." });
+    } catch (reason) {
+      toast.danger("ذخیره تنظیمات هیرو انجام نشد", { description: reason instanceof Error ? reason.message : "خطای ناشناخته" });
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  const selectedSlide = pickerTarget ? slides.find((slide) => pickerTarget.endsWith(`:${slide.id}`)) : null;
+  const selectedMedia = pickerTarget?.startsWith("desktop:") ? selectedSlide?.desktopMedia ?? null : selectedSlide?.mobileMedia ?? null;
+
+  return <>
+    <form onSubmit={submit} className="grid gap-5" dir="rtl">
+      <Card variant="secondary" className="overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-sm">
+        <Card.Header className="flex-row items-center gap-3 border-b border-[var(--border)] p-5">
+          <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-[var(--accent)]/10 text-[var(--accent)]"><Sparkles size={19} /></span>
+          <div><Card.Title className="text-base font-black">محتوای هیرو</Card.Title><Card.Description className="mt-1 text-xs text-[var(--muted)]">نحوه نمایش متن و دکمه روی تصاویر</Card.Description></div>
+        </Card.Header>
+        <Card.Content className="grid gap-4 p-5">
+          <HeroSelectField name="heroContentMode" label="نوع نمایش اسلایدر" value={contentMode} onValueChange={(value) => setContentMode(value as HomepageSettings["heroContentMode"])} includeEmptyOption={false} options={[{ value: "WITH_CONTENT", label: "بنر همراه عنوان، توضیح و دکمه" }, { value: "IMAGE_ONLY", label: "فقط تصویر؛ کل بنر قابل کلیک" }]} />
+          {contentMode === "WITH_CONTENT" ? <>
+            <div className="grid gap-4 lg:grid-cols-2"><Field label="عنوان اصلی"><Input required value={title} onChange={(event) => setTitle(event.target.value)} variant="secondary" className={adminFieldClass} /></Field><Field label="متن دکمه"><Input required value={buttonLabel} onChange={(event) => setButtonLabel(event.target.value)} variant="secondary" className={adminFieldClass} /></Field></div>
+            <Field label="متن کوتاه"><TextArea required value={description} onChange={(event) => setDescription(event.target.value)} rows={3} variant="secondary" className={adminFieldClass} /></Field>
+          </> : <Alert status="accent"><Alert.Description>در این حالت تمام سطح هر تصویر به لینک اختصاصی همان اسلاید متصل می‌شود.</Alert.Description></Alert>}
+        </Card.Content>
+      </Card>
+
+      <Card variant="secondary" className="overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-sm">
+        <Card.Header className="flex-row items-center justify-between gap-3 border-b border-[var(--border)] p-5">
+          <div className="flex items-center gap-3"><span className="grid size-11 shrink-0 place-items-center rounded-xl bg-[var(--accent)]/10 text-[var(--accent)]"><Images size={19} /></span><div><Card.Title className="text-base font-black">اسلایدهای هیرو</Card.Title><Card.Description className="mt-1 text-xs text-[var(--muted)]">حداکثر ۱۰ تصویر با لینک مقصد اختصاصی</Card.Description></div></div>
+          <Button type="button" size="sm" variant="secondary" isDisabled={slides.length >= 10} onPress={() => setSlides((current) => [...current, { id: crypto.randomUUID(), href: "/products", desktopMedia: null, mobileMedia: null }])} className="shrink-0 gap-1.5 text-xs"><Plus size={14} />افزودن اسلاید</Button>
+        </Card.Header>
+        <Card.Content className="p-5">
+          {slides.length ? <div className="grid gap-4 xl:grid-cols-2">{slides.map((slide, index) => <Card key={slide.id} variant="secondary" className="rounded-xl border border-[var(--border)] bg-[var(--surface-secondary)] p-4 shadow-none">
+            <div className="mb-3 flex items-center justify-between gap-2"><strong className="text-xs">اسلاید {(index + 1).toLocaleString("fa-IR")}</strong><div className="flex gap-1"><Button type="button" isIconOnly size="sm" variant="ghost" isDisabled={index === 0} aria-label="انتقال اسلاید به بالا" onPress={() => moveSlide(index, -1)}><ChevronUp size={14} /></Button><Button type="button" isIconOnly size="sm" variant="ghost" isDisabled={index === slides.length - 1} aria-label="انتقال اسلاید به پایین" onPress={() => moveSlide(index, 1)}><ChevronDown size={14} /></Button><Button type="button" isIconOnly size="sm" variant="danger-soft" aria-label={`حذف اسلاید ${index + 1}`} onPress={() => setSlides((current) => current.filter((item) => item.id !== slide.id))}><Trash2 size={14} /></Button></div></div>
+            <div className="grid gap-3 sm:grid-cols-2"><HeroMediaField label="تصویر دسکتاپ" hint="پیشنهاد: ۱۹۲۰×۹۰۰" media={slide.desktopMedia} onSelect={() => setPickerTarget(`desktop:${slide.id}`)} onClear={() => setSlides((current) => current.map((item) => item.id === slide.id ? { ...item, desktopMedia: null } : item))} /><HeroMediaField label="تصویر موبایل" hint="اختیاری؛ ۹۰۰×۱۲۰۰" media={slide.mobileMedia} onSelect={() => setPickerTarget(`mobile:${slide.id}`)} onClear={() => setSlides((current) => current.map((item) => item.id === slide.id ? { ...item, mobileMedia: null } : item))} /></div>
+            <div className="mt-3"><Field label="لینک اختصاصی اسلاید"><Input required value={slide.href} onChange={(event) => setSlides((current) => current.map((item) => item.id === slide.id ? { ...item, href: event.target.value } : item))} dir="ltr" placeholder="/products یا https://example.com" variant="secondary" className={adminFieldClass} /></Field></div>
+          </Card>)}</div> : <Alert status="warning"><Alert.Description>هنوز اسلایدی اضافه نشده است؛ تا زمان افزودن تصویر، بنر پیش‌فرض سایت نمایش داده می‌شود.</Alert.Description></Alert>}
+        </Card.Content>
+      </Card>
+
+      <Card variant="secondary" className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4 shadow-sm"><div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"><div><strong className="block text-sm">ذخیره تنظیمات هیرو</strong><p className="m-0 mt-1 text-xs text-[var(--muted)]">محتوا، ترتیب تصاویر و لینک‌های اختصاصی با هم ذخیره می‌شوند.</p></div><Button type="submit" variant="primary" isPending={saving} className="min-h-11 shrink-0 gap-2 px-5"><Save size={16} />ذخیره تنظیمات هیرو</Button></div></Card>
+    </form>
+    <MediaPickerDialog open={pickerTarget !== null} scope="HOMEPAGE" allowedTypes={["IMAGE"]} selected={selectedMedia ? [selectedMedia] : []} onClose={() => setPickerTarget(null)} onConfirm={(items) => { const media = items[0] ?? null; if (!pickerTarget) return; const id = pickerTarget.slice(pickerTarget.indexOf(":") + 1); setSlides((current) => current.map((slide) => slide.id === id ? pickerTarget.startsWith("desktop:") ? { ...slide, desktopMedia: media } : { ...slide, mobileMedia: media } : slide)); }} />
+  </>;
+}
+
+function Field({ label, children }: { label: string; children: ReactNode }) {
+  return <div className={adminLabelClass}><Label className="text-xs font-bold text-[var(--muted)]">{label}</Label>{children}</div>;
+}
+
+function HeroMediaField({ label, hint, media, onSelect, onClear }: { label: string; hint: string; media: MediaChoice | null; onSelect: () => void; onClear: () => void }) {
+  return <Card variant="secondary" className="overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface-secondary)] shadow-none"><div className="relative aspect-[16/9] bg-[var(--surface)]">{media ? <Image src={media.url} alt={media.title} fill sizes="(max-width: 640px) 100vw, 420px" className="object-cover" /> : <span className="grid h-full place-items-center text-[var(--muted)]"><Images size={24} /></span>}</div><div className="grid gap-2 p-3"><div><strong className="block text-xs">{label}</strong><span className="text-[10px] text-[var(--muted)]">{media?.title || hint}</span></div><div className="flex gap-2"><Button type="button" size="sm" variant="secondary" onPress={onSelect} className="flex-1 gap-1 text-xs"><Upload size={13} />{media ? "تغییر" : "انتخاب"}</Button>{media && <Button type="button" size="sm" isIconOnly variant="danger-soft" aria-label={`حذف ${label}`} onPress={onClear}><Trash2 size={13} /></Button>}</div></div></Card>;
+}

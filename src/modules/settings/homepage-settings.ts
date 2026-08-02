@@ -52,7 +52,7 @@ const storedHeroSlidesSchema = z.array(heroSlideSchema.extend({ href: safeHrefSc
   "شناسه اسلایدها نباید تکراری باشد.",
 );
 
-export const homepageSettingsInputSchema = z.object({
+export const homepageOverviewSettingsInputSchema = z.object({
   sections: z.array(sectionSchema).length(homepageSectionIds.length).superRefine((sections, context) => {
     const ids = new Set(sections.map((section) => section.id));
     if (ids.size !== homepageSectionIds.length || homepageSectionIds.some((id) => !ids.has(id))) {
@@ -61,6 +61,13 @@ export const homepageSettingsInputSchema = z.object({
   }),
   menuCategoryIds: menuCategoryIdsSchema,
   treasureCards: treasureCardsSchema,
+  promoBannerEnabled: z.boolean(),
+  promoBannerHref: optionalSafeHrefSchema,
+  promoDesktopMediaId: z.string().trim().min(1).nullable(),
+  promoMobileMediaId: z.string().trim().min(1).nullable(),
+});
+
+export const homepageHeroSettingsInputSchema = z.object({
   heroSlides: heroSlidesSchema,
   heroContentMode: z.enum(["WITH_CONTENT", "IMAGE_ONLY"]),
   heroTitle: z.string().trim().min(2).max(191),
@@ -69,11 +76,9 @@ export const homepageSettingsInputSchema = z.object({
   heroButtonHref: safeHrefSchema,
   heroDesktopMediaId: z.string().trim().min(1).nullable(),
   heroMobileMediaId: z.string().trim().min(1).nullable(),
-  promoBannerEnabled: z.boolean(),
-  promoBannerHref: optionalSafeHrefSchema,
-  promoDesktopMediaId: z.string().trim().min(1).nullable(),
-  promoMobileMediaId: z.string().trim().min(1).nullable(),
 });
+
+export const homepageSettingsInputSchema = homepageOverviewSettingsInputSchema.merge(homepageHeroSettingsInputSchema);
 
 const mediaSchema = z.object({
   id: z.string(),

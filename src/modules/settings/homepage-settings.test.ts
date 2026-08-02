@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { homepageSettingsDefaults, homepageSettingsInputSchema } from "./homepage-settings";
+import { homepageHeroSettingsInputSchema, homepageOverviewSettingsInputSchema, homepageSettingsDefaults, homepageSettingsInputSchema } from "./homepage-settings";
 
 test("homepage settings accept a complete reordered section list", () => {
   const parsed = homepageSettingsInputSchema.parse({
@@ -73,4 +73,11 @@ test("homepage settings reject duplicate hero slide identifiers", () => {
 test("homepage settings reject an unsafe per-slide link", () => {
   const heroSlides = [{ id: "slide-1", desktopMediaId: "desktop-1", mobileMediaId: null, href: "javascript:alert(1)" }];
   assert.equal(homepageSettingsInputSchema.safeParse({ ...homepageSettingsDefaults, heroSlides }).success, false);
+});
+
+test("homepage overview and hero settings can be updated independently", () => {
+  const overview = homepageOverviewSettingsInputSchema.parse(homepageSettingsDefaults);
+  const hero = homepageHeroSettingsInputSchema.parse(homepageSettingsDefaults);
+  assert.equal("heroSlides" in overview, false);
+  assert.equal("promoBannerEnabled" in hero, false);
 });

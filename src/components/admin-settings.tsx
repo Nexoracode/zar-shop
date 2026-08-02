@@ -7,7 +7,7 @@ import { Alert, Button, Card, Chip, Input, Label, TextArea, buttonVariants, toas
 import {
   Bell, Boxes, CheckCircle2, CircleDollarSign, Clock3, CreditCard, Eye, EyeOff, FileQuestion, FileText,
   Globe2, GripVertical, Images, LayoutDashboard, Mail, MapPin, Megaphone, PackageCheck, Palette, Plus, Save,
-  Search, Settings2, ShieldCheck, Smartphone, Sparkles, Store, Trash2, Truck, Upload, Users, ListTree, ChevronDown, ChevronUp,
+  Search, Settings2, ShieldCheck, Smartphone, Sparkles, Store, Trash2, Truck, Upload, Users, ListTree, ChevronLeft,
 } from "lucide-react";
 import { AdminCheckbox } from "@/components/admin-checkbox";
 import { HeroSelectField } from "@/components/hero-select-field";
@@ -83,7 +83,7 @@ const treasureCardMeta: Record<HomepageTreasureCardId, { title: string; hint: st
   OVER_100: { title: "بالاتر از ۱۰۰ میلیون", hint: "تصویر محصولات لوکس" },
 };
 
-type HomepagePickerTarget = "promoDesktop" | "promoMobile" | `heroSlideDesktop:${string}` | `heroSlideMobile:${string}` | `treasure:${HomepageTreasureCardId}`;
+type HomepagePickerTarget = "promoDesktop" | "promoMobile" | `treasure:${HomepageTreasureCardId}`;
 
 function toMediaChoice(media: HomepageSettingsData["heroDesktopMedia"]): MediaChoice | null {
   return media ? { id: media.id, title: media.title || media.alt || "تصویر صفحه اصلی", url: media.url, type: "IMAGE", mimeType: media.mimeType } : null;
@@ -94,11 +94,6 @@ export function HomepageSettings({ initialSettings, menuCategories }: { initialS
   const [sections, setSections] = useState(initialSettings.sections);
   const [menuCategoryIds, setMenuCategoryIds] = useState(initialSettings.menuCategoryIds);
   const [treasureCards, setTreasureCards] = useState(() => initialSettings.treasureCards.map((card) => ({ id: card.id, mediaId: card.mediaId, media: toMediaChoice(card.media) })));
-  const [heroContentMode, setHeroContentMode] = useState(initialSettings.heroContentMode);
-  const [heroTitle, setHeroTitle] = useState(initialSettings.heroTitle);
-  const [heroDescription, setHeroDescription] = useState(initialSettings.heroDescription);
-  const [heroButtonLabel, setHeroButtonLabel] = useState(initialSettings.heroButtonLabel);
-  const [heroSlides, setHeroSlides] = useState(() => initialSettings.heroSlides.map((slide) => ({ id: slide.id, href: slide.href, desktopMedia: toMediaChoice(slide.desktopMedia), mobileMedia: toMediaChoice(slide.mobileMedia) })));
   const [promoBannerEnabled, setPromoBannerEnabled] = useState(initialSettings.promoBannerEnabled);
   const [promoBannerHref, setPromoBannerHref] = useState(initialSettings.promoBannerHref ?? "");
   const [promoDesktopMedia, setPromoDesktopMedia] = useState<MediaChoice | null>(() => toMediaChoice(initialSettings.promoDesktopMedia));
@@ -111,16 +106,6 @@ export function HomepageSettings({ initialSettings, menuCategories }: { initialS
     const target = index + direction;
     if (target < 0 || target >= sections.length) return;
     setSections((current) => {
-      const next = [...current];
-      [next[index], next[target]] = [next[target], next[index]];
-      return next;
-    });
-  }
-
-  function moveHeroSlide(index: number, direction: -1 | 1) {
-    const target = index + direction;
-    if (target < 0 || target >= heroSlides.length) return;
-    setHeroSlides((current) => {
       const next = [...current];
       [next[index], next[target]] = [next[target], next[index]];
       return next;
@@ -162,7 +147,7 @@ export function HomepageSettings({ initialSettings, menuCategories }: { initialS
       const response = await fetch("/api/admin/settings/homepage", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...values, sections, menuCategoryIds, treasureCards: treasureCards.map((card) => ({ id: card.id, mediaId: card.media?.id ?? null })), heroSlides: heroSlides.map((slide) => ({ id: slide.id, href: slide.href, desktopMediaId: slide.desktopMedia?.id ?? null, mobileMediaId: slide.mobileMedia?.id ?? null })), heroContentMode, heroTitle, heroDescription, heroButtonLabel, heroButtonHref: heroSlides[0]?.href ?? initialSettings.heroButtonHref, heroDesktopMediaId: heroSlides[0]?.desktopMedia?.id ?? null, heroMobileMediaId: heroSlides[0]?.mobileMedia?.id ?? null, promoBannerEnabled, promoBannerHref, promoDesktopMediaId: promoDesktopMedia?.id ?? null, promoMobileMediaId: promoMobileMedia?.id ?? null }),
+        body: JSON.stringify({ ...values, sections, menuCategoryIds, treasureCards: treasureCards.map((card) => ({ id: card.id, mediaId: card.media?.id ?? null })), promoBannerEnabled, promoBannerHref, promoDesktopMediaId: promoDesktopMedia?.id ?? null, promoMobileMediaId: promoMobileMedia?.id ?? null }),
       });
       const result = await response.json().catch(() => null);
       if (!response.ok) throw new Error(result?.message ?? "ذخیره تنظیمات صفحه اصلی انجام نشد.");
@@ -177,17 +162,15 @@ export function HomepageSettings({ initialSettings, menuCategories }: { initialS
   const treasurePickerCard = pickerTarget?.startsWith("treasure:")
     ? treasureCards.find((card) => `treasure:${card.id}` === pickerTarget)
     : null;
-  const heroSlidePicker = pickerTarget?.startsWith("heroSlide")
-    ? heroSlides.find((slide) => pickerTarget.endsWith(`:${slide.id}`))
-    : null;
   const selectedPickerMedia = pickerTarget === "promoDesktop" ? promoDesktopMedia
     : pickerTarget === "promoMobile" ? promoMobileMedia
-      : pickerTarget?.startsWith("heroSlideDesktop:") ? heroSlidePicker?.desktopMedia ?? null
-        : pickerTarget?.startsWith("heroSlideMobile:") ? heroSlidePicker?.mobileMedia ?? null
-          : treasurePickerCard?.media ?? null;
+      : treasurePickerCard?.media ?? null;
 
   return <>
     <form onSubmit={submit} className="grid gap-5"><SettingsGrid>
+      <SettingCard icon={<Images size={19} />} title="هیرو صفحه اصلی" description="مدیریت محتوای هیرو، تصاویر اسلایدر و لینک اختصاصی هر تصویر" className="lg:col-span-2">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"><div><strong className="block text-sm">مدیریت مستقل هیرو</strong><span className="mt-1 block text-xs text-[var(--muted)]">این بخش به‌دلیل تعداد تنظیمات و اسلایدها در صفحه‌ای مستقل مدیریت می‌شود.</span></div><Link href="/admin/settings/homepage/hero" className={buttonVariants({ variant: "primary", size: "md", className: "min-h-11 shrink-0 gap-2 rounded-xl px-5 text-sm font-bold" })}>مدیریت هیرو<ChevronLeft size={16} /></Link></div>
+      </SettingCard>
       <SettingCard icon={<LayoutDashboard size={19} />} title="چینش صفحه اصلی" description="برای تغییر ترتیب، هر ردیف را از دستگیره بگیرید و جابه‌جا کنید" className="lg:col-span-[span_7/span_7]">
         <div className="grid gap-2">{sections.map((section, index) => {
           const meta = homeSectionMeta[section.id];
@@ -245,19 +228,6 @@ export function HomepageSettings({ initialSettings, menuCategories }: { initialS
           </Button>;
         })}</div> : <Alert status="warning"><Alert.Description>دسته فعال سطح اولی برای انتخاب وجود ندارد. ابتدا از بخش دسته‌بندی‌ها یک دسته فعال بسازید.</Alert.Description></Alert>}
       </SettingCard>
-      <SettingCard icon={<Sparkles size={19} />} title="محتوای هیرو" description="نحوه نمایش متن و دکمه روی اسلایدر اصلی" className="lg:col-span-2">
-        <HeroSelectField name="heroContentMode" label="نوع نمایش اسلایدر" value={heroContentMode} onValueChange={(value) => setHeroContentMode(value as HomepageSettingsData["heroContentMode"])} includeEmptyOption={false} options={[{ value: "WITH_CONTENT", label: "بنر همراه عنوان، توضیح و دکمه" }, { value: "IMAGE_ONLY", label: "فقط تصویر؛ کل بنر قابل کلیک" }]} />
-        {heroContentMode === "WITH_CONTENT" ? <>
-          <div className="grid gap-4 lg:grid-cols-2"><Field label="عنوان اصلی"><Input required value={heroTitle} onChange={(event) => setHeroTitle(event.target.value)} variant="secondary" className={adminFieldClass} /></Field><Field label="متن دکمه"><Input required value={heroButtonLabel} onChange={(event) => setHeroButtonLabel(event.target.value)} variant="secondary" className={adminFieldClass} /></Field></div>
-          <Field label="متن کوتاه"><TextArea required value={heroDescription} onChange={(event) => setHeroDescription(event.target.value)} rows={3} variant="secondary" className={adminFieldClass} /></Field>
-        </> : <>
-          <Alert status="accent"><Alert.Description>در این حالت هیچ متن یا دکمه‌ای روی تصویر قرار نمی‌گیرد و تمام سطح هر اسلاید به لینک اختصاصی همان تصویر متصل می‌شود.</Alert.Description></Alert>
-        </>}
-      </SettingCard>
-      <SettingCard icon={<Images size={19} />} title="تصاویر هیرو" description="هر اسلاید تصویر واکنش‌گرا و لینک مقصد اختصاصی خودش را دارد" className="lg:col-span-2">
-        <div className="flex items-center justify-between gap-3"><div><strong className="block text-xs">تصاویر اسلایدر</strong><span className="text-[10px] text-[var(--muted)]">حداکثر ۱۰ اسلاید؛ تصویر موبایل اختیاری است.</span></div><Button type="button" size="sm" variant="secondary" isDisabled={heroSlides.length >= 10} onPress={() => setHeroSlides((current) => [...current, { id: crypto.randomUUID(), href: "/products", desktopMedia: null, mobileMedia: null }])} className="gap-1.5 text-xs"><Plus size={14} />افزودن اسلاید</Button></div>
-        {heroSlides.length ? <div className="grid gap-4 xl:grid-cols-2">{heroSlides.map((slide, index) => <Card key={slide.id} variant="secondary" className="rounded-xl border border-[var(--border)] bg-[var(--surface-secondary)] p-4 shadow-none"><div className="mb-3 flex items-center justify-between gap-2"><strong className="text-xs">اسلاید {(index + 1).toLocaleString("fa-IR")}</strong><div className="flex gap-1"><Button type="button" isIconOnly size="sm" variant="ghost" isDisabled={index === 0} aria-label="انتقال اسلاید به بالا" onPress={() => moveHeroSlide(index, -1)}><ChevronUp size={14} /></Button><Button type="button" isIconOnly size="sm" variant="ghost" isDisabled={index === heroSlides.length - 1} aria-label="انتقال اسلاید به پایین" onPress={() => moveHeroSlide(index, 1)}><ChevronDown size={14} /></Button><Button type="button" isIconOnly size="sm" variant="danger-soft" aria-label={`حذف اسلاید ${index + 1}`} onPress={() => setHeroSlides((current) => current.filter((item) => item.id !== slide.id))}><Trash2 size={14} /></Button></div></div><div className="grid gap-3 sm:grid-cols-2"><HomepageMediaField label="تصویر دسکتاپ" hint="پیشنهاد: ۱۹۲۰×۹۰۰" media={slide.desktopMedia} onSelect={() => setPickerTarget(`heroSlideDesktop:${slide.id}`)} onClear={() => setHeroSlides((current) => current.map((item) => item.id === slide.id ? { ...item, desktopMedia: null } : item))} /><HomepageMediaField label="تصویر موبایل" hint="اختیاری؛ ۹۰۰×۱۲۰۰" media={slide.mobileMedia} onSelect={() => setPickerTarget(`heroSlideMobile:${slide.id}`)} onClear={() => setHeroSlides((current) => current.map((item) => item.id === slide.id ? { ...item, mobileMedia: null } : item))} /></div><div className="mt-3"><Field label="لینک اختصاصی اسلاید"><Input required value={slide.href} onChange={(event) => setHeroSlides((current) => current.map((item) => item.id === slide.id ? { ...item, href: event.target.value } : item))} dir="ltr" placeholder="/products یا https://example.com" variant="secondary" className={adminFieldClass} /></Field></div></Card>)}</div> : <Alert status="warning"><Alert.Description>هنوز اسلایدی اضافه نشده است؛ تا زمان افزودن تصویر، بنر پیش‌فرض سایت نمایش داده می‌شود.</Alert.Description></Alert>}
-      </SettingCard>
       <SettingCard icon={<Megaphone size={19} />} title="پروموبنر بالای سایت" description="بنر اختیاری پیش از هدر؛ پشتیبانی از تصویر ثابت و GIF">
         <AdminCheckbox isSelected={promoBannerEnabled} onChange={setPromoBannerEnabled} icon={<Megaphone size={17} />} description="در صورت غیرفعال‌بودن یا نداشتن تصویر، هیچ فضایی بالای سایت اشغال نمی‌شود">نمایش پروموبنر</AdminCheckbox>
         {promoBannerEnabled && <div className="grid gap-3">
@@ -274,12 +244,12 @@ export function HomepageSettings({ initialSettings, menuCategories }: { initialS
     </SettingsGrid>
       <Card variant="secondary" className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4 shadow-sm">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div><strong className="block text-sm">ذخیره تغییرات صفحه اصلی</strong><p className="m-0 mt-1 text-xs text-[var(--muted)]">چینش بخش‌ها، منوی بالا، اسلایدر، تصاویر و پروموبنر با هم ذخیره می‌شوند.</p></div>
+          <div><strong className="block text-sm">ذخیره تغییرات صفحه اصلی</strong><p className="m-0 mt-1 text-xs text-[var(--muted)]">چینش بخش‌ها، منوی بالا، تصاویر گنجینه و پروموبنر با هم ذخیره می‌شوند.</p></div>
           <Button type="submit" variant="primary" isPending={saving} className="min-h-11 shrink-0 gap-2 px-5"><Save size={16} />ذخیره تنظیمات صفحه اصلی</Button>
         </div>
       </Card>
     </form>
-    <MediaPickerDialog open={pickerTarget !== null} scope="HOMEPAGE" allowedTypes={["IMAGE"]} selected={selectedPickerMedia ? [selectedPickerMedia] : []} onClose={() => setPickerTarget(null)} onConfirm={(items) => { const media = items[0] ?? null; if (pickerTarget === "promoDesktop") setPromoDesktopMedia(media); else if (pickerTarget === "promoMobile") setPromoMobileMedia(media); else if (pickerTarget?.startsWith("heroSlideDesktop:")) { const id = pickerTarget.slice("heroSlideDesktop:".length); setHeroSlides((current) => current.map((slide) => slide.id === id ? { ...slide, desktopMedia: media } : slide)); } else if (pickerTarget?.startsWith("heroSlideMobile:")) { const id = pickerTarget.slice("heroSlideMobile:".length); setHeroSlides((current) => current.map((slide) => slide.id === id ? { ...slide, mobileMedia: media } : slide)); } else if (pickerTarget?.startsWith("treasure:")) { const id = pickerTarget.slice("treasure:".length) as HomepageTreasureCardId; setTreasureCards((current) => current.map((card) => card.id === id ? { ...card, mediaId: media?.id ?? null, media } : card)); } }} />
+    <MediaPickerDialog open={pickerTarget !== null} scope="HOMEPAGE" allowedTypes={["IMAGE"]} selected={selectedPickerMedia ? [selectedPickerMedia] : []} onClose={() => setPickerTarget(null)} onConfirm={(items) => { const media = items[0] ?? null; if (pickerTarget === "promoDesktop") setPromoDesktopMedia(media); else if (pickerTarget === "promoMobile") setPromoMobileMedia(media); else if (pickerTarget?.startsWith("treasure:")) { const id = pickerTarget.slice("treasure:".length) as HomepageTreasureCardId; setTreasureCards((current) => current.map((card) => card.id === id ? { ...card, mediaId: media?.id ?? null, media } : card)); } }} />
   </>;
 }
 
