@@ -3,11 +3,10 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Alert, Button, Spinner } from "@heroui/react";
-import { ChevronLeft, ChevronRight, RotateCw } from "lucide-react";
+import { RotateCw } from "lucide-react";
 import { DragScrollRow } from "@/components/drag-scroll-row";
 import { ProductCard } from "@/components/product-card";
 import type { StorefrontProductFeed, StorefrontProductSort } from "@/modules/products/storefront-feed-contract";
-import { storefrontPaginationWindow } from "@/modules/products/storefront-feed-contract";
 
 const filters: Array<{ id: StorefrontProductSort; label: string; mobile: boolean }> = [
   { id: "LATEST", label: "جدیدترین‌ها", mobile: true },
@@ -46,8 +45,6 @@ export function HomepageProductFeed({ initialFeed }: Props) {
     }
   }
 
-  const pages = storefrontPaginationWindow(feed.pagination.page, feed.pagination.totalPages);
-
   return (
     <div dir="rtl">
       <div className="mb-7 flex items-end justify-between gap-4">
@@ -67,14 +64,6 @@ export function HomepageProductFeed({ initialFeed }: Props) {
         ) : <div className="grid h-[260px] place-items-center rounded-[7px] bg-[#f8f8f8] text-sm text-[#777]">محصولی برای نمایش وجود ندارد.</div>}
       </div>
 
-      {feed.pagination.totalPages > 1 && <footer className="mt-3 flex flex-col items-center justify-between gap-3 border-t border-[#eee] pt-4 sm:flex-row">
-        <span className="text-xs text-[#777]">صفحه {feed.pagination.page.toLocaleString("fa-IR")} از {feed.pagination.totalPages.toLocaleString("fa-IR")} · {feed.pagination.totalItems.toLocaleString("fa-IR")} محصول</span>
-        <div className="flex items-center justify-center gap-1">
-          <Button type="button" isIconOnly size="sm" variant="secondary" aria-label="صفحه قبل" isDisabled={loading || feed.pagination.page <= 1} onPress={() => void load(feed.sort, feed.pagination.page - 1)} className="min-h-9 min-w-9"><ChevronRight size={16} /></Button>
-          {pages.map((item, index) => item === "ellipsis" ? <span key={`ellipsis-${index}`} className="grid h-9 w-7 place-items-center text-[#999]">…</span> : <Button key={item} type="button" isIconOnly size="sm" variant={item === feed.pagination.page ? "primary" : "ghost"} aria-label={`صفحه ${item.toLocaleString("fa-IR")}`} isDisabled={loading} onPress={() => void load(feed.sort, item)} className={`min-h-9 min-w-9 text-xs ${item === feed.pagination.page ? "bg-[var(--brand-primary)] text-[var(--brand-primary-foreground)]" : ""}`}>{item.toLocaleString("fa-IR")}</Button>)}
-          <Button type="button" isIconOnly size="sm" variant="secondary" aria-label="صفحه بعد" isDisabled={loading || feed.pagination.page >= feed.pagination.totalPages} onPress={() => void load(feed.sort, feed.pagination.page + 1)} className="min-h-9 min-w-9"><ChevronLeft size={16} /></Button>
-        </div>
-      </footer>}
     </div>
   );
 }
