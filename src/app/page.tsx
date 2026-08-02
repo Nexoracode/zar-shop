@@ -90,7 +90,7 @@ export default async function Home() {
 
     <section {...sectionProps("ABOUT")} className="bg-white py-5 lg:py-[60px]">
       <div className={`${container} grid min-h-[340px] items-center gap-8 lg:grid-cols-[1.15fr_.85fr]`}>
-        <div><h2 className="mb-4 mt-0 text-[clamp(1.7rem,3vw,2.4rem)] font-black text-[#171717]">گنجینه {settings.storeName}</h2><p className="max-w-[700px] text-sm leading-9 text-[#555]">طلای لوکس، دیگر دور از دسترس نیست. با انتخاب محصولات متنوع فروشگاه می‌توانید متناسب با هر میزان بودجه، برای خرید طلای دلخواهتان قدم بردارید و از قیمت‌گذاری شفاف و نرخ لحظه‌ای بهره‌مند شوید.</p><Link href="/products" className="mt-3 inline-flex h-12 min-w-48 items-center justify-center rounded-[7px] bg-[var(--brand-primary)] px-6 text-sm font-bold text-[var(--brand-primary-foreground)]">شروع خرید</Link></div>
+        <div><h2 className="mb-4 mt-0 text-[clamp(1.7rem,3vw,2.4rem)] font-black text-[#171717]">گنجینه {settings.storeName}</h2><p className="max-w-[700px] text-base leading-9 text-[#555] lg:text-lg lg:leading-10">طلای لوکس، دیگر دور از دسترس نیست. با انتخاب محصولات متنوع فروشگاه می‌توانید متناسب با هر میزان بودجه، برای خرید طلای دلخواهتان قدم بردارید و از قیمت‌گذاری شفاف و نرخ لحظه‌ای بهره‌مند شوید.</p><Link href="/products" className="mt-3 inline-flex h-12 min-w-48 items-center justify-center rounded-[7px] bg-[var(--brand-primary)] px-6 text-sm font-bold text-[var(--brand-primary-foreground)]">شروع سرمایه‌گذاری</Link></div>
         <div className="relative min-h-[280px] overflow-hidden"><Image src="/images/treasure.png" alt={`گنجینه ${settings.storeName}`} fill sizes="(max-width:1024px) 100vw, 40vw" className="object-contain object-center lg:object-left" /></div>
       </div>
 
