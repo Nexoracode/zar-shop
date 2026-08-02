@@ -17,6 +17,15 @@ export async function PATCH(request: Request) {
     const actor = await getCurrentUser();
     if (!actor || !isAdminRole(actor.role)) return NextResponse.json({ message: "دسترسی غیرمجاز است." }, { status: 403 });
     const input = homepageSettingsInputSchema.parse(await request.json());
+    if (input.menuCategoryIds.length) {
+      const categories = await db.category.findMany({
+        where: { id: { in: input.menuCategoryIds }, isActive: true, parentId: null },
+        select: { id: true },
+      });
+      if (categories.length !== input.menuCategoryIds.length) {
+        return NextResponse.json({ message: "یکی از دسته‌های انتخاب‌شده برای منوی بالا معتبر یا فعال نیست." }, { status: 422 });
+      }
+    }
     const mediaIds = [...new Set([input.heroDesktopMediaId, input.heroMobileMediaId, input.promoDesktopMediaId, input.promoMobileMediaId].filter((id): id is string => Boolean(id)))];
     if (mediaIds.length) {
       const media = await db.mediaAsset.findMany({ where: { id: { in: mediaIds }, scope: "HOMEPAGE", type: "IMAGE" }, select: { id: true } });
@@ -36,7 +45,7 @@ export async function PATCH(request: Request) {
           action: "HOMEPAGE_SETTINGS_UPDATE",
           entityType: "StoreSetting",
           entityId: STORE_SETTING_ID,
-          metadata: { sectionOrder: input.sections.map((section) => section.id) },
+          metadata: { sectionOrder: input.sections.map((section) => section.id), menuCategoryIds: input.menuCategoryIds },
         },
       });
     });

@@ -7,7 +7,7 @@ import { Alert, Button, Card, Chip, Input, Label, TextArea, buttonVariants, toas
 import {
   Bell, Boxes, CheckCircle2, CircleDollarSign, Clock3, CreditCard, Eye, EyeOff, FileQuestion, FileText,
   Globe2, GripVertical, Images, LayoutDashboard, Mail, MapPin, Megaphone, PackageCheck, Palette, Plus, Save,
-  Search, Settings2, ShieldCheck, Smartphone, Sparkles, Store, Trash2, Truck, Upload, Users,
+  Search, Settings2, ShieldCheck, Smartphone, Sparkles, Store, Trash2, Truck, Upload, Users, ListTree,
 } from "lucide-react";
 import { AdminCheckbox } from "@/components/admin-checkbox";
 import { HeroSelectField } from "@/components/hero-select-field";
@@ -16,7 +16,7 @@ import { HeroNumberInput } from "@/components/hero-number-input";
 import { MediaPickerDialog } from "@/components/media-picker-dialog";
 import type { MediaChoice } from "@/components/media-library";
 import type { GeneralStoreSettingsInput } from "@/modules/settings/general-settings";
-import type { HomepageSectionId, HomepageSettings as HomepageSettingsData } from "@/modules/settings/homepage-settings";
+import type { HomepageMenuCategoryOption, HomepageSectionId, HomepageSettings as HomepageSettingsData } from "@/modules/settings/homepage-settings";
 import type { BrandSettings as BrandSettingsData } from "@/modules/settings/brand-settings";
 import type { OrderSettings as OrderSettingsData } from "@/modules/settings/order-settings";
 import type { CommerceSettings as CommerceSettingsData } from "@/modules/settings/commerce-settings";
@@ -80,9 +80,10 @@ function toMediaChoice(media: HomepageSettingsData["heroDesktopMedia"]): MediaCh
   return media ? { id: media.id, title: media.title || media.alt || "تصویر صفحه اصلی", url: media.url, type: "IMAGE", mimeType: media.mimeType } : null;
 }
 
-export function HomepageSettings({ initialSettings }: { initialSettings: HomepageSettingsData }) {
+export function HomepageSettings({ initialSettings, menuCategories }: { initialSettings: HomepageSettingsData; menuCategories: HomepageMenuCategoryOption[] }) {
   const [saving, setSaving] = useState(false);
   const [sections, setSections] = useState(initialSettings.sections);
+  const [menuCategoryIds, setMenuCategoryIds] = useState(initialSettings.menuCategoryIds);
   const [heroContentMode, setHeroContentMode] = useState(initialSettings.heroContentMode);
   const [heroTitle, setHeroTitle] = useState(initialSettings.heroTitle);
   const [heroDescription, setHeroDescription] = useState(initialSettings.heroDescription);
@@ -141,11 +142,11 @@ export function HomepageSettings({ initialSettings }: { initialSettings: Homepag
       const response = await fetch("/api/admin/settings/homepage", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...values, sections, heroContentMode, heroTitle, heroDescription, heroButtonLabel, heroDesktopMediaId: desktopMedia?.id ?? null, heroMobileMediaId: mobileMedia?.id ?? null, promoBannerEnabled, promoDesktopMediaId: promoDesktopMedia?.id ?? null, promoMobileMediaId: promoMobileMedia?.id ?? null }),
+        body: JSON.stringify({ ...values, sections, menuCategoryIds, heroContentMode, heroTitle, heroDescription, heroButtonLabel, heroDesktopMediaId: desktopMedia?.id ?? null, heroMobileMediaId: mobileMedia?.id ?? null, promoBannerEnabled, promoDesktopMediaId: promoDesktopMedia?.id ?? null, promoMobileMediaId: promoMobileMedia?.id ?? null }),
       });
       const result = await response.json().catch(() => null);
       if (!response.ok) throw new Error(result?.message ?? "ذخیره تنظیمات صفحه اصلی انجام نشد.");
-      toast.success("تنظیمات صفحه اصلی ذخیره شد", { description: "چینش، محتوای اسلایدر و تصاویر در سایت اعمال شدند." });
+      toast.success("تنظیمات صفحه اصلی ذخیره شد", { description: "چینش، منوی بالا، اسلایدر و تصاویر در سایت اعمال شدند." });
     } catch (reason) {
       toast.danger("ذخیره تنظیمات صفحه اصلی انجام نشد", { description: reason instanceof Error ? reason.message : "خطای ناشناخته" });
     } finally {
@@ -191,6 +192,27 @@ export function HomepageSettings({ initialSettings }: { initialSettings: Homepag
           </div>;
         })}</div>
       </SettingCard>
+      <SettingCard icon={<ListTree size={19} />} title="منوی بالا و مگامنو" description="دسته‌های سطح اولی که در نوار اصلی و مگامنو نمایش داده می‌شوند" className="lg:col-span-2">
+        <div className="flex items-center justify-between gap-3 rounded-xl border border-[var(--border)] bg-[var(--surface-secondary)] px-4 py-3">
+          <div><strong className="block text-xs">دسته‌های قابل نمایش</strong><span className="mt-1 block text-[11px] text-[var(--muted)]">حداکثر ۶ دسته را انتخاب کنید؛ زیر‌دسته‌های هر مورد داخل مگامنو نمایش داده می‌شوند.</span></div>
+          <Chip size="sm" variant="soft" className="shrink-0 text-[var(--accent)]"><Chip.Label>{menuCategoryIds.length.toLocaleString("fa-IR")} از ۶</Chip.Label></Chip>
+        </div>
+        {menuCategories.length ? <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">{menuCategories.map((category) => {
+          const selected = menuCategoryIds.includes(category.id);
+          const disabled = !selected && menuCategoryIds.length >= 6;
+          return <Button
+            key={category.id}
+            type="button"
+            variant="secondary"
+            isDisabled={disabled}
+            aria-pressed={selected}
+            onPress={() => setMenuCategoryIds((current) => selected ? current.filter((id) => id !== category.id) : [...current, category.id])}
+            className={`h-auto min-h-16 w-full justify-start rounded-xl border p-3 text-right transition ${selected ? "border-[var(--accent)] bg-[var(--accent)]/8 text-[var(--accent)] ring-1 ring-[var(--accent)]/20" : "border-[var(--border)] bg-[var(--surface)] text-[var(--foreground)] hover:border-[var(--accent)]/40"}`}
+          >
+            <span className="flex w-full items-center gap-3"><span className={`grid size-8 shrink-0 place-items-center rounded-lg ${selected ? "bg-[var(--accent)] text-[var(--accent-foreground)]" : "bg-[var(--surface-secondary)] text-[var(--muted)]"}`}>{selected ? <CheckCircle2 size={16} /> : <Boxes size={16} />}</span><span className="min-w-0 flex-1"><strong className="block truncate text-xs">{category.name}</strong><small className="mt-1 block text-[10px] opacity-70">{category.childrenCount.toLocaleString("fa-IR")} زیردسته فعال</small></span></span>
+          </Button>;
+        })}</div> : <Alert status="warning"><Alert.Description>دسته فعال سطح اولی برای انتخاب وجود ندارد. ابتدا از بخش دسته‌بندی‌ها یک دسته فعال بسازید.</Alert.Description></Alert>}
+      </SettingCard>
       <SettingCard icon={<Images size={19} />} title="اسلایدر اصلی" description="محتوا و تصاویر واکنش‌گرای ابتدای سایت" className="lg:col-span-[span_5/span_5]">
         <HeroSelectField name="heroContentMode" label="نوع نمایش اسلایدر" value={heroContentMode} onValueChange={(value) => setHeroContentMode(value as HomepageSettingsData["heroContentMode"])} includeEmptyOption={false} options={[{ value: "WITH_CONTENT", label: "بنر همراه عنوان، توضیح و دکمه" }, { value: "IMAGE_ONLY", label: "فقط تصویر؛ کل بنر قابل کلیک" }]} />
         {heroContentMode === "WITH_CONTENT" ? <>
@@ -213,7 +235,7 @@ export function HomepageSettings({ initialSettings }: { initialSettings: Homepag
     </SettingsGrid>
       <Card variant="secondary" className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4 shadow-sm">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div><strong className="block text-sm">ذخیره تغییرات صفحه اصلی</strong><p className="m-0 mt-1 text-xs text-[var(--muted)]">چینش بخش‌ها، اسلایدر، تصاویر و پروموبنر با هم ذخیره می‌شوند.</p></div>
+          <div><strong className="block text-sm">ذخیره تغییرات صفحه اصلی</strong><p className="m-0 mt-1 text-xs text-[var(--muted)]">چینش بخش‌ها، منوی بالا، اسلایدر، تصاویر و پروموبنر با هم ذخیره می‌شوند.</p></div>
           <Button type="submit" variant="primary" isPending={saving} className="min-h-11 shrink-0 gap-2 px-5"><Save size={16} />ذخیره تنظیمات صفحه اصلی</Button>
         </div>
       </Card>

@@ -20,14 +20,13 @@ import type { BrandSettings } from "@/modules/settings/brand-settings";
 import { getCatalogSettings } from "@/modules/settings/catalog-settings";
 import type { GeneralStoreSettingsInput } from "@/modules/settings/general-settings";
 
-export async function SiteHeader({ settings, brand, user }: { settings: GeneralStoreSettingsInput; brand: BrandSettings; user: User | null }) {
+export async function SiteHeader({ settings, brand, user, menuCategoryIds }: { settings: GeneralStoreSettingsInput; brand: BrandSettings; user: User | null; menuCategoryIds: string[] }) {
   const [gold, categories, catalogSettings] = await Promise.all([
     settings.industry === "GOLD" ? getGoldPriceForDisplay() : Promise.resolve(null),
     db.category.findMany({
-      where: { isActive: true, parentId: null },
+      where: { id: { in: menuCategoryIds }, isActive: true, parentId: null },
       include: { children: { where: { isActive: true }, orderBy: [{ sortOrder: "asc" }, { name: "asc" }] } },
       orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
-      take: 5,
     }),
     getCatalogSettings(),
   ]);

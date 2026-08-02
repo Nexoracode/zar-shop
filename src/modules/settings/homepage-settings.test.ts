@@ -29,3 +29,13 @@ test("homepage settings normalize an empty promo link", () => {
   const parsed = homepageSettingsInputSchema.parse({ ...homepageSettingsDefaults, promoBannerEnabled: true, promoBannerHref: "" });
   assert.equal(parsed.promoBannerHref, null);
 });
+
+test("homepage settings accept unique menu categories", () => {
+  const parsed = homepageSettingsInputSchema.parse({ ...homepageSettingsDefaults, menuCategoryIds: ["category-1", "category-2"] });
+  assert.deepEqual(parsed.menuCategoryIds, ["category-1", "category-2"]);
+});
+
+test("homepage settings reject duplicate or excessive menu categories", () => {
+  assert.equal(homepageSettingsInputSchema.safeParse({ ...homepageSettingsDefaults, menuCategoryIds: ["same", "same"] }).success, false);
+  assert.equal(homepageSettingsInputSchema.safeParse({ ...homepageSettingsDefaults, menuCategoryIds: Array.from({ length: 7 }, (_, index) => `category-${index}`) }).success, false);
+});

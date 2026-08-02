@@ -10,6 +10,11 @@ const sectionSchema = z.object({
   enabled: z.boolean(),
 });
 
+const menuCategoryIdsSchema = z.array(z.string().trim().min(1)).max(6).refine(
+  (ids) => new Set(ids).size === ids.length,
+  "دسته‌های منوی بالا نباید تکراری باشند.",
+);
+
 const safeHrefSchema = z.string().trim().min(1).max(500).refine(
   (value) => (/^\/(?!\/)/.test(value) || /^https:\/\//i.test(value)),
   "لینک دکمه باید یک مسیر داخلی یا نشانی امن HTTPS باشد.",
@@ -23,6 +28,7 @@ export const homepageSettingsInputSchema = z.object({
       context.addIssue({ code: "custom", message: "چینش بخش‌های صفحه اصلی کامل یا معتبر نیست." });
     }
   }),
+  menuCategoryIds: menuCategoryIdsSchema,
   heroContentMode: z.enum(["WITH_CONTENT", "IMAGE_ONLY"]),
   heroTitle: z.string().trim().min(2).max(191),
   heroDescription: z.string().trim().min(10).max(500),
@@ -57,6 +63,7 @@ export type HomepageSettings = z.infer<typeof homepageSettingsSchema>;
 
 export const homepageSettingsDefaults: HomepageSettingsInput = {
   sections: homepageSectionIds.map((id) => ({ id, enabled: true })),
+  menuCategoryIds: [],
   heroContentMode: "WITH_CONTENT",
   heroTitle: "درخشش ماندگار، انتخابی مطمئن",
   heroDescription: "جدیدترین زیورآلات طلا با قیمت لحظه‌ای و تضمین اصالت",
@@ -72,6 +79,7 @@ export const homepageSettingsDefaults: HomepageSettingsInput = {
 
 const homepageSelect = {
   homepageSections: true,
+  menuCategoryIds: true,
   heroContentMode: true,
   heroTitle: true,
   heroDescription: true,
@@ -94,15 +102,40 @@ export async function getHomepageSettings(): Promise<HomepageSettings> {
   const { sections, ...homepageDefaults } = homepageSettingsDefaults;
   const settings = existing ?? await db.storeSetting.upsert({
     where: { id: STORE_SETTING_ID },
-    create: { id: STORE_SETTING_ID, ...homepageDefaults, homepageSections: sections },
+    create: { id: STORE_SETTING_ID, ...homepageDefaults, menuCategoryIds: undefined, homepageSections: sections },
     update: {},
     select: homepageSelect,
   });
 
   const parsedSections = homepageSettingsInputSchema.shape.sections.safeParse(settings.homepageSections);
+  const parsedMenuCategoryIds = menuCategoryIdsSchema.safeParse(settings.menuCategoryIds);
+  const menuCategoryIds = parsedMenuCategoryIds.success
+    ? parsedMenuCategoryIds.data
+    : (await db.category.findMany({
+      where: { isActive: true, parentId: null },
+      orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
+      take: 5,
+      select: { id: true },
+    })).map((category) => category.id);
   const input = {
     ...settings,
     sections: parsedSections.success ? parsedSections.data : homepageSettingsDefaults.sections,
+    menuCategoryIds,
   };
   return homepageSettingsSchema.parse(input);
+}
+
+export type HomepageMenuCategoryOption = {
+  id: string;
+  name: string;
+  childrenCount: number;
+};
+
+export async function getHomepageMenuCategoryOptions(): Promise<HomepageMenuCategoryOption[]> {
+  const categories = await db.category.findMany({
+    where: { isActive: true, parentId: null },
+    orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
+    select: { id: true, name: true, _count: { select: { children: { where: { isActive: true } } } } },
+  });
+  return categories.map((category) => ({ id: category.id, name: category.name, childrenCount: category._count.children }));
 }
