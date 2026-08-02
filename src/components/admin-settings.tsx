@@ -101,6 +101,7 @@ export function HomepageSettings({ initialSettings, menuCategories }: { initialS
   const [desktopMedia, setDesktopMedia] = useState<MediaChoice | null>(() => toMediaChoice(initialSettings.heroDesktopMedia));
   const [mobileMedia, setMobileMedia] = useState<MediaChoice | null>(() => toMediaChoice(initialSettings.heroMobileMedia));
   const [promoBannerEnabled, setPromoBannerEnabled] = useState(initialSettings.promoBannerEnabled);
+  const [promoBannerHref, setPromoBannerHref] = useState(initialSettings.promoBannerHref ?? "");
   const [promoDesktopMedia, setPromoDesktopMedia] = useState<MediaChoice | null>(() => toMediaChoice(initialSettings.promoDesktopMedia));
   const [promoMobileMedia, setPromoMobileMedia] = useState<MediaChoice | null>(() => toMediaChoice(initialSettings.promoMobileMedia));
   const [pickerTarget, setPickerTarget] = useState<HomepagePickerTarget | null>(null);
@@ -152,7 +153,7 @@ export function HomepageSettings({ initialSettings, menuCategories }: { initialS
       const response = await fetch("/api/admin/settings/homepage", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...values, sections, menuCategoryIds, treasureCards: treasureCards.map((card) => ({ id: card.id, mediaId: card.media?.id ?? null })), heroContentMode, heroTitle, heroDescription, heroButtonLabel, heroDesktopMediaId: desktopMedia?.id ?? null, heroMobileMediaId: mobileMedia?.id ?? null, promoBannerEnabled, promoDesktopMediaId: promoDesktopMedia?.id ?? null, promoMobileMediaId: promoMobileMedia?.id ?? null }),
+        body: JSON.stringify({ ...values, sections, menuCategoryIds, treasureCards: treasureCards.map((card) => ({ id: card.id, mediaId: card.media?.id ?? null })), heroContentMode, heroTitle, heroDescription, heroButtonLabel, heroDesktopMediaId: desktopMedia?.id ?? null, heroMobileMediaId: mobileMedia?.id ?? null, promoBannerEnabled, promoBannerHref, promoDesktopMediaId: promoDesktopMedia?.id ?? null, promoMobileMediaId: promoMobileMedia?.id ?? null }),
       });
       const result = await response.json().catch(() => null);
       if (!response.ok) throw new Error(result?.message ?? "ذخیره تنظیمات صفحه اصلی انجام نشد.");
@@ -247,7 +248,7 @@ export function HomepageSettings({ initialSettings, menuCategories }: { initialS
       <SettingCard icon={<Megaphone size={19} />} title="پروموبنر بالای سایت" description="بنر اختیاری پیش از هدر؛ پشتیبانی از تصویر ثابت و GIF">
         <AdminCheckbox isSelected={promoBannerEnabled} onChange={setPromoBannerEnabled} icon={<Megaphone size={17} />} description="در صورت غیرفعال‌بودن یا نداشتن تصویر، هیچ فضایی بالای سایت اشغال نمی‌شود">نمایش پروموبنر</AdminCheckbox>
         {promoBannerEnabled && <div className="grid gap-3">
-          <Field label="لینک مقصد اختیاری"><Input name="promoBannerHref" defaultValue={initialSettings.promoBannerHref ?? ""} dir="ltr" placeholder="/products یا https://example.com" variant="secondary" className={adminFieldClass} /></Field>
+          <Field label="لینک مقصد اختیاری"><Input name="promoBannerHref" value={promoBannerHref} onChange={(event) => setPromoBannerHref(event.target.value)} dir="ltr" placeholder="/products یا https://example.com" variant="secondary" className={adminFieldClass} /></Field>
           <div className="grid gap-3 sm:grid-cols-2"><HomepageMediaField label="بنر دسکتاپ" hint="۱۹۲۰×۱۲۰؛ تصویر یا GIF" media={promoDesktopMedia} onSelect={() => setPickerTarget("promoDesktop")} onClear={() => setPromoDesktopMedia(null)} aspectClass="aspect-[3/1]" /><HomepageMediaField label="بنر موبایل" hint="۹۰۰×۱۸۰؛ تصویر یا GIF" media={promoMobileMedia} onSelect={() => setPickerTarget("promoMobile")} onClear={() => setPromoMobileMedia(null)} aspectClass="aspect-[3/1]" /></div>
         </div>}
       </SettingCard>
