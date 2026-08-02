@@ -43,7 +43,7 @@ export async function SiteHeader({ settings, brand, user }: { settings: GeneralS
   return <>
     <header className={`relative z-50 bg-white shadow-[0_2px_10px_rgba(0,0,0,.04)] ${brand.stickyStoreHeader ? "sticky top-0" : ""}`}>
       <div className="hidden h-10 bg-[#fdf9f2] lg:block">
-        <div className="mx-auto flex h-full max-w-[1200px] items-center justify-between px-4 text-[0.68rem] text-[#4d4b47]">
+        <div className="flex h-full w-full items-center justify-between px-4 text-[0.68rem] text-[#4d4b47]">
           <strong className="font-normal">قیمت لحظه‌ای طلای ۱۸ عیار: <span className="font-bold text-[var(--brand-primary)]">{goldPrice}</span></strong>
           <nav className="flex items-center gap-7" aria-label="دسترسی‌های اطلاعاتی">
             <Link href="/#trust">مشتریان ما</Link><Link href="/pages/about">درباره ما</Link><Link href="/pages/contact">تماس با ما</Link>
