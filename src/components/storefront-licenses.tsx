@@ -28,7 +28,7 @@ const licenses = [
   },
 ] as const;
 
-export function StorefrontLicenses() {
+export function StorefrontLicenses({ storeName }: { storeName: string }) {
   const [selectedKey, setSelectedKey] = useState<string>("online");
   const selectedLicense = licenses.find((license) => license.id === selectedKey) ?? licenses[1];
   const DocumentIcon = selectedLicense.icon;
@@ -38,7 +38,7 @@ export function StorefrontLicenses() {
       <Tabs selectedKey={selectedKey} onSelectionChange={(key) => setSelectedKey(String(key))} className="w-full">
         <div className="grid items-center gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(360px,470px)] lg:gap-16">
           <div className="text-right">
-            <h2 className="mb-7 mt-0 text-2xl font-black text-[#242321] sm:text-3xl">مجوزهای زرگالری</h2>
+            <h2 className="mb-7 mt-0 text-2xl font-black text-[#242321] sm:text-3xl">مجوزهای {storeName}</h2>
             <Tabs.List aria-label="مجوزهای فروشگاه" className="grid w-full grid-cols-[1fr_1.55fr_0.55fr] gap-2 bg-transparent p-0">
               {licenses.map((license) => <Tabs.Tab key={license.id} id={license.id} className="min-h-11 min-w-0 rounded-[6px] border border-[#ded9d1] bg-white px-2 text-xs font-bold text-[#55514b] outline-none transition-colors hover:bg-[#f8f5ef] data-[selected]:border-[#a9c9bd] data-[selected]:bg-[#edf5f1] data-[selected]:text-[#276655] sm:px-4 sm:text-sm">{license.title}</Tabs.Tab>)}
             </Tabs.List>
