@@ -29,6 +29,17 @@ const treasureCardsSchema = z.array(treasureCardSchema).length(homepageTreasureC
   }
 });
 
+const heroSlideSchema = z.object({
+  id: z.string().trim().min(1).max(80),
+  desktopMediaId: z.string().trim().min(1).nullable(),
+  mobileMediaId: z.string().trim().min(1).nullable(),
+});
+
+const heroSlidesSchema = z.array(heroSlideSchema).max(10).refine(
+  (slides) => new Set(slides.map((slide) => slide.id)).size === slides.length,
+  "شناسه اسلایدها نباید تکراری باشد.",
+);
+
 const safeHrefSchema = z.string().trim().min(1).max(500).refine(
   (value) => (/^\/(?!\/)/.test(value) || /^https:\/\//i.test(value)),
   "لینک دکمه باید یک مسیر داخلی یا نشانی امن HTTPS باشد.",
@@ -44,6 +55,7 @@ export const homepageSettingsInputSchema = z.object({
   }),
   menuCategoryIds: menuCategoryIdsSchema,
   treasureCards: treasureCardsSchema,
+  heroSlides: heroSlidesSchema,
   heroContentMode: z.enum(["WITH_CONTENT", "IMAGE_ONLY"]),
   heroTitle: z.string().trim().min(2).max(191),
   heroDescription: z.string().trim().min(10).max(500),
@@ -68,6 +80,7 @@ const mediaSchema = z.object({
 
 export const homepageSettingsSchema = homepageSettingsInputSchema.extend({
   treasureCards: z.array(treasureCardSchema.extend({ media: mediaSchema.nullable() })).length(homepageTreasureCardIds.length),
+  heroSlides: z.array(heroSlideSchema.extend({ desktopMedia: mediaSchema.nullable(), mobileMedia: mediaSchema.nullable() })).max(10),
   heroDesktopMedia: mediaSchema.nullable(),
   heroMobileMedia: mediaSchema.nullable(),
   promoDesktopMedia: mediaSchema.nullable(),
@@ -81,6 +94,7 @@ export const homepageSettingsDefaults: HomepageSettingsInput = {
   sections: homepageSectionIds.map((id) => ({ id, enabled: true })),
   menuCategoryIds: [],
   treasureCards: homepageTreasureCardIds.map((id) => ({ id, mediaId: null })),
+  heroSlides: [],
   heroContentMode: "WITH_CONTENT",
   heroTitle: "درخشش ماندگار، انتخابی مطمئن",
   heroDescription: "جدیدترین زیورآلات طلا با قیمت لحظه‌ای و تضمین اصالت",
@@ -98,6 +112,7 @@ const homepageSelect = {
   homepageSections: true,
   menuCategoryIds: true,
   homepageTreasureCards: true,
+  homepageHeroSlides: true,
   heroContentMode: true,
   heroTitle: true,
   heroDescription: true,
@@ -117,10 +132,10 @@ const homepageSelect = {
 
 export async function getHomepageSettings(): Promise<HomepageSettings> {
   const existing = await db.storeSetting.findUnique({ where: { id: STORE_SETTING_ID }, select: homepageSelect });
-  const { sections, treasureCards: defaultTreasureCards, ...homepageDefaults } = homepageSettingsDefaults;
+  const { sections, treasureCards: defaultTreasureCards, heroSlides: defaultHeroSlides, ...homepageDefaults } = homepageSettingsDefaults;
   const settings = existing ?? await db.storeSetting.upsert({
     where: { id: STORE_SETTING_ID },
-    create: { id: STORE_SETTING_ID, ...homepageDefaults, menuCategoryIds: undefined, homepageSections: sections, homepageTreasureCards: defaultTreasureCards },
+    create: { id: STORE_SETTING_ID, ...homepageDefaults, menuCategoryIds: undefined, homepageSections: sections, homepageTreasureCards: defaultTreasureCards, homepageHeroSlides: defaultHeroSlides },
     update: {},
     select: homepageSelect,
   });
@@ -135,6 +150,18 @@ export async function getHomepageSettings(): Promise<HomepageSettings> {
     select: { id: true, title: true, alt: true, url: true, type: true, mimeType: true },
   }) : [];
   const treasureMediaById = new Map(treasureMedia.map((media) => [media.id, media]));
+  const parsedHeroSlides = heroSlidesSchema.safeParse(settings.homepageHeroSlides);
+  const heroSlides = parsedHeroSlides.success
+    ? parsedHeroSlides.data
+    : settings.heroDesktopMediaId
+      ? [{ id: "legacy-slide", desktopMediaId: settings.heroDesktopMediaId, mobileMediaId: settings.heroMobileMediaId }]
+      : [];
+  const heroSlideMediaIds = [...new Set(heroSlides.flatMap((slide) => [slide.desktopMediaId, slide.mobileMediaId]).filter((id): id is string => Boolean(id)))];
+  const heroSlideMedia = heroSlideMediaIds.length ? await db.mediaAsset.findMany({
+    where: { id: { in: heroSlideMediaIds }, scope: "HOMEPAGE", type: "IMAGE" },
+    select: { id: true, title: true, alt: true, url: true, type: true, mimeType: true },
+  }) : [];
+  const heroSlideMediaById = new Map(heroSlideMedia.map((media) => [media.id, media]));
   const menuCategoryIds = parsedMenuCategoryIds.success
     ? parsedMenuCategoryIds.data
     : (await db.category.findMany({
@@ -148,6 +175,7 @@ export async function getHomepageSettings(): Promise<HomepageSettings> {
     sections: parsedSections.success ? parsedSections.data : homepageSettingsDefaults.sections,
     menuCategoryIds,
     treasureCards: treasureCards.map((card) => ({ ...card, media: card.mediaId ? treasureMediaById.get(card.mediaId) ?? null : null })),
+    heroSlides: heroSlides.map((slide) => ({ ...slide, desktopMedia: slide.desktopMediaId ? heroSlideMediaById.get(slide.desktopMediaId) ?? null : null, mobileMedia: slide.mobileMediaId ? heroSlideMediaById.get(slide.mobileMediaId) ?? null : null })),
   };
   return homepageSettingsSchema.parse(input);
 }

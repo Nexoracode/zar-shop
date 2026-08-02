@@ -7,7 +7,7 @@ import { Alert, Button, Card, Chip, Input, Label, TextArea, buttonVariants, toas
 import {
   Bell, Boxes, CheckCircle2, CircleDollarSign, Clock3, CreditCard, Eye, EyeOff, FileQuestion, FileText,
   Globe2, GripVertical, Images, LayoutDashboard, Mail, MapPin, Megaphone, PackageCheck, Palette, Plus, Save,
-  Search, Settings2, ShieldCheck, Smartphone, Sparkles, Store, Trash2, Truck, Upload, Users, ListTree,
+  Search, Settings2, ShieldCheck, Smartphone, Sparkles, Store, Trash2, Truck, Upload, Users, ListTree, ChevronDown, ChevronUp,
 } from "lucide-react";
 import { AdminCheckbox } from "@/components/admin-checkbox";
 import { HeroSelectField } from "@/components/hero-select-field";
@@ -83,7 +83,7 @@ const treasureCardMeta: Record<HomepageTreasureCardId, { title: string; hint: st
   OVER_100: { title: "بالاتر از ۱۰۰ میلیون", hint: "تصویر محصولات لوکس" },
 };
 
-type HomepagePickerTarget = "heroDesktop" | "heroMobile" | "promoDesktop" | "promoMobile" | `treasure:${HomepageTreasureCardId}`;
+type HomepagePickerTarget = "promoDesktop" | "promoMobile" | `heroSlideDesktop:${string}` | `heroSlideMobile:${string}` | `treasure:${HomepageTreasureCardId}`;
 
 function toMediaChoice(media: HomepageSettingsData["heroDesktopMedia"]): MediaChoice | null {
   return media ? { id: media.id, title: media.title || media.alt || "تصویر صفحه اصلی", url: media.url, type: "IMAGE", mimeType: media.mimeType } : null;
@@ -98,8 +98,7 @@ export function HomepageSettings({ initialSettings, menuCategories }: { initialS
   const [heroTitle, setHeroTitle] = useState(initialSettings.heroTitle);
   const [heroDescription, setHeroDescription] = useState(initialSettings.heroDescription);
   const [heroButtonLabel, setHeroButtonLabel] = useState(initialSettings.heroButtonLabel);
-  const [desktopMedia, setDesktopMedia] = useState<MediaChoice | null>(() => toMediaChoice(initialSettings.heroDesktopMedia));
-  const [mobileMedia, setMobileMedia] = useState<MediaChoice | null>(() => toMediaChoice(initialSettings.heroMobileMedia));
+  const [heroSlides, setHeroSlides] = useState(() => initialSettings.heroSlides.map((slide) => ({ id: slide.id, desktopMedia: toMediaChoice(slide.desktopMedia), mobileMedia: toMediaChoice(slide.mobileMedia) })));
   const [promoBannerEnabled, setPromoBannerEnabled] = useState(initialSettings.promoBannerEnabled);
   const [promoBannerHref, setPromoBannerHref] = useState(initialSettings.promoBannerHref ?? "");
   const [promoDesktopMedia, setPromoDesktopMedia] = useState<MediaChoice | null>(() => toMediaChoice(initialSettings.promoDesktopMedia));
@@ -112,6 +111,16 @@ export function HomepageSettings({ initialSettings, menuCategories }: { initialS
     const target = index + direction;
     if (target < 0 || target >= sections.length) return;
     setSections((current) => {
+      const next = [...current];
+      [next[index], next[target]] = [next[target], next[index]];
+      return next;
+    });
+  }
+
+  function moveHeroSlide(index: number, direction: -1 | 1) {
+    const target = index + direction;
+    if (target < 0 || target >= heroSlides.length) return;
+    setHeroSlides((current) => {
       const next = [...current];
       [next[index], next[target]] = [next[target], next[index]];
       return next;
@@ -153,7 +162,7 @@ export function HomepageSettings({ initialSettings, menuCategories }: { initialS
       const response = await fetch("/api/admin/settings/homepage", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...values, sections, menuCategoryIds, treasureCards: treasureCards.map((card) => ({ id: card.id, mediaId: card.media?.id ?? null })), heroContentMode, heroTitle, heroDescription, heroButtonLabel, heroDesktopMediaId: desktopMedia?.id ?? null, heroMobileMediaId: mobileMedia?.id ?? null, promoBannerEnabled, promoBannerHref, promoDesktopMediaId: promoDesktopMedia?.id ?? null, promoMobileMediaId: promoMobileMedia?.id ?? null }),
+        body: JSON.stringify({ ...values, sections, menuCategoryIds, treasureCards: treasureCards.map((card) => ({ id: card.id, mediaId: card.media?.id ?? null })), heroSlides: heroSlides.map((slide) => ({ id: slide.id, desktopMediaId: slide.desktopMedia?.id ?? null, mobileMediaId: slide.mobileMedia?.id ?? null })), heroContentMode, heroTitle, heroDescription, heroButtonLabel, heroDesktopMediaId: heroSlides[0]?.desktopMedia?.id ?? null, heroMobileMediaId: heroSlides[0]?.mobileMedia?.id ?? null, promoBannerEnabled, promoBannerHref, promoDesktopMediaId: promoDesktopMedia?.id ?? null, promoMobileMediaId: promoMobileMedia?.id ?? null }),
       });
       const result = await response.json().catch(() => null);
       if (!response.ok) throw new Error(result?.message ?? "ذخیره تنظیمات صفحه اصلی انجام نشد.");
@@ -168,10 +177,13 @@ export function HomepageSettings({ initialSettings, menuCategories }: { initialS
   const treasurePickerCard = pickerTarget?.startsWith("treasure:")
     ? treasureCards.find((card) => `treasure:${card.id}` === pickerTarget)
     : null;
-  const selectedPickerMedia = pickerTarget === "heroDesktop" ? desktopMedia
-    : pickerTarget === "heroMobile" ? mobileMedia
-      : pickerTarget === "promoDesktop" ? promoDesktopMedia
-        : pickerTarget === "promoMobile" ? promoMobileMedia
+  const heroSlidePicker = pickerTarget?.startsWith("heroSlide")
+    ? heroSlides.find((slide) => pickerTarget.endsWith(`:${slide.id}`))
+    : null;
+  const selectedPickerMedia = pickerTarget === "promoDesktop" ? promoDesktopMedia
+    : pickerTarget === "promoMobile" ? promoMobileMedia
+      : pickerTarget?.startsWith("heroSlideDesktop:") ? heroSlidePicker?.desktopMedia ?? null
+        : pickerTarget?.startsWith("heroSlideMobile:") ? heroSlidePicker?.mobileMedia ?? null
           : treasurePickerCard?.media ?? null;
 
   return <>
@@ -243,7 +255,8 @@ export function HomepageSettings({ initialSettings, menuCategories }: { initialS
           <Alert status="accent"><Alert.Description>در این حالت هیچ متن یا دکمه‌ای روی تصویر قرار نمی‌گیرد و تمام سطح بنر به لینک مقصد متصل می‌شود.</Alert.Description></Alert>
           <Field label="لینک مقصد بنر"><Input name="heroButtonHref" required defaultValue={initialSettings.heroButtonHref} dir="ltr" placeholder="/products یا https://example.com" variant="secondary" className={adminFieldClass} /></Field>
         </>}
-        <div className="grid gap-3 sm:grid-cols-2"><HomepageMediaField label="تصویر دسکتاپ" hint="پیشنهاد: ۱۹۲۰×۹۰۰" media={desktopMedia} onSelect={() => setPickerTarget("heroDesktop")} onClear={() => setDesktopMedia(null)} /><HomepageMediaField label="تصویر موبایل" hint="پیشنهاد: ۹۰۰×۱۲۰۰" media={mobileMedia} onSelect={() => setPickerTarget("heroMobile")} onClear={() => setMobileMedia(null)} /></div>
+        <div className="flex items-center justify-between gap-3 border-t border-[var(--border)] pt-3"><div><strong className="block text-xs">تصاویر اسلایدر</strong><span className="text-[10px] text-[var(--muted)]">حداکثر ۱۰ اسلاید؛ تصویر موبایل اختیاری است.</span></div><Button type="button" size="sm" variant="secondary" isDisabled={heroSlides.length >= 10} onPress={() => setHeroSlides((current) => [...current, { id: crypto.randomUUID(), desktopMedia: null, mobileMedia: null }])} className="gap-1.5 text-xs"><Plus size={14} />افزودن اسلاید</Button></div>
+        {heroSlides.length ? <div className="grid gap-3 xl:grid-cols-2">{heroSlides.map((slide, index) => <Card key={slide.id} variant="secondary" className="rounded-xl border border-[var(--border)] bg-[var(--surface-secondary)] p-3 shadow-none"><div className="mb-3 flex items-center justify-between gap-2"><strong className="text-xs">اسلاید {(index + 1).toLocaleString("fa-IR")}</strong><div className="flex gap-1"><Button type="button" isIconOnly size="sm" variant="ghost" isDisabled={index === 0} aria-label="انتقال اسلاید به بالا" onPress={() => moveHeroSlide(index, -1)}><ChevronUp size={14} /></Button><Button type="button" isIconOnly size="sm" variant="ghost" isDisabled={index === heroSlides.length - 1} aria-label="انتقال اسلاید به پایین" onPress={() => moveHeroSlide(index, 1)}><ChevronDown size={14} /></Button><Button type="button" isIconOnly size="sm" variant="danger-soft" aria-label={`حذف اسلاید ${index + 1}`} onPress={() => setHeroSlides((current) => current.filter((item) => item.id !== slide.id))}><Trash2 size={14} /></Button></div></div><div className="grid gap-3 sm:grid-cols-2"><HomepageMediaField label="تصویر دسکتاپ" hint="پیشنهاد: ۱۹۲۰×۹۰۰" media={slide.desktopMedia} onSelect={() => setPickerTarget(`heroSlideDesktop:${slide.id}`)} onClear={() => setHeroSlides((current) => current.map((item) => item.id === slide.id ? { ...item, desktopMedia: null } : item))} /><HomepageMediaField label="تصویر موبایل" hint="اختیاری؛ ۹۰۰×۱۲۰۰" media={slide.mobileMedia} onSelect={() => setPickerTarget(`heroSlideMobile:${slide.id}`)} onClear={() => setHeroSlides((current) => current.map((item) => item.id === slide.id ? { ...item, mobileMedia: null } : item))} /></div></Card>)}</div> : <Alert status="warning"><Alert.Description>هنوز اسلایدی اضافه نشده است؛ تا زمان افزودن تصویر، بنر پیش‌فرض سایت نمایش داده می‌شود.</Alert.Description></Alert>}
       </SettingCard>
       <SettingCard icon={<Megaphone size={19} />} title="پروموبنر بالای سایت" description="بنر اختیاری پیش از هدر؛ پشتیبانی از تصویر ثابت و GIF">
         <AdminCheckbox isSelected={promoBannerEnabled} onChange={setPromoBannerEnabled} icon={<Megaphone size={17} />} description="در صورت غیرفعال‌بودن یا نداشتن تصویر، هیچ فضایی بالای سایت اشغال نمی‌شود">نمایش پروموبنر</AdminCheckbox>
@@ -266,7 +279,7 @@ export function HomepageSettings({ initialSettings, menuCategories }: { initialS
         </div>
       </Card>
     </form>
-    <MediaPickerDialog open={pickerTarget !== null} scope="HOMEPAGE" allowedTypes={["IMAGE"]} selected={selectedPickerMedia ? [selectedPickerMedia] : []} onClose={() => setPickerTarget(null)} onConfirm={(items) => { const media = items[0] ?? null; if (pickerTarget === "heroDesktop") setDesktopMedia(media); else if (pickerTarget === "heroMobile") setMobileMedia(media); else if (pickerTarget === "promoDesktop") setPromoDesktopMedia(media); else if (pickerTarget === "promoMobile") setPromoMobileMedia(media); else if (pickerTarget?.startsWith("treasure:")) { const id = pickerTarget.slice("treasure:".length) as HomepageTreasureCardId; setTreasureCards((current) => current.map((card) => card.id === id ? { ...card, mediaId: media?.id ?? null, media } : card)); } }} />
+    <MediaPickerDialog open={pickerTarget !== null} scope="HOMEPAGE" allowedTypes={["IMAGE"]} selected={selectedPickerMedia ? [selectedPickerMedia] : []} onClose={() => setPickerTarget(null)} onConfirm={(items) => { const media = items[0] ?? null; if (pickerTarget === "promoDesktop") setPromoDesktopMedia(media); else if (pickerTarget === "promoMobile") setPromoMobileMedia(media); else if (pickerTarget?.startsWith("heroSlideDesktop:")) { const id = pickerTarget.slice("heroSlideDesktop:".length); setHeroSlides((current) => current.map((slide) => slide.id === id ? { ...slide, desktopMedia: media } : slide)); } else if (pickerTarget?.startsWith("heroSlideMobile:")) { const id = pickerTarget.slice("heroSlideMobile:".length); setHeroSlides((current) => current.map((slide) => slide.id === id ? { ...slide, mobileMedia: media } : slide)); } else if (pickerTarget?.startsWith("treasure:")) { const id = pickerTarget.slice("treasure:".length) as HomepageTreasureCardId; setTreasureCards((current) => current.map((card) => card.id === id ? { ...card, mediaId: media?.id ?? null, media } : card)); } }} />
   </>;
 }
 

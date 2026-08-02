@@ -51,3 +51,20 @@ test("homepage settings reject duplicate treasure card identifiers", () => {
   treasureCards[1].id = treasureCards[0].id;
   assert.equal(homepageSettingsInputSchema.safeParse({ ...homepageSettingsDefaults, treasureCards }).success, false);
 });
+
+test("homepage settings accept multiple hero image pairs", () => {
+  const heroSlides = [
+    { id: "slide-1", desktopMediaId: "desktop-1", mobileMediaId: "mobile-1" },
+    { id: "slide-2", desktopMediaId: "desktop-2", mobileMediaId: null },
+  ];
+  const parsed = homepageSettingsInputSchema.parse({ ...homepageSettingsDefaults, heroSlides });
+  assert.equal(parsed.heroSlides.length, 2);
+});
+
+test("homepage settings reject duplicate hero slide identifiers", () => {
+  const heroSlides = [
+    { id: "same", desktopMediaId: "desktop-1", mobileMediaId: null },
+    { id: "same", desktopMediaId: "desktop-2", mobileMediaId: null },
+  ];
+  assert.equal(homepageSettingsInputSchema.safeParse({ ...homepageSettingsDefaults, heroSlides }).success, false);
+});

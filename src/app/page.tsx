@@ -3,6 +3,7 @@ import Link from "next/link";
 import { BadgeCheck, Gem, PackageCheck, ReceiptText, ShieldCheck, Sparkles, Truck } from "lucide-react";
 import type { Prisma } from "@generated/prisma/client";
 import { HomepageProductFeed } from "@/components/homepage-product-feed";
+import { StorefrontHeroSlider, type StorefrontHeroSlide } from "@/components/storefront-hero-slider";
 import { StorefrontFaqAccordion } from "@/components/storefront-faq-accordion";
 import { db } from "@/lib/db";
 import { getStorefrontProductFeed } from "@/modules/products/storefront-feed";
@@ -36,6 +37,12 @@ export default async function Home() {
   const sectionState = new Map(homepage.sections.map((section) => [section.id, section.enabled]));
   const sectionProps = (id: HomepageSectionId) => ({ hidden: sectionState.get(id) === false });
   const categoryImage = (category: HomeCategory | undefined) => category?.image?.type === "IMAGE" ? category.image.url : "/images/zar-hero-campaign.png";
+  const configuredHeroSlides: StorefrontHeroSlide[] = homepage.heroSlides.flatMap((slide) => slide.desktopMedia ? [{
+    id: slide.id,
+    desktop: { src: slide.desktopMedia.url, alt: slide.desktopMedia.alt ?? homepage.heroTitle },
+    mobile: slide.mobileMedia ? { src: slide.mobileMedia.url, alt: slide.mobileMedia.alt ?? homepage.heroTitle } : undefined,
+  }] : []);
+  const heroSlides: StorefrontHeroSlide[] = configuredHeroSlides.length ? configuredHeroSlides : [{ id: "fallback", desktop: { src: desktopHeroImage, alt: homepage.heroDesktopMedia?.alt ?? homepage.heroTitle }, mobile: homepage.heroMobileMedia ? { src: homepage.heroMobileMedia.url, alt: homepage.heroMobileMedia.alt ?? homepage.heroTitle } : undefined }];
   const storySource = [
     ...productFeed.items.map((product) => ({ title: product.name, href: product.href, image: product.image?.src ?? "/images/zar-hero-campaign.png" })),
     ...rootCategories.map((category) => ({ title: category.name, href: `/products?category=${category.slug}`, image: categoryImage(category) })),
@@ -57,14 +64,7 @@ export default async function Home() {
         </Link>) : Array.from({ length: 9 }, (_, index) => <span key={index} className="grid aspect-square h-[76px] shrink-0 place-items-center rounded-full border-[3px] border-[var(--brand-primary)] bg-[#f1ede8] text-[var(--brand-accent)] lg:h-[102px]"><Gem size={28} strokeWidth={1} /></span>)}
       </div>
 
-      <div className="relative h-[440px] overflow-hidden bg-[#e8dfd5]">
-        {homepage.heroMobileMedia && <Image src={homepage.heroMobileMedia.url} alt={homepage.heroMobileMedia.alt ?? homepage.heroTitle} fill priority sizes="(max-width: 639px) 100vw, 0px" className="object-cover sm:hidden" />}
-        <Image src={desktopHeroImage} alt={homepage.heroDesktopMedia?.alt ?? homepage.heroTitle} fill priority sizes="100vw" className={`object-cover ${homepage.heroMobileMedia ? "hidden sm:block" : ""}`} />
-        {homepage.heroContentMode === "IMAGE_ONLY" ? <Link href={homepage.heroButtonHref} aria-label={`مشاهده ${homepage.heroTitle}`} className="absolute inset-0" /> : <>
-          <span className="absolute inset-0 bg-gradient-to-l from-black/35 via-transparent to-transparent" />
-          <div className={`${container} relative flex h-full items-center`}><div className="max-w-[480px] text-white"><h1 className="m-0 text-[clamp(2.2rem,5vw,4.4rem)] font-black leading-[1.25]">{homepage.heroTitle}</h1><p className="mb-6 mt-3 text-sm text-white/85">{homepage.heroDescription}</p><Link href={homepage.heroButtonHref} className="inline-flex h-11 items-center rounded-md bg-[var(--brand-primary)] px-6 text-xs text-[var(--brand-primary-foreground)]">{homepage.heroButtonLabel}</Link></div></div>
-        </>}
-      </div>
+      <StorefrontHeroSlider slides={heroSlides} contentMode={homepage.heroContentMode} title={homepage.heroTitle} description={homepage.heroDescription} buttonLabel={homepage.heroButtonLabel} buttonHref={homepage.heroButtonHref} />
     </section>
 
     <section {...sectionProps("CATEGORIES")} className="bg-white py-5 lg:py-[60px]" aria-label="دسته‌بندی محصولات">

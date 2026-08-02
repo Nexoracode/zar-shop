@@ -31,6 +31,7 @@ export async function PATCH(request: Request) {
       input.heroMobileMediaId,
       input.promoDesktopMediaId,
       input.promoMobileMediaId,
+      ...input.heroSlides.flatMap((slide) => [slide.desktopMediaId, slide.mobileMediaId]),
       ...input.treasureCards.map((card) => card.mediaId),
     ].filter((id): id is string => Boolean(id)))];
     if (mediaIds.length) {
@@ -38,12 +39,12 @@ export async function PATCH(request: Request) {
       if (media.length !== mediaIds.length) return NextResponse.json({ message: "یکی از تصاویر انتخاب‌شده برای صفحه اصلی معتبر نیست." }, { status: 422 });
     }
 
-    const { sections, treasureCards, ...homepageFields } = input;
+    const { sections, treasureCards, heroSlides, ...homepageFields } = input;
     await db.$transaction(async (transaction) => {
       await transaction.storeSetting.upsert({
         where: { id: STORE_SETTING_ID },
-        create: { id: STORE_SETTING_ID, ...homepageFields, homepageSections: sections, homepageTreasureCards: treasureCards },
-        update: { ...homepageFields, homepageSections: sections, homepageTreasureCards: treasureCards },
+        create: { id: STORE_SETTING_ID, ...homepageFields, homepageSections: sections, homepageTreasureCards: treasureCards, homepageHeroSlides: heroSlides },
+        update: { ...homepageFields, homepageSections: sections, homepageTreasureCards: treasureCards, homepageHeroSlides: heroSlides },
       });
       await transaction.auditLog.create({
         data: {
@@ -51,7 +52,7 @@ export async function PATCH(request: Request) {
           action: "HOMEPAGE_SETTINGS_UPDATE",
           entityType: "StoreSetting",
           entityId: STORE_SETTING_ID,
-          metadata: { sectionOrder: input.sections.map((section) => section.id), menuCategoryIds: input.menuCategoryIds, treasureMediaIds: treasureCards.map((card) => card.mediaId) },
+          metadata: { sectionOrder: input.sections.map((section) => section.id), menuCategoryIds: input.menuCategoryIds, treasureMediaIds: treasureCards.map((card) => card.mediaId), heroSlideCount: heroSlides.length },
         },
       });
     });
