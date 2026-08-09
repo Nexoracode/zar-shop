@@ -38,7 +38,7 @@ export function GeneralCategoryMegaMenu({ categories, enabled = true }: { catego
         if (!containerRef.current?.contains(event.relatedTarget as Node | null)) setOpen(false);
       }}
     >
-      <Button type="button" variant="ghost" onPress={() => enabled && setOpen(true)} className={`relative h-full min-h-0 self-stretch overflow-visible rounded-none px-0 font-bold transition after:absolute after:-bottom-px after:left-0 after:h-0.5 after:w-full after:origin-left after:scale-x-0 after:bg-[var(--brand-primary)] after:content-[''] after:transition-transform after:duration-300 after:ease-out group-hover/mega:after:scale-x-100 group-focus-within/mega:after:scale-x-100 ${open && enabled ? "text-[var(--brand-primary)]" : "hover:text-[var(--brand-primary)]"}`}>
+      <Button type="button" variant="ghost" onPress={() => enabled && setOpen(true)} className={`relative h-full min-h-0 self-stretch overflow-visible rounded-none bg-transparent px-0 font-bold transition hover:bg-transparent data-[hovered=true]:bg-transparent data-[pressed=true]:bg-transparent after:absolute after:-bottom-px after:left-0 after:h-0.5 after:w-full after:origin-left after:scale-x-0 after:bg-[var(--brand-primary)] after:content-[''] after:transition-transform after:duration-300 after:ease-out group-hover/mega:after:scale-x-100 group-focus-within/mega:after:scale-x-100 ${open && enabled ? "text-[var(--brand-primary)]" : "hover:text-[var(--brand-primary)]"}`}>
         <Menu size={19} />
         دسته‌بندی کالاها
         <ChevronDown size={14} className={`transition-transform duration-200 ${open && enabled ? "rotate-180" : ""}`} />
