@@ -5,7 +5,7 @@ import { MapPin } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { GeneralCategoryMegaMenu, type MenuCategory } from "@/storefront/general/category-mega-menu";
 
-export function GeneralHeaderMenuRow({ categories, deliveryHref }: { categories: MenuCategory[]; deliveryHref: string }) {
+export function GeneralHeaderMenuRow({ categories, shortcutCategories, deliveryHref }: { categories: MenuCategory[]; shortcutCategories: MenuCategory[]; deliveryHref: string }) {
   const [visible, setVisible] = useState(true);
   const lastScrollY = useRef(0);
   const direction = useRef<"up" | "down">("up");
@@ -69,7 +69,7 @@ export function GeneralHeaderMenuRow({ categories, deliveryHref }: { categories:
       <div className="flex h-12 items-stretch px-10">
         <nav className="flex h-full min-w-0 items-stretch gap-8 text-xs" aria-label="دسته‌بندی محصولات">
           <GeneralCategoryMegaMenu key={visible ? "visible" : "hidden"} categories={categories} enabled={visible} />
-          {categories.map((category) => (
+          {shortcutCategories.map((category) => (
             <Link key={category.id} href={`/products?category=${category.slug}`} className="relative flex h-full shrink-0 items-center transition after:absolute after:-bottom-px after:left-0 after:h-0.5 after:w-full after:origin-left after:scale-x-0 after:bg-[var(--brand-primary)] after:content-[''] after:transition-transform after:duration-300 after:ease-out hover:text-[var(--brand-primary)] hover:after:scale-x-100 focus-visible:text-[var(--brand-primary)] focus-visible:after:scale-x-100">
               {category.name}
             </Link>
