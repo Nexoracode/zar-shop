@@ -33,10 +33,10 @@ export function AdminSectionHelp({ title, summary, blocks, placement = "bottom l
       <Popover.Content
         dir="rtl"
         placement={placement}
-        className="z-[190] max-h-[calc(100dvh-24px)] w-[min(92vw,400px)] overflow-hidden rounded-xl border border-slate-200 bg-white p-0 text-right text-slate-800 shadow-2xl"
+        className="z-[190] max-h-[min(640px,calc(100dvh-24px))] w-[min(92vw,400px)] overflow-hidden rounded-xl border border-slate-200 bg-white p-0 text-right text-slate-800 shadow-2xl"
       >
-        <Popover.Dialog dir="rtl" className="p-0 text-right outline-none">
-          <div className="flex items-start gap-3 border-b border-slate-100 bg-slate-50/80 p-4">
+        <Popover.Dialog dir="rtl" className="flex max-h-[min(640px,calc(100dvh-24px))] min-h-0 flex-col overflow-hidden p-0 text-right outline-none">
+          <div className="flex shrink-0 items-start gap-3 border-b border-slate-100 bg-slate-50/80 p-4">
             <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-violet-100 text-violet-700">
               <Info size={17} />
             </span>
@@ -49,7 +49,7 @@ export function AdminSectionHelp({ title, summary, blocks, placement = "bottom l
             </Button>
           </div>
 
-          <div className="admin-content-scroll max-h-[min(62dvh,520px)] overflow-y-auto overscroll-contain p-4 [scrollbar-gutter:stable]">
+          <div className="admin-content-scroll min-h-0 flex-1 touch-pan-y overflow-y-auto overscroll-contain p-4 [scrollbar-gutter:stable]">
             <div className="grid gap-4">
               {blocks.map((block, index) => (
                 <section
