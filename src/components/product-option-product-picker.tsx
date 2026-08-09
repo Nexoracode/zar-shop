@@ -110,16 +110,16 @@ export function ProductOptionProductPicker() {
   const remainingCharacters = Math.max(0, 3 - normalizedQuery.length);
 
   return (
-    <div className="grid items-start gap-5 lg:grid-cols-[340px_minmax(0,1fr)]">
+    <div className="grid items-start gap-4 lg:grid-cols-[320px_minmax(0,1fr)] xl:grid-cols-[360px_minmax(0,1fr)]">
       <aside className="min-w-0 lg:sticky lg:top-24">
-        <Card variant="secondary" className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm lg:h-[420px]">
-          <Card.Content className="p-4">
-            <div className="mb-4 flex items-start gap-3 border-b border-slate-100 pb-4">
+        <Card variant="secondary" className="overflow-hidden rounded-xl border border-slate-200/80 bg-white shadow-sm lg:h-[min(620px,calc(100dvh-128px))] lg:min-h-[460px]">
+          <Card.Content className="flex h-full min-h-0 flex-col p-4">
+            <div className="mb-4 flex shrink-0 items-start gap-3 border-b border-slate-100 pb-4">
               <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-violet-50 text-violet-700"><PackageSearch size={20} /></span>
               <div><h2 className="m-0 text-sm font-black text-slate-800">انتخاب محصول</h2><p className="mt-1 text-[11px] leading-5 text-slate-500">نام، کد کالا یا نشانی انگلیسی را بنویسید.</p></div>
             </div>
 
-            <label className="grid gap-1.5 text-xs font-bold text-slate-600">
+            <label className="grid shrink-0 gap-1.5 text-xs font-bold text-slate-600">
               جست‌وجوی محصول
               <div className="relative">
                 <Search className="pointer-events-none absolute right-3.5 top-1/2 z-10 -translate-y-1/2 text-slate-400" size={17} />
@@ -129,7 +129,7 @@ export function ProductOptionProductPicker() {
               </div>
             </label>
 
-            <div id="product-option-search-hint" className="mt-2 min-h-5 text-[10px] text-slate-400" aria-live="polite">
+            <div id="product-option-search-hint" className="mt-2 min-h-5 shrink-0 text-[10px] text-slate-400" aria-live="polite">
               {loadingSearch
                 ? "در حال جست‌وجوی محصولات..."
                 : normalizedQuery.length > 0 && remainingCharacters > 0
@@ -139,20 +139,19 @@ export function ProductOptionProductPicker() {
                     : "جست‌وجو از کاراکتر سوم آغاز می‌شود."}
             </div>
 
-            {searchError && <Alert status="danger" className="mt-3"><Alert.Description>{searchError}</Alert.Description></Alert>}
+            {searchError && <Alert status="danger" className="mt-3 shrink-0"><Alert.Description>{searchError}</Alert.Description></Alert>}
 
             {normalizedQuery.length < 3 ? (
-              <div className="mt-4 grid min-h-40 place-items-center rounded-xl border-2 border-dashed border-slate-200 bg-slate-50/70 p-4 text-center"><div><Search className="mx-auto mb-2 text-slate-300" size={28} /><strong className="block text-xs text-slate-600">محصول را جست‌وجو کنید</strong><span className="mt-1 block text-[10px] text-slate-400">حداقل سه کاراکتر لازم است.</span></div></div>
+              <div className="mt-3 grid min-h-40 flex-1 place-items-center rounded-xl border-2 border-dashed border-slate-200 bg-slate-50/70 p-4 text-center"><div><Search className="mx-auto mb-2 text-slate-300" size={28} /><strong className="block text-xs text-slate-600">محصول را جست‌وجو کنید</strong><span className="mt-1 block text-[10px] text-slate-400">حداقل سه کاراکتر لازم است.</span></div></div>
             ) : !loadingSearch && !searchError && results.length === 0 ? (
-              <div className="mt-4 grid min-h-32 place-items-center rounded-xl border border-slate-200 bg-slate-50 p-4 text-center"><div><Boxes className="mx-auto mb-2 text-slate-300" size={26} /><strong className="block text-xs text-slate-600">محصولی پیدا نشد</strong></div></div>
+              <div className="mt-3 grid min-h-32 flex-1 place-items-center rounded-xl border border-slate-200 bg-slate-50 p-4 text-center"><div><Boxes className="mx-auto mb-2 text-slate-300" size={26} /><strong className="block text-xs text-slate-600">محصولی پیدا نشد</strong></div></div>
             ) : results.length > 0 ? (
-              <div className="mt-4 grid max-h-[52vh] gap-2 overflow-y-auto pl-1" aria-label="نتایج جست‌وجوی محصولات">
+              <div className="admin-content-scroll mt-3 grid min-h-0 flex-1 content-start gap-2 overflow-y-auto overscroll-contain pl-1" aria-label="نتایج جست‌وجوی محصولات" tabIndex={0}>
                 {results.map((product) => {
                   const isSelected = selectedProduct?.id === product.id;
-                  return <div key={product.id} className={`rounded-xl border p-3 transition ${isSelected ? "border-violet-300 bg-violet-50" : "border-slate-200 bg-slate-50/70 hover:border-violet-200"}`}>
-                    <div className="flex min-w-0 items-start gap-2"><span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-white text-violet-600"><ListTree size={16} /></span><div className="min-w-0 flex-1"><strong className="block truncate text-xs text-slate-800">{product.name}</strong><span dir="ltr" className="mt-0.5 block truncate text-right text-[10px] text-slate-400">{product.sku}</span></div><AdminStatusBadge tone={productStatusTones[product.status]}>{productStatusLabels[product.status]}</AdminStatusBadge></div>
-                    <div className="mt-2 flex flex-wrap gap-x-2 text-[10px] text-slate-500"><span>موجودی {product.stock.toLocaleString("fa-IR")}</span><span>{product._count.options.toLocaleString("fa-IR")} تنوع</span><span>{product.storeIndustry === "GOLD" ? "طلا" : "عمومی"}</span></div>
-                    <Button type="button" variant={isSelected ? "secondary" : "primary"} isDisabled={isSelected && Boolean(optionData)} isPending={isSelected && loadingOptions} fullWidth onPress={() => void selectProduct(product)} className={`mt-3 min-h-9 gap-2 text-xs font-bold ${isSelected ? "border-violet-200 text-violet-700" : "bg-violet-700 text-white"}`}>{({ isPending }) => <>{isPending ? <Spinner color="current" size="sm" /> : isSelected ? <CheckCircle2 size={14} /> : <Plus size={14} />}{isPending ? "در حال بارگذاری..." : isSelected ? "محصول انتخاب‌شده" : "انتخاب محصول"}</>}</Button>
+                  return <div key={product.id} className={`rounded-lg border p-2.5 transition ${isSelected ? "border-violet-300 bg-violet-50" : "border-slate-200 bg-slate-50/70 hover:border-violet-200 hover:bg-white"}`}>
+                    <div className="flex min-w-0 items-start gap-2"><span className={`grid h-8 w-8 shrink-0 place-items-center rounded-lg ${isSelected ? "bg-violet-100 text-violet-700" : "bg-white text-slate-500"}`}><ListTree size={16} /></span><div className="min-w-0 flex-1"><strong className="block truncate text-xs text-slate-800">{product.name}</strong><span dir="ltr" className="mt-0.5 block truncate text-right text-[10px] text-slate-400">{product.sku}</span></div><AdminStatusBadge tone={productStatusTones[product.status]}>{productStatusLabels[product.status]}</AdminStatusBadge></div>
+                    <div className="mt-2 flex items-center justify-between gap-2 border-t border-slate-200/70 pt-2"><div className="min-w-0 text-[10px] text-slate-500"><span className="truncate">{product.category?.name ?? "بدون دسته‌بندی"}</span><span className="mx-1.5 text-slate-300">•</span><span>{product.stock.toLocaleString("fa-IR")} موجود</span><span className="mx-1.5 text-slate-300">•</span><span>{product._count.options.toLocaleString("fa-IR")} تنوع</span></div><Button type="button" size="sm" variant={isSelected ? "secondary" : "primary"} isDisabled={isSelected && Boolean(optionData)} isPending={isSelected && loadingOptions} onPress={() => void selectProduct(product)} className={`h-8 min-h-8 shrink-0 gap-1.5 rounded-lg px-3 text-[10px] font-bold ${isSelected ? "border-violet-200 text-violet-700" : "bg-violet-700 text-white"}`}>{({ isPending }) => <>{isPending ? <Spinner color="current" size="sm" /> : isSelected ? <CheckCircle2 size={13} /> : <Plus size={13} />}{isPending ? "بارگذاری" : isSelected ? "انتخاب‌شده" : "انتخاب"}</>}</Button></div>
                   </div>;
                 })}
               </div>
@@ -163,14 +162,10 @@ export function ProductOptionProductPicker() {
 
       <section className="min-w-0">
         {loadingOptions ? <LoadingOptionsPanel productName={selectedProduct?.name ?? "محصول"} /> : optionError && selectedProduct ? <OptionsErrorPanel message={optionError} onRetry={() => void selectProduct(selectedProduct)} /> : optionData && selectedProduct ? (
-          <div className="grid gap-4">
-            <Card variant="secondary" className="rounded-xl border border-violet-200 bg-violet-50/50 shadow-sm">
-              <Card.Content dir="rtl" className="grid justify-items-start gap-1.5 px-3 py-2.5 text-right">
-                <span className="text-[10px] font-bold text-violet-500">محصول انتخاب‌شده</span>
-                <div className="flex min-w-0 flex-wrap items-baseline gap-x-6 gap-y-1">
-                  <strong className="truncate text-xs text-slate-800">{optionData.productName}</strong>
-                  <span dir="ltr" className="text-[10px] text-slate-500">{optionData.productSku}</span>
-                </div>
+          <div className="grid gap-3">
+            <Card variant="secondary" className="rounded-xl border border-violet-200 bg-violet-50/50 shadow-none">
+              <Card.Content dir="rtl" className="flex min-w-0 items-center justify-between gap-4 px-4 py-3 text-right">
+                <div className="min-w-0"><span className="block text-[10px] font-bold text-violet-500">محصول انتخاب‌شده</span><div className="mt-1 flex min-w-0 flex-wrap items-center gap-x-5 gap-y-1"><strong className="truncate text-sm text-slate-800">{optionData.productName}</strong><span dir="ltr" className="text-[10px] text-slate-500">{optionData.productSku}</span></div></div>
                 <AdminStatusBadge tone={productStatusTones[selectedProduct.status]}>{productStatusLabels[selectedProduct.status]}</AdminStatusBadge>
               </Card.Content>
             </Card>
