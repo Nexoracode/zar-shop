@@ -46,6 +46,9 @@ export async function POST(request: Request) {
     if (deliveryMethod === "STORE_PICKUP" && !commerceSettings.inStorePickupEnabled) return NextResponse.json({ message: "تحویل حضوری در حال حاضر فعال نیست." }, { status: 422 });
     const cart = await db.cart.findUnique({ where: { userId: user.id }, include: { items: { include: { product: { include: { options: true } } } } } });
     if (!cart?.items.length) return NextResponse.json({ message: "سبد خرید خالی است." }, { status: 409 });
+    if (cart.items.some((item) => item.product.storeIndustry !== generalSettings.industry)) {
+      return NextResponse.json({ message: "نوع بعضی محصولات سبد خرید با قالب فعلی فروشگاه سازگار نیست؛ لطفاً سبد خرید را بازبینی کنید." }, { status: 409 });
+    }
     const needsGoldRate = cart.items.some((item) => item.product.storeIndustry === "GOLD");
     let rate = 0;
     if (needsGoldRate) {

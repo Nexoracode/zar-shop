@@ -42,6 +42,7 @@ export async function getStorefrontProductFeed(input: { sort: StorefrontProductS
   const [settings, catalogSettings] = await Promise.all([getGeneralStoreSettings(), getCatalogSettings()]);
   const where: Prisma.ProductWhereInput = {
     status: "ACTIVE",
+    storeIndustry: settings.industry,
     ...(catalogSettings.hideOutOfStockProducts ? { stock: { gt: 0 } } : {}),
   };
   const totalItems = await db.product.count({ where });

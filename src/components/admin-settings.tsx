@@ -95,7 +95,7 @@ function toMediaChoice(media: HomepageSettingsData["heroDesktopMedia"]): MediaCh
   return media ? { id: media.id, title: media.title || media.alt || "تصویر صفحه اصلی", url: media.url, type: "IMAGE", mimeType: media.mimeType } : null;
 }
 
-export function HomepageSettings({ initialSettings, menuCategories }: { initialSettings: HomepageSettingsData; menuCategories: HomepageMenuCategoryOption[] }) {
+export function HomepageSettings({ initialSettings, menuCategories, industry }: { initialSettings: HomepageSettingsData; menuCategories: HomepageMenuCategoryOption[]; industry: "GOLD" | "GENERAL" }) {
   const [saving, setSaving] = useState(false);
   const [sections, setSections] = useState(initialSettings.sections);
   const [menuCategoryIds, setMenuCategoryIds] = useState(initialSettings.menuCategoryIds);
@@ -246,13 +246,13 @@ export function HomepageSettings({ initialSettings, menuCategories }: { initialS
           </Button>;
         })}</div> : <Alert status="warning"><Alert.Description>دسته فعال سطح اولی برای انتخاب وجود ندارد. ابتدا از بخش دسته‌بندی‌ها یک دسته فعال بسازید.</Alert.Description></Alert>}
       </SettingCard>
-      <SettingCard icon={<Images size={19} />} title="تصاویر گنجینه زرگالری" description="تصویر چهار کارت خرید براساس بازه قیمت" className="lg:col-span-2">
+      {industry === "GOLD" && <SettingCard icon={<Images size={19} />} title="تصاویر گنجینه زرگالری" description="تصویر چهار کارت خرید براساس بازه قیمت" className="lg:col-span-2">
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">{treasureCards.map((card) => {
           const meta = treasureCardMeta[card.id];
           return <HomepageMediaField key={card.id} label={meta.title} hint={meta.hint} media={card.media} onSelect={() => setPickerTarget(`treasure:${card.id}`)} onClear={() => setTreasureCards((current) => current.map((item) => item.id === card.id ? { ...item, mediaId: null, media: null } : item))} aspectClass="aspect-[4/3]" />;
         })}</div>
-      </SettingCard>
-      <SettingCard icon={<ShieldCheck size={19} />} title="مجوزهای فروشگاه" description="تصویر و لینک اختیاری سه مجوز نمایش‌داده‌شده در صفحه اصلی" className="lg:col-span-2">
+      </SettingCard>}
+      {industry === "GOLD" && <SettingCard icon={<ShieldCheck size={19} />} title="مجوزهای فروشگاه" description="تصویر و لینک اختیاری سه مجوز نمایش‌داده‌شده در صفحه اصلی" className="lg:col-span-2">
         <Tabs selectedKey={selectedLicenseId} onSelectionChange={(key) => setSelectedLicenseId(String(key) as HomepageLicenseId)} className="w-full">
           <Tabs.List aria-label="مدیریت مجوزهای فروشگاه" className="grid w-full grid-cols-[1fr_1.55fr_0.55fr] gap-2 bg-transparent p-0">
             {licenses.map((license) => <Tabs.Tab key={license.id} id={license.id} className="min-h-11 min-w-0 rounded-lg border border-[var(--border)] bg-[var(--surface)] px-2 text-xs font-bold outline-none transition hover:bg-[var(--surface-secondary)] data-[selected]:border-[var(--accent)] data-[selected]:bg-[var(--accent)]/8 data-[selected]:text-[var(--accent)] sm:px-4">{homepageLicenseMeta[license.id].title}</Tabs.Tab>)}
@@ -264,7 +264,7 @@ export function HomepageSettings({ initialSettings, menuCategories }: { initialS
             </div>
           </Tabs.Panel>}
         </Tabs>
-      </SettingCard>
+      </SettingCard>}
     </SettingsGrid>
       <Card variant="secondary" className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4 shadow-sm">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">

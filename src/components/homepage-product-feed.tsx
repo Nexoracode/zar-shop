@@ -14,9 +14,9 @@ const filters: Array<{ id: StorefrontProductSort; label: string; mobile: boolean
   { id: "LOW_FEE", label: "کم‌اجرت‌ها", mobile: false },
 ];
 
-type Props = { initialFeed: StorefrontProductFeed };
+type Props = { initialFeed: StorefrontProductFeed; industry?: "GOLD" | "GENERAL" };
 
-export function HomepageProductFeed({ initialFeed }: Props) {
+export function HomepageProductFeed({ initialFeed, industry = "GOLD" }: Props) {
   const [feed, setFeed] = useState(initialFeed);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -49,7 +49,7 @@ export function HomepageProductFeed({ initialFeed }: Props) {
     <div dir="rtl">
       <div className="mb-7 flex items-end justify-between gap-4">
         <nav className="flex flex-wrap gap-2" aria-label="مرتب‌سازی محصولات">
-          {filters.map((filter) => <Button key={filter.id} id={filter.id === "LATEST" ? "latest-products" : undefined} type="button" size="sm" variant={feed.sort === filter.id ? "primary" : "secondary"} isDisabled={loading && feed.sort === filter.id} onPress={() => void load(filter.id, 1)} className={`${filter.mobile ? "" : "hidden sm:inline-flex"} min-h-9 rounded-full px-5 text-xs font-bold ${feed.sort === filter.id ? "bg-[var(--brand-primary)] text-[var(--brand-primary-foreground)]" : "bg-[#fafafa] text-[#333]"}`}>{filter.label}</Button>)}
+          {filters.filter((filter) => industry === "GOLD" || filter.id !== "LOW_FEE").map((filter) => <Button key={filter.id} id={filter.id === "LATEST" ? "latest-products" : undefined} type="button" size="sm" variant={feed.sort === filter.id ? "primary" : "secondary"} isDisabled={loading && feed.sort === filter.id} onPress={() => void load(filter.id, 1)} className={`${filter.mobile ? "" : "hidden sm:inline-flex"} min-h-9 rounded-full px-5 text-xs font-bold ${feed.sort === filter.id ? "bg-[var(--brand-primary)] text-[var(--brand-primary-foreground)]" : "bg-[#fafafa] text-[#333]"}`}>{filter.label}</Button>)}
         </nav>
         <Link href="/products" className="shrink-0 border-b-2 border-[var(--brand-primary)] pb-1 text-sm font-bold text-[var(--brand-primary)]">مشاهده بیشتر</Link>
       </div>

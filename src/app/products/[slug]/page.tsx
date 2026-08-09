@@ -19,7 +19,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   const { slug } = await params;
   const settings = await getGeneralStoreSettings();
   const [product, gold, catalogSettings] = await Promise.all([
-    db.product.findFirst({ where: { slug, status: "ACTIVE" }, include: { category: true, media: { include: { media: true }, orderBy: { position: "asc" } }, options: { orderBy: { position: "asc" } }, optionGuide: true } }),
+    db.product.findFirst({ where: { slug, status: "ACTIVE", storeIndustry: settings.industry }, include: { category: true, media: { include: { media: true }, orderBy: { position: "asc" } }, options: { orderBy: { position: "asc" } }, optionGuide: true } }),
     settings.industry === "GOLD" ? getGoldPriceForDisplay() : Promise.resolve(null),
     getCatalogSettings(),
   ]);

@@ -12,7 +12,7 @@ function phoneHref(phone: string) {
   return `tel:${normalized.replace(/[^+\d]/g, "")}`;
 }
 
-export async function SiteFooter({ settings, brand }: { settings: GeneralStoreSettingsInput; brand: BrandSettings }) {
+export async function GoldFooter({ settings, brand }: { settings: GeneralStoreSettingsInput; brand: BrandSettings }) {
   const footerLogo = brand.darkLogoMedia ?? brand.mainLogoMedia;
   const content = await getContentSettings();
   const publishedPages = content.pages.filter((page) => page.published);

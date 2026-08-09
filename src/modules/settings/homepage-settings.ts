@@ -137,7 +137,39 @@ export const homepageSettingsDefaults: HomepageSettingsInput = {
   promoMobileMediaId: null,
 };
 
+export const generalHomepageSettingsDefaults: HomepageSettingsInput = {
+  ...homepageSettingsDefaults,
+  heroTitle: "خرید ساده، انتخاب مطمئن",
+  heroDescription: "محصولات موردنیازتان را با موجودی به‌روز، قیمت شفاف و ارسال قابل پیگیری انتخاب کنید.",
+  heroButtonLabel: "مشاهده محصولات",
+};
+
+export function homepageSettingsToInput(settings: HomepageSettings): HomepageSettingsInput {
+  return {
+    sections: settings.sections,
+    menuCategoryIds: settings.menuCategoryIds,
+    treasureCards: settings.treasureCards.map(({ id, mediaId }) => ({ id, mediaId })),
+    licenses: settings.licenses.map(({ id, mediaId, href }) => ({ id, mediaId, href })),
+    heroSlides: settings.heroSlides.map(({ id, desktopMediaId, mobileMediaId, href }) => ({ id, desktopMediaId, mobileMediaId, href })),
+    heroContentMode: settings.heroContentMode,
+    heroTitle: settings.heroTitle,
+    heroDescription: settings.heroDescription,
+    heroButtonLabel: settings.heroButtonLabel,
+    heroButtonHref: settings.heroButtonHref,
+    heroDesktopMediaId: settings.heroDesktopMediaId,
+    heroMobileMediaId: settings.heroMobileMediaId,
+    promoBannerEnabled: settings.promoBannerEnabled,
+    promoBannerHref: settings.promoBannerHref,
+    promoDesktopMediaId: settings.promoDesktopMediaId,
+    promoMobileMediaId: settings.promoMobileMediaId,
+  };
+}
+
+const homepageMediaSelect = { id: true, title: true, alt: true, url: true, type: true, mimeType: true } as const;
+
 const homepageSelect = {
+  industry: true,
+  generalHomepageSettings: true,
   homepageSections: true,
   menuCategoryIds: true,
   homepageTreasureCards: true,
@@ -154,10 +186,6 @@ const homepageSelect = {
   promoBannerHref: true,
   promoDesktopMediaId: true,
   promoMobileMediaId: true,
-  heroDesktopMedia: { select: { id: true, title: true, alt: true, url: true, type: true, mimeType: true } },
-  heroMobileMedia: { select: { id: true, title: true, alt: true, url: true, type: true, mimeType: true } },
-  promoDesktopMedia: { select: { id: true, title: true, alt: true, url: true, type: true, mimeType: true } },
-  promoMobileMedia: { select: { id: true, title: true, alt: true, url: true, type: true, mimeType: true } },
 } as const;
 
 export async function getHomepageSettings(): Promise<HomepageSettings> {
@@ -170,53 +198,63 @@ export async function getHomepageSettings(): Promise<HomepageSettings> {
     select: homepageSelect,
   });
 
-  const parsedSections = homepageSettingsInputSchema.shape.sections.safeParse(settings.homepageSections);
-  const parsedMenuCategoryIds = menuCategoryIdsSchema.safeParse(settings.menuCategoryIds);
-  const parsedTreasureCards = treasureCardsSchema.safeParse(settings.homepageTreasureCards);
-  const treasureCards = parsedTreasureCards.success ? parsedTreasureCards.data : homepageSettingsDefaults.treasureCards;
-  const treasureMediaIds = treasureCards.map((card) => card.mediaId).filter((id): id is string => Boolean(id));
-  const treasureMedia = treasureMediaIds.length ? await db.mediaAsset.findMany({
-    where: { id: { in: treasureMediaIds }, scope: "HOMEPAGE", type: "IMAGE" },
-    select: { id: true, title: true, alt: true, url: true, type: true, mimeType: true },
+  let activeSettings: HomepageSettingsInput;
+  if (settings.industry === "GENERAL") {
+    const parsed = homepageSettingsInputSchema.safeParse(settings.generalHomepageSettings);
+    activeSettings = parsed.success ? parsed.data : generalHomepageSettingsDefaults;
+  } else {
+    const parsedHeroSlides = storedHeroSlidesSchema.safeParse(settings.homepageHeroSlides);
+    const heroSlides = parsedHeroSlides.success
+      ? parsedHeroSlides.data.map((slide) => ({ ...slide, href: slide.href ?? settings.heroButtonHref }))
+      : settings.heroDesktopMediaId
+        ? [{ id: "legacy-slide", desktopMediaId: settings.heroDesktopMediaId, mobileMediaId: settings.heroMobileMediaId, href: settings.heroButtonHref }]
+        : [];
+    activeSettings = homepageSettingsInputSchema.parse({
+      sections: homepageSettingsInputSchema.shape.sections.safeParse(settings.homepageSections).data ?? homepageSettingsDefaults.sections,
+      menuCategoryIds: menuCategoryIdsSchema.safeParse(settings.menuCategoryIds).data ?? homepageSettingsDefaults.menuCategoryIds,
+      treasureCards: treasureCardsSchema.safeParse(settings.homepageTreasureCards).data ?? homepageSettingsDefaults.treasureCards,
+      licenses: homepageLicensesSchema.safeParse(settings.homepageLicenses).data ?? homepageSettingsDefaults.licenses,
+      heroSlides,
+      heroContentMode: settings.heroContentMode,
+      heroTitle: settings.heroTitle,
+      heroDescription: settings.heroDescription,
+      heroButtonLabel: settings.heroButtonLabel,
+      heroButtonHref: settings.heroButtonHref,
+      heroDesktopMediaId: settings.heroDesktopMediaId,
+      heroMobileMediaId: settings.heroMobileMediaId,
+      promoBannerEnabled: settings.promoBannerEnabled,
+      promoBannerHref: settings.promoBannerHref,
+      promoDesktopMediaId: settings.promoDesktopMediaId,
+      promoMobileMediaId: settings.promoMobileMediaId,
+    });
+  }
+
+  const mediaIds = [...new Set([
+    activeSettings.heroDesktopMediaId,
+    activeSettings.heroMobileMediaId,
+    activeSettings.promoDesktopMediaId,
+    activeSettings.promoMobileMediaId,
+    ...activeSettings.treasureCards.map((card) => card.mediaId),
+    ...activeSettings.licenses.map((license) => license.mediaId),
+    ...activeSettings.heroSlides.flatMap((slide) => [slide.desktopMediaId, slide.mobileMediaId]),
+  ].filter((id): id is string => Boolean(id)))];
+  const media = mediaIds.length ? await db.mediaAsset.findMany({
+    where: { id: { in: mediaIds }, scope: "HOMEPAGE", type: "IMAGE" },
+    select: homepageMediaSelect,
   }) : [];
-  const treasureMediaById = new Map(treasureMedia.map((media) => [media.id, media]));
-  const parsedLicenses = homepageLicensesSchema.safeParse(settings.homepageLicenses);
-  const licenses = parsedLicenses.success ? parsedLicenses.data : homepageSettingsDefaults.licenses;
-  const licenseMediaIds = licenses.map((license) => license.mediaId).filter((id): id is string => Boolean(id));
-  const licenseMedia = licenseMediaIds.length ? await db.mediaAsset.findMany({
-    where: { id: { in: licenseMediaIds }, scope: "HOMEPAGE", type: "IMAGE" },
-    select: { id: true, title: true, alt: true, url: true, type: true, mimeType: true },
-  }) : [];
-  const licenseMediaById = new Map(licenseMedia.map((media) => [media.id, media]));
-  const parsedHeroSlides = storedHeroSlidesSchema.safeParse(settings.homepageHeroSlides);
-  const heroSlides = parsedHeroSlides.success
-    ? parsedHeroSlides.data.map((slide) => ({ ...slide, href: slide.href ?? settings.heroButtonHref }))
-    : settings.heroDesktopMediaId
-      ? [{ id: "legacy-slide", desktopMediaId: settings.heroDesktopMediaId, mobileMediaId: settings.heroMobileMediaId, href: settings.heroButtonHref }]
-      : [];
-  const heroSlideMediaIds = [...new Set(heroSlides.flatMap((slide) => [slide.desktopMediaId, slide.mobileMediaId]).filter((id): id is string => Boolean(id)))];
-  const heroSlideMedia = heroSlideMediaIds.length ? await db.mediaAsset.findMany({
-    where: { id: { in: heroSlideMediaIds }, scope: "HOMEPAGE", type: "IMAGE" },
-    select: { id: true, title: true, alt: true, url: true, type: true, mimeType: true },
-  }) : [];
-  const heroSlideMediaById = new Map(heroSlideMedia.map((media) => [media.id, media]));
-  const menuCategoryIds = parsedMenuCategoryIds.success
-    ? parsedMenuCategoryIds.data
-    : (await db.category.findMany({
-      where: { isActive: true, parentId: null },
-      orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
-      take: 5,
-      select: { id: true },
-    })).map((category) => category.id);
-  const input = {
-    ...settings,
-    sections: parsedSections.success ? parsedSections.data : homepageSettingsDefaults.sections,
-    menuCategoryIds,
-    treasureCards: treasureCards.map((card) => ({ ...card, media: card.mediaId ? treasureMediaById.get(card.mediaId) ?? null : null })),
-    licenses: licenses.map((license) => ({ ...license, media: license.mediaId ? licenseMediaById.get(license.mediaId) ?? null : null })),
-    heroSlides: heroSlides.map((slide) => ({ ...slide, desktopMedia: slide.desktopMediaId ? heroSlideMediaById.get(slide.desktopMediaId) ?? null : null, mobileMedia: slide.mobileMediaId ? heroSlideMediaById.get(slide.mobileMediaId) ?? null : null })),
-  };
-  return homepageSettingsSchema.parse(input);
+  const mediaById = new Map(media.map((item) => [item.id, item]));
+  const resolveMedia = (id: string | null) => id ? mediaById.get(id) ?? null : null;
+
+  return homepageSettingsSchema.parse({
+    ...activeSettings,
+    treasureCards: activeSettings.treasureCards.map((card) => ({ ...card, media: resolveMedia(card.mediaId) })),
+    licenses: activeSettings.licenses.map((license) => ({ ...license, media: resolveMedia(license.mediaId) })),
+    heroSlides: activeSettings.heroSlides.map((slide) => ({ ...slide, desktopMedia: resolveMedia(slide.desktopMediaId), mobileMedia: resolveMedia(slide.mobileMediaId) })),
+    heroDesktopMedia: resolveMedia(activeSettings.heroDesktopMediaId),
+    heroMobileMedia: resolveMedia(activeSettings.heroMobileMediaId),
+    promoDesktopMedia: resolveMedia(activeSettings.promoDesktopMediaId),
+    promoMobileMedia: resolveMedia(activeSettings.promoMobileMediaId),
+  });
 }
 
 export type HomepageMenuCategoryOption = {

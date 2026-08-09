@@ -15,7 +15,7 @@ export async function GET() {
   const [settings, user, catalogSettings] = await Promise.all([getGeneralStoreSettings(), getCurrentUser(), getCatalogSettings()]);
   if (!isStorefrontAvailable(settings, user?.role)) return NextResponse.json({ message: "فروشگاه موقتاً در دسترس نیست." }, { status: 503 });
   const products = await db.product.findMany({
-    where: { status: "ACTIVE", ...(catalogSettings.hideOutOfStockProducts ? { stock: { gt: 0 } } : {}) },
+    where: { status: "ACTIVE", storeIndustry: settings.industry, ...(catalogSettings.hideOutOfStockProducts ? { stock: { gt: 0 } } : {}) },
     include: { media: { include: { media: true }, orderBy: { position: "asc" } }, category: true, options: { orderBy: { position: "asc" } }, optionGuide: true },
     orderBy: { createdAt: "desc" },
   });

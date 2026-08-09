@@ -18,7 +18,7 @@ export async function POST(request: Request) {
     if (!isStorefrontAvailable(settings, currentUser?.role)) return NextResponse.json({ message: "فروشگاه در حال حاضر امکان ثبت خرید ندارد." }, { status: 503 });
     if (!currentUser && !settings.guestCheckout) return NextResponse.json({ message: "ابتدا وارد حساب خود شوید." }, { status: 401 });
     const input = inputSchema.parse(await request.json());
-    const product = await db.product.findFirst({ where: { id: input.productId, status: "ACTIVE" }, include: { options: { orderBy: { position: "asc" } } } });
+    const product = await db.product.findFirst({ where: { id: input.productId, status: "ACTIVE", storeIndustry: settings.industry }, include: { options: { orderBy: { position: "asc" } } } });
     if (!product || product.stock < input.quantity) return NextResponse.json({ message: "محصول موجود نیست یا موجودی کافی ندارد." }, { status: 409 });
     const selection = resolveOptionSelection(product.options, input.selectedOptions, input.quantity, product.stock);
     if (!selection.ok) return NextResponse.json({ message: `لطفاً یک مقدار معتبر برای «${selection.optionName}» انتخاب کنید.` }, { status: 422 });

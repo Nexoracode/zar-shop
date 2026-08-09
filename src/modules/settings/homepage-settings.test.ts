@@ -1,6 +1,11 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { homepageHeroSettingsInputSchema, homepageOverviewSettingsInputSchema, homepageSettingsDefaults, homepageSettingsInputSchema } from "./homepage-settings";
+import { generalHomepageSettingsDefaults, homepageHeroSettingsInputSchema, homepageOverviewSettingsInputSchema, homepageSettingsDefaults, homepageSettingsInputSchema } from "./homepage-settings";
+
+test("general storefront starts with copy independent from the gold template", () => {
+  assert.notEqual(generalHomepageSettingsDefaults.heroTitle, homepageSettingsDefaults.heroTitle);
+  assert.equal(homepageSettingsInputSchema.safeParse(generalHomepageSettingsDefaults).success, true);
+});
 
 test("homepage settings accept a complete reordered section list", () => {
   const parsed = homepageSettingsInputSchema.parse({

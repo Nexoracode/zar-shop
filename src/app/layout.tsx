@@ -1,7 +1,5 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
-import { SiteHeader } from "@/components/site-header";
-import { SiteFooter } from "@/components/site-footer";
 import { SitePromoBanner } from "@/components/site-promo-banner";
 import { AppChrome } from "@/components/app-chrome";
 import { AppToasts } from "@/components/app-toasts";
@@ -9,6 +7,7 @@ import { getCurrentUser } from "@/modules/auth/session";
 import { getGeneralStoreSettings, isStorefrontAvailable } from "@/modules/settings/general-settings";
 import { getHomepageSettings } from "@/modules/settings/homepage-settings";
 import { brandCssVariables, getBrandSettings } from "@/modules/settings/brand-settings";
+import { StorefrontFooter, StorefrontHeader } from "@/storefront/resolve-chrome";
 import "./globals.css";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -33,8 +32,8 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
     <html lang="fa" dir="rtl" data-theme="zar" data-scroll-behavior="smooth">
       <body>
         <AppChrome
-          header={<><SitePromoBanner settings={homepageSettings} /><SiteHeader settings={settings} brand={brandSettings} user={user} menuCategoryIds={homepageSettings.menuCategoryIds} /></>}
-          footer={<SiteFooter settings={settings} brand={brandSettings} />}
+          header={<><SitePromoBanner settings={homepageSettings} /><StorefrontHeader settings={settings} brand={brandSettings} user={user} menuCategoryIds={homepageSettings.menuCategoryIds} /></>}
+          footer={<StorefrontFooter settings={settings} brand={brandSettings} />}
           storefrontAvailable={isStorefrontAvailable(settings, user?.role)}
           maintenanceMode={settings.maintenanceMode}
           storeName={settings.storeName}

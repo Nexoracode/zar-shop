@@ -3,8 +3,8 @@ import { apiError } from "@/lib/http";
 import { db } from "@/lib/db";
 import { getCurrentUser } from "@/modules/auth/session";
 import { isAdminRole } from "@/modules/auth/permissions";
-import { getHomepageSettings, homepageOverviewSettingsInputSchema } from "@/modules/settings/homepage-settings";
-import { STORE_SETTING_ID } from "@/modules/settings/store-settings";
+import { getHomepageSettings, homepageOverviewSettingsInputSchema, homepageSettingsInputSchema, homepageSettingsToInput } from "@/modules/settings/homepage-settings";
+import { getStoreIndustry, STORE_SETTING_ID } from "@/modules/settings/store-settings";
 
 export async function GET() {
   const actor = await getCurrentUser();
@@ -37,13 +37,25 @@ export async function PATCH(request: Request) {
       if (media.length !== mediaIds.length) return NextResponse.json({ message: "یکی از تصاویر انتخاب‌شده برای صفحه اصلی معتبر نیست." }, { status: 422 });
     }
 
+    const industry = await getStoreIndustry();
     const { sections, treasureCards, licenses, ...homepageFields } = input;
+    const generalHomepageSettings = industry === "GENERAL"
+      ? homepageSettingsInputSchema.parse({ ...homepageSettingsToInput(await getHomepageSettings()), ...input })
+      : null;
     await db.$transaction(async (transaction) => {
-      await transaction.storeSetting.upsert({
-        where: { id: STORE_SETTING_ID },
-        create: { id: STORE_SETTING_ID, ...homepageFields, homepageSections: sections, homepageTreasureCards: treasureCards, homepageLicenses: licenses },
-        update: { ...homepageFields, homepageSections: sections, homepageTreasureCards: treasureCards, homepageLicenses: licenses },
-      });
+      if (industry === "GENERAL") {
+        await transaction.storeSetting.upsert({
+          where: { id: STORE_SETTING_ID },
+          create: { id: STORE_SETTING_ID, industry, generalHomepageSettings: generalHomepageSettings! },
+          update: { generalHomepageSettings: generalHomepageSettings! },
+        });
+      } else {
+        await transaction.storeSetting.upsert({
+          where: { id: STORE_SETTING_ID },
+          create: { id: STORE_SETTING_ID, ...homepageFields, homepageSections: sections, homepageTreasureCards: treasureCards, homepageLicenses: licenses },
+          update: { ...homepageFields, homepageSections: sections, homepageTreasureCards: treasureCards, homepageLicenses: licenses },
+        });
+      }
       await transaction.auditLog.create({
         data: {
           actorId: actor.id,

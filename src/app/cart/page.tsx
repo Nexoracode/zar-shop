@@ -24,7 +24,7 @@ export default async function CartPage() {
     getGeneralStoreSettings(),
     getCommerceSettings(),
   ]);
-  const items = (cart?.items ?? []) as CartItemRow[];
+  const items = ((cart?.items ?? []) as CartItemRow[]).filter((item) => item.product.storeIndustry === settings.industry);
   const rate = gold ? Number(gold.pricePerGram18) : null;
   const hasGoldItems = items.some((item) => item.product.storeIndustry === "GOLD");
   const getItemPricing = (item: CartItemRow) => {

@@ -20,7 +20,7 @@ import type { BrandSettings } from "@/modules/settings/brand-settings";
 import { getCatalogSettings } from "@/modules/settings/catalog-settings";
 import type { GeneralStoreSettingsInput } from "@/modules/settings/general-settings";
 
-export async function SiteHeader({ settings, brand, user, menuCategoryIds }: { settings: GeneralStoreSettingsInput; brand: BrandSettings; user: User | null; menuCategoryIds: string[] }) {
+export async function GoldHeader({ settings, brand, user, menuCategoryIds }: { settings: GeneralStoreSettingsInput; brand: BrandSettings; user: User | null; menuCategoryIds: string[] }) {
   const [gold, categories, catalogSettings] = await Promise.all([
     settings.industry === "GOLD" ? getGoldPriceForDisplay() : Promise.resolve(null),
     db.category.findMany({

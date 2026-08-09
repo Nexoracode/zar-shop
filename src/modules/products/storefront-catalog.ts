@@ -51,6 +51,7 @@ export async function getStorefrontCatalog(query: StorefrontCatalogQuery, catego
   const [settings, catalogSettings] = await Promise.all([getGeneralStoreSettings(), getCatalogSettings()]);
   const where: Prisma.ProductWhereInput = {
     status: "ACTIVE",
+    storeIndustry: settings.industry,
     ...(catalogSettings.hideOutOfStockProducts ? { stock: { gt: 0 } } : {}),
     ...(categoryIds ? { categoryId: { in: categoryIds } } : {}),
   };

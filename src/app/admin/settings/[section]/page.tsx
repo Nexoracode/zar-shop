@@ -60,8 +60,8 @@ export default async function AdminSettingSectionPage({ params }: Context) {
   switch (section) {
     case "general": content = <GeneralSettings initialSettings={await getGeneralStoreSettings()} />; break;
     case "homepage": {
-      const [homepageSettings, menuCategories] = await Promise.all([getHomepageSettings(), getHomepageMenuCategoryOptions()]);
-      content = <HomepageSettings initialSettings={homepageSettings} menuCategories={menuCategories} />;
+      const [homepageSettings, menuCategories, industry] = await Promise.all([getHomepageSettings(), getHomepageMenuCategoryOptions(), getStoreIndustry()]);
+      content = <HomepageSettings initialSettings={homepageSettings} menuCategories={menuCategories} industry={industry} />;
       break;
     }
     case "branding": content = <BrandSettings initialSettings={await getBrandSettings()} />; break;
