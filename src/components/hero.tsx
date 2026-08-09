@@ -6,13 +6,11 @@ import { Alert, Button, Card, Chip, Input, Table as HeroTable, Tooltip } from "@
 export { Button, Card, Input };
 const subscribe = () => () => undefined;
 
-export function TruncatedTextTooltip({ text, className = "" }: { text: string; className?: string }) {
+export function TruncatedTextTooltip({ text, className = "", dir = "rtl" }: { text: string; className?: string; dir?: "rtl" | "ltr" | "auto" }) {
   return (
     <Tooltip delay={200} closeDelay={100}>
-      <Tooltip.Trigger>
-        <strong className={`block min-w-0 truncate ${className}`}>{text}</strong>
-      </Tooltip.Trigger>
-      <Tooltip.Content showArrow dir="rtl" className="z-50 max-w-sm border border-[var(--border)] bg-[var(--overlay)] px-3 py-2 text-right text-xs leading-6 text-[var(--overlay-foreground)] shadow-lg">
+      <Tooltip.Trigger className="min-w-0"><span dir={dir} className={`block min-w-0 truncate ${className}`}>{text}</span></Tooltip.Trigger>
+      <Tooltip.Content showArrow dir={dir} className={`z-50 max-w-sm border border-[var(--border)] bg-[var(--overlay)] px-3 py-2 text-xs leading-6 text-[var(--overlay-foreground)] shadow-lg ${dir === "ltr" ? "text-left" : "text-right"}`}>
         {text}
       </Tooltip.Content>
     </Tooltip>

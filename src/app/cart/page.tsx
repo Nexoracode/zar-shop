@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { AlertDescription, AlertRoot, Card, ChipLabel, ChipRoot, Table, TableBody, TableCell, TableColumn, TableContent, TableHeader, TableRow, TableScrollContainer } from "@/components/hero";
+import { AlertDescription, AlertRoot, Card, ChipLabel, ChipRoot, Table, TableBody, TableCell, TableColumn, TableContent, TableHeader, TableRow, TableScrollContainer, TruncatedTextTooltip } from "@/components/hero";
 import { requireUser } from "@/modules/auth/session";
 import { db } from "@/lib/db";
 import { getGoldPriceForDisplay } from "@/modules/gold/gold-price.service";
@@ -71,9 +71,10 @@ export default async function CartPage() {
                     const amount = getItemAmount(item);
                     const pricing = getItemPricing(item);
                     const selectedWeight = getSelectedOptionWeight(p.options, item.selectedOptions, Number(p.weightGrams));
+                    const optionSummary = `${p.sku}${optionEntries(item.selectedOptions).map(([name, value]) => ` · ${name}: ${value}`).join("")}`;
                     return (
                       <TableRow id={item.id} key={item.id}>
-                        <TableCell className="px-4 py-[14px]"><strong>{p.name}</strong><br /><span className="text-[#747982] text-[0.82rem]">{p.sku}{optionEntries(item.selectedOptions).map(([name, value]) => ` · ${name}: ${value}`).join("")}</span></TableCell>
+                        <TableCell className="w-80 max-w-80 px-4 py-[14px]"><TruncatedTextTooltip text={p.name} className="max-w-72 font-bold" /><TruncatedTextTooltip text={optionSummary} className="max-w-72 text-[0.82rem] text-[#747982]" /></TableCell>
                         <TableCell className="px-4 py-[14px]">{item.quantity}</TableCell>
                         <TableCell className="px-4 py-[14px]">{p.storeIndustry === "GOLD" ? `${selectedWeight.toLocaleString("fa-IR", { maximumFractionDigits: 3 })} گرم` : "—"}</TableCell>
                         <TableCell className="px-4 py-[14px]">

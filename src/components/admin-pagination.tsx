@@ -5,7 +5,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@heroui/react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { HeroSelectField } from "@/components/hero-select-field";
-import { adminPageSizes } from "@/lib/admin-pagination";
+import { adminPageSizeCookieMaxAge, adminPageSizeCookieName, adminPageSizes } from "@/lib/admin-pagination";
 
 type Props = {
   page: number;
@@ -26,10 +26,14 @@ export function AdminPagination({ page, pageSize, totalItems, totalPages }: Prop
   function update(name: "page" | "pageSize", value: number) {
     const next = new URLSearchParams(searchParams.toString());
     if (name === "pageSize") {
-      next.set("pageSize", String(value));
+      document.cookie = `${adminPageSizeCookieName}=${value}; Path=/admin; Max-Age=${adminPageSizeCookieMaxAge}; SameSite=Lax`;
+      next.delete("pageSize");
       next.delete("page");
-    } else if (value <= 1) next.delete("page");
-    else next.set("page", String(value));
+    } else {
+      next.delete("pageSize");
+      if (value <= 1) next.delete("page");
+      else next.set("page", String(value));
+    }
     startTransition(() => router.replace(`${pathname}?${next.toString()}`, { scroll: false }));
   }
 

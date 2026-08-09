@@ -8,7 +8,8 @@ import { formatDate, formatMoney } from "@/lib/format";
 import { orderStatusLabels, orderStatusTones } from "@/modules/admin/labels";
 import { AdminListFilters } from "@/components/admin-list-filters";
 import { AdminPagination } from "@/components/admin-pagination";
-import { parseAdminPagination, resolveAdminPagination } from "@/lib/admin-pagination";
+import { resolveAdminPagination } from "@/lib/admin-pagination";
+import { parseAdminPaginationRequest } from "@/lib/admin-pagination-server";
 import { requirePermission } from "@/modules/auth/session";
 import { AdminBulkCheckbox, AdminBulkEditor } from "@/components/admin-bulk-editor";
 import {
@@ -20,6 +21,7 @@ import {
   TableHeader,
   TableRow,
   TableScrollContainer,
+  TruncatedTextTooltip,
 } from "@/components/hero";
 
 type OrderRow = Prisma.OrderGetPayload<{ include: { user: true; _count: { select: { items: true } } } }>;
@@ -32,7 +34,7 @@ export default async function OrdersPage({ searchParams }: { searchParams: Searc
   const params = await searchParams;
   const query = params.q?.trim() ?? "";
   const status = statuses.includes(params.status as OrderStatus) ? params.status as OrderStatus : undefined;
-  const { requestedPage, pageSize } = parseAdminPagination(params);
+  const { requestedPage, pageSize } = await parseAdminPaginationRequest(params);
   const where: Prisma.OrderWhereInput = {
     ...(status ? { status } : {}),
     ...(query ? {
@@ -99,7 +101,7 @@ export default async function OrdersPage({ searchParams }: { searchParams: Searc
                       <TableCell className={`${cell} w-12 text-center`}><AdminBulkCheckbox id={order.id} label={`انتخاب سفارش ${order.orderNumber}`} /></TableCell>
                       <TableCell className={`${cell} w-16 font-bold text-slate-400`}>{(pagination.skip + index + 1).toLocaleString("fa-IR")}</TableCell>
                       <TableCell className={cell}><strong className="text-[#17233b]" dir="ltr">{order.orderNumber}</strong></TableCell>
-                      <TableCell className={cell}><strong className="block text-slate-700">{customerName}</strong><span className="text-xs text-slate-400">{order.user.email}</span></TableCell>
+                      <TableCell className={`${cell} w-64 max-w-64`}><div className="min-w-0"><TruncatedTextTooltip text={customerName} className="max-w-52 font-bold text-slate-700" /><TruncatedTextTooltip text={order.user.email} dir="ltr" className="max-w-52 text-right text-xs text-slate-400" /></div></TableCell>
                       <TableCell className={cell}>{order._count.items.toLocaleString("fa-IR")}</TableCell>
                       <TableCell className={cell}><strong className="text-slate-700">{formatMoney(order.total.toString())}</strong></TableCell>
                       <TableCell className={cell}><AdminStatusBadge tone={orderStatusTones[order.status]}>{orderStatusLabels[order.status]}</AdminStatusBadge></TableCell>

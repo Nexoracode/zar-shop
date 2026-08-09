@@ -58,8 +58,8 @@ export function HeroSelectField({
     <div className={className}>
       <input type="hidden" name={name} value={selectedValue} />
       <Select
-        value={selectedKey}
-        onChange={change}
+        selectedKey={selectedKey}
+        onSelectionChange={change}
         placeholder={placeholder}
         isRequired={required}
         isDisabled={disabled}

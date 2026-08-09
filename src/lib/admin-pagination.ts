@@ -1,9 +1,11 @@
 export const adminPageSizes = [10, 20, 50, 100] as const;
 export const defaultAdminPageSize = 10;
+export const adminPageSizeCookieName = "admin-page-size";
+export const adminPageSizeCookieMaxAge = 60 * 60 * 24 * 365;
 
-export function parseAdminPagination(params: { page?: string; pageSize?: string }) {
+export function parseAdminPagination(params: { page?: string; pageSize?: string }, preferredPageSize?: string) {
   const parsedPage = Number.parseInt(params.page ?? "1", 10);
-  const parsedPageSize = Number.parseInt(params.pageSize ?? String(defaultAdminPageSize), 10);
+  const parsedPageSize = Number.parseInt(preferredPageSize ?? params.pageSize ?? String(defaultAdminPageSize), 10);
   const pageSize = adminPageSizes.includes(parsedPageSize as (typeof adminPageSizes)[number])
     ? parsedPageSize
     : defaultAdminPageSize;

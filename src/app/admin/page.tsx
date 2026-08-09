@@ -29,6 +29,7 @@ import {
   TableHeader,
   TableRow,
   TableScrollContainer,
+  TruncatedTextTooltip,
 } from "@/components/hero";
 import { requirePermission } from "@/modules/auth/session";
 import { getCatalogSettings } from "@/modules/settings/catalog-settings";
@@ -135,7 +136,7 @@ export default async function AdminPage() {
                     const customerName = [order.user.firstName, order.user.lastName].filter(Boolean).join(" ") || order.user.email;
                     return <TableRow id={order.id} key={order.id} className="transition hover:bg-slate-50/60">
                       <TableCell className="px-4 py-3 text-xs font-bold text-slate-700">{order.orderNumber}</TableCell>
-                      <TableCell className="max-w-40 truncate px-4 py-3 text-xs text-slate-600">{customerName}</TableCell>
+                      <TableCell className="w-44 max-w-44 px-4 py-3"><TruncatedTextTooltip text={customerName} className="max-w-36 text-xs text-slate-600" /></TableCell>
                       <TableCell className="px-4 py-3 text-xs text-slate-500">{order._count.items.toLocaleString("fa-IR")}</TableCell>
                       <TableCell className="px-4 py-3 text-xs font-bold text-slate-700">{formatMoney(order.total.toString())}</TableCell>
                       <TableCell className="px-4 py-3"><AdminStatusBadge tone={orderStatusTones[order.status]}>{orderStatusLabels[order.status]}</AdminStatusBadge></TableCell>

@@ -6,7 +6,8 @@ import { formatDate } from "@/lib/format";
 import { userRoleLabels, userStatusLabels, userStatusTones } from "@/modules/admin/labels";
 import { AdminListFilters } from "@/components/admin-list-filters";
 import { AdminPagination } from "@/components/admin-pagination";
-import { parseAdminPagination, resolveAdminPagination } from "@/lib/admin-pagination";
+import { resolveAdminPagination } from "@/lib/admin-pagination";
+import { parseAdminPaginationRequest } from "@/lib/admin-pagination-server";
 import { requirePermission } from "@/modules/auth/session";
 import { UserRoleSelect } from "@/components/user-role-select";
 import { AdminBulkCheckbox, AdminBulkEditor } from "@/components/admin-bulk-editor";
@@ -19,6 +20,7 @@ import {
   TableHeader,
   TableRow,
   TableScrollContainer,
+  TruncatedTextTooltip,
 } from "@/components/hero";
 
 type UserRow = Prisma.UserGetPayload<{ include: { _count: { select: { orders: true } } } }>;
@@ -34,7 +36,7 @@ export default async function UsersPage({ searchParams }: { searchParams: Search
   const query = params.q?.trim() ?? "";
   const role = roles.includes(params.role as UserRole) ? params.role as UserRole : undefined;
   const status = statuses.includes(params.status as UserStatus) ? params.status as UserStatus : undefined;
-  const { requestedPage, pageSize } = parseAdminPagination(params);
+  const { requestedPage, pageSize } = await parseAdminPaginationRequest(params);
   const where: Prisma.UserWhereInput = {
     isGuest: false,
     ...(role ? { role } : {}),
@@ -95,7 +97,7 @@ export default async function UsersPage({ searchParams }: { searchParams: Search
                     <TableRow id={user.id} key={user.id} className="transition hover:bg-slate-50/60">
                       <TableCell className={`${cell} w-12 text-center`}><AdminBulkCheckbox id={user.id} label={`انتخاب کاربر ${fullName}`} disabled={user.id === actor.id || user.role === "ADMIN"} /></TableCell>
                       <TableCell className={`${cell} w-16 font-bold text-slate-400`}>{(pagination.skip + index + 1).toLocaleString("fa-IR")}</TableCell>
-                      <TableCell className={cell}><strong className="block text-slate-700">{fullName}</strong><span className="text-xs text-slate-400">{user.email}</span></TableCell>
+                      <TableCell className={`${cell} w-64 max-w-64`}><div className="min-w-0"><TruncatedTextTooltip text={fullName} className="max-w-52 font-bold text-slate-700" /><TruncatedTextTooltip text={user.email} dir="ltr" className="max-w-52 text-right text-xs text-slate-400" /></div></TableCell>
                       <TableCell className={cell}><span dir="ltr">{user.phone ?? "—"}</span></TableCell>
                       <TableCell className={cell}><UserRoleSelect userId={user.id} value={user.role} roles={user.role === "ADMIN" && actor.role !== "ADMIN" ? ["ADMIN"] : assignableRoles} disabled={user.id === actor.id || (user.role === "ADMIN" && actor.role !== "ADMIN")} /></TableCell>
                       <TableCell className={cell}>{user._count.orders.toLocaleString("fa-IR")}</TableCell>
