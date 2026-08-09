@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Alert, Button, Card, Input, Spinner } from "@heroui/react";
 import { Boxes, CheckCircle2, FolderSearch, Layers3, LockKeyhole, Plus, Search, SlidersHorizontal, X } from "lucide-react";
 import { AdminStatusBadge, adminFieldClass } from "@/components/admin-ui";
+import { AdminSectionHelp } from "@/components/admin-section-help";
 import { CategoryAttributesForm } from "@/components/category-attributes-form";
 import type { CategoryAttributeGroup } from "@/modules/products/attributes";
 
@@ -71,7 +72,12 @@ export function CategoryAttributePicker({ categories }: { categories: CategoryRe
           <Card.Content className="flex h-full min-h-0 flex-col p-4">
             <div className="mb-4 flex shrink-0 items-start gap-3 border-b border-slate-100 pb-4">
               <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-violet-50 text-violet-700"><FolderSearch size={20} /></span>
-              <div><h2 className="m-0 text-sm font-black text-slate-800">انتخاب دسته‌بندی</h2><p className="mt-1 text-[11px] leading-5 text-slate-500">نام، نشانی یا دسته والد را بنویسید.</p></div>
+              <div className="min-w-0"><h2 className="m-0 text-sm font-black text-slate-800">انتخاب دسته‌بندی</h2><p className="mt-1 text-[11px] leading-5 text-slate-500">نام، نشانی یا دسته والد را بنویسید.</p></div>
+              <div className="mr-auto"><AdminSectionHelp title="انتخاب دسته‌بندی" summary="ویژگی‌ها برای هر دسته جدا نگهداری می‌شوند؛ ابتدا دسته مقصد را پیدا کنید." blocks={[
+                { title: "جست‌وجو و انتخاب", items: ["حداقل سه کاراکتر از نام، نشانی یا نام دسته والد را وارد کنید.", "نتایج در همین کارت نمایش داده می‌شوند و در صورت زیاد بودن قابل اسکرول هستند.", "دسته موردنظر را انتخاب کنید تا ساختار فعلی آن از سرور دریافت و فرم سمت چپ فعال شود.", "برای شروع جست‌وجوی تازه، آیکون ضربدر داخل کادر جست‌وجو را بزنید."] },
+                { title: "اطلاعات هر نتیجه", description: "کنار هر دسته وضعیت فعال‌بودن و تعداد گروه‌ها، ویژگی‌ها و محصولات مرتبط نمایش داده می‌شود تا دسته درست را انتخاب کنید." },
+                { title: "نکته", tone: "important", description: "تغییرات فقط روی دسته انتخاب‌شده اعمال می‌شوند. قبل از ساخت یا حذف ویژگی، نام دسته انتخاب‌شده را در کارت بالای فرم بررسی کنید." },
+              ]} /></div>
             </div>
 
             <label className="grid shrink-0 gap-1.5 text-xs font-bold text-slate-600">
@@ -113,7 +119,10 @@ export function CategoryAttributePicker({ categories }: { categories: CategoryRe
       <section className="min-w-0">
         {loading && selectedCategory ? <LoadingPanel categoryName={selectedCategory.name} /> : error && selectedCategory ? <ErrorPanel message={error} onRetry={() => void selectCategory(selectedCategory)} /> : attributeData && selectedCategory ? (
           <div className="grid gap-3">
-            <Card variant="secondary" className="rounded-xl border border-violet-200 bg-violet-50/50 shadow-none"><Card.Content dir="rtl" className="grid justify-items-start gap-1.5 px-4 py-3 text-right"><span className="text-[10px] font-bold text-violet-500">دسته‌بندی انتخاب‌شده</span><strong className="w-full truncate text-sm text-slate-800">{attributeData.name}</strong><span className="text-[10px] text-slate-500">{selectedCategory.parentName ? `زیرمجموعه ${selectedCategory.parentName}` : "دسته‌بندی اصلی"}</span><AdminStatusBadge tone={selectedCategory.isActive ? "success" : "neutral"}>{selectedCategory.isActive ? "فعال" : "غیرفعال"}</AdminStatusBadge></Card.Content></Card>
+            <Card variant="secondary" className="rounded-xl border border-violet-200 bg-violet-50/50 shadow-none"><Card.Content dir="rtl" className="flex items-start gap-3 px-4 py-3 text-right"><div className="grid min-w-0 flex-1 justify-items-start gap-1.5"><span className="text-[10px] font-bold text-violet-500">دسته‌بندی انتخاب‌شده</span><strong className="w-full truncate text-sm text-slate-800">{attributeData.name}</strong><span className="text-[10px] text-slate-500">{selectedCategory.parentName ? `زیرمجموعه ${selectedCategory.parentName}` : "دسته‌بندی اصلی"}</span><AdminStatusBadge tone={selectedCategory.isActive ? "success" : "neutral"}>{selectedCategory.isActive ? "فعال" : "غیرفعال"}</AdminStatusBadge></div><AdminSectionHelp title="دسته‌بندی انتخاب‌شده" summary="این کارت مشخص می‌کند تغییرات فرم دقیقاً روی کدام دسته ثبت می‌شوند." blocks={[
+              { title: "کنترل دسته مقصد", description: "نام، جایگاه در ساختار دسته‌ها و وضعیت انتشار را پیش از ویرایش بررسی کنید. غیرفعال بودن دسته مانع ویرایش ساختار آن نیست، اما تا زمان فعال‌شدن در فروشگاه نمایش داده نمی‌شود." },
+              { title: "تغییر دسته", description: "برای کار روی دسته‌ای دیگر، از کارت جست‌وجوی سمت راست نتیجه جدیدی را انتخاب کنید. اطلاعات فرم با ساختار همان دسته جایگزین می‌شود." },
+            ]} /></Card.Content></Card>
             <CategoryAttributesForm key={attributeData.id} categoryId={attributeData.id} initialGroups={attributeData.groups} />
           </div>
         ) : <DisabledPanel />}
@@ -123,7 +132,10 @@ export function CategoryAttributePicker({ categories }: { categories: CategoryRe
 }
 
 function DisabledPanel() {
-  return <Card variant="secondary" className="min-h-[420px] rounded-xl border border-slate-200 bg-white opacity-60 shadow-sm" aria-disabled="true"><Card.Content className="grid gap-4 p-4 sm:p-5"><div className="flex items-center justify-between gap-3 border-b border-slate-100 pb-4"><div className="flex items-center gap-3"><span className="grid size-10 place-items-center rounded-xl bg-slate-100 text-slate-400"><Layers3 size={19} /></span><div><h2 className="m-0 text-base font-black text-slate-700">ساختار ویژگی‌ها</h2><p className="mt-1 text-xs text-slate-400">پس از انتخاب دسته‌بندی فعال می‌شود.</p></div></div><Button type="button" variant="secondary" isDisabled className="gap-2 text-xs"><Plus size={14} />گروه جدید</Button></div><div className="grid gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4"><Input disabled fullWidth variant="secondary" placeholder="نام گروه؛ مثلاً مشخصات کلی" className={adminFieldClass} /><Input disabled fullWidth variant="secondary" placeholder="نام ویژگی؛ مثلاً رم یا مناسب برای" className={adminFieldClass} /></div><div className="grid min-h-40 place-items-center rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 p-4 text-center"><div><LockKeyhole className="mx-auto mb-3 text-slate-300" size={30} /><strong className="block text-sm text-slate-600">ابتدا یک دسته‌بندی انتخاب کنید</strong><span className="mt-1 block text-xs leading-6 text-slate-400">فرم تعریف گروه و ویژگی پس از انتخاب دسته‌بندی در دسترس قرار می‌گیرد.</span></div></div></Card.Content></Card>;
+  return <Card variant="secondary" className="min-h-[420px] rounded-xl border border-slate-200 bg-white shadow-sm"><Card.Content className="grid gap-4 p-4 sm:p-5"><div className="flex items-center justify-between gap-3 border-b border-slate-100 pb-4"><div className="flex items-center gap-3 opacity-60"><span className="grid size-10 place-items-center rounded-xl bg-slate-100 text-slate-400"><Layers3 size={19} /></span><div><h2 className="m-0 text-base font-black text-slate-700">ساختار ویژگی‌ها</h2><p className="mt-1 text-xs text-slate-400">پس از انتخاب دسته‌بندی فعال می‌شود.</p></div></div><div className="mr-auto"><AdminSectionHelp title="ساختار ویژگی‌ها" summary="این فرم پس از انتخاب دسته‌بندی، گروه‌ها و ویژگی‌های همان دسته را نمایش می‌دهد." blocks={[
+    { title: "برای شروع", items: ["در کارت سمت راست حداقل سه کاراکتر جست‌وجو کنید.", "دسته موردنظر را از نتایج انتخاب کنید.", "پس از دریافت اطلاعات، فرم تعریف گروه، ویژگی و مقدار در همین محل فعال می‌شود."] },
+    { title: "ساختار داده", description: "هر دسته چند گروه دارد؛ هر گروه شامل چند ویژگی است و هر ویژگی می‌تواند چند مقدار پیشنهادی داشته باشد." },
+  ]} /></div><Button type="button" variant="secondary" isDisabled className="gap-2 text-xs opacity-60"><Plus size={14} />گروه جدید</Button></div><div className="grid gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4 opacity-60"><Input disabled fullWidth variant="secondary" placeholder="نام گروه؛ مثلاً مشخصات کلی" className={adminFieldClass} /><Input disabled fullWidth variant="secondary" placeholder="نام ویژگی؛ مثلاً رم یا مناسب برای" className={adminFieldClass} /></div><div className="grid min-h-40 place-items-center rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 p-4 text-center opacity-60"><div><LockKeyhole className="mx-auto mb-3 text-slate-300" size={30} /><strong className="block text-sm text-slate-600">ابتدا یک دسته‌بندی انتخاب کنید</strong><span className="mt-1 block text-xs leading-6 text-slate-400">فرم تعریف گروه و ویژگی پس از انتخاب دسته‌بندی در دسترس قرار می‌گیرد.</span></div></div></Card.Content></Card>;
 }
 
 function LoadingPanel({ categoryName }: { categoryName: string }) {

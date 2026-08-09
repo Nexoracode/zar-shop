@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { Alert, Button, Card, Input, Spinner, toast } from "@heroui/react";
+import { Button, Card, Input, Spinner, toast } from "@heroui/react";
 import { Boxes, ListPlus, Plus, Save, Tags, Trash2, X } from "lucide-react";
 import { AdminCheckbox } from "@/components/admin-checkbox";
+import { AdminSectionHelp } from "@/components/admin-section-help";
 import { adminFieldClass, adminLabelClass } from "@/components/admin-ui";
 import { HeroSelectField } from "@/components/hero-select-field";
 import { categoryAttributeSchema, type CategoryAttributeGroup } from "@/modules/products/attributes";
@@ -144,10 +145,12 @@ export function CategoryAttributesForm({ categoryId, initialGroups }: { category
   const allowsMultiple = selectedAttribute?.allowsMultiple ?? newAttributeAllowsMultiple;
 
   return <form onSubmit={submit} className="grid gap-4">
-    <Alert status="accent" className="border border-violet-200 bg-violet-50 text-violet-950"><Alert.Description className="text-xs leading-6">ابتدا گروه را انتخاب یا ایجاد کنید، سپس ویژگی همان گروه و مقادیر قابل انتخاب آن را ثبت کنید. رنگ، سایز، وزن و قیمت انتخابی همچنان از بخش «تنوع محصول» مدیریت می‌شوند.</Alert.Description></Alert>
-
     <Card variant="secondary" className="rounded-xl border border-slate-200 bg-white shadow-sm"><Card.Content className="p-4 sm:p-5">
-      <div className="mb-4 flex items-center gap-3 border-b border-slate-100 pb-4"><span className="grid size-10 place-items-center rounded-xl bg-violet-50 text-violet-700"><ListPlus size={19} /></span><div><h2 className="m-0 text-base font-black text-slate-800">افزودن ویژگی و مقدار</h2><p className="mt-1 text-xs text-slate-400">از موارد قبلی انتخاب کنید یا مورد جدید بسازید.</p></div></div>
+      <div className="mb-4 flex items-center gap-3 border-b border-slate-100 pb-4"><span className="grid size-10 place-items-center rounded-xl bg-violet-50 text-violet-700"><ListPlus size={19} /></span><div className="min-w-0"><h2 className="m-0 text-base font-black text-slate-800">افزودن ویژگی و مقدار</h2><p className="mt-1 text-xs text-slate-400">از موارد قبلی انتخاب کنید یا مورد جدید بسازید.</p></div><div className="mr-auto"><AdminSectionHelp title="افزودن ویژگی و مقدار" summary="در این بخش ساختار مشخصات محصولات این دسته را تعریف می‌کنید." blocks={[
+        { title: "ترتیب ثبت", items: ["ابتدا یک گروه موجود مثل «مشخصات کلی» را انتخاب کنید یا گزینه ثبت گروه جدید را بزنید.", "بعد ویژگی‌های همان گروه را از فهرست انتخاب کنید یا یک ویژگی تازه بسازید.", "یک یا چند مقدار پیشنهادی وارد کنید؛ برای ورود هم‌زمان چند مقدار، آن‌ها را با کاما جدا کنید.", "دکمه «ثبت مقدار ویژگی» تغییر را به فهرست پایین اضافه می‌کند؛ برای اعمال نهایی باید در انتهای صفحه ذخیره کنید."] },
+        { title: "تک‌مقداری یا چندمقداری", description: "برای ویژگی‌هایی مثل حافظه داخلی که هر محصول فقط یک مقدار دارد، گزینه چندمقداری را خاموش نگه دارید. برای مواردی مثل «مناسب برای» که یک محصول می‌تواند چند انتخاب داشته باشد، آن را فعال کنید." },
+        { title: "تفاوت ویژگی و تنوع محصول", tone: "important", description: "ویژگی برای نمایش مشخصات توصیفی محصول است. رنگ، سایز، وزن، موجودی و قیمت انتخابی که روی خرید اثر می‌گذارند باید از بخش «تنوع محصول» مدیریت شوند." },
+      ]} /></div></div>
       <div className="grid gap-4 xl:grid-cols-2">
         <div className="grid content-start gap-3 rounded-xl border border-slate-200 bg-slate-50/60 p-3 sm:p-4">
           <HeroSelectField name="attributeGroup" label="گروه ویژگی" value={selectedGroupId} includeEmptyOption={false} options={[...groups.map((group) => ({ value: group.id, label: group.name })), { value: newItemKey, label: "+ ثبت گروه جدید" }]} onValueChange={selectGroup} />
@@ -165,13 +168,21 @@ export function CategoryAttributesForm({ categoryId, initialGroups }: { category
     </Card.Content></Card>
 
     <Card variant="secondary" className="rounded-xl border border-slate-200 bg-white shadow-sm"><Card.Content className="p-4 sm:p-5">
-      <div className="mb-4 flex items-center gap-3 border-b border-slate-100 pb-4"><span className="grid size-10 place-items-center rounded-xl bg-slate-100 text-slate-600"><Boxes size={19} /></span><div><h2 className="m-0 text-base font-black text-slate-800">فهرست ویژگی‌های دسته</h2><p className="mt-1 text-xs text-slate-400">گروه‌ها، ویژگی‌ها و مقادیر ثبت‌شده را مرور کنید.</p></div></div>
+      <div className="mb-4 flex items-center gap-3 border-b border-slate-100 pb-4"><span className="grid size-10 place-items-center rounded-xl bg-slate-100 text-slate-600"><Boxes size={19} /></span><div className="min-w-0"><h2 className="m-0 text-base font-black text-slate-800">فهرست ویژگی‌های دسته</h2><p className="mt-1 text-xs text-slate-400">گروه‌ها، ویژگی‌ها و مقادیر ثبت‌شده را مرور کنید.</p></div><div className="mr-auto"><AdminSectionHelp title="فهرست ویژگی‌های دسته" summary="پیش‌نمایش کامل ساختاری است که برای فرم محصول این دسته استفاده می‌شود." blocks={[
+        { title: "ساختار فهرست", description: "هر کارت خاکستری یک گروه است، ردیف‌های داخل آن ویژگی‌ها هستند و برچسب‌های بنفش مقادیر پیشنهادی هر ویژگی را نشان می‌دهند." },
+        { title: "ویرایش و حذف", items: ["برای حذف فقط یک مقدار، علامت ضربدر کنار همان مقدار را بزنید.", "برای حذف یک ویژگی، آیکون سطل همان ویژگی را بزنید.", "برای حذف کل گروه و همه ویژگی‌های داخل آن، آیکون سطل سربرگ گروه را بزنید.", "حذف‌ها تا قبل از زدن دکمه ذخیره فقط در همین فرم هستند و هنوز در دیتابیس اعمال نشده‌اند."] },
+        { title: "محدودیت حذف", tone: "important", description: "اگر ویژگی روی محصولی استفاده شده باشد، سیستم اجازه حذف مخرب آن را نمی‌دهد. ابتدا مقدار آن ویژگی را از محصولات مرتبط بردارید یا فقط مقادیر پیشنهادی بلااستفاده را حذف کنید." },
+      ]} /></div></div>
       <div className="grid gap-3">
         {groups.map((group) => <Card key={group.id} variant="secondary" className="rounded-xl border border-slate-200 bg-slate-50/60 shadow-none"><Card.Content className="p-3 sm:p-4"><div className="flex items-center justify-between gap-3"><div className="flex items-center gap-2"><Tags size={16} className="text-violet-600" /><strong className="text-sm text-slate-800">{group.name}</strong><span className="text-[10px] text-slate-400">{group.attributes.length.toLocaleString("fa-IR")} ویژگی</span></div><Button type="button" isIconOnly size="sm" variant="danger-soft" aria-label={`حذف گروه ${group.name}`} onPress={() => removeGroup(group.id)}><Trash2 size={14} /></Button></div><div className="mt-3 grid gap-2 border-t border-slate-200 pt-3">{group.attributes.map((attribute) => <div key={attribute.id} className="rounded-lg border border-slate-200 bg-white p-3"><div className="flex items-center justify-between gap-3"><div><strong className="block text-xs text-slate-700">{attribute.name}</strong><span className="mt-1 block text-[10px] text-slate-400">{attribute.allowsMultiple ? "چندمقداری" : "تک‌مقداری"}</span></div><Button type="button" isIconOnly size="sm" variant="danger-soft" aria-label={`حذف ویژگی ${attribute.name}`} onPress={() => removeAttribute(group.id, attribute.id)}><Trash2 size={13} /></Button></div>{attribute.suggestedValues.length ? <div className="mt-3 flex flex-wrap gap-1.5">{attribute.suggestedValues.map((value) => <span key={value} className="inline-flex min-h-7 items-center gap-1 rounded-md bg-violet-50 px-2 text-[10px] font-bold text-violet-700">{value}<Button type="button" isIconOnly size="sm" variant="ghost" aria-label={`حذف مقدار ${value}`} onPress={() => removeSuggestedValue(group.id, attribute.id, value)} className="size-5 min-h-5 min-w-5 rounded text-violet-500"><X size={11} /></Button></span>)}</div> : <span className="mt-2 block text-[10px] text-amber-600">مقداری ثبت نشده است.</span>}</div>)}</div></Card.Content></Card>)}
         {!groups.length && <div className="grid min-h-40 place-items-center rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 p-5 text-center"><div><Boxes className="mx-auto mb-2 text-slate-300" size={28} /><strong className="block text-sm text-slate-600">هنوز ویژگی‌ای ثبت نشده است</strong><span className="mt-1 block text-xs text-slate-400">از فرم بالا اولین گروه، ویژگی و مقدار را ثبت کنید.</span></div></div>}
       </div>
     </Card.Content></Card>
 
-    <Card variant="secondary" className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm"><div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div><strong className="block text-sm text-slate-800">ذخیره ساختار ویژگی‌ها</strong><p className="mt-1 text-xs text-slate-400">ویژگی‌های استفاده‌شده در محصولات بدون حذف مقدار آن‌ها قابل حذف نیستند.</p></div><Button type="submit" variant="primary" isPending={saving} className="min-h-11 shrink-0 gap-2 px-5 font-bold">{({ isPending }) => <>{isPending ? <Spinner size="sm" color="current" /> : <Save size={16} />}{isPending ? "در حال ذخیره..." : "ذخیره ویژگی‌ها"}</>}</Button></div></Card>
+    <Card variant="secondary" className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm"><div className="flex flex-col gap-3 sm:flex-row sm:items-center"><div className="min-w-0"><strong className="block text-sm text-slate-800">ذخیره ساختار ویژگی‌ها</strong><p className="mt-1 text-xs text-slate-400">ویژگی‌های استفاده‌شده در محصولات بدون حذف مقدار آن‌ها قابل حذف نیستند.</p></div><div className="sm:mr-auto"><AdminSectionHelp title="ذخیره ساختار ویژگی‌ها" summary="تمام افزودن‌ها، ویرایش‌ها و حذف‌های این صفحه یک‌جا ثبت می‌شوند." blocks={[
+      { title: "پیش از ذخیره", items: ["گروه‌ها، ویژگی‌ها و مقادیر را در فهرست بالا مرور کنید.", "مطمئن شوید ویژگی‌های چندمقداری درست مشخص شده‌اند.", "با زدن «ذخیره ویژگی‌ها»، کل ساختار فعلی برای دسته انتخاب‌شده ارسال و اعتبارسنجی می‌شود."] },
+      { title: "پس از ذخیره", description: "مقادیر ثبت‌شده در فرم ایجاد و ویرایش محصولاتی که همین دسته را دارند به‌عنوان پیشنهاد در دسترس خواهند بود." },
+      { title: "اگر خطای حذف دیدید", tone: "important", description: "این خطا معمولاً یعنی یک ویژگی هنوز در محصولی استفاده می‌شود. داده محصول را اصلاح کنید و سپس دوباره برای حذف ویژگی اقدام کنید." },
+    ]} /></div><Button type="submit" variant="primary" isPending={saving} className="min-h-11 shrink-0 gap-2 px-5 font-bold">{({ isPending }) => <>{isPending ? <Spinner size="sm" color="current" /> : <Save size={16} />}{isPending ? "در حال ذخیره..." : "ذخیره ویژگی‌ها"}</>}</Button></div></Card>
   </form>;
 }
