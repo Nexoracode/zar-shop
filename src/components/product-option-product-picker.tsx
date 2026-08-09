@@ -164,8 +164,10 @@ export function ProductOptionProductPicker() {
         {loadingOptions ? <LoadingOptionsPanel productName={selectedProduct?.name ?? "محصول"} /> : optionError && selectedProduct ? <OptionsErrorPanel message={optionError} onRetry={() => void selectProduct(selectedProduct)} /> : optionData && selectedProduct ? (
           <div className="grid gap-3">
             <Card variant="secondary" className="rounded-xl border border-violet-200 bg-violet-50/50 shadow-none">
-              <Card.Content dir="rtl" className="flex min-w-0 items-center justify-between gap-4 px-4 py-3 text-right">
-                <div className="min-w-0"><span className="block text-[10px] font-bold text-violet-500">محصول انتخاب‌شده</span><div className="mt-1 flex min-w-0 flex-wrap items-center gap-x-5 gap-y-1"><strong className="truncate text-sm text-slate-800">{optionData.productName}</strong><span dir="ltr" className="text-[10px] text-slate-500">{optionData.productSku}</span></div></div>
+              <Card.Content dir="rtl" className="grid min-w-0 justify-items-start gap-1.5 px-4 py-3 text-right">
+                <span className="text-[10px] font-bold text-violet-500">محصول انتخاب‌شده</span>
+                <strong className="w-full truncate text-sm text-slate-800">{optionData.productName}</strong>
+                <span className="text-[10px] text-slate-500">کد محصول: <bdi dir="ltr" className="font-mono">{optionData.productSku}</bdi></span>
                 <AdminStatusBadge tone={productStatusTones[selectedProduct.status]}>{productStatusLabels[selectedProduct.status]}</AdminStatusBadge>
               </Card.Content>
             </Card>
@@ -179,7 +181,21 @@ export function ProductOptionProductPicker() {
 
 function DisabledOptionsPanel() {
   return <div className="relative" aria-disabled="true">
-    <Card variant="secondary" className="rounded-2xl border border-slate-200 bg-white opacity-60 shadow-sm lg:h-[420px]"><Card.Content className="p-4 sm:p-6"><div className="mb-5 flex items-center justify-between gap-3 border-b border-slate-100 pb-4"><div className="flex items-center gap-3"><span className="grid h-10 w-10 place-items-center rounded-xl bg-slate-100 text-slate-400"><ListPlus size={19} /></span><div><h2 className="text-base font-black text-slate-700">گروه‌های تنوع</h2><p className="text-xs text-slate-400">پس از انتخاب محصول فعال می‌شود.</p></div></div><Button type="button" variant="secondary" isDisabled className="gap-1.5 text-[11px]"><Plus size={14} />افزودن</Button></div><div className="grid gap-3"><div className="rounded-xl border border-slate-200 bg-slate-50 p-4"><Input disabled fullWidth variant="secondary" placeholder="عنوان تنوع؛ مثلاً سایز یا رنگ" className={adminFieldClass} /><div className="mt-3 flex gap-2"><Input disabled fullWidth variant="secondary" placeholder="مقدار قابل انتخاب" className={adminFieldClass} /><Button type="button" isDisabled variant="secondary">افزودن</Button></div></div><div className="grid min-h-36 place-items-center rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 text-center"><div><LockKeyhole className="mx-auto mb-3 text-slate-300" size={30} /><strong className="block text-sm text-slate-600">ابتدا یک محصول انتخاب کنید</strong><span className="mt-1 block text-xs text-slate-400">فرم مدیریت تنوع پس از انتخاب محصول در دسترس قرار می‌گیرد.</span></div></div></div></Card.Content></Card>
+    <Card variant="secondary" className="min-h-[420px] rounded-xl border border-slate-200 bg-white opacity-60 shadow-sm">
+      <Card.Content className="grid gap-4 p-4 sm:p-5">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-4">
+          <div className="flex min-w-0 items-center gap-3"><span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-slate-100 text-slate-400"><ListPlus size={19} /></span><div className="min-w-0"><h2 className="m-0 text-base font-black text-slate-700">گروه‌های تنوع</h2><p className="mt-1 text-xs text-slate-400">پس از انتخاب محصول فعال می‌شود.</p></div></div>
+          <Button type="button" variant="secondary" isDisabled className="shrink-0 gap-1.5 text-[11px]"><Plus size={14} />افزودن</Button>
+        </div>
+        <div className="grid gap-3">
+          <div className="grid gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3 sm:p-4">
+            <Input disabled fullWidth variant="secondary" placeholder="عنوان تنوع؛ مثلاً سایز یا رنگ" className={adminFieldClass} />
+            <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto]"><Input disabled fullWidth variant="secondary" placeholder="مقدار قابل انتخاب" className={adminFieldClass} /><Button type="button" isDisabled variant="secondary" className="shrink-0">افزودن</Button></div>
+          </div>
+          <div className="grid min-h-36 place-items-center rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 p-4 text-center"><div><LockKeyhole className="mx-auto mb-3 text-slate-300" size={30} /><strong className="block text-sm text-slate-600">ابتدا یک محصول انتخاب کنید</strong><span className="mt-1 block text-xs leading-6 text-slate-400">فرم مدیریت تنوع پس از انتخاب محصول در دسترس قرار می‌گیرد.</span></div></div>
+        </div>
+      </Card.Content>
+    </Card>
   </div>;
 }
 
