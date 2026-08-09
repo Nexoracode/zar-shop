@@ -106,11 +106,11 @@ export function DragScrollRow({ children, className = "", ariaLabel, showNavigat
       setIsDragging(true);
     }
     const elapsed = Math.max(1, event.timeStamp - drag.current.lastTime);
-    const instantVelocity = -(event.clientX - drag.current.lastX) / elapsed;
+    const instantVelocity = (event.clientX - drag.current.lastX) / elapsed;
     drag.current.velocity = drag.current.velocity * 0.68 + instantVelocity * 0.32;
     drag.current.lastX = event.clientX;
     drag.current.lastTime = event.timeStamp;
-    drag.current.targetScrollLeft = drag.current.startScrollLeft - distance;
+    drag.current.targetScrollLeft = drag.current.startScrollLeft + distance;
     if (dragFrame.current === null) dragFrame.current = requestAnimationFrame(renderDragPosition);
     event.preventDefault();
   }
