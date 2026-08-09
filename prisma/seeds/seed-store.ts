@@ -107,11 +107,15 @@ async function createStore(db: PrismaClient, seed: DevelopmentStoreSeed) {
   });
 
   const categoryIds = new Map<string, string>();
+  const rootCategoryIds: string[] = [];
   for (const [index, category] of seed.categories.entries()) {
+    const parentId = category.parentSlug ? categoryIds.get(category.parentSlug) : undefined;
+    if (category.parentSlug && !parentId) throw new Error(`Seed parent category not found: ${category.parentSlug}`);
     const created = await db.category.create({
-      data: { name: category.name, slug: category.slug, description: category.description, attributeSchema: category.attributeSchema ?? [], featured: true, isActive: true, sortOrder: (index + 1) * 10 },
+      data: { name: category.name, slug: category.slug, description: category.description, parentId, attributeSchema: category.attributeSchema ?? [], featured: !parentId, isActive: true, sortOrder: (index + 1) * 10 },
     });
     categoryIds.set(category.slug, created.id);
+    if (!parentId) rootCategoryIds.push(created.id);
   }
 
   for (const product of seed.products) {
@@ -146,7 +150,7 @@ async function createStore(db: PrismaClient, seed: DevelopmentStoreSeed) {
     });
   }
 
-  const menuCategoryIds = [...categoryIds.values()];
+  const menuCategoryIds = rootCategoryIds;
   await db.storeSetting.create({
     data: {
       id: "main",

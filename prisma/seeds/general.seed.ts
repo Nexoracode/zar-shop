@@ -1,4 +1,93 @@
-import type { DevelopmentStoreSeed } from "./types";
+import type { DevelopmentCategorySeed, DevelopmentStoreSeed } from "./types";
+
+function mobileAttribute(id: string, name: string, suggestedValues: string[], allowsMultiple = suggestedValues.length > 1) {
+  return { id, name, allowsMultiple, suggestedValues };
+}
+
+// Structured from Digikala product dkp-20127115 (Apple iPhone 17 CH 256GB/8GB).
+const mobileAttributeSchema = [
+  { id: "mobile_general", name: "مشخصات کلی", attributes: [
+    mobileAttribute("mobile_region", "ریجن", ["چین"]),
+    mobileAttribute("mobile_phone_type", "نوع گوشی موبایل", ["سیستم عامل iOS"]),
+    mobileAttribute("mobile_category", "دسته‌بندی", ["پرچم‌دار"]),
+    mobileAttribute("mobile_model", "مدل", ["iPhone 17 CH"]),
+    mobileAttribute("mobile_intro_date", "زمان معرفی", ["۱۹ سپتامبر ۲۰۲۵"]),
+    mobileAttribute("mobile_dimensions", "ابعاد", ["۱۴۹.۶ × ۷۱.۵ × ۸ میلی‌متر"]),
+    mobileAttribute("mobile_weight", "وزن", ["۱۷۷ گرم"]),
+    mobileAttribute("mobile_body", "توضیحات بدنه", ["قاب جلو از جنس شیشه Ceramic Shield 2، فریم آلومینیومی و قاب پشت شیشه‌ای"]),
+    mobileAttribute("mobile_resistance", "قابلیت‌های مقاومتی", ["مقاوم در برابر نفوذ گرد و غبار", "مقاوم در برابر نفوذ آب"]),
+    mobileAttribute("mobile_sim_count", "تعداد سیم‌کارت", ["دو عدد"]),
+    mobileAttribute("mobile_sim_type", "نوع سیم‌کارت", ["سایز نانو (۸.۸ × ۱۲.۳ میلی‌متر)"]),
+    mobileAttribute("mobile_key_features", "ویژگی‌های کلیدی", ["گواهی IP68 و مقاومت در عمق ۶ متری آب تا ۳۰ دقیقه، Ultra Wideband، پیام اضطراری SOS و مکان‌یابی ماهواره‌ای"]),
+  ] },
+  { id: "mobile_display", name: "صفحه نمایش", attributes: [
+    mobileAttribute("mobile_display_technology", "فناوری صفحه نمایش", ["LTPO Super Retina XDR OLED"]),
+    mobileAttribute("mobile_refresh_rate", "نرخ به‌روزرسانی تصویر", ["۱۲۰ هرتز"]),
+    mobileAttribute("mobile_display_size", "اندازه", ["۶.۳ اینچ"]),
+    mobileAttribute("mobile_screen_body_ratio", "نسبت صفحه نمایش به بدنه", ["۹۰.۱ درصد"]),
+    mobileAttribute("mobile_aspect_ratio", "نسبت تصویر", ["۱۹.۵:۹"]),
+    mobileAttribute("mobile_display_resolution", "رزولوشن صفحه نمایش", ["۱۲۰۶ × ۲۶۲۲ پیکسل"]),
+    mobileAttribute("mobile_pixel_density", "تراکم پیکسلی", ["۴۵۸ پیکسل بر اینچ"]),
+    mobileAttribute("mobile_screen_protection", "نوع محافظ صفحه نمایش گوشی", ["Ceramic Shield 2"]),
+  ] },
+  { id: "mobile_processor", name: "پردازنده", attributes: [
+    mobileAttribute("mobile_chipset", "تراشه", ["Apple A19 (3 nm)"]),
+    mobileAttribute("mobile_cpu", "پردازنده", ["شش هسته‌ای؛ دو هسته ۴.۲۶ گیگاهرتزی و چهار هسته ۲.۶۰ گیگاهرتزی"]),
+    mobileAttribute("mobile_cpu_frequency", "فرکانس پردازنده مرکزی", ["۴.۲۶ تا ۲.۶۰ گیگاهرتز"]),
+    mobileAttribute("mobile_gpu", "پردازنده گرافیکی", ["Apple GPU پنج هسته‌ای"]),
+  ] },
+  { id: "mobile_memory", name: "حافظه", attributes: [
+    mobileAttribute("mobile_storage", "حافظه داخلی", ["۲۵۶ گیگابایت"]),
+    mobileAttribute("mobile_ram", "مقدار RAM", ["۸ گیگابایت"]),
+    mobileAttribute("mobile_memory_card", "پشتیبانی از کارت حافظه", ["فاقد پشتیبانی از کارت حافظه"]),
+  ] },
+  { id: "mobile_connectivity", name: "ارتباطات", attributes: [
+    mobileAttribute("mobile_networks", "شبکه‌های مخابراتی", ["2G", "3G", "4G", "5G"]),
+    mobileAttribute("mobile_bluetooth_version", "نسخه بلوتوث", ["۶"]),
+    mobileAttribute("mobile_bluetooth_specs", "مشخصات بلوتوث", ["پشتیبانی از A2DP و فناوری کم‌مصرف LE برای اتصال بهتر به وسایل الکترونیکی"]),
+    mobileAttribute("mobile_positioning", "تکنولوژی‌های مکان‌یابی (GPS)", ["GPS", "GALILEO", "GLONASS", "QZSS", "BDS (Beidou)"]),
+    mobileAttribute("mobile_radio", "رادیو", ["عدم پشتیبانی"]),
+    mobileAttribute("mobile_ports", "درگاه‌ها و فناوری‌های ارتباطی", ["USB Type-C 2.0", "DisplayPort"]),
+    mobileAttribute("mobile_supported_connections", "شبکه‌های ارتباطی قابل پشتیبانی", ["NFC", "بلوتوث", "Wi-Fi"]),
+  ] },
+  { id: "mobile_camera", name: "دوربین", attributes: [
+    mobileAttribute("mobile_rear_camera_count", "تعداد دوربین‌های پشت گوشی", ["۲ ماژول دوربین"]),
+    mobileAttribute("mobile_main_lens_type", "نوع لنز دوربین اصلی", ["عریض"]),
+    mobileAttribute("mobile_main_camera_resolution", "رزولوشن دوربین اصلی", ["۴۸ مگاپیکسل"]),
+    mobileAttribute("mobile_main_camera_specs", "مشخصات دوربین اصلی", ["دیافراگم f/1.6، فاصله کانونی ۲۶ میلی‌متر، سنسور 1/1.56 اینچ، پیکسل ۱ میکرومتر، فوکوس دوگانه PDAF، لرزش‌گیر اپتیکال سنسور شیفت، HDR و پانوراما"]),
+    mobileAttribute("mobile_second_lens_type", "نوع لنز دوربین دوم", ["فوق عریض"]),
+    mobileAttribute("mobile_second_camera_resolution", "رزولوشن دوربین دوم", ["۱۲ مگاپیکسل"]),
+    mobileAttribute("mobile_second_camera_specs", "مشخصات دوربین دوم", ["دیافراگم f/2.2، فاصله کانونی ۱۳ میلی‌متر، پیکسل ۰.۷ میکرومتر و فوکوس اتوماتیک دوگانه PDAF"]),
+    mobileAttribute("mobile_focus_technology", "فناوری فوکوس", ["PDAF"]),
+    mobileAttribute("mobile_video_resolution", "رزولوشن فیلمبرداری", ["4K"]),
+    mobileAttribute("mobile_video_specs", "سایر مشخصات فیلمبرداری", ["فیلمبرداری 4K با سرعت ۶۰ فریم، 1080p با سرعت ۲۴۰ فریم، HDR، دالبی ویژن تا ۶۰ فریم و ضبط صدای استودیویی"]),
+    mobileAttribute("mobile_flash", "فلش", ["Dual LED"]),
+    mobileAttribute("mobile_selfie_resolution", "رزولوشن دوربین سلفی", ["۱۲ مگاپیکسل"]),
+    mobileAttribute("mobile_selfie_specs", "مشخصات دوربین سلفی", ["دیافراگم f/1.9، فاصله کانونی ۲۳ میلی‌متر، فوکوس PDAF، سنسور SL 3D، فیلمبرداری 4K@60fps و 1080p@120fps، لرزش‌گیر ژیروسکوپی، Multi Aspect و Center Stage"]),
+  ] },
+  { id: "mobile_audio", name: "صدا", attributes: [
+    mobileAttribute("mobile_speaker", "اسپیکر", ["استریو"]),
+    mobileAttribute("mobile_audio_output", "خروجی صدا", ["USB Type-C"]),
+  ] },
+  { id: "mobile_software", name: "امکانات نرم‌افزاری", attributes: [
+    mobileAttribute("mobile_os", "سیستم عامل", ["iOS"]),
+    mobileAttribute("mobile_os_version", "نسخه سیستم عامل", ["iOS 26"]),
+  ] },
+  { id: "mobile_other", name: "سایر مشخصات", attributes: [
+    mobileAttribute("mobile_sensors", "حس‌گرها", ["شتاب‌سنج", "قطب‌نما", "مجاورت", "ژیروسکوپ", "فشارسنج", "تشخیص چهره بیومتریک Face ID"]),
+    mobileAttribute("mobile_battery_capacity", "ظرفیت باتری", ["۳۶۹۲ میلی‌آمپر ساعت"]),
+    mobileAttribute("mobile_battery_type", "نوع باتری", ["لیتیوم یون"]),
+    mobileAttribute("mobile_charging_power", "توان شارژ", ["۲۵ وات"]),
+    mobileAttribute("mobile_charging_features", "قابلیت‌های شارژ", ["شارژ باسیم", "شارژ بی‌سیم", "شارژ معکوس"]),
+    mobileAttribute("mobile_battery_specs", "مشخصات باتری", ["شارژ ۵۰ درصدی در ۲۰ دقیقه با PD3.2 و AVS، شارژ بی‌سیم ۲۵ وات MagSafe، شارژ بی‌سیم ۱۵ وات Qi2 و شارژ معکوس باسیم ۴.۵ وات"]),
+    mobileAttribute("mobile_box_contents", "اقلام همراه", ["کابل USB Type-C", "دفترچه راهنما"]),
+  ] },
+] satisfies NonNullable<DevelopmentCategorySeed["attributeSchema"]>;
+
+const iphone17Attributes = mobileAttributeSchema.flatMap((group) => group.attributes.map((attribute) => ({
+  attributeId: attribute.id,
+  values: attribute.suggestedValues,
+})));
 
 export const generalStoreSeed: DevelopmentStoreSeed = {
   industry: "GENERAL",
@@ -7,6 +96,7 @@ export const generalStoreSeed: DevelopmentStoreSeed = {
   shortDescription: "فروشگاه آزمایشی محصولات عمومی با قیمت ثابت، موجودی و تخفیف زمان‌دار",
   categories: [
     { name: "کالای دیجیتال", slug: "digital-products", description: "لوازم دیجیتال و جانبی پرکاربرد", attributeSchema: [{ id: "group_digital", name: "مشخصات فنی", attributes: [{ id: "digital_brand", name: "برند", allowsMultiple: false }, { id: "digital_ram", name: "رم", allowsMultiple: false }, { id: "digital_suitable", name: "مناسب برای", allowsMultiple: true }] }] },
+    { name: "موبایل", slug: "mobile-phones", parentSlug: "digital-products", description: "گوشی‌های موبایل هوشمند با مشخصات فنی کامل", attributeSchema: mobileAttributeSchema },
     { name: "خانه و آشپزخانه", slug: "home-kitchen", description: "محصولات کاربردی خانه و آشپزخانه", attributeSchema: [{ id: "group_home", name: "مشخصات کلی", attributes: [{ id: "home_material", name: "جنس", allowsMultiple: false }, { id: "home_usage", name: "کاربرد", allowsMultiple: true }] }] },
     { name: "مد و پوشاک", slug: "fashion-clothing", description: "پوشاک و اکسسوری روزمره", attributeSchema: [{ id: "group_fashion", name: "جزئیات محصول", attributes: [{ id: "fashion_material", name: "جنس پارچه", allowsMultiple: false }, { id: "fashion_suitable", name: "مناسب برای", allowsMultiple: true }] }] },
     { name: "ورزش و سفر", slug: "sport-travel", description: "لوازم ورزشی، کمپ و سفر", attributeSchema: [{ id: "group_sport", name: "مشخصات استفاده", attributes: [{ id: "sport_capacity", name: "ظرفیت", allowsMultiple: false }, { id: "sport_usage", name: "مناسب برای", allowsMultiple: true }] }] },
@@ -25,5 +115,6 @@ export const generalStoreSeed: DevelopmentStoreSeed = {
     { sku: "DEV-GEN-010", name: "کوله پشتی طبیعت‌گردی", slug: "hiking-backpack", categorySlug: "sport-travel", description: "کوله سبک طبیعت‌گردی با بندهای قابل تنظیم.", stock: 6, fixedPrice: "38500000", discountPercent: "8", featured: true },
     { sku: "DEV-GEN-011", name: "ماساژور دستی شارژی", slug: "rechargeable-hand-massager", categorySlug: "beauty-health", description: "ماساژور شارژی با چند سطح شدت.", stock: 10, fixedPrice: "27600000" },
     { sku: "DEV-GEN-012", name: "ست مراقبت پوست روزانه", slug: "daily-skincare-set", categorySlug: "beauty-health", description: "ست آزمایشی مراقبت روزانه پوست شامل سه محصول.", stock: 14, fixedPrice: "34200000", discountPercent: "12", featured: true },
+    { sku: "DEV-GEN-013", name: "گوشی موبایل اپل مدل iPhone 17 CH دو سیم‌کارت ظرفیت ۲۵۶ گیگابایت و رم ۸ گیگابایت", slug: "apple-iphone-17-ch-256gb-8gb", categorySlug: "mobile-phones", description: "گوشی پرچم‌دار اپل با تراشه A19، نمایشگر LTPO Super Retina XDR OLED و دوربین دوگانه.", stock: 4, fixedPrice: "2859990000", featured: true, attributes: iphone17Attributes },
   ],
 };
