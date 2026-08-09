@@ -10,15 +10,32 @@ export function GeneralHeaderMenuRow({ categories, deliveryHref }: { categories:
   const lastScrollY = useRef(0);
   const direction = useRef<"up" | "down">("up");
   const distance = useRef(0);
+  const visibleRef = useRef(true);
+  const lockedUntil = useRef(0);
 
   useEffect(() => {
     lastScrollY.current = window.scrollY;
     let frame = 0;
 
+    function updateVisibility(nextVisible: boolean) {
+      if (visibleRef.current === nextVisible) return;
+      visibleRef.current = nextVisible;
+      distance.current = 0;
+      lockedUntil.current = performance.now() + 380;
+      setVisible(nextVisible);
+    }
+
     function handleScroll() {
       if (frame) return;
       frame = window.requestAnimationFrame(() => {
         const current = Math.max(window.scrollY, 0);
+        if (performance.now() < lockedUntil.current) {
+          lastScrollY.current = current;
+          distance.current = 0;
+          frame = 0;
+          return;
+        }
+
         const delta = current - lastScrollY.current;
         const nextDirection = delta > 0 ? "down" : delta < 0 ? "up" : direction.current;
 
@@ -28,13 +45,11 @@ export function GeneralHeaderMenuRow({ categories, deliveryHref }: { categories:
         }
         distance.current += Math.abs(delta);
 
-        if (current < 32) setVisible(true);
-        else if (nextDirection === "down" && distance.current > 14) {
-          setVisible(false);
-          distance.current = 0;
+        if (current < 32) updateVisibility(true);
+        else if (nextDirection === "down" && current > 80 && distance.current > 14) {
+          updateVisibility(false);
         } else if (nextDirection === "up" && distance.current > 8) {
-          setVisible(true);
-          distance.current = 0;
+          updateVisibility(true);
         }
 
         lastScrollY.current = current;
