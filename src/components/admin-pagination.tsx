@@ -27,7 +27,7 @@ export function AdminPagination({ page, pageSize, totalItems, totalPages }: Prop
     const next = new URLSearchParams(searchParams.toString());
     if (name === "pageSize") {
       document.cookie = `${adminPageSizeCookieName}=${value}; Path=/admin; Max-Age=${adminPageSizeCookieMaxAge}; SameSite=Lax`;
-      next.delete("pageSize");
+      next.set("pageSize", String(value));
       next.delete("page");
     } else {
       next.delete("pageSize");
