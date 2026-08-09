@@ -78,9 +78,9 @@ export async function GeneralHome() {
     {discountedProducts.length > 0 && <section {...sectionProps("PRODUCTS")} className={`${container} overflow-hidden rounded-2xl bg-[var(--brand-primary)] p-3 text-[var(--brand-primary-foreground)] sm:p-4 lg:p-5`} aria-label="پیشنهادهای ویژه">
       <div className="grid min-w-0 gap-4 lg:grid-cols-[170px_minmax(0,1fr)] lg:items-center">
         <div className="grid justify-items-center gap-3 px-3 py-3 text-center text-white"><Sparkles size={42} strokeWidth={1.4} /><strong className="text-2xl font-black leading-9">پیشنهاد<br />شگفت‌انگیز</strong><Link href="/products" className="inline-flex items-center gap-1 text-xs font-bold">مشاهده همه<ChevronLeft size={15} /></Link></div>
-        <DragScrollRow ariaLabel="پیشنهادهای شگفت‌انگیز" showNavigation className="flex w-full min-w-0 max-w-full gap-4 overflow-x-auto pb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          {discountedProducts.map((product, index) => <div key={product.id} className="w-[calc(50%-8px)] min-w-[calc(50%-8px)] snap-start sm:w-[220px] sm:min-w-[220px] lg:w-[224px] lg:min-w-[224px]"><ProductCard {...product} storefrontVariant="gallery" imageTone={index % 4} /></div>)}
-          <div className="w-[calc(50%-8px)] min-w-[calc(50%-8px)] snap-start sm:w-[220px] sm:min-w-[220px] lg:w-[224px] lg:min-w-[224px]"><ViewAllProductCard href="/products" /></div>
+        <DragScrollRow ariaLabel="پیشنهادهای شگفت‌انگیز" showNavigation className="flex w-full min-w-0 max-w-full gap-2 overflow-x-auto pb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          {discountedProducts.map((product, index) => <div key={product.id} className="w-[calc(50%-4px)] min-w-[calc(50%-4px)] snap-start sm:w-[220px] sm:min-w-[220px] lg:w-[224px] lg:min-w-[224px]"><ProductCard {...product} storefrontVariant="gallery" imageTone={index % 4} /></div>)}
+          <div className="w-[calc(50%-4px)] min-w-[calc(50%-4px)] snap-start sm:w-[220px] sm:min-w-[220px] lg:w-[224px] lg:min-w-[224px]"><ViewAllProductCard href="/products" /></div>
         </DragScrollRow>
       </div>
     </section>}
