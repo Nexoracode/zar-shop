@@ -2,50 +2,128 @@
 
 import { useState, type FormEvent } from "react";
 import { Alert, Button, Card, Input, Spinner, toast } from "@heroui/react";
-import { Boxes, GripVertical, ListPlus, Plus, Save, Trash2 } from "lucide-react";
+import { Boxes, ListPlus, Plus, Save, Tags, Trash2, X } from "lucide-react";
 import { AdminCheckbox } from "@/components/admin-checkbox";
 import { adminFieldClass, adminLabelClass } from "@/components/admin-ui";
+import { HeroSelectField } from "@/components/hero-select-field";
 import { categoryAttributeSchema, type CategoryAttributeGroup } from "@/modules/products/attributes";
+
+const newItemKey = "__new__";
 
 function stableId(prefix: string) {
   return `${prefix}_${crypto.randomUUID().replaceAll("-", "")}`;
 }
 
+function splitValues(value: string) {
+  return [...new Set(value.split(/[,،]/).map((item) => item.trim()).filter(Boolean))];
+}
+
 export function CategoryAttributesForm({ categoryId, initialGroups }: { categoryId: string; initialGroups: CategoryAttributeGroup[] }) {
   const [groups, setGroups] = useState(initialGroups);
+  const [selectedGroupId, setSelectedGroupId] = useState(initialGroups[0]?.id ?? newItemKey);
+  const [selectedAttributeId, setSelectedAttributeId] = useState(initialGroups[0]?.attributes[0]?.id ?? newItemKey);
+  const [newGroupName, setNewGroupName] = useState("");
+  const [newAttributeName, setNewAttributeName] = useState("");
+  const [newAttributeAllowsMultiple, setNewAttributeAllowsMultiple] = useState(false);
+  const [valueDraft, setValueDraft] = useState("");
   const [saving, setSaving] = useState(false);
-  const [draggedGroupId, setDraggedGroupId] = useState<string | null>(null);
+  const selectedGroup = groups.find((group) => group.id === selectedGroupId);
+  const selectedAttribute = selectedGroup?.attributes.find((attribute) => attribute.id === selectedAttributeId);
 
-  function addGroup() {
-    setGroups((current) => [...current, { id: stableId("group"), name: "", attributes: [{ id: stableId("attribute"), name: "", allowsMultiple: false }] }]);
+  function selectGroup(groupId: string) {
+    setSelectedGroupId(groupId);
+    const group = groups.find((item) => item.id === groupId);
+    setSelectedAttributeId(group?.attributes[0]?.id ?? newItemKey);
+    setNewAttributeName("");
   }
 
-  function updateGroup(groupId: string, update: Partial<CategoryAttributeGroup>) {
-    setGroups((current) => current.map((group) => group.id === groupId ? { ...group, ...update } : group));
+  function addDefinitionValue() {
+    const suggestedValues = splitValues(valueDraft);
+    if (!suggestedValues.length) {
+      toast.danger("مقدار ویژگی را وارد کنید", { description: "یک یا چند مقدار را با کاما از هم جدا کنید." });
+      return;
+    }
+
+    if (selectedGroup) {
+      if (selectedAttribute) {
+        setGroups((current) => current.map((group) => group.id === selectedGroup.id ? {
+          ...group,
+          attributes: group.attributes.map((attribute) => attribute.id === selectedAttribute.id ? { ...attribute, suggestedValues: [...new Set([...attribute.suggestedValues, ...suggestedValues])] } : attribute),
+        } : group));
+      } else {
+        const name = newAttributeName.trim();
+        if (name.length < 2) {
+          toast.danger("نام ویژگی را وارد کنید");
+          return;
+        }
+        if (selectedGroup.attributes.some((attribute) => attribute.name === name)) {
+          toast.danger("این ویژگی قبلاً در گروه ثبت شده است", { description: "ویژگی موجود را از فهرست انتخاب کنید." });
+          return;
+        }
+        const attributeId = stableId("attribute");
+        setGroups((current) => current.map((group) => group.id === selectedGroup.id ? { ...group, attributes: [...group.attributes, { id: attributeId, name, allowsMultiple: newAttributeAllowsMultiple, suggestedValues }] } : group));
+        setSelectedAttributeId(attributeId);
+        setNewAttributeName("");
+      }
+    } else {
+      const groupName = newGroupName.trim();
+      const attributeName = newAttributeName.trim();
+      if (groupName.length < 2 || attributeName.length < 2) {
+        toast.danger("نام گروه و ویژگی را کامل کنید");
+        return;
+      }
+      if (groups.some((group) => group.name === groupName)) {
+        toast.danger("این گروه قبلاً ثبت شده است", { description: "گروه موجود را از فهرست انتخاب کنید." });
+        return;
+      }
+      const groupId = stableId("group");
+      const attributeId = stableId("attribute");
+      setGroups((current) => [...current, { id: groupId, name: groupName, attributes: [{ id: attributeId, name: attributeName, allowsMultiple: newAttributeAllowsMultiple, suggestedValues }] }]);
+      setSelectedGroupId(groupId);
+      setSelectedAttributeId(attributeId);
+      setNewGroupName("");
+      setNewAttributeName("");
+    }
+    setValueDraft("");
   }
 
-  function addAttribute(groupId: string) {
-    setGroups((current) => current.map((group) => group.id === groupId ? { ...group, attributes: [...group.attributes, { id: stableId("attribute"), name: "", allowsMultiple: false }] } : group));
+  function setAllowsMultiple(allowsMultiple: boolean) {
+    if (!selectedGroup || !selectedAttribute) {
+      setNewAttributeAllowsMultiple(allowsMultiple);
+      return;
+    }
+    setGroups((current) => current.map((group) => group.id === selectedGroup.id ? { ...group, attributes: group.attributes.map((attribute) => attribute.id === selectedAttribute.id ? { ...attribute, allowsMultiple } : attribute) } : group));
   }
 
-  function moveGroup(targetId: string) {
-    if (!draggedGroupId || draggedGroupId === targetId) return;
-    setGroups((current) => {
-      const sourceIndex = current.findIndex((group) => group.id === draggedGroupId);
-      const targetIndex = current.findIndex((group) => group.id === targetId);
-      if (sourceIndex < 0 || targetIndex < 0) return current;
-      const next = [...current];
-      const [moved] = next.splice(sourceIndex, 1);
-      next.splice(targetIndex, 0, moved);
-      return next;
-    });
+  function removeSuggestedValue(groupId: string, attributeId: string, value: string) {
+    setGroups((current) => current.map((group) => group.id === groupId ? { ...group, attributes: group.attributes.map((attribute) => attribute.id === attributeId ? { ...attribute, suggestedValues: attribute.suggestedValues.filter((item) => item !== value) } : attribute) } : group));
+  }
+
+  function removeAttribute(groupId: string, attributeId: string) {
+    const group = groups.find((item) => item.id === groupId);
+    if (group?.attributes.length === 1) {
+      removeGroup(groupId);
+      return;
+    }
+    const remaining = group?.attributes.filter((attribute) => attribute.id !== attributeId) ?? [];
+    setGroups((current) => current.map((item) => item.id === groupId ? { ...item, attributes: remaining } : item));
+    if (selectedAttributeId === attributeId) setSelectedAttributeId(remaining[0]?.id ?? newItemKey);
+  }
+
+  function removeGroup(groupId: string) {
+    const next = groups.filter((group) => group.id !== groupId);
+    setGroups(next);
+    if (selectedGroupId === groupId) {
+      setSelectedGroupId(next[0]?.id ?? newItemKey);
+      setSelectedAttributeId(next[0]?.attributes[0]?.id ?? newItemKey);
+    }
   }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const validation = categoryAttributeSchema.safeParse(groups);
     if (!validation.success) {
-      toast.danger("تعریف ویژگی‌ها کامل نیست", { description: validation.error.issues[0]?.message ?? "نام گروه و ویژگی‌ها را تکمیل کنید." });
+      toast.danger("تعریف ویژگی‌ها کامل نیست", { description: validation.error.issues[0]?.message ?? "گروه‌ها و ویژگی‌ها را بررسی کنید." });
       return;
     }
     setSaving(true);
@@ -54,7 +132,7 @@ export function CategoryAttributesForm({ categoryId, initialGroups }: { category
       const result = await response.json().catch(() => null);
       if (!response.ok) throw new Error(result?.message ?? "ذخیره ویژگی‌های دسته‌بندی انجام نشد.");
       setGroups(result.groups);
-      toast.success("ویژگی‌های دسته‌بندی ذخیره شدند", { description: "فرم محصولات این دسته‌بندی براساس ساختار جدید به‌روزرسانی شد." });
+      toast.success("ویژگی‌های دسته‌بندی ذخیره شدند", { description: "مقادیر پیشنهادی نیز در فرم محصولات همین دسته در دسترس هستند." });
     } catch (reason) {
       toast.danger("ذخیره ویژگی‌ها انجام نشد", { description: reason instanceof Error ? reason.message : "خطای ناشناخته" });
     } finally {
@@ -62,25 +140,38 @@ export function CategoryAttributesForm({ categoryId, initialGroups }: { category
     }
   }
 
+  const attributeOptions = selectedGroup?.attributes ?? [];
+  const allowsMultiple = selectedAttribute?.allowsMultiple ?? newAttributeAllowsMultiple;
+
   return <form onSubmit={submit} className="grid gap-4">
-    <Alert status="accent" className="border border-violet-200 bg-violet-50 text-violet-950"><Alert.Description className="text-xs leading-6">ویژگی‌ها فقط اطلاعات توصیفی محصول هستند. موارد قابل انتخاب هنگام خرید مثل رنگ، سایز، وزن و قیمت هر انتخاب باید از بخش «تنوع محصول» مدیریت شوند.</Alert.Description></Alert>
-    <Card variant="secondary" className="rounded-xl border border-slate-200 bg-white shadow-sm">
-      <Card.Content className="p-4 sm:p-5">
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-4"><div className="flex items-center gap-3"><span className="grid size-10 place-items-center rounded-xl bg-violet-50 text-violet-700"><Boxes size={19} /></span><div><h2 className="m-0 text-base font-black text-slate-800">ساختار ویژگی‌ها</h2><p className="mt-1 text-xs text-slate-400">ابتدا گروه و سپس ویژگی‌های داخل آن را تعریف کنید.</p></div></div><Button type="button" variant="secondary" onPress={addGroup} isDisabled={groups.length >= 20} className="gap-2 text-xs font-bold"><Plus size={15} />گروه جدید</Button></div>
-        <div className="grid gap-3">
-          {groups.map((group, groupIndex) => <Card key={group.id} variant="secondary" onDragOver={(event) => event.preventDefault()} onDrop={() => { moveGroup(group.id); setDraggedGroupId(null); }} className={`rounded-xl border bg-slate-50/60 shadow-none ${draggedGroupId === group.id ? "border-violet-400 opacity-50" : "border-slate-200"}`}>
-            <Card.Content className="p-3 sm:p-4">
-              <div className="grid items-end gap-2 sm:grid-cols-[32px_minmax(0,1fr)_36px]"><span draggable onDragStart={() => setDraggedGroupId(group.id)} onDragEnd={() => setDraggedGroupId(null)} className="mb-1 grid h-10 cursor-grab place-items-center text-slate-400"><GripVertical size={17} /></span><label className={adminLabelClass}>نام گروه<Input value={group.name} onChange={(event) => updateGroup(group.id, { name: event.target.value })} placeholder="مثلاً مشخصات کلی" fullWidth variant="secondary" className={adminFieldClass} /></label><Button type="button" isIconOnly size="sm" variant="danger-soft" aria-label={`حذف گروه ${(groupIndex + 1).toLocaleString("fa-IR")}`} onPress={() => setGroups((current) => current.filter((item) => item.id !== group.id))} className="mb-1"><Trash2 size={14} /></Button></div>
-              <div className="mt-4 grid gap-2 border-t border-slate-200 pt-4">
-                {group.attributes.map((attribute, attributeIndex) => <div key={attribute.id} className="grid items-start gap-3 rounded-lg border border-slate-200 bg-white p-3 lg:grid-cols-[minmax(180px,1fr)_minmax(220px,1fr)_36px]"><label className={adminLabelClass}>نام ویژگی<Input value={attribute.name} onChange={(event) => updateGroup(group.id, { attributes: group.attributes.map((item) => item.id === attribute.id ? { ...item, name: event.target.value } : item) })} placeholder="مثلاً رم یا مناسب برای" fullWidth variant="secondary" className={adminFieldClass} /></label><AdminCheckbox isSelected={attribute.allowsMultiple} onChange={(allowsMultiple) => updateGroup(group.id, { attributes: group.attributes.map((item) => item.id === attribute.id ? { ...item, allowsMultiple } : item) })} description="برای مواردی مثل مناسب برای: آقایان، خانم‌ها">چند مقدار قابل ثبت باشد</AdminCheckbox><Button type="button" isIconOnly size="sm" variant="danger-soft" aria-label={`حذف ویژگی ${(attributeIndex + 1).toLocaleString("fa-IR")}`} onPress={() => updateGroup(group.id, { attributes: group.attributes.filter((item) => item.id !== attribute.id) })} className="mt-5"><Trash2 size={14} /></Button></div>)}
-                <Button type="button" variant="ghost" onPress={() => addAttribute(group.id)} isDisabled={group.attributes.length >= 30} className="min-h-10 justify-self-start gap-2 text-xs font-bold text-violet-700"><ListPlus size={15} />افزودن ویژگی</Button>
-              </div>
-            </Card.Content>
-          </Card>)}
-          {!groups.length && <div className="grid min-h-52 place-items-center rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 p-6 text-center"><div><Boxes className="mx-auto mb-3 text-slate-300" size={30} /><strong className="block text-sm text-slate-700">هنوز گروه ویژگی تعریف نشده است</strong><p className="mt-1 text-xs text-slate-400">مثلاً گروه «مشخصات کلی» را ایجاد و ویژگی‌هایی مثل رم را به آن اضافه کنید.</p><Button type="button" variant="secondary" onPress={addGroup} className="mt-4 gap-2 text-xs font-bold"><Plus size={15} />ساخت اولین گروه</Button></div></div>}
+    <Alert status="accent" className="border border-violet-200 bg-violet-50 text-violet-950"><Alert.Description className="text-xs leading-6">ابتدا گروه را انتخاب یا ایجاد کنید، سپس ویژگی همان گروه و مقادیر قابل انتخاب آن را ثبت کنید. رنگ، سایز، وزن و قیمت انتخابی همچنان از بخش «تنوع محصول» مدیریت می‌شوند.</Alert.Description></Alert>
+
+    <Card variant="secondary" className="rounded-xl border border-slate-200 bg-white shadow-sm"><Card.Content className="p-4 sm:p-5">
+      <div className="mb-4 flex items-center gap-3 border-b border-slate-100 pb-4"><span className="grid size-10 place-items-center rounded-xl bg-violet-50 text-violet-700"><ListPlus size={19} /></span><div><h2 className="m-0 text-base font-black text-slate-800">افزودن ویژگی و مقدار</h2><p className="mt-1 text-xs text-slate-400">از موارد قبلی انتخاب کنید یا مورد جدید بسازید.</p></div></div>
+      <div className="grid gap-4 xl:grid-cols-2">
+        <div className="grid content-start gap-3 rounded-xl border border-slate-200 bg-slate-50/60 p-3 sm:p-4">
+          <HeroSelectField name="attributeGroup" label="گروه ویژگی" value={selectedGroupId} includeEmptyOption={false} options={[...groups.map((group) => ({ value: group.id, label: group.name })), { value: newItemKey, label: "+ ثبت گروه جدید" }]} onValueChange={selectGroup} />
+          {selectedGroupId === newItemKey && <label className={adminLabelClass}>نام گروه جدید<Input value={newGroupName} onChange={(event) => setNewGroupName(event.target.value)} placeholder="مثلاً مشخصات کلی" fullWidth variant="secondary" className={adminFieldClass} /></label>}
+          <HeroSelectField name="attributeDefinition" label="ویژگی" value={selectedAttributeId} includeEmptyOption={false} options={[...attributeOptions.map((attribute) => ({ value: attribute.id, label: attribute.name })), { value: newItemKey, label: "+ ثبت ویژگی جدید" }]} onValueChange={setSelectedAttributeId} />
+          {selectedAttributeId === newItemKey && <label className={adminLabelClass}>نام ویژگی جدید<Input value={newAttributeName} onChange={(event) => setNewAttributeName(event.target.value)} placeholder="مثلاً رم یا مناسب برای" fullWidth variant="secondary" className={adminFieldClass} /></label>}
+          <AdminCheckbox isSelected={allowsMultiple} onChange={setAllowsMultiple} description="برای مواردی مثل مناسب برای: آقایان، خانم‌ها">چند مقدار برای محصول قابل انتخاب باشد</AdminCheckbox>
         </div>
-      </Card.Content>
-    </Card>
+        <div className="grid content-start gap-3 rounded-xl border border-slate-200 bg-white p-3 sm:p-4">
+          <label className={adminLabelClass}>مقدار ویژگی<Input value={valueDraft} onChange={(event) => setValueDraft(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); addDefinitionValue(); } }} placeholder="مثلاً ۸، ۱۲، ۱۶ گیگابایت" fullWidth variant="secondary" className={adminFieldClass} /><span className="text-[10px] font-normal text-slate-400">برای ثبت چند مقدار، آن‌ها را با کاما جدا کنید.</span></label>
+          {selectedAttribute?.suggestedValues.length ? <div className="flex flex-wrap gap-1.5">{selectedAttribute.suggestedValues.map((value) => <span key={value} className="rounded-md bg-slate-100 px-2 py-1 text-[10px] text-slate-600">{value}</span>)}</div> : <span className="text-[11px] text-slate-400">هنوز مقداری برای این ویژگی ثبت نشده است.</span>}
+          <Button type="button" variant="primary" onPress={addDefinitionValue} className="mt-auto min-h-11 gap-2 font-bold"><Plus size={15} />ثبت مقدار ویژگی</Button>
+        </div>
+      </div>
+    </Card.Content></Card>
+
+    <Card variant="secondary" className="rounded-xl border border-slate-200 bg-white shadow-sm"><Card.Content className="p-4 sm:p-5">
+      <div className="mb-4 flex items-center gap-3 border-b border-slate-100 pb-4"><span className="grid size-10 place-items-center rounded-xl bg-slate-100 text-slate-600"><Boxes size={19} /></span><div><h2 className="m-0 text-base font-black text-slate-800">فهرست ویژگی‌های دسته</h2><p className="mt-1 text-xs text-slate-400">گروه‌ها، ویژگی‌ها و مقادیر ثبت‌شده را مرور کنید.</p></div></div>
+      <div className="grid gap-3">
+        {groups.map((group) => <Card key={group.id} variant="secondary" className="rounded-xl border border-slate-200 bg-slate-50/60 shadow-none"><Card.Content className="p-3 sm:p-4"><div className="flex items-center justify-between gap-3"><div className="flex items-center gap-2"><Tags size={16} className="text-violet-600" /><strong className="text-sm text-slate-800">{group.name}</strong><span className="text-[10px] text-slate-400">{group.attributes.length.toLocaleString("fa-IR")} ویژگی</span></div><Button type="button" isIconOnly size="sm" variant="danger-soft" aria-label={`حذف گروه ${group.name}`} onPress={() => removeGroup(group.id)}><Trash2 size={14} /></Button></div><div className="mt-3 grid gap-2 border-t border-slate-200 pt-3">{group.attributes.map((attribute) => <div key={attribute.id} className="rounded-lg border border-slate-200 bg-white p-3"><div className="flex items-center justify-between gap-3"><div><strong className="block text-xs text-slate-700">{attribute.name}</strong><span className="mt-1 block text-[10px] text-slate-400">{attribute.allowsMultiple ? "چندمقداری" : "تک‌مقداری"}</span></div><Button type="button" isIconOnly size="sm" variant="danger-soft" aria-label={`حذف ویژگی ${attribute.name}`} onPress={() => removeAttribute(group.id, attribute.id)}><Trash2 size={13} /></Button></div>{attribute.suggestedValues.length ? <div className="mt-3 flex flex-wrap gap-1.5">{attribute.suggestedValues.map((value) => <span key={value} className="inline-flex min-h-7 items-center gap-1 rounded-md bg-violet-50 px-2 text-[10px] font-bold text-violet-700">{value}<Button type="button" isIconOnly size="sm" variant="ghost" aria-label={`حذف مقدار ${value}`} onPress={() => removeSuggestedValue(group.id, attribute.id, value)} className="size-5 min-h-5 min-w-5 rounded text-violet-500"><X size={11} /></Button></span>)}</div> : <span className="mt-2 block text-[10px] text-amber-600">مقداری ثبت نشده است.</span>}</div>)}</div></Card.Content></Card>)}
+        {!groups.length && <div className="grid min-h-40 place-items-center rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 p-5 text-center"><div><Boxes className="mx-auto mb-2 text-slate-300" size={28} /><strong className="block text-sm text-slate-600">هنوز ویژگی‌ای ثبت نشده است</strong><span className="mt-1 block text-xs text-slate-400">از فرم بالا اولین گروه، ویژگی و مقدار را ثبت کنید.</span></div></div>}
+      </div>
+    </Card.Content></Card>
+
     <Card variant="secondary" className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm"><div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div><strong className="block text-sm text-slate-800">ذخیره ساختار ویژگی‌ها</strong><p className="mt-1 text-xs text-slate-400">ویژگی‌های استفاده‌شده در محصولات بدون حذف مقدار آن‌ها قابل حذف نیستند.</p></div><Button type="submit" variant="primary" isPending={saving} className="min-h-11 shrink-0 gap-2 px-5 font-bold">{({ isPending }) => <>{isPending ? <Spinner size="sm" color="current" /> : <Save size={16} />}{isPending ? "در حال ذخیره..." : "ذخیره ویژگی‌ها"}</>}</Button></div></Card>
   </form>;
 }

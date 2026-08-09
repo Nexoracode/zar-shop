@@ -20,6 +20,15 @@ test("category attributes support grouped single and multiple values", () => {
   assert.equal(result.ok, true);
 });
 
+test("category attributes keep selectable suggested values", () => {
+  const result = categoryAttributeSchema.parse([{
+    id: "group_specs",
+    name: "مشخصات فنی",
+    attributes: [{ id: "attribute_memory", name: "حافظه", allowsMultiple: false, suggestedValues: ["۱۲۸ گیگابایت", "۲۵۶ گیگابایت"] }],
+  }]);
+  assert.deepEqual(result[0].attributes[0].suggestedValues, ["۱۲۸ گیگابایت", "۲۵۶ گیگابایت"]);
+});
+
 test("single-value category attributes reject multiple product values", () => {
   const result = validateProductAttributes(definitions, [{ attributeId: "attribute_ram", values: ["۸", "۱۲"] }]);
   assert.equal(result.ok, false);

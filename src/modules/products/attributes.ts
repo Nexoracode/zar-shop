@@ -6,6 +6,10 @@ export const categoryAttributeDefinitionSchema = z.object({
   id: stableIdSchema,
   name: z.string().trim().min(2).max(100),
   allowsMultiple: z.boolean().default(false),
+  suggestedValues: z.array(z.string().trim().min(1).max(191)).max(100).default([]).refine(
+    (values) => new Set(values).size === values.length,
+    "مقادیر پیشنهادی یک ویژگی نباید تکراری باشند.",
+  ),
 });
 
 export const categoryAttributeGroupSchema = z.object({
