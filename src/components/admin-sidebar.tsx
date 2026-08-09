@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { Button } from "@heroui/react";
 import { usePathname, useRouter } from "next/navigation";
-import { BadgePercent, Boxes, ChartNoAxesCombined, FolderTree, Images, ListTree, LogOut, Menu, PackageCheck, Palette, Settings, Store, Users, X } from "lucide-react";
+import { BadgePercent, Boxes, ChartNoAxesCombined, FolderTree, Images, ListTree, LogOut, Menu, PackageCheck, Palette, Settings, SlidersHorizontal, Store, Users, X } from "lucide-react";
 import { useState } from "react";
 import type { UserRole } from "@generated/prisma/enums";
 import { hasPermission, type AdminPermission } from "@/modules/auth/permissions";
@@ -19,10 +19,16 @@ const navGroups: Array<{ title: string; items: NavItem[] }> = [
     title: "کاتالوگ و محصولات",
     items: [
       { href: "/admin/products", label: "محصولات", icon: Boxes, permission: "catalog:manage" },
-      { href: "/admin/product-options", label: "تنوع محصولات", icon: ListTree, permission: "catalog:manage" },
       { href: "/admin/categories", label: "دسته‌بندی‌ها", icon: FolderTree, permission: "catalog:manage" },
-      { href: "/admin/colors", label: "رنگ‌ها", icon: Palette, permission: "catalog:manage" },
       { href: "/admin/media", label: "گالری رسانه", icon: Images, permission: "catalog:manage" },
+    ],
+  },
+  {
+    title: "تنوع و ویژگی‌ها",
+    items: [
+      { href: "/admin/product-options", label: "تنوع محصولات", icon: ListTree, permission: "catalog:manage" },
+      { href: "/admin/colors", label: "رنگ‌های تنوع", icon: Palette, permission: "catalog:manage" },
+      { href: "/admin/category-attributes", label: "ویژگی‌های دسته‌بندی", icon: SlidersHorizontal, permission: "catalog:manage" },
     ],
   },
   {
