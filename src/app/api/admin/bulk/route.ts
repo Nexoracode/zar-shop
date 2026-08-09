@@ -4,6 +4,7 @@ import { OrderStatus, ProductStatus, UserStatus } from "@generated/prisma/enums"
 import { db } from "@/lib/db";
 import { getCurrentUser } from "@/modules/auth/session";
 import { hasPermission } from "@/modules/auth/permissions";
+import { auditRequestContext } from "@/modules/audit/request-context";
 
 const bodySchema = z.object({
   entity: z.enum(["products", "categories", "orders", "users"]),
@@ -58,6 +59,6 @@ export async function PATCH(request: Request) {
   }
 
   if (!updated) return NextResponse.json({ message: "هیچ‌کدام از موارد انتخاب‌شده شرایط این تغییر را ندارند." }, { status: 409 });
-  await db.auditLog.create({ data: { actorId: actor.id, action: "BULK_UPDATE", entityType: entity, metadata: { action, requestedIds: uniqueIds, updated } } });
+  await db.auditLog.create({ data: { actorId: actor.id, action: "BULK_UPDATE", entityType: entity, ...auditRequestContext(request, { action, requestedIds: uniqueIds, updated }) } });
   return NextResponse.json({ updated });
 }

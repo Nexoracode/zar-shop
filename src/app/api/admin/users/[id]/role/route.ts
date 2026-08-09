@@ -3,6 +3,7 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { getCurrentUser } from "@/modules/auth/session";
 import { hasPermission } from "@/modules/auth/permissions";
+import { auditRequestContext } from "@/modules/audit/request-context";
 
 const roleSchema = z.object({
   role: z.enum(["CUSTOMER", "ADMIN", "CATALOG_MANAGER", "USER_MANAGER", "ORDER_MANAGER"]),
@@ -48,7 +49,7 @@ export async function PATCH(request: Request, context: Context) {
         action: "USER_ROLE_UPDATE",
         entityType: "User",
         entityId: id,
-        metadata: { previousRole: target.role, nextRole: parsed.data.role },
+        ...auditRequestContext(request, { previousRole: target.role, nextRole: parsed.data.role }),
       },
     });
     return updated;

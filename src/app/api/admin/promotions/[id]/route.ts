@@ -5,6 +5,7 @@ import { hasPermission } from "@/modules/auth/permissions";
 import { getCurrentUser } from "@/modules/auth/session";
 import { promotionData, serializePromotion } from "@/modules/promotions/admin";
 import { updatePromotionSchema } from "@/modules/promotions/schemas";
+import { auditRequestContext } from "@/modules/audit/request-context";
 
 type Context = { params: Promise<{ id: string }> };
 
@@ -21,7 +22,7 @@ export async function PATCH(request: Request, context: Context) {
     const input = updatePromotionSchema.parse(await request.json());
     const promotion = await db.$transaction(async (tx) => {
       const updated = await tx.promotion.update({ where: { id }, data: promotionData(input), include: { _count: { select: { redemptions: true, rewards: true } } } });
-      await tx.auditLog.create({ data: { actorId: actor.id, action: "PROMOTION_UPDATE", entityType: "Promotion", entityId: id, metadata: { type: updated.type, isActive: updated.isActive } } });
+      await tx.auditLog.create({ data: { actorId: actor.id, action: "PROMOTION_UPDATE", entityType: "Promotion", entityId: id, ...auditRequestContext(request, { title: updated.title, type: updated.type, isActive: updated.isActive, changedFields: Object.keys(input) }) } });
       return updated;
     });
     return NextResponse.json(serializePromotion(promotion));
@@ -32,7 +33,7 @@ export async function PATCH(request: Request, context: Context) {
   }
 }
 
-export async function DELETE(_request: Request, context: Context) {
+export async function DELETE(request: Request, context: Context) {
   try {
     const actor = await actorWithAccess();
     if (!actor) return NextResponse.json({ message: "دسترسی غیرمجاز است." }, { status: 403 });
@@ -42,7 +43,7 @@ export async function DELETE(_request: Request, context: Context) {
     if (promotion._count.redemptions || promotion._count.rewards) return NextResponse.json({ message: "این پروموشن سابقه استفاده دارد و فقط می‌تواند غیرفعال شود." }, { status: 409 });
     await db.$transaction(async (tx) => {
       await tx.promotion.delete({ where: { id } });
-      await tx.auditLog.create({ data: { actorId: actor.id, action: "PROMOTION_DELETE", entityType: "Promotion", entityId: id, metadata: { type: promotion.type, code: promotion.code } } });
+      await tx.auditLog.create({ data: { actorId: actor.id, action: "PROMOTION_DELETE", entityType: "Promotion", entityId: id, ...auditRequestContext(request, { title: promotion.title, type: promotion.type, code: promotion.code }) } });
     });
     return new NextResponse(null, { status: 204 });
   } catch (error) {

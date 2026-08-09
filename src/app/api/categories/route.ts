@@ -5,6 +5,7 @@ import { getCurrentUser } from "@/modules/auth/session";
 import { buildCategoryTree } from "@/modules/categories/category-tree";
 import { categorySchema } from "@/modules/categories/schemas";
 import { hasPermission } from "@/modules/auth/permissions";
+import { auditRequestContext } from "@/modules/audit/request-context";
 
 const categoryInclude = {
   image: true,
@@ -50,7 +51,7 @@ export async function POST(request: Request) {
 
     const category = await db.$transaction(async (tx) => {
       const created = await tx.category.create({ data: input, include: categoryInclude });
-      await tx.auditLog.create({ data: { actorId: actor!.id, action: "CATEGORY_CREATE", entityType: "Category", entityId: created.id } });
+      await tx.auditLog.create({ data: { actorId: actor!.id, action: "CATEGORY_CREATE", entityType: "Category", entityId: created.id, ...auditRequestContext(request, { name: created.name, slug: created.slug, parentId: created.parentId }) } });
       return created;
     });
     return NextResponse.json(category, { status: 201 });

@@ -12,6 +12,7 @@ import { getStoreIndustry } from "@/modules/settings/store-settings";
 import { getCatalogSettings } from "@/modules/settings/catalog-settings";
 import { validateProductAttributes } from "@/modules/products/attributes";
 import { parseOptionValues } from "@/modules/products/options";
+import { auditRequestContext } from "@/modules/audit/request-context";
 
 export async function GET() {
   const [settings, user, catalogSettings] = await Promise.all([getGeneralStoreSettings(), getCurrentUser(), getCatalogSettings()]);
@@ -52,7 +53,7 @@ export async function POST(request: Request) {
     const product = await db.$transaction(async (tx) => {
       const created = await tx.product.create({ data: { ...input, attributes: attributeValidation.data, discountStartsAt: tehranDateStart(input.discountStartsAt), discountEndsAt: tehranDateEnd(input.discountEndsAt), description: sanitizeProductDescription(input.description), optionGuideId, options: { create: options.map((option, position) => ({ ...option, position })) } } });
       if (mediaIds.length) await tx.productMedia.createMany({ data: mediaIds.map((mediaId, position) => ({ productId: created.id, mediaId, position, isCover: position === 0 })) });
-      await tx.auditLog.create({ data: { actorId: actor.id, action: "PRODUCT_CREATE", entityType: "Product", entityId: created.id } });
+      await tx.auditLog.create({ data: { actorId: actor.id, action: "PRODUCT_CREATE", entityType: "Product", entityId: created.id, ...auditRequestContext(request, { name: created.name, sku: created.sku, status: created.status, categoryId: created.categoryId }) } });
       return tx.product.findUniqueOrThrow({ where: { id: created.id }, include: { media: { include: { media: true }, orderBy: { position: "asc" } }, category: true, options: { orderBy: { position: "asc" } }, optionGuide: true } });
     });
     return NextResponse.json(product, { status: 201 });

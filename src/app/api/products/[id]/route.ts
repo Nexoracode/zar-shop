@@ -9,6 +9,7 @@ import { sanitizeProductDescription } from "@/modules/products/rich-text";
 import { mergeOptionsPreservingHistory, optionEntries, optionSelectionKey } from "@/modules/products/options";
 import { formatTehranDateInput, tehranDateEnd, tehranDateStart } from "@/modules/products/discount";
 import { parseProductAttributes, validateProductAttributes } from "@/modules/products/attributes";
+import { auditRequestContext } from "@/modules/audit/request-context";
 
 type Context = { params: Promise<{ id: string }> };
 
@@ -17,7 +18,7 @@ export async function PATCH(request: Request, context: Context) {
     const actor = await getCurrentUser();
     if (!actor || !hasPermission(actor.role, "catalog:manage")) return NextResponse.json({ message: "دسترسی غیرمجاز است." }, { status: 403 });
     const { id } = await context.params;
-    const existingProduct = await db.product.findUnique({ where: { id }, select: { storeIndustry: true, categoryId: true, attributes: true, discountType: true, discountValue: true, discountStartsAt: true, discountEndsAt: true } });
+    const existingProduct = await db.product.findUnique({ where: { id }, select: { name: true, sku: true, storeIndustry: true, categoryId: true, attributes: true, discountType: true, discountValue: true, discountStartsAt: true, discountEndsAt: true } });
     if (!existingProduct) return NextResponse.json({ message: "محصول پیدا نشد." }, { status: 404 });
     const { mediaIds, options, optionGuideId, attributes, storeIndustry: _ignoredIndustry, ...input } = productSchema.partial().parse(await request.json());
     void _ignoredIndustry;
@@ -75,7 +76,7 @@ export async function PATCH(request: Request, context: Context) {
         await tx.productOption.deleteMany({ where: { productId: id } });
         if (safeOptions.length) await tx.productOption.createMany({ data: safeOptions.map((option, position) => ({ productId: id, ...option, position })) });
       }
-      await tx.auditLog.create({ data: { actorId: actor.id, action: "PRODUCT_UPDATE", entityType: "Product", entityId: id } });
+      await tx.auditLog.create({ data: { actorId: actor.id, action: "PRODUCT_UPDATE", entityType: "Product", entityId: id, ...auditRequestContext(request, { name: input.name ?? existingProduct.name, sku: input.sku ?? existingProduct.sku, changedFields: [...Object.keys(input), ...(attributes !== undefined ? ["attributes"] : []), ...(mediaIds !== undefined ? ["media"] : []), ...(options !== undefined ? ["options"] : []), ...(optionGuideId !== undefined ? ["optionGuideId"] : [])] }) } });
       return tx.product.findUniqueOrThrow({ where: { id }, include: { media: { include: { media: true }, orderBy: { position: "asc" } }, category: true, options: { orderBy: { position: "asc" } }, optionGuide: true } });
     });
     return NextResponse.json(product);

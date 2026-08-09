@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { Button } from "@heroui/react";
 import { usePathname, useRouter } from "next/navigation";
-import { BadgePercent, Boxes, ChartNoAxesCombined, FolderTree, Images, ListTree, LogOut, Menu, PackageCheck, Palette, Settings, SlidersHorizontal, Store, Users, X } from "lucide-react";
+import { BadgePercent, Boxes, ChartNoAxesCombined, FolderTree, Images, ListTree, LogOut, Menu, PackageCheck, Palette, ScrollText, Settings, SlidersHorizontal, Store, Users, X } from "lucide-react";
 import { useState } from "react";
 import type { UserRole } from "@generated/prisma/enums";
 import { hasPermission, type AdminPermission } from "@/modules/auth/permissions";
@@ -41,7 +41,10 @@ const navGroups: Array<{ title: string; items: NavItem[] }> = [
   },
   {
     title: "تنظیمات سیستم",
-    items: [{ href: "/admin/settings", label: "تنظیمات", icon: Settings }],
+    items: [
+      { href: "/admin/audit-logs", label: "تاریخچه فعالیت‌ها", icon: ScrollText, permission: "audit:view" },
+      { href: "/admin/settings", label: "تنظیمات", icon: Settings },
+    ],
   },
 ];
 

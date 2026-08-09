@@ -5,6 +5,7 @@ import { hasPermission } from "@/modules/auth/permissions";
 import { getCurrentUser } from "@/modules/auth/session";
 import { promotionData, serializePromotion } from "@/modules/promotions/admin";
 import { promotionSchema } from "@/modules/promotions/schemas";
+import { auditRequestContext } from "@/modules/audit/request-context";
 
 async function actorWithAccess() {
   const actor = await getCurrentUser();
@@ -28,7 +29,7 @@ export async function POST(request: Request) {
     const input = promotionSchema.parse(await request.json());
     const promotion = await db.$transaction(async (tx) => {
       const created = await tx.promotion.create({ data: promotionData(input), include: { _count: { select: { redemptions: true, rewards: true } } } });
-      await tx.auditLog.create({ data: { actorId: actor.id, action: "PROMOTION_CREATE", entityType: "Promotion", entityId: created.id, metadata: { type: created.type, code: created.code } } });
+      await tx.auditLog.create({ data: { actorId: actor.id, action: "PROMOTION_CREATE", entityType: "Promotion", entityId: created.id, ...auditRequestContext(request, { title: created.title, type: created.type, code: created.code }) } });
       return created;
     });
     return NextResponse.json(serializePromotion(promotion), { status: 201 });

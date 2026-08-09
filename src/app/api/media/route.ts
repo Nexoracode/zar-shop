@@ -6,6 +6,7 @@ import { apiError } from "@/lib/http";
 import { getCurrentUser } from "@/modules/auth/session";
 import { hasPermission } from "@/modules/auth/permissions";
 import { deleteStoredMedia, MediaStorageUnavailableError, uploadMediaToFtp } from "@/modules/media/ftp-storage";
+import { auditRequestContext } from "@/modules/audit/request-context";
 
 const MAX_SIZE = 25 * 1024 * 1024;
 const MAX_TOTAL_SIZE = 100 * 1024 * 1024;
@@ -84,7 +85,7 @@ export async function POST(request: Request) {
               sizeBytes: item.file.size,
             },
           });
-          await tx.auditLog.create({ data: { actorId: actor.id, action: "MEDIA_UPLOAD", entityType: "MediaAsset", entityId: created.id, metadata: { scope, storageKey: item.storageKey } } });
+          await tx.auditLog.create({ data: { actorId: actor.id, action: "MEDIA_UPLOAD", entityType: "MediaAsset", entityId: created.id, ...auditRequestContext(request, { scope, storageKey: item.storageKey, title: created.title, mimeType: created.mimeType, sizeBytes: created.sizeBytes }) } });
           createdItems.push(created);
         }
         return createdItems;

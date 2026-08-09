@@ -5,6 +5,7 @@ import { getCurrentUser } from "@/modules/auth/session";
 import { isAdminRole } from "@/modules/auth/permissions";
 import { contentSettingsSchema, getContentSettings, sanitizeContentSettings } from "@/modules/settings/content-settings";
 import { STORE_SETTING_ID } from "@/modules/settings/store-settings";
+import { auditRequestContext } from "@/modules/audit/request-context";
 
 export async function GET() {
   const actor = await getCurrentUser();
@@ -29,7 +30,7 @@ export async function PATCH(request: Request) {
           action: "CONTENT_SETTINGS_UPDATE",
           entityType: "StoreSetting",
           entityId: STORE_SETTING_ID,
-          metadata: { faqCount: input.faqs.length, publishedPages: input.pages.filter((page) => page.published).map((page) => page.id) },
+          ...auditRequestContext(request, { faqCount: input.faqs.length, publishedPages: input.pages.filter((page) => page.published).map((page) => page.id) }),
         },
       });
     });

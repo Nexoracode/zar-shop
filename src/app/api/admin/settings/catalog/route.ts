@@ -5,6 +5,7 @@ import { getCurrentUser } from "@/modules/auth/session";
 import { hasPermission } from "@/modules/auth/permissions";
 import { getCatalogSettings, parseCatalogSettingsUpdate } from "@/modules/settings/catalog-settings";
 import { getStoreIndustry, STORE_SETTING_ID } from "@/modules/settings/store-settings";
+import { auditRequestContext } from "@/modules/audit/request-context";
 
 async function catalogManager() {
   const actor = await getCurrentUser();
@@ -35,7 +36,7 @@ export async function PATCH(request: Request) {
           action: "CATALOG_SETTINGS_UPDATE",
           entityType: "StoreSetting",
           entityId: STORE_SETTING_ID,
-          metadata: { industry, ...input },
+          ...auditRequestContext(request, { industry, ...input }),
         },
       });
     });

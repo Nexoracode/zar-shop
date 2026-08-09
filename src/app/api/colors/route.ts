@@ -4,6 +4,7 @@ import { apiError } from "@/lib/http";
 import { getCurrentUser } from "@/modules/auth/session";
 import { hasPermission } from "@/modules/auth/permissions";
 import { colorSchema } from "@/modules/colors/schemas";
+import { auditRequestContext } from "@/modules/audit/request-context";
 
 export async function GET() {
   const actor = await getCurrentUser();
@@ -19,7 +20,7 @@ export async function POST(request: Request) {
     const input = colorSchema.parse(await request.json());
     const color = await db.$transaction(async (tx) => {
       const created = await tx.color.create({ data: input });
-      await tx.auditLog.create({ data: { actorId: actor.id, action: "COLOR_CREATE", entityType: "Color", entityId: created.id } });
+      await tx.auditLog.create({ data: { actorId: actor.id, action: "COLOR_CREATE", entityType: "Color", entityId: created.id, ...auditRequestContext(request, { name: created.name, hex: created.hex }) } });
       return created;
     });
     return NextResponse.json(color, { status: 201 });

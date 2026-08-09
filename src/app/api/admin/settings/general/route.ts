@@ -5,6 +5,7 @@ import { getCurrentUser } from "@/modules/auth/session";
 import { isAdminRole } from "@/modules/auth/permissions";
 import { generalStoreSettingsSchema, generalStoreSettingsUpdateSchema, getGeneralStoreSettings } from "@/modules/settings/general-settings";
 import { STORE_SETTING_ID } from "@/modules/settings/store-settings";
+import { auditRequestContext } from "@/modules/audit/request-context";
 
 export async function GET() {
   const actor = await getCurrentUser();
@@ -24,7 +25,7 @@ export async function PATCH(request: Request) {
         update: input,
       });
       await transaction.auditLog.create({
-        data: { actorId: actor.id, action: "GENERAL_SETTINGS_UPDATE", entityType: "StoreSetting", entityId: STORE_SETTING_ID },
+        data: { actorId: actor.id, action: "GENERAL_SETTINGS_UPDATE", entityType: "StoreSetting", entityId: STORE_SETTING_ID, ...auditRequestContext(request, { changedFields: Object.keys(input) }) },
       });
       return saved;
     });

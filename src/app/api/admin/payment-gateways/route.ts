@@ -4,6 +4,7 @@ import { apiError } from "@/lib/http";
 import { getCurrentUser } from "@/modules/auth/session";
 import { gatewayConfigInputSchema, getPublicGatewayConfigs, encryptGatewayCredential, maskGatewayCredential } from "@/modules/payments/gateway-config";
 import { gatewayProviders } from "@/modules/payments/gateway-providers";
+import { auditRequestContext } from "@/modules/audit/request-context";
 
 async function requireGatewayAdmin() {
   const actor = await getCurrentUser();
@@ -27,7 +28,7 @@ export async function POST(request: Request) {
         create: { provider: input.provider, displayName: provider.name, credentialEncrypted: encryptGatewayCredential(input.credential), credentialMasked: maskGatewayCredential(input.credential), isSandbox: input.isSandbox },
         update: { displayName: provider.name, credentialEncrypted: encryptGatewayCredential(input.credential), credentialMasked: maskGatewayCredential(input.credential), isSandbox: input.isSandbox },
       });
-      await transaction.auditLog.create({ data: { actorId: actor.id, action: "PAYMENT_GATEWAY_CONFIG_UPSERT", entityType: "PaymentGatewayConfig", entityId: config.id, metadata: { provider: input.provider, isSandbox: input.isSandbox } } });
+      await transaction.auditLog.create({ data: { actorId: actor.id, action: "PAYMENT_GATEWAY_CONFIG_UPSERT", entityType: "PaymentGatewayConfig", entityId: config.id, ...auditRequestContext(request, { provider: input.provider, isSandbox: input.isSandbox }) } });
     });
     return NextResponse.json(await getPublicGatewayConfigs(), { status: 201 });
   } catch (error) { return apiError(error); }
@@ -42,7 +43,7 @@ export async function DELETE(request: Request) {
     if (!existing) return NextResponse.json({ message: "درگاه پیدا نشد." }, { status: 404 });
     await db.$transaction(async (transaction) => {
       await transaction.paymentGatewayConfig.delete({ where: { provider } });
-      await transaction.auditLog.create({ data: { actorId: actor.id, action: "PAYMENT_GATEWAY_CONFIG_DELETE", entityType: "PaymentGatewayConfig", entityId: existing.id, metadata: { provider } } });
+      await transaction.auditLog.create({ data: { actorId: actor.id, action: "PAYMENT_GATEWAY_CONFIG_DELETE", entityType: "PaymentGatewayConfig", entityId: existing.id, ...auditRequestContext(request, { provider }) } });
     });
     return NextResponse.json(await getPublicGatewayConfigs());
   } catch (error) { return apiError(error); }

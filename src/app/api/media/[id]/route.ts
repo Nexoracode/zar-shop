@@ -4,10 +4,11 @@ import { apiError } from "@/lib/http";
 import { getCurrentUser } from "@/modules/auth/session";
 import { deleteStoredMedia, MediaStorageUnavailableError } from "@/modules/media/ftp-storage";
 import { hasPermission } from "@/modules/auth/permissions";
+import { auditRequestContext } from "@/modules/audit/request-context";
 
 type Context = { params: Promise<{ id: string }> };
 
-export async function DELETE(_request: Request, context: Context) {
+export async function DELETE(request: Request, context: Context) {
   try {
     const actor = await getCurrentUser();
     if (!actor || !hasPermission(actor.role, "catalog:manage")) return NextResponse.json({ message: "دسترسی غیرمجاز است." }, { status: 403 });
@@ -24,7 +25,7 @@ export async function DELETE(_request: Request, context: Context) {
     await deleteStoredMedia(media.storageKey, media.url);
     await db.$transaction(async (tx) => {
       await tx.mediaAsset.delete({ where: { id } });
-      await tx.auditLog.create({ data: { actorId: actor.id, action: "MEDIA_DELETE", entityType: "MediaAsset", entityId: id, metadata: { scope: media.scope, storageKey: media.storageKey } } });
+      await tx.auditLog.create({ data: { actorId: actor.id, action: "MEDIA_DELETE", entityType: "MediaAsset", entityId: id, ...auditRequestContext(request, { scope: media.scope, storageKey: media.storageKey, title: media.title, mimeType: media.mimeType }) } });
     });
     return new NextResponse(null, { status: 204 });
   } catch (error) {

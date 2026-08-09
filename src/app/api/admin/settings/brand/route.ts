@@ -5,6 +5,7 @@ import { getCurrentUser } from "@/modules/auth/session";
 import { isAdminRole } from "@/modules/auth/permissions";
 import { brandSettingsInputSchema, getBrandSettings } from "@/modules/settings/brand-settings";
 import { STORE_SETTING_ID } from "@/modules/settings/store-settings";
+import { auditRequestContext } from "@/modules/audit/request-context";
 
 export async function GET() {
   const actor = await getCurrentUser();
@@ -24,7 +25,7 @@ export async function PATCH(request: Request) {
     }
     await db.$transaction(async (tx) => {
       await tx.storeSetting.upsert({ where: { id: STORE_SETTING_ID }, create: { id: STORE_SETTING_ID, ...input }, update: input });
-      await tx.auditLog.create({ data: { actorId: actor.id, action: "BRAND_SETTINGS_UPDATE", entityType: "StoreSetting", entityId: STORE_SETTING_ID } });
+      await tx.auditLog.create({ data: { actorId: actor.id, action: "BRAND_SETTINGS_UPDATE", entityType: "StoreSetting", entityId: STORE_SETTING_ID, ...auditRequestContext(request, { changedFields: Object.keys(input) }) } });
     });
     return NextResponse.json(await getBrandSettings());
   } catch (error) { return apiError(error); }

@@ -6,6 +6,7 @@ import { getCurrentUser } from "@/modules/auth/session";
 import { updateCategorySchema } from "@/modules/categories/schemas";
 import { hasPermission } from "@/modules/auth/permissions";
 import { wouldCreateCategoryCycle } from "@/modules/categories/category-tree";
+import { auditRequestContext } from "@/modules/audit/request-context";
 
 type Context = { params: Promise<{ id: string }> };
 
@@ -38,7 +39,7 @@ export async function PATCH(request: Request, context: Context) {
     const { id } = await context.params;
     const input = updateCategorySchema.parse(await request.json());
 
-    const current = await db.category.findUnique({ where: { id }, select: { id: true, parentId: true } });
+    const current = await db.category.findUnique({ where: { id }, select: { id: true, name: true, slug: true, parentId: true } });
     if (!current) return NextResponse.json({ message: "دسته‌بندی پیدا نشد." }, { status: 404 });
 
     if (input.parentId) {
@@ -58,7 +59,7 @@ export async function PATCH(request: Request, context: Context) {
 
     const category = await db.$transaction(async (tx) => {
       const updated = await tx.category.update({ where: { id }, data: input, include: categoryInclude });
-      await tx.auditLog.create({ data: { actorId: actor!.id, action: "CATEGORY_UPDATE", entityType: "Category", entityId: id, metadata: { previousParentId: current.parentId } } });
+      await tx.auditLog.create({ data: { actorId: actor!.id, action: "CATEGORY_UPDATE", entityType: "Category", entityId: id, ...auditRequestContext(request, { name: updated.name, slug: updated.slug, previousParentId: current.parentId, changedFields: Object.keys(input) }) } });
       return updated;
     });
     return NextResponse.json(category);
@@ -70,7 +71,7 @@ export async function PATCH(request: Request, context: Context) {
   }
 }
 
-export async function DELETE(_request: Request, context: Context) {
+export async function DELETE(request: Request, context: Context) {
   try {
     const actor = await getCurrentUser();
     if (!actor || !hasPermission(actor.role, "catalog:manage")) return NextResponse.json({ message: "دسترسی غیرمجاز است." }, { status: 403 });
@@ -83,7 +84,7 @@ export async function DELETE(_request: Request, context: Context) {
 
     await db.$transaction(async (tx) => {
       await tx.category.delete({ where: { id } });
-      await tx.auditLog.create({ data: { actorId: actor!.id, action: "CATEGORY_DELETE", entityType: "Category", entityId: id } });
+      await tx.auditLog.create({ data: { actorId: actor!.id, action: "CATEGORY_DELETE", entityType: "Category", entityId: id, ...auditRequestContext(request, { name: category.name, slug: category.slug }) } });
     });
     return new NextResponse(null, { status: 204 });
   } catch (error) {

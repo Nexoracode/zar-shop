@@ -1,12 +1,12 @@
 import type { UserRole } from "@generated/prisma/enums";
 
-export type AdminPermission = "dashboard:view" | "catalog:manage" | "users:manage" | "orders:manage";
+export type AdminPermission = "dashboard:view" | "catalog:manage" | "users:manage" | "orders:manage" | "audit:view";
 
 export const adminRoles: UserRole[] = ["ADMIN", "CATALOG_MANAGER", "USER_MANAGER", "ORDER_MANAGER"];
 
 const rolePermissions: Record<UserRole, AdminPermission[]> = {
   CUSTOMER: [],
-  ADMIN: ["dashboard:view", "catalog:manage", "users:manage", "orders:manage"],
+  ADMIN: ["dashboard:view", "catalog:manage", "users:manage", "orders:manage", "audit:view"],
   CATALOG_MANAGER: ["catalog:manage"],
   USER_MANAGER: ["users:manage"],
   ORDER_MANAGER: ["dashboard:view", "orders:manage"],

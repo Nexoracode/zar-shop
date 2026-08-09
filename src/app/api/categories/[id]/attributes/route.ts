@@ -4,6 +4,7 @@ import { apiError } from "@/lib/http";
 import { hasPermission } from "@/modules/auth/permissions";
 import { getCurrentUser } from "@/modules/auth/session";
 import { categoryAttributeSchema, parseCategoryAttributeSchema, parseProductAttributes } from "@/modules/products/attributes";
+import { auditRequestContext } from "@/modules/audit/request-context";
 
 type Context = { params: Promise<{ id: string }> };
 
@@ -22,7 +23,7 @@ export async function PATCH(request: Request, context: Context) {
     if (!actor || !hasPermission(actor.role, "catalog:manage")) return NextResponse.json({ message: "دسترسی غیرمجاز است." }, { status: 403 });
     const { id } = await context.params;
     const groups = categoryAttributeSchema.parse(await request.json());
-    const category = await db.category.findUnique({ where: { id }, select: { id: true, attributeSchema: true, products: { select: { attributes: true } } } });
+    const category = await db.category.findUnique({ where: { id }, select: { id: true, name: true, attributeSchema: true, products: { select: { attributes: true } } } });
     if (!category) return NextResponse.json({ message: "دسته‌بندی پیدا نشد." }, { status: 404 });
 
     const nextAttributeIds = new Set(groups.flatMap((group) => group.attributes.map((attribute) => attribute.id)));
@@ -36,7 +37,7 @@ export async function PATCH(request: Request, context: Context) {
 
     await db.$transaction([
       db.category.update({ where: { id }, data: { attributeSchema: groups } }),
-      db.auditLog.create({ data: { actorId: actor.id, action: "CATEGORY_ATTRIBUTES_UPDATE", entityType: "Category", entityId: id, metadata: { groupCount: groups.length, attributeCount: groups.reduce((sum, group) => sum + group.attributes.length, 0) } } }),
+      db.auditLog.create({ data: { actorId: actor.id, action: "CATEGORY_ATTRIBUTES_UPDATE", entityType: "Category", entityId: id, ...auditRequestContext(request, { name: category.name, groupCount: groups.length, attributeCount: groups.reduce((sum, group) => sum + group.attributes.length, 0) }) } }),
     ]);
     return NextResponse.json({ groups });
   } catch (error) {
