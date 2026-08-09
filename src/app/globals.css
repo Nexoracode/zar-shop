@@ -375,6 +375,29 @@ img {
     background: rgb(100 116 139 / 48%);
   }
 
+.storefront-mega-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(100 116 139 / 35%) transparent;
+  scrollbar-gutter: stable;
+}
+
+.storefront-mega-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.storefront-mega-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.storefront-mega-scroll::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgb(100 116 139 / 28%);
+}
+
+.storefront-mega-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgb(100 116 139 / 45%);
+}
+
 @media print {
   @page {
     size: A4 portrait;
