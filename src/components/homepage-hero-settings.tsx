@@ -5,6 +5,7 @@ import { useState, type DragEvent, type FormEvent, type ReactNode } from "react"
 import { Alert, Button, Card, Input, Label, Modal, TextArea, toast } from "@heroui/react";
 import { GripVertical, Images, ListOrdered, Plus, Save, Sparkles, Trash2, Upload, X } from "lucide-react";
 import { adminFieldClass, adminLabelClass } from "@/components/admin-ui";
+import { AdminSectionHelp } from "@/components/admin-section-help";
 import { HeroSelectField } from "@/components/hero-select-field";
 import { MediaPickerDialog } from "@/components/media-picker-dialog";
 import type { MediaChoice } from "@/components/media-library";
@@ -122,21 +123,22 @@ export function HomepageHeroSettings({ initialSettings }: { initialSettings: Hom
       <Card variant="secondary" className="overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-sm">
         <Card.Header className="flex-row items-center gap-3 border-b border-[var(--border)] p-5">
           <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-[var(--accent)]/10 text-[var(--accent)]"><Sparkles size={19} /></span>
-          <div><Card.Title className="text-base font-black">محتوای هیرو</Card.Title><Card.Description className="mt-1 text-xs text-[var(--muted)]">نحوه نمایش متن و دکمه روی تصاویر</Card.Description></div>
+          <div className="min-w-0"><Card.Title className="text-base font-black">محتوای هیرو</Card.Title><Card.Description className="mt-1 text-xs text-[var(--muted)]">نحوه نمایش متن و دکمه روی تصاویر</Card.Description></div>
+          <div className="mr-auto"><AdminSectionHelp title="محتوای هیرو" summary="حالت نمایش مشخص می‌کند متن روی همه اسلایدها قرار بگیرد یا هر تصویر به‌تنهایی بنر کامل باشد." blocks={[{ title: "همراه محتوا", description: "عنوان، توضیح و متن دکمه روی اسلایدها نمایش داده می‌شوند و لینک اختصاصی هر اسلاید مقصد دکمه را مشخص می‌کند." }, { title: "فقط تصویر", description: "هیچ متن یا دکمه‌ای روی تصویر قرار نمی‌گیرد و تمام سطح هر اسلاید به لینک اختصاصی همان اسلاید متصل می‌شود." }, { title: "انتخاب حالت", tone: "important", description: "اگر متن و دکمه داخل خود فایل تصویر طراحی شده‌اند، حالت «فقط تصویر» را انتخاب کنید تا محتوا دوباره روی بنر تکرار نشود." }]} /></div>
         </Card.Header>
         <Card.Content className="grid gap-4 p-5">
           <HeroSelectField name="heroContentMode" label="نوع نمایش اسلایدر" value={contentMode} onValueChange={(value) => setContentMode(value as HomepageSettings["heroContentMode"])} includeEmptyOption={false} options={[{ value: "WITH_CONTENT", label: "بنر همراه عنوان، توضیح و دکمه" }, { value: "IMAGE_ONLY", label: "فقط تصویر؛ کل بنر قابل کلیک" }]} />
           {contentMode === "WITH_CONTENT" ? <>
             <div className="grid gap-4 lg:grid-cols-2"><Field label="عنوان اصلی"><Input required value={title} onChange={(event) => setTitle(event.target.value)} variant="secondary" className={adminFieldClass} /></Field><Field label="متن دکمه"><Input required value={buttonLabel} onChange={(event) => setButtonLabel(event.target.value)} variant="secondary" className={adminFieldClass} /></Field></div>
             <Field label="متن کوتاه"><TextArea required value={description} onChange={(event) => setDescription(event.target.value)} rows={3} variant="secondary" className={adminFieldClass} /></Field>
-          </> : <Alert status="accent"><Alert.Description>در این حالت تمام سطح هر تصویر به لینک اختصاصی همان اسلاید متصل می‌شود.</Alert.Description></Alert>}
+          </> : null}
         </Card.Content>
       </Card>
 
       <Card variant="secondary" className="overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-sm">
         <Card.Header className="flex-row items-center justify-between gap-3 border-b border-[var(--border)] p-5">
           <div className="flex items-center gap-3"><span className="grid size-11 shrink-0 place-items-center rounded-xl bg-[var(--accent)]/10 text-[var(--accent)]"><Images size={19} /></span><div><Card.Title className="text-base font-black">اسلایدهای هیرو</Card.Title><Card.Description className="mt-1 text-xs text-[var(--muted)]">حداکثر ۱۰ تصویر با لینک مقصد اختصاصی</Card.Description></div></div>
-          <div className="flex shrink-0 items-center gap-2"><Button type="button" isIconOnly size="sm" variant="secondary" isDisabled={slides.length < 2} aria-label="ویرایش ترتیب اسلایدها" onPress={openOrderEditor}><ListOrdered size={16} /></Button><Button type="button" size="sm" variant="secondary" isDisabled={slides.length >= 10} onPress={() => setSlides((current) => [...current, { id: crypto.randomUUID(), href: "/products", desktopMedia: null, mobileMedia: null }])} className="shrink-0 gap-1.5 text-xs"><Plus size={14} />افزودن اسلاید</Button></div>
+          <div className="flex shrink-0 items-center gap-2"><AdminSectionHelp title="اسلایدهای هیرو" summary="هر اسلاید تصویر دسکتاپ، نسخه اختیاری موبایل و لینک مقصد مستقل دارد." blocks={[{ title: "ساخت اسلاید", items: ["اسلاید جدید اضافه کنید.", "تصویر دسکتاپ را انتخاب و در صورت نیاز نسخه عمودی موبایل را ثبت کنید.", "لینک داخلی یا خارجی معتبر همان اسلاید را وارد کنید."] }, { title: "تغییر ترتیب", description: "کارت‌ها را مستقیماً با دستگیره جابه‌جا کنید یا از آیکون ترتیب برای بازکردن نمای فشرده استفاده کنید." }, { title: "نمایش موبایل", tone: "important", description: "اگر تصویر موبایل خالی باشد، تصویر دسکتاپ استفاده می‌شود. برای جلوگیری از برش نامناسب، نسخه موبایل جداگانه پیشنهاد می‌شود." }]} /><Button type="button" isIconOnly size="sm" variant="secondary" isDisabled={slides.length < 2} aria-label="ویرایش ترتیب اسلایدها" onPress={openOrderEditor}><ListOrdered size={16} /></Button><Button type="button" size="sm" variant="secondary" isDisabled={slides.length >= 10} onPress={() => setSlides((current) => [...current, { id: crypto.randomUUID(), href: "/products", desktopMedia: null, mobileMedia: null }])} className="shrink-0 gap-1.5 text-xs"><Plus size={14} />افزودن اسلاید</Button></div>
         </Card.Header>
         <Card.Content className="p-5">
           {slides.length ? <div className="grid gap-4 xl:grid-cols-2">{slides.map((slide, index) => {

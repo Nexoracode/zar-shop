@@ -12,6 +12,7 @@ import { HeroSelectField } from "@/components/hero-select-field";
 import { HeroNumberInput } from "@/components/hero-number-input";
 import { adminFieldClass, adminLabelClass } from "@/components/admin-ui";
 import { AdminCheckbox } from "@/components/admin-checkbox";
+import { AdminSectionHelp } from "@/components/admin-section-help";
 import { apiErrorMessage, validationErrorMessage } from "@/lib/form-errors";
 import { categorySchema } from "@/modules/categories/schemas";
 
@@ -98,7 +99,7 @@ export function CategoryForm({ categories, category }: { categories: CategoryOpt
           <Card.Content className="p-4 sm:p-6">
             <div className="mb-5 flex items-start gap-3 border-b border-slate-100 pb-4">
               <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[#fbf7ef] text-[#9a7434]"><FolderTree size={20} /></span>
-              <div><h2 className="m-0 text-base font-black text-slate-800">اطلاعات دسته‌بندی</h2><p className="m-0 text-xs text-slate-400">نام، نشانی و ساختار سلسله‌مراتبی دسته را مشخص کنید.</p></div>
+              <div className="min-w-0"><h2 className="m-0 text-base font-black text-slate-800">اطلاعات دسته‌بندی</h2><p className="m-0 text-xs text-slate-400">نام، نشانی و ساختار سلسله‌مراتبی دسته را مشخص کنید.</p></div><div className="mr-auto"><AdminSectionHelp title="اطلاعات دسته‌بندی" summary="دسته والد جایگاه این دسته را در منو، مگامنو و مسیر پیمایش محصولات تعیین می‌کند." blocks={[{ title: "ساختار دسته", items: ["برای دسته سطح اول، والد را خالی بگذارید.", "برای زیر‌دسته، نزدیک‌ترین والد مرتبط را انتخاب کنید.", "نشانی انگلیسی باید یکتا، کوتاه و شامل حروف کوچک، عدد یا خط تیره باشد."] }, { title: "اثر جابه‌جایی", tone: "important", description: "تغییر والد، مسیر دسته و محل نمایش آن در مگامنو را تغییر می‌دهد. پیش از جابه‌جایی دسته دارای محصول، مسیرهای فروشگاه را بررسی کنید." }, { title: "ویژگی‌های وابسته", description: "ویژگی‌های محصولات برای هر دسته جدا تعریف می‌شوند؛ پس از ساخت دسته می‌توانید از صفحه ویژگی‌های دسته‌بندی ساختار مشخصات آن را بسازید." }]} /></div>
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <label className={adminLabelClass}>نام دسته<Input required minLength={2} value={name} onChange={(event) => setName(event.target.value)} fullWidth variant="secondary" className={adminFieldClass} /></label>

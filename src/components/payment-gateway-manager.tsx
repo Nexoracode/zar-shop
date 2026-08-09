@@ -2,10 +2,11 @@
 
 import { useMemo, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { Alert, Button, Card, Chip, Input, toast } from "@heroui/react";
+import { Button, Card, Chip, Input, toast } from "@heroui/react";
 import { CheckCircle2, CreditCard, ExternalLink, Eye, EyeOff, Plus, ShieldCheck, Trash2 } from "lucide-react";
 import { adminFieldClass } from "@/components/admin-ui";
 import { AdminCheckbox } from "@/components/admin-checkbox";
+import { AdminSectionHelp } from "@/components/admin-section-help";
 import { Table, TableBody, TableCell, TableColumn, TableContent, TableHeader, TableRow, TableScrollContainer } from "@/components/hero";
 import { gatewayProviders, type GatewayProviderId } from "@/modules/payments/gateway-providers";
 import type { PublicGatewayConfig } from "@/modules/payments/gateway-config";
@@ -72,10 +73,9 @@ export function PaymentGatewayManager({ mode, initialConfigs }: { mode: "list" |
       </Card>
 
       <Card variant="secondary" className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 shadow-sm">
-        <div className="mb-5"><h2 className="m-0 text-base font-black">افزودن {selected.name}</h2><p className="mb-0 mt-1 text-xs text-[var(--muted)]">شناسه فقط هنگام ثبت دریافت می‌شود و بعداً به‌صورت کامل نمایش داده نخواهد شد.</p></div>
+        <div className="mb-5 flex items-start gap-3"><div className="min-w-0"><h2 className="m-0 text-base font-black">افزودن {selected.name}</h2><p className="mb-0 mt-1 text-xs text-[var(--muted)]">شناسه فقط هنگام ثبت دریافت می‌شود و بعداً به‌صورت کامل نمایش داده نخواهد شد.</p></div><div className="mr-auto"><AdminSectionHelp title={`افزودن ${selected.name}`} summary="شناسه اتصال درگاه به‌صورت رمزنگاری‌شده ذخیره و پس از ثبت فقط ماسک‌شده نمایش داده می‌شود." blocks={[{ title: "ثبت شناسه", items: ["شناسه را فقط از پنل رسمی ارائه‌دهنده دریافت کنید.", "مقدار را بدون فاصله اضافی وارد کنید.", "برای جایگزینی شناسه قبلی، همان درگاه را دوباره ثبت کنید."] }, { title: "حالت آزمایشی", description: "Sandbox فقط برای تست request، callback و verify است. پیش از انتشار، تنظیم اصلی پذیرنده را ثبت کنید." }, { title: "فعال‌شدن پرداخت", tone: "important", description: "ذخیره شناسه به‌تنهایی کافی نیست؛ اتصال فنی request و verify همان ارائه‌دهنده باید در سامانه پشتیبانی و پرداخت آنلاین نیز در تنظیمات فعال باشد." }]} /></div></div>
         <label className="grid gap-1.5 text-xs font-bold text-[var(--muted)]">{selected.credentialLabel}<span className="relative block"><Input required minLength={4} maxLength={500} type={showCredential ? "text" : "password"} value={credential} onChange={(event) => setCredential(event.target.value)} placeholder={selected.credentialPlaceholder} dir="ltr" variant="secondary" className={`${adminFieldClass} pl-12`} /><Button type="button" isIconOnly size="sm" variant="ghost" aria-label={showCredential ? "پنهان‌کردن شناسه" : "نمایش شناسه"} onPress={() => setShowCredential((value) => !value)} className="absolute left-2 top-1/2 -translate-y-1/2">{showCredential ? <EyeOff size={15} /> : <Eye size={15} />}</Button></span></label>
         {(selected.id === "ZARINPAL" || selected.id === "ZIBAL") && <div className="mt-4"><AdminCheckbox isSelected={isSandbox} onChange={setIsSandbox} description="فقط برای بررسی اتصال و تراکنش آزمایشی استفاده شود">حالت آزمایشی</AdminCheckbox></div>}
-        <Alert status="warning" className="mt-4"><Alert.Description>ثبت شناسه به معنی ذخیره امن تنظیمات است. فعال‌شدن پرداخت واقعی منوط به وجود اتصال فنی request و verify همان ارائه‌دهنده است.</Alert.Description></Alert>
         <Button type="submit" variant="primary" isPending={saving} className="mt-5 min-h-11 w-full gap-2"><Plus size={16} />افزودن درگاه</Button>
       </Card>
     </form>

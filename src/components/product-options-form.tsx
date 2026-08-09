@@ -5,6 +5,7 @@ import { useState, type FormEvent } from "react";
 import { Button, Card, Input, Spinner, buttonVariants, toast } from "@heroui/react";
 import { Eye, EyeOff, ChevronRight, GripVertical, ListPlus, Plus, Save, Trash2 } from "lucide-react";
 import { adminFieldClass, adminLabelClass } from "@/components/admin-ui";
+import { AdminSectionHelp } from "@/components/admin-section-help";
 import { HeroSelectField } from "@/components/hero-select-field";
 import { HeroNumberInput } from "@/components/hero-number-input";
 import { apiErrorMessage, validationErrorMessage } from "@/lib/form-errors";
@@ -112,7 +113,7 @@ export function ProductOptionsForm({ productId, productStock, storeIndustry, col
       <Card.Content className="p-4 sm:p-5">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-4">
           <div className="flex items-center gap-3"><span className="grid h-10 w-10 place-items-center rounded-xl bg-[#fbf7ef] text-[#9a7434]"><ListPlus size={19} /></span><div><h2 className="text-base font-black text-slate-800">گروه‌های تنوع</h2><p className="text-xs text-slate-400">برای هر گروه، عنوان و مقادیر قابل انتخاب مشتری را مشخص کنید.</p></div></div>
-          <Button type="button" variant="secondary" isDisabled={options.length >= 10} onPress={addOptionGroup} className="min-h-10 gap-1.5 border-[#d8c29a] bg-[#fbf7ef] text-[11px] font-bold text-[#846325]"><Plus size={14} />افزودن</Button>
+          <div className="mr-auto flex items-center gap-2"><AdminSectionHelp title="گروه‌های تنوع" summary="تنوع‌ها انتخاب‌های مؤثر بر خرید مثل رنگ و سایز هستند و برای هر مقدار موجودی و قیمت یا وزن مستقل دارند." blocks={[{ title: "افزودن سریع مقدار", items: ["مقادیر ساده را با کاما وارد کنید؛ مثل ۱۲,۱۳,۱۴.", "در فروشگاه طلا می‌توانید وزن را بعد از دونقطه بنویسید؛ مثل ۱۲:۲/۴۰۰.", "برای گروه رنگ، رنگ‌ها را از فهرست رنگ‌های ثبت‌شده انتخاب کنید."] }, { title: "موجودی و قیمت‌گذاری", description: storeIndustry === "GOLD" ? "موجودی هر مقدار مستقل است و وزن آن برای محاسبه قیمت روز طلا استفاده می‌شود. مقدار بدون وزن از وزن پایه محصول استفاده می‌کند." : "موجودی و قیمت هر مقدار مستقل است. قیمت خالی از قیمت پایه محصول استفاده می‌کند." }, { title: "حذف یا غیرفعال‌سازی", tone: "important", description: "مقداری که هنوز در سفارشی استفاده نشده قابل حذف است. اگر سابقه خرید دارد، برای حفظ فاکتور مشتری فقط آن را غیرفعال کنید." }, { title: "ترتیب نمایش", description: "گروه‌ها را از دستگیره بکشید؛ ترتیب این صفحه همان ترتیب انتخاب‌های مشتری در صفحه محصول است." }]} /><Button type="button" variant="secondary" isDisabled={options.length >= 10} onPress={addOptionGroup} className="min-h-10 gap-1.5 border-[#d8c29a] bg-[#fbf7ef] text-[11px] font-bold text-[#846325]"><Plus size={14} />افزودن</Button></div>
         </div>
 
         <div className="grid gap-3">
