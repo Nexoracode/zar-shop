@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
+import { useCallback, useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@heroui/react";
@@ -25,27 +25,66 @@ export function StorefrontHeroSlider({ slides, contentMode, title, description, 
   const [activeIndex, setActiveIndex] = useState(0);
   const [hovered, setHovered] = useState(false);
   const [dragging, setDragging] = useState(false);
+  const [animating, setAnimating] = useState(false);
+  const [dragOffset, setDragOffset] = useState(0);
+  const [transitionEnabled, setTransitionEnabled] = useState(true);
+  const sliderRef = useRef<HTMLDivElement>(null);
   const drag = useRef({ active: false, moved: false, pointerId: -1, startX: 0, startY: 0, currentX: 0 });
+  const animationTarget = useRef<number | null>(null);
   const suppressClick = useRef(false);
   const hasMultipleSlides = slides.length > 1;
-  const paused = hovered || dragging;
+  const paused = hovered || dragging || animating;
+
+  const startSlide = useCallback((direction: -1 | 1) => {
+    if (!hasMultipleSlides || animating || animationTarget.current !== null) return;
+    const width = sliderRef.current?.clientWidth ?? 0;
+    if (!width) return;
+    animationTarget.current = (activeIndex + direction + slides.length) % slides.length;
+    setTransitionEnabled(true);
+    setAnimating(true);
+    setDragOffset(direction === 1 ? -width : width);
+  }, [activeIndex, animating, hasMultipleSlides, slides.length]);
 
   useEffect(() => {
     if (!hasMultipleSlides || paused) return;
-    const timer = window.setInterval(() => setActiveIndex((current) => (current + 1) % slides.length), 6000);
+    const timer = window.setInterval(() => startSlide(1), 6000);
     return () => window.clearInterval(timer);
-  }, [hasMultipleSlides, paused, slides.length]);
+  }, [hasMultipleSlides, paused, startSlide]);
 
   function previous() {
-    setActiveIndex((current) => (current - 1 + slides.length) % slides.length);
+    startSlide(-1);
   }
 
   function next() {
-    setActiveIndex((current) => (current + 1) % slides.length);
+    startSlide(1);
+  }
+
+  function completeAnimation() {
+    if (!animating) return;
+    const target = animationTarget.current;
+    if (target === null) {
+      setAnimating(false);
+      return;
+    }
+    setTransitionEnabled(false);
+    setActiveIndex(target);
+    setDragOffset(0);
+    setAnimating(false);
+    animationTarget.current = null;
+    window.requestAnimationFrame(() => window.requestAnimationFrame(() => setTransitionEnabled(true)));
+  }
+
+  function relativePosition(index: number) {
+    let difference = index - activeIndex;
+    const half = slides.length / 2;
+    if (difference > half) difference -= slides.length;
+    if (difference < -half) difference += slides.length;
+    if (Math.abs(difference) === half && slides.length % 2 === 0) difference = dragOffset > 0 ? -Math.abs(difference) : Math.abs(difference);
+    return difference;
   }
 
   function pointerDown(event: ReactPointerEvent<HTMLDivElement>) {
-    if (!hasMultipleSlides || (event.pointerType === "mouse" && event.button !== 0)) return;
+    if (!hasMultipleSlides || animating || (event.pointerType === "mouse" && event.button !== 0)) return;
     if (event.target instanceof Element && event.target.closest("button,[data-slider-control='true']")) return;
     drag.current = { active: true, moved: false, pointerId: event.pointerId, startX: event.clientX, startY: event.clientY, currentX: event.clientX };
   }
@@ -59,8 +98,11 @@ export function StorefrontHeroSlider({ slides, contentMode, title, description, 
       if (Math.abs(deltaX) < 10 || Math.abs(deltaX) <= Math.abs(deltaY)) return;
       drag.current.moved = true;
       event.currentTarget.setPointerCapture(event.pointerId);
+      setTransitionEnabled(false);
       setDragging(true);
     }
+    const width = sliderRef.current?.clientWidth ?? 0;
+    setDragOffset(width ? Math.max(-width, Math.min(width, deltaX)) : deltaX);
     event.preventDefault();
   }
 
@@ -74,16 +116,20 @@ export function StorefrontHeroSlider({ slides, contentMode, title, description, 
     setDragging(false);
     if (!moved) return;
     suppressClick.current = true;
-    if (!cancelled && Math.abs(deltaX) >= 50) {
-      if (deltaX < 0) next();
-      else previous();
+    const threshold = Math.min(110, (sliderRef.current?.clientWidth ?? 300) * 0.18);
+    if (!cancelled && Math.abs(deltaX) >= threshold) startSlide(deltaX < 0 ? 1 : -1);
+    else {
+      animationTarget.current = null;
+      setTransitionEnabled(true);
+      setAnimating(true);
+      setDragOffset(0);
     }
     window.setTimeout(() => { suppressClick.current = false; }, 0);
   }
 
   return (
-    <div className={`relative h-[440px] touch-pan-y select-none overflow-hidden bg-[#e8dfd5] ${dragging ? "cursor-grabbing" : hasMultipleSlides ? "cursor-grab" : ""}`} onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)} onPointerDown={pointerDown} onPointerMove={pointerMove} onPointerUp={finishDrag} onPointerCancel={(event) => finishDrag(event, true)} onClickCapture={(event) => { if (suppressClick.current) { event.preventDefault(); event.stopPropagation(); } }} onDragStart={(event) => event.preventDefault()}>
-      {slides.map((slide, index) => <Link href={slide.href} key={slide.id} aria-hidden={index !== activeIndex} tabIndex={index === activeIndex ? 0 : -1} aria-label={`مشاهده ${slide.desktop.alt}`} className={`absolute inset-0 transition-opacity duration-700 ${index === activeIndex ? "z-0 opacity-100" : "pointer-events-none opacity-0"}`}>
+    <div ref={sliderRef} className={`relative h-[440px] touch-pan-y select-none overflow-hidden bg-[#e8dfd5] ${dragging ? "cursor-grabbing" : hasMultipleSlides ? "cursor-grab" : ""}`} onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)} onPointerDown={pointerDown} onPointerMove={pointerMove} onPointerUp={finishDrag} onPointerCancel={(event) => finishDrag(event, true)} onClickCapture={(event) => { if (suppressClick.current) { event.preventDefault(); event.stopPropagation(); } }} onDragStart={(event) => event.preventDefault()}>
+      {slides.map((slide, index) => <Link href={slide.href} key={slide.id} aria-hidden={index !== activeIndex} tabIndex={index === activeIndex ? 0 : -1} aria-label={`مشاهده ${slide.desktop.alt}`} onTransitionEnd={(event) => { if (index === activeIndex && event.propertyName === "transform") completeAnimation(); }} style={{ transform: `translate3d(calc(${relativePosition(index) * 100}% + ${dragOffset}px), 0, 0)` }} className={`absolute inset-0 will-change-transform ${transitionEnabled ? "transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]" : ""} ${index === activeIndex && !dragging && !animating ? "z-[1]" : "z-0"} ${index === activeIndex ? "" : "pointer-events-none"}`}>
         {slide.mobile && <Image src={slide.mobile.src} alt={slide.mobile.alt} fill priority={index === 0} draggable={false} sizes="(max-width: 639px) 100vw, 0px" className="object-cover sm:hidden" />}
         <Image src={slide.desktop.src} alt={slide.desktop.alt} fill priority={index === 0} draggable={false} sizes="100vw" className={`object-cover ${slide.mobile ? "hidden sm:block" : ""}`} />
       </Link>)}
