@@ -1,10 +1,23 @@
 "use client";
 
 import { useSyncExternalStore, type ComponentProps } from "react";
-import { Alert, Button, Card, Chip, Input, Table as HeroTable } from "@heroui/react";
+import { Alert, Button, Card, Chip, Input, Table as HeroTable, Tooltip } from "@heroui/react";
 
 export { Button, Card, Input };
 const subscribe = () => () => undefined;
+
+export function TruncatedTextTooltip({ text, className = "" }: { text: string; className?: string }) {
+  return (
+    <Tooltip delay={200} closeDelay={100}>
+      <Tooltip.Trigger>
+        <strong className={`block min-w-0 truncate ${className}`}>{text}</strong>
+      </Tooltip.Trigger>
+      <Tooltip.Content showArrow dir="rtl" className="z-50 max-w-sm border border-[var(--border)] bg-[var(--overlay)] px-3 py-2 text-right text-xs leading-6 text-[var(--overlay-foreground)] shadow-lg">
+        {text}
+      </Tooltip.Content>
+    </Tooltip>
+  );
+}
 
 export function Table(props: ComponentProps<typeof HeroTable>) {
   const hydrated = useSyncExternalStore(subscribe, () => true, () => false);
