@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { ChevronDown, Headphones, Home, LayoutDashboard, Menu, Search, ShoppingCart, UserRound } from "lucide-react";
+import { Headphones, Home, LayoutDashboard, Menu, Search, ShoppingCart, UserRound } from "lucide-react";
 import type { User } from "@generated/prisma/client";
 import { db } from "@/lib/db";
 import { normalizeNumericValue } from "@/lib/persian-numbers";
@@ -42,14 +42,7 @@ export async function GeneralHeader({ settings, brand, user, menuCategoryIds }: 
       <div className="hidden h-16 items-center px-10 lg:flex">
         <Link href="/" aria-label={`${settings.storeName}، صفحه اصلی`}>{logo}</Link>
         <nav className="mr-12 flex h-full items-center gap-8 text-sm" aria-label="دسته‌بندی محصولات">
-          <div className="group flex h-full items-center">
-            <Link href="/products" className="flex h-full items-center gap-2 border-b-2 border-transparent font-bold transition group-hover:border-[var(--brand-primary)] group-hover:text-[var(--brand-primary)] group-focus-within:border-[var(--brand-primary)] group-focus-within:text-[var(--brand-primary)]">
-              <Menu size={19} />
-              دسته‌بندی کالاها
-              <ChevronDown size={14} className="transition-transform duration-200 group-hover:rotate-180 group-focus-within:rotate-180" />
-            </Link>
-            <GeneralCategoryMegaMenu categories={categories} />
-          </div>
+          <GeneralCategoryMegaMenu categories={categories} />
           {categories.map((category) => <Link key={category.id} href={`/products?category=${category.slug}`} className="flex h-full items-center border-b-2 border-transparent transition hover:border-[var(--brand-primary)] hover:text-[var(--brand-primary)]">{category.name}</Link>)}
         </nav>
         <div className="mr-auto flex items-center gap-5 text-[#555]">

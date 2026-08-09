@@ -2,8 +2,8 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { ChevronLeft, Package } from "lucide-react";
-import { useState } from "react";
+import { ChevronDown, ChevronLeft, Menu, Package } from "lucide-react";
+import { useRef, useState } from "react";
 
 type MenuChild = {
   id: string;
@@ -22,10 +22,27 @@ type MenuCategory = {
 
 export function GeneralCategoryMegaMenu({ categories }: { categories: MenuCategory[] }) {
   const [activeCategoryId, setActiveCategoryId] = useState(categories[0]?.id ?? "");
+  const [open, setOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
   const activeCategory = categories.find((category) => category.id === activeCategoryId) ?? categories[0];
 
   return (
-    <div className="invisible pointer-events-none absolute inset-x-0 top-full z-50 translate-y-1 border-t border-slate-200 bg-white opacity-0 shadow-[0_18px_38px_rgba(24,35,55,.14)] transition duration-200 group-hover:visible group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:visible group-focus-within:pointer-events-auto group-focus-within:translate-y-0 group-focus-within:opacity-100" dir="rtl">
+    <div
+      ref={containerRef}
+      className="flex h-full items-center"
+      onMouseEnter={() => setOpen(true)}
+      onMouseLeave={() => setOpen(false)}
+      onFocusCapture={() => setOpen(true)}
+      onBlurCapture={(event) => {
+        if (!containerRef.current?.contains(event.relatedTarget as Node | null)) setOpen(false);
+      }}
+    >
+      <Link href="/products" onClick={() => setOpen(false)} className={`flex h-full items-center gap-2 border-b-2 font-bold transition ${open ? "border-[var(--brand-primary)] text-[var(--brand-primary)]" : "border-transparent hover:border-[var(--brand-primary)] hover:text-[var(--brand-primary)]"}`}>
+        <Menu size={19} />
+        دسته‌بندی کالاها
+        <ChevronDown size={14} className={`transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
+      </Link>
+      <div className={`absolute inset-x-0 top-full z-50 border-t border-slate-200 bg-white shadow-[0_18px_38px_rgba(24,35,55,.14)] transition duration-200 ${open ? "visible pointer-events-auto translate-y-0 opacity-100" : "invisible pointer-events-none translate-y-1 opacity-0"}`} dir="rtl" aria-hidden={!open}>
       {activeCategory ? (
         <div className="flex h-[min(620px,calc(100dvh-130px))] min-h-[360px] w-full overflow-hidden">
           <aside className="storefront-mega-scroll w-60 shrink-0 overflow-y-auto overscroll-contain border-l border-slate-200 bg-slate-50" aria-label="دسته‌های اصلی">
@@ -35,6 +52,7 @@ export function GeneralCategoryMegaMenu({ categories }: { categories: MenuCatego
                 <Link
                   key={category.id}
                   href={`/products?category=${category.slug}`}
+                  onClick={() => setOpen(false)}
                   onMouseEnter={() => setActiveCategoryId(category.id)}
                   onFocus={() => setActiveCategoryId(category.id)}
                   className={`flex min-h-14 items-center gap-3 border-r-2 px-4 text-xs font-bold transition ${active ? "border-[var(--brand-primary)] bg-white text-[var(--brand-primary)]" : "border-transparent text-slate-700 hover:bg-white hover:text-[var(--brand-primary)]"}`}
@@ -50,7 +68,7 @@ export function GeneralCategoryMegaMenu({ categories }: { categories: MenuCatego
           </aside>
 
           <section key={activeCategory.id} className="storefront-mega-scroll min-w-0 flex-1 overflow-y-auto overscroll-contain px-7 py-6" aria-label={`زیر‌دسته‌های ${activeCategory.name}`}>
-            <Link href={`/products?category=${activeCategory.slug}`} className="mb-7 inline-flex items-center gap-1 text-xs font-black text-[var(--brand-primary)]">
+            <Link href={`/products?category=${activeCategory.slug}`} onClick={() => setOpen(false)} className="mb-7 inline-flex items-center gap-1 text-xs font-black text-[var(--brand-primary)]">
               همه محصولات {activeCategory.name}
               <ChevronLeft size={14} />
             </Link>
@@ -59,7 +77,7 @@ export function GeneralCategoryMegaMenu({ categories }: { categories: MenuCatego
               <div className="columns-2 gap-x-10 xl:columns-4">
                 {activeCategory.children.map((child) => (
                   <section key={child.id} className="mb-8 inline-block w-full break-inside-avoid">
-                    <Link href={`/products?category=${child.slug}`} className="mb-4 flex items-center gap-2 text-[0.8rem] font-black text-slate-800 transition hover:text-[var(--brand-primary)]">
+                    <Link href={`/products?category=${child.slug}`} onClick={() => setOpen(false)} className="mb-4 flex items-center gap-2 text-[0.8rem] font-black text-slate-800 transition hover:text-[var(--brand-primary)]">
                       <span className="h-4 w-0.5 shrink-0 bg-[var(--brand-primary)]" />
                       <span className="truncate">{child.name}</span>
                       <ChevronLeft size={13} className="shrink-0" />
@@ -67,7 +85,7 @@ export function GeneralCategoryMegaMenu({ categories }: { categories: MenuCatego
                     {child.children.length > 0 && (
                       <div className="grid gap-3 pr-2 text-xs text-slate-400">
                         {child.children.map((grandchild) => (
-                          <Link key={grandchild.id} href={`/products?category=${grandchild.slug}`} className="truncate transition hover:text-[var(--brand-primary)] hover:pr-1">{grandchild.name}</Link>
+                          <Link key={grandchild.id} href={`/products?category=${grandchild.slug}`} onClick={() => setOpen(false)} className="truncate transition hover:text-[var(--brand-primary)] hover:pr-1">{grandchild.name}</Link>
                         ))}
                       </div>
                     )}
@@ -84,6 +102,7 @@ export function GeneralCategoryMegaMenu({ categories }: { categories: MenuCatego
       ) : (
         <div className="px-6 py-12 text-center text-xs text-slate-500">دسته‌بندی فعالی برای نمایش در منوی فروشگاه انتخاب نشده است.</div>
       )}
+      </div>
     </div>
   );
 }
