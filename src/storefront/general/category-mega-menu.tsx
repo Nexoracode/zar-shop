@@ -30,7 +30,7 @@ export function GeneralCategoryMegaMenu({ categories }: { categories: MenuCatego
   return (
     <div
       ref={containerRef}
-      className="flex h-full items-center"
+      className="group/mega flex h-full items-center"
       onMouseEnter={() => setOpen(true)}
       onMouseLeave={() => setOpen(false)}
       onFocusCapture={() => setOpen(true)}
@@ -38,7 +38,7 @@ export function GeneralCategoryMegaMenu({ categories }: { categories: MenuCatego
         if (!containerRef.current?.contains(event.relatedTarget as Node | null)) setOpen(false);
       }}
     >
-      <Button type="button" variant="ghost" onPress={() => setOpen(true)} className={`h-full min-h-0 rounded-none border-b-2 px-0 font-bold transition ${open ? "border-[var(--brand-primary)] text-[var(--brand-primary)]" : "border-transparent hover:border-[var(--brand-primary)] hover:text-[var(--brand-primary)]"}`}>
+      <Button type="button" variant="ghost" onPress={() => setOpen(true)} className={`relative h-full min-h-0 overflow-visible rounded-none px-0 font-bold transition after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-full after:origin-left after:scale-x-0 after:bg-[var(--brand-primary)] after:content-[''] after:transition-transform after:duration-300 after:ease-out group-hover/mega:after:scale-x-100 group-focus-within/mega:after:scale-x-100 ${open ? "text-[var(--brand-primary)]" : "hover:text-[var(--brand-primary)]"}`}>
         <Menu size={19} />
         دسته‌بندی کالاها
         <ChevronDown size={14} className={`transition-transform duration-200 ${open ? "rotate-180" : ""}`} />

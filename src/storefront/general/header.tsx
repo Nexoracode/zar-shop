@@ -43,7 +43,7 @@ export async function GeneralHeader({ settings, brand, user, menuCategoryIds }: 
         <Link href="/" aria-label={`${settings.storeName}، صفحه اصلی`}>{logo}</Link>
         <nav className="mr-12 flex h-full items-center gap-8 text-sm" aria-label="دسته‌بندی محصولات">
           <GeneralCategoryMegaMenu categories={categories} />
-          {categories.map((category) => <Link key={category.id} href={`/products?category=${category.slug}`} className="flex h-full items-center border-b-2 border-transparent transition hover:border-[var(--brand-primary)] hover:text-[var(--brand-primary)]">{category.name}</Link>)}
+          {categories.map((category) => <Link key={category.id} href={`/products?category=${category.slug}`} className="relative flex h-full items-center transition after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-full after:origin-left after:scale-x-0 after:bg-[var(--brand-primary)] after:content-[''] after:transition-transform after:duration-300 after:ease-out hover:text-[var(--brand-primary)] hover:after:scale-x-100 focus-visible:text-[var(--brand-primary)] focus-visible:after:scale-x-100">{category.name}</Link>)}
         </nav>
         <div className="mr-auto flex items-center gap-5 text-[#555]">
           <Link href="/products" aria-label="جستجوی محصولات"><Search size={21} /></Link>
