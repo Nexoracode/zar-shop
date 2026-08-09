@@ -7,6 +7,7 @@ import { HomepageProductFeed } from "@/components/homepage-product-feed";
 import { ProductCard } from "@/components/product-card";
 import { StorefrontFaqAccordion } from "@/components/storefront-faq-accordion";
 import { StorefrontHeroSlider } from "@/components/storefront-hero-slider";
+import { ViewAllProductCard } from "@/components/view-all-product-card";
 import { db } from "@/lib/db";
 import type { StorefrontProductCardItem } from "@/modules/products/storefront-feed-contract";
 import { getStorefrontProductFeed } from "@/modules/products/storefront-feed";
@@ -31,10 +32,11 @@ function resolveCategoryIcon(value: string): LucideIcon {
 
 function ProductRail({ title, eyebrow, products, href = "/products" }: { title: string; eyebrow: string; products: StorefrontProductCardItem[]; href?: string }) {
   if (!products.length) return null;
-  return <section className="rounded-2xl border border-[#e6e8ec] bg-white px-4 py-5 sm:px-6 lg:px-7 lg:py-7">
-    <div className="mb-5 flex items-end justify-between gap-4"><div><span className="text-[11px] font-bold text-[var(--brand-primary)]">{eyebrow}</span><h2 className="mb-0 mt-1.5 text-xl font-black text-[#232934] sm:text-2xl">{title}</h2></div><Link href={href} className="inline-flex shrink-0 items-center gap-1 text-xs font-bold text-[var(--brand-primary)]">مشاهده همه<ChevronLeft size={15} /></Link></div>
-    <DragScrollRow ariaLabel={title} className="flex gap-3 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+  return <section className="min-w-0 overflow-hidden rounded-2xl border border-[#e6e8ec] bg-white px-4 py-5 sm:px-6 lg:px-7 lg:py-7">
+    <div className="mb-5"><span className="text-[11px] font-bold text-[var(--brand-primary)]">{eyebrow}</span><h2 className="mb-0 mt-1.5 text-xl font-black text-[#232934] sm:text-2xl">{title}</h2></div>
+    <DragScrollRow ariaLabel={title} className="storefront-product-scroll flex w-full min-w-0 max-w-full gap-3 overflow-x-auto pb-3">
       {products.map((product, index) => <div key={product.id} className="w-[164px] min-w-[164px] sm:w-[206px] sm:min-w-[206px] lg:w-[218px] lg:min-w-[218px]"><ProductCard {...product} storefrontVariant="gallery" imageTone={index % 4} /></div>)}
+      <div className="w-[164px] min-w-[164px] sm:w-[206px] sm:min-w-[206px] lg:w-[218px] lg:min-w-[218px]"><ViewAllProductCard href={href} /></div>
     </DragScrollRow>
   </section>;
 }
@@ -83,7 +85,7 @@ export async function GeneralHome() {
       return <Link key={category.id} href={`/products?category=${category.slug}`} className={`group relative min-h-[170px] overflow-hidden rounded-2xl p-5 sm:min-h-[210px] ${categoryTones[index % categoryTones.length]}`}>{media?.url || category.image?.url ? <Image src={media?.url ?? category.image!.url} alt={media?.alt ?? category.image?.alt ?? category.name} fill sizes="(max-width:1024px) 50vw, 25vw" className="object-cover transition duration-500 group-hover:scale-105" /> : <><span className="absolute -bottom-10 -left-8 size-36 rounded-full bg-white/45" /><Icon className="absolute bottom-5 left-5 opacity-80 transition group-hover:-translate-y-1" size={58} strokeWidth={1.2} /></>}<span className={`absolute inset-0 ${media?.url || category.image?.url ? "bg-gradient-to-t from-black/65 via-black/5 to-transparent" : ""}`} /><span className="absolute inset-x-5 bottom-5"><strong className={`block text-base font-black sm:text-xl ${media?.url || category.image?.url ? "text-white" : ""}`}>{category.name}</strong><small className={`mt-1 block ${media?.url || category.image?.url ? "text-white/80" : "opacity-70"}`}>مشاهده و خرید محصولات</small></span></Link>;
     })}</section>}
 
-    <section {...sectionProps("PRODUCTS")} className={`${container} grid gap-4 lg:gap-6`}><ProductRail title="محبوب‌ترین کالاها" eyebrow="انتخاب مشتریان" products={popularFeed.items} href="/products?sortby=popular" /><div className="rounded-2xl border border-[#e6e8ec] bg-white px-4 py-6 sm:px-6 lg:px-7 lg:py-8"><div className="mb-2"><span className="text-[11px] font-bold text-[var(--brand-primary)]">تازه‌های فروشگاه</span><h2 className="mb-0 mt-1.5 text-xl font-black text-[#232934] sm:text-2xl">جدیدترین محصولات</h2></div><HomepageProductFeed initialFeed={latestFeed} industry="GENERAL" /></div></section>
+    <section {...sectionProps("PRODUCTS")} className={`${container} grid min-w-0 gap-4 lg:gap-6`}><ProductRail title="محبوب‌ترین کالاها" eyebrow="انتخاب مشتریان" products={popularFeed.items} href="/products?sortby=popular" /><div className="min-w-0 overflow-hidden rounded-2xl border border-[#e6e8ec] bg-white px-4 py-6 sm:px-6 lg:px-7 lg:py-8"><div className="mb-2"><span className="text-[11px] font-bold text-[var(--brand-primary)]">تازه‌های فروشگاه</span><h2 className="mb-0 mt-1.5 text-xl font-black text-[#232934] sm:text-2xl">جدیدترین محصولات</h2></div><HomepageProductFeed initialFeed={latestFeed} industry="GENERAL" /></div></section>
 
     <section {...sectionProps("PROMISES")} className={`${container} rounded-2xl border border-[#e6e8ec] bg-white px-4 py-5 sm:px-6`}><div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">{[
       { icon: Truck, title: "ارسال قابل پیگیری", text: "وضعیت سفارش همیشه مشخص است" },

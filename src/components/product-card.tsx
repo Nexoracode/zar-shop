@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { Dumbbell, Heart, HeartPulse, House, Package, Shirt, Smartphone } from "lucide-react";
+import { Heart } from "lucide-react";
 
 const galleryImageBackgrounds = [
   "bg-[linear-gradient(145deg,#fcfcfc,#f3f3f3)]",
@@ -16,15 +16,8 @@ const generalImageBackgrounds = [
   "bg-[linear-gradient(145deg,#ecfdf5,#d1fae5)]",
 ] as const;
 
-function GeneralProductPlaceholder({ category }: { category: string }) {
-  const value = category.toLowerCase();
-  const Icon = value.includes("موبایل") || value.includes("دیجیتال") ? Smartphone
-    : value.includes("خانه") || value.includes("آشپزخانه") ? House
-      : value.includes("پوشاک") || value.includes("مد") ? Shirt
-        : value.includes("ورزش") || value.includes("سفر") ? Dumbbell
-          : value.includes("سلامت") || value.includes("زیبایی") ? HeartPulse
-            : Package;
-  return <div className="relative grid h-full w-full place-items-center overflow-hidden text-slate-500" aria-hidden="true"><span className="absolute -right-8 -top-10 size-32 rounded-full bg-white/55" /><span className="absolute -bottom-14 -left-8 size-40 rounded-full bg-white/45" /><span className="grid size-24 place-items-center rounded-[28px] bg-white/75 shadow-[0_18px_50px_rgba(30,41,59,.10)] backdrop-blur"><Icon size={44} strokeWidth={1.35} /></span></div>;
+function GeneralProductPlaceholder() {
+  return <div className="h-full w-full bg-[#f1f2f4]" aria-hidden="true" />;
 }
 
 type ProductCardProps = {
@@ -61,7 +54,7 @@ export function ProductCard({ href, name, category, industry, weight, purity, ma
             height={560}
             className="w-full h-full object-cover transition-transform duration-400 ease-out group-hover:scale-[1.025]"
           />
-        ) : industry === "GENERAL" ? <GeneralProductPlaceholder category={category} /> : (
+        ) : industry === "GENERAL" ? <GeneralProductPlaceholder /> : (
           <div className="relative grid h-full w-full place-items-center bg-[radial-gradient(circle_at_50%_44%,#fff_0_9%,transparent_10%),linear-gradient(145deg,#f8f7f4,#e9e5df)]" aria-hidden="true">
             <span className="block w-[36%] aspect-square border-[clamp(9px,1.5vw,17px)] border-[#c49a4d] rounded-full -rotate-[18deg] shadow-[inset_0_0_0_4px_#f8dda1,0_18px_32px_rgba(75,52,19,0.2)]" />
             <span className="absolute top-[27%] right-[29%] text-white text-2xl drop-shadow-[0_0_14px_#fff]">✦</span>

@@ -45,5 +45,5 @@ export function DragScrollRow({ children, className = "", ariaLabel }: Props) {
     drag.current.moved = false;
   }
 
-  return <div ref={rowRef} dir="rtl" aria-label={ariaLabel} className={`${className} select-none ${isDragging ? "cursor-grabbing" : "cursor-grab"}`} onPointerDown={pointerDown} onPointerMove={pointerMove} onPointerUp={finishDrag} onPointerCancel={finishDrag} onClickCapture={captureClick} onDragStart={(event) => event.preventDefault()}>{children}</div>;
+  return <div ref={rowRef} dir="rtl" tabIndex={0} aria-label={ariaLabel} className={`${className} select-none ${isDragging ? "cursor-grabbing" : "cursor-grab"}`} onPointerDown={pointerDown} onPointerMove={pointerMove} onPointerUp={finishDrag} onPointerCancel={finishDrag} onClickCapture={captureClick} onDragStart={(event) => event.preventDefault()}>{children}</div>;
 }
