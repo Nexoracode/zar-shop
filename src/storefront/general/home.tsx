@@ -54,7 +54,7 @@ export async function GeneralHome() {
     }),
   ]);
 
-  const heroSlides = buildStorefrontHeroSlides(homepage, "/images/general-hero.svg");
+  const heroSlides = buildStorefrontHeroSlides(homepage, "/images/zar-hero-campaign.png");
   const activeFaqs = content.faqs.filter((faq) => faq.enabled);
   const sectionState = new Map(homepage.sections.map((section) => [section.id, section.enabled]));
   const sectionProps = (id: HomepageSectionId) => ({ hidden: sectionState.get(id) === false });
@@ -63,7 +63,7 @@ export async function GeneralHome() {
   const promoCategories = categories.slice(0, 4);
 
   return <main className="flex flex-col gap-4 overflow-hidden bg-[#f4f5f7] pb-[78px] pt-3 lg:gap-6 lg:pb-8">
-    <section {...sectionProps("HERO")} className={container}><div className="overflow-hidden rounded-2xl bg-white shadow-sm"><StorefrontHeroSlider slides={heroSlides} contentMode={homepage.heroContentMode} title={homepage.heroTitle} description={homepage.heroDescription} buttonLabel={homepage.heroButtonLabel} /></div></section>
+    <section {...sectionProps("HERO")} className="bg-white"><StorefrontHeroSlider slides={heroSlides} contentMode={homepage.heroContentMode} title={homepage.heroTitle} description={homepage.heroDescription} buttonLabel={homepage.heroButtonLabel} /></section>
 
     {categories.length > 0 && <section {...sectionProps("CATEGORIES")} className={`${container} rounded-2xl bg-white px-3 py-6 sm:px-6 lg:py-8`} aria-label="دسته‌بندی محصولات">
       <div className="mb-6 flex items-center justify-between"><h2 className="m-0 text-lg font-black text-[#232934] sm:text-xl">خرید بر اساس دسته‌بندی</h2><Link href="/products" className="inline-flex items-center gap-1 text-xs font-bold text-[var(--brand-primary)]">همه کالاها<ChevronLeft size={15} /></Link></div>
