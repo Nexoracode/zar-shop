@@ -34,9 +34,9 @@ function ProductRail({ title, eyebrow, products, href = "/products" }: { title: 
   if (!products.length) return null;
   return <section className="min-w-0 overflow-hidden rounded-2xl border border-[#e6e8ec] bg-white px-4 py-5 sm:px-6 lg:px-7 lg:py-7">
     <div className="mb-5"><span className="text-[11px] font-bold text-[var(--brand-primary)]">{eyebrow}</span><h2 className="mb-0 mt-1.5 text-xl font-black text-[#232934] sm:text-2xl">{title}</h2></div>
-    <DragScrollRow ariaLabel={title} className="flex w-full min-w-0 max-w-full gap-3 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-      {products.map((product, index) => <div key={product.id} className="w-[164px] min-w-[164px] sm:w-[206px] sm:min-w-[206px] lg:w-[218px] lg:min-w-[218px]"><ProductCard {...product} storefrontVariant="gallery" imageTone={index % 4} /></div>)}
-      <div className="w-[164px] min-w-[164px] sm:w-[206px] sm:min-w-[206px] lg:w-[218px] lg:min-w-[218px]"><ViewAllProductCard href={href} /></div>
+    <DragScrollRow ariaLabel={title} showNavigation className="flex w-full min-w-0 max-w-full gap-3 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      {products.map((product, index) => <div key={product.id} className="w-[164px] min-w-[164px] snap-start sm:w-[206px] sm:min-w-[206px] lg:w-[218px] lg:min-w-[218px]"><ProductCard {...product} storefrontVariant="gallery" imageTone={index % 4} /></div>)}
+      <div className="w-[164px] min-w-[164px] snap-start sm:w-[206px] sm:min-w-[206px] lg:w-[218px] lg:min-w-[218px]"><ViewAllProductCard href={href} /></div>
     </DragScrollRow>
   </section>;
 }
