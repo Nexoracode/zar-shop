@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="640" viewBox="0 0 1920 640" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1920" y2="640" gradientUnits="userSpaceOnUse"><stop stop-color="#E9F2FF"/><stop offset=".55" stop-color="#F7FAFF"/><stop offset="1" stop-color="#FFF0F3"/></linearGradient>
+    <linearGradient id="bag" x1="1340" y1="130" x2="1600" y2="530" gradientUnits="userSpaceOnUse"><stop stop-color="#EF4056"/><stop offset="1" stop-color="#D62845"/></linearGradient>
+    <filter id="shadow" x="1110" y="55" width="620" height="560" filterUnits="userSpaceOnUse"><feDropShadow dx="0" dy="25" stdDeviation="24" flood-color="#263449" flood-opacity=".16"/></filter>
+  </defs>
+  <rect width="1920" height="640" fill="url(#bg)"/>
+  <circle cx="1710" cy="85" r="170" fill="#fff" fill-opacity=".46"/>
+  <circle cx="1160" cy="600" r="250" fill="#DCEAFF" fill-opacity=".75"/>
+  <path d="M120 510C360 355 580 570 850 390C1030 270 1110 180 1290 170" stroke="#fff" stroke-opacity=".85" stroke-width="3" stroke-dasharray="12 14"/>
+  <g filter="url(#shadow)">
+    <rect x="1320" y="172" width="300" height="340" rx="42" fill="url(#bag)"/>
+    <path d="M1390 205C1390 112 1550 112 1550 205" stroke="#fff" stroke-width="24" stroke-linecap="round"/>
+    <rect x="1155" y="220" width="205" height="260" rx="30" fill="#fff"/>
+    <rect x="1180" y="250" width="155" height="188" rx="20" fill="#DCEAFF"/>
+    <circle cx="1258" cy="458" r="9" fill="#A9B9D1"/>
+    <rect x="1550" y="285" width="170" height="150" rx="28" fill="#fff"/>
+    <path d="M1586 285C1586 236 1682 236 1682 285" stroke="#4B70E2" stroke-width="16" stroke-linecap="round"/>
+  </g>
+  <g fill="#4B70E2"><path d="M1065 150l11 26 27 10-27 11-11 26-10-26-27-11 27-10 10-26z"/><circle cx="1735" cy="500" r="14"/><circle cx="1110" cy="410" r="9"/></g>
+  <g fill="#EF4056"><circle cx="1260" cy="105" r="12"/><path d="M1775 205l8 18 18 8-18 8-8 18-8-18-18-8 18-8 8-18z"/></g>
+</svg>
