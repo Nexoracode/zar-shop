@@ -398,31 +398,6 @@ img {
   background: rgb(100 116 139 / 45%);
 }
 
-.storefront-product-scroll {
-  scrollbar-width: thin;
-  scrollbar-color: color-mix(in srgb, var(--brand-primary) 58%, transparent) #e8eaee;
-  scrollbar-gutter: stable;
-  overscroll-behavior-inline: contain;
-}
-
-.storefront-product-scroll::-webkit-scrollbar {
-  height: 6px;
-}
-
-.storefront-product-scroll::-webkit-scrollbar-track {
-  border-radius: 999px;
-  background: #e8eaee;
-}
-
-.storefront-product-scroll::-webkit-scrollbar-thumb {
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--brand-primary) 58%, transparent);
-}
-
-.storefront-product-scroll::-webkit-scrollbar-thumb:hover {
-  background: var(--brand-primary);
-}
-
 @media print {
   @page {
     size: A4 portrait;
