@@ -35,7 +35,11 @@ export function AdminSectionHelp({ title, summary, blocks, placement = "bottom l
         placement={placement}
         className="z-[190] w-[min(92vw,400px)] overflow-hidden rounded-xl border border-slate-200 bg-white p-0 text-right text-slate-800 shadow-2xl"
       >
-        <Popover.Dialog dir="rtl" className="overflow-hidden p-0 text-right outline-none">
+        <Popover.Dialog
+          dir="rtl"
+          className="flex min-h-0 flex-col overflow-hidden p-0 text-right outline-none"
+          style={{ maxHeight: "inherit" }}
+        >
           <div className="flex shrink-0 items-start gap-3 border-b border-slate-100 bg-slate-50/80 p-4">
             <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-violet-100 text-violet-700">
               <Info size={17} />
@@ -55,8 +59,7 @@ export function AdminSectionHelp({ title, summary, blocks, placement = "bottom l
             hideScrollBar={false}
             tabIndex={0}
             aria-label={`متن راهنمای ${title}`}
-            className="admin-content-scroll touch-pan-y overscroll-contain p-4 [scrollbar-gutter:stable]"
-            style={{ maxHeight: "min(480px, calc(100dvh - 170px))" }}
+            className="admin-content-scroll min-h-0 flex-1 touch-pan-y overscroll-contain p-4 [scrollbar-gutter:stable]"
           >
             <div className="grid gap-4">
               {blocks.map((block, index) => (
