@@ -109,7 +109,7 @@ async function createStore(db: PrismaClient, seed: DevelopmentStoreSeed) {
   const categoryIds = new Map<string, string>();
   for (const [index, category] of seed.categories.entries()) {
     const created = await db.category.create({
-      data: { ...category, featured: true, isActive: true, sortOrder: (index + 1) * 10 },
+      data: { name: category.name, slug: category.slug, description: category.description, attributeSchema: category.attributeSchema ?? [], featured: true, isActive: true, sortOrder: (index + 1) * 10 },
     });
     categoryIds.set(category.slug, created.id);
   }
@@ -141,6 +141,7 @@ async function createStore(db: PrismaClient, seed: DevelopmentStoreSeed) {
         stock: product.stock,
         preparationDays: 2,
         featured: product.featured ?? false,
+        attributes: product.attributes ?? [],
       },
     });
   }

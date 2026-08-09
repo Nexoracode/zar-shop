@@ -12,6 +12,7 @@ import { sanitizeProductDescription } from "@/modules/products/rich-text";
 import { calculateDiscountedPrice } from "@/modules/products/discount";
 import { getGeneralStoreSettings } from "@/modules/settings/general-settings";
 import { getCatalogSettings } from "@/modules/settings/catalog-settings";
+import { buildProductAttributeGroups } from "@/modules/products/attributes";
 
 export const dynamic = "force-dynamic";
 
@@ -31,6 +32,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   const colorIds = [...new Set(optionValues.flatMap(({ values }) => values.flatMap((item) => item.colorId ? [item.colorId] : [])))];
   const colors = colorIds.length ? await db.color.findMany({ where: { id: { in: colorIds }, isActive: true }, select: { id: true, name: true, hex: true } }) : [];
   const colorsById = new Map(colors.map((color) => [color.id, color]));
+  const attributeGroups = buildProductAttributeGroups(product.category?.attributeSchema, product.attributes);
 
   const rate = gold ? Number(gold.pricePerGram18) : null;
   const parts = product.storeIndustry === "GOLD" && rate !== null ? calculateProductPrice({ goldPricePerGram18: rate, weightGrams: Number(product.weightGrams), purity: product.purity, makingFeeType: product.makingFeeType, makingFeeValue: Number(product.makingFeeValue), profitPercent: Number(product.profitPercent), taxPercent: Number(product.taxPercent) }) : null;
@@ -102,7 +104,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
             <AddToCart
               productId={product.id}
               currency={settings.currency}
-              options={optionValues.map(({ option, values }) => ({ id: option.id, name: option.name, values: values.map((item) => ({ value: item.value, stock: item.stock ?? product.stock, weightGrams: item.weightGrams, price: priceForVariant(item.weightGrams, item.price), color: item.colorId ? colorsById.get(item.colorId) ?? null : null })) }))}
+              options={optionValues.map(({ option, values }) => ({ id: option.id, name: option.name, kind: values.some((item) => item.colorId) ? "COLOR" as const : "SELECT" as const, values: values.map((item) => ({ value: item.value, stock: item.stock ?? product.stock, weightGrams: item.weightGrams, price: priceForVariant(item.weightGrams, item.price), color: item.colorId ? colorsById.get(item.colorId) ?? null : null })) }))}
               optionGuide={product.optionGuide && product.optionGuide.type !== "VIDEO" ? { url: product.optionGuide.url, type: product.optionGuide.type, title: product.optionGuide.title ?? "راهنمای انتخاب محصول" } : null}
               disabled={product.stock < 1 || total === null}
               disabledLabel={product.stock < 1 ? "ناموجود" : "قیمت موقتاً نامشخص"}
@@ -123,6 +125,10 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
           </div>
         </div>
       </div>
+      {attributeGroups.length > 0 && <section className="mx-auto mt-12 w-full max-w-[1240px] border-t border-[#e7e6e2] pt-8" aria-labelledby="product-attributes-title">
+        <h2 id="product-attributes-title" className="mb-6 mt-0 text-xl font-black text-[var(--brand-primary)]">ویژگی‌های محصول</h2>
+        <div className="grid gap-4 lg:grid-cols-2">{attributeGroups.map((group) => <div key={group.id} className="overflow-hidden rounded-lg border border-[#e7e6e2] bg-white"><h3 className="m-0 border-b border-[#e7e6e2] bg-[#f7f7f5] px-4 py-3 text-sm font-black text-[#333]">{group.name}</h3><dl className="m-0">{group.attributes.map((attribute) => <div key={attribute.id} className="grid grid-cols-[minmax(110px,0.7fr)_minmax(0,1.3fr)] border-b border-[#efefec] last:border-b-0"><dt className="bg-[#fafaf8] px-4 py-3 text-xs text-[#747982]">{attribute.name}</dt><dd className="m-0 px-4 py-3 text-xs font-bold leading-6 text-[#30343b]">{attribute.values.join("، ")}</dd></div>)}</dl></div>)}</div>
+      </section>}
     </main>
   );
 }

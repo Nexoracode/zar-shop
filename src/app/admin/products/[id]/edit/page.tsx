@@ -5,6 +5,7 @@ import { AdminPageHeader } from "@/components/admin-ui";
 import { requirePermission } from "@/modules/auth/session";
 import { parseOptionValues } from "@/modules/products/options";
 import { formatTehranDateInput } from "@/modules/products/discount";
+import { parseCategoryAttributeSchema, parseProductAttributes } from "@/modules/products/attributes";
 
 type Context = { params: Promise<{ id: string }> };
 
@@ -29,7 +30,7 @@ export default async function EditProductPage({ params }: Context) {
       <AdminPageHeader eyebrow="مدیریت کاتالوگ" title={`ویرایش «${product.name}»`} description="اطلاعات، قیمت‌گذاری، موجودی و گالری این محصول را به‌روزرسانی کنید." backHref="/admin/products" backLabel="بازگشت به محصولات" />
       <ProductForm
         storeIndustry={product.storeIndustry}
-        categories={categories.map((category) => ({ id: category.id, name: category.name, parentName: category.parent?.name ?? null }))}
+        categories={categories.map((category) => ({ id: category.id, name: category.name, parentName: category.parent?.name ?? null, attributeGroups: parseCategoryAttributeSchema(category.attributeSchema) }))}
         product={{
           id: product.id,
           sku: product.sku,
@@ -53,6 +54,7 @@ export default async function EditProductPage({ params }: Context) {
           preparationDays: product.preparationDays,
           status: product.status,
           featured: product.featured,
+          attributes: parseProductAttributes(product.attributes),
           options: product.options.map((option) => ({ name: option.name, values: parseOptionValues(option.values) })),
           optionGuide: product.optionGuide ? { id: product.optionGuide.id, title: product.optionGuide.title ?? product.optionGuide.storageKey, url: product.optionGuide.url, type: product.optionGuide.type } : null,
           media: product.media.map(({ media }) => ({ id: media.id, title: media.title ?? media.storageKey, url: media.url, type: media.type })),

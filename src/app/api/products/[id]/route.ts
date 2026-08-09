@@ -8,6 +8,7 @@ import { areOptionColorsValid } from "@/modules/products/color-validation";
 import { sanitizeProductDescription } from "@/modules/products/rich-text";
 import { mergeOptionsPreservingHistory, optionEntries, optionSelectionKey } from "@/modules/products/options";
 import { formatTehranDateInput, tehranDateEnd, tehranDateStart } from "@/modules/products/discount";
+import { parseProductAttributes, validateProductAttributes } from "@/modules/products/attributes";
 
 type Context = { params: Promise<{ id: string }> };
 
@@ -16,9 +17,9 @@ export async function PATCH(request: Request, context: Context) {
     const actor = await getCurrentUser();
     if (!actor || !hasPermission(actor.role, "catalog:manage")) return NextResponse.json({ message: "دسترسی غیرمجاز است." }, { status: 403 });
     const { id } = await context.params;
-    const existingProduct = await db.product.findUnique({ where: { id }, select: { storeIndustry: true, discountType: true, discountValue: true, discountStartsAt: true, discountEndsAt: true } });
+    const existingProduct = await db.product.findUnique({ where: { id }, select: { storeIndustry: true, categoryId: true, attributes: true, discountType: true, discountValue: true, discountStartsAt: true, discountEndsAt: true } });
     if (!existingProduct) return NextResponse.json({ message: "محصول پیدا نشد." }, { status: 404 });
-    const { mediaIds, options, optionGuideId, storeIndustry: _ignoredIndustry, ...input } = productSchema.partial().parse(await request.json());
+    const { mediaIds, options, optionGuideId, attributes, storeIndustry: _ignoredIndustry, ...input } = productSchema.partial().parse(await request.json());
     void _ignoredIndustry;
     if (existingProduct.storeIndustry === "GOLD" && options?.some((option) => option.values.some((item) => item.price !== null))) {
       return NextResponse.json({ message: "برای محصول طلا، قیمت تنوع از وزن آن محاسبه می‌شود." }, { status: 422 });
@@ -46,6 +47,12 @@ export async function PATCH(request: Request, context: Context) {
       return NextResponse.json({ message: "پایان تخفیف باید بعد از شروع آن باشد." }, { status: 422 });
     }
     if (options && !await areOptionColorsValid(options)) return NextResponse.json({ message: "یک یا چند رنگ انتخاب‌شده معتبر یا فعال نیست." }, { status: 422 });
+    const nextCategoryId = input.categoryId !== undefined ? input.categoryId : existingProduct.categoryId;
+    const nextAttributes = attributes ?? (input.categoryId !== undefined && input.categoryId !== existingProduct.categoryId ? [] : parseProductAttributes(existingProduct.attributes));
+    const category = nextCategoryId ? await db.category.findUnique({ where: { id: nextCategoryId }, select: { attributeSchema: true } }) : null;
+    if (nextCategoryId && !category) return NextResponse.json({ message: "دسته‌بندی انتخاب‌شده پیدا نشد." }, { status: 422 });
+    const attributeValidation = validateProductAttributes(category?.attributeSchema ?? [], nextAttributes);
+    if (!attributeValidation.ok) return NextResponse.json({ message: attributeValidation.message }, { status: 422 });
     if (mediaIds) {
       const media = mediaIds.length ? await db.mediaAsset.findMany({ where: { id: { in: mediaIds }, scope: "PRODUCT", type: { in: ["IMAGE", "VIDEO"] } }, select: { id: true } }) : [];
       if (media.length !== new Set(mediaIds).size) return NextResponse.json({ message: "یک یا چند رسانه محصول معتبر نیست." }, { status: 422 });
@@ -55,7 +62,7 @@ export async function PATCH(request: Request, context: Context) {
       if (!guide) return NextResponse.json({ message: "فایل راهنمای انتخاب باید تصویر یا PDF معتبر از گالری محصولات باشد." }, { status: 422 });
     }
     const product = await db.$transaction(async (tx) => {
-      await tx.product.update({ where: { id }, data: { ...input, ...(input.discountStartsAt !== undefined ? { discountStartsAt: tehranDateStart(input.discountStartsAt) } : {}), ...(input.discountEndsAt !== undefined ? { discountEndsAt: tehranDateEnd(input.discountEndsAt) } : {}), ...(input.description !== undefined ? { description: sanitizeProductDescription(input.description) } : {}), ...(optionGuideId !== undefined ? { optionGuideId } : {}) } });
+      await tx.product.update({ where: { id }, data: { ...input, attributes: attributeValidation.data, ...(input.discountStartsAt !== undefined ? { discountStartsAt: tehranDateStart(input.discountStartsAt) } : {}), ...(input.discountEndsAt !== undefined ? { discountEndsAt: tehranDateEnd(input.discountEndsAt) } : {}), ...(input.description !== undefined ? { description: sanitizeProductDescription(input.description) } : {}), ...(optionGuideId !== undefined ? { optionGuideId } : {}) } });
       if (mediaIds) {
         await tx.productMedia.deleteMany({ where: { productId: id } });
         if (mediaIds.length) await tx.productMedia.createMany({ data: mediaIds.map((mediaId, position) => ({ productId: id, mediaId, position, isCover: position === 0 })) });

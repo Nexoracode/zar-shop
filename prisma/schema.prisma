@@ -171,6 +171,7 @@ model Category {
   isActive    Boolean     @default(true)
   featured    Boolean     @default(false)
   sortOrder   Int         @default(0)
+  attributeSchema Json?
   parent      Category?   @relation("CategoryTree", fields: [parentId], references: [id], onDelete: SetNull)
   children    Category[]  @relation("CategoryTree")
   image       MediaAsset? @relation("CategoryImage", fields: [imageId], references: [id], onDelete: SetNull)
@@ -217,6 +218,7 @@ model Product {
   stock            Int                  @default(0)
   preparationDays  Int                  @default(2)
   featured         Boolean              @default(false)
+  attributes       Json?
   createdAt        DateTime             @default(now())
   updatedAt        DateTime             @updatedAt
   category         Category?            @relation(fields: [categoryId], references: [id], onDelete: SetNull)

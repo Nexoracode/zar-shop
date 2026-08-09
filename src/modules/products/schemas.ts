@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { productAttributesSchema } from "@/modules/products/attributes";
 
 const dateOnlySchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/).refine((value) => {
   const [year, month, day] = value.split("-").map(Number);
@@ -54,6 +55,7 @@ export const productSchema = z.object({
     }
   }).default([]),
   optionGuideId: z.string().cuid().nullable().default(null),
+  attributes: productAttributesSchema.default([]),
 });
 
 export const completeProductSchema = productSchema.superRefine((product, context) => {

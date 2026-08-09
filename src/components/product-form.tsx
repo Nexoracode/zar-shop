@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useState, type FormEvent, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { Alert, Button, Card, Input, Spinner, toast } from "@heroui/react";
-import { BadgePercent, ChevronRight, FileText, GripVertical, Images, Info, PackageCheck, Ruler, Save, Sparkles, Tag, Trash2 } from "lucide-react";
+import { BadgePercent, ChevronRight, FileText, GripVertical, Images, Info, ListChecks, PackageCheck, Ruler, Save, Sparkles, Tag, Trash2 } from "lucide-react";
 import { MediaPickerDialog } from "@/components/media-picker-dialog";
 import type { MediaChoice } from "@/components/media-library";
 import { adminFieldClass, adminLabelClass } from "@/components/admin-ui";
@@ -16,15 +16,19 @@ import { completeProductSchema } from "@/modules/products/schemas";
 import { RichTextEditor } from "@/components/rich-text-editor";
 import { HeroDateRangeField } from "@/components/hero-date-range-field";
 import { HeroNumberInput } from "@/components/hero-number-input";
+import { ProductAttributesFields } from "@/components/product-attributes-fields";
+import type { CategoryAttributeGroup, ProductAttributeValue } from "@/modules/products/attributes";
 
 type EditableProduct = {
   id: string; sku: string; name: string; slug: string; description: string; categoryId: string; purity: number; weightGrams: number;
   storeIndustry: "GOLD" | "GENERAL"; makingFeeType: string; makingFeeValue: number; profitPercent: number; taxPercent: number; fixedPrice: number | null; stock: number; preparationDays: number;
   discountType: "PERCENT" | "FIXED" | null; discountValue: number | null; discountStartsAt: string | null; discountEndsAt: string | null;
   status: "DRAFT" | "ACTIVE" | "ARCHIVED"; featured: boolean; media: MediaChoice[]; options: Array<{ name: string; values: Array<{ value: string; colorId: string | null }> }>; optionGuide: MediaChoice | null;
+  attributes: ProductAttributeValue[];
 };
 
-type Props = { storeIndustry: "GOLD" | "GENERAL"; categories?: Array<{ id: string; name: string; parentName: string | null }>; product?: EditableProduct };
+type ProductCategoryOption = { id: string; name: string; parentName: string | null; attributeGroups: CategoryAttributeGroup[] };
+type Props = { storeIndustry: "GOLD" | "GENERAL"; categories?: ProductCategoryOption[]; product?: EditableProduct };
 
 const productFieldLabels: Record<string, string> = {
   sku: "کد کالا",
@@ -50,6 +54,7 @@ const productFieldLabels: Record<string, string> = {
   mediaIds: "گالری محصول",
   options: "تنوع‌های محصول",
   optionGuideId: "راهنمای انتخاب",
+  attributes: "ویژگی‌های محصول",
 };
 
 export function ProductForm({ storeIndustry, categories = [], product }: Props) {
@@ -65,6 +70,15 @@ export function ProductForm({ storeIndustry, categories = [], product }: Props) 
   const [discountType, setDiscountType] = useState<"PERCENT" | "FIXED">(product?.discountType ?? "PERCENT");
   const [discountRange, setDiscountRange] = useState<{ start: string; end: string } | null>(() => product?.discountStartsAt && product.discountEndsAt ? { start: product.discountStartsAt, end: product.discountEndsAt } : null);
   const [draggedMediaId, setDraggedMediaId] = useState<string | null>(null);
+  const [categoryId, setCategoryId] = useState(product?.categoryId ?? "");
+  const [attributes, setAttributes] = useState<ProductAttributeValue[]>(product?.attributes ?? []);
+  const selectedCategory = categories.find((category) => category.id === categoryId);
+
+  function changeCategory(nextCategoryId: string) {
+    setCategoryId(nextCategoryId);
+    const allowedIds = new Set(categories.find((category) => category.id === nextCategoryId)?.attributeGroups.flatMap((group) => group.attributes.map((attribute) => attribute.id)) ?? []);
+    setAttributes((current) => current.filter((attribute) => allowedIds.has(attribute.attributeId)));
+  }
 
   function moveMedia(targetId: string) {
     if (!draggedMediaId || draggedMediaId === targetId) return;
@@ -83,7 +97,7 @@ export function ProductForm({ storeIndustry, categories = [], product }: Props) 
     event.preventDefault(); setLoading(true);
     const form = new FormData(event.currentTarget);
     const body = {
-      sku: form.get("sku"), name: form.get("name"), slug: form.get("slug"), description, categoryId: form.get("categoryId") || null,
+      sku: form.get("sku"), name: form.get("name"), slug: form.get("slug"), description, categoryId: categoryId || null,
       storeIndustry, purity: storeIndustry === "GOLD" ? Number(form.get("purity")) : 750, weightGrams: storeIndustry === "GOLD" ? Number(form.get("weightGrams")) : 0,
       makingFeeType: storeIndustry === "GOLD" ? form.get("makingFeeType") : "PERCENT", makingFeeValue: storeIndustry === "GOLD" ? Number(form.get("makingFeeValue")) : 0,
       profitPercent: storeIndustry === "GOLD" ? Number(form.get("profitPercent")) : 0, taxPercent: storeIndustry === "GOLD" ? Number(form.get("taxPercent")) : 0,
@@ -92,7 +106,7 @@ export function ProductForm({ storeIndustry, categories = [], product }: Props) 
       discountValue: discountEnabled ? Number(form.get("discountValue")) : null,
       discountStartsAt: discountEnabled ? discountRange?.start ?? null : null,
       discountEndsAt: discountEnabled ? discountRange?.end ?? null : null,
-      featured: form.get("featured") === "on", mediaIds: selectedMedia.map((media) => media.id), options: product?.options ?? [], optionGuideId: optionGuide?.id ?? null,
+      featured: form.get("featured") === "on", mediaIds: selectedMedia.map((media) => media.id), options: product?.options ?? [], optionGuideId: optionGuide?.id ?? null, attributes,
     };
     const validation = completeProductSchema.safeParse(body);
     if (!validation.success) {
@@ -149,8 +163,12 @@ export function ProductForm({ storeIndustry, categories = [], product }: Props) 
 
         <FormSection icon={<Info size={18} />} title="اطلاعات پایه" description="مشخصات اصلی که در صفحه محصول نمایش داده می‌شود.">
           <div className="grid gap-4 sm:grid-cols-2"><Field label="نام محصول"><Input name="name" required fullWidth variant="secondary" defaultValue={product?.name} className={adminFieldClass} /></Field><Field label="کد کالا"><Input name="sku" dir="ltr" required fullWidth variant="secondary" defaultValue={product?.sku} className={inputClass} /></Field></div>
-          <div className="mt-4 grid gap-4 sm:grid-cols-2"><Field label="نشانی انگلیسی"><Input name="slug" dir="ltr" pattern="[a-z0-9-]+" required fullWidth variant="secondary" defaultValue={product?.slug} placeholder="minimal-gold-ring" className={inputClass} /></Field><HeroSelectField name="categoryId" label="دسته‌بندی" defaultValue={product?.categoryId ?? ""} options={[{ value: "", label: "بدون دسته‌بندی" }, ...categories.map((category) => ({ value: category.id, label: `${category.parentName ? `${category.parentName} ← ` : ""}${category.name}` }))]} /></div>
+          <div className="mt-4 grid gap-4 sm:grid-cols-2"><Field label="نشانی انگلیسی"><Input name="slug" dir="ltr" pattern="[a-z0-9-]+" required fullWidth variant="secondary" defaultValue={product?.slug} placeholder="minimal-gold-ring" className={inputClass} /></Field><HeroSelectField name="categoryId" label="دسته‌بندی" value={categoryId} onValueChange={changeCategory} options={[{ value: "", label: "بدون دسته‌بندی" }, ...categories.map((category) => ({ value: category.id, label: `${category.parentName ? `${category.parentName} ← ` : ""}${category.name}` }))]} /></div>
           <div className={`${adminLabelClass} mt-4`}>توضیحات محصول<RichTextEditor value={product?.description} onChange={setDescription} /></div>
+        </FormSection>
+
+        <FormSection icon={<ListChecks size={18} />} title="ویژگی‌های محصول" description="این موارد براساس دسته‌بندی انتخاب‌شده تعیین می‌شوند و روی قیمت یا موجودی اثر ندارند.">
+          {!categoryId ? <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 px-5 py-8 text-center text-xs text-slate-500">ابتدا دسته‌بندی محصول را انتخاب کنید.</div> : selectedCategory?.attributeGroups.length ? <ProductAttributesFields groups={selectedCategory.attributeGroups} values={attributes} onChange={setAttributes} /> : <div className="rounded-xl border border-dashed border-amber-300 bg-amber-50 px-5 py-8 text-center"><strong className="block text-sm text-amber-900">برای این دسته‌بندی ویژگی تعریف نشده است</strong><p className="mt-1 text-xs text-amber-700">از صفحه دسته‌بندی‌ها وارد مدیریت ویژگی‌های همین دسته شوید.</p><Link href={`/admin/categories/${categoryId}/attributes`} className="mt-3 inline-flex min-h-9 items-center justify-center rounded-lg bg-white px-4 text-xs font-bold text-amber-800 shadow-sm">تعریف ویژگی‌های دسته</Link></div>}
         </FormSection>
 
         <FormSection icon={<Ruler size={18} />} title="تنوع‌های محصول" description="هر نوع ویژگی قابل انتخاب مثل سایز، رنگ، طول یا نوع قفل را تعریف کنید.">

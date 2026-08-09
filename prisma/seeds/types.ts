@@ -4,6 +4,7 @@ export type DevelopmentCategorySeed = {
   name: string;
   slug: string;
   description: string;
+  attributeSchema?: Array<{ id: string; name: string; attributes: Array<{ id: string; name: string; allowsMultiple: boolean }> }>;
 };
 
 export type DevelopmentProductSeed = {
@@ -18,6 +19,7 @@ export type DevelopmentProductSeed = {
   weightGrams?: string;
   makingFeePercent?: string;
   discountPercent?: string;
+  attributes?: Array<{ attributeId: string; values: string[] }>;
 };
 
 export type DevelopmentStoreSeed = {

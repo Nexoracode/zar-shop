@@ -10,6 +10,8 @@ import { tehranDateEnd, tehranDateStart } from "@/modules/products/discount";
 import { getGeneralStoreSettings, isStorefrontAvailable } from "@/modules/settings/general-settings";
 import { getStoreIndustry } from "@/modules/settings/store-settings";
 import { getCatalogSettings } from "@/modules/settings/catalog-settings";
+import { validateProductAttributes } from "@/modules/products/attributes";
+import { parseOptionValues } from "@/modules/products/options";
 
 export async function GET() {
   const [settings, user, catalogSettings] = await Promise.all([getGeneralStoreSettings(), getCurrentUser(), getCatalogSettings()]);
@@ -19,7 +21,13 @@ export async function GET() {
     include: { media: { include: { media: true }, orderBy: { position: "asc" } }, category: true, options: { orderBy: { position: "asc" } }, optionGuide: true },
     orderBy: { createdAt: "desc" },
   });
-  return NextResponse.json(products);
+  const colorIds = [...new Set(products.flatMap((product) => product.options.flatMap((option) => parseOptionValues(option.values).flatMap((value) => value.colorId ? [value.colorId] : []))))];
+  const colors = colorIds.length ? await db.color.findMany({ where: { id: { in: colorIds }, isActive: true }, select: { id: true, name: true, hex: true } }) : [];
+  const colorsById = new Map(colors.map((color) => [color.id, color]));
+  return NextResponse.json(products.map((product) => ({ ...product, options: product.options.map((option) => {
+    const values = parseOptionValues(option.values);
+    return { ...option, kind: values.some((value) => value.colorId) ? "COLOR" : "SELECT", values: values.map((value) => ({ ...value, color: value.colorId ? colorsById.get(value.colorId) ?? null : null })) };
+  }) })));
 }
 
 export async function POST(request: Request) {
@@ -29,7 +37,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: "دسترسی غیرمجاز است." }, { status: 403 });
     }
     const storeIndustry = await getStoreIndustry();
-    const { mediaIds, options, optionGuideId, ...input } = completeProductSchema.parse({ ...(await request.json()), storeIndustry });
+    const { mediaIds, options, optionGuideId, attributes, ...input } = completeProductSchema.parse({ ...(await request.json()), storeIndustry });
+    const category = input.categoryId ? await db.category.findUnique({ where: { id: input.categoryId }, select: { attributeSchema: true } }) : null;
+    if (input.categoryId && !category) return NextResponse.json({ message: "دسته‌بندی انتخاب‌شده پیدا نشد." }, { status: 422 });
+    const attributeValidation = validateProductAttributes(category?.attributeSchema ?? [], attributes);
+    if (!attributeValidation.ok) return NextResponse.json({ message: attributeValidation.message }, { status: 422 });
     if (!await areOptionColorsValid(options)) return NextResponse.json({ message: "یک یا چند رنگ انتخاب‌شده معتبر یا فعال نیست." }, { status: 422 });
     const media = mediaIds.length ? await db.mediaAsset.findMany({ where: { id: { in: mediaIds }, scope: "PRODUCT", type: { in: ["IMAGE", "VIDEO"] } }, select: { id: true } }) : [];
     if (media.length !== new Set(mediaIds).size) return NextResponse.json({ message: "یک یا چند رسانه محصول معتبر نیست." }, { status: 422 });
@@ -38,7 +50,7 @@ export async function POST(request: Request) {
       if (!guide) return NextResponse.json({ message: "فایل راهنمای انتخاب باید تصویر یا PDF معتبر از گالری محصولات باشد." }, { status: 422 });
     }
     const product = await db.$transaction(async (tx) => {
-      const created = await tx.product.create({ data: { ...input, discountStartsAt: tehranDateStart(input.discountStartsAt), discountEndsAt: tehranDateEnd(input.discountEndsAt), description: sanitizeProductDescription(input.description), optionGuideId, options: { create: options.map((option, position) => ({ ...option, position })) } } });
+      const created = await tx.product.create({ data: { ...input, attributes: attributeValidation.data, discountStartsAt: tehranDateStart(input.discountStartsAt), discountEndsAt: tehranDateEnd(input.discountEndsAt), description: sanitizeProductDescription(input.description), optionGuideId, options: { create: options.map((option, position) => ({ ...option, position })) } } });
       if (mediaIds.length) await tx.productMedia.createMany({ data: mediaIds.map((mediaId, position) => ({ productId: created.id, mediaId, position, isCover: position === 0 })) });
       await tx.auditLog.create({ data: { actorId: actor.id, action: "PRODUCT_CREATE", entityType: "Product", entityId: created.id } });
       return tx.product.findUniqueOrThrow({ where: { id: created.id }, include: { media: { include: { media: true }, orderBy: { position: "asc" } }, category: true, options: { orderBy: { position: "asc" } }, optionGuide: true } });
