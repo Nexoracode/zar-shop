@@ -179,10 +179,6 @@ export function CategoryAttributesForm({ categoryId, initialGroups }: { category
       </div>
     </Card.Content></Card>
 
-    <Card variant="secondary" className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm"><div className="flex flex-col gap-3 sm:flex-row sm:items-center"><div className="min-w-0"><strong className="block text-sm text-slate-800">ذخیره ساختار ویژگی‌ها</strong><p className="mt-1 text-xs text-slate-400">ویژگی‌های استفاده‌شده در محصولات بدون حذف مقدار آن‌ها قابل حذف نیستند.</p></div><div className="sm:mr-auto"><AdminSectionHelp title="ذخیره ساختار ویژگی‌ها" summary="تمام افزودن‌ها، ویرایش‌ها و حذف‌های این صفحه یک‌جا ثبت می‌شوند." blocks={[
-      { title: "پیش از ذخیره", items: ["گروه‌ها، ویژگی‌ها و مقادیر را در فهرست بالا مرور کنید.", "مطمئن شوید ویژگی‌های چندمقداری درست مشخص شده‌اند.", "با زدن «ذخیره ویژگی‌ها»، کل ساختار فعلی برای دسته انتخاب‌شده ارسال و اعتبارسنجی می‌شود."] },
-      { title: "پس از ذخیره", description: "مقادیر ثبت‌شده در فرم ایجاد و ویرایش محصولاتی که همین دسته را دارند به‌عنوان پیشنهاد در دسترس خواهند بود." },
-      { title: "اگر خطای حذف دیدید", tone: "important", description: "این خطا معمولاً یعنی یک ویژگی هنوز در محصولی استفاده می‌شود. داده محصول را اصلاح کنید و سپس دوباره برای حذف ویژگی اقدام کنید." },
-    ]} /></div><Button type="submit" variant="primary" isPending={saving} className="min-h-11 shrink-0 gap-2 px-5 font-bold">{({ isPending }) => <>{isPending ? <Spinner size="sm" color="current" /> : <Save size={16} />}{isPending ? "در حال ذخیره..." : "ذخیره ویژگی‌ها"}</>}</Button></div></Card>
+    <Card variant="secondary" className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm"><div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div><strong className="block text-sm text-slate-800">ذخیره ساختار ویژگی‌ها</strong><p className="mt-1 text-xs text-slate-400">ویژگی‌های استفاده‌شده در محصولات بدون حذف مقدار آن‌ها قابل حذف نیستند.</p></div><Button type="submit" variant="primary" isPending={saving} className="min-h-11 shrink-0 gap-2 px-5 font-bold">{({ isPending }) => <>{isPending ? <Spinner size="sm" color="current" /> : <Save size={16} />}{isPending ? "در حال ذخیره..." : "ذخیره ویژگی‌ها"}</>}</Button></div></Card>
   </form>;
 }
