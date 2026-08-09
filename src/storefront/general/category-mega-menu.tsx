@@ -13,7 +13,7 @@ type MenuChild = {
   children: Array<{ id: string; name: string; slug: string }>;
 };
 
-type MenuCategory = {
+export type MenuCategory = {
   id: string;
   name: string;
   slug: string;
@@ -21,7 +21,7 @@ type MenuCategory = {
   children: MenuChild[];
 };
 
-export function GeneralCategoryMegaMenu({ categories }: { categories: MenuCategory[] }) {
+export function GeneralCategoryMegaMenu({ categories, enabled = true }: { categories: MenuCategory[]; enabled?: boolean }) {
   const [activeCategoryId, setActiveCategoryId] = useState(categories[0]?.id ?? "");
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -31,19 +31,19 @@ export function GeneralCategoryMegaMenu({ categories }: { categories: MenuCatego
     <div
       ref={containerRef}
       className="group/mega flex h-full self-stretch items-stretch"
-      onMouseEnter={() => setOpen(true)}
+      onMouseEnter={() => enabled && setOpen(true)}
       onMouseLeave={() => setOpen(false)}
-      onFocusCapture={() => setOpen(true)}
+      onFocusCapture={() => enabled && setOpen(true)}
       onBlurCapture={(event) => {
         if (!containerRef.current?.contains(event.relatedTarget as Node | null)) setOpen(false);
       }}
     >
-      <Button type="button" variant="ghost" onPress={() => setOpen(true)} className={`relative h-full min-h-0 self-stretch overflow-visible rounded-none px-0 font-bold transition after:absolute after:-bottom-px after:left-0 after:h-0.5 after:w-full after:origin-left after:scale-x-0 after:bg-[var(--brand-primary)] after:content-[''] after:transition-transform after:duration-300 after:ease-out group-hover/mega:after:scale-x-100 group-focus-within/mega:after:scale-x-100 ${open ? "text-[var(--brand-primary)]" : "hover:text-[var(--brand-primary)]"}`}>
+      <Button type="button" variant="ghost" onPress={() => enabled && setOpen(true)} className={`relative h-full min-h-0 self-stretch overflow-visible rounded-none px-0 font-bold transition after:absolute after:-bottom-px after:left-0 after:h-0.5 after:w-full after:origin-left after:scale-x-0 after:bg-[var(--brand-primary)] after:content-[''] after:transition-transform after:duration-300 after:ease-out group-hover/mega:after:scale-x-100 group-focus-within/mega:after:scale-x-100 ${open && enabled ? "text-[var(--brand-primary)]" : "hover:text-[var(--brand-primary)]"}`}>
         <Menu size={19} />
         دسته‌بندی کالاها
-        <ChevronDown size={14} className={`transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
+        <ChevronDown size={14} className={`transition-transform duration-200 ${open && enabled ? "rotate-180" : ""}`} />
       </Button>
-      <div className={`absolute inset-x-0 top-full z-50 border-t border-slate-200 bg-white shadow-[0_18px_38px_rgba(24,35,55,.14)] transition duration-200 ${open ? "visible pointer-events-auto translate-y-0 opacity-100" : "invisible pointer-events-none translate-y-1 opacity-0"}`} dir="rtl" aria-hidden={!open}>
+      <div className={`absolute inset-x-0 top-full z-50 border-t border-slate-200 bg-white shadow-[0_18px_38px_rgba(24,35,55,.14)] transition duration-200 ${open && enabled ? "visible pointer-events-auto translate-y-0 opacity-100" : "invisible pointer-events-none translate-y-1 opacity-0"}`} dir="rtl" aria-hidden={!open || !enabled}>
       {activeCategory ? (
         <div className="flex h-[min(620px,calc(100dvh-130px))] min-h-[360px] w-full overflow-hidden">
           <aside className="storefront-mega-scroll w-60 shrink-0 overflow-y-auto overscroll-contain border-l border-slate-200 bg-slate-50" aria-label="دسته‌های اصلی">

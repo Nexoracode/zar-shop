@@ -1,12 +1,12 @@
 import Image from "next/image";
 import Link from "next/link";
-import { Headphones, Home, LayoutDashboard, Menu, Search, ShoppingCart, UserRound } from "lucide-react";
+import { Bell, Headphones, Home, LayoutDashboard, Menu, Search, ShoppingCart, UserRound } from "lucide-react";
 import type { User } from "@generated/prisma/client";
 import { db } from "@/lib/db";
 import { normalizeNumericValue } from "@/lib/persian-numbers";
 import type { BrandSettings } from "@/modules/settings/brand-settings";
 import type { GeneralStoreSettingsInput } from "@/modules/settings/general-settings";
-import { GeneralCategoryMegaMenu } from "@/storefront/general/category-mega-menu";
+import { GeneralHeaderMenuRow } from "@/storefront/general/header-menu-row";
 
 type Props = { settings: GeneralStoreSettingsInput; brand: BrandSettings; user: User | null; menuCategoryIds: string[] };
 
@@ -30,28 +30,26 @@ export async function GeneralHeader({ settings, brand, user, menuCategoryIds }: 
 
   return <>
     <header className={`relative z-50 border-b border-[#e7e9ed] bg-white shadow-[0_2px_10px_rgba(0,0,0,.035)] ${brand.stickyStoreHeader ? "sticky top-0" : ""}`}>
-      <div className="hidden h-9 items-center justify-between bg-[#f7f8fa] px-10 text-[0.7rem] text-[#666d79] lg:flex">
-        <span>{settings.tagline}</span>
-        <nav className="flex items-center gap-6" aria-label="دسترسی‌های اطلاعاتی"><Link href="/pages/about">درباره ما</Link><Link href="/pages/contact">تماس با ما</Link><Link href="/#faq">سوالات متداول</Link></nav>
-      </div>
       <div className="relative flex h-14 items-center justify-center px-4 lg:hidden">
         <Link href="/products" className="absolute right-4" aria-label="منوی محصولات"><Menu size={23} /></Link>
         <Link href="/" aria-label={`${settings.storeName}، صفحه اصلی`}>{logo}</Link>
         <Link href="/products" className="absolute left-4" aria-label="جستجوی محصولات"><Search size={22} /></Link>
       </div>
-      <div className="hidden h-16 items-center px-10 lg:flex">
+      <div className="hidden h-[72px] grid-cols-[auto_minmax(320px,500px)_1fr] items-center gap-8 px-10 lg:grid">
         <Link href="/" aria-label={`${settings.storeName}، صفحه اصلی`}>{logo}</Link>
-        <nav className="mr-12 flex h-full self-stretch items-stretch gap-8 text-sm" aria-label="دسته‌بندی محصولات">
-          <GeneralCategoryMegaMenu categories={categories} />
-          {categories.map((category) => <Link key={category.id} href={`/products?category=${category.slug}`} className="relative flex h-full self-stretch items-center transition after:absolute after:-bottom-px after:left-0 after:h-0.5 after:w-full after:origin-left after:scale-x-0 after:bg-[var(--brand-primary)] after:content-[''] after:transition-transform after:duration-300 after:ease-out hover:text-[var(--brand-primary)] hover:after:scale-x-100 focus-visible:text-[var(--brand-primary)] focus-visible:after:scale-x-100">{category.name}</Link>)}
-        </nav>
-        <div className="mr-auto flex items-center gap-5 text-[#555]">
-          <Link href="/products" aria-label="جستجوی محصولات"><Search size={21} /></Link>
-          <Link href={accountHref} aria-label="حساب کاربری"><UserRound size={21} /></Link>
-          <Link href="/cart" aria-label="سبد خرید"><ShoppingCart size={21} /></Link>
+        <Link href="/products" aria-label="جست‌وجوی محصولات" className="flex h-11 items-center gap-3 rounded-xl bg-slate-100 px-4 text-xs text-slate-400 transition hover:bg-slate-200/70 hover:text-slate-600">
+          <Search className="mr-auto" size={19} />
+          جست‌وجو در کالاها
+        </Link>
+        <div className="mr-auto flex items-center gap-1 text-[#323741]">
+          <Link href={accountHref} aria-label="اعلان‌ها" className="grid size-10 place-items-center rounded-lg transition hover:bg-slate-100"><Bell size={20} strokeWidth={1.7} /></Link>
+          <Link href={accountHref} aria-label="حساب کاربری" className="grid size-10 place-items-center rounded-lg transition hover:bg-slate-100"><UserRound size={21} strokeWidth={1.7} /></Link>
+          <span className="mx-2 h-6 w-px bg-slate-200" />
+          <Link href="/cart" aria-label="سبد خرید" className="grid size-10 place-items-center rounded-lg transition hover:bg-slate-100"><ShoppingCart size={21} strokeWidth={1.7} /></Link>
           {user?.role !== "CUSTOMER" && user && <Link href="/admin" aria-label="پنل مدیریت"><LayoutDashboard size={20} /></Link>}
         </div>
       </div>
+      <GeneralHeaderMenuRow categories={categories} deliveryHref={accountHref} />
     </header>
     <nav className="fixed inset-x-0 bottom-0 z-50 grid h-[66px] grid-cols-4 border-t border-[#e7e9ed] bg-white/95 text-[#6f7480] shadow-[0_-5px_20px_rgba(0,0,0,.05)] backdrop-blur lg:hidden" aria-label="ناوبری موبایل">
       <Link href="/" className="grid place-items-center content-center text-[var(--brand-primary)]"><Home size={21} /><small className="sr-only">خانه</small></Link>
