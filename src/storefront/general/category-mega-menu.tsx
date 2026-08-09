@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { Button } from "@heroui/react";
 import { ChevronDown, ChevronLeft, Menu, Package } from "lucide-react";
 import { useRef, useState } from "react";
 
@@ -37,11 +38,11 @@ export function GeneralCategoryMegaMenu({ categories }: { categories: MenuCatego
         if (!containerRef.current?.contains(event.relatedTarget as Node | null)) setOpen(false);
       }}
     >
-      <Link href="/products" onClick={() => setOpen(false)} className={`flex h-full items-center gap-2 border-b-2 font-bold transition ${open ? "border-[var(--brand-primary)] text-[var(--brand-primary)]" : "border-transparent hover:border-[var(--brand-primary)] hover:text-[var(--brand-primary)]"}`}>
+      <Button type="button" variant="ghost" onPress={() => setOpen(true)} className={`h-full min-h-0 rounded-none border-b-2 px-0 font-bold transition ${open ? "border-[var(--brand-primary)] text-[var(--brand-primary)]" : "border-transparent hover:border-[var(--brand-primary)] hover:text-[var(--brand-primary)]"}`}>
         <Menu size={19} />
         دسته‌بندی کالاها
         <ChevronDown size={14} className={`transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
-      </Link>
+      </Button>
       <div className={`absolute inset-x-0 top-full z-50 border-t border-slate-200 bg-white shadow-[0_18px_38px_rgba(24,35,55,.14)] transition duration-200 ${open ? "visible pointer-events-auto translate-y-0 opacity-100" : "invisible pointer-events-none translate-y-1 opacity-0"}`} dir="rtl" aria-hidden={!open}>
       {activeCategory ? (
         <div className="flex h-[min(620px,calc(100dvh-130px))] min-h-[360px] w-full overflow-hidden">
@@ -49,20 +50,21 @@ export function GeneralCategoryMegaMenu({ categories }: { categories: MenuCatego
             {categories.map((category) => {
               const active = category.id === activeCategory.id;
               return (
-                <Link
+                <Button
                   key={category.id}
-                  href={`/products?category=${category.slug}`}
-                  onClick={() => setOpen(false)}
                   onMouseEnter={() => setActiveCategoryId(category.id)}
                   onFocus={() => setActiveCategoryId(category.id)}
-                  className={`flex min-h-14 items-center gap-3 border-r-2 px-4 text-xs font-bold transition ${active ? "border-[var(--brand-primary)] bg-white text-[var(--brand-primary)]" : "border-transparent text-slate-700 hover:bg-white hover:text-[var(--brand-primary)]"}`}
+                  onPress={() => setActiveCategoryId(category.id)}
+                  variant="ghost"
+                  fullWidth
+                  className={`min-h-14 justify-start gap-3 rounded-none border-r-2 px-4 text-xs font-bold transition ${active ? "border-[var(--brand-primary)] bg-white text-[var(--brand-primary)]" : "border-transparent text-slate-700 hover:bg-white hover:text-[var(--brand-primary)]"}`}
                 >
                   <span className={`relative grid size-8 shrink-0 place-items-center overflow-hidden rounded-lg ${active ? "bg-[var(--brand-primary)]/10" : "bg-white"}`}>
                     {category.image?.type === "IMAGE" ? <Image src={category.image.url} alt={category.image.alt ?? category.name} fill sizes="32px" className="object-cover" /> : <Package size={17} />}
                   </span>
                   <span className="min-w-0 flex-1 truncate">{category.name}</span>
                   <ChevronLeft size={14} className="shrink-0" />
-                </Link>
+                </Button>
               );
             })}
           </aside>
