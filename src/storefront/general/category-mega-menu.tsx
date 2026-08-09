@@ -50,21 +50,20 @@ export function GeneralCategoryMegaMenu({ categories }: { categories: MenuCatego
             {categories.map((category) => {
               const active = category.id === activeCategory.id;
               return (
-                <Button
+                <Link
                   key={category.id}
+                  href={`/products?category=${category.slug}`}
                   onMouseEnter={() => setActiveCategoryId(category.id)}
                   onFocus={() => setActiveCategoryId(category.id)}
-                  onPress={() => setActiveCategoryId(category.id)}
-                  variant="ghost"
-                  fullWidth
-                  className={`min-h-14 justify-start gap-3 rounded-none border-r-2 px-4 text-xs font-bold transition ${active ? "border-[var(--brand-primary)] bg-white text-[var(--brand-primary)]" : "border-transparent text-slate-700 hover:bg-white hover:text-[var(--brand-primary)]"}`}
+                  onClick={() => setOpen(false)}
+                  className={`flex min-h-14 items-center gap-3 border-r-2 px-4 text-xs font-bold transition ${active ? "border-[var(--brand-primary)] bg-white text-[var(--brand-primary)]" : "border-transparent text-slate-700 hover:bg-white hover:text-[var(--brand-primary)]"}`}
                 >
                   <span className={`relative grid size-8 shrink-0 place-items-center overflow-hidden rounded-lg ${active ? "bg-[var(--brand-primary)]/10" : "bg-white"}`}>
                     {category.image?.type === "IMAGE" ? <Image src={category.image.url} alt={category.image.alt ?? category.name} fill sizes="32px" className="object-cover" /> : <Package size={17} />}
                   </span>
                   <span className="min-w-0 flex-1 truncate">{category.name}</span>
                   <ChevronLeft size={14} className="shrink-0" />
-                </Button>
+                </Link>
               );
             })}
           </aside>
