@@ -13,7 +13,9 @@
     "test": "node --import tsx --test \"src/**/*.test.ts\"",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
-    "db:seed": "tsx prisma/seed.ts"
+    "db:seed": "tsx prisma/seed.ts",
+    "db:seed:gold": "tsx prisma/seed.ts gold",
+    "db:seed:general": "tsx prisma/seed.ts general"
   },
   "dependencies": {
     "@heroui/react": "^3.2.2",
