@@ -96,7 +96,7 @@ export function StorefrontSearch({ variant = "icon", className = "" }: { variant
   const popularTerms = response.query === "" ? response.popularTerms : [];
 
   return <>
-    {variant === "field" ? <Button ref={triggerRef} type="button" variant="ghost" onPress={openSearch} className={`flex h-11 w-full items-center justify-between rounded-xl bg-slate-100 px-4 text-xs font-normal text-slate-400 transition hover:bg-slate-200/70 hover:text-slate-600 ${className}`}><span>جستجو در همه کالاها</span><Search size={19} /></Button> : <Button ref={triggerRef} type="button" isIconOnly variant="ghost" onPress={openSearch} aria-label="جستجوی محصولات" className={`size-10 min-h-10 min-w-10 rounded-lg text-inherit ${className}`}><Search size={22} strokeWidth={1.7} /></Button>}
+    {variant === "field" ? <Button ref={triggerRef} type="button" variant="ghost" onPress={openSearch} className={`relative flex h-11 w-full items-center justify-start rounded-xl bg-slate-100 pr-11 pl-4 text-xs font-normal text-slate-400 transition hover:bg-slate-200/70 hover:text-slate-600 ${className}`}><Search className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2" size={19} /><span>جستجو</span></Button> : <Button ref={triggerRef} type="button" isIconOnly variant="ghost" onPress={openSearch} aria-label="جستجوی محصولات" className={`size-10 min-h-10 min-w-10 rounded-lg text-inherit ${className}`}><Search size={22} strokeWidth={1.7} /></Button>}
 
     <Modal.Backdrop isOpen={open} onOpenChange={setOpen} className="z-[100] !bg-black/10 !backdrop-blur-none">
       <Modal.Container size="lg" placement="center" className="p-0">
