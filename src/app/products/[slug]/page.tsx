@@ -133,12 +133,12 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
               {primaryFeatures.length > 0 && <section className="mt-7" aria-labelledby="primary-features-title"><h2 id="primary-features-title" className="mb-3 text-base font-black text-slate-900">ویژگی‌ها</h2><div className="grid grid-cols-2 gap-2 sm:grid-cols-3">{primaryFeatures.map((feature) => <div key={feature.id} className="rounded-lg bg-slate-100 px-3 py-3"><span className="block text-[11px] text-slate-500">{feature.name}</span><strong className="mt-1 block truncate text-xs text-slate-800">{feature.values.join("، ")}</strong></div>)}</div></section>}
             </div>
           </section>
-
-          <div className="mt-10 grid grid-cols-2 gap-3 border-y border-slate-200 py-5 text-xs text-slate-600 sm:grid-cols-4">
-            <span className="flex items-center gap-2"><ShieldCheck size={22} className="text-slate-500" />ضمانت اصالت کالا</span><span className="flex items-center gap-2"><Truck size={22} className="text-slate-500" />ارسال قابل پیگیری</span><span className="flex items-center gap-2"><PackageCheck size={22} className="text-slate-500" />بسته‌بندی مطمئن</span><span className="flex items-center gap-2"><CheckCircle2 size={22} className="text-slate-500" />پرداخت امن</span>
-          </div>
         </div>
         <AddToCart {...cartProps} layout="product-detail" showOptionFields={false} purchaseCardClassName="h-full" />
+      </div>
+
+      <div className="mt-10 grid w-full grid-cols-2 gap-3 border-y border-slate-200 py-5 text-xs text-slate-600 sm:grid-cols-4">
+        <span className="flex items-center gap-2"><ShieldCheck size={22} className="text-slate-500" />ضمانت اصالت کالا</span><span className="flex items-center gap-2"><Truck size={22} className="text-slate-500" />ارسال قابل پیگیری</span><span className="flex items-center gap-2"><PackageCheck size={22} className="text-slate-500" />بسته‌بندی مطمئن</span><span className="flex items-center gap-2"><CheckCircle2 size={22} className="text-slate-500" />پرداخت امن</span>
       </div>
 
       {product.category && <section className="mt-12 border-y border-slate-200 py-8" aria-labelledby="related-products-title">
