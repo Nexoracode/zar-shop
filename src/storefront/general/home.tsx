@@ -4,12 +4,12 @@ import type { LucideIcon } from "lucide-react";
 import { ChevronLeft, Dumbbell, HeartPulse, House, Laptop, Shirt, ShoppingBag, Smartphone, Sparkles } from "lucide-react";
 import { DragScrollRow } from "@/components/drag-scroll-row";
 import { HomepageProductFeed } from "@/components/homepage-product-feed";
+import { HomepageBestSellers } from "@/components/homepage-best-sellers";
 import { ProductCard } from "@/components/product-card";
 import { StorefrontHeroSlider } from "@/components/storefront-hero-slider";
 import { StorefrontImageTiles } from "@/components/storefront-image-tiles";
 import { ViewAllProductCard } from "@/components/view-all-product-card";
 import { db } from "@/lib/db";
-import type { StorefrontProductCardItem } from "@/modules/products/storefront-feed-contract";
 import { getStorefrontProductFeed } from "@/modules/products/storefront-feed";
 import { getHomepageSettings, type HomepageLayoutItemId } from "@/modules/settings/homepage-settings";
 import { buildStorefrontHeroSlides } from "@/storefront/shared/hero";
@@ -28,22 +28,11 @@ function resolveCategoryIcon(value: string): LucideIcon {
   return ShoppingBag;
 }
 
-function ProductRail({ title, description, products, href = "/products" }: { title: string; description: string; products: StorefrontProductCardItem[]; href?: string }) {
-  if (!products.length) return null;
-  return <section className="min-w-0 overflow-hidden rounded-2xl border border-[#e6e8ec] bg-white px-4 py-5 sm:px-6 lg:px-7 lg:py-7">
-    <div className="mb-5"><h2 className="m-0 text-xl font-black text-[#232934] sm:text-2xl">{title}</h2><p className="mb-0 mt-1 text-xs text-[#858b95] sm:text-sm">{description}</p></div>
-    <DragScrollRow ariaLabel={title} showNavigation className="flex w-full min-w-0 max-w-full gap-3 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-      {products.map((product, index) => <div key={product.id} className="w-[164px] min-w-[164px] snap-start sm:w-[206px] sm:min-w-[206px] lg:w-[218px] lg:min-w-[218px]"><ProductCard {...product} storefrontVariant="gallery" imageTone={index % 4} /></div>)}
-      <div className="w-[164px] min-w-[164px] snap-start sm:w-[206px] sm:min-w-[206px] lg:w-[218px] lg:min-w-[218px]"><ViewAllProductCard href={href} /></div>
-    </DragScrollRow>
-  </section>;
-}
-
 export async function GeneralHome() {
   const [homepage, latestFeed, popularFeed, categories] = await Promise.all([
     getHomepageSettings(),
     getStorefrontProductFeed({ sort: "LATEST", page: 1 }),
-    getStorefrontProductFeed({ sort: "POPULAR", page: 1 }),
+    getStorefrontProductFeed({ sort: "POPULAR", page: 1, pageSize: 12 }),
     db.category.findMany({
       where: { parentId: null, isActive: true, products: { some: { status: "ACTIVE", storeIndustry: "GENERAL" } } },
       include: { image: true, _count: { select: { products: { where: { status: "ACTIVE", storeIndustry: "GENERAL" } } } } },
@@ -81,7 +70,7 @@ export async function GeneralHome() {
       </div>
     </section>}
 
-    {popularFeed.items.length > 0 && <div {...sectionProps("POPULAR_PRODUCTS")} className={container}><ProductRail title="محبوب‌ترین کالاها" description="محصولاتی که بیشتر مورد توجه مشتریان قرار گرفته‌اند" products={popularFeed.items} href="/products?sortby=popular" /></div>}
+    {popularFeed.items.length > 0 && <div {...sectionProps("POPULAR_PRODUCTS")} className={container}><HomepageBestSellers products={popularFeed.items} /></div>}
 
     <section {...sectionProps("LATEST_PRODUCTS")} className={`${container} min-w-0 overflow-hidden rounded-2xl border border-[#e6e8ec] bg-white px-4 py-6 sm:px-6 lg:px-7 lg:py-8`}><div className="mb-5"><h2 className="m-0 text-xl font-black text-[#232934] sm:text-2xl">جدیدترین محصولات</h2><p className="mb-0 mt-1 text-xs text-[#858b95] sm:text-sm">تازه‌ترین کالاهای اضافه‌شده به فروشگاه</p></div><HomepageProductFeed initialFeed={latestFeed} industry="GENERAL" /></section>
 

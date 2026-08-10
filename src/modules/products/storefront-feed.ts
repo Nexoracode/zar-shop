@@ -38,7 +38,7 @@ function orderByFor(sort: StorefrontProductSort): Prisma.ProductOrderByWithRelat
   return [{ createdAt: "desc" }];
 }
 
-export async function getStorefrontProductFeed(input: { sort: StorefrontProductSort; page: number }): Promise<StorefrontProductFeed> {
+export async function getStorefrontProductFeed(input: { sort: StorefrontProductSort; page: number; pageSize?: number }): Promise<StorefrontProductFeed> {
   const [settings, catalogSettings] = await Promise.all([getGeneralStoreSettings(), getCatalogSettings()]);
   const where: Prisma.ProductWhereInput = {
     status: "ACTIVE",
@@ -46,7 +46,7 @@ export async function getStorefrontProductFeed(input: { sort: StorefrontProductS
     ...(catalogSettings.hideOutOfStockProducts ? { stock: { gt: 0 } } : {}),
   };
   const totalItems = await db.product.count({ where });
-  const pageSize = catalogSettings.catalogPageSize;
+  const pageSize = input.pageSize ?? catalogSettings.catalogPageSize;
   const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
   const page = Math.min(input.page, totalPages);
 
