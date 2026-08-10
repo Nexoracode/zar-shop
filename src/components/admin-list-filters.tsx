@@ -72,7 +72,7 @@ function DebouncedSearch({ initialValue, label, placeholder, onSearch }: { initi
             type="button"
             isIconOnly
             variant="ghost"
-            aria-label="پاک‌کردن جست‌وجو"
+            aria-label="پاک‌کردن جستجو"
             onPress={clearSearch}
             className="absolute left-1.5 top-1/2 z-20 h-8 min-h-8 w-8 min-w-8 -translate-y-1/2 rounded-lg text-slate-400 hover:text-slate-700"
           >

@@ -46,7 +46,7 @@ export default async function CategoriesPage({ searchParams }: Context) {
       </div>
 
       <AdminPanel>
-        <div className="border-b border-slate-100 bg-slate-50/70 p-4"><AdminListFilters path="/admin/categories" query={query} queryLabel="جست‌وجوی دسته‌بندی" queryPlaceholder="نام، نشانی یا دسته والد" filters={[{ name: "status", label: "وضعیت دسته‌بندی", value: status ?? "", options: [{ value: "", label: "همه وضعیت‌ها" }, { value: "active", label: "فعال" }, { value: "inactive", label: "غیرفعال" }] }, { name: "featured", label: "نمایش در صفحه اصلی", value: featuredFilter ?? "", options: [{ value: "", label: "همه دسته‌ها" }, { value: "yes", label: "نمایش در صفحه اصلی" }, { value: "no", label: "عدم نمایش در صفحه اصلی" }] }]} /></div>
+        <div className="border-b border-slate-100 bg-slate-50/70 p-4"><AdminListFilters path="/admin/categories" query={query} queryLabel="جستجوی دسته‌بندی" queryPlaceholder="نام، نشانی یا دسته والد" filters={[{ name: "status", label: "وضعیت دسته‌بندی", value: status ?? "", options: [{ value: "", label: "همه وضعیت‌ها" }, { value: "active", label: "فعال" }, { value: "inactive", label: "غیرفعال" }] }, { name: "featured", label: "نمایش در صفحه اصلی", value: featuredFilter ?? "", options: [{ value: "", label: "همه دسته‌ها" }, { value: "yes", label: "نمایش در صفحه اصلی" }, { value: "no", label: "عدم نمایش در صفحه اصلی" }] }]} /></div>
 
         {categories.length ? <>
           <div className="grid gap-3 p-3 md:hidden">{categories.map((category) => <CategoryMobileCard key={category.id} category={category} />)}</div>

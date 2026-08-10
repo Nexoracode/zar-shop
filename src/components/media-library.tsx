@@ -122,7 +122,7 @@ export function MediaLibrary() {
 
       {message && <Alert status="warning"><Alert.Description>{message}</Alert.Description></Alert>}
 
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div><h2 className="font-black text-slate-900">فایل‌های گالری</h2><p className="text-xs text-slate-500">{items.length.toLocaleString("fa-IR")} فایل در این بخش</p></div><div className="relative sm:w-72"><Search className="pointer-events-none absolute right-3 top-1/2 z-10 size-4 -translate-y-1/2 text-slate-400" /><Input value={query} onChange={(event) => setQuery(event.target.value)} fullWidth variant="secondary" className={`${fieldClass} pr-10`} placeholder="جست‌وجوی عنوان فایل..." /></div></div>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div><h2 className="font-black text-slate-900">فایل‌های گالری</h2><p className="text-xs text-slate-500">{items.length.toLocaleString("fa-IR")} فایل در این بخش</p></div><div className="relative sm:w-72"><Search className="pointer-events-none absolute right-3 top-1/2 z-10 size-4 -translate-y-1/2 text-slate-400" /><Input value={query} onChange={(event) => setQuery(event.target.value)} fullWidth variant="secondary" className={`${fieldClass} pr-10`} placeholder="جستجوی عنوان فایل..." /></div></div>
 
       {loading ? <div className="rounded-2xl border border-slate-200 bg-white py-14 text-center text-sm text-slate-500">در حال دریافت گالری...</div> : filteredItems.length ? (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
@@ -141,7 +141,7 @@ export function MediaLibrary() {
             );
           })}
         </div>
-      ) : <AdminEmptyState title={query ? "فایلی پیدا نشد" : "این گالری هنوز خالی است"} description={query ? "عبارت جست‌وجو را تغییر دهید." : "اولین فایل را از فرم بالا بارگذاری کنید."} />}
+      ) : <AdminEmptyState title={query ? "فایلی پیدا نشد" : "این گالری هنوز خالی است"} description={query ? "عبارت جستجو را تغییر دهید." : "اولین فایل را از فرم بالا بارگذاری کنید."} />}
       <DeleteConfirmDialog
         open={Boolean(pendingDelete)}
         itemName={pendingDelete?.title}

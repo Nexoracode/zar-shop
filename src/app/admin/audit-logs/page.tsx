@@ -50,9 +50,9 @@ export default async function AuditLogsPage({ searchParams }: { searchParams: Se
 
   return <>
     <AdminPageHeader eyebrow="نظارت و امنیت" title="تاریخچه فعالیت‌ها" description="تمام عملیات ثبت، ویرایش، حذف و دسترسی کاربران پنل را با جزئیات بررسی کنید." action={<AdminTableRefreshButton />} />
-    <AdminPanel className="mb-5 p-4 sm:p-5"><AdminListFilters path="/admin/audit-logs" query={query} queryLabel="جست‌وجوی فعالیت" queryPlaceholder="نام مدیر، عملیات، موجودیت یا شناسه" filters={[{ name: "action", label: "نوع فعالیت", value: action, options: [{ value: "", label: "همه فعالیت‌ها" }, ...actionRows.map((item) => ({ value: item.action, label: auditActionLabel(item.action) }))] }]} /></AdminPanel>
+    <AdminPanel className="mb-5 p-4 sm:p-5"><AdminListFilters path="/admin/audit-logs" query={query} queryLabel="جستجوی فعالیت" queryPlaceholder="نام مدیر، عملیات، موجودیت یا شناسه" filters={[{ name: "action", label: "نوع فعالیت", value: action, options: [{ value: "", label: "همه فعالیت‌ها" }, ...actionRows.map((item) => ({ value: item.action, label: auditActionLabel(item.action) }))] }]} /></AdminPanel>
     <AdminPanel>
-      {!logs.length ? <AdminEmptyState title="فعالیتی پیدا نشد" description={query || action ? "فیلترها را تغییر دهید و دوباره جست‌وجو کنید." : "هنوز فعالیت مدیریتی ثبت نشده است."} /> : <>
+      {!logs.length ? <AdminEmptyState title="فعالیتی پیدا نشد" description={query || action ? "فیلترها را تغییر دهید و دوباره جستجو کنید." : "هنوز فعالیت مدیریتی ثبت نشده است."} /> : <>
         <div className="divide-y divide-slate-100 md:hidden">{logs.map((log) => <AuditMobileCard key={log.id} log={log} />)}</div>
         <Table className="hidden md:block"><TableScrollContainer><TableContent aria-label="تاریخچه فعالیت کاربران پنل" className="w-full min-w-[920px]"><TableHeader>{["ردیف", "کاربر پنل", "فعالیت", "نوع", "موجودیت", "زمان", "جزئیات"].map((head, index) => <TableColumn id={head} key={head} isRowHeader={index === 2} className="bg-slate-50/70 px-5 py-3.5 text-right text-xs font-bold text-slate-500">{head}</TableColumn>)}</TableHeader><TableBody>{logs.map((log: AuditRow, index) => {
           const kind = auditActionKind(log.action);

@@ -13,7 +13,7 @@ export async function GET(request: Request) {
 
     const query = new URL(request.url).searchParams.get("q")?.trim() ?? "";
     if (query.length < 3) return NextResponse.json([]);
-    if (query.length > 100) return NextResponse.json({ message: "عبارت جست‌وجو بیش از حد طولانی است." }, { status: 422 });
+    if (query.length > 100) return NextResponse.json({ message: "عبارت جستجو بیش از حد طولانی است." }, { status: 422 });
 
     const products = await db.product.findMany({
       where: {

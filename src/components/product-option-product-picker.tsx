@@ -61,7 +61,7 @@ export function ProductOptionProductPicker() {
       try {
         const response = await fetch(`/api/admin/products/search?q=${encodeURIComponent(normalizedQuery)}`, { signal: controller.signal });
         const data = await response.json().catch(() => null);
-        if (!response.ok) throw new Error(data?.message ?? "جست‌وجوی محصولات انجام نشد.");
+        if (!response.ok) throw new Error(data?.message ?? "جستجوی محصولات انجام نشد.");
         setSearchResponse({ query: normalizedQuery, results: Array.isArray(data) ? data : [], error: null });
       } catch (reason) {
         if (controller.signal.aborted) return;
@@ -120,33 +120,33 @@ export function ProductOptionProductPicker() {
             </div>
 
             <label className="grid shrink-0 gap-1.5 text-xs font-bold text-slate-600">
-              جست‌وجوی محصول
+              جستجوی محصول
               <div className="relative">
                 <Search className="pointer-events-none absolute right-3.5 top-1/2 z-10 -translate-y-1/2 text-slate-400" size={17} />
                 <Input value={query} onChange={(event) => setQuery(event.target.value)} fullWidth autoFocus variant="secondary" className={`${adminFieldClass} min-h-11 pr-10 pl-20 text-sm`} placeholder="حداقل ۳ کاراکتر" aria-describedby="product-option-search-hint" />
-                {loadingSearch && <Spinner size="sm" className="absolute left-11 top-1/2 z-10 -translate-y-1/2" aria-label="در حال جست‌وجو" />}
-                {query ? <Button type="button" isIconOnly variant="ghost" aria-label="پاک‌کردن جست‌وجو" onPress={clearSearch} className="absolute left-1.5 top-1/2 z-20 h-8 min-h-8 w-8 min-w-8 -translate-y-1/2 rounded-lg text-slate-400 hover:text-slate-700"><X size={15} /></Button> : null}
+                {loadingSearch && <Spinner size="sm" className="absolute left-11 top-1/2 z-10 -translate-y-1/2" aria-label="در حال جستجو" />}
+                {query ? <Button type="button" isIconOnly variant="ghost" aria-label="پاک‌کردن جستجو" onPress={clearSearch} className="absolute left-1.5 top-1/2 z-20 h-8 min-h-8 w-8 min-w-8 -translate-y-1/2 rounded-lg text-slate-400 hover:text-slate-700"><X size={15} /></Button> : null}
               </div>
             </label>
 
             <div id="product-option-search-hint" className="mt-2 min-h-5 shrink-0 text-[10px] text-slate-400" aria-live="polite">
               {loadingSearch
-                ? "در حال جست‌وجوی محصولات..."
+                ? "در حال جستجوی محصولات..."
                 : normalizedQuery.length > 0 && remainingCharacters > 0
                   ? `${remainingCharacters.toLocaleString("fa-IR")} کاراکتر دیگر وارد کنید.`
                   : normalizedQuery.length >= 3
                     ? `${results.length.toLocaleString("fa-IR")} محصول پیدا شد.`
-                    : "جست‌وجو از کاراکتر سوم آغاز می‌شود."}
+                    : "جستجو از کاراکتر سوم آغاز می‌شود."}
             </div>
 
             {searchError && <Alert status="danger" className="mt-3 shrink-0"><Alert.Description>{searchError}</Alert.Description></Alert>}
 
             {normalizedQuery.length < 3 ? (
-              <div className="mt-3 grid min-h-40 flex-1 place-items-center rounded-xl border-2 border-dashed border-slate-200 bg-slate-50/70 p-4 text-center"><div><Search className="mx-auto mb-2 text-slate-300" size={28} /><strong className="block text-xs text-slate-600">محصول را جست‌وجو کنید</strong><span className="mt-1 block text-[10px] text-slate-400">حداقل سه کاراکتر لازم است.</span></div></div>
+              <div className="mt-3 grid min-h-40 flex-1 place-items-center rounded-xl border-2 border-dashed border-slate-200 bg-slate-50/70 p-4 text-center"><div><Search className="mx-auto mb-2 text-slate-300" size={28} /><strong className="block text-xs text-slate-600">محصول را جستجو کنید</strong><span className="mt-1 block text-[10px] text-slate-400">حداقل سه کاراکتر لازم است.</span></div></div>
             ) : !loadingSearch && !searchError && results.length === 0 ? (
               <div className="mt-3 grid min-h-32 flex-1 place-items-center rounded-xl border border-slate-200 bg-slate-50 p-4 text-center"><div><Boxes className="mx-auto mb-2 text-slate-300" size={26} /><strong className="block text-xs text-slate-600">محصولی پیدا نشد</strong></div></div>
             ) : results.length > 0 ? (
-              <div className="admin-content-scroll mt-3 grid min-h-0 flex-1 content-start gap-2 overflow-y-auto overscroll-contain pl-1" aria-label="نتایج جست‌وجوی محصولات" tabIndex={0}>
+              <div className="admin-content-scroll mt-3 grid min-h-0 flex-1 content-start gap-2 overflow-y-auto overscroll-contain pl-1" aria-label="نتایج جستجوی محصولات" tabIndex={0}>
                 {results.map((product) => {
                   const isSelected = selectedProduct?.id === product.id;
                   return <div key={product.id} className={`rounded-lg border p-2.5 transition ${isSelected ? "border-violet-300 bg-violet-50" : "border-slate-200 bg-slate-50/70 hover:border-violet-200 hover:bg-white"}`}>

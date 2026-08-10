@@ -413,9 +413,9 @@ export function ContentSettings({ initialSettings }: { initialSettings: ContentS
 export function SeoSettings() {
   const onDemo = () => toast.info("نسخه نمایشی تنظیمات", { description: "بخش «SEO حرفه‌ای» پس از تأیید شما به API و دیتابیس متصل می‌شود." });
   return <SettingsGrid>
-    <SettingCard icon={<Search size={19} />} title="SEO حرفه‌ای" description="اطلاعات پیش‌فرض موتورهای جست‌وجو و شبکه‌های اجتماعی" className="lg:col-span-2">
+    <SettingCard icon={<Search size={19} />} title="SEO حرفه‌ای" description="اطلاعات پیش‌فرض موتورهای جستجو و شبکه‌های اجتماعی" className="lg:col-span-2">
       <Field label="عنوان پیش‌فرض سایت"><Input defaultValue="زر گالری | خرید آنلاین طلا با قیمت روز" variant="secondary" className={adminFieldClass} /></Field><Field label="توضیحات متا"><TextArea defaultValue="خرید آنلاین زیورآلات طلای ۱۸ عیار با قیمت لحظه‌ای، تضمین اصالت و فاکتور رسمی." rows={3} variant="secondary" className={adminFieldClass} /></Field><div className="grid gap-4 sm:grid-cols-2"><Field label="دامنه اصلی"><Input defaultValue="https://zargallery.ir" dir="ltr" variant="secondary" className={adminFieldClass} /></Field><Field label="نشانی Sitemap"><Input defaultValue="/sitemap.xml" dir="ltr" variant="secondary" className={adminFieldClass} /></Field></div>
-      <AdminCheckbox defaultSelected description="صفحات منتشرشده امکان ایندکس‌شدن داشته باشند">اجازه ایندکس موتورهای جست‌وجو</AdminCheckbox><AdminCheckbox defaultSelected description="اطلاعات محصول، قیمت و موجودی برای موتور جست‌وجو">Structured Data محصولات</AdminCheckbox>
+      <AdminCheckbox defaultSelected description="صفحات منتشرشده امکان ایندکس‌شدن داشته باشند">اجازه ایندکس موتورهای جستجو</AdminCheckbox><AdminCheckbox defaultSelected description="اطلاعات محصول، قیمت و موجودی برای موتور جستجو">Structured Data محصولات</AdminCheckbox>
       <DemoFooter onPress={onDemo} />
     </SettingCard>
   </SettingsGrid>;

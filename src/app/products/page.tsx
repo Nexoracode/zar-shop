@@ -56,7 +56,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
       {/* Catalog hero */}
       <section className="bg-[linear-gradient(135deg,#eee1d3,#f8f3ed_50%,#dfe6e2)] px-5 py-14 text-center sm:py-[76px]">
         <div className="mx-auto w-full max-w-[1240px]">
-          <span className="text-[var(--brand-accent)] text-[0.8rem]">{query.q ? "نتایج جست‌وجو" : selectedCategory ? "دسته‌بندی محصولات" : `کالکشن ${settings.storeName}`}</span>
+          <span className="text-[var(--brand-accent)] text-[0.8rem]">{query.q ? "نتایج جستجو" : selectedCategory ? "دسته‌بندی محصولات" : `کالکشن ${settings.storeName}`}</span>
           <h1 className="mt-[5px] mb-0 text-[clamp(2.5rem,5vw,4.5rem)] font-medium">{query.q ? `«${query.q}»` : selectedCategory?.name ?? (settings.industry === "GOLD" ? "طلا برای هر لحظه" : "محصولاتی برای انتخاب شما")}</h1>
           <p className="m-0 text-[#747982]">{query.q ? `${catalog.pagination.totalItems.toLocaleString("fa-IR")} محصول مرتبط پیدا شد.` : selectedCategory?.description ?? (settings.industry === "GOLD" ? "مجموعه‌ای از طراحی‌های مینیمال و ماندگار با قیمت‌گذاری شفاف." : "مجموعه محصولات فروشگاه با اطلاعات روشن و خرید مطمئن.")}</p>
           {settings.industry === "GOLD" && <div className="mt-5 text-[0.78rem]">

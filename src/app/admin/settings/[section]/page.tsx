@@ -31,7 +31,7 @@ const sectionMeta = {
   orders: { title: "تنظیمات سفارش و انقضا", description: "مهلت پرداخت، شماره‌گذاری و قواعد ثبت سفارش" },
   commerce: { title: "تنظیمات ارسال و پرداخت", description: "روش‌های تحویل سفارش و وضعیت درگاه پرداخت" },
   content: { title: "تنظیمات محتوا و سوالات متداول", description: "مدیریت FAQ و صفحات راهنما و قوانین فروشگاه" },
-  seo: { title: "SEO حرفه‌ای", description: "تنظیمات دیده‌شدن فروشگاه و ساختار فنی صفحات برای موتورهای جست‌وجو" },
+  seo: { title: "SEO حرفه‌ای", description: "تنظیمات دیده‌شدن فروشگاه و ساختار فنی صفحات برای موتورهای جستجو" },
 } as const;
 
 async function getPageMeta(section: string) {

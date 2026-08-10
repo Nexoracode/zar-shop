@@ -65,12 +65,12 @@ export default async function OrdersPage({ searchParams }: { searchParams: Searc
       <AdminPageHeader eyebrow="مدیریت فروش" title="سفارش‌ها" description="پرداخت‌ها، وضعیت آماده‌سازی و ارسال سفارش‌ها را یک‌جا پیگیری کنید." />
 
       <AdminPanel className="mb-5 p-4 sm:p-5">
-        <AdminListFilters path="/admin/orders" query={query} queryLabel="جست‌وجوی سفارش" queryPlaceholder="شماره سفارش، نام، ایمیل یا موبایل" filters={[{ name: "status", label: "وضعیت سفارش", value: status ?? "", options: [{ value: "", label: "همه وضعیت‌ها" }, ...statuses.map((item) => ({ value: item, label: orderStatusLabels[item] }))] }]} />
+        <AdminListFilters path="/admin/orders" query={query} queryLabel="جستجوی سفارش" queryPlaceholder="شماره سفارش، نام، ایمیل یا موبایل" filters={[{ name: "status", label: "وضعیت سفارش", value: status ?? "", options: [{ value: "", label: "همه وضعیت‌ها" }, ...statuses.map((item) => ({ value: item, label: orderStatusLabels[item] }))] }]} />
       </AdminPanel>
 
       <AdminPanel>
         {!orders.length ? (
-          <AdminEmptyState title="سفارشی پیدا نشد" description={query || status ? "فیلترها را تغییر دهید و دوباره جست‌وجو کنید." : "هنوز سفارشی در فروشگاه ثبت نشده است."} />
+          <AdminEmptyState title="سفارشی پیدا نشد" description={query || status ? "فیلترها را تغییر دهید و دوباره جستجو کنید." : "هنوز سفارشی در فروشگاه ثبت نشده است."} />
         ) : (
           <>
             <div className="divide-y divide-slate-100 md:hidden">

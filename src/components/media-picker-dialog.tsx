@@ -162,7 +162,7 @@ export function MediaPickerDialog({ open, scope, multiple = false, allowedTypes,
                     <Button type="submit" isPending={uploading} variant="primary" className="min-h-10 gap-2 bg-[#b5904c] px-4 text-xs font-bold text-white">{({ isPending }) => <>{isPending ? <Spinner color="current" size="sm" /> : <Upload size={15} />}{isPending ? "در حال بارگذاری" : "بارگذاری"}</>}</Button>
                   </form>
                   <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
-                    <div className="relative"><Search className="pointer-events-none absolute right-3.5 top-1/2 z-10 -translate-y-1/2 text-slate-400" size={17} /><Input value={query} onChange={(event) => setQuery(event.target.value)} fullWidth variant="secondary" placeholder="جست‌وجوی عنوان فایل..." className="pr-10" /></div>
+                    <div className="relative"><Search className="pointer-events-none absolute right-3.5 top-1/2 z-10 -translate-y-1/2 text-slate-400" size={17} /><Input value={query} onChange={(event) => setQuery(event.target.value)} fullWidth variant="secondary" placeholder="جستجوی عنوان فایل..." className="pr-10" /></div>
                     <Button type="button" variant="secondary" isIconOnly aria-label="به‌روزرسانی گالری" onPress={() => void load()} isPending={loading} className="hidden h-10 w-10 min-w-10 border border-slate-200 sm:inline-flex">{({ isPending }) => isPending ? <Spinner color="current" size="sm" /> : <RefreshCw size={16} />}</Button>
                   </div>
                 </div>
@@ -192,7 +192,7 @@ export function MediaPickerDialog({ open, scope, multiple = false, allowedTypes,
                     })}
                   </div>
                 ) : (
-                  <div className="grid min-h-64 place-items-center rounded-2xl border-2 border-dashed border-slate-200 bg-white p-8 text-center"><div><ImageIcon className="mx-auto mb-3 text-slate-300" size={38} /><strong className="block text-sm text-slate-600">{query ? "رسانه‌ای پیدا نشد" : "گالری این بخش خالی است"}</strong><p className="mt-1 text-xs text-slate-400">{query ? "عبارت جست‌وجو را تغییر دهید." : "از بخش بالای صفحه اولین فایل را بارگذاری کنید."}</p></div></div>
+                  <div className="grid min-h-64 place-items-center rounded-2xl border-2 border-dashed border-slate-200 bg-white p-8 text-center"><div><ImageIcon className="mx-auto mb-3 text-slate-300" size={38} /><strong className="block text-sm text-slate-600">{query ? "رسانه‌ای پیدا نشد" : "گالری این بخش خالی است"}</strong><p className="mt-1 text-xs text-slate-400">{query ? "عبارت جستجو را تغییر دهید." : "از بخش بالای صفحه اولین فایل را بارگذاری کنید."}</p></div></div>
                 )}
               </div>
             </Modal.Body>

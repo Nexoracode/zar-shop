@@ -64,12 +64,12 @@ export default async function UsersPage({ searchParams }: { searchParams: Search
       <AdminPageHeader eyebrow="مدیریت مشتریان" title="کاربران" description="اطلاعات تماس، نقش، وضعیت حساب و سابقه سفارش کاربران را بررسی کنید." />
 
       <AdminPanel className="mb-5 p-4 sm:p-5">
-        <AdminListFilters path="/admin/users" query={query} queryLabel="جست‌وجوی کاربر" queryPlaceholder="نام، ایمیل یا شماره موبایل" filters={[{ name: "role", label: "نقش کاربر", value: role ?? "", options: [{ value: "", label: "همه نقش‌ها" }, ...roles.map((item) => ({ value: item, label: userRoleLabels[item] }))] }, { name: "status", label: "وضعیت حساب", value: status ?? "", options: [{ value: "", label: "همه وضعیت‌ها" }, ...statuses.map((item) => ({ value: item, label: userStatusLabels[item] }))] }]} />
+        <AdminListFilters path="/admin/users" query={query} queryLabel="جستجوی کاربر" queryPlaceholder="نام، ایمیل یا شماره موبایل" filters={[{ name: "role", label: "نقش کاربر", value: role ?? "", options: [{ value: "", label: "همه نقش‌ها" }, ...roles.map((item) => ({ value: item, label: userRoleLabels[item] }))] }, { name: "status", label: "وضعیت حساب", value: status ?? "", options: [{ value: "", label: "همه وضعیت‌ها" }, ...statuses.map((item) => ({ value: item, label: userStatusLabels[item] }))] }]} />
       </AdminPanel>
 
       <AdminPanel>
         {!users.length ? (
-          <AdminEmptyState title="کاربری پیدا نشد" description={query || role || status ? "فیلترها را تغییر دهید و دوباره جست‌وجو کنید." : "هنوز کاربری در فروشگاه ثبت نشده است."} />
+          <AdminEmptyState title="کاربری پیدا نشد" description={query || role || status ? "فیلترها را تغییر دهید و دوباره جستجو کنید." : "هنوز کاربری در فروشگاه ثبت نشده است."} />
         ) : (
           <>
             <div className="divide-y divide-slate-100 md:hidden">

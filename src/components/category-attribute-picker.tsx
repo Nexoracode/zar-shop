@@ -75,11 +75,11 @@ export function CategoryAttributePicker({ categories }: { categories: CategoryRe
             </div>
 
             <label className="grid shrink-0 gap-1.5 text-xs font-bold text-slate-600">
-              جست‌وجوی دسته‌بندی
+              جستجوی دسته‌بندی
               <div className="relative">
                 <Search className="pointer-events-none absolute right-3.5 top-1/2 z-10 -translate-y-1/2 text-slate-400" size={17} />
                 <Input value={query} onChange={(event) => setQuery(event.target.value)} fullWidth autoFocus variant="secondary" className={`${adminFieldClass} min-h-11 pr-10 pl-12 text-sm`} placeholder="حداقل ۳ کاراکتر" aria-describedby="category-attribute-search-hint" />
-                {query && <Button type="button" isIconOnly variant="ghost" aria-label="پاک‌کردن جست‌وجو" onPress={clearSearch} className="absolute left-1.5 top-1/2 z-20 size-8 min-h-8 min-w-8 -translate-y-1/2 rounded-lg text-slate-400 hover:text-slate-700"><X size={15} /></Button>}
+                {query && <Button type="button" isIconOnly variant="ghost" aria-label="پاک‌کردن جستجو" onPress={clearSearch} className="absolute left-1.5 top-1/2 z-20 size-8 min-h-8 min-w-8 -translate-y-1/2 rounded-lg text-slate-400 hover:text-slate-700"><X size={15} /></Button>}
               </div>
             </label>
 
@@ -88,15 +88,15 @@ export function CategoryAttributePicker({ categories }: { categories: CategoryRe
                 ? `${remainingCharacters.toLocaleString("fa-IR")} کاراکتر دیگر وارد کنید.`
                 : normalizedQuery.length >= 3
                   ? `${results.length.toLocaleString("fa-IR")} دسته‌بندی پیدا شد.`
-                  : "جست‌وجو از کاراکتر سوم آغاز می‌شود."}
+                  : "جستجو از کاراکتر سوم آغاز می‌شود."}
             </div>
 
             {normalizedQuery.length < 3 ? (
-              <div className="mt-3 grid min-h-40 flex-1 place-items-center rounded-xl border-2 border-dashed border-slate-200 bg-slate-50/70 p-4 text-center"><div><Search className="mx-auto mb-2 text-slate-300" size={28} /><strong className="block text-xs text-slate-600">دسته‌بندی را جست‌وجو کنید</strong><span className="mt-1 block text-[10px] text-slate-400">حداقل سه کاراکتر لازم است.</span></div></div>
+              <div className="mt-3 grid min-h-40 flex-1 place-items-center rounded-xl border-2 border-dashed border-slate-200 bg-slate-50/70 p-4 text-center"><div><Search className="mx-auto mb-2 text-slate-300" size={28} /><strong className="block text-xs text-slate-600">دسته‌بندی را جستجو کنید</strong><span className="mt-1 block text-[10px] text-slate-400">حداقل سه کاراکتر لازم است.</span></div></div>
             ) : results.length === 0 ? (
               <div className="mt-3 grid min-h-32 flex-1 place-items-center rounded-xl border border-slate-200 bg-slate-50 p-4 text-center"><div><Boxes className="mx-auto mb-2 text-slate-300" size={26} /><strong className="block text-xs text-slate-600">دسته‌بندی‌ای پیدا نشد</strong></div></div>
             ) : (
-              <div className="admin-content-scroll mt-3 grid min-h-0 flex-1 content-start gap-2 overflow-y-auto overscroll-contain pl-1" aria-label="نتایج جست‌وجوی دسته‌بندی‌ها" tabIndex={0}>
+              <div className="admin-content-scroll mt-3 grid min-h-0 flex-1 content-start gap-2 overflow-y-auto overscroll-contain pl-1" aria-label="نتایج جستجوی دسته‌بندی‌ها" tabIndex={0}>
                 {results.map((category) => {
                   const selected = selectedCategory?.id === category.id;
                   return <div key={category.id} className={`rounded-lg border p-2.5 transition ${selected ? "border-violet-300 bg-violet-50" : "border-slate-200 bg-slate-50/70 hover:border-violet-200 hover:bg-white"}`}>
