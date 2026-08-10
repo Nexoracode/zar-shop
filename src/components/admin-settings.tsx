@@ -17,7 +17,7 @@ import { HeroNumberInput } from "@/components/hero-number-input";
 import { MediaPickerDialog } from "@/components/media-picker-dialog";
 import type { MediaChoice } from "@/components/media-library";
 import type { GeneralStoreSettingsInput } from "@/modules/settings/general-settings";
-import type { HomepageLicenseId, HomepageMenuLinkOption, HomepageSettings as HomepageSettingsData, HomepageTreasureCardId } from "@/modules/settings/homepage-settings";
+import type { HomepageLicenseId, HomepageSettings as HomepageSettingsData, HomepageTreasureCardId } from "@/modules/settings/homepage-settings";
 import type { BrandSettings as BrandSettingsData } from "@/modules/settings/brand-settings";
 import type { OrderSettings as OrderSettingsData } from "@/modules/settings/order-settings";
 import type { CommerceSettings as CommerceSettingsData } from "@/modules/settings/commerce-settings";
@@ -87,14 +87,9 @@ function toMediaChoice(media: HomepageSettingsData["heroDesktopMedia"]): MediaCh
   return media ? { id: media.id, title: media.title || media.alt || "تصویر صفحه اصلی", url: media.url, type: "IMAGE", mimeType: media.mimeType } : null;
 }
 
-export function HomepageSettings({ initialSettings, menuLinkOptions, industry }: { initialSettings: HomepageSettingsData; menuLinkOptions: HomepageMenuLinkOption[]; industry: "GOLD" | "GENERAL" }) {
+export function HomepageSettings({ initialSettings, industry }: { initialSettings: HomepageSettingsData; industry: "GOLD" | "GENERAL" }) {
   const [saving, setSaving] = useState(false);
   const sections = initialSettings.sections;
-  const [menuItems, setMenuItems] = useState(initialSettings.menuItems);
-  const [selectedMenuOptionId, setSelectedMenuOptionId] = useState("");
-  const [customMenuLabel, setCustomMenuLabel] = useState("");
-  const [customMenuHref, setCustomMenuHref] = useState("");
-  const [draggedMenuItemId, setDraggedMenuItemId] = useState<string | null>(null);
   const tileGroups = initialSettings.tileGroups;
   const [treasureCards, setTreasureCards] = useState(() => initialSettings.treasureCards.map((card) => ({ id: card.id, mediaId: card.mediaId, media: toMediaChoice(card.media) })));
   const [licenses, setLicenses] = useState(() => initialSettings.licenses.map((license) => ({ id: license.id, href: license.href ?? "", media: toMediaChoice(license.media) })));
@@ -112,11 +107,11 @@ export function HomepageSettings({ initialSettings, menuLinkOptions, industry }:
       const response = await fetch("/api/admin/settings/homepage", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...values, menuItems, treasureCards: treasureCards.map((card) => ({ id: card.id, mediaId: card.media?.id ?? null })), licenses: licenses.map((license) => ({ id: license.id, mediaId: license.media?.id ?? null, href: license.href })), promoBannerEnabled, promoBannerHref, promoDesktopMediaId: promoDesktopMedia?.id ?? null, promoMobileMediaId: promoMobileMedia?.id ?? null }),
+        body: JSON.stringify({ ...values, treasureCards: treasureCards.map((card) => ({ id: card.id, mediaId: card.media?.id ?? null })), licenses: licenses.map((license) => ({ id: license.id, mediaId: license.media?.id ?? null, href: license.href })), promoBannerEnabled, promoBannerHref, promoDesktopMediaId: promoDesktopMedia?.id ?? null, promoMobileMediaId: promoMobileMedia?.id ?? null }),
       });
       const result = await response.json().catch(() => null);
       if (!response.ok) throw new Error(result?.message ?? "ذخیره تنظیمات صفحه اصلی انجام نشد.");
-      toast.success("تنظیمات صفحه اصلی ذخیره شد", { description: "چینش، منوی بالا، اسلایدر و تصاویر در سایت اعمال شدند." });
+      toast.success("تنظیمات صفحه اصلی ذخیره شد", { description: "بنرها، تصاویر و تنظیمات عمومی صفحه اصلی در سایت اعمال شدند." });
     } catch (reason) {
       toast.danger("ذخیره تنظیمات صفحه اصلی انجام نشد", { description: reason instanceof Error ? reason.message : "خطای ناشناخته" });
     } finally {
@@ -134,26 +129,6 @@ export function HomepageSettings({ initialSettings, menuLinkOptions, industry }:
         : treasurePickerCard?.media ?? null;
   const selectedLicense = licenses.find((license) => license.id === selectedLicenseId) ?? licenses[1];
 
-  function createMenuItem(label: string, href: string) {
-    const normalizedLabel = label.trim();
-    const normalizedHref = href.trim();
-    if (!normalizedLabel || !normalizedHref || menuItems.length >= 20) return;
-    setMenuItems((current) => [...current, { id: crypto.randomUUID(), label: normalizedLabel, href: normalizedHref }]);
-  }
-
-  function moveMenuItem(targetId: string) {
-    if (!draggedMenuItemId || draggedMenuItemId === targetId) return;
-    setMenuItems((current) => {
-      const sourceIndex = current.findIndex((item) => item.id === draggedMenuItemId);
-      const targetIndex = current.findIndex((item) => item.id === targetId);
-      if (sourceIndex < 0 || targetIndex < 0) return current;
-      const next = [...current];
-      const [moved] = next.splice(sourceIndex, 1);
-      next.splice(targetIndex, 0, moved);
-      return next;
-    });
-  }
-
   return <>
     <form onSubmit={submit} className="grid gap-5"><SettingsGrid>
       <SettingCard icon={<Megaphone size={19} />} title="پروموبنر بالای سایت" description="بنر اختیاری پیش از هدر؛ پشتیبانی از تصویر ثابت و GIF" className="lg:col-span-2" help={{ summary: "این بنر پیش از هدر فروشگاه نمایش داده می‌شود و می‌تواند به یک مقصد مشخص لینک شود.", blocks: [{ title: "روش تنظیم", items: ["نمایش پروموبنر را فعال کنید.", "تصویر دسکتاپ و در صورت نیاز نسخه مخصوص موبایل را انتخاب کنید.", "اگر بنر باید قابل کلیک باشد، لینک مقصد داخلی یا معتبر را وارد کنید."] }, { title: "تصویر و GIF", description: "تصویر ثابت و GIF پشتیبانی می‌شوند. برای جلوگیری از کندی صفحه، فایل کم‌حجم و متناسب با عرض سایت انتخاب کنید." }, { title: "نمایش موبایل", tone: "important", description: "اگر نسخه موبایل ثبت نشود، نسخه دسکتاپ استفاده می‌شود و ممکن است برش مناسبی نداشته باشد." }] }}>
@@ -163,44 +138,17 @@ export function HomepageSettings({ initialSettings, menuLinkOptions, industry }:
           <div className="grid gap-3 sm:grid-cols-2"><HomepageMediaField label="بنر دسکتاپ" hint="۱۹۲۰×۱۲۰؛ تصویر یا GIF" media={promoDesktopMedia} onSelect={() => setPickerTarget("promoDesktop")} onClear={() => setPromoDesktopMedia(null)} aspectClass="aspect-[3/1]" /><HomepageMediaField label="بنر موبایل" hint="۹۰۰×۱۸۰؛ تصویر یا GIF" media={promoMobileMedia} onSelect={() => setPickerTarget("promoMobile")} onClear={() => setPromoMobileMedia(null)} aspectClass="aspect-[3/1]" /></div>
         </div>}
       </SettingCard>
-      <SettingCard icon={<Images size={19} />} title="هیرو صفحه اصلی" description="مدیریت محتوای هیرو، تصاویر اسلایدر و لینک اختصاصی هر تصویر" className="lg:col-span-2">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"><div><strong className="block text-sm">مدیریت مستقل هیرو</strong><span className="mt-1 block text-xs text-[var(--muted)]">این بخش به‌دلیل تعداد تنظیمات و اسلایدها در صفحه‌ای مستقل مدیریت می‌شود.</span></div><Link href="/admin/settings/homepage/hero" className={buttonVariants({ variant: "primary", size: "md", className: "min-h-11 shrink-0 gap-2 rounded-xl px-5 text-sm font-bold" })}>مدیریت هیرو<ChevronLeft size={16} /></Link></div>
+      <SettingCard icon={<Images size={19} />} title="هیرو صفحه اصلی" description="اسلایدها، تصاویر و لینک‌ها">
+        <div className="flex items-center justify-between gap-3"><strong className="text-xs">مدیریت مستقل هیرو</strong><Link href="/admin/settings/homepage/hero" className={buttonVariants({ variant: "primary", size: "sm", className: "min-h-9 shrink-0 gap-1 rounded-lg px-3 text-xs font-bold" })}>مدیریت<ChevronLeft size={14} /></Link></div>
       </SettingCard>
-      <SettingCard icon={<LayoutDashboard size={19} />} title="تایل‌های تصویری" description="مدیریت ردیف‌ها، چیدمان‌ها، تصاویر، لینک‌ها و ترتیب داخلی تایل‌ها" className="lg:col-span-2">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"><div><strong className="block text-sm">مدیریت مستقل تایل‌ها</strong><span className="mt-1 block text-xs text-[var(--muted)]">در حال حاضر {tileGroups.length.toLocaleString("fa-IR")} ردیف تایل ثبت شده است.</span></div><Link href="/admin/settings/homepage/tiles" className={buttonVariants({ variant: "primary", size: "md", className: "min-h-11 shrink-0 gap-2 rounded-xl px-5 text-sm font-bold" })}>مدیریت تایل‌ها<ChevronLeft size={16} /></Link></div>
+      <SettingCard icon={<LayoutDashboard size={19} />} title="تایل‌های تصویری" description={`${tileGroups.length.toLocaleString("fa-IR")} ردیف تایل ثبت شده`}>
+        <div className="flex items-center justify-between gap-3"><strong className="text-xs">چیدمان، تصویر و لینک</strong><Link href="/admin/settings/homepage/tiles" className={buttonVariants({ variant: "primary", size: "sm", className: "min-h-9 shrink-0 gap-1 rounded-lg px-3 text-xs font-bold" })}>مدیریت<ChevronLeft size={14} /></Link></div>
       </SettingCard>
-      <SettingCard icon={<LayoutDashboard size={19} />} title="چینش صفحه اصلی" description="مدیریت ترتیب، وضعیت بخش‌ها و پیش‌نمایش زنده" className="lg:col-span-2">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"><div><strong className="block text-sm">مدیریت مستقل چینش</strong><span className="mt-1 block text-xs text-[var(--muted)]">{sections.filter((section) => section.enabled).length.toLocaleString("fa-IR")} بخش فعال از {sections.length.toLocaleString("fa-IR")} بخش ثبت‌شده</span></div><Link href="/admin/settings/homepage/layout" className={buttonVariants({ variant: "primary", size: "md", className: "min-h-11 shrink-0 gap-2 rounded-xl px-5 text-sm font-bold" })}>مدیریت چینش<ChevronLeft size={16} /></Link></div>
+      <SettingCard icon={<LayoutDashboard size={19} />} title="چینش صفحه اصلی" description={`${sections.filter((section) => section.enabled).length.toLocaleString("fa-IR")} بخش فعال از ${sections.length.toLocaleString("fa-IR")}`}>
+        <div className="flex items-center justify-between gap-3"><strong className="text-xs">ترتیب و پیش‌نمایش زنده</strong><Link href="/admin/settings/homepage/layout" className={buttonVariants({ variant: "primary", size: "sm", className: "min-h-9 shrink-0 gap-1 rounded-lg px-3 text-xs font-bold" })}>مدیریت<ChevronLeft size={14} /></Link></div>
       </SettingCard>
-      <SettingCard icon={<ListTree size={19} />} title="منوی بالای سایت" description="ساخت منوی مستقل با لینک‌های آماده یا دلخواه" className="lg:col-span-2" help={{ summary: "آیتم‌های این منو مستقل از ساختار دسته‌بندی‌ها هستند و هرکدام عنوان و لینک اختصاصی دارند.", blocks: [{ title: "استفاده از لینک آماده", items: ["یکی از صفحات یا دسته‌بندی‌های آماده را انتخاب کنید.", "آیتم انتخاب‌شده به انتهای منو اضافه می‌شود و بعداً قابل ویرایش است."] }, { title: "ساخت لینک جدید", items: ["عنوانی که باید در هدر دیده شود را بنویسید.", "یک مسیر داخلی یا لینک امن HTTPS وارد کنید."] }, { title: "ترتیب نمایش", description: "آیتم‌ها را از دستگیره کنارشان بکشید و به ترتیب دلخواه بچینید." }] }}>
-        <div className="flex items-center justify-between gap-3 rounded-xl border border-[var(--border)] bg-[var(--surface-secondary)] px-3 py-2.5">
-          <div><strong className="block text-xs">آیتم‌های مستقل منو</strong><span className="mt-1 block text-[11px] text-[var(--muted)]">هر آیتم عنوان و مقصد خودش را دارد و وابسته به دسته‌بندی نیست.</span></div>
-          <Chip size="sm" variant="soft" className="shrink-0 text-[var(--accent)]"><Chip.Label>{menuItems.length.toLocaleString("fa-IR")} از ۲۰</Chip.Label></Chip>
-        </div>
-
-        <div className="grid gap-3 rounded-xl border border-[var(--border)] bg-[var(--surface-secondary)] p-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
-          <HeroSelectField name="menu-link-preset" label="انتخاب از لینک‌های آماده" value={selectedMenuOptionId} onValueChange={setSelectedMenuOptionId} placeholder="صفحه یا دسته‌بندی را انتخاب کنید" options={menuLinkOptions.map((option) => ({ value: option.id, label: `${option.group} — ${option.label}` }))} />
-          <Button type="button" variant="secondary" isDisabled={!selectedMenuOptionId || menuItems.length >= 20} onPress={() => { const option = menuLinkOptions.find((item) => item.id === selectedMenuOptionId); if (!option) return; createMenuItem(option.label, option.href); setSelectedMenuOptionId(""); }} className="min-h-11 gap-2"><Plus size={15} />افزودن لینک آماده</Button>
-        </div>
-
-        <div className="grid gap-3 rounded-xl border border-dashed border-[var(--border)] p-3 sm:grid-cols-[minmax(160px,0.7fr)_minmax(220px,1.3fr)_auto] sm:items-end">
-          <Field label="عنوان جدید"><Input value={customMenuLabel} onChange={(event) => setCustomMenuLabel(event.target.value)} placeholder="مثلاً پیشنهادهای ویژه" variant="secondary" className={adminFieldClass} /></Field>
-          <Field label="لینک مقصد"><Input value={customMenuHref} onChange={(event) => setCustomMenuHref(event.target.value)} dir="ltr" placeholder="/products?featured=true یا https://example.com" variant="secondary" className={adminFieldClass} /></Field>
-          <Button type="button" variant="primary" isDisabled={!customMenuLabel.trim() || !customMenuHref.trim() || menuItems.length >= 20} onPress={() => { createMenuItem(customMenuLabel, customMenuHref); setCustomMenuLabel(""); setCustomMenuHref(""); }} className="min-h-11 gap-2"><Plus size={15} />ساخت آیتم</Button>
-        </div>
-
-        {menuItems.length ? <div className="grid gap-2">{menuItems.map((item, index) => <Card
-          key={item.id}
-          variant="secondary"
-          onDragOver={(event) => { event.preventDefault(); moveMenuItem(item.id); }}
-          onDrop={(event) => { event.preventDefault(); setDraggedMenuItemId(null); }}
-          className={`grid gap-3 rounded-xl border p-3 transition sm:grid-cols-[auto_minmax(140px,0.65fr)_minmax(220px,1.35fr)_auto] sm:items-end ${draggedMenuItemId === item.id ? "border-[var(--accent)] opacity-55" : "border-[var(--border)]"}`}
-        >
-          <span draggable onDragStart={(event) => { event.dataTransfer.effectAllowed = "move"; setDraggedMenuItemId(item.id); }} onDragEnd={() => setDraggedMenuItemId(null)} className="self-center cursor-grab active:cursor-grabbing"><Button type="button" isIconOnly size="sm" variant="ghost" className="pointer-events-none text-[var(--muted)]" aria-label={`جابه‌جایی آیتم ${(index + 1).toLocaleString("fa-IR")}`}><GripVertical size={16} /></Button></span>
-          <Field label={`عنوان ${(index + 1).toLocaleString("fa-IR")}`}><Input value={item.label} onChange={(event) => setMenuItems((current) => current.map((currentItem) => currentItem.id === item.id ? { ...currentItem, label: event.target.value } : currentItem))} variant="secondary" className={adminFieldClass} /></Field>
-          <Field label="لینک"><Input value={item.href} onChange={(event) => setMenuItems((current) => current.map((currentItem) => currentItem.id === item.id ? { ...currentItem, href: event.target.value } : currentItem))} dir="ltr" variant="secondary" className={adminFieldClass} /></Field>
-          <Button type="button" isIconOnly variant="danger-soft" aria-label={`حذف ${item.label}`} onPress={() => setMenuItems((current) => current.filter((currentItem) => currentItem.id !== item.id))} className="mb-0.5"><Trash2 size={15} /></Button>
-        </Card>)}</div> : <Alert status="warning"><Alert.Description>هنوز آیتمی برای منوی بالای سایت تعریف نشده است.</Alert.Description></Alert>}
+      <SettingCard icon={<ListTree size={19} />} title="منوی بالای سایت" description={`${initialSettings.menuItems.length.toLocaleString("fa-IR")} آیتم فعال`}>
+        <div className="flex items-center justify-between gap-3"><strong className="text-xs">عنوان، لینک و ترتیب آیتم‌ها</strong><Link href="/admin/settings/homepage/menu" className={buttonVariants({ variant: "primary", size: "sm", className: "min-h-9 shrink-0 gap-1 rounded-lg px-3 text-xs font-bold" })}>مدیریت<ChevronLeft size={14} /></Link></div>
       </SettingCard>
       {industry === "GOLD" && <SettingCard icon={<Images size={19} />} title="تصاویر گنجینه زرگالری" description="تصویر چهار کارت خرید براساس بازه قیمت" className="lg:col-span-2" help={{ summary: "برای هر بازه قیمت یک تصویر مستقل انتخاب کنید تا مسیر سرمایه‌گذاری بصری و قابل تشخیص باشد.", blocks: [{ title: "انتخاب تصویر", description: "هر تصویر فقط به کارت همان بازه قیمت متصل است. بهتر است چهار تصویر سبک یکسان، ابعاد مشابه و سوژه‌های متفاوت داشته باشند." }, { title: "اثر کلیک", description: "کلیک روی هر کارت کاربر را به فهرست محصولات با فیلتر قیمت همان بازه می‌برد." }] }}>
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">{treasureCards.map((card) => {
@@ -224,7 +172,7 @@ export function HomepageSettings({ initialSettings, menuLinkOptions, industry }:
     </SettingsGrid>
       <Card variant="secondary" className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4 shadow-sm">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div><strong className="block text-sm">ذخیره تغییرات صفحه اصلی</strong><p className="m-0 mt-1 text-xs text-[var(--muted)]">چینش بخش‌ها، منوی بالا، تصاویر گنجینه و پروموبنر با هم ذخیره می‌شوند.</p></div>
+          <div><strong className="block text-sm">ذخیره تغییرات صفحه اصلی</strong><p className="m-0 mt-1 text-xs text-[var(--muted)]">پروموبنر، تصاویر گنجینه و مجوزها با هم ذخیره می‌شوند.</p></div>
           <Button type="submit" variant="primary" isPending={saving} className="min-h-11 shrink-0 gap-2 px-5"><Save size={16} />ذخیره تنظیمات صفحه اصلی</Button>
         </div>
       </Card>

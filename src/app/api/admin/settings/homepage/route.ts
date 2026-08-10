@@ -30,7 +30,7 @@ export async function PATCH(request: Request) {
     }
 
     const industry = await getStoreIndustry();
-    const { treasureCards, licenses, menuItems, ...homepageFields } = input;
+    const { treasureCards, licenses, ...homepageFields } = input;
     const current = await getHomepageSettings();
     const generalHomepageSettings = industry === "GENERAL"
       ? homepageSettingsInputSchema.parse({ ...homepageSettingsToInput(current), ...input })
@@ -45,8 +45,8 @@ export async function PATCH(request: Request) {
       } else {
         await transaction.storeSetting.upsert({
           where: { id: STORE_SETTING_ID },
-          create: { id: STORE_SETTING_ID, ...homepageFields, menuCategoryIds: menuItems, homepageTreasureCards: treasureCards, homepageLicenses: licenses },
-          update: { ...homepageFields, menuCategoryIds: menuItems, homepageTreasureCards: treasureCards, homepageLicenses: licenses },
+          create: { id: STORE_SETTING_ID, ...homepageFields, homepageTreasureCards: treasureCards, homepageLicenses: licenses },
+          update: { ...homepageFields, homepageTreasureCards: treasureCards, homepageLicenses: licenses },
         });
       }
       await transaction.auditLog.create({
@@ -55,7 +55,7 @@ export async function PATCH(request: Request) {
           action: "HOMEPAGE_SETTINGS_UPDATE",
           entityType: "StoreSetting",
           entityId: STORE_SETTING_ID,
-          ...auditRequestContext(request, { menuItems, treasureMediaIds: treasureCards.map((card) => card.mediaId), licenseMediaIds: licenses.map((license) => license.mediaId) }),
+          ...auditRequestContext(request, { treasureMediaIds: treasureCards.map((card) => card.mediaId), licenseMediaIds: licenses.map((license) => license.mediaId) }),
         },
       });
     });

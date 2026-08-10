@@ -17,7 +17,7 @@ import { getCatalogSettings } from "@/modules/settings/catalog-settings";
 import { getCommerceSettings } from "@/modules/settings/commerce-settings";
 import { getContentSettings } from "@/modules/settings/content-settings";
 import { getGeneralStoreSettings } from "@/modules/settings/general-settings";
-import { getHomepageMenuLinkOptions, getHomepageSettings } from "@/modules/settings/homepage-settings";
+import { getHomepageSettings } from "@/modules/settings/homepage-settings";
 import { getOrderSettings } from "@/modules/settings/order-settings";
 import { getStoreIndustry } from "@/modules/settings/store-settings";
 import { getPublicGatewayConfigs } from "@/modules/payments/gateway-config";
@@ -60,8 +60,8 @@ export default async function AdminSettingSectionPage({ params }: Context) {
   switch (section) {
     case "general": content = <GeneralSettings initialSettings={await getGeneralStoreSettings()} />; break;
     case "homepage": {
-      const [homepageSettings, menuLinkOptions, industry] = await Promise.all([getHomepageSettings(), getHomepageMenuLinkOptions(), getStoreIndustry()]);
-      content = <HomepageSettings initialSettings={homepageSettings} menuLinkOptions={menuLinkOptions} industry={industry} />;
+      const [homepageSettings, industry] = await Promise.all([getHomepageSettings(), getStoreIndustry()]);
+      content = <HomepageSettings initialSettings={homepageSettings} industry={industry} />;
       break;
     }
     case "branding": content = <BrandSettings initialSettings={await getBrandSettings()} />; break;
