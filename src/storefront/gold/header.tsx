@@ -5,7 +5,6 @@ import {
   Home,
   LayoutDashboard,
   Menu,
-  Search,
   ShoppingCart,
   UserRound,
   WalletCards,
@@ -18,6 +17,7 @@ import type { BrandSettings } from "@/modules/settings/brand-settings";
 import { getCatalogSettings } from "@/modules/settings/catalog-settings";
 import type { GeneralStoreSettingsInput } from "@/modules/settings/general-settings";
 import type { HomepageMenuItem } from "@/modules/settings/homepage-settings";
+import { StorefrontSearch } from "@/components/storefront-search";
 
 export async function GoldHeader({ settings, brand, user, menuItems }: { settings: GeneralStoreSettingsInput; brand: BrandSettings; user: User | null; menuItems: HomepageMenuItem[] }) {
   const [gold, catalogSettings] = await Promise.all([
@@ -50,7 +50,7 @@ export async function GoldHeader({ settings, brand, user, menuItems }: { setting
       <div className="relative flex h-[54px] items-center justify-center px-4 lg:hidden">
         <Link href="/products" className="absolute right-4" aria-label="منوی محصولات"><Menu size={23} /></Link>
         <Link href="/" aria-label={`${settings.storeName}، صفحه اصلی`}>{logo}</Link>
-        <Link href="/products" className="absolute left-4" aria-label="جستجوی محصولات"><Search size={22} strokeWidth={1.5} /></Link>
+        <StorefrontSearch className="absolute left-4" />
       </div>
 
       <div className="hidden h-14 w-full items-center px-10 lg:flex">
@@ -60,7 +60,7 @@ export async function GoldHeader({ settings, brand, user, menuItems }: { setting
         <nav className="mr-10 flex h-full min-w-0 items-center gap-9 overflow-hidden text-sm" aria-label="منوی اصلی فروشگاه">
           {menuItems.map((item) => <Link key={item.id} href={item.href} className="flex h-full shrink-0 items-center border-b-2 border-transparent transition hover:border-[var(--success)] hover:text-[var(--success)]">{item.label}</Link>)}
         </nav>
-        <div className="mr-auto flex items-center gap-5 text-[#555]"><Link href="/products" aria-label="جستجوی محصولات"><Search size={22} strokeWidth={1.5} /></Link><span className="h-7 w-px bg-[#ddd]" /><Link href={accountHref} aria-label="حساب کاربری"><UserRound size={22} strokeWidth={1.5} /></Link><Link href="/cart" aria-label="سبد خرید"><ShoppingCart size={22} strokeWidth={1.5} /></Link>{user?.role !== "CUSTOMER" && user && <Link href="/admin" aria-label="پنل مدیریت"><LayoutDashboard size={20} /></Link>}</div>
+        <div className="mr-auto flex items-center gap-5 text-[#555]"><StorefrontSearch /><span className="h-7 w-px bg-[#ddd]" /><Link href={accountHref} aria-label="حساب کاربری"><UserRound size={22} strokeWidth={1.5} /></Link><Link href="/cart" aria-label="سبد خرید"><ShoppingCart size={22} strokeWidth={1.5} /></Link>{user?.role !== "CUSTOMER" && user && <Link href="/admin" aria-label="پنل مدیریت"><LayoutDashboard size={20} /></Link>}</div>
       </div>
 
       <div className="flex h-8 items-center justify-between bg-[#fdf9f2] px-4 text-[0.64rem] lg:hidden">

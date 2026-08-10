@@ -52,6 +52,7 @@ export async function getStorefrontCatalog(query: StorefrontCatalogQuery, catego
   const where: Prisma.ProductWhereInput = {
     status: "ACTIVE",
     storeIndustry: settings.industry,
+    ...(query.q ? { OR: [{ name: { contains: query.q } }, { sku: { contains: query.q } }, { slug: { contains: query.q } }, { category: { name: { contains: query.q } } }] } : {}),
     ...(catalogSettings.hideOutOfStockProducts ? { stock: { gt: 0 } } : {}),
     ...(categoryIds ? { categoryId: { in: categoryIds } } : {}),
   };
@@ -83,7 +84,7 @@ export async function getStorefrontCatalog(query: StorefrontCatalogQuery, catego
   const pageProducts = sortedProducts.slice((page - 1) * pageSize, page * pageSize);
 
   return {
-    filters: { sortby: query.sortby, MinPrice: query.MinPrice, MaxPrice: query.MaxPrice, category: query.category },
+    filters: { q: query.q, sortby: query.sortby, MinPrice: query.MinPrice, MaxPrice: query.MaxPrice, category: query.category },
     pagination: { page, pageSize, totalItems, totalPages },
     items: pageProducts.map(({ product, finalPriceRials, originalPriceRials }) => {
       const media = product.media[0]?.media;

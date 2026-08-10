@@ -16,6 +16,7 @@ export async function GET(request: Request) {
 
     const params = new URL(request.url).searchParams;
     const query = storefrontCatalogQuerySchema.parse({
+      q: params.get("q") ?? undefined,
       sortby: params.get("sortby") ?? undefined,
       MinPrice: params.get("MinPrice"),
       MaxPrice: params.get("MaxPrice"),

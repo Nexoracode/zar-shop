@@ -10,6 +10,7 @@ const optionalTomanAmount = z.preprocess(
 );
 
 export const storefrontCatalogQuerySchema = z.object({
+  q: z.preprocess((value) => value === null || value === undefined || value === "" ? undefined : value, z.string().trim().min(1).max(100).optional()),
   sortby: z.enum(storefrontCatalogSorts).default("newest"),
   MinPrice: optionalTomanAmount,
   MaxPrice: optionalTomanAmount,
@@ -25,7 +26,7 @@ export type StorefrontCatalogQuery = z.infer<typeof storefrontCatalogQuerySchema
 
 export type StorefrontCatalogResult = {
   items: StorefrontProductCardItem[];
-  filters: Pick<StorefrontCatalogQuery, "sortby" | "MinPrice" | "MaxPrice" | "category">;
+  filters: Pick<StorefrontCatalogQuery, "q" | "sortby" | "MinPrice" | "MaxPrice" | "category">;
   pagination: { page: number; pageSize: number; totalItems: number; totalPages: number };
 };
 

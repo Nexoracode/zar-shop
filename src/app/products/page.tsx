@@ -10,7 +10,7 @@ import { storefrontCatalogQuerySchema } from "@/modules/products/storefront-cata
 import { getGeneralStoreSettings } from "@/modules/settings/general-settings";
 import type { Metadata } from "next";
 
-type ProductSearchParams = { category?: string; page?: string; sortby?: string; MinPrice?: string; MaxPrice?: string };
+type ProductSearchParams = { q?: string; category?: string; page?: string; sortby?: string; MinPrice?: string; MaxPrice?: string };
 
 export const dynamic = "force-dynamic";
 export async function generateMetadata(): Promise<Metadata> {
@@ -41,7 +41,8 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
 
   function productsHref(overrides: Partial<ProductSearchParams>) {
     const next = new URLSearchParams();
-    const values = { category: query.category, sortby: query.sortby, MinPrice: query.MinPrice?.toString(), MaxPrice: query.MaxPrice?.toString(), ...overrides };
+    const values = { q: query.q, category: query.category, sortby: query.sortby, MinPrice: query.MinPrice?.toString(), MaxPrice: query.MaxPrice?.toString(), ...overrides };
+    if (values.q) next.set("q", values.q);
     if (values.category) next.set("category", values.category);
     if (values.sortby) next.set("sortby", values.sortby);
     if (values.MinPrice) next.set("MinPrice", values.MinPrice);
@@ -55,9 +56,9 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
       {/* Catalog hero */}
       <section className="bg-[linear-gradient(135deg,#eee1d3,#f8f3ed_50%,#dfe6e2)] px-5 py-14 text-center sm:py-[76px]">
         <div className="mx-auto w-full max-w-[1240px]">
-          <span className="text-[var(--brand-accent)] text-[0.8rem]">{selectedCategory ? "دسته‌بندی محصولات" : `کالکشن ${settings.storeName}`}</span>
-          <h1 className="mt-[5px] mb-0 text-[clamp(2.5rem,5vw,4.5rem)] font-medium">{selectedCategory?.name ?? (settings.industry === "GOLD" ? "طلا برای هر لحظه" : "محصولاتی برای انتخاب شما")}</h1>
-          <p className="m-0 text-[#747982]">{selectedCategory?.description ?? (settings.industry === "GOLD" ? "مجموعه‌ای از طراحی‌های مینیمال و ماندگار با قیمت‌گذاری شفاف." : "مجموعه محصولات فروشگاه با اطلاعات روشن و خرید مطمئن.")}</p>
+          <span className="text-[var(--brand-accent)] text-[0.8rem]">{query.q ? "نتایج جست‌وجو" : selectedCategory ? "دسته‌بندی محصولات" : `کالکشن ${settings.storeName}`}</span>
+          <h1 className="mt-[5px] mb-0 text-[clamp(2.5rem,5vw,4.5rem)] font-medium">{query.q ? `«${query.q}»` : selectedCategory?.name ?? (settings.industry === "GOLD" ? "طلا برای هر لحظه" : "محصولاتی برای انتخاب شما")}</h1>
+          <p className="m-0 text-[#747982]">{query.q ? `${catalog.pagination.totalItems.toLocaleString("fa-IR")} محصول مرتبط پیدا شد.` : selectedCategory?.description ?? (settings.industry === "GOLD" ? "مجموعه‌ای از طراحی‌های مینیمال و ماندگار با قیمت‌گذاری شفاف." : "مجموعه محصولات فروشگاه با اطلاعات روشن و خرید مطمئن.")}</p>
           {settings.industry === "GOLD" && <div className="mt-5 text-[0.78rem]">
             نرخ امروز: <strong className="text-[var(--brand-primary)] text-[0.95rem]">
               {rate === null ? "موقتاً در دسترس نیست" : formatMoney(rate, settings.currency)}

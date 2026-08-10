@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { Bell, Headphones, Home, LayoutDashboard, Menu, Search, ShoppingCart, UserRound } from "lucide-react";
+import { Bell, Headphones, Home, LayoutDashboard, Menu, ShoppingCart, UserRound } from "lucide-react";
 import type { User } from "@generated/prisma/client";
 import { db } from "@/lib/db";
 import { normalizeNumericValue } from "@/lib/persian-numbers";
@@ -8,6 +8,7 @@ import type { BrandSettings } from "@/modules/settings/brand-settings";
 import type { GeneralStoreSettingsInput } from "@/modules/settings/general-settings";
 import type { HomepageMenuItem } from "@/modules/settings/homepage-settings";
 import { GeneralHeaderMenuRow } from "@/storefront/general/header-menu-row";
+import { StorefrontSearch } from "@/components/storefront-search";
 
 type Props = { settings: GeneralStoreSettingsInput; brand: BrandSettings; user: User | null; menuItems: HomepageMenuItem[] };
 
@@ -34,14 +35,11 @@ export async function GeneralHeader({ settings, brand, user, menuItems }: Props)
       <div className="relative flex h-14 items-center justify-center px-4 lg:hidden">
         <Link href="/products" className="absolute right-4" aria-label="منوی محصولات"><Menu size={23} /></Link>
         <Link href="/" aria-label={`${settings.storeName}، صفحه اصلی`}>{logo}</Link>
-        <Link href="/products" className="absolute left-4" aria-label="جستجوی محصولات"><Search size={22} /></Link>
+        <StorefrontSearch className="absolute left-4" />
       </div>
       <div className="hidden h-[72px] grid-cols-[auto_minmax(320px,500px)_1fr] items-center gap-8 px-10 lg:grid">
         <Link href="/" aria-label={`${settings.storeName}، صفحه اصلی`}>{logo}</Link>
-        <Link href="/products" aria-label="جست‌وجوی محصولات" className="flex h-11 items-center gap-3 rounded-xl bg-slate-100 px-4 text-xs text-slate-400 transition hover:bg-slate-200/70 hover:text-slate-600">
-          <Search className="mr-auto" size={19} />
-          جست‌وجو در کالاها
-        </Link>
+        <StorefrontSearch variant="field" />
         <div className="mr-auto flex items-center gap-1 text-[#323741]">
           <Link href={accountHref} aria-label="اعلان‌ها" className="grid size-10 place-items-center rounded-lg transition hover:bg-slate-100"><Bell size={20} strokeWidth={1.7} /></Link>
           <Link href={accountHref} aria-label="حساب کاربری" className="grid size-10 place-items-center rounded-lg transition hover:bg-slate-100"><UserRound size={21} strokeWidth={1.7} /></Link>
