@@ -61,7 +61,7 @@ async function clearDevelopmentData(db: PrismaClient) {
 }
 
 function homepageSections() {
-  return ["HERO", "PROMISES", "PRODUCTS", "ABOUT", "CONCIERGE"].map((id) => ({ id, enabled: true }));
+  return ["HERO", "CATEGORIES", "PROMISES", "PRODUCTS", "ABOUT", "CONCIERGE"].map((id) => ({ id, enabled: true }));
 }
 
 function emptyTreasureCards() {

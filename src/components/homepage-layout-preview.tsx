@@ -10,6 +10,7 @@ type PreviewMode = "desktop" | "mobile";
 
 const sectionNames: Partial<Record<HomepageLayoutItemId, string>> = {
   HERO: "اسلایدر",
+  CATEGORIES: "دسته‌بندی‌های دایره‌ای",
   FEATURED_PRODUCTS: "شگفت‌انگیزها",
   POPULAR_PRODUCTS: "محبوب‌ترین‌ها",
   LATEST_PRODUCTS: "جدیدترین‌ها",
@@ -69,6 +70,7 @@ function ProductShapes({ count = 4 }: { count?: number }) {
 
 function PreviewSection({ id, mode, heroUrl }: { id: HomepageSectionId; mode: PreviewMode; heroUrl: string | null }) {
   if (id === "HERO") return <section className={`relative overflow-hidden rounded-md bg-slate-300 ${mode === "mobile" ? "aspect-[4/3]" : "aspect-[3.2/1]"}`}>{heroUrl && <Image src={heroUrl} alt="پیش‌نمایش اسلایدر" fill sizes="420px" className="object-cover" />}<span className="absolute inset-0 bg-gradient-to-l from-black/30 to-transparent" /><span className="absolute right-2 top-1/2 grid -translate-y-1/2 gap-1"><i className="h-2 w-16 rounded-full bg-white/90" /><i className="h-1 w-20 rounded-full bg-white/60" /><i className="h-3 w-9 rounded bg-[var(--accent)]" /></span></section>;
+  if (id === "CATEGORIES") return <PreviewBlock label={sectionNames[id]!}><div className={`grid gap-1 ${mode === "mobile" ? "grid-cols-5" : "grid-cols-8"}`}>{Array.from({ length: mode === "mobile" ? 5 : 8 }, (_, index) => <span key={index} className="grid justify-items-center gap-0.5"><i className="aspect-square w-full rounded-full bg-slate-200" /><i className="h-1 w-3/4 rounded-full bg-slate-200" /></span>)}</div></PreviewBlock>;
   if (id === "FEATURED_PRODUCTS") return <PreviewBlock label={sectionNames[id]!} tone="bg-rose-100"><ProductShapes count={4} /></PreviewBlock>;
   if (id === "POPULAR_PRODUCTS" || id === "LATEST_PRODUCTS") return <PreviewBlock label={sectionNames[id]!}><ProductShapes count={4} /></PreviewBlock>;
   if (id === "ABOUT") return <PreviewBlock label={sectionNames[id]!}><div className="grid grid-cols-2 gap-1"><span className="h-10 rounded bg-amber-100" /><span className="h-10 rounded bg-slate-200" /></div></PreviewBlock>;

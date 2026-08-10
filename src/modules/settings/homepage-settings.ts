@@ -2,7 +2,7 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { STORE_SETTING_ID } from "@/modules/settings/store-settings";
 
-export const homepageSectionIds = ["HERO", "FEATURED_PRODUCTS", "POPULAR_PRODUCTS", "LATEST_PRODUCTS", "ABOUT", "PROMISES", "CONCIERGE"] as const;
+export const homepageSectionIds = ["HERO", "CATEGORIES", "FEATURED_PRODUCTS", "POPULAR_PRODUCTS", "LATEST_PRODUCTS", "ABOUT", "PROMISES", "CONCIERGE"] as const;
 export type HomepageSectionId = (typeof homepageSectionIds)[number];
 export type HomepageLayoutItemId = HomepageSectionId | `TILE_GROUP:${string}`;
 export const homepageTileLayouts = ["TWO_COLUMNS", "THREE_COLUMNS", "FOUR_COLUMNS", "TWO_BY_TWO"] as const;
@@ -104,7 +104,7 @@ const storedHeroSlidesSchema = z.array(heroSlideSchema.extend({ href: safeHrefSc
 
 function homepageBaseSectionIds(industry: "GOLD" | "GENERAL"): HomepageSectionId[] {
   return industry === "GENERAL"
-    ? ["HERO", "FEATURED_PRODUCTS", "ABOUT", "POPULAR_PRODUCTS", "LATEST_PRODUCTS", "PROMISES", "CONCIERGE"]
+    ? ["HERO", "CATEGORIES", "FEATURED_PRODUCTS", "POPULAR_PRODUCTS", "LATEST_PRODUCTS"]
     : ["HERO", "LATEST_PRODUCTS", "ABOUT", "PROMISES", "CONCIERGE"];
 }
 
