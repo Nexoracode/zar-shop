@@ -27,11 +27,12 @@ export function StorefrontSearch({ variant = "icon", className = "" }: { variant
   function openSearch() {
     const triggerRect = triggerRef.current?.getBoundingClientRect();
     const viewportWidth = window.innerWidth;
-    const panelWidth = variant === "field" && triggerRect ? triggerRect.width : Math.min(540, viewportWidth - 16);
-    const panelTop = Math.max(8, triggerRect?.top ?? 8);
-    const preferredLeft = variant === "field" && triggerRect ? triggerRect.left : 8;
-    const panelLeft = Math.max(8, Math.min(preferredLeft, viewportWidth - panelWidth - 8));
-    setPanelStyle({ position: "fixed", top: panelTop, left: panelLeft, width: panelWidth, maxHeight: `calc(100dvh - ${panelTop + 8}px)` });
+    const fieldPanelPadding = variant === "field" ? 8 : 0;
+    const panelWidth = variant === "field" && triggerRect ? Math.min(triggerRect.width + (fieldPanelPadding * 2), viewportWidth - 8) : Math.min(540, viewportWidth - 16);
+    const panelTop = Math.max(4, (triggerRect?.top ?? 8) - fieldPanelPadding);
+    const preferredLeft = variant === "field" && triggerRect ? triggerRect.left - fieldPanelPadding : 8;
+    const panelLeft = Math.max(4, Math.min(preferredLeft, viewportWidth - panelWidth - 4));
+    setPanelStyle({ position: "fixed", top: panelTop, left: panelLeft, width: panelWidth, maxHeight: `calc(100dvh - ${panelTop + 4}px)` });
     try {
       const stored = JSON.parse(window.localStorage.getItem(recentStorageKey) ?? "[]");
       setRecent(Array.isArray(stored) ? stored.filter((item): item is string => typeof item === "string").slice(0, 8) : []);
@@ -99,12 +100,12 @@ export function StorefrontSearch({ variant = "icon", className = "" }: { variant
 
     <Modal.Backdrop isOpen={open} onOpenChange={setOpen} className="z-[100] !bg-black/10 !backdrop-blur-none">
       <Modal.Container size="lg" placement="center" className="p-0">
-        <Modal.Dialog style={panelStyle} aria-label="جستجوی محصولات" dir="rtl" className="m-0 max-w-none origin-top overflow-hidden rounded-[26px] border border-white/80 bg-white shadow-2xl">
-          <Modal.Header className="block border-b border-slate-100 p-2.5">
+        <Modal.Dialog style={panelStyle} aria-label="جستجوی محصولات" dir="rtl" className="m-0 max-w-none origin-top overflow-hidden rounded-[24px] bg-white p-0 shadow-2xl">
+          <Modal.Header className="block p-2">
             <form onSubmit={(event: FormEvent<HTMLFormElement>) => { event.preventDefault(); searchAll(); }} className="relative">
-              <Search className="pointer-events-none absolute right-4 top-1/2 z-10 -translate-y-1/2 text-slate-400" size={20} />
-              <Input autoFocus value={query} onChange={(event) => setQuery(event.target.value)} aria-label="عبارت جستجو" placeholder="جستجو در همه کالاها" variant="secondary" className="min-h-12 w-full rounded-full border-0 bg-[#f1f1f3] pr-11 pl-12 text-sm text-slate-700 outline-none ring-0 placeholder:text-slate-400" />
-              <Button type="button" isIconOnly variant="ghost" aria-label={query ? "پاک‌کردن عبارت" : "بستن جستجو"} onPress={() => query ? setQuery("") : setOpen(false)} className="absolute left-2 top-1/2 z-20 size-9 min-h-9 min-w-9 -translate-y-1/2 rounded-full text-slate-400 hover:bg-white/80 hover:text-slate-700"><X size={19} /></Button>
+              <Search className="pointer-events-none absolute right-4 top-1/2 z-10 -translate-y-1/2 text-slate-400" size={19} />
+              <Input autoFocus value={query} onChange={(event) => setQuery(event.target.value)} aria-label="عبارت جستجو" placeholder="جستجو در همه کالاها" variant="secondary" className={`h-11 min-h-11 w-full rounded-xl border-0 bg-slate-100 pr-11 text-xs font-normal text-slate-700 outline-none ring-0 placeholder:text-slate-400 ${query ? "pl-11" : "pl-4"}`} />
+              {query && <Button type="button" isIconOnly variant="ghost" aria-label="پاک‌کردن عبارت" onPress={() => setQuery("")} className="absolute left-1 top-1/2 z-20 size-9 min-h-9 min-w-9 -translate-y-1/2 rounded-lg text-slate-400 hover:bg-white/80 hover:text-slate-700"><X size={18} /></Button>}
             </form>
           </Modal.Header>
 
