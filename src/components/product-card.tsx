@@ -41,7 +41,7 @@ export function ProductCard({ href, name, category, industry, weight, purity, ma
   const imageBackground = industry === "GENERAL" ? generalImageBackgrounds[Math.abs(imageTone) % generalImageBackgrounds.length] : galleryImageBackgrounds[Math.abs(imageTone) % galleryImageBackgrounds.length];
   return (
     <Link
-      className={`group min-w-0 bg-white transition-all duration-[250ms] ease-out ${isGallery ? "block" : "hover:-translate-y-[5px] hover:shadow-[0_18px_42px_rgba(23,35,59,0.09)]"}`}
+      className={`group min-w-0 bg-white transition-all duration-[250ms] ease-out ${isGallery ? "block h-full" : "hover:-translate-y-[5px] hover:shadow-[0_18px_42px_rgba(23,35,59,0.09)]"}`}
       href={href}
     >
       {/* Media */}
@@ -68,9 +68,9 @@ export function ProductCard({ href, name, category, industry, weight, purity, ma
       {/* Content */}
       <div className={`px-1 pb-4 sm:pb-5 ${isGallery ? "pt-2 text-right" : "px-2.5 pt-2.5 text-center sm:px-[15px] sm:pt-[17px]"}`}>
         {!isGallery && <span className="text-[0.7rem] text-[#747982]">{industry === "GOLD" ? `${category} · ${weight} گرم` : category}</span>}
-        <h3 className={`font-medium ${isGallery ? `mb-1 mt-0 line-clamp-2 min-h-10 text-[0.76rem] leading-5 sm:text-[0.82rem] ${industry === "GENERAL" ? "text-slate-700" : ""}` : "mb-[7px] mt-[5px] min-h-8 text-[0.82rem] sm:text-[0.95rem]"}`}>{name}</h3>
-        <div className={isGallery ? "flex min-h-9 flex-col items-start gap-0.5" : ""}>
-          {originalPrice && <span className={`${isGallery ? "block" : "ml-2"} text-[0.7rem] text-slate-400 line-through`}>{originalPrice}</span>}
+        <h3 className={`font-medium ${isGallery ? `mb-1 mt-0 line-clamp-2 h-10 overflow-hidden text-[0.76rem] leading-5 sm:text-[0.82rem] ${industry === "GENERAL" ? "text-slate-700" : ""}` : "mb-[7px] mt-[5px] min-h-8 text-[0.82rem] sm:text-[0.95rem]"}`}>{name}</h3>
+        <div className={isGallery ? "grid min-h-9 grid-rows-[1rem_1.125rem] content-start justify-items-start gap-0.5" : ""}>
+          {originalPrice ? <span className={`${isGallery ? "block" : "ml-2"} text-[0.7rem] text-slate-400 line-through`}>{originalPrice}</span> : isGallery ? <span aria-hidden="true" className="invisible block text-[0.7rem]">بدون تخفیف</span> : null}
           <strong className={`${isGallery ? "block text-[0.72rem]" : "text-[0.76rem] sm:text-[0.92rem]"} text-[var(--brand-primary)]`}>{price}</strong>
         </div>
       </div>
