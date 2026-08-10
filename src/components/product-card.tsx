@@ -69,8 +69,10 @@ export function ProductCard({ href, name, category, industry, weight, purity, ma
       <div className={`px-1 pb-4 sm:pb-5 ${isGallery ? "pt-2 text-right" : "px-2.5 pt-2.5 text-center sm:px-[15px] sm:pt-[17px]"}`}>
         {!isGallery && <span className="text-[0.7rem] text-[#747982]">{industry === "GOLD" ? `${category} · ${weight} گرم` : category}</span>}
         <h3 className={`font-medium ${isGallery ? `mb-1 mt-0 line-clamp-2 min-h-10 text-[0.76rem] leading-5 sm:text-[0.82rem] ${industry === "GENERAL" ? "text-slate-700" : ""}` : "mb-[7px] mt-[5px] min-h-8 text-[0.82rem] sm:text-[0.95rem]"}`}>{name}</h3>
-        {originalPrice && <span className="ml-2 text-[0.7rem] text-slate-400 line-through">{originalPrice}</span>}
-        <strong className={`${isGallery ? "text-[0.72rem]" : "text-[0.76rem] sm:text-[0.92rem]"} text-[var(--brand-primary)]`}>{price}</strong>
+        <div className={isGallery ? "flex min-h-9 flex-col items-start gap-0.5" : ""}>
+          {originalPrice && <span className={`${isGallery ? "block" : "ml-2"} text-[0.7rem] text-slate-400 line-through`}>{originalPrice}</span>}
+          <strong className={`${isGallery ? "block text-[0.72rem]" : "text-[0.76rem] sm:text-[0.92rem]"} text-[var(--brand-primary)]`}>{price}</strong>
+        </div>
       </div>
     </Link>
   );
