@@ -58,7 +58,7 @@ export default async function AuditLogsPage({ searchParams }: { searchParams: Se
           const kind = auditActionKind(log.action);
           return <TableRow id={log.id} key={log.id} className="transition hover:bg-slate-50/60">
             <TableCell className={`${cell} w-16 font-bold text-slate-400`}>{(pagination.skip + index + 1).toLocaleString("fa-IR")}</TableCell>
-            <TableCell className={`${cell} w-56 max-w-56`}><div className="min-w-0"><TruncatedTextTooltip text={auditActorName(log.actor)} className="max-w-48 font-bold text-slate-700" /><TruncatedTextTooltip text={log.actor ? log.actor.phone ?? "شماره همراه ثبت نشده" : "رویداد خودکار سیستم"} dir="ltr" className="max-w-48 text-right text-[11px] text-slate-400" /></div></TableCell>
+            <TableCell className={`${cell} w-56 max-w-56`}><div className="grid min-w-0 gap-1"><TruncatedTextTooltip text={auditActorName(log.actor)} className="max-w-48 font-bold text-slate-700" /><TruncatedTextTooltip text={log.actor ? log.actor.phone ?? "شماره همراه ثبت نشده" : "رویداد خودکار سیستم"} dir="ltr" className="max-w-48 text-right text-[11px] text-slate-400" /></div></TableCell>
             <TableCell className={`${cell} w-60 max-w-60`}><TruncatedTextTooltip text={auditActionLabel(log.action)} className="max-w-52 font-bold text-[#17233b]" /></TableCell>
             <TableCell className={cell}><AdminStatusBadge tone={kindTones[kind]}>{kindLabels[kind]}</AdminStatusBadge></TableCell>
             <TableCell className={`${cell} w-52 max-w-52`}><strong className="block text-xs text-slate-700">{auditEntityLabel(log.entityType)}</strong><TruncatedTextTooltip text={log.entityId ?? "بدون شناسه"} dir="ltr" className="mt-1 max-w-44 text-right font-mono text-[10px] text-slate-400" /></TableCell>
