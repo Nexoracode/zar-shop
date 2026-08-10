@@ -6,6 +6,7 @@ import { HomepageProductFeed } from "@/components/homepage-product-feed";
 import { StorefrontHeroSlider } from "@/components/storefront-hero-slider";
 import { StorefrontFaqAccordion } from "@/components/storefront-faq-accordion";
 import { StorefrontLicenses } from "@/components/storefront-licenses";
+import { StorefrontImageTiles } from "@/components/storefront-image-tiles";
 import { db } from "@/lib/db";
 import { getStorefrontProductFeed } from "@/modules/products/storefront-feed";
 import { getContentSettings } from "@/modules/settings/content-settings";
@@ -33,8 +34,10 @@ export async function GoldHome() {
   const categories = homepageCategories;
   const heroSlides = buildStorefrontHeroSlides(homepage, "/images/zar-hero-campaign.png");
   const activeFaqs = contentSettings.faqs.filter((faq) => faq.enabled);
+  const hasImageTiles = homepage.tileGroups.some((group) => group.tiles.some((tile) => tile.media));
   const sectionState = new Map(homepage.sections.map((section) => [section.id, section.enabled]));
-  const sectionProps = (id: HomepageSectionId) => ({ hidden: sectionState.get(id) === false });
+  const sectionOrder = new Map(homepage.sections.map((section, index) => [section.id, index]));
+  const sectionProps = (id: HomepageSectionId) => ({ hidden: sectionState.get(id) === false, style: { order: sectionOrder.get(id) ?? homepage.sections.length } });
   const categoryImage = (category: HomeCategory | undefined) => category?.image?.type === "IMAGE" ? category.image.url : "/images/zar-hero-campaign.png";
   const treasureItems: Array<{ id: HomepageTreasureCardId; title: string; subtitle: string; query: string }> = [
     { id: "UNDER_20", title: "کمتر از ۲۰ میلیون تومان", subtitle: "محصولات مینیمال", query: "sortby=newest&MaxPrice=20000000" },
@@ -48,6 +51,10 @@ export async function GoldHome() {
     <section {...sectionProps("HERO")} className="bg-white">
       <StorefrontHeroSlider slides={heroSlides} contentMode={homepage.heroContentMode} title={homepage.heroTitle} description={homepage.heroDescription} buttonLabel={homepage.heroButtonLabel} />
     </section>
+
+    {hasImageTiles && <section {...sectionProps("TILES")} className="bg-white py-5 lg:py-10" aria-label="پیشنهادهای تصویری">
+      <div className={container}><StorefrontImageTiles groups={homepage.tileGroups} /></div>
+    </section>}
 
     {categories.length > 0 && <section {...sectionProps("CATEGORIES")} className="bg-white py-5 lg:py-[60px]" aria-label="دسته‌بندی محصولات">
       <div className={`${container} grid grid-cols-1 gap-4 lg:grid-cols-5`}>

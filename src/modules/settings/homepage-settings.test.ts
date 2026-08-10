@@ -100,6 +100,31 @@ test("homepage settings reject an unsafe per-slide link", () => {
   assert.equal(homepageSettingsInputSchema.safeParse({ ...homepageSettingsDefaults, heroSlides }).success, false);
 });
 
+test("homepage settings accept ordered tile groups with every supported layout", () => {
+  const tileGroups = ["TWO_COLUMNS", "THREE_COLUMNS", "FOUR_COLUMNS", "TWO_BY_TWO"].map((layout, groupIndex) => ({
+    id: `group-${groupIndex}`,
+    layout,
+    tiles: Array.from({ length: groupIndex + 2 }, (_, tileIndex) => ({
+      id: `tile-${groupIndex}-${tileIndex}`,
+      mediaId: `media-${groupIndex}-${tileIndex}`,
+      href: `/campaign/${groupIndex}/${tileIndex}`,
+    })),
+  }));
+  const parsed = homepageSettingsInputSchema.parse({ ...homepageSettingsDefaults, tileGroups });
+  assert.equal(parsed.tileGroups[3].layout, "TWO_BY_TWO");
+  assert.equal(parsed.tileGroups[0].tiles[1].href, "/campaign/0/1");
+});
+
+test("homepage settings reject duplicate tile identifiers and unsafe tile links", () => {
+  const duplicatedTiles = [{ id: "group", layout: "TWO_COLUMNS", tiles: [
+    { id: "same", mediaId: "media-1", href: "/one" },
+    { id: "same", mediaId: "media-2", href: "/two" },
+  ] }];
+  assert.equal(homepageSettingsInputSchema.safeParse({ ...homepageSettingsDefaults, tileGroups: duplicatedTiles }).success, false);
+  const unsafeLink = [{ id: "group", layout: "FOUR_COLUMNS", tiles: [{ id: "tile", mediaId: "media", href: "javascript:alert(1)" }] }];
+  assert.equal(homepageSettingsInputSchema.safeParse({ ...homepageSettingsDefaults, tileGroups: unsafeLink }).success, false);
+});
+
 test("homepage overview and hero settings can be updated independently", () => {
   const overview = homepageOverviewSettingsInputSchema.parse(homepageSettingsDefaults);
   const hero = homepageHeroSettingsInputSchema.parse(homepageSettingsDefaults);

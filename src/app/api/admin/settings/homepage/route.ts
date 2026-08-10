@@ -32,6 +32,7 @@ export async function PATCH(request: Request) {
       input.promoMobileMediaId,
       ...input.treasureCards.map((card) => card.mediaId),
       ...input.licenses.map((license) => license.mediaId),
+      ...input.tileGroups.flatMap((group) => group.tiles.map((tile) => tile.mediaId)),
     ].filter((id): id is string => Boolean(id)))];
     if (mediaIds.length) {
       const media = await db.mediaAsset.findMany({ where: { id: { in: mediaIds }, scope: "HOMEPAGE", type: "IMAGE" }, select: { id: true } });
@@ -39,7 +40,7 @@ export async function PATCH(request: Request) {
     }
 
     const industry = await getStoreIndustry();
-    const { sections, treasureCards, licenses, ...homepageFields } = input;
+    const { sections, tileGroups, treasureCards, licenses, ...homepageFields } = input;
     const generalHomepageSettings = industry === "GENERAL"
       ? homepageSettingsInputSchema.parse({ ...homepageSettingsToInput(await getHomepageSettings()), ...input })
       : null;
@@ -53,8 +54,8 @@ export async function PATCH(request: Request) {
       } else {
         await transaction.storeSetting.upsert({
           where: { id: STORE_SETTING_ID },
-          create: { id: STORE_SETTING_ID, ...homepageFields, homepageSections: sections, homepageTreasureCards: treasureCards, homepageLicenses: licenses },
-          update: { ...homepageFields, homepageSections: sections, homepageTreasureCards: treasureCards, homepageLicenses: licenses },
+          create: { id: STORE_SETTING_ID, ...homepageFields, homepageSections: sections, homepageTileGroups: tileGroups, homepageTreasureCards: treasureCards, homepageLicenses: licenses },
+          update: { ...homepageFields, homepageSections: sections, homepageTileGroups: tileGroups, homepageTreasureCards: treasureCards, homepageLicenses: licenses },
         });
       }
       await transaction.auditLog.create({
@@ -63,7 +64,7 @@ export async function PATCH(request: Request) {
           action: "HOMEPAGE_SETTINGS_UPDATE",
           entityType: "StoreSetting",
           entityId: STORE_SETTING_ID,
-          ...auditRequestContext(request, { sectionOrder: input.sections.map((section) => section.id), menuCategoryIds: input.menuCategoryIds, treasureMediaIds: treasureCards.map((card) => card.mediaId), licenseMediaIds: licenses.map((license) => license.mediaId) }),
+          ...auditRequestContext(request, { sectionOrder: input.sections.map((section) => section.id), menuCategoryIds: input.menuCategoryIds, tileGroups: tileGroups.map((group) => ({ id: group.id, layout: group.layout, tiles: group.tiles.map((tile) => ({ id: tile.id, mediaId: tile.mediaId, href: tile.href })) })), treasureMediaIds: treasureCards.map((card) => card.mediaId), licenseMediaIds: licenses.map((license) => license.mediaId) }),
         },
       });
     });

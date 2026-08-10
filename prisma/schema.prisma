@@ -254,6 +254,7 @@ model StoreSetting {
   homepageSections     Json?
   menuCategoryIds      Json?
   homepageTreasureCards Json?
+  homepageTileGroups    Json?
   homepageHeroSlides   Json?
   homepageLicenses     Json?
   generalHomepageSettings Json?

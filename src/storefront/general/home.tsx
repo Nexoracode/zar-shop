@@ -7,6 +7,7 @@ import { HomepageProductFeed } from "@/components/homepage-product-feed";
 import { ProductCard } from "@/components/product-card";
 import { StorefrontFaqAccordion } from "@/components/storefront-faq-accordion";
 import { StorefrontHeroSlider } from "@/components/storefront-hero-slider";
+import { StorefrontImageTiles } from "@/components/storefront-image-tiles";
 import { ViewAllProductCard } from "@/components/view-all-product-card";
 import { db } from "@/lib/db";
 import type { StorefrontProductCardItem } from "@/modules/products/storefront-feed-contract";
@@ -58,14 +59,18 @@ export async function GeneralHome() {
 
   const heroSlides = buildStorefrontHeroSlides(homepage, "/images/zar-hero-campaign.png");
   const activeFaqs = content.faqs.filter((faq) => faq.enabled);
+  const hasImageTiles = homepage.tileGroups.some((group) => group.tiles.some((tile) => tile.media));
   const sectionState = new Map(homepage.sections.map((section) => [section.id, section.enabled]));
-  const sectionProps = (id: HomepageSectionId) => ({ hidden: sectionState.get(id) === false });
+  const sectionOrder = new Map(homepage.sections.map((section, index) => [section.id, index]));
+  const sectionProps = (id: HomepageSectionId) => ({ hidden: sectionState.get(id) === false, style: { order: sectionOrder.get(id) ?? homepage.sections.length } });
   const discountedProducts = latestFeed.items.filter((product) => product.originalPrice);
   const promoMedia = homepage.treasureCards.map((card) => card.media);
   const promoCategories = categories.slice(0, 4);
 
   return <main className="flex flex-col gap-4 overflow-hidden bg-[#f4f5f7] pb-[78px] pt-3 lg:gap-6 lg:pb-8">
     <section {...sectionProps("HERO")} className="bg-white"><StorefrontHeroSlider slides={heroSlides} contentMode={homepage.heroContentMode} title={homepage.heroTitle} description={homepage.heroDescription} buttonLabel={homepage.heroButtonLabel} /></section>
+
+    {hasImageTiles && <section {...sectionProps("TILES")} className={container} aria-label="پیشنهادهای تصویری"><StorefrontImageTiles groups={homepage.tileGroups} /></section>}
 
     {categories.length > 0 && <section {...sectionProps("CATEGORIES")} className={`${container} rounded-2xl bg-white px-3 py-6 sm:px-6 lg:py-8`} aria-label="دسته‌بندی محصولات">
       <div className="mb-6 flex items-center justify-between"><h2 className="m-0 text-lg font-black text-[#232934] sm:text-xl">خرید بر اساس دسته‌بندی</h2><Link href="/products" className="inline-flex items-center gap-1 text-xs font-bold text-[var(--brand-primary)]">همه کالاها<ChevronLeft size={15} /></Link></div>
@@ -100,7 +105,7 @@ export async function GeneralHome() {
       { icon: Headphones, title: "پشتیبانی فروشگاه", text: settings.supportPhone || "همراه شما تا تحویل سفارش" },
     ].map(({ icon: Icon, title, text }) => <div key={title} className="flex items-center gap-3 rounded-xl bg-[#f8f9fa] px-4 py-4"><span className="grid size-11 shrink-0 place-items-center rounded-xl bg-white text-[var(--brand-primary)] shadow-sm"><Icon size={20} /></span><span className="min-w-0"><strong className="block text-sm text-[#303641]">{title}</strong><small className="mt-1 block truncate text-[11px] text-[#858b95]">{text}</small></span></div>)}</div></section>
 
-    <section className={`${container} overflow-hidden rounded-2xl bg-[var(--brand-primary)] px-6 py-8 text-[var(--brand-primary-foreground)] sm:px-9 lg:grid lg:grid-cols-[1fr_auto] lg:items-center lg:px-12`}><div><span className="text-xs font-bold opacity-70">فروشگاه آنلاین {settings.storeName}</span><h2 className="mb-3 mt-2 text-2xl font-black sm:text-3xl">هر چیزی که نیاز داری، یک‌جا پیدا کن</h2><p className="m-0 max-w-2xl text-sm leading-8 opacity-80">از کالاهای دیجیتال تا خانه، پوشاک، زیبایی و ورزش؛ محصولات را با قیمت شفاف و موجودی به‌روز مقایسه و انتخاب کنید.</p></div><Link href="/products" className="mt-5 inline-flex min-h-12 items-center justify-center rounded-xl bg-white px-7 text-sm font-bold text-[var(--brand-primary)] lg:mt-0">شروع خرید</Link></section>
+    <section style={{ order: homepage.sections.length }} className={`${container} overflow-hidden rounded-2xl bg-[var(--brand-primary)] px-6 py-8 text-[var(--brand-primary-foreground)] sm:px-9 lg:grid lg:grid-cols-[1fr_auto] lg:items-center lg:px-12`}><div><span className="text-xs font-bold opacity-70">فروشگاه آنلاین {settings.storeName}</span><h2 className="mb-3 mt-2 text-2xl font-black sm:text-3xl">هر چیزی که نیاز داری، یک‌جا پیدا کن</h2><p className="m-0 max-w-2xl text-sm leading-8 opacity-80">از کالاهای دیجیتال تا خانه، پوشاک، زیبایی و ورزش؛ محصولات را با قیمت شفاف و موجودی به‌روز مقایسه و انتخاب کنید.</p></div><Link href="/products" className="mt-5 inline-flex min-h-12 items-center justify-center rounded-xl bg-white px-7 text-sm font-bold text-[var(--brand-primary)] lg:mt-0">شروع خرید</Link></section>
 
     {activeFaqs.length > 0 && <section {...sectionProps("CONCIERGE")} id="faq" className={`${container} rounded-2xl bg-white px-4 py-10 sm:px-8 lg:px-12 lg:py-14`}><div className="mx-auto mb-8 max-w-xl text-center"><span className="text-xs font-bold text-[var(--brand-primary)]">راهنمای خرید</span><h2 className="mb-3 mt-2 text-2xl font-black text-[#232934] sm:text-3xl">سوالات متداول</h2><p className="m-0 text-sm leading-8 text-[#777]">پاسخ پرسش‌های پرتکرار درباره سفارش، پرداخت و تحویل.</p></div><StorefrontFaqAccordion faqs={activeFaqs} /></section>}
   </main>;

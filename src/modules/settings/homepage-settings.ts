@@ -2,8 +2,10 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { STORE_SETTING_ID } from "@/modules/settings/store-settings";
 
-export const homepageSectionIds = ["HERO", "PROMISES", "CATEGORIES", "PRODUCTS", "ABOUT", "CONCIERGE"] as const;
+export const homepageSectionIds = ["HERO", "TILES", "PROMISES", "CATEGORIES", "PRODUCTS", "ABOUT", "CONCIERGE"] as const;
 export type HomepageSectionId = (typeof homepageSectionIds)[number];
+export const homepageTileLayouts = ["TWO_COLUMNS", "THREE_COLUMNS", "FOUR_COLUMNS", "TWO_BY_TWO"] as const;
+export type HomepageTileLayout = (typeof homepageTileLayouts)[number];
 export const homepageTreasureCardIds = ["UNDER_20", "FROM_20_TO_60", "FROM_60_TO_100", "OVER_100"] as const;
 export type HomepageTreasureCardId = (typeof homepageTreasureCardIds)[number];
 export const homepageLicenseIds = ["SALES", "ONLINE", "ENAMAD"] as const;
@@ -37,6 +39,26 @@ const safeHrefSchema = z.string().trim().min(1).max(500).refine(
 );
 const optionalSafeHrefSchema = z.union([z.null(), z.literal(""), safeHrefSchema]).transform((value) => value || null);
 
+const homepageTileSchema = z.object({
+  id: z.string().trim().min(1).max(80),
+  mediaId: z.string().trim().min(1).nullable(),
+  href: safeHrefSchema,
+});
+
+const homepageTileGroupSchema = z.object({
+  id: z.string().trim().min(1).max(80),
+  layout: z.enum(homepageTileLayouts),
+  tiles: z.array(homepageTileSchema).max(24).refine(
+    (tiles) => new Set(tiles.map((tile) => tile.id)).size === tiles.length,
+    "شناسه تایل‌های هر ردیف نباید تکراری باشد.",
+  ),
+});
+
+const homepageTileGroupsSchema = z.array(homepageTileGroupSchema).max(12).refine(
+  (groups) => new Set(groups.map((group) => group.id)).size === groups.length,
+  "شناسه ردیف‌های تایل نباید تکراری باشد.",
+);
+
 const homepageLicenseSchema = z.object({
   id: z.enum(homepageLicenseIds),
   mediaId: z.string().trim().min(1).nullable(),
@@ -67,6 +89,16 @@ const storedHeroSlidesSchema = z.array(heroSlideSchema.extend({ href: safeHrefSc
   "شناسه اسلایدها نباید تکراری باشد.",
 );
 
+function normalizeStoredSections(value: unknown) {
+  const parsed = z.array(sectionSchema).max(homepageSectionIds.length).safeParse(value);
+  const stored = parsed.success ? parsed.data : [];
+  const unique = stored.filter((section, index) => stored.findIndex((item) => item.id === section.id) === index);
+  return [
+    ...unique,
+    ...homepageSectionIds.filter((id) => !unique.some((section) => section.id === id)).map((id) => ({ id, enabled: true })),
+  ];
+}
+
 export const homepageOverviewSettingsInputSchema = z.object({
   sections: z.array(sectionSchema).length(homepageSectionIds.length).superRefine((sections, context) => {
     const ids = new Set(sections.map((section) => section.id));
@@ -75,6 +107,7 @@ export const homepageOverviewSettingsInputSchema = z.object({
     }
   }),
   menuCategoryIds: menuCategoryIdsSchema,
+  tileGroups: homepageTileGroupsSchema,
   treasureCards: treasureCardsSchema,
   licenses: homepageLicensesSchema,
   promoBannerEnabled: z.boolean(),
@@ -106,6 +139,7 @@ const mediaSchema = z.object({
 });
 
 export const homepageSettingsSchema = homepageSettingsInputSchema.extend({
+  tileGroups: z.array(homepageTileGroupSchema.extend({ tiles: z.array(homepageTileSchema.extend({ media: mediaSchema.nullable() })).max(24) })).max(12),
   treasureCards: z.array(treasureCardSchema.extend({ media: mediaSchema.nullable() })).length(homepageTreasureCardIds.length),
   licenses: z.array(homepageLicenseSchema.extend({ media: mediaSchema.nullable() })).length(homepageLicenseIds.length),
   heroSlides: z.array(heroSlideSchema.extend({ desktopMedia: mediaSchema.nullable(), mobileMedia: mediaSchema.nullable() })).max(10),
@@ -121,6 +155,7 @@ export type HomepageSettings = z.infer<typeof homepageSettingsSchema>;
 export const homepageSettingsDefaults: HomepageSettingsInput = {
   sections: homepageSectionIds.map((id) => ({ id, enabled: true })),
   menuCategoryIds: [],
+  tileGroups: [],
   treasureCards: homepageTreasureCardIds.map((id) => ({ id, mediaId: null })),
   licenses: homepageLicenseIds.map((id) => ({ id, mediaId: null, href: null })),
   heroSlides: [],
@@ -148,6 +183,7 @@ export function homepageSettingsToInput(settings: HomepageSettings): HomepageSet
   return {
     sections: settings.sections,
     menuCategoryIds: settings.menuCategoryIds,
+    tileGroups: settings.tileGroups.map((group) => ({ ...group, tiles: group.tiles.map(({ id, mediaId, href }) => ({ id, mediaId, href })) })),
     treasureCards: settings.treasureCards.map(({ id, mediaId }) => ({ id, mediaId })),
     licenses: settings.licenses.map(({ id, mediaId, href }) => ({ id, mediaId, href })),
     heroSlides: settings.heroSlides.map(({ id, desktopMediaId, mobileMediaId, href }) => ({ id, desktopMediaId, mobileMediaId, href })),
@@ -173,6 +209,7 @@ const homepageSelect = {
   homepageSections: true,
   menuCategoryIds: true,
   homepageTreasureCards: true,
+  homepageTileGroups: true,
   homepageHeroSlides: true,
   homepageLicenses: true,
   heroContentMode: true,
@@ -190,17 +227,25 @@ const homepageSelect = {
 
 export async function getHomepageSettings(): Promise<HomepageSettings> {
   const existing = await db.storeSetting.findUnique({ where: { id: STORE_SETTING_ID }, select: homepageSelect });
-  const { sections, treasureCards: defaultTreasureCards, heroSlides: defaultHeroSlides, licenses: defaultLicenses, ...homepageDefaults } = homepageSettingsDefaults;
+  const { sections, tileGroups: defaultTileGroups, treasureCards: defaultTreasureCards, heroSlides: defaultHeroSlides, licenses: defaultLicenses, ...homepageDefaults } = homepageSettingsDefaults;
   const settings = existing ?? await db.storeSetting.upsert({
     where: { id: STORE_SETTING_ID },
-    create: { id: STORE_SETTING_ID, ...homepageDefaults, menuCategoryIds: undefined, homepageSections: sections, homepageTreasureCards: defaultTreasureCards, homepageHeroSlides: defaultHeroSlides, homepageLicenses: defaultLicenses },
+    create: { id: STORE_SETTING_ID, ...homepageDefaults, menuCategoryIds: undefined, homepageSections: sections, homepageTileGroups: defaultTileGroups, homepageTreasureCards: defaultTreasureCards, homepageHeroSlides: defaultHeroSlides, homepageLicenses: defaultLicenses },
     update: {},
     select: homepageSelect,
   });
 
   let activeSettings: HomepageSettingsInput;
   if (settings.industry === "GENERAL") {
-    const parsed = homepageSettingsInputSchema.safeParse(settings.generalHomepageSettings);
+    const stored = settings.generalHomepageSettings && typeof settings.generalHomepageSettings === "object" && !Array.isArray(settings.generalHomepageSettings)
+      ? settings.generalHomepageSettings as Record<string, unknown>
+      : {};
+    const parsed = homepageSettingsInputSchema.safeParse({
+      ...generalHomepageSettingsDefaults,
+      ...stored,
+      sections: normalizeStoredSections(stored.sections),
+      tileGroups: homepageTileGroupsSchema.safeParse(stored.tileGroups).data ?? [],
+    });
     activeSettings = parsed.success ? parsed.data : generalHomepageSettingsDefaults;
   } else {
     const parsedHeroSlides = storedHeroSlidesSchema.safeParse(settings.homepageHeroSlides);
@@ -210,8 +255,9 @@ export async function getHomepageSettings(): Promise<HomepageSettings> {
         ? [{ id: "legacy-slide", desktopMediaId: settings.heroDesktopMediaId, mobileMediaId: settings.heroMobileMediaId, href: settings.heroButtonHref }]
         : [];
     activeSettings = homepageSettingsInputSchema.parse({
-      sections: homepageSettingsInputSchema.shape.sections.safeParse(settings.homepageSections).data ?? homepageSettingsDefaults.sections,
+      sections: normalizeStoredSections(settings.homepageSections),
       menuCategoryIds: menuCategoryIdsSchema.safeParse(settings.menuCategoryIds).data ?? homepageSettingsDefaults.menuCategoryIds,
+      tileGroups: homepageTileGroupsSchema.safeParse(settings.homepageTileGroups).data ?? homepageSettingsDefaults.tileGroups,
       treasureCards: treasureCardsSchema.safeParse(settings.homepageTreasureCards).data ?? homepageSettingsDefaults.treasureCards,
       licenses: homepageLicensesSchema.safeParse(settings.homepageLicenses).data ?? homepageSettingsDefaults.licenses,
       heroSlides,
@@ -236,6 +282,7 @@ export async function getHomepageSettings(): Promise<HomepageSettings> {
     activeSettings.promoMobileMediaId,
     ...activeSettings.treasureCards.map((card) => card.mediaId),
     ...activeSettings.licenses.map((license) => license.mediaId),
+    ...activeSettings.tileGroups.flatMap((group) => group.tiles.map((tile) => tile.mediaId)),
     ...activeSettings.heroSlides.flatMap((slide) => [slide.desktopMediaId, slide.mobileMediaId]),
   ].filter((id): id is string => Boolean(id)))];
   const media = mediaIds.length ? await db.mediaAsset.findMany({
@@ -247,6 +294,7 @@ export async function getHomepageSettings(): Promise<HomepageSettings> {
 
   return homepageSettingsSchema.parse({
     ...activeSettings,
+    tileGroups: activeSettings.tileGroups.map((group) => ({ ...group, tiles: group.tiles.map((tile) => ({ ...tile, media: resolveMedia(tile.mediaId) })) })),
     treasureCards: activeSettings.treasureCards.map((card) => ({ ...card, media: resolveMedia(card.mediaId) })),
     licenses: activeSettings.licenses.map((license) => ({ ...license, media: resolveMedia(license.mediaId) })),
     heroSlides: activeSettings.heroSlides.map((slide) => ({ ...slide, desktopMedia: resolveMedia(slide.desktopMediaId), mobileMedia: resolveMedia(slide.mobileMediaId) })),
