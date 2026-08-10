@@ -15,6 +15,7 @@ import { HeroSelectField } from "@/components/hero-select-field";
 import { adminFieldClass, adminLabelClass } from "@/components/admin-ui";
 import { HeroNumberInput } from "@/components/hero-number-input";
 import { MediaPickerDialog } from "@/components/media-picker-dialog";
+import { HomepageLayoutPreview } from "@/components/homepage-layout-preview";
 import type { MediaChoice } from "@/components/media-library";
 import type { GeneralStoreSettingsInput } from "@/modules/settings/general-settings";
 import type { HomepageLayoutItemId, HomepageLicenseId, HomepageMenuCategoryOption, HomepageSectionId, HomepageSettings as HomepageSettingsData, HomepageTreasureCardId } from "@/modules/settings/homepage-settings";
@@ -197,7 +198,7 @@ export function HomepageSettings({ initialSettings, menuCategories, industry }: 
         </div>}
       </SettingCard>
       <SettingCard icon={<LayoutDashboard size={19} />} title="چینش صفحه اصلی" description="هر بخش و هر ردیف تایل را مستقل در جای دلخواه قرار دهید" className="lg:col-span-[span_7/span_7]" help={{ summary: "ترتیب و وضعیت تمام بخش‌ها، از جمله هر ردیف تایل، از این کارت مدیریت می‌شود.", blocks: [{ title: "تغییر ترتیب", items: ["دستگیره هر ردیف را نگه دارید.", "ردیف را بین بخش‌های دیگر بکشید و در محل دلخواه رها کنید.", "وضعیت هر بخش یا ردیف تایل را جداگانه فعال یا غیرفعال کنید."] }, { title: "اثر تغییر", description: "ترتیب این فهرست دقیقاً ترتیب نمایش صفحه اصلی است؛ برای مثال می‌توانید یک ردیف تایل را بین محبوب‌ترین‌ها و پیشنهادهای شگفت‌انگیز قرار دهید." }] }}>
-        <div className="grid gap-2">{sections.map((section, index) => {
+        <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(300px,0.72fr)]"><div className="grid gap-2">{sections.map((section, index) => {
           const tileGroupId = section.id.startsWith("TILE_GROUP:") ? section.id.slice("TILE_GROUP:".length) : null;
           const tileGroupIndex = tileGroupId ? tileGroups.findIndex((group) => group.id === tileGroupId) : -1;
           const tileGroup = tileGroupIndex >= 0 ? tileGroups[tileGroupIndex] : null;
@@ -236,7 +237,7 @@ export function HomepageSettings({ initialSettings, menuCategories, industry }: 
               <Button type="button" isIconOnly size="sm" variant="ghost" aria-label={`${section.enabled ? "غیرفعال کردن" : "فعال کردن"} ${meta.title}`} onPress={() => setSections((current) => current.map((item) => item.id === section.id ? { ...item, enabled: !item.enabled } : item))}>{section.enabled ? <Eye size={15} /> : <EyeOff size={15} />}</Button>
             </div>
           </div>;
-        })}</div>
+        })}</div><HomepageLayoutPreview sections={sections} settings={initialSettings} /></div>
       </SettingCard>
       <SettingCard icon={<ListTree size={19} />} title="منوی بالا و مگامنو" description="دسته‌های سطح اولی که در نوار اصلی و مگامنو نمایش داده می‌شوند" help={{ summary: "دسته‌های منتخب در نوار بالای سایت قرار می‌گیرند و زیرمجموعه‌هایشان داخل مگامنو نمایش داده می‌شود.", blocks: [{ title: "انتخاب دسته‌ها", items: ["حداکثر شش دسته سطح اول را انتخاب کنید.", "برای حذف از منو، همان دسته را دوباره بزنید.", "ترتیب انتخاب، ترتیب نمایش در نوار بالا را مشخص می‌کند."] }, { title: "مگامنو", description: "زیر‌دسته‌ها نیاز به انتخاب جداگانه ندارند و از ساختار فعال همان دسته اصلی خوانده می‌شوند." }, { title: "نکته", tone: "important", description: "این تنظیم فقط منوی بالای هدر را محدود می‌کند؛ منوی کامل «دسته‌بندی کالاها» همیشه همه دسته‌های فعال را نمایش می‌دهد." }] }}>
         <div className="flex items-center justify-between gap-3 rounded-xl border border-[var(--border)] bg-[var(--surface-secondary)] px-3 py-2.5">
