@@ -10,6 +10,7 @@ import { mergeOptionsPreservingHistory, optionEntries, optionSelectionKey } from
 import { formatTehranDateInput, tehranDateEnd, tehranDateStart } from "@/modules/products/discount";
 import { parseProductAttributes, validateProductAttributes } from "@/modules/products/attributes";
 import { auditRequestContext } from "@/modules/audit/request-context";
+import { buildAuditChanges, productAuditSnapshot } from "@/modules/audit/product-audit";
 
 type Context = { params: Promise<{ id: string }> };
 
@@ -18,7 +19,15 @@ export async function PATCH(request: Request, context: Context) {
     const actor = await getCurrentUser();
     if (!actor || !hasPermission(actor.role, "catalog:manage")) return NextResponse.json({ message: "دسترسی غیرمجاز است." }, { status: 403 });
     const { id } = await context.params;
-    const existingProduct = await db.product.findUnique({ where: { id }, select: { name: true, sku: true, storeIndustry: true, categoryId: true, attributes: true, discountType: true, discountValue: true, discountStartsAt: true, discountEndsAt: true } });
+    const existingProduct = await db.product.findUnique({
+      where: { id },
+      include: {
+        category: { select: { id: true, name: true } },
+        media: { select: { position: true, isCover: true, media: { select: { id: true, title: true, storageKey: true } } }, orderBy: { position: "asc" } },
+        options: { select: { id: true, name: true, values: true, position: true }, orderBy: { position: "asc" } },
+        optionGuide: { select: { id: true, title: true, storageKey: true } },
+      },
+    });
     if (!existingProduct) return NextResponse.json({ message: "محصول پیدا نشد." }, { status: 404 });
     const { mediaIds, options, optionGuideId, attributes, storeIndustry: _ignoredIndustry, ...input } = productSchema.partial().parse(await request.json());
     void _ignoredIndustry;
@@ -76,8 +85,17 @@ export async function PATCH(request: Request, context: Context) {
         await tx.productOption.deleteMany({ where: { productId: id } });
         if (safeOptions.length) await tx.productOption.createMany({ data: safeOptions.map((option, position) => ({ productId: id, ...option, position })) });
       }
-      await tx.auditLog.create({ data: { actorId: actor.id, action: "PRODUCT_UPDATE", entityType: "Product", entityId: id, ...auditRequestContext(request, { name: input.name ?? existingProduct.name, sku: input.sku ?? existingProduct.sku, changedFields: [...Object.keys(input), ...(attributes !== undefined ? ["attributes"] : []), ...(mediaIds !== undefined ? ["media"] : []), ...(options !== undefined ? ["options"] : []), ...(optionGuideId !== undefined ? ["optionGuideId"] : [])] }) } });
-      return tx.product.findUniqueOrThrow({ where: { id }, include: { media: { include: { media: true }, orderBy: { position: "asc" } }, category: true, options: { orderBy: { position: "asc" } }, optionGuide: true } });
+      const updated = await tx.product.findUniqueOrThrow({ where: { id }, include: { media: { include: { media: true }, orderBy: { position: "asc" } }, category: true, options: { orderBy: { position: "asc" } }, optionGuide: true } });
+      const before = productAuditSnapshot(existingProduct);
+      const after = productAuditSnapshot(updated);
+      await tx.auditLog.create({ data: { actorId: actor.id, action: "PRODUCT_UPDATE", entityType: "Product", entityId: id, ...auditRequestContext(request, {
+        subject: { id: updated.id, type: "Product", name: updated.name, sku: updated.sku },
+        summary: `محصول «${updated.name}» ویرایش شد.`,
+        changes: buildAuditChanges(before, after),
+        before,
+        after,
+      }) } });
+      return updated;
     });
     return NextResponse.json(product);
   } catch (error) { return apiError(error); }

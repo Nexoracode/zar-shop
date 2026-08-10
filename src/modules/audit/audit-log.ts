@@ -83,7 +83,7 @@ export function sanitizeAuditMetadata(value: unknown): unknown {
   return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, sensitiveKey.test(key) ? "[پنهان‌شده]" : sanitizeAuditMetadata(item)]));
 }
 
-export function auditActorName(actor: { firstName: string | null; lastName: string | null; email: string } | null) {
+export function auditActorName(actor: { firstName: string | null; lastName: string | null; phone: string | null } | null) {
   if (!actor) return "سیستم";
-  return `${actor.firstName ?? ""} ${actor.lastName ?? ""}`.trim() || actor.email;
+  return `${actor.firstName ?? ""} ${actor.lastName ?? ""}`.trim() || actor.phone || "کاربر بدون نام";
 }

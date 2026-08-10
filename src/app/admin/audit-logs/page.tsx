@@ -13,7 +13,7 @@ import { parseAdminPaginationRequest } from "@/lib/admin-pagination-server";
 import { auditActionKind, auditActionLabel, auditActorName, auditEntityLabel } from "@/modules/audit/audit-log";
 import { requirePermission } from "@/modules/auth/session";
 
-type AuditRow = Prisma.AuditLogGetPayload<{ include: { actor: { select: { firstName: true; lastName: true; email: true; role: true } } } }>;
+type AuditRow = Prisma.AuditLogGetPayload<{ include: { actor: { select: { firstName: true; lastName: true; phone: true; role: true } } } }>;
 type SearchParams = Promise<{ q?: string; action?: string; page?: string; pageSize?: string }>;
 
 const kindLabels = { CREATE: "ایجاد", UPDATE: "ویرایش", DELETE: "حذف", ACCESS: "دسترسی", SYSTEM: "سیستمی" } as const;
@@ -31,7 +31,7 @@ export default async function AuditLogsPage({ searchParams }: { searchParams: Se
       { action: { contains: query } },
       { entityType: { contains: query } },
       { entityId: { contains: query } },
-      { actor: { is: { OR: [{ firstName: { contains: query } }, { lastName: { contains: query } }, { email: { contains: query } }] } } },
+      { actor: { is: { OR: [{ firstName: { contains: query } }, { lastName: { contains: query } }, { phone: { contains: query } }] } } },
     ] } : {}),
   };
   const [totalItems, actionRows] = await Promise.all([
@@ -41,7 +41,7 @@ export default async function AuditLogsPage({ searchParams }: { searchParams: Se
   const pagination = resolveAdminPagination(totalItems, requestedPage, pageSize);
   const logs = await db.auditLog.findMany({
     where,
-    include: { actor: { select: { firstName: true, lastName: true, email: true, role: true } } },
+    include: { actor: { select: { firstName: true, lastName: true, phone: true, role: true } } },
     orderBy: { createdAt: "desc" },
     skip: pagination.skip,
     take: pagination.pageSize,
@@ -58,7 +58,7 @@ export default async function AuditLogsPage({ searchParams }: { searchParams: Se
           const kind = auditActionKind(log.action);
           return <TableRow id={log.id} key={log.id} className="transition hover:bg-slate-50/60">
             <TableCell className={`${cell} w-16 font-bold text-slate-400`}>{(pagination.skip + index + 1).toLocaleString("fa-IR")}</TableCell>
-            <TableCell className={`${cell} w-56 max-w-56`}><div className="min-w-0"><TruncatedTextTooltip text={auditActorName(log.actor)} className="max-w-48 font-bold text-slate-700" /><TruncatedTextTooltip text={log.actor?.email ?? "رویداد خودکار سیستم"} dir="ltr" className="max-w-48 text-right text-[11px] text-slate-400" /></div></TableCell>
+            <TableCell className={`${cell} w-56 max-w-56`}><div className="min-w-0"><TruncatedTextTooltip text={auditActorName(log.actor)} className="max-w-48 font-bold text-slate-700" /><TruncatedTextTooltip text={log.actor ? log.actor.phone ?? "شماره همراه ثبت نشده" : "رویداد خودکار سیستم"} dir="ltr" className="max-w-48 text-right text-[11px] text-slate-400" /></div></TableCell>
             <TableCell className={`${cell} w-60 max-w-60`}><TruncatedTextTooltip text={auditActionLabel(log.action)} className="max-w-52 font-bold text-[#17233b]" /></TableCell>
             <TableCell className={cell}><AdminStatusBadge tone={kindTones[kind]}>{kindLabels[kind]}</AdminStatusBadge></TableCell>
             <TableCell className={`${cell} w-52 max-w-52`}><strong className="block text-xs text-slate-700">{auditEntityLabel(log.entityType)}</strong><TruncatedTextTooltip text={log.entityId ?? "بدون شناسه"} dir="ltr" className="mt-1 max-w-44 text-right font-mono text-[10px] text-slate-400" /></TableCell>
@@ -78,5 +78,5 @@ function DetailLink({ id, label }: { id: string; label: string }) {
 
 function AuditMobileCard({ log }: { log: AuditRow }) {
   const kind = auditActionKind(log.action);
-  return <article className="space-y-3 p-4"><div className="flex items-start justify-between gap-3"><span className="flex min-w-0 items-center gap-2"><span className="grid size-9 shrink-0 place-items-center rounded-xl bg-slate-100 text-slate-500"><History size={17} /></span><span className="min-w-0"><strong className="block truncate text-sm text-[#17233b]">{auditActionLabel(log.action)}</strong><small className="block truncate text-slate-400">{auditActorName(log.actor)}</small></span></span><AdminStatusBadge tone={kindTones[kind]}>{kindLabels[kind]}</AdminStatusBadge></div><div className="flex items-end justify-between gap-3 rounded-xl bg-slate-50 p-3"><div><span className="block text-xs font-bold text-slate-600">{auditEntityLabel(log.entityType)}</span><small className="mt-1 block text-slate-400">{formatDateTime(log.createdAt)}</small></div><DetailLink id={log.id} label={auditActionLabel(log.action)} /></div></article>;
+  return <article className="space-y-3 p-4"><div className="flex items-start justify-between gap-3"><span className="flex min-w-0 items-center gap-2"><span className="grid size-9 shrink-0 place-items-center rounded-xl bg-slate-100 text-slate-500"><History size={17} /></span><span className="min-w-0"><strong className="block truncate text-sm text-[#17233b]">{auditActorName(log.actor)}</strong><small dir="ltr" className="block truncate text-right text-slate-400">{log.actor ? log.actor.phone ?? "شماره همراه ثبت نشده" : "رویداد خودکار سیستم"}</small></span></span><AdminStatusBadge tone={kindTones[kind]}>{kindLabels[kind]}</AdminStatusBadge></div><div className="flex items-end justify-between gap-3 rounded-xl bg-slate-50 p-3"><div><span className="block text-xs font-bold text-slate-600">{auditActionLabel(log.action)} · {auditEntityLabel(log.entityType)}</span><small className="mt-1 block text-slate-400">{formatDateTime(log.createdAt)}</small></div><DetailLink id={log.id} label={auditActionLabel(log.action)} /></div></article>;
 }
