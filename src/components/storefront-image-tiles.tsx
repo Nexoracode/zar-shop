@@ -9,13 +9,20 @@ const layoutClasses = {
   TWO_BY_TWO: "grid-cols-2",
 } as const;
 
+const tileSizeClasses = {
+  TWO_COLUMNS: "aspect-[2.15/1] sm:aspect-[2.6/1] sm:rounded-xl",
+  THREE_COLUMNS: "aspect-[16/9] sm:rounded-2xl",
+  FOUR_COLUMNS: "aspect-[16/9] sm:rounded-2xl",
+  TWO_BY_TWO: "aspect-[16/9] sm:rounded-2xl",
+} as const;
+
 export function StorefrontImageTiles({ groups }: { groups: HomepageSettings["tileGroups"] }) {
   const visibleGroups = groups.map((group) => ({ ...group, tiles: group.tiles.filter((tile) => tile.media) })).filter((group) => group.tiles.length);
   if (!visibleGroups.length) return null;
 
   return <div className="grid gap-3 sm:gap-4 lg:gap-5">
     {visibleGroups.map((group) => <div key={group.id} className={`grid gap-3 sm:gap-4 ${layoutClasses[group.layout]}`}>
-      {group.tiles.map((tile) => <Link key={tile.id} href={tile.href} className="group relative block aspect-[16/9] overflow-hidden rounded-xl bg-black/5 sm:rounded-2xl">
+      {group.tiles.map((tile) => <Link key={tile.id} href={tile.href} className={`group relative block overflow-hidden rounded-xl bg-black/5 ${tileSizeClasses[group.layout]}`}>
         <Image src={tile.media!.url} alt={tile.media!.alt ?? tile.media!.title ?? "تایل تصویری صفحه اصلی"} fill unoptimized={tile.media!.mimeType === "image/gif"} sizes={group.layout === "FOUR_COLUMNS" ? "(max-width: 640px) 50vw, (max-width: 1024px) 50vw, 25vw" : group.layout === "THREE_COLUMNS" ? "(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw" : "(max-width: 640px) 100vw, 50vw"} className="object-cover transition duration-500 group-hover:scale-[1.025]" />
       </Link>)}
     </div>)}
