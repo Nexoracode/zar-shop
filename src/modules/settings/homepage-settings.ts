@@ -2,8 +2,9 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { STORE_SETTING_ID } from "@/modules/settings/store-settings";
 
-export const homepageSectionIds = ["HERO", "TILES", "PROMISES", "CATEGORIES", "PRODUCTS", "ABOUT", "CONCIERGE"] as const;
+export const homepageSectionIds = ["HERO", "CATEGORIES", "FEATURED_PRODUCTS", "POPULAR_PRODUCTS", "LATEST_PRODUCTS", "ABOUT", "PROMISES", "CONCIERGE"] as const;
 export type HomepageSectionId = (typeof homepageSectionIds)[number];
+export type HomepageLayoutItemId = HomepageSectionId | `TILE_GROUP:${string}`;
 export const homepageTileLayouts = ["TWO_COLUMNS", "THREE_COLUMNS", "FOUR_COLUMNS", "TWO_BY_TWO"] as const;
 export type HomepageTileLayout = (typeof homepageTileLayouts)[number];
 export const homepageTreasureCardIds = ["UNDER_20", "FROM_20_TO_60", "FROM_60_TO_100", "OVER_100"] as const;
@@ -11,8 +12,13 @@ export type HomepageTreasureCardId = (typeof homepageTreasureCardIds)[number];
 export const homepageLicenseIds = ["SALES", "ONLINE", "ENAMAD"] as const;
 export type HomepageLicenseId = (typeof homepageLicenseIds)[number];
 
+const tileGroupSectionIdSchema = z.custom<`TILE_GROUP:${string}`>(
+  (value) => typeof value === "string" && /^TILE_GROUP:[^:]{1,80}$/.test(value),
+  "شناسه ردیف تایل معتبر نیست.",
+);
+
 const sectionSchema = z.object({
-  id: z.enum(homepageSectionIds),
+  id: z.union([z.enum(homepageSectionIds), tileGroupSectionIdSchema]),
   enabled: z.boolean(),
 });
 
@@ -46,7 +52,7 @@ const homepageTileSchema = z.object({
 });
 
 const homepageTileGroupSchema = z.object({
-  id: z.string().trim().min(1).max(80),
+  id: z.string().trim().min(1).max(80).regex(/^[^:]+$/, "شناسه ردیف تایل معتبر نیست."),
   layout: z.enum(homepageTileLayouts),
   tiles: z.array(homepageTileSchema).max(24).refine(
     (tiles) => new Set(tiles.map((tile) => tile.id)).size === tiles.length,
@@ -89,21 +95,38 @@ const storedHeroSlidesSchema = z.array(heroSlideSchema.extend({ href: safeHrefSc
   "شناسه اسلایدها نباید تکراری باشد.",
 );
 
-function normalizeStoredSections(value: unknown) {
-  const parsed = z.array(sectionSchema).max(homepageSectionIds.length).safeParse(value);
+function homepageBaseSectionIds(industry: "GOLD" | "GENERAL"): HomepageSectionId[] {
+  return industry === "GENERAL"
+    ? ["HERO", "CATEGORIES", "FEATURED_PRODUCTS", "ABOUT", "POPULAR_PRODUCTS", "LATEST_PRODUCTS", "PROMISES", "CONCIERGE"]
+    : ["HERO", "CATEGORIES", "LATEST_PRODUCTS", "ABOUT", "PROMISES", "CONCIERGE"];
+}
+
+function normalizeStoredSections(value: unknown, industry: "GOLD" | "GENERAL", tileGroups: z.infer<typeof homepageTileGroupsSchema>) {
+  const parsed = z.array(z.object({ id: z.string(), enabled: z.boolean() })).max(40).safeParse(value);
   const stored = parsed.success ? parsed.data : [];
-  const unique = stored.filter((section, index) => stored.findIndex((item) => item.id === section.id) === index);
+  const tileIds = tileGroups.map((group) => `TILE_GROUP:${group.id}` as const);
+  const allowed = new Set<string>([...homepageBaseSectionIds(industry), ...tileIds]);
+  const expanded = stored.flatMap((section) => {
+    if (section.id === "TILES") return tileIds.map((id) => ({ id, enabled: section.enabled }));
+    if (section.id === "PRODUCTS") {
+      const productIds: HomepageSectionId[] = industry === "GENERAL" ? ["FEATURED_PRODUCTS", "POPULAR_PRODUCTS", "LATEST_PRODUCTS"] : ["LATEST_PRODUCTS"];
+      return productIds.map((id) => ({ id, enabled: section.enabled }));
+    }
+    return [section];
+  }).filter((section) => allowed.has(section.id));
+  const unique = expanded.filter((section, index) => expanded.findIndex((item) => item.id === section.id) === index);
+  const defaults: HomepageLayoutItemId[] = ["HERO", ...tileIds, ...homepageBaseSectionIds(industry).filter((id) => id !== "HERO")];
   return [
     ...unique,
-    ...homepageSectionIds.filter((id) => !unique.some((section) => section.id === id)).map((id) => ({ id, enabled: true })),
+    ...defaults.filter((id) => !unique.some((section) => section.id === id)).map((id) => ({ id, enabled: true })),
   ];
 }
 
-export const homepageOverviewSettingsInputSchema = z.object({
-  sections: z.array(sectionSchema).length(homepageSectionIds.length).superRefine((sections, context) => {
+const homepageOverviewSettingsObjectSchema = z.object({
+  sections: z.array(sectionSchema).min(1).max(40).superRefine((sections, context) => {
     const ids = new Set(sections.map((section) => section.id));
-    if (ids.size !== homepageSectionIds.length || homepageSectionIds.some((id) => !ids.has(id))) {
-      context.addIssue({ code: "custom", message: "چینش بخش‌های صفحه اصلی کامل یا معتبر نیست." });
+    if (ids.size !== sections.length) {
+      context.addIssue({ code: "custom", message: "آیتم‌های چینش صفحه اصلی نباید تکراری باشند." });
     }
   }),
   menuCategoryIds: menuCategoryIdsSchema,
@@ -116,6 +139,16 @@ export const homepageOverviewSettingsInputSchema = z.object({
   promoMobileMediaId: z.string().trim().min(1).nullable(),
 });
 
+function validateTileGroupLayout(value: z.infer<typeof homepageOverviewSettingsObjectSchema>, context: z.RefinementCtx) {
+  const layoutTileIds = value.sections.filter((section) => section.id.startsWith("TILE_GROUP:")).map((section) => section.id.slice("TILE_GROUP:".length));
+  const tileGroupIds = value.tileGroups.map((group) => group.id);
+  if (layoutTileIds.length !== tileGroupIds.length || tileGroupIds.some((id) => !layoutTileIds.includes(id))) {
+    context.addIssue({ code: "custom", path: ["sections"], message: "هر ردیف تایل باید دقیقاً یک جایگاه مستقل در چینش صفحه اصلی داشته باشد." });
+  }
+}
+
+export const homepageOverviewSettingsInputSchema = homepageOverviewSettingsObjectSchema.superRefine(validateTileGroupLayout);
+
 export const homepageHeroSettingsInputSchema = z.object({
   heroSlides: heroSlidesSchema,
   heroContentMode: z.enum(["WITH_CONTENT", "IMAGE_ONLY"]),
@@ -127,7 +160,10 @@ export const homepageHeroSettingsInputSchema = z.object({
   heroMobileMediaId: z.string().trim().min(1).nullable(),
 });
 
-export const homepageSettingsInputSchema = homepageOverviewSettingsInputSchema.merge(homepageHeroSettingsInputSchema);
+export const homepageSettingsInputSchema = z.object({
+  ...homepageOverviewSettingsObjectSchema.shape,
+  ...homepageHeroSettingsInputSchema.shape,
+}).superRefine(validateTileGroupLayout);
 
 const mediaSchema = z.object({
   id: z.string(),
@@ -138,7 +174,7 @@ const mediaSchema = z.object({
   mimeType: z.string(),
 });
 
-export const homepageSettingsSchema = homepageSettingsInputSchema.extend({
+export const homepageSettingsSchema = homepageSettingsInputSchema.safeExtend({
   tileGroups: z.array(homepageTileGroupSchema.extend({ tiles: z.array(homepageTileSchema.extend({ media: mediaSchema.nullable() })).max(24) })).max(12),
   treasureCards: z.array(treasureCardSchema.extend({ media: mediaSchema.nullable() })).length(homepageTreasureCardIds.length),
   licenses: z.array(homepageLicenseSchema.extend({ media: mediaSchema.nullable() })).length(homepageLicenseIds.length),
@@ -153,7 +189,7 @@ export type HomepageSettingsInput = z.infer<typeof homepageSettingsInputSchema>;
 export type HomepageSettings = z.infer<typeof homepageSettingsSchema>;
 
 export const homepageSettingsDefaults: HomepageSettingsInput = {
-  sections: homepageSectionIds.map((id) => ({ id, enabled: true })),
+  sections: homepageBaseSectionIds("GOLD").map((id) => ({ id, enabled: true })),
   menuCategoryIds: [],
   tileGroups: [],
   treasureCards: homepageTreasureCardIds.map((id) => ({ id, mediaId: null })),
@@ -243,8 +279,8 @@ export async function getHomepageSettings(): Promise<HomepageSettings> {
     const parsed = homepageSettingsInputSchema.safeParse({
       ...generalHomepageSettingsDefaults,
       ...stored,
-      sections: normalizeStoredSections(stored.sections),
       tileGroups: homepageTileGroupsSchema.safeParse(stored.tileGroups).data ?? [],
+      sections: normalizeStoredSections(stored.sections, "GENERAL", homepageTileGroupsSchema.safeParse(stored.tileGroups).data ?? []),
     });
     activeSettings = parsed.success ? parsed.data : generalHomepageSettingsDefaults;
   } else {
@@ -255,7 +291,7 @@ export async function getHomepageSettings(): Promise<HomepageSettings> {
         ? [{ id: "legacy-slide", desktopMediaId: settings.heroDesktopMediaId, mobileMediaId: settings.heroMobileMediaId, href: settings.heroButtonHref }]
         : [];
     activeSettings = homepageSettingsInputSchema.parse({
-      sections: normalizeStoredSections(settings.homepageSections),
+      sections: normalizeStoredSections(settings.homepageSections, "GOLD", homepageTileGroupsSchema.safeParse(settings.homepageTileGroups).data ?? homepageSettingsDefaults.tileGroups),
       menuCategoryIds: menuCategoryIdsSchema.safeParse(settings.menuCategoryIds).data ?? homepageSettingsDefaults.menuCategoryIds,
       tileGroups: homepageTileGroupsSchema.safeParse(settings.homepageTileGroups).data ?? homepageSettingsDefaults.tileGroups,
       treasureCards: treasureCardsSchema.safeParse(settings.homepageTreasureCards).data ?? homepageSettingsDefaults.treasureCards,

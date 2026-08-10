@@ -14,7 +14,7 @@ import type { StorefrontProductCardItem } from "@/modules/products/storefront-fe
 import { getStorefrontProductFeed } from "@/modules/products/storefront-feed";
 import { getContentSettings } from "@/modules/settings/content-settings";
 import { getGeneralStoreSettings } from "@/modules/settings/general-settings";
-import { getHomepageSettings, type HomepageSectionId } from "@/modules/settings/homepage-settings";
+import { getHomepageSettings, type HomepageLayoutItemId } from "@/modules/settings/homepage-settings";
 import { buildStorefrontHeroSlides } from "@/storefront/shared/hero";
 
 const container = "mx-auto w-[min(1440px,calc(100%-24px))] sm:w-[min(1440px,calc(100%-40px))] lg:w-[min(1440px,calc(100%-64px))]";
@@ -59,10 +59,9 @@ export async function GeneralHome() {
 
   const heroSlides = buildStorefrontHeroSlides(homepage, "/images/zar-hero-campaign.png");
   const activeFaqs = content.faqs.filter((faq) => faq.enabled);
-  const hasImageTiles = homepage.tileGroups.some((group) => group.tiles.some((tile) => tile.media));
   const sectionState = new Map(homepage.sections.map((section) => [section.id, section.enabled]));
   const sectionOrder = new Map(homepage.sections.map((section, index) => [section.id, index]));
-  const sectionProps = (id: HomepageSectionId) => ({ hidden: sectionState.get(id) === false, style: { order: sectionOrder.get(id) ?? homepage.sections.length } });
+  const sectionProps = (id: HomepageLayoutItemId) => ({ hidden: sectionState.get(id) === false, style: { order: sectionOrder.get(id) ?? homepage.sections.length } });
   const discountedProducts = latestFeed.items.filter((product) => product.originalPrice);
   const promoMedia = homepage.treasureCards.map((card) => card.media);
   const promoCategories = categories.slice(0, 4);
@@ -70,7 +69,7 @@ export async function GeneralHome() {
   return <main className="flex flex-col gap-4 overflow-hidden bg-[#f4f5f7] pb-[78px] pt-3 lg:gap-6 lg:pb-8">
     <section {...sectionProps("HERO")} className="bg-white"><StorefrontHeroSlider slides={heroSlides} contentMode={homepage.heroContentMode} title={homepage.heroTitle} description={homepage.heroDescription} buttonLabel={homepage.heroButtonLabel} /></section>
 
-    {hasImageTiles && <section {...sectionProps("TILES")} className={container} aria-label="پیشنهادهای تصویری"><StorefrontImageTiles groups={homepage.tileGroups} /></section>}
+    {homepage.tileGroups.map((group) => group.tiles.some((tile) => tile.media) && <section key={group.id} {...sectionProps(`TILE_GROUP:${group.id}`)} className={container} aria-label="پیشنهادهای تصویری"><StorefrontImageTiles groups={[group]} /></section>)}
 
     {categories.length > 0 && <section {...sectionProps("CATEGORIES")} className={`${container} rounded-2xl bg-white px-3 py-6 sm:px-6 lg:py-8`} aria-label="دسته‌بندی محصولات">
       <div className="mb-6 flex items-center justify-between"><h2 className="m-0 text-lg font-black text-[#232934] sm:text-xl">خرید بر اساس دسته‌بندی</h2><Link href="/products" className="inline-flex items-center gap-1 text-xs font-bold text-[var(--brand-primary)]">همه کالاها<ChevronLeft size={15} /></Link></div>
@@ -80,7 +79,7 @@ export async function GeneralHome() {
       })}</div>
     </section>}
 
-    {discountedProducts.length > 0 && <section {...sectionProps("PRODUCTS")} className={`${container} overflow-hidden rounded-2xl bg-[var(--brand-primary)] p-3 text-[var(--brand-primary-foreground)] sm:p-4 lg:p-5`} aria-label="پیشنهادهای ویژه">
+    {discountedProducts.length > 0 && <section {...sectionProps("FEATURED_PRODUCTS")} className={`${container} overflow-hidden rounded-2xl bg-[var(--brand-primary)] p-3 text-[var(--brand-primary-foreground)] sm:p-4 lg:p-5`} aria-label="پیشنهادهای ویژه">
       <div className="grid min-w-0 gap-4 lg:grid-cols-[170px_minmax(0,1fr)] lg:items-center">
         <div className="grid justify-items-center gap-3 px-3 py-3 text-center text-white"><Sparkles size={42} strokeWidth={1.4} /><strong className="text-2xl font-black leading-9">پیشنهاد<br />شگفت‌انگیز</strong><Link href="/products" className="inline-flex items-center gap-1 text-xs font-bold">مشاهده همه<ChevronLeft size={15} /></Link></div>
         <DragScrollRow ariaLabel="پیشنهادهای شگفت‌انگیز" showNavigation className="flex w-full min-w-0 max-w-full gap-1 overflow-x-auto pb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
@@ -96,7 +95,9 @@ export async function GeneralHome() {
       return <Link key={category.id} href={`/products?category=${category.slug}`} className={`group relative min-h-[170px] overflow-hidden rounded-2xl p-5 sm:min-h-[210px] ${categoryTones[index % categoryTones.length]}`}>{media?.url || category.image?.url ? <Image src={media?.url ?? category.image!.url} alt={media?.alt ?? category.image?.alt ?? category.name} fill sizes="(max-width:1024px) 50vw, 25vw" className="object-cover transition duration-500 group-hover:scale-105" /> : <><span className="absolute -bottom-10 -left-8 size-36 rounded-full bg-white/45" /><Icon className="absolute bottom-5 left-5 opacity-80 transition group-hover:-translate-y-1" size={58} strokeWidth={1.2} /></>}<span className={`absolute inset-0 ${media?.url || category.image?.url ? "bg-gradient-to-t from-black/65 via-black/5 to-transparent" : ""}`} /><span className="absolute inset-x-5 bottom-5"><strong className={`block text-base font-black sm:text-xl ${media?.url || category.image?.url ? "text-white" : ""}`}>{category.name}</strong><small className={`mt-1 block ${media?.url || category.image?.url ? "text-white/80" : "opacity-70"}`}>مشاهده و خرید محصولات</small></span></Link>;
     })}</section>}
 
-    <section {...sectionProps("PRODUCTS")} className={`${container} grid min-w-0 gap-4 lg:gap-6`}><ProductRail title="محبوب‌ترین کالاها" description="محصولاتی که بیشتر مورد توجه مشتریان قرار گرفته‌اند" products={popularFeed.items} href="/products?sortby=popular" /><div className="min-w-0 overflow-hidden rounded-2xl border border-[#e6e8ec] bg-white px-4 py-6 sm:px-6 lg:px-7 lg:py-8"><div className="mb-5"><h2 className="m-0 text-xl font-black text-[#232934] sm:text-2xl">جدیدترین محصولات</h2><p className="mb-0 mt-1 text-xs text-[#858b95] sm:text-sm">تازه‌ترین کالاهای اضافه‌شده به فروشگاه</p></div><HomepageProductFeed initialFeed={latestFeed} industry="GENERAL" /></div></section>
+    {popularFeed.items.length > 0 && <div {...sectionProps("POPULAR_PRODUCTS")} className={container}><ProductRail title="محبوب‌ترین کالاها" description="محصولاتی که بیشتر مورد توجه مشتریان قرار گرفته‌اند" products={popularFeed.items} href="/products?sortby=popular" /></div>}
+
+    <section {...sectionProps("LATEST_PRODUCTS")} className={`${container} min-w-0 overflow-hidden rounded-2xl border border-[#e6e8ec] bg-white px-4 py-6 sm:px-6 lg:px-7 lg:py-8`}><div className="mb-5"><h2 className="m-0 text-xl font-black text-[#232934] sm:text-2xl">جدیدترین محصولات</h2><p className="mb-0 mt-1 text-xs text-[#858b95] sm:text-sm">تازه‌ترین کالاهای اضافه‌شده به فروشگاه</p></div><HomepageProductFeed initialFeed={latestFeed} industry="GENERAL" /></section>
 
     <section {...sectionProps("PROMISES")} className={`${container} rounded-2xl border border-[#e6e8ec] bg-white px-4 py-5 sm:px-6`}><div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">{[
       { icon: Truck, title: "ارسال قابل پیگیری", text: "وضعیت سفارش همیشه مشخص است" },

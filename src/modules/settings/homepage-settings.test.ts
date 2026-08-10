@@ -110,7 +110,8 @@ test("homepage settings accept ordered tile groups with every supported layout",
       href: `/campaign/${groupIndex}/${tileIndex}`,
     })),
   }));
-  const parsed = homepageSettingsInputSchema.parse({ ...homepageSettingsDefaults, tileGroups });
+  const sections = [...homepageSettingsDefaults.sections, ...tileGroups.map((group) => ({ id: `TILE_GROUP:${group.id}`, enabled: true }))];
+  const parsed = homepageSettingsInputSchema.parse({ ...homepageSettingsDefaults, sections, tileGroups });
   assert.equal(parsed.tileGroups[3].layout, "TWO_BY_TWO");
   assert.equal(parsed.tileGroups[0].tiles[1].href, "/campaign/0/1");
 });
@@ -120,9 +121,15 @@ test("homepage settings reject duplicate tile identifiers and unsafe tile links"
     { id: "same", mediaId: "media-1", href: "/one" },
     { id: "same", mediaId: "media-2", href: "/two" },
   ] }];
-  assert.equal(homepageSettingsInputSchema.safeParse({ ...homepageSettingsDefaults, tileGroups: duplicatedTiles }).success, false);
+  assert.equal(homepageSettingsInputSchema.safeParse({ ...homepageSettingsDefaults, sections: [...homepageSettingsDefaults.sections, { id: "TILE_GROUP:group", enabled: true }], tileGroups: duplicatedTiles }).success, false);
   const unsafeLink = [{ id: "group", layout: "FOUR_COLUMNS", tiles: [{ id: "tile", mediaId: "media", href: "javascript:alert(1)" }] }];
-  assert.equal(homepageSettingsInputSchema.safeParse({ ...homepageSettingsDefaults, tileGroups: unsafeLink }).success, false);
+  assert.equal(homepageSettingsInputSchema.safeParse({ ...homepageSettingsDefaults, sections: [...homepageSettingsDefaults.sections, { id: "TILE_GROUP:group", enabled: true }], tileGroups: unsafeLink }).success, false);
+});
+
+test("homepage settings require an independent layout item for every tile group", () => {
+  const tileGroups = [{ id: "group", layout: "TWO_COLUMNS", tiles: [{ id: "tile", mediaId: "media", href: "/products" }] }];
+  assert.equal(homepageSettingsInputSchema.safeParse({ ...homepageSettingsDefaults, tileGroups }).success, false);
+  assert.equal(homepageSettingsInputSchema.safeParse({ ...homepageSettingsDefaults, sections: [...homepageSettingsDefaults.sections, { id: "TILE_GROUP:group", enabled: true }], tileGroups }).success, true);
 });
 
 test("homepage overview and hero settings can be updated independently", () => {

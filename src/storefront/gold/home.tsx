@@ -11,7 +11,7 @@ import { db } from "@/lib/db";
 import { getStorefrontProductFeed } from "@/modules/products/storefront-feed";
 import { getContentSettings } from "@/modules/settings/content-settings";
 import { getGeneralStoreSettings } from "@/modules/settings/general-settings";
-import { getHomepageSettings, type HomepageSectionId, type HomepageTreasureCardId } from "@/modules/settings/homepage-settings";
+import { getHomepageSettings, type HomepageLayoutItemId, type HomepageTreasureCardId } from "@/modules/settings/homepage-settings";
 import { buildStorefrontHeroSlides } from "@/storefront/shared/hero";
 
 type HomeCategory = Prisma.CategoryGetPayload<{ include: { image: true; children: true; _count: { select: { products: true } } } }>;
@@ -34,10 +34,9 @@ export async function GoldHome() {
   const categories = homepageCategories;
   const heroSlides = buildStorefrontHeroSlides(homepage, "/images/zar-hero-campaign.png");
   const activeFaqs = contentSettings.faqs.filter((faq) => faq.enabled);
-  const hasImageTiles = homepage.tileGroups.some((group) => group.tiles.some((tile) => tile.media));
   const sectionState = new Map(homepage.sections.map((section) => [section.id, section.enabled]));
   const sectionOrder = new Map(homepage.sections.map((section, index) => [section.id, index]));
-  const sectionProps = (id: HomepageSectionId) => ({ hidden: sectionState.get(id) === false, style: { order: sectionOrder.get(id) ?? homepage.sections.length } });
+  const sectionProps = (id: HomepageLayoutItemId) => ({ hidden: sectionState.get(id) === false, style: { order: sectionOrder.get(id) ?? homepage.sections.length } });
   const categoryImage = (category: HomeCategory | undefined) => category?.image?.type === "IMAGE" ? category.image.url : "/images/zar-hero-campaign.png";
   const treasureItems: Array<{ id: HomepageTreasureCardId; title: string; subtitle: string; query: string }> = [
     { id: "UNDER_20", title: "کمتر از ۲۰ میلیون تومان", subtitle: "محصولات مینیمال", query: "sortby=newest&MaxPrice=20000000" },
@@ -52,9 +51,9 @@ export async function GoldHome() {
       <StorefrontHeroSlider slides={heroSlides} contentMode={homepage.heroContentMode} title={homepage.heroTitle} description={homepage.heroDescription} buttonLabel={homepage.heroButtonLabel} />
     </section>
 
-    {hasImageTiles && <section {...sectionProps("TILES")} className="bg-white py-5 lg:py-10" aria-label="پیشنهادهای تصویری">
-      <div className={container}><StorefrontImageTiles groups={homepage.tileGroups} /></div>
-    </section>}
+    {homepage.tileGroups.map((group) => group.tiles.some((tile) => tile.media) && <section key={group.id} {...sectionProps(`TILE_GROUP:${group.id}`)} className="bg-white py-5 lg:py-10" aria-label="پیشنهادهای تصویری">
+      <div className={container}><StorefrontImageTiles groups={[group]} /></div>
+    </section>)}
 
     {categories.length > 0 && <section {...sectionProps("CATEGORIES")} className="bg-white py-5 lg:py-[60px]" aria-label="دسته‌بندی محصولات">
       <div className={`${container} grid grid-cols-1 gap-4 lg:grid-cols-5`}>
@@ -66,7 +65,7 @@ export async function GoldHome() {
       </div>
     </section>}
 
-    <section {...sectionProps("PRODUCTS")} className="bg-white py-[30px] lg:py-[60px]" aria-labelledby="latest-products">
+    <section {...sectionProps("LATEST_PRODUCTS")} className="bg-white py-[30px] lg:py-[60px]" aria-labelledby="latest-products">
       <div className={container}>
         <HomepageProductFeed initialFeed={productFeed} />
       </div>

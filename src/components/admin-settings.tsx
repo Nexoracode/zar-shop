@@ -17,7 +17,7 @@ import { HeroNumberInput } from "@/components/hero-number-input";
 import { MediaPickerDialog } from "@/components/media-picker-dialog";
 import type { MediaChoice } from "@/components/media-library";
 import type { GeneralStoreSettingsInput } from "@/modules/settings/general-settings";
-import type { HomepageLicenseId, HomepageMenuCategoryOption, HomepageSectionId, HomepageSettings as HomepageSettingsData, HomepageTileLayout, HomepageTreasureCardId } from "@/modules/settings/homepage-settings";
+import type { HomepageLayoutItemId, HomepageLicenseId, HomepageMenuCategoryOption, HomepageSectionId, HomepageSettings as HomepageSettingsData, HomepageTileLayout, HomepageTreasureCardId } from "@/modules/settings/homepage-settings";
 import type { BrandSettings as BrandSettingsData } from "@/modules/settings/brand-settings";
 import type { OrderSettings as OrderSettingsData } from "@/modules/settings/order-settings";
 import type { CommerceSettings as CommerceSettingsData } from "@/modules/settings/commerce-settings";
@@ -70,10 +70,11 @@ export function GeneralSettings({ initialSettings }: { initialSettings: GeneralS
 
 const homeSectionMeta: Record<HomepageSectionId, { title: string; description: string }> = {
   HERO: { title: "اسلایدر اصلی", description: "بنر، عنوان، توضیح و دکمه اقدام" },
-  TILES: { title: "تایل‌های تصویری", description: "ردیف‌های تصویری قابل کلیک با چیدمان دلخواه" },
   PROMISES: { title: "مزیت‌های خرید", description: "ضمانت اصالت، ارسال امن و قیمت‌گذاری شفاف" },
   CATEGORIES: { title: "دسته‌بندی‌های منتخب", description: "دسته‌بندی‌های شاخص و فعال فروشگاه" },
-  PRODUCTS: { title: "محصولات منتخب", description: "محصولات ویژه و تازه منتشرشده" },
+  FEATURED_PRODUCTS: { title: "پیشنهادهای شگفت‌انگیز", description: "محصولات دارای تخفیف و پیشنهاد ویژه" },
+  POPULAR_PRODUCTS: { title: "محبوب‌ترین محصولات", description: "محصولاتی که بیشتر مورد توجه مشتریان هستند" },
+  LATEST_PRODUCTS: { title: "جدیدترین محصولات", description: "تازه‌ترین محصولات منتشرشده فروشگاه" },
   ABOUT: { title: "معرفی فروشگاه", description: "داستان، ارزش‌ها و شفافیت فروشگاه" },
   CONCIERGE: { title: "خدمات اختصاصی", description: "تضمین اصالت، تحویل و مشاوره انتخاب" },
 };
@@ -123,10 +124,8 @@ export function HomepageSettings({ initialSettings, menuCategories, industry }: 
   const [promoDesktopMedia, setPromoDesktopMedia] = useState<MediaChoice | null>(() => toMediaChoice(initialSettings.promoDesktopMedia));
   const [promoMobileMedia, setPromoMobileMedia] = useState<MediaChoice | null>(() => toMediaChoice(initialSettings.promoMobileMedia));
   const [pickerTarget, setPickerTarget] = useState<HomepagePickerTarget | null>(null);
-  const [draggedSectionId, setDraggedSectionId] = useState<HomepageSectionId | null>(null);
-  const [dropTarget, setDropTarget] = useState<{ id: HomepageSectionId; after: boolean } | null>(null);
-  const [draggedTileGroupId, setDraggedTileGroupId] = useState<string | null>(null);
-  const [tileGroupDropTargetId, setTileGroupDropTargetId] = useState<string | null>(null);
+  const [draggedSectionId, setDraggedSectionId] = useState<HomepageLayoutItemId | null>(null);
+  const [dropTarget, setDropTarget] = useState<{ id: HomepageLayoutItemId; after: boolean } | null>(null);
   const [draggedTile, setDraggedTile] = useState<{ groupId: string; tileId: string } | null>(null);
   const [tileDropTarget, setTileDropTarget] = useState<{ groupId: string; tileId: string } | null>(null);
 
@@ -140,16 +139,16 @@ export function HomepageSettings({ initialSettings, menuCategories, industry }: 
     });
   }
 
-  function updateDropTarget(event: DragEvent<HTMLDivElement>, id: HomepageSectionId) {
+  function updateDropTarget(event: DragEvent<HTMLDivElement>, id: HomepageLayoutItemId) {
     event.preventDefault();
     event.dataTransfer.dropEffect = "move";
     const bounds = event.currentTarget.getBoundingClientRect();
     setDropTarget({ id, after: event.clientY > bounds.top + bounds.height / 2 });
   }
 
-  function dropSection(event: DragEvent<HTMLDivElement>, targetId: HomepageSectionId) {
+  function dropSection(event: DragEvent<HTMLDivElement>, targetId: HomepageLayoutItemId) {
     event.preventDefault();
-    const sourceId = draggedSectionId ?? event.dataTransfer.getData("text/plain") as HomepageSectionId;
+    const sourceId = draggedSectionId ?? event.dataTransfer.getData("text/plain") as HomepageLayoutItemId;
     const target = dropTarget?.id === targetId ? dropTarget : { id: targetId, after: false };
     if (sourceId && sourceId !== target.id) {
       setSections((current) => {
@@ -174,19 +173,7 @@ export function HomepageSettings({ initialSettings, menuCategories, industry }: 
       layout: "TWO_COLUMNS",
       tiles: Array.from({ length: 2 }, () => ({ id: createHomepageEditorId("tile"), href: "/products", media: null })),
     }]);
-  }
-
-  function moveTileGroup(targetId: string) {
-    if (!draggedTileGroupId || draggedTileGroupId === targetId) return;
-    setTileGroups((current) => {
-      const source = current.find((group) => group.id === draggedTileGroupId);
-      if (!source) return current;
-      const remaining = current.filter((group) => group.id !== draggedTileGroupId);
-      const targetIndex = remaining.findIndex((group) => group.id === targetId);
-      if (targetIndex < 0) return current;
-      remaining.splice(targetIndex, 0, source);
-      return remaining;
-    });
+    setSections((current) => [...current, { id: `TILE_GROUP:${groupId}`, enabled: true }]);
   }
 
   function moveTile(groupId: string, targetTileId: string) {
@@ -249,9 +236,16 @@ export function HomepageSettings({ initialSettings, menuCategories, industry }: 
           <div className="grid gap-3 sm:grid-cols-2"><HomepageMediaField label="بنر دسکتاپ" hint="۱۹۲۰×۱۲۰؛ تصویر یا GIF" media={promoDesktopMedia} onSelect={() => setPickerTarget("promoDesktop")} onClear={() => setPromoDesktopMedia(null)} aspectClass="aspect-[3/1]" /><HomepageMediaField label="بنر موبایل" hint="۹۰۰×۱۸۰؛ تصویر یا GIF" media={promoMobileMedia} onSelect={() => setPickerTarget("promoMobile")} onClear={() => setPromoMobileMedia(null)} aspectClass="aspect-[3/1]" /></div>
         </div>}
       </SettingCard>
-      <SettingCard icon={<LayoutDashboard size={19} />} title="چینش صفحه اصلی" description="برای تغییر ترتیب، هر ردیف را از دستگیره بگیرید و جابه‌جا کنید" className="lg:col-span-[span_7/span_7]" help={{ summary: "ترتیب و وضعیت بخش‌های اصلی فروشگاه را از این کارت مدیریت کنید.", blocks: [{ title: "تغییر ترتیب", items: ["دستگیره هر ردیف را نگه دارید.", "ردیف را به محل جدید بکشید و روی نشانگر جای‌گذاری رها کنید.", "وضعیت هر بخش را جداگانه فعال یا غیرفعال کنید."] }, { title: "اثر تغییر", description: "ترتیب این فهرست دقیقاً ترتیب نمایش بخش‌ها در صفحه اصلی است؛ بخش غیرفعال بدون حذف تنظیماتش پنهان می‌شود." }] }}>
+      <SettingCard icon={<LayoutDashboard size={19} />} title="چینش صفحه اصلی" description="هر بخش و هر ردیف تایل را مستقل در جای دلخواه قرار دهید" className="lg:col-span-[span_7/span_7]" help={{ summary: "ترتیب و وضعیت تمام بخش‌ها، از جمله هر ردیف تایل، از این کارت مدیریت می‌شود.", blocks: [{ title: "تغییر ترتیب", items: ["دستگیره هر ردیف را نگه دارید.", "ردیف را بین بخش‌های دیگر بکشید و در محل دلخواه رها کنید.", "وضعیت هر بخش یا ردیف تایل را جداگانه فعال یا غیرفعال کنید."] }, { title: "اثر تغییر", description: "ترتیب این فهرست دقیقاً ترتیب نمایش صفحه اصلی است؛ برای مثال می‌توانید یک ردیف تایل را بین محبوب‌ترین‌ها و پیشنهادهای شگفت‌انگیز قرار دهید." }] }}>
         <div className="grid gap-2">{sections.map((section, index) => {
-          const meta = homeSectionMeta[section.id];
+          const tileGroupId = section.id.startsWith("TILE_GROUP:") ? section.id.slice("TILE_GROUP:".length) : null;
+          const tileGroupIndex = tileGroupId ? tileGroups.findIndex((group) => group.id === tileGroupId) : -1;
+          const tileGroup = tileGroupIndex >= 0 ? tileGroups[tileGroupIndex] : null;
+          const layoutLabel = tileGroup ? tileLayoutOptions.find((option) => option.value === tileGroup.layout)?.label : null;
+          const meta = tileGroup
+            ? { title: `ردیف تایل ${(tileGroupIndex + 1).toLocaleString("fa-IR")}`, description: `${layoutLabel ?? "چیدمان تصویری"}؛ ${tileGroup.tiles.length.toLocaleString("fa-IR")} تایل` }
+            : homeSectionMeta[section.id as HomepageSectionId];
+          if (!meta) return null;
           const isDropBefore = dropTarget?.id === section.id && !dropTarget.after && draggedSectionId !== section.id;
           const isDropAfter = dropTarget?.id === section.id && dropTarget.after && draggedSectionId !== section.id;
           return <div
@@ -285,7 +279,7 @@ export function HomepageSettings({ initialSettings, menuCategories, industry }: 
           </div>;
         })}</div>
       </SettingCard>
-      <SettingCard icon={<Images size={19} />} title="تایل‌های تصویری صفحه اصلی" description="ساخت ردیف‌های دلخواه با عکس، لینک و مرتب‌سازی درگ‌ودراپ" className="lg:col-span-2" help={{ summary: "هر ردیف چیدمان مستقل دارد و می‌توانید تا ۱۲ ردیف و ۲۴ تایل در هر ردیف بسازید.", blocks: [{ title: "چیدمان‌ها", items: ["دو، سه یا چهار تصویر کنار هم", "چیدمان دو ستونه برای نمایش چهار تصویر به‌صورت دو در دو", "ادامه خودکار ردیف‌ها در صورت افزودن تصاویر بیشتر"] }, { title: "مرتب‌سازی", description: "از دستگیره بالای هر ردیف برای جابه‌جایی ردیف‌ها و از دستگیره هر تایل برای مرتب‌سازی تصاویر همان ردیف استفاده کنید." }, { title: "نمایش", tone: "important", description: "تایل بدون تصویر در سایت نمایش داده نمی‌شود. لینک باید مسیر داخلی مانند /products یا نشانی HTTPS باشد." }] }}>
+      <SettingCard icon={<Images size={19} />} title="تایل‌های تصویری صفحه اصلی" description="ساخت ردیف‌های دلخواه با عکس، لینک و مرتب‌سازی درگ‌ودراپ" className="lg:col-span-2" help={{ summary: "هر ردیف چیدمان مستقل دارد و می‌توانید تا ۱۲ ردیف و ۲۴ تایل در هر ردیف بسازید.", blocks: [{ title: "چیدمان‌ها", items: ["دو، سه یا چهار تصویر کنار هم", "چیدمان دو ستونه برای نمایش چهار تصویر به‌صورت دو در دو", "ادامه خودکار ردیف‌ها در صورت افزودن تصاویر بیشتر"] }, { title: "مرتب‌سازی", description: "ترتیب تایل‌های داخل هر ردیف را از دستگیره خود تایل تغییر دهید. جای ردیف در صفحه از کارت «چینش صفحه اصلی» تعیین می‌شود." }, { title: "نمایش", tone: "important", description: "تایل بدون تصویر در سایت نمایش داده نمی‌شود. لینک باید مسیر داخلی مانند /products یا نشانی HTTPS باشد." }] }}>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div><strong className="block text-sm">ردیف‌های تایل</strong><span className="mt-1 block text-xs text-[var(--muted)]">هر ردیف می‌تواند چیدمان متفاوتی داشته باشد.</span></div>
           <Button type="button" variant="primary" onPress={addTileGroup} isDisabled={tileGroups.length >= 12} className="min-h-10 shrink-0 gap-2"><Plus size={15} />افزودن ردیف تایل</Button>
@@ -295,17 +289,14 @@ export function HomepageSettings({ initialSettings, menuCategories, industry }: 
           return <Card
             key={group.id}
             variant="secondary"
-            onDragOver={(event) => { if (!draggedTileGroupId) return; event.preventDefault(); event.dataTransfer.dropEffect = "move"; setTileGroupDropTargetId(group.id); }}
-            onDrop={(event) => { if (!draggedTileGroupId) return; event.preventDefault(); moveTileGroup(group.id); setDraggedTileGroupId(null); setTileGroupDropTargetId(null); }}
-            className={`rounded-xl border bg-[var(--surface-secondary)] p-3 shadow-none transition sm:p-4 ${draggedTileGroupId === group.id ? "opacity-45" : tileGroupDropTargetId === group.id ? "border-[var(--accent)] ring-2 ring-[var(--accent)]/15" : "border-[var(--border)]"}`}
+            className="rounded-xl border border-[var(--border)] bg-[var(--surface-secondary)] p-3 shadow-none sm:p-4"
           >
             <div className="mb-4 flex flex-wrap items-center gap-3">
-              <span draggable onDragStart={(event: DragEvent<HTMLSpanElement>) => { event.dataTransfer.effectAllowed = "move"; event.dataTransfer.setData("text/plain", group.id); setDraggedTileGroupId(group.id); }} onDragEnd={() => { setDraggedTileGroupId(null); setTileGroupDropTargetId(null); }} className="cursor-grab active:cursor-grabbing"><Button type="button" isIconOnly size="sm" variant="ghost" aria-label={`جابه‌جایی ردیف ${groupIndex + 1}`} className="pointer-events-none text-[var(--muted)]"><GripVertical size={17} /></Button></span>
               <span className="grid size-8 place-items-center rounded-lg bg-[var(--surface)] text-xs font-black text-[var(--muted)]">{(groupIndex + 1).toLocaleString("fa-IR")}</span>
               <HeroSelectField name={`tile-layout-${group.id}`} ariaLabel={`چیدمان ردیف ${groupIndex + 1}`} value={group.layout} includeEmptyOption={false} options={tileLayoutOptions} onValueChange={(value) => setTileGroups((current) => current.map((item) => item.id === group.id ? { ...item, layout: value as HomepageTileLayout } : item))} className="min-w-[190px] flex-1 sm:max-w-[280px]" />
               <Chip size="sm" variant="soft"><Chip.Label>{group.tiles.length.toLocaleString("fa-IR")} تایل</Chip.Label></Chip>
               <Button type="button" size="sm" variant="secondary" onPress={() => setTileGroups((current) => current.map((item) => item.id === group.id ? { ...item, tiles: [...item.tiles, { id: createHomepageEditorId("tile"), href: "/products", media: null }] } : item))} isDisabled={group.tiles.length >= 24} className="gap-1"><Plus size={14} />افزودن تایل</Button>
-              <Button type="button" size="sm" isIconOnly variant="danger-soft" aria-label={`حذف ردیف ${groupIndex + 1}`} onPress={() => setTileGroups((current) => current.filter((item) => item.id !== group.id))}><Trash2 size={14} /></Button>
+              <Button type="button" size="sm" isIconOnly variant="danger-soft" aria-label={`حذف ردیف ${groupIndex + 1}`} onPress={() => { setTileGroups((current) => current.filter((item) => item.id !== group.id)); setSections((current) => current.filter((section) => section.id !== `TILE_GROUP:${group.id}`)); }}><Trash2 size={14} /></Button>
             </div>
             {group.tiles.length === 0 ? <Alert status="warning"><Alert.Description>این ردیف خالی است؛ حداقل یک تایل اضافه کنید.</Alert.Description></Alert> : <div className={`grid gap-3 ${tileGridClass}`}>{group.tiles.map((tile, tileIndex) => <Card
               key={tile.id}
