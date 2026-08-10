@@ -24,6 +24,7 @@ const actionLabels: Record<string, string> = {
   COMMERCE_SETTINGS_UPDATE: "ویرایش تنظیمات ارسال و پرداخت",
   HOMEPAGE_SETTINGS_UPDATE: "ویرایش تنظیمات صفحه اصلی",
   HOMEPAGE_HERO_SETTINGS_UPDATE: "ویرایش اسلایدر صفحه اصلی",
+  HOMEPAGE_TILES_SETTINGS_UPDATE: "ویرایش تایل‌های صفحه اصلی",
   CONTENT_SETTINGS_UPDATE: "ویرایش محتوا و FAQ",
   COMMUNICATION_SETTINGS_UPDATE: "ویرایش تنظیمات پیامک",
   PAYMENT_GATEWAY_CONFIG_UPSERT: "ثبت یا ویرایش درگاه پرداخت",

@@ -1,0 +1,59 @@
+import { NextResponse } from "next/server";
+import { db } from "@/lib/db";
+import { apiError } from "@/lib/http";
+import { getCurrentUser } from "@/modules/auth/session";
+import { isAdminRole } from "@/modules/auth/permissions";
+import { getHomepageSettings, homepageSettingsInputSchema, homepageSettingsToInput, homepageTilesSettingsInputSchema } from "@/modules/settings/homepage-settings";
+import { getStoreIndustry, STORE_SETTING_ID } from "@/modules/settings/store-settings";
+import { auditRequestContext } from "@/modules/audit/request-context";
+
+export async function GET() {
+  const actor = await getCurrentUser();
+  if (!actor || !isAdminRole(actor.role)) return NextResponse.json({ message: "دسترسی غیرمجاز است." }, { status: 403 });
+  return NextResponse.json(await getHomepageSettings());
+}
+
+export async function PATCH(request: Request) {
+  try {
+    const actor = await getCurrentUser();
+    if (!actor || !isAdminRole(actor.role)) return NextResponse.json({ message: "دسترسی غیرمجاز است." }, { status: 403 });
+    const input = homepageTilesSettingsInputSchema.parse(await request.json());
+    const mediaIds = [...new Set(input.tileGroups.flatMap((group) => group.tiles.map((tile) => tile.mediaId)).filter((id): id is string => Boolean(id)))];
+    if (mediaIds.length) {
+      const media = await db.mediaAsset.findMany({ where: { id: { in: mediaIds }, scope: "HOMEPAGE", type: "IMAGE" }, select: { id: true } });
+      if (media.length !== mediaIds.length) return NextResponse.json({ message: "یکی از تصاویر انتخاب‌شده برای تایل‌ها معتبر نیست." }, { status: 422 });
+    }
+
+    const industry = await getStoreIndustry();
+    const generalHomepageSettings = industry === "GENERAL"
+      ? homepageSettingsInputSchema.parse({ ...homepageSettingsToInput(await getHomepageSettings()), ...input })
+      : null;
+    await db.$transaction(async (transaction) => {
+      if (industry === "GENERAL") {
+        await transaction.storeSetting.upsert({
+          where: { id: STORE_SETTING_ID },
+          create: { id: STORE_SETTING_ID, industry, generalHomepageSettings: generalHomepageSettings! },
+          update: { generalHomepageSettings: generalHomepageSettings! },
+        });
+      } else {
+        await transaction.storeSetting.upsert({
+          where: { id: STORE_SETTING_ID },
+          create: { id: STORE_SETTING_ID, homepageSections: input.sections, homepageTileGroups: input.tileGroups },
+          update: { homepageSections: input.sections, homepageTileGroups: input.tileGroups },
+        });
+      }
+      await transaction.auditLog.create({
+        data: {
+          actorId: actor.id,
+          action: "HOMEPAGE_TILES_SETTINGS_UPDATE",
+          entityType: "StoreSetting",
+          entityId: STORE_SETTING_ID,
+          ...auditRequestContext(request, { tileGroups: input.tileGroups.map((group) => ({ id: group.id, layout: group.layout, tileCount: group.tiles.length })) }),
+        },
+      });
+    });
+    return NextResponse.json(await getHomepageSettings());
+  } catch (error) {
+    return apiError(error);
+  }
+}

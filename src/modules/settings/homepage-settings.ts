@@ -139,7 +139,7 @@ const homepageOverviewSettingsObjectSchema = z.object({
   promoMobileMediaId: z.string().trim().min(1).nullable(),
 });
 
-function validateTileGroupLayout(value: z.infer<typeof homepageOverviewSettingsObjectSchema>, context: z.RefinementCtx) {
+function validateTileGroupLayout(value: { sections: z.infer<typeof sectionSchema>[]; tileGroups: z.infer<typeof homepageTileGroupsSchema> }, context: z.RefinementCtx) {
   const layoutTileIds = value.sections.filter((section) => section.id.startsWith("TILE_GROUP:")).map((section) => section.id.slice("TILE_GROUP:".length));
   const tileGroupIds = value.tileGroups.map((group) => group.id);
   if (layoutTileIds.length !== tileGroupIds.length || tileGroupIds.some((id) => !layoutTileIds.includes(id))) {
@@ -148,6 +148,11 @@ function validateTileGroupLayout(value: z.infer<typeof homepageOverviewSettingsO
 }
 
 export const homepageOverviewSettingsInputSchema = homepageOverviewSettingsObjectSchema.superRefine(validateTileGroupLayout);
+
+export const homepageTilesSettingsInputSchema = z.object({
+  sections: homepageOverviewSettingsObjectSchema.shape.sections,
+  tileGroups: homepageOverviewSettingsObjectSchema.shape.tileGroups,
+}).superRefine(validateTileGroupLayout);
 
 export const homepageHeroSettingsInputSchema = z.object({
   heroSlides: heroSlidesSchema,

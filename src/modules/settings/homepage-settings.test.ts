@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { generalHomepageSettingsDefaults, homepageHeroSettingsInputSchema, homepageOverviewSettingsInputSchema, homepageSettingsDefaults, homepageSettingsInputSchema } from "./homepage-settings";
+import { generalHomepageSettingsDefaults, homepageHeroSettingsInputSchema, homepageOverviewSettingsInputSchema, homepageSettingsDefaults, homepageSettingsInputSchema, homepageTilesSettingsInputSchema } from "./homepage-settings";
 
 test("general storefront starts with copy independent from the gold template", () => {
   assert.notEqual(generalHomepageSettingsDefaults.heroTitle, homepageSettingsDefaults.heroTitle);
@@ -137,4 +137,12 @@ test("homepage overview and hero settings can be updated independently", () => {
   const hero = homepageHeroSettingsInputSchema.parse(homepageSettingsDefaults);
   assert.equal("heroSlides" in overview, false);
   assert.equal("promoBannerEnabled" in hero, false);
+});
+
+test("homepage tiles can be updated independently from other homepage settings", () => {
+  const tileGroups = [{ id: "group", layout: "TWO_COLUMNS", tiles: [{ id: "tile", mediaId: "media", href: "/products" }] }];
+  const sections = [...homepageSettingsDefaults.sections, { id: "TILE_GROUP:group", enabled: true }];
+  const parsed = homepageTilesSettingsInputSchema.parse({ sections, tileGroups });
+  assert.equal(parsed.tileGroups[0].tiles[0].mediaId, "media");
+  assert.equal("promoBannerEnabled" in parsed, false);
 });
