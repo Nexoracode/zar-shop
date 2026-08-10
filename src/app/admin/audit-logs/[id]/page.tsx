@@ -28,7 +28,14 @@ export default async function AuditLogDetailPage({ params }: Context) {
         <AuditMetadataPanel metadata={metadata} />
       </div>
       <aside className="grid content-start gap-5">
-        <AdminPanel className="p-5"><div className="mb-4 flex items-center gap-2"><UserRound size={18} className="text-[#b5904c]" /><h2 className="m-0 text-sm font-black text-[#17233b]">کاربر پنل</h2></div><dl className="grid gap-3"><DetailItem label="نام" value={auditActorName(log.actor)} /><DetailItem label="شماره همراه" value={log.actor?.phone ?? "ثبت نشده"} ltr /><DetailItem label="شناسه کاربر" value={log.actorId ?? "رویداد خودکار سیستم"} ltr /><DetailItem label="نقش هنگام مشاهده" value={log.actor?.role ?? "SYSTEM"} ltr /></dl></AdminPanel>
+        <AdminPanel className="p-5">
+          <div className="mb-4 flex items-center gap-2"><UserRound size={18} className="text-[#b5904c]" /><h2 className="m-0 text-sm font-black text-[#17233b]">کاربر پنل</h2></div>
+          <div className="mb-4 rounded-xl bg-slate-50 px-4 py-3">
+            <strong className="block text-sm text-slate-700">{auditActorName(log.actor)}</strong>
+            <small dir="ltr" className="mt-1 block text-right text-[11px] text-slate-400">{log.actor ? log.actor.phone ?? "شماره همراه ثبت نشده" : "رویداد خودکار سیستم"}</small>
+          </div>
+          <dl className="grid gap-3"><DetailItem label="شناسه کاربر" value={log.actorId ?? "رویداد خودکار سیستم"} ltr /><DetailItem label="نقش هنگام مشاهده" value={log.actor?.role ?? "SYSTEM"} ltr /></dl>
+        </AdminPanel>
         <AdminPanel className="p-5"><div className="mb-4 flex items-center gap-2"><Clock3 size={18} className="text-[#b5904c]" /><h2 className="m-0 text-sm font-black text-[#17233b]">زمان و مبدأ</h2></div><dl className="grid gap-3"><DetailItem label="زمان ثبت" value={formatDateTime(log.createdAt)} /><DetailItem label="نشانی IP" value={log.ipAddress ?? "ثبت نشده"} ltr />{requestDetails && <><DetailItem label="متد درخواست" value={displayValue(requestDetails.method)} ltr /><DetailItem label="مسیر درخواست" value={displayValue(requestDetails.path)} ltr /><DetailItem label="صفحه مبدأ" value={displayValue(requestDetails.referer)} ltr /><DetailItem label="مرورگر / دستگاه" value={displayValue(requestDetails.userAgent)} ltr /></>}</dl><div className="mt-4 flex items-start gap-2 rounded-xl bg-blue-50/70 p-3 text-xs leading-6 text-blue-700"><Globe2 size={16} className="mt-1 shrink-0" /><span>اطلاعات مبدأ بر اساس داده ثبت‌شده هنگام انجام عملیات نمایش داده می‌شود.</span></div></AdminPanel>
       </aside>
     </div>
