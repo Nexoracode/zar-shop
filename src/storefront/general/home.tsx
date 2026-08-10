@@ -11,6 +11,7 @@ import { StorefrontImageTiles } from "@/components/storefront-image-tiles";
 import { ViewAllProductCard } from "@/components/view-all-product-card";
 import { db } from "@/lib/db";
 import { getStorefrontProductFeed } from "@/modules/products/storefront-feed";
+import type { StorefrontProductCardItem } from "@/modules/products/storefront-feed-contract";
 import { getHomepageSettings, type HomepageLayoutItemId } from "@/modules/settings/homepage-settings";
 import { buildStorefrontHeroSlides } from "@/storefront/shared/hero";
 
@@ -26,6 +27,16 @@ function resolveCategoryIcon(value: string): LucideIcon {
   if (name.includes("ورزش") || name.includes("سفر")) return Dumbbell;
   if (name.includes("زیبایی") || name.includes("سلامت")) return HeartPulse;
   return ShoppingBag;
+}
+
+function ProductRail({ title, description, products, href }: { title: string; description: string; products: StorefrontProductCardItem[]; href: string }) {
+  if (!products.length) return null;
+  return <section className="min-w-0 overflow-hidden rounded-2xl border border-[#e6e8ec] bg-white px-4 py-5 sm:px-6 lg:px-7 lg:py-7">
+    <div className="mb-5 flex items-end justify-between gap-4"><div><h2 className="m-0 text-xl font-black text-[#232934] sm:text-2xl">{title}</h2><p className="mb-0 mt-1 text-xs text-[#858b95] sm:text-sm">{description}</p></div><Link href={href} className="inline-flex shrink-0 items-center gap-1 text-xs font-bold text-[#232934] transition hover:text-black">مشاهده همه<ChevronLeft size={15} /></Link></div>
+    <DragScrollRow ariaLabel={title} showNavigation className="flex w-full min-w-0 max-w-full gap-3 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      {products.map((product, index) => <div key={product.id} className="w-[164px] min-w-[164px] snap-start sm:w-[206px] sm:min-w-[206px] lg:w-[218px] lg:min-w-[218px]"><ProductCard {...product} storefrontVariant="gallery" imageTone={index % 4} /></div>)}
+    </DragScrollRow>
+  </section>;
 }
 
 export async function GeneralHome() {
@@ -70,9 +81,11 @@ export async function GeneralHome() {
       </div>
     </section>}
 
-    {popularFeed.items.length > 0 && <div {...sectionProps("POPULAR_PRODUCTS")} className={container}><HomepageBestSellers products={popularFeed.items} /></div>}
+    {popularFeed.items.length > 0 && <div {...sectionProps("POPULAR_PRODUCTS")} className={container}><ProductRail title="محبوب‌ترین کالاها" description="محصولاتی که بیشتر مورد توجه مشتریان قرار گرفته‌اند" products={popularFeed.items} href="/products?sortby=popular" /></div>}
 
-    <section {...sectionProps("LATEST_PRODUCTS")} className={`${container} min-w-0 overflow-hidden rounded-2xl border border-[#e6e8ec] bg-white px-4 py-6 sm:px-6 lg:px-7 lg:py-8`}><div className="mb-5"><h2 className="m-0 text-xl font-black text-[#232934] sm:text-2xl">جدیدترین محصولات</h2><p className="mb-0 mt-1 text-xs text-[#858b95] sm:text-sm">تازه‌ترین کالاهای اضافه‌شده به فروشگاه</p></div><HomepageProductFeed initialFeed={latestFeed} industry="GENERAL" /></section>
+    {popularFeed.items.length > 0 && <div {...sectionProps("BEST_SELLING_PRODUCTS")} className={container}><HomepageBestSellers products={popularFeed.items} /></div>}
+
+    <section {...sectionProps("LATEST_PRODUCTS")} className={`${container} min-w-0 overflow-hidden rounded-2xl border border-[#e6e8ec] bg-white px-4 py-6 sm:px-6 lg:px-7 lg:py-8`}><div className="mb-5 flex items-end justify-between gap-4"><div><h2 className="m-0 text-xl font-black text-[#232934] sm:text-2xl">جدیدترین محصولات</h2><p className="mb-0 mt-1 text-xs text-[#858b95] sm:text-sm">تازه‌ترین کالاهای اضافه‌شده به فروشگاه</p></div><Link href="/products?sortby=newest" className="inline-flex shrink-0 items-center gap-1 text-xs font-bold text-[#232934] transition hover:text-black">مشاهده همه<ChevronLeft size={15} /></Link></div><HomepageProductFeed initialFeed={latestFeed} industry="GENERAL" /></section>
 
   </main>;
 }

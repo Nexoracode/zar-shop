@@ -12,8 +12,8 @@ export function HomepageBestSellers({ products }: { products: StorefrontProductC
 
   return <section className="overflow-hidden rounded-2xl border border-[#e6e8ec] bg-white px-4 py-6 sm:px-6 lg:px-8 lg:py-8" aria-labelledby="best-selling-products">
     <div className="mb-6 flex items-end justify-between gap-4 border-b border-slate-100 pb-5">
-      <div><span className="text-[11px] font-bold text-[var(--brand-primary)]">انتخاب مشتریان</span><h2 id="best-selling-products" className="mb-0 mt-1 text-xl font-black text-[#232934] sm:text-2xl">پرفروش‌ترین کالاها</h2></div>
-      <Link href="/products?sortby=popular" className="inline-flex shrink-0 items-center gap-1 text-xs font-bold text-[var(--brand-primary)]">مشاهده همه<ChevronLeft size={15} /></Link>
+      <h2 id="best-selling-products" className="m-0 text-xl font-black text-[#232934] sm:text-2xl">پرفروش‌ترین کالاها</h2>
+      <Link href="/products?sortby=popular" className="inline-flex shrink-0 items-center gap-1 text-xs font-bold text-[#232934] transition hover:text-black">مشاهده همه<ChevronLeft size={15} /></Link>
     </div>
     <div className="flex snap-x snap-mandatory gap-5 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden lg:grid lg:grid-cols-4 lg:gap-0 lg:overflow-visible lg:pb-0">
       {columns.map((column, columnIndex) => <div key={column[0]?.id ?? columnIndex} className="grid min-w-[285px] snap-start divide-y divide-slate-100 px-1 sm:min-w-[330px] lg:min-w-0 lg:border-l lg:border-slate-100 lg:px-5 lg:last:border-l-0">

@@ -12,7 +12,8 @@ const sectionNames: Partial<Record<HomepageLayoutItemId, string>> = {
   HERO: "اسلایدر",
   CATEGORIES: "دسته‌بندی‌های دایره‌ای",
   FEATURED_PRODUCTS: "شگفت‌انگیزها",
-  POPULAR_PRODUCTS: "پرفروش‌ترین‌ها",
+  POPULAR_PRODUCTS: "محبوب‌ترین‌ها",
+  BEST_SELLING_PRODUCTS: "پرفروش‌ترین‌ها",
   LATEST_PRODUCTS: "جدیدترین‌ها",
   ABOUT: "معرفی فروشگاه",
   PROMISES: "مزیت‌های خرید",
@@ -72,8 +73,8 @@ function PreviewSection({ id, mode, heroUrl }: { id: HomepageSectionId; mode: Pr
   if (id === "HERO") return <section className={`relative overflow-hidden rounded-md bg-slate-300 ${mode === "mobile" ? "aspect-[4/3]" : "aspect-[3.2/1]"}`}>{heroUrl && <Image src={heroUrl} alt="پیش‌نمایش اسلایدر" fill sizes="420px" className="object-cover" />}<span className="absolute inset-0 bg-gradient-to-l from-black/30 to-transparent" /><span className="absolute right-2 top-1/2 grid -translate-y-1/2 gap-1"><i className="h-2 w-16 rounded-full bg-white/90" /><i className="h-1 w-20 rounded-full bg-white/60" /><i className="h-3 w-9 rounded bg-[var(--accent)]" /></span></section>;
   if (id === "CATEGORIES") return <PreviewBlock label={sectionNames[id]!}><div className={`grid gap-1 ${mode === "mobile" ? "grid-cols-5" : "grid-cols-8"}`}>{Array.from({ length: mode === "mobile" ? 5 : 8 }, (_, index) => <span key={index} className="grid justify-items-center gap-0.5"><i className="aspect-square w-full rounded-full bg-slate-200" /><i className="h-1 w-3/4 rounded-full bg-slate-200" /></span>)}</div></PreviewBlock>;
   if (id === "FEATURED_PRODUCTS") return <PreviewBlock label={sectionNames[id]!} tone="bg-rose-100"><ProductShapes count={4} /></PreviewBlock>;
-  if (id === "POPULAR_PRODUCTS") return <PreviewBlock label={sectionNames[id]!}><div className="grid grid-cols-4 gap-1">{Array.from({ length: 12 }, (_, index) => <span key={index} className="flex items-center gap-0.5"><i className="size-2.5 shrink-0 rounded bg-slate-200" /><i className="grid size-1.5 shrink-0 place-items-center rounded-full bg-rose-400 text-[3px] text-white">{index + 1}</i><i className="h-1 flex-1 rounded-full bg-slate-200" /></span>)}</div></PreviewBlock>;
-  if (id === "LATEST_PRODUCTS") return <PreviewBlock label={sectionNames[id]!}><ProductShapes count={4} /></PreviewBlock>;
+  if (id === "BEST_SELLING_PRODUCTS") return <PreviewBlock label={sectionNames[id]!}><div className="grid grid-cols-4 gap-1">{Array.from({ length: 12 }, (_, index) => <span key={index} className="flex items-center gap-0.5"><i className="size-2.5 shrink-0 rounded bg-slate-200" /><i className="grid size-1.5 shrink-0 place-items-center rounded-full bg-rose-400 text-[3px] text-white">{index + 1}</i><i className="h-1 flex-1 rounded-full bg-slate-200" /></span>)}</div></PreviewBlock>;
+  if (id === "POPULAR_PRODUCTS" || id === "LATEST_PRODUCTS") return <PreviewBlock label={sectionNames[id]!}><ProductShapes count={4} /></PreviewBlock>;
   if (id === "ABOUT") return <PreviewBlock label={sectionNames[id]!}><div className="grid grid-cols-2 gap-1"><span className="h-10 rounded bg-amber-100" /><span className="h-10 rounded bg-slate-200" /></div></PreviewBlock>;
   if (id === "PROMISES") return <PreviewBlock label={sectionNames[id]!}><div className="grid grid-cols-4 gap-1">{Array.from({ length: 4 }, (_, index) => <span key={index} className="h-6 rounded bg-slate-100" />)}</div></PreviewBlock>;
   return <PreviewBlock label={sectionNames[id] ?? "خدمات و سوالات"}><div className="grid gap-1">{Array.from({ length: 3 }, (_, index) => <span key={index} className="h-2 rounded bg-slate-100" />)}</div></PreviewBlock>;
