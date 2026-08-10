@@ -13,7 +13,7 @@ const tileSizeClasses = {
   TWO_COLUMNS: "aspect-[2.15/1] sm:aspect-[2.6/1] sm:rounded-xl",
   THREE_COLUMNS: "aspect-[16/9] sm:rounded-2xl",
   FOUR_COLUMNS: "aspect-[16/9] sm:rounded-2xl",
-  TWO_BY_TWO: "aspect-[16/9] sm:rounded-2xl",
+  TWO_BY_TWO: "aspect-[2.15/1] sm:aspect-[2.6/1] sm:rounded-xl",
 } as const;
 
 export function StorefrontImageTiles({ groups }: { groups: HomepageSettings["tileGroups"] }) {
