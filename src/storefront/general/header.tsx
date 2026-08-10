@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Bell, Headphones, Home, LayoutDashboard, Menu, Search, ShoppingCart, UserRound } from "lucide-react";
 import type { User } from "@generated/prisma/client";
+import { db } from "@/lib/db";
 import { normalizeNumericValue } from "@/lib/persian-numbers";
 import type { BrandSettings } from "@/modules/settings/brand-settings";
 import type { GeneralStoreSettingsInput } from "@/modules/settings/general-settings";
@@ -10,7 +11,19 @@ import { GeneralHeaderMenuRow } from "@/storefront/general/header-menu-row";
 
 type Props = { settings: GeneralStoreSettingsInput; brand: BrandSettings; user: User | null; menuItems: HomepageMenuItem[] };
 
-export function GeneralHeader({ settings, brand, user, menuItems }: Props) {
+export async function GeneralHeader({ settings, brand, user, menuItems }: Props) {
+  const categories = await db.category.findMany({
+    where: { isActive: true, parentId: null },
+    include: {
+      image: { select: { url: true, alt: true, type: true } },
+      children: {
+        where: { isActive: true },
+        include: { children: { where: { isActive: true }, orderBy: [{ sortOrder: "asc" }, { name: "asc" }] } },
+        orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
+      },
+    },
+    orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
+  });
   const accountHref = user ? (user.isGuest ? "/cart" : "/account") : "/login";
   const logo = brand.mainLogoMedia
     ? <span className="relative block h-10 w-28"><Image src={brand.mainLogoMedia.url} alt={brand.mainLogoMedia.alt ?? settings.storeName} fill sizes="112px" className="object-contain" /></span>
@@ -37,7 +50,7 @@ export function GeneralHeader({ settings, brand, user, menuItems }: Props) {
           {user?.role !== "CUSTOMER" && user && <Link href="/admin" aria-label="پنل مدیریت"><LayoutDashboard size={20} /></Link>}
         </div>
       </div>
-      <GeneralHeaderMenuRow menuItems={menuItems} deliveryHref={accountHref} />
+      <GeneralHeaderMenuRow categories={categories} menuItems={menuItems} deliveryHref={accountHref} />
     </header>
     <nav className="fixed inset-x-0 bottom-0 z-50 grid h-[66px] grid-cols-4 border-t border-[#e7e9ed] bg-white/95 text-[#6f7480] shadow-[0_-5px_20px_rgba(0,0,0,.05)] backdrop-blur lg:hidden" aria-label="ناوبری موبایل">
       <Link href="/" className="grid place-items-center content-center text-[var(--brand-primary)]"><Home size={21} /><small className="sr-only">خانه</small></Link>
