@@ -149,10 +149,16 @@ function validateTileGroupLayout(value: { sections: z.infer<typeof sectionSchema
 
 export const homepageOverviewSettingsInputSchema = homepageOverviewSettingsObjectSchema.superRefine(validateTileGroupLayout);
 
+export const homepageMainSettingsInputSchema = homepageOverviewSettingsObjectSchema.omit({ sections: true, tileGroups: true });
+
 export const homepageTilesSettingsInputSchema = z.object({
   sections: homepageOverviewSettingsObjectSchema.shape.sections,
   tileGroups: homepageOverviewSettingsObjectSchema.shape.tileGroups,
 }).superRefine(validateTileGroupLayout);
+
+export const homepageLayoutSettingsInputSchema = z.object({
+  sections: homepageOverviewSettingsObjectSchema.shape.sections,
+});
 
 export const homepageHeroSettingsInputSchema = z.object({
   heroSlides: heroSlidesSchema,

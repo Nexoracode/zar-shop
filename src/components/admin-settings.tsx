@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useState, type DragEvent, type FormEvent, type ReactNode } from "react";
+import { useState, type FormEvent, type ReactNode } from "react";
 import { Alert, Button, Card, Chip, Input, Label, Tabs, TextArea, buttonVariants, toast } from "@heroui/react";
 import {
   Bell, Boxes, CheckCircle2, CircleDollarSign, Clock3, CreditCard, Eye, EyeOff, FileQuestion, FileText,
@@ -15,10 +15,9 @@ import { HeroSelectField } from "@/components/hero-select-field";
 import { adminFieldClass, adminLabelClass } from "@/components/admin-ui";
 import { HeroNumberInput } from "@/components/hero-number-input";
 import { MediaPickerDialog } from "@/components/media-picker-dialog";
-import { HomepageLayoutPreview } from "@/components/homepage-layout-preview";
 import type { MediaChoice } from "@/components/media-library";
 import type { GeneralStoreSettingsInput } from "@/modules/settings/general-settings";
-import type { HomepageLayoutItemId, HomepageLicenseId, HomepageMenuCategoryOption, HomepageSectionId, HomepageSettings as HomepageSettingsData, HomepageTreasureCardId } from "@/modules/settings/homepage-settings";
+import type { HomepageLicenseId, HomepageMenuCategoryOption, HomepageSettings as HomepageSettingsData, HomepageTreasureCardId } from "@/modules/settings/homepage-settings";
 import type { BrandSettings as BrandSettingsData } from "@/modules/settings/brand-settings";
 import type { OrderSettings as OrderSettingsData } from "@/modules/settings/order-settings";
 import type { CommerceSettings as CommerceSettingsData } from "@/modules/settings/commerce-settings";
@@ -69,17 +68,6 @@ export function GeneralSettings({ initialSettings }: { initialSettings: GeneralS
   </SettingsGrid><Card variant="secondary" className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4 shadow-sm"><div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"><div><strong className="block text-sm">ذخیره تنظیمات عمومی</strong><p className="m-0 mt-1 text-xs text-[var(--muted)]">اطلاعات و وضعیت عمومی فروشگاه با هم ذخیره می‌شوند.</p></div><Button type="submit" variant="primary" isPending={saving} className="min-h-11 gap-2 px-5"><Save size={16} />ذخیره تنظیمات</Button></div></Card></form>;
 }
 
-const homeSectionMeta: Record<HomepageSectionId, { title: string; description: string }> = {
-  HERO: { title: "اسلایدر اصلی", description: "بنر، عنوان، توضیح و دکمه اقدام" },
-  PROMISES: { title: "مزیت‌های خرید", description: "ضمانت اصالت، ارسال امن و قیمت‌گذاری شفاف" },
-  CATEGORIES: { title: "دسته‌بندی‌های منتخب", description: "دسته‌بندی‌های شاخص و فعال فروشگاه" },
-  FEATURED_PRODUCTS: { title: "پیشنهادهای شگفت‌انگیز", description: "محصولات دارای تخفیف و پیشنهاد ویژه" },
-  POPULAR_PRODUCTS: { title: "محبوب‌ترین محصولات", description: "محصولاتی که بیشتر مورد توجه مشتریان هستند" },
-  LATEST_PRODUCTS: { title: "جدیدترین محصولات", description: "تازه‌ترین محصولات منتشرشده فروشگاه" },
-  ABOUT: { title: "معرفی فروشگاه", description: "داستان، ارزش‌ها و شفافیت فروشگاه" },
-  CONCIERGE: { title: "خدمات اختصاصی", description: "تضمین اصالت، تحویل و مشاوره انتخاب" },
-};
-
 const treasureCardMeta: Record<HomepageTreasureCardId, { title: string; hint: string }> = {
   UNDER_20: { title: "کمتر از ۲۰ میلیون", hint: "تصویر محصولات مینیمال" },
   FROM_20_TO_60: { title: "۲۰ تا ۶۰ میلیون", hint: "تصویر محصولات روزانه" },
@@ -101,7 +89,7 @@ function toMediaChoice(media: HomepageSettingsData["heroDesktopMedia"]): MediaCh
 
 export function HomepageSettings({ initialSettings, menuCategories, industry }: { initialSettings: HomepageSettingsData; menuCategories: HomepageMenuCategoryOption[]; industry: "GOLD" | "GENERAL" }) {
   const [saving, setSaving] = useState(false);
-  const [sections, setSections] = useState(initialSettings.sections);
+  const sections = initialSettings.sections;
   const [menuCategoryIds, setMenuCategoryIds] = useState(initialSettings.menuCategoryIds);
   const tileGroups = initialSettings.tileGroups;
   const [treasureCards, setTreasureCards] = useState(() => initialSettings.treasureCards.map((card) => ({ id: card.id, mediaId: card.mediaId, media: toMediaChoice(card.media) })));
@@ -112,46 +100,6 @@ export function HomepageSettings({ initialSettings, menuCategories, industry }: 
   const [promoDesktopMedia, setPromoDesktopMedia] = useState<MediaChoice | null>(() => toMediaChoice(initialSettings.promoDesktopMedia));
   const [promoMobileMedia, setPromoMobileMedia] = useState<MediaChoice | null>(() => toMediaChoice(initialSettings.promoMobileMedia));
   const [pickerTarget, setPickerTarget] = useState<HomepagePickerTarget | null>(null);
-  const [draggedSectionId, setDraggedSectionId] = useState<HomepageLayoutItemId | null>(null);
-  const [dropTarget, setDropTarget] = useState<{ id: HomepageLayoutItemId; after: boolean } | null>(null);
-
-  function moveSection(index: number, direction: -1 | 1) {
-    const target = index + direction;
-    if (target < 0 || target >= sections.length) return;
-    setSections((current) => {
-      const next = [...current];
-      [next[index], next[target]] = [next[target], next[index]];
-      return next;
-    });
-  }
-
-  function updateDropTarget(event: DragEvent<HTMLDivElement>, id: HomepageLayoutItemId) {
-    event.preventDefault();
-    event.dataTransfer.dropEffect = "move";
-    const bounds = event.currentTarget.getBoundingClientRect();
-    setDropTarget({ id, after: event.clientY > bounds.top + bounds.height / 2 });
-  }
-
-  function dropSection(event: DragEvent<HTMLDivElement>, targetId: HomepageLayoutItemId) {
-    event.preventDefault();
-    const sourceId = draggedSectionId ?? event.dataTransfer.getData("text/plain") as HomepageLayoutItemId;
-    const target = dropTarget?.id === targetId ? dropTarget : { id: targetId, after: false };
-    if (sourceId && sourceId !== target.id) {
-      setSections((current) => {
-        const source = current.find((section) => section.id === sourceId);
-        if (!source) return current;
-        const remaining = current.filter((section) => section.id !== sourceId);
-        const targetIndex = remaining.findIndex((section) => section.id === target.id);
-        if (targetIndex < 0) return current;
-        const next = [...remaining];
-        next.splice(targetIndex + (target.after ? 1 : 0), 0, source);
-        return next;
-      });
-    }
-    setDraggedSectionId(null);
-    setDropTarget(null);
-  }
-
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setSaving(true);
@@ -160,7 +108,7 @@ export function HomepageSettings({ initialSettings, menuCategories, industry }: 
       const response = await fetch("/api/admin/settings/homepage", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...values, sections, menuCategoryIds, tileGroups: tileGroups.map((group) => ({ id: group.id, layout: group.layout, tiles: group.tiles.map(({ id, mediaId, href }) => ({ id, mediaId, href })) })), treasureCards: treasureCards.map((card) => ({ id: card.id, mediaId: card.media?.id ?? null })), licenses: licenses.map((license) => ({ id: license.id, mediaId: license.media?.id ?? null, href: license.href })), promoBannerEnabled, promoBannerHref, promoDesktopMediaId: promoDesktopMedia?.id ?? null, promoMobileMediaId: promoMobileMedia?.id ?? null }),
+        body: JSON.stringify({ ...values, menuCategoryIds, treasureCards: treasureCards.map((card) => ({ id: card.id, mediaId: card.media?.id ?? null })), licenses: licenses.map((license) => ({ id: license.id, mediaId: license.media?.id ?? null, href: license.href })), promoBannerEnabled, promoBannerHref, promoDesktopMediaId: promoDesktopMedia?.id ?? null, promoMobileMediaId: promoMobileMedia?.id ?? null }),
       });
       const result = await response.json().catch(() => null);
       if (!response.ok) throw new Error(result?.message ?? "ذخیره تنظیمات صفحه اصلی انجام نشد.");
@@ -197,47 +145,8 @@ export function HomepageSettings({ initialSettings, menuCategories, industry }: 
           <div className="grid gap-3 sm:grid-cols-2"><HomepageMediaField label="بنر دسکتاپ" hint="۱۹۲۰×۱۲۰؛ تصویر یا GIF" media={promoDesktopMedia} onSelect={() => setPickerTarget("promoDesktop")} onClear={() => setPromoDesktopMedia(null)} aspectClass="aspect-[3/1]" /><HomepageMediaField label="بنر موبایل" hint="۹۰۰×۱۸۰؛ تصویر یا GIF" media={promoMobileMedia} onSelect={() => setPickerTarget("promoMobile")} onClear={() => setPromoMobileMedia(null)} aspectClass="aspect-[3/1]" /></div>
         </div>}
       </SettingCard>
-      <SettingCard icon={<LayoutDashboard size={19} />} title="چینش صفحه اصلی" description="هر بخش و هر ردیف تایل را مستقل در جای دلخواه قرار دهید" className="lg:col-span-[span_7/span_7]" help={{ summary: "ترتیب و وضعیت تمام بخش‌ها، از جمله هر ردیف تایل، از این کارت مدیریت می‌شود.", blocks: [{ title: "تغییر ترتیب", items: ["دستگیره هر ردیف را نگه دارید.", "ردیف را بین بخش‌های دیگر بکشید و در محل دلخواه رها کنید.", "وضعیت هر بخش یا ردیف تایل را جداگانه فعال یا غیرفعال کنید."] }, { title: "اثر تغییر", description: "ترتیب این فهرست دقیقاً ترتیب نمایش صفحه اصلی است؛ برای مثال می‌توانید یک ردیف تایل را بین محبوب‌ترین‌ها و پیشنهادهای شگفت‌انگیز قرار دهید." }] }}>
-        <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(300px,0.72fr)]"><div className="grid gap-2">{sections.map((section, index) => {
-          const tileGroupId = section.id.startsWith("TILE_GROUP:") ? section.id.slice("TILE_GROUP:".length) : null;
-          const tileGroupIndex = tileGroupId ? tileGroups.findIndex((group) => group.id === tileGroupId) : -1;
-          const tileGroup = tileGroupIndex >= 0 ? tileGroups[tileGroupIndex] : null;
-          const meta = tileGroup
-            ? { title: `ردیف تایل ${(tileGroupIndex + 1).toLocaleString("fa-IR")}`, description: `${tileGroup.tiles.length.toLocaleString("fa-IR")} تایل؛ مدیریت تصاویر در صفحه مستقل تایل‌ها` }
-            : homeSectionMeta[section.id as HomepageSectionId];
-          if (!meta) return null;
-          const isDropBefore = dropTarget?.id === section.id && !dropTarget.after && draggedSectionId !== section.id;
-          const isDropAfter = dropTarget?.id === section.id && dropTarget.after && draggedSectionId !== section.id;
-          return <div
-            key={section.id}
-            onDragOver={(event) => updateDropTarget(event, section.id)}
-            onDrop={(event) => dropSection(event, section.id)}
-            className={`relative flex items-center gap-2 rounded-xl border bg-[var(--surface-secondary)] p-3 transition sm:gap-3 ${draggedSectionId === section.id ? "border-[var(--accent)] opacity-45" : "border-[var(--border)]"} ${isDropBefore ? "before:absolute before:inset-x-2 before:-top-1.5 before:h-0.5 before:rounded-full before:bg-[var(--accent)]" : ""} ${isDropAfter ? "after:absolute after:inset-x-2 after:-bottom-1.5 after:h-0.5 after:rounded-full after:bg-[var(--accent)]" : ""}`}
-          >
-            <span
-              draggable
-              onDragStart={(event: DragEvent<HTMLSpanElement>) => { event.dataTransfer.effectAllowed = "move"; event.dataTransfer.setData("text/plain", section.id); setDraggedSectionId(section.id); }}
-              onDragEnd={() => { setDraggedSectionId(null); setDropTarget(null); }}
-              className="shrink-0 cursor-grab active:cursor-grabbing"
-            >
-              <Button
-                type="button"
-                isIconOnly
-                size="sm"
-                variant="ghost"
-                aria-label={`جابه‌جایی ${meta.title}؛ با کشیدن یا کلیدهای بالا و پایین`}
-                onKeyDown={(event) => { if (event.key === "ArrowUp") { event.preventDefault(); moveSection(index, -1); } else if (event.key === "ArrowDown") { event.preventDefault(); moveSection(index, 1); } }}
-                className="pointer-events-none cursor-grab text-[var(--muted)] active:cursor-grabbing"
-              ><GripVertical size={17} /></Button>
-            </span>
-            <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-[var(--surface)] text-xs font-black text-[var(--muted)]">{(index + 1).toLocaleString("fa-IR")}</span>
-            <div className="min-w-0 flex-1"><strong className="block text-sm">{meta.title}</strong><span className="mt-0.5 block truncate text-[11px] text-[var(--muted)]">{meta.description}</span></div>
-            <Chip size="sm" variant="soft" className={section.enabled ? "text-emerald-700" : "text-slate-500"}><Chip.Label>{section.enabled ? "فعال" : "غیرفعال"}</Chip.Label></Chip>
-            <div className="flex shrink-0 items-center gap-0.5">
-              <Button type="button" isIconOnly size="sm" variant="ghost" aria-label={`${section.enabled ? "غیرفعال کردن" : "فعال کردن"} ${meta.title}`} onPress={() => setSections((current) => current.map((item) => item.id === section.id ? { ...item, enabled: !item.enabled } : item))}>{section.enabled ? <Eye size={15} /> : <EyeOff size={15} />}</Button>
-            </div>
-          </div>;
-        })}</div><HomepageLayoutPreview sections={sections} settings={initialSettings} /></div>
+      <SettingCard icon={<LayoutDashboard size={19} />} title="چینش صفحه اصلی" description="مدیریت ترتیب، وضعیت بخش‌ها و پیش‌نمایش زنده" className="lg:col-span-2">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"><div><strong className="block text-sm">مدیریت مستقل چینش</strong><span className="mt-1 block text-xs text-[var(--muted)]">{sections.filter((section) => section.enabled).length.toLocaleString("fa-IR")} بخش فعال از {sections.length.toLocaleString("fa-IR")} بخش ثبت‌شده</span></div><Link href="/admin/settings/homepage/layout" className={buttonVariants({ variant: "primary", size: "md", className: "min-h-11 shrink-0 gap-2 rounded-xl px-5 text-sm font-bold" })}>مدیریت چینش<ChevronLeft size={16} /></Link></div>
       </SettingCard>
       <SettingCard icon={<ListTree size={19} />} title="منوی بالا و مگامنو" description="دسته‌های سطح اولی که در نوار اصلی و مگامنو نمایش داده می‌شوند" help={{ summary: "دسته‌های منتخب در نوار بالای سایت قرار می‌گیرند و زیرمجموعه‌هایشان داخل مگامنو نمایش داده می‌شود.", blocks: [{ title: "انتخاب دسته‌ها", items: ["حداکثر شش دسته سطح اول را انتخاب کنید.", "برای حذف از منو، همان دسته را دوباره بزنید.", "ترتیب انتخاب، ترتیب نمایش در نوار بالا را مشخص می‌کند."] }, { title: "مگامنو", description: "زیر‌دسته‌ها نیاز به انتخاب جداگانه ندارند و از ساختار فعال همان دسته اصلی خوانده می‌شوند." }, { title: "نکته", tone: "important", description: "این تنظیم فقط منوی بالای هدر را محدود می‌کند؛ منوی کامل «دسته‌بندی کالاها» همیشه همه دسته‌های فعال را نمایش می‌دهد." }] }}>
         <div className="flex items-center justify-between gap-3 rounded-xl border border-[var(--border)] bg-[var(--surface-secondary)] px-3 py-2.5">
