@@ -1,9 +1,10 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { BadgePercent, CheckCircle2, PackageCheck, ShieldCheck, Star, Truck } from "lucide-react";
-import { AddToCart } from "@/components/add-to-cart";
+import { AddToCart, ProductPurchaseProvider } from "@/components/add-to-cart";
 import { PriceTooltip } from "@/components/price-tooltip";
 import { ProductDetailGallery } from "@/components/product-detail-gallery";
+import { ProductCard } from "@/components/product-card";
 import { db } from "@/lib/db";
 import { formatMoney } from "@/lib/format";
 import { buildProductAttributeGroups } from "@/modules/products/attributes";
@@ -11,6 +12,7 @@ import { calculateDiscountedPrice } from "@/modules/products/discount";
 import { parseOptionValues } from "@/modules/products/options";
 import { calculateProductPrice } from "@/modules/products/pricing";
 import { sanitizeProductDescription } from "@/modules/products/rich-text";
+import { getStorefrontProductFeed } from "@/modules/products/storefront-feed";
 import { getGoldPriceForDisplay } from "@/modules/gold/gold-price.service";
 import { getCatalogSettings } from "@/modules/settings/catalog-settings";
 import { getGeneralStoreSettings } from "@/modules/settings/general-settings";
@@ -72,58 +74,74 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
     ...attributeGroups.filter((group) => group.id !== generalAttributeGroup?.id).map((group) => ({ id: group.id, name: group.name, rows: group.attributes.map((attribute) => ({ label: attribute.name, value: attribute.values.join("، ") })) })),
   ];
 
-  return <main className="bg-white px-4 pb-16 pt-5 sm:px-6 lg:pb-24">
+  const cartOptions = optionValues.map(({ option, values }) => ({
+    id: option.id,
+    name: option.name,
+    kind: values.some((item) => item.colorId) ? "COLOR" as const : "SELECT" as const,
+    values: values.map((item) => ({ value: item.value, stock: item.stock ?? product.stock, weightGrams: item.weightGrams, price: priceForVariant(item.weightGrams, item.price), color: item.colorId ? colorsById.get(item.colorId) ?? null : null })),
+  }));
+  const initialSelectedOptions = Object.fromEntries(cartOptions.flatMap((option) => {
+    const firstAvailable = option.values.find((item) => item.stock > 0);
+    return firstAvailable ? [[option.id, firstAvailable.value]] : [];
+  }));
+  const relatedProducts = product.categoryId
+    ? (await getStorefrontProductFeed({ sort: "POPULAR", page: 1, pageSize: 8, categoryId: product.categoryId, excludeProductId: product.id })).items
+    : [];
+  const purchaseSummary = <div className="grid gap-3">
+    <span className="text-xs text-slate-500">{product.storeIndustry === "GOLD" && !product.fixedPrice && rate !== null ? `محاسبه‌شده با نرخ ${formatMoney(rate, settings.currency)}` : "قیمت فروش محصول"}</span>
+    {product.storeIndustry === "GOLD" && rate !== null && <PriceTooltip />}
+    {discounted?.isActive && <div className="flex items-center gap-2"><span className="text-xs text-slate-400 line-through">{formatMoney(discounted.originalPrice, settings.currency)}</span><span className="inline-flex items-center gap-1 rounded-full bg-rose-500 px-2 py-1 text-[10px] font-black text-white"><BadgePercent size={12} />{product.discountType === "PERCENT" ? `${Number(product.discountValue).toLocaleString("fa-IR")}٪` : "تخفیف"}</span></div>}
+    <strong className="text-left text-xl font-black text-slate-900" dir="rtl">{total === null ? "قیمت نامشخص" : formatMoney(total, settings.currency)}</strong>
+    <span className={`text-xs font-bold ${product.stock > 0 ? "text-emerald-600" : "text-rose-600"}`}>{product.stock > 0 ? catalogSettings.showProductStock ? `${product.stock.toLocaleString("fa-IR")} عدد موجود در انبار` : "موجود در انبار" : "در حال حاضر ناموجود"}</span>
+  </div>;
+  const cartProps = {
+    productId: product.id,
+    currency: settings.currency,
+    preparationDays: product.preparationDays,
+    options: cartOptions,
+    optionGuide: product.optionGuide && product.optionGuide.type !== "VIDEO" ? { url: product.optionGuide.url, type: product.optionGuide.type, title: product.optionGuide.title ?? "راهنمای انتخاب محصول" } : null,
+    disabled: product.stock < 1 || total === null,
+    disabledLabel: product.stock < 1 ? "ناموجود" : "قیمت موقتاً نامشخص",
+    purchaseSummary,
+  };
+
+  return <ProductPurchaseProvider initialSelectedOptions={initialSelectedOptions}><main className="bg-white px-4 pb-16 pt-5 sm:px-6 lg:pb-24">
     <div className="mx-auto w-full max-w-[1440px]">
       <nav className="mb-6 flex flex-wrap items-center gap-2 text-xs text-slate-500" aria-label="مسیر محصول">
         <Link href="/" className="transition hover:text-slate-900">خانه</Link><span>/</span><Link href="/products" className="transition hover:text-slate-900">محصولات</Link>{product.category && <><span>/</span><Link href={`/products?category=${encodeURIComponent(product.category.slug)}`} className="transition hover:text-slate-900">{product.category.name}</Link></>}
       </nav>
 
-      <section className="grid items-start gap-7 lg:grid-cols-[minmax(330px,1.05fr)_minmax(0,1.1fr)_320px] lg:grid-rows-[auto_auto] lg:gap-x-7 lg:gap-y-5">
-        <ProductDetailGallery media={galleryMedia} productName={product.name} productCode={product.sku} />
+      <div className="grid items-stretch gap-7 lg:grid-cols-[minmax(0,1fr)_320px]">
+        <div className="min-w-0">
+          <section className="grid items-start gap-7 lg:grid-cols-[minmax(330px,1.05fr)_minmax(0,1.1fr)] lg:grid-rows-[auto_auto] lg:gap-x-7 lg:gap-y-5">
+            <ProductDetailGallery media={galleryMedia} productName={product.name} productCode={product.sku} />
 
-        <div className="min-w-0 lg:col-start-2 lg:row-start-1">
-          {product.category && <Link href={`/products?category=${encodeURIComponent(product.category.slug)}`} className="text-sm font-bold text-sky-600 hover:text-sky-700">{product.category.name}</Link>}
-          <h1 className="mb-4 mt-3 text-xl font-black leading-9 text-slate-900 sm:text-2xl">{product.name}</h1>
-          <p dir="ltr" className="border-b border-slate-200 pb-4 text-left text-xs text-slate-400">{product.sku}</p>
+            <div className="min-w-0 lg:col-start-2 lg:row-start-1">
+              {product.category && <Link href={`/products?category=${encodeURIComponent(product.category.slug)}`} className="text-sm font-bold text-sky-600 hover:text-sky-700">{product.category.name}</Link>}
+              <h1 className="mb-4 mt-3 text-xl font-black leading-9 text-slate-900 sm:text-2xl">{product.name}</h1>
+              <p dir="ltr" className="border-b border-slate-200 pb-4 text-left text-xs text-slate-400">{product.sku}</p>
+              <div className="mt-4 flex flex-wrap items-center gap-3 text-xs">
+                <span className="inline-flex items-center gap-1 font-bold text-slate-700"><Star size={16} className="fill-amber-400 text-amber-400" />{mockRating.toLocaleString("fa-IR")}</span><span className="text-slate-400">از ۵</span><span className="size-1 rounded-full bg-slate-300" /><span className="font-bold text-sky-600">{mockReviewCount.toLocaleString("fa-IR")} دیدگاه</span>
+              </div>
+              {primaryFeatures.length > 0 && <section className="mt-7" aria-labelledby="primary-features-title"><h2 id="primary-features-title" className="mb-3 text-base font-black text-slate-900">ویژگی‌ها</h2><div className="grid grid-cols-2 gap-2 sm:grid-cols-3">{primaryFeatures.map((feature) => <div key={feature.id} className="rounded-lg bg-slate-100 px-3 py-3"><span className="block text-[11px] text-slate-500">{feature.name}</span><strong className="mt-1 block truncate text-xs text-slate-800">{feature.values.join("، ")}</strong></div>)}</div></section>}
+            </div>
+            <AddToCart {...cartProps} layout="product-detail" showPurchaseCard={false} />
+          </section>
 
-          <div className="mt-4 flex flex-wrap items-center gap-3 text-xs">
-            <span className="inline-flex items-center gap-1 font-bold text-slate-700"><Star size={16} className="fill-amber-400 text-amber-400" />{mockRating.toLocaleString("fa-IR")}</span>
-            <span className="text-slate-400">از ۵</span>
-            <span className="size-1 rounded-full bg-slate-300" />
-            <span className="font-bold text-sky-600">{mockReviewCount.toLocaleString("fa-IR")} دیدگاه</span>
+          <div className="mt-10 grid grid-cols-2 gap-3 border-y border-slate-200 py-5 text-xs text-slate-600 sm:grid-cols-4">
+            <span className="flex items-center gap-2"><ShieldCheck size={22} className="text-slate-500" />ضمانت اصالت کالا</span><span className="flex items-center gap-2"><Truck size={22} className="text-slate-500" />ارسال قابل پیگیری</span><span className="flex items-center gap-2"><PackageCheck size={22} className="text-slate-500" />بسته‌بندی مطمئن</span><span className="flex items-center gap-2"><CheckCircle2 size={22} className="text-slate-500" />پرداخت امن</span>
           </div>
-
-          {primaryFeatures.length > 0 && <section className="mt-7" aria-labelledby="primary-features-title">
-            <h2 id="primary-features-title" className="mb-3 text-base font-black text-slate-900">ویژگی‌ها</h2>
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">{primaryFeatures.map((feature) => <div key={feature.id} className="rounded-lg bg-slate-100 px-3 py-3"><span className="block text-[11px] text-slate-500">{feature.name}</span><strong className="mt-1 block truncate text-xs text-slate-800">{feature.values.join("، ")}</strong></div>)}</div>
-          </section>}
         </div>
-
-        <AddToCart
-          layout="product-detail"
-          productId={product.id}
-          currency={settings.currency}
-          preparationDays={product.preparationDays}
-          options={optionValues.map(({ option, values }) => ({ id: option.id, name: option.name, kind: values.some((item) => item.colorId) ? "COLOR" as const : "SELECT" as const, values: values.map((item) => ({ value: item.value, stock: item.stock ?? product.stock, weightGrams: item.weightGrams, price: priceForVariant(item.weightGrams, item.price), color: item.colorId ? colorsById.get(item.colorId) ?? null : null })) }))}
-          optionGuide={product.optionGuide && product.optionGuide.type !== "VIDEO" ? { url: product.optionGuide.url, type: product.optionGuide.type, title: product.optionGuide.title ?? "راهنمای انتخاب محصول" } : null}
-          disabled={product.stock < 1 || total === null}
-          disabledLabel={product.stock < 1 ? "ناموجود" : "قیمت موقتاً نامشخص"}
-          purchaseSummary={<div className="grid gap-3">
-            <span className="text-xs text-slate-500">{product.storeIndustry === "GOLD" && !product.fixedPrice && rate !== null ? `محاسبه‌شده با نرخ ${formatMoney(rate, settings.currency)}` : "قیمت فروش محصول"}</span>
-            {product.storeIndustry === "GOLD" && rate !== null && <PriceTooltip />}
-            {discounted?.isActive && <div className="flex items-center gap-2"><span className="text-xs text-slate-400 line-through">{formatMoney(discounted.originalPrice, settings.currency)}</span><span className="inline-flex items-center gap-1 rounded-full bg-rose-500 px-2 py-1 text-[10px] font-black text-white"><BadgePercent size={12} />{product.discountType === "PERCENT" ? `${Number(product.discountValue).toLocaleString("fa-IR")}٪` : "تخفیف"}</span></div>}
-            <strong className="text-left text-xl font-black text-slate-900" dir="rtl">{total === null ? "قیمت نامشخص" : formatMoney(total, settings.currency)}</strong>
-            <span className={`text-xs font-bold ${product.stock > 0 ? "text-emerald-600" : "text-rose-600"}`}>{product.stock > 0 ? catalogSettings.showProductStock ? `${product.stock.toLocaleString("fa-IR")} عدد موجود در انبار` : "موجود در انبار" : "در حال حاضر ناموجود"}</span>
-          </div>}
-        />
-      </section>
-
-      <div className="mt-10 grid grid-cols-2 gap-3 border-y border-slate-200 py-5 text-xs text-slate-600 sm:grid-cols-4">
-        <span className="flex items-center gap-2"><ShieldCheck size={22} className="text-slate-500" />ضمانت اصالت کالا</span>
-        <span className="flex items-center gap-2"><Truck size={22} className="text-slate-500" />ارسال قابل پیگیری</span>
-        <span className="flex items-center gap-2"><PackageCheck size={22} className="text-slate-500" />بسته‌بندی مطمئن</span>
-        <span className="flex items-center gap-2"><CheckCircle2 size={22} className="text-slate-500" />پرداخت امن</span>
+        <AddToCart {...cartProps} layout="product-detail" showOptionFields={false} purchaseCardClassName="h-full" />
       </div>
+
+      {product.category && <section className="mt-12 border-y border-slate-200 py-8" aria-labelledby="related-products-title">
+        <div className="mb-6 flex items-center justify-between gap-4"><h2 id="related-products-title" className="relative w-fit pb-3 text-lg font-black text-slate-900 after:absolute after:inset-x-0 after:bottom-0 after:h-[3px] after:rounded-full after:bg-rose-500">کالاهای مرتبط</h2><Link href={`/products?category=${encodeURIComponent(product.category.slug)}`} className="shrink-0 text-xs font-bold text-slate-700 hover:text-slate-950">مشاهده همه</Link></div>
+        {relatedProducts.length > 0 ? <div className="flex snap-x gap-4 overflow-x-auto pb-3">{relatedProducts.map((item, index) => <div key={item.id} className="w-[176px] min-w-[176px] snap-start sm:w-[210px] sm:min-w-[210px]"><ProductCard {...item} storefrontVariant="gallery" imageTone={index} /></div>)}</div> : <p className="rounded-xl bg-slate-50 px-4 py-6 text-center text-xs text-slate-500">در حال حاضر کالای مرتبط دیگری در این دسته‌بندی ثبت نشده است.</p>}
+      </section>}
+
+      <div className="mt-2 grid items-stretch gap-7 lg:grid-cols-[minmax(0,1fr)_320px]">
+        <div className="min-w-0">
 
       <nav className="sticky top-0 z-20 mt-10 flex gap-7 overflow-x-auto border-b border-slate-200 bg-white/95 px-1 py-4 text-sm font-bold text-slate-600 backdrop-blur" aria-label="بخش‌های صفحه محصول">
         <Link href="#introduction" className="shrink-0 hover:text-rose-500">معرفی</Link><Link href="#specifications" className="shrink-0 hover:text-rose-500">مشخصات</Link><Link href="#reviews" className="shrink-0 hover:text-rose-500">دیدگاه‌ها</Link>
@@ -157,8 +175,11 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
           </article>)}</div>
         </div>
       </section>
+        </div>
+        <AddToCart {...cartProps} layout="product-detail" showOptionFields={false} purchaseCardClassName="order-first h-full lg:order-none" />
+      </div>
     </div>
-  </main>;
+  </main></ProductPurchaseProvider>;
 }
 
 function SectionTitle({ id, children }: { id: string; children: string }) {

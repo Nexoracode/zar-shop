@@ -38,11 +38,13 @@ function orderByFor(sort: StorefrontProductSort): Prisma.ProductOrderByWithRelat
   return [{ createdAt: "desc" }];
 }
 
-export async function getStorefrontProductFeed(input: { sort: StorefrontProductSort; page: number; pageSize?: number }): Promise<StorefrontProductFeed> {
+export async function getStorefrontProductFeed(input: { sort: StorefrontProductSort; page: number; pageSize?: number; categoryId?: string; excludeProductId?: string }): Promise<StorefrontProductFeed> {
   const [settings, catalogSettings] = await Promise.all([getGeneralStoreSettings(), getCatalogSettings()]);
   const where: Prisma.ProductWhereInput = {
     status: "ACTIVE",
     storeIndustry: settings.industry,
+    ...(input.categoryId ? { categoryId: input.categoryId } : {}),
+    ...(input.excludeProductId ? { id: { not: input.excludeProductId } } : {}),
     ...(catalogSettings.hideOutOfStockProducts ? { stock: { gt: 0 } } : {}),
   };
   const totalItems = await db.product.count({ where });
