@@ -35,14 +35,17 @@ test("homepage settings normalize an empty promo link", () => {
   assert.equal(parsed.promoBannerHref, null);
 });
 
-test("homepage settings accept unique menu categories", () => {
-  const parsed = homepageSettingsInputSchema.parse({ ...homepageSettingsDefaults, menuCategoryIds: ["category-1", "category-2"] });
-  assert.deepEqual(parsed.menuCategoryIds, ["category-1", "category-2"]);
+test("homepage settings accept independent menu items", () => {
+  const menuItems = [{ id: "special", label: "پیشنهاد ویژه", href: "/products?featured=true" }];
+  const parsed = homepageSettingsInputSchema.parse({ ...homepageSettingsDefaults, menuItems });
+  assert.deepEqual(parsed.menuItems, menuItems);
 });
 
-test("homepage settings reject duplicate or excessive menu categories", () => {
-  assert.equal(homepageSettingsInputSchema.safeParse({ ...homepageSettingsDefaults, menuCategoryIds: ["same", "same"] }).success, false);
-  assert.equal(homepageSettingsInputSchema.safeParse({ ...homepageSettingsDefaults, menuCategoryIds: Array.from({ length: 7 }, (_, index) => `category-${index}`) }).success, false);
+test("homepage settings reject unsafe, duplicate or excessive menu items", () => {
+  const item = { id: "same", label: "آیتم", href: "/products" };
+  assert.equal(homepageSettingsInputSchema.safeParse({ ...homepageSettingsDefaults, menuItems: [item, item] }).success, false);
+  assert.equal(homepageSettingsInputSchema.safeParse({ ...homepageSettingsDefaults, menuItems: [{ ...item, href: "javascript:alert(1)" }] }).success, false);
+  assert.equal(homepageSettingsInputSchema.safeParse({ ...homepageSettingsDefaults, menuItems: Array.from({ length: 21 }, (_, index) => ({ id: `item-${index}`, label: `آیتم ${index}`, href: "/products" })) }).success, false);
 });
 
 test("homepage settings accept one optional image per treasure card", () => {

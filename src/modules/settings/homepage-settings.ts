@@ -22,11 +22,6 @@ const sectionSchema = z.object({
   enabled: z.boolean(),
 });
 
-const menuCategoryIdsSchema = z.array(z.string().trim().min(1)).max(6).refine(
-  (ids) => new Set(ids).size === ids.length,
-  "دسته‌های منوی بالا نباید تکراری باشند.",
-);
-
 const treasureCardSchema = z.object({
   id: z.enum(homepageTreasureCardIds),
   mediaId: z.string().trim().min(1).nullable(),
@@ -44,6 +39,18 @@ const safeHrefSchema = z.string().trim().min(1).max(500).refine(
   "لینک دکمه باید یک مسیر داخلی یا نشانی امن HTTPS باشد.",
 );
 const optionalSafeHrefSchema = z.union([z.null(), z.literal(""), safeHrefSchema]).transform((value) => value || null);
+
+const homepageMenuItemSchema = z.object({
+  id: z.string().trim().min(1).max(80),
+  label: z.string().trim().min(1).max(80),
+  href: safeHrefSchema,
+});
+export type HomepageMenuItem = z.infer<typeof homepageMenuItemSchema>;
+
+const homepageMenuItemsSchema = z.array(homepageMenuItemSchema).max(20).refine(
+  (items) => new Set(items.map((item) => item.id)).size === items.length,
+  "شناسه آیتم‌های منوی بالا نباید تکراری باشد.",
+);
 
 const homepageTileSchema = z.object({
   id: z.string().trim().min(1).max(80),
@@ -129,7 +136,7 @@ const homepageOverviewSettingsObjectSchema = z.object({
       context.addIssue({ code: "custom", message: "آیتم‌های چینش صفحه اصلی نباید تکراری باشند." });
     }
   }),
-  menuCategoryIds: menuCategoryIdsSchema,
+  menuItems: homepageMenuItemsSchema,
   tileGroups: homepageTileGroupsSchema,
   treasureCards: treasureCardsSchema,
   licenses: homepageLicensesSchema,
@@ -201,7 +208,7 @@ export type HomepageSettings = z.infer<typeof homepageSettingsSchema>;
 
 export const homepageSettingsDefaults: HomepageSettingsInput = {
   sections: homepageBaseSectionIds("GOLD").map((id) => ({ id, enabled: true })),
-  menuCategoryIds: [],
+  menuItems: [],
   tileGroups: [],
   treasureCards: homepageTreasureCardIds.map((id) => ({ id, mediaId: null })),
   licenses: homepageLicenseIds.map((id) => ({ id, mediaId: null, href: null })),
@@ -229,7 +236,7 @@ export const generalHomepageSettingsDefaults: HomepageSettingsInput = {
 export function homepageSettingsToInput(settings: HomepageSettings): HomepageSettingsInput {
   return {
     sections: settings.sections,
-    menuCategoryIds: settings.menuCategoryIds,
+    menuItems: settings.menuItems,
     tileGroups: settings.tileGroups.map((group) => ({ ...group, tiles: group.tiles.map(({ id, mediaId, href }) => ({ id, mediaId, href })) })),
     treasureCards: settings.treasureCards.map(({ id, mediaId }) => ({ id, mediaId })),
     licenses: settings.licenses.map(({ id, mediaId, href }) => ({ id, mediaId, href })),
@@ -274,10 +281,10 @@ const homepageSelect = {
 
 export async function getHomepageSettings(): Promise<HomepageSettings> {
   const existing = await db.storeSetting.findUnique({ where: { id: STORE_SETTING_ID }, select: homepageSelect });
-  const { sections, tileGroups: defaultTileGroups, treasureCards: defaultTreasureCards, heroSlides: defaultHeroSlides, licenses: defaultLicenses, ...homepageDefaults } = homepageSettingsDefaults;
+  const { sections, menuItems: defaultMenuItems, tileGroups: defaultTileGroups, treasureCards: defaultTreasureCards, heroSlides: defaultHeroSlides, licenses: defaultLicenses, ...homepageDefaults } = homepageSettingsDefaults;
   const settings = existing ?? await db.storeSetting.upsert({
     where: { id: STORE_SETTING_ID },
-    create: { id: STORE_SETTING_ID, ...homepageDefaults, menuCategoryIds: undefined, homepageSections: sections, homepageTileGroups: defaultTileGroups, homepageTreasureCards: defaultTreasureCards, homepageHeroSlides: defaultHeroSlides, homepageLicenses: defaultLicenses },
+    create: { id: STORE_SETTING_ID, ...homepageDefaults, menuCategoryIds: defaultMenuItems, homepageSections: sections, homepageTileGroups: defaultTileGroups, homepageTreasureCards: defaultTreasureCards, homepageHeroSlides: defaultHeroSlides, homepageLicenses: defaultLicenses },
     update: {},
     select: homepageSelect,
   });
@@ -287,9 +294,11 @@ export async function getHomepageSettings(): Promise<HomepageSettings> {
     const stored = settings.generalHomepageSettings && typeof settings.generalHomepageSettings === "object" && !Array.isArray(settings.generalHomepageSettings)
       ? settings.generalHomepageSettings as Record<string, unknown>
       : {};
+    const legacyMenuItems = await resolveLegacyMenuItems(stored.menuCategoryIds);
     const parsed = homepageSettingsInputSchema.safeParse({
       ...generalHomepageSettingsDefaults,
       ...stored,
+      menuItems: homepageMenuItemsSchema.safeParse(stored.menuItems).data ?? legacyMenuItems,
       tileGroups: homepageTileGroupsSchema.safeParse(stored.tileGroups).data ?? [],
       sections: normalizeStoredSections(stored.sections, "GENERAL", homepageTileGroupsSchema.safeParse(stored.tileGroups).data ?? []),
     });
@@ -303,7 +312,7 @@ export async function getHomepageSettings(): Promise<HomepageSettings> {
         : [];
     activeSettings = homepageSettingsInputSchema.parse({
       sections: normalizeStoredSections(settings.homepageSections, "GOLD", homepageTileGroupsSchema.safeParse(settings.homepageTileGroups).data ?? homepageSettingsDefaults.tileGroups),
-      menuCategoryIds: menuCategoryIdsSchema.safeParse(settings.menuCategoryIds).data ?? homepageSettingsDefaults.menuCategoryIds,
+      menuItems: homepageMenuItemsSchema.safeParse(settings.menuCategoryIds).data ?? await resolveLegacyMenuItems(settings.menuCategoryIds),
       tileGroups: homepageTileGroupsSchema.safeParse(settings.homepageTileGroups).data ?? homepageSettingsDefaults.tileGroups,
       treasureCards: treasureCardsSchema.safeParse(settings.homepageTreasureCards).data ?? homepageSettingsDefaults.treasureCards,
       licenses: homepageLicensesSchema.safeParse(settings.homepageLicenses).data ?? homepageSettingsDefaults.licenses,
@@ -352,17 +361,40 @@ export async function getHomepageSettings(): Promise<HomepageSettings> {
   });
 }
 
-export type HomepageMenuCategoryOption = {
+export type HomepageMenuLinkOption = {
   id: string;
-  name: string;
-  childrenCount: number;
+  label: string;
+  href: string;
+  group: "پیشنهادی" | "دسته‌بندی‌ها";
 };
 
-export async function getHomepageMenuCategoryOptions(): Promise<HomepageMenuCategoryOption[]> {
+async function resolveLegacyMenuItems(value: unknown) {
+  const parsed = z.array(z.string().trim().min(1)).max(20).safeParse(value);
+  if (!parsed.success || !parsed.data.length) return [];
   const categories = await db.category.findMany({
-    where: { isActive: true, parentId: null },
+    where: { id: { in: parsed.data }, isActive: true },
     orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
-    select: { id: true, name: true, _count: { select: { children: { where: { isActive: true } } } } },
+    select: { id: true, name: true, slug: true },
   });
-  return categories.map((category) => ({ id: category.id, name: category.name, childrenCount: category._count.children }));
+  const byId = new Map(categories.map((category) => [category.id, category]));
+  return parsed.data.flatMap((id) => {
+    const category = byId.get(id);
+    return category ? [{ id: `legacy-${category.id}`, label: category.name, href: `/products?category=${category.slug}` }] : [];
+  });
+}
+
+export async function getHomepageMenuLinkOptions(): Promise<HomepageMenuLinkOption[]> {
+  const categories = await db.category.findMany({
+    where: { isActive: true },
+    orderBy: [{ parentId: "asc" }, { sortOrder: "asc" }, { name: "asc" }],
+    select: { id: true, name: true, slug: true },
+  });
+  const suggested: HomepageMenuLinkOption[] = [
+    { id: "home", label: "صفحه اصلی", href: "/", group: "پیشنهادی" },
+    { id: "products", label: "همه محصولات", href: "/products", group: "پیشنهادی" },
+    { id: "about", label: "درباره ما", href: "/pages/about", group: "پیشنهادی" },
+    { id: "contact", label: "تماس با ما", href: "/pages/contact", group: "پیشنهادی" },
+    { id: "cart", label: "سبد خرید", href: "/cart", group: "پیشنهادی" },
+  ];
+  return [...suggested, ...categories.map((category) => ({ id: `category-${category.id}`, label: category.name, href: `/products?category=${category.slug}`, group: "دسته‌بندی‌ها" as const }))];
 }

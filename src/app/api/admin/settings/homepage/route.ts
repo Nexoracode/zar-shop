@@ -18,15 +18,6 @@ export async function PATCH(request: Request) {
     const actor = await getCurrentUser();
     if (!actor || !isAdminRole(actor.role)) return NextResponse.json({ message: "دسترسی غیرمجاز است." }, { status: 403 });
     const input = homepageMainSettingsInputSchema.parse(await request.json());
-    if (input.menuCategoryIds.length) {
-      const categories = await db.category.findMany({
-        where: { id: { in: input.menuCategoryIds }, isActive: true, parentId: null },
-        select: { id: true },
-      });
-      if (categories.length !== input.menuCategoryIds.length) {
-        return NextResponse.json({ message: "یکی از دسته‌های انتخاب‌شده برای منوی بالا معتبر یا فعال نیست." }, { status: 422 });
-      }
-    }
     const mediaIds = [...new Set([
       input.promoDesktopMediaId,
       input.promoMobileMediaId,
@@ -39,7 +30,7 @@ export async function PATCH(request: Request) {
     }
 
     const industry = await getStoreIndustry();
-    const { treasureCards, licenses, ...homepageFields } = input;
+    const { treasureCards, licenses, menuItems, ...homepageFields } = input;
     const current = await getHomepageSettings();
     const generalHomepageSettings = industry === "GENERAL"
       ? homepageSettingsInputSchema.parse({ ...homepageSettingsToInput(current), ...input })
@@ -54,8 +45,8 @@ export async function PATCH(request: Request) {
       } else {
         await transaction.storeSetting.upsert({
           where: { id: STORE_SETTING_ID },
-          create: { id: STORE_SETTING_ID, ...homepageFields, homepageTreasureCards: treasureCards, homepageLicenses: licenses },
-          update: { ...homepageFields, homepageTreasureCards: treasureCards, homepageLicenses: licenses },
+          create: { id: STORE_SETTING_ID, ...homepageFields, menuCategoryIds: menuItems, homepageTreasureCards: treasureCards, homepageLicenses: licenses },
+          update: { ...homepageFields, menuCategoryIds: menuItems, homepageTreasureCards: treasureCards, homepageLicenses: licenses },
         });
       }
       await transaction.auditLog.create({
@@ -64,7 +55,7 @@ export async function PATCH(request: Request) {
           action: "HOMEPAGE_SETTINGS_UPDATE",
           entityType: "StoreSetting",
           entityId: STORE_SETTING_ID,
-          ...auditRequestContext(request, { menuCategoryIds: input.menuCategoryIds, treasureMediaIds: treasureCards.map((card) => card.mediaId), licenseMediaIds: licenses.map((license) => license.mediaId) }),
+          ...auditRequestContext(request, { menuItems, treasureMediaIds: treasureCards.map((card) => card.mediaId), licenseMediaIds: licenses.map((license) => license.mediaId) }),
         },
       });
     });

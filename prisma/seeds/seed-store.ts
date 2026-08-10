@@ -72,10 +72,10 @@ function emptyLicenses() {
   return ["SALES", "ONLINE", "ENAMAD"].map((id) => ({ id, mediaId: null, href: null }));
 }
 
-function generalHomepageSettings(menuCategoryIds: string[]) {
+function generalHomepageSettings(menuItems: Array<{ id: string; label: string; href: string }>) {
   return {
     sections: homepageSections(),
-    menuCategoryIds,
+    menuItems,
     treasureCards: emptyTreasureCards(),
     licenses: emptyLicenses(),
     heroSlides: [],
@@ -107,7 +107,7 @@ async function createStore(db: PrismaClient, seed: DevelopmentStoreSeed) {
   });
 
   const categoryIds = new Map<string, string>();
-  const rootCategoryIds: string[] = [];
+  const rootMenuItems: Array<{ id: string; label: string; href: string }> = [];
   for (const [index, category] of seed.categories.entries()) {
     const parentId = category.parentSlug ? categoryIds.get(category.parentSlug) : undefined;
     if (category.parentSlug && !parentId) throw new Error(`Seed parent category not found: ${category.parentSlug}`);
@@ -115,7 +115,7 @@ async function createStore(db: PrismaClient, seed: DevelopmentStoreSeed) {
       data: { name: category.name, slug: category.slug, description: category.description, parentId, attributeSchema: category.attributeSchema ?? [], featured: !parentId, isActive: true, sortOrder: (index + 1) * 10 },
     });
     categoryIds.set(category.slug, created.id);
-    if (!parentId) rootCategoryIds.push(created.id);
+    if (!parentId) rootMenuItems.push({ id: `category-${created.id}`, label: created.name, href: `/products?category=${created.slug}` });
   }
 
   for (const product of seed.products) {
@@ -150,7 +150,6 @@ async function createStore(db: PrismaClient, seed: DevelopmentStoreSeed) {
     });
   }
 
-  const menuCategoryIds = rootCategoryIds;
   await db.storeSetting.create({
     data: {
       id: "main",
@@ -158,12 +157,12 @@ async function createStore(db: PrismaClient, seed: DevelopmentStoreSeed) {
       storeName: seed.storeName,
       tagline: seed.tagline,
       shortDescription: seed.shortDescription,
-      menuCategoryIds,
+      menuCategoryIds: rootMenuItems,
       homepageSections: homepageSections(),
       homepageTreasureCards: emptyTreasureCards(),
       homepageLicenses: emptyLicenses(),
       homepageHeroSlides: [],
-      generalHomepageSettings: seed.industry === "GENERAL" ? generalHomepageSettings(menuCategoryIds) : undefined,
+      generalHomepageSettings: seed.industry === "GENERAL" ? generalHomepageSettings(rootMenuItems) : undefined,
       heroContentMode: "WITH_CONTENT",
       heroTitle: seed.industry === "GOLD" ? "درخشش ماندگار، انتخابی مطمئن" : "خرید ساده، انتخاب مطمئن",
       heroDescription: seed.industry === "GOLD" ? "جدیدترین زیورآلات طلا با قیمت لحظه‌ای و تضمین اصالت" : "محصولات کاربردی با قیمت شفاف و موجودی به‌روز",

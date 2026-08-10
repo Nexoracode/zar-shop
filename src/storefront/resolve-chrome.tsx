@@ -1,8 +1,9 @@
 import type { User } from "@generated/prisma/client";
 import type { BrandSettings } from "@/modules/settings/brand-settings";
 import type { GeneralStoreSettingsInput } from "@/modules/settings/general-settings";
+import type { HomepageMenuItem } from "@/modules/settings/homepage-settings";
 
-type HeaderProps = { settings: GeneralStoreSettingsInput; brand: BrandSettings; user: User | null; menuCategoryIds: string[] };
+type HeaderProps = { settings: GeneralStoreSettingsInput; brand: BrandSettings; user: User | null; menuItems: HomepageMenuItem[] };
 
 export async function StorefrontHeader(props: HeaderProps) {
   if (props.settings.industry === "GENERAL") {

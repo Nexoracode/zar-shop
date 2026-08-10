@@ -1,7 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
 import {
-  ChevronLeft,
   Headphones,
   Home,
   LayoutDashboard,
@@ -13,27 +12,16 @@ import {
 } from "lucide-react";
 import type { User } from "@generated/prisma/client";
 import { StorefrontGoldPrice } from "@/components/storefront-gold-price";
-import { db } from "@/lib/db";
 import { normalizeNumericValue } from "@/lib/persian-numbers";
 import { getGoldPriceForDisplay } from "@/modules/gold/gold-price.service";
 import type { BrandSettings } from "@/modules/settings/brand-settings";
 import { getCatalogSettings } from "@/modules/settings/catalog-settings";
 import type { GeneralStoreSettingsInput } from "@/modules/settings/general-settings";
+import type { HomepageMenuItem } from "@/modules/settings/homepage-settings";
 
-export async function GoldHeader({ settings, brand, user, menuCategoryIds }: { settings: GeneralStoreSettingsInput; brand: BrandSettings; user: User | null; menuCategoryIds: string[] }) {
-  const [gold, categories, catalogSettings] = await Promise.all([
+export async function GoldHeader({ settings, brand, user, menuItems }: { settings: GeneralStoreSettingsInput; brand: BrandSettings; user: User | null; menuItems: HomepageMenuItem[] }) {
+  const [gold, catalogSettings] = await Promise.all([
     settings.industry === "GOLD" ? getGoldPriceForDisplay() : Promise.resolve(null),
-    db.category.findMany({
-      where: { id: { in: menuCategoryIds }, isActive: true, parentId: null },
-      include: {
-        children: {
-          where: { isActive: true },
-          include: { children: { where: { isActive: true }, orderBy: [{ sortOrder: "asc" }, { name: "asc" }] } },
-          orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
-        },
-      },
-      orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
-    }),
     getCatalogSettings(),
   ]);
   const accountHref = user ? (user.isGuest ? "/cart" : "/account") : "/login";
@@ -69,24 +57,8 @@ export async function GoldHeader({ settings, brand, user, menuCategoryIds }: { s
         <div className="flex items-center">
           <Link href="/" aria-label={`${settings.storeName}، صفحه اصلی`}>{logo}</Link><span className="mx-8 h-7 w-px bg-[#ddd]" /><Link href="/products" className="inline-flex items-center gap-2 text-sm"><WalletCards size={20} /> فروشگاه زر گالری</Link>
         </div>
-        <nav className="mr-10 flex h-full items-center gap-9 text-sm" aria-label="دسته‌بندی محصولات">
-          {categories.map((category) => {
-            const columns = category.children.length ? category.children : [category];
-            return <div key={category.id} className="group flex h-full items-center">
-              <Link href={`/products?category=${category.slug}`} className="flex h-full items-center border-b-2 border-transparent transition group-hover:border-[var(--success)] group-hover:text-[var(--success)]">{category.name}</Link>
-              <div className="invisible pointer-events-none absolute inset-x-0 top-full z-50 min-h-[350px] translate-y-1 border-t border-[#e7e7e7] bg-white opacity-0 shadow-[0_16px_32px_rgba(0,0,0,.08)] transition duration-200 group-hover:visible group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:visible group-focus-within:pointer-events-auto group-focus-within:translate-y-0 group-focus-within:opacity-100" dir="rtl">
-                <div className="grid w-full grid-cols-5 gap-x-12 gap-y-10 px-10 py-7">
-                  {columns.map((column) => <div key={column.id} className="min-w-0">
-                    <Link href={`/products?category=${column.slug}`} className="mb-4 flex items-center gap-2 text-[0.78rem] font-black text-[#222] transition hover:text-[var(--success)]"><span className="h-4 w-1 rounded-full bg-[var(--success)]" />{column.name}<ChevronLeft className="mr-auto" size={14} /></Link>
-                    <div className="grid gap-3 pr-3 text-xs text-[#414141]">
-                      {column.children.length ? column.children.map((child) => <Link key={child.id} href={`/products?category=${child.slug}`} className="transition hover:text-[var(--success)]">{child.name}</Link>) : <Link href={`/products?category=${column.slug}`} className="transition hover:text-[var(--success)]">مشاهده همه محصولات</Link>}
-                    </div>
-                  </div>)}
-                </div>
-              </div>
-            </div>;
-          })}
-          <Link href="/products" className="font-bold transition hover:text-[var(--success)]">کم‌اجرت</Link>
+        <nav className="mr-10 flex h-full min-w-0 items-center gap-9 overflow-hidden text-sm" aria-label="منوی اصلی فروشگاه">
+          {menuItems.map((item) => <Link key={item.id} href={item.href} className="flex h-full shrink-0 items-center border-b-2 border-transparent transition hover:border-[var(--success)] hover:text-[var(--success)]">{item.label}</Link>)}
         </nav>
         <div className="mr-auto flex items-center gap-5 text-[#555]"><Link href="/products" aria-label="جستجوی محصولات"><Search size={22} strokeWidth={1.5} /></Link><span className="h-7 w-px bg-[#ddd]" /><Link href={accountHref} aria-label="حساب کاربری"><UserRound size={22} strokeWidth={1.5} /></Link><Link href="/cart" aria-label="سبد خرید"><ShoppingCart size={22} strokeWidth={1.5} /></Link>{user?.role !== "CUSTOMER" && user && <Link href="/admin" aria-label="پنل مدیریت"><LayoutDashboard size={20} /></Link>}</div>
       </div>

@@ -32,7 +32,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
     <html lang="fa" dir="rtl" data-theme="zar" data-scroll-behavior="smooth">
       <body>
         <AppChrome
-          header={<><SitePromoBanner settings={homepageSettings} /><StorefrontHeader settings={settings} brand={brandSettings} user={user} menuCategoryIds={homepageSettings.menuCategoryIds} /></>}
+          header={<><SitePromoBanner settings={homepageSettings} /><StorefrontHeader settings={settings} brand={brandSettings} user={user} menuItems={homepageSettings.menuItems} /></>}
           footer={<StorefrontFooter settings={settings} brand={brandSettings} />}
           storefrontAvailable={isStorefrontAvailable(settings, user?.role)}
           maintenanceMode={settings.maintenanceMode}
