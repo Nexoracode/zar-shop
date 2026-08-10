@@ -7,6 +7,7 @@ import { updateCategorySchema } from "@/modules/categories/schemas";
 import { hasPermission } from "@/modules/auth/permissions";
 import { wouldCreateCategoryCycle } from "@/modules/categories/category-tree";
 import { auditRequestContext } from "@/modules/audit/request-context";
+import { buildCategoryAuditChanges, categoryAuditSnapshot } from "@/modules/audit/category-audit";
 
 type Context = { params: Promise<{ id: string }> };
 
@@ -39,7 +40,7 @@ export async function PATCH(request: Request, context: Context) {
     const { id } = await context.params;
     const input = updateCategorySchema.parse(await request.json());
 
-    const current = await db.category.findUnique({ where: { id }, select: { id: true, name: true, slug: true, parentId: true } });
+    const current = await db.category.findUnique({ where: { id }, select: { id: true, name: true, slug: true, description: true, parentId: true, imageId: true, isActive: true, featured: true, sortOrder: true } });
     if (!current) return NextResponse.json({ message: "دسته‌بندی پیدا نشد." }, { status: 404 });
 
     if (input.parentId) {
@@ -59,7 +60,15 @@ export async function PATCH(request: Request, context: Context) {
 
     const category = await db.$transaction(async (tx) => {
       const updated = await tx.category.update({ where: { id }, data: input, include: categoryInclude });
-      await tx.auditLog.create({ data: { actorId: actor!.id, action: "CATEGORY_UPDATE", entityType: "Category", entityId: id, ...auditRequestContext(request, { name: updated.name, slug: updated.slug, previousParentId: current.parentId, changedFields: Object.keys(input) }) } });
+      const before = categoryAuditSnapshot(current);
+      const after = categoryAuditSnapshot(updated);
+      await tx.auditLog.create({ data: { actorId: actor!.id, action: "CATEGORY_UPDATE", entityType: "Category", entityId: id, ...auditRequestContext(request, {
+        subject: { id: updated.id, type: "Category", name: updated.name, slug: updated.slug },
+        summary: `دسته‌بندی «${updated.name}» ویرایش شد.`,
+        changes: buildCategoryAuditChanges(before, after),
+        before,
+        after,
+      }) } });
       return updated;
     });
     return NextResponse.json(category);
