@@ -64,7 +64,11 @@ export default async function AdminSettingSectionPage({ params }: Context) {
       content = <HomepageSettings initialSettings={homepageSettings} industry={industry} />;
       break;
     }
-    case "branding": content = <BrandSettings initialSettings={await getBrandSettings()} />; break;
+    case "branding": {
+      const [brandSettings, industry] = await Promise.all([getBrandSettings(), getStoreIndustry()]);
+      content = <BrandSettings initialSettings={brandSettings} industry={industry} />;
+      break;
+    }
     case "orders": content = <OrderSettings initialSettings={await getOrderSettings()} />; break;
     case "catalog": content = <CatalogSettings initialSettings={await getCatalogSettings()} />; break;
     case "commerce": {
