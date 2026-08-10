@@ -5,14 +5,12 @@ import { ChevronLeft, Dumbbell, Headphones, HeartPulse, House, Laptop, RefreshCc
 import { DragScrollRow } from "@/components/drag-scroll-row";
 import { HomepageProductFeed } from "@/components/homepage-product-feed";
 import { ProductCard } from "@/components/product-card";
-import { StorefrontFaqAccordion } from "@/components/storefront-faq-accordion";
 import { StorefrontHeroSlider } from "@/components/storefront-hero-slider";
 import { StorefrontImageTiles } from "@/components/storefront-image-tiles";
 import { ViewAllProductCard } from "@/components/view-all-product-card";
 import { db } from "@/lib/db";
 import type { StorefrontProductCardItem } from "@/modules/products/storefront-feed-contract";
 import { getStorefrontProductFeed } from "@/modules/products/storefront-feed";
-import { getContentSettings } from "@/modules/settings/content-settings";
 import { getGeneralStoreSettings } from "@/modules/settings/general-settings";
 import { getHomepageSettings, type HomepageLayoutItemId } from "@/modules/settings/homepage-settings";
 import { buildStorefrontHeroSlides } from "@/storefront/shared/hero";
@@ -43,10 +41,9 @@ function ProductRail({ title, description, products, href = "/products" }: { tit
 }
 
 export async function GeneralHome() {
-  const [settings, homepage, content, latestFeed, popularFeed, categories] = await Promise.all([
+  const [settings, homepage, latestFeed, popularFeed, categories] = await Promise.all([
     getGeneralStoreSettings(),
     getHomepageSettings(),
-    getContentSettings(),
     getStorefrontProductFeed({ sort: "LATEST", page: 1 }),
     getStorefrontProductFeed({ sort: "POPULAR", page: 1 }),
     db.category.findMany({
@@ -58,7 +55,6 @@ export async function GeneralHome() {
   ]);
 
   const heroSlides = buildStorefrontHeroSlides(homepage, "/images/zar-hero-campaign.png");
-  const activeFaqs = content.faqs.filter((faq) => faq.enabled);
   const sectionState = new Map(homepage.sections.map((section) => [section.id, section.enabled]));
   const sectionOrder = new Map(homepage.sections.map((section, index) => [section.id, index]));
   const sectionProps = (id: HomepageLayoutItemId) => ({ hidden: sectionState.get(id) === false, style: { order: sectionOrder.get(id) ?? homepage.sections.length } });
@@ -70,14 +66,6 @@ export async function GeneralHome() {
     <section {...sectionProps("HERO")} className="bg-white"><StorefrontHeroSlider slides={heroSlides} contentMode={homepage.heroContentMode} title={homepage.heroTitle} description={homepage.heroDescription} buttonLabel={homepage.heroButtonLabel} /></section>
 
     {homepage.tileGroups.map((group) => group.tiles.some((tile) => tile.media) && <section key={group.id} {...sectionProps(`TILE_GROUP:${group.id}`)} className={container} aria-label="پیشنهادهای تصویری"><StorefrontImageTiles groups={[group]} /></section>)}
-
-    {categories.length > 0 && <section {...sectionProps("CATEGORIES")} className={`${container} rounded-2xl bg-white px-3 py-6 sm:px-6 lg:py-8`} aria-label="دسته‌بندی محصولات">
-      <div className="mb-6 flex items-center justify-between"><h2 className="m-0 text-lg font-black text-[#232934] sm:text-xl">خرید بر اساس دسته‌بندی</h2><Link href="/products" className="inline-flex items-center gap-1 text-xs font-bold text-[var(--brand-primary)]">همه کالاها<ChevronLeft size={15} /></Link></div>
-      <div className="grid grid-cols-3 gap-x-3 gap-y-7 sm:grid-cols-5 lg:grid-cols-10">{categories.map((category, index) => {
-        const Icon = resolveCategoryIcon(`${category.name} ${category.slug}`);
-        return <Link key={category.id} href={`/products?category=${category.slug}`} className="group grid min-w-0 justify-items-center gap-2.5 text-center"><span className={`relative grid aspect-square w-full max-w-[112px] place-items-center overflow-hidden rounded-full ${categoryTones[index % categoryTones.length]} transition duration-300 group-hover:-translate-y-1 group-hover:shadow-md`}>{category.image?.type === "IMAGE" ? <Image src={category.image.url} alt={category.image.alt ?? category.name} fill sizes="112px" className="object-cover transition duration-500 group-hover:scale-105" /> : <><span className="absolute -left-4 -top-4 size-14 rounded-full bg-white/50" /><Icon size={38} strokeWidth={1.4} /></>}</span><span className="w-full truncate text-xs font-bold text-[#3d4450]">{category.name}</span><small className="-mt-1 text-[10px] text-[#9298a2]">{category._count.products.toLocaleString("fa-IR")} کالا</small></Link>;
-      })}</div>
-    </section>}
 
     {discountedProducts.length > 0 && <section {...sectionProps("FEATURED_PRODUCTS")} className={`${container} overflow-hidden rounded-2xl bg-[var(--brand-primary)] p-3 text-[var(--brand-primary-foreground)] sm:p-4 lg:p-5`} aria-label="پیشنهادهای ویژه">
       <div className="grid min-w-0 gap-4 lg:grid-cols-[170px_minmax(0,1fr)] lg:items-center">
@@ -108,6 +96,5 @@ export async function GeneralHome() {
 
     <section style={{ order: homepage.sections.length }} className={`${container} overflow-hidden rounded-2xl bg-[var(--brand-primary)] px-6 py-8 text-[var(--brand-primary-foreground)] sm:px-9 lg:grid lg:grid-cols-[1fr_auto] lg:items-center lg:px-12`}><div><span className="text-xs font-bold opacity-70">فروشگاه آنلاین {settings.storeName}</span><h2 className="mb-3 mt-2 text-2xl font-black sm:text-3xl">هر چیزی که نیاز داری، یک‌جا پیدا کن</h2><p className="m-0 max-w-2xl text-sm leading-8 opacity-80">از کالاهای دیجیتال تا خانه، پوشاک، زیبایی و ورزش؛ محصولات را با قیمت شفاف و موجودی به‌روز مقایسه و انتخاب کنید.</p></div><Link href="/products" className="mt-5 inline-flex min-h-12 items-center justify-center rounded-xl bg-white px-7 text-sm font-bold text-[var(--brand-primary)] lg:mt-0">شروع خرید</Link></section>
 
-    {activeFaqs.length > 0 && <section {...sectionProps("CONCIERGE")} id="faq" className={`${container} rounded-2xl bg-white px-4 py-10 sm:px-8 lg:px-12 lg:py-14`}><div className="mx-auto mb-8 max-w-xl text-center"><span className="text-xs font-bold text-[var(--brand-primary)]">راهنمای خرید</span><h2 className="mb-3 mt-2 text-2xl font-black text-[#232934] sm:text-3xl">سوالات متداول</h2><p className="m-0 text-sm leading-8 text-[#777]">پاسخ پرسش‌های پرتکرار درباره سفارش، پرداخت و تحویل.</p></div><StorefrontFaqAccordion faqs={activeFaqs} /></section>}
   </main>;
 }

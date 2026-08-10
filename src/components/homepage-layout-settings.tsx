@@ -9,7 +9,6 @@ import type { HomepageLayoutItemId, HomepageSectionId, HomepageSettings } from "
 
 const sectionMeta: Record<HomepageSectionId, { title: string; description: string }> = {
   HERO: { title: "اسلایدر اصلی", description: "بنر، عنوان، توضیح و دکمه اقدام" },
-  CATEGORIES: { title: "دسته‌بندی‌های منتخب", description: "دسته‌بندی‌های شاخص و فعال فروشگاه" },
   FEATURED_PRODUCTS: { title: "پیشنهادهای شگفت‌انگیز", description: "محصولات دارای تخفیف و پیشنهاد ویژه" },
   POPULAR_PRODUCTS: { title: "محبوب‌ترین محصولات", description: "محصولاتی که بیشتر مورد توجه مشتریان هستند" },
   LATEST_PRODUCTS: { title: "جدیدترین محصولات", description: "تازه‌ترین محصولات منتشرشده فروشگاه" },

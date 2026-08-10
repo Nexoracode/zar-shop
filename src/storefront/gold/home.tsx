@@ -4,12 +4,10 @@ import { BadgeCheck, PackageCheck, ReceiptText, Truck } from "lucide-react";
 import type { Prisma } from "@generated/prisma/client";
 import { HomepageProductFeed } from "@/components/homepage-product-feed";
 import { StorefrontHeroSlider } from "@/components/storefront-hero-slider";
-import { StorefrontFaqAccordion } from "@/components/storefront-faq-accordion";
 import { StorefrontLicenses } from "@/components/storefront-licenses";
 import { StorefrontImageTiles } from "@/components/storefront-image-tiles";
 import { db } from "@/lib/db";
 import { getStorefrontProductFeed } from "@/modules/products/storefront-feed";
-import { getContentSettings } from "@/modules/settings/content-settings";
 import { getGeneralStoreSettings } from "@/modules/settings/general-settings";
 import { getHomepageSettings, type HomepageLayoutItemId, type HomepageTreasureCardId } from "@/modules/settings/homepage-settings";
 import { buildStorefrontHeroSlides } from "@/storefront/shared/hero";
@@ -20,7 +18,7 @@ const container = "mx-auto w-[min(1440px,calc(100%-32px))] lg:w-[min(1440px,calc
 
 export async function GoldHome() {
   const settings = await getGeneralStoreSettings();
-  const [productFeed, homepageCategories, homepage, contentSettings] = await Promise.all([
+  const [productFeed, homepageCategories, homepage] = await Promise.all([
     getStorefrontProductFeed({ sort: "LATEST", page: 1 }),
     db.category.findMany({
       where: { isActive: true, featured: true, products: { some: { status: "ACTIVE", storeIndustry: "GOLD" } } },
@@ -28,12 +26,10 @@ export async function GoldHome() {
       orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
     }),
     getHomepageSettings(),
-    getContentSettings(),
   ]);
 
   const categories = homepageCategories;
   const heroSlides = buildStorefrontHeroSlides(homepage, "/images/zar-hero-campaign.png");
-  const activeFaqs = contentSettings.faqs.filter((faq) => faq.enabled);
   const sectionState = new Map(homepage.sections.map((section) => [section.id, section.enabled]));
   const sectionOrder = new Map(homepage.sections.map((section, index) => [section.id, index]));
   const sectionProps = (id: HomepageLayoutItemId) => ({ hidden: sectionState.get(id) === false, style: { order: sectionOrder.get(id) ?? homepage.sections.length } });
@@ -54,16 +50,6 @@ export async function GoldHome() {
     {homepage.tileGroups.map((group) => group.tiles.some((tile) => tile.media) && <section key={group.id} {...sectionProps(`TILE_GROUP:${group.id}`)} className="bg-white py-5 lg:py-10" aria-label="پیشنهادهای تصویری">
       <div className={container}><StorefrontImageTiles groups={[group]} /></div>
     </section>)}
-
-    {categories.length > 0 && <section {...sectionProps("CATEGORIES")} className="bg-white py-5 lg:py-[60px]" aria-label="دسته‌بندی محصولات">
-      <div className={`${container} grid grid-cols-1 gap-4 lg:grid-cols-5`}>
-        {categories.map((category, index) => <Link key={category.id} href={`/products?category=${category.slug}`} className="group relative h-[350px] overflow-hidden rounded-[7px] bg-[#e8e2dc] lg:h-[286px]">
-          <Image src={categoryImage(category)} alt={category.name} fill sizes="(max-width:1024px) 100vw, 25vw" className={`object-cover transition duration-500 group-hover:scale-[1.03] ${category.image?.type === "IMAGE" ? "" : index % 2 ? "object-left" : "object-right"}`} />
-          <span className="absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-transparent" />
-          <strong className="absolute inset-x-0 bottom-4 text-center text-base text-white">{category.name}</strong>
-        </Link>)}
-      </div>
-    </section>}
 
     <section {...sectionProps("LATEST_PRODUCTS")} className="bg-white py-[30px] lg:py-[60px]" aria-labelledby="latest-products">
       <div className={container}>
@@ -102,8 +88,6 @@ export async function GoldHome() {
       <div className={container}><h2 className="mb-8 mt-0 text-2xl font-black">چرا {settings.storeName}؟</h2><div className="grid gap-x-12 gap-y-7 lg:grid-cols-2">{[
         ["چگونه می‌توانم از فروشگاه خرید کنم؟", "محصول دلخواه را انتخاب کنید، مشخصات قیمت را ببینید و سفارش را به‌صورت آنلاین ثبت کنید."], ["قیمت طلا چگونه محاسبه می‌شود؟", "قیمت محصولات بر اساس نرخ لحظه‌ای طلا و مشخصات دقیق وزن، اجرت، سود و مالیات محاسبه می‌شود."], ["آیا محصولات فاکتور رسمی دارند؟", "تمام محصولات همراه با فاکتور رسمی و اطلاعات کامل فروشنده و خریدار تحویل می‌شوند."], ["ارسال سفارش چگونه انجام می‌شود؟", "سفارش‌ها با بسته‌بندی امن ارسال می‌شوند و وضعیت آن‌ها از حساب کاربری قابل پیگیری است."],
       ].map(([title, text]) => <article key={title} className="border-b border-[#ddd] pb-6"><h3 className="mb-2 mt-0 text-base font-bold">{title}</h3><p className="m-0 text-xs leading-7 text-[#666]">{text}</p></article>)}</div></div>
-
-      {activeFaqs.length > 0 && <div id="faq" className={`${container} mt-[90px]`}><div className="mx-auto mb-9 max-w-xl text-center"><span className="text-xs font-bold text-[var(--brand-primary)]">راهنمای خرید</span><h2 className="mb-3 mt-2 text-3xl font-black text-[#222]">سوالات متداول</h2><p className="m-0 text-sm leading-8 text-[#777]">پاسخ پرسش‌های پرتکرار درباره سفارش، پرداخت و تحویل.</p></div><StorefrontFaqAccordion faqs={activeFaqs} /></div>}
 
       <StorefrontLicenses storeName={settings.storeName} settings={homepage.licenses} />
     </section>
