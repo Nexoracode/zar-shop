@@ -1,15 +1,16 @@
 "use client";
 import Image from "next/image";
 import { useState } from "react";
+import type { ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { Button, Modal, Spinner, toast } from "@heroui/react";
-import { FileText, Ruler, X } from "lucide-react";
+import { FileText, PackageCheck, Ruler, ShieldCheck, X } from "lucide-react";
 import { formatMoney } from "@/lib/format";
 
 type OptionGuide = { url: string; type: "IMAGE" | "DOCUMENT"; title: string };
 type ProductOption = { id: string; name: string; kind: "COLOR" | "SELECT"; values: Array<{ value: string; stock: number; weightGrams: string | null; price: number | null; color: { name: string; hex: string } | null }> };
 
-export function AddToCart({ productId, options = [], optionGuide, disabled, disabledLabel = "ناموجود", currency = "IRR" }: { productId: string; options?: ProductOption[]; optionGuide?: OptionGuide | null; disabled: boolean; disabledLabel?: string; currency?: "IRR" | "IRT" }) {
+export function AddToCart({ productId, options = [], optionGuide, disabled, disabledLabel = "ناموجود", currency = "IRR", layout = "default", purchaseSummary, preparationDays = 0 }: { productId: string; options?: ProductOption[]; optionGuide?: OptionGuide | null; disabled: boolean; disabledLabel?: string; currency?: "IRR" | "IRT"; layout?: "default" | "product-detail"; purchaseSummary?: ReactNode; preparationDays?: number }) {
   const router = useRouter();
   const [msg, setMsg] = useState("");
   const [loading, setLoading] = useState(false);
@@ -39,15 +40,13 @@ export function AddToCart({ productId, options = [], optionGuide, disabled, disa
     if (r.ok) router.refresh();
   }
 
-  return (
-    <div className="grid gap-3">
-      {options.length > 0 && <div className="grid gap-4">
+  const optionFields = options.length > 0 ? <div className="grid gap-4">
         <div className="flex items-center justify-between gap-3"><strong className="text-sm text-[var(--brand-primary)]">انتخاب تنوع محصول</strong>{optionGuide && <Button type="button" variant="ghost" onPress={() => setGuideOpen(true)} className="h-auto min-h-0 gap-1 p-0 text-xs font-bold text-[var(--brand-accent)]"><Ruler size={15} />راهنمای انتخاب</Button>}</div>
         {options.map((option) => <div key={option.id} className="grid gap-2"><span className="text-xs font-bold text-[#525966]">{option.name}{option.kind === "COLOR" && <small className="mr-1.5 font-normal text-[#8a909b]">(تنوع رنگ)</small>}</span><div className="flex flex-wrap gap-2" role="group" aria-label={`انتخاب ${option.name}`}>{option.values.map((item) => { const selected = selectedOptions[option.id] === item.value; const unavailable = item.stock < 1; return <Button key={item.value} type="button" variant="secondary" isDisabled={unavailable} aria-pressed={selected} aria-label={`${item.value}${item.color ? `، رنگ ${item.color.name}` : ""}${item.weightGrams ? `، وزن ${item.weightGrams} گرم` : ""}${unavailable ? "، ناموجود" : selected ? "، انتخاب‌شده" : ""}`} onPress={() => setSelectedOptions((current) => ({ ...current, [option.id]: item.value }))} className={`min-h-10 min-w-12 rounded-lg border px-3 text-sm font-bold transition ${unavailable ? "border-slate-200 bg-slate-100 text-slate-400 line-through" : selected ? "border-[var(--brand-accent)] bg-[var(--brand-accent)] text-[var(--brand-accent-foreground)] ring-2 ring-[var(--brand-accent)]/25" : "border-[#d8d5ce] bg-white text-[var(--brand-primary)] hover:border-[var(--brand-accent)]"}`}>{item.color && <span className="ml-2 inline-block h-5 w-5 rounded-full border-2 border-white shadow ring-1 ring-slate-300" style={{ backgroundColor: item.color.hex }} />}{item.value}{item.weightGrams && <small className="mr-1 text-[10px] opacity-75">{item.weightGrams} گرم</small>}{unavailable && <small className="mr-1 text-[10px]">ناموجود</small>}</Button>; })}</div></div>)}
         {selectedWeightValue && <div className="flex items-center justify-between rounded-lg border border-[#dfd3bc] bg-white px-3 py-2 text-xs"><span className="text-[#747982]">وزن انتخاب‌شده: {selectedWeightValue.weightGrams} گرم</span><strong className="text-[#17233b]">{selectedWeightValue.price === null ? "قیمت موقتاً نامشخص" : formatMoney(selectedWeightValue.price, currency)}</strong></div>}
         {!selectedWeightValue && selectedPriceValue && <div className="flex items-center justify-between rounded-lg border border-[#dfd3bc] bg-white px-3 py-2 text-xs"><span className="text-[#747982]">قیمت تنوع انتخاب‌شده</span><strong className="text-[#17233b]">{formatMoney(selectedPriceValue.price!, currency)}</strong></div>}
-      </div>}
-      <Button
+      </div> : null;
+  const addButton = <Button
         onPress={() => void add()}
         isDisabled={disabled || optionStockUnavailable}
         isPending={loading}
@@ -56,9 +55,30 @@ export function AddToCart({ productId, options = [], optionGuide, disabled, disa
         className="w-full min-h-[46px] px-6 py-[9px] inline-flex items-center justify-center gap-[9px] border border-[var(--brand-primary)] rounded-sm bg-[var(--brand-primary)] text-[var(--brand-primary-foreground)] transition-all duration-200 hover:-translate-y-[2px] hover:brightness-110 hover:shadow-[0_8px_20px_rgba(20,35,61,0.12)] disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-none"
       >
         {({ isPending }) => <>{isPending && <Spinner color="current" size="sm" />}{disabled ? disabledLabel : optionStockUnavailable ? "تنوع موجودی ندارد" : isPending ? "در حال افزودن..." : "افزودن به سبد"}</>}
-      </Button>
-      {msg && <small className="block mt-2 text-[var(--brand-accent)]">{msg}</small>}
-      {optionGuide && <Modal.Backdrop isOpen={guideOpen} onOpenChange={setGuideOpen} variant="blur"><Modal.Container size="lg" placement="center"><Modal.Dialog aria-label="راهنمای انتخاب محصول" className="mx-3 max-h-[calc(100dvh-32px)] overflow-hidden bg-white"><Modal.Header className="flex-row items-center justify-between border-b border-slate-200 px-5 py-4"><div><Modal.Heading className="text-base font-black text-slate-900">راهنمای انتخاب</Modal.Heading><p className="mt-1 text-xs text-slate-500">{optionGuide.title}</p></div><Modal.CloseTrigger aria-label="بستن راهنمای انتخاب" className="grid h-9 w-9 place-items-center rounded-lg text-slate-500 hover:bg-slate-100"><X size={18} /></Modal.CloseTrigger></Modal.Header><Modal.Body className="min-h-64 bg-slate-50 p-3 sm:p-5">{optionGuide.type === "IMAGE" ? <div className="relative min-h-[55vh] w-full overflow-hidden rounded-xl bg-white"><Image src={optionGuide.url} alt={optionGuide.title} fill sizes="90vw" className="object-contain" /></div> : <div className="grid gap-3"><iframe src={optionGuide.url} title={optionGuide.title} className="h-[65vh] w-full rounded-xl border border-slate-200 bg-white" /><a href={optionGuide.url} target="_blank" rel="noreferrer" className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-[#d8c29a] bg-white text-sm font-bold text-[#785b27]"><FileText size={16} />باز کردن فایل PDF در صفحه جدید</a></div>}</Modal.Body></Modal.Dialog></Modal.Container></Modal.Backdrop>}
-    </div>
-  );
+      </Button>;
+  const guideModal = optionGuide && <Modal.Backdrop isOpen={guideOpen} onOpenChange={setGuideOpen} variant="blur"><Modal.Container size="lg" placement="center"><Modal.Dialog aria-label="راهنمای انتخاب محصول" className="mx-3 max-h-[calc(100dvh-32px)] overflow-hidden bg-white"><Modal.Header className="flex-row items-center justify-between border-b border-slate-200 px-5 py-4"><div><Modal.Heading className="text-base font-black text-slate-900">راهنمای انتخاب</Modal.Heading><p className="mt-1 text-xs text-slate-500">{optionGuide.title}</p></div><Modal.CloseTrigger aria-label="بستن راهنمای انتخاب" className="grid h-9 w-9 place-items-center rounded-lg text-slate-500 hover:bg-slate-100"><X size={18} /></Modal.CloseTrigger></Modal.Header><Modal.Body className="min-h-64 bg-slate-50 p-3 sm:p-5">{optionGuide.type === "IMAGE" ? <div className="relative min-h-[55vh] w-full overflow-hidden rounded-xl bg-white"><Image src={optionGuide.url} alt={optionGuide.title} fill sizes="90vw" className="object-contain" /></div> : <div className="grid gap-3"><iframe src={optionGuide.url} title={optionGuide.title} className="h-[65vh] w-full rounded-xl border border-slate-200 bg-white" /><a href={optionGuide.url} target="_blank" rel="noreferrer" className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-[#d8c29a] bg-white text-sm font-bold text-[#785b27]"><FileText size={16} />باز کردن فایل PDF در صفحه جدید</a></div>}</Modal.Body></Modal.Dialog></Modal.Container></Modal.Backdrop>;
+
+  if (layout === "product-detail") return <>
+    {optionFields && <section className="grid gap-4 border-t border-slate-200 pt-5 lg:col-start-2 lg:row-start-2" aria-label="انتخاب تنوع محصول">{optionFields}</section>}
+    <aside className="lg:col-start-3 lg:row-span-2 lg:row-start-1">
+      <div className="grid gap-4 rounded-xl border border-slate-200 bg-slate-50 p-4 shadow-sm lg:sticky lg:top-24">
+        <strong className="text-base font-black text-slate-900">خرید این محصول</strong>
+        {purchaseSummary}
+        {addButton}
+        {msg && <small className="block text-[var(--brand-accent)]">{msg}</small>}
+        <div className="grid gap-3 border-t border-slate-200 pt-4 text-xs text-slate-600">
+          <span className="flex items-center justify-between gap-3"><span>ضمانت اصالت و سلامت کالا</span><ShieldCheck size={18} className="text-slate-500" /></span>
+          <span className="flex items-center justify-between gap-3"><span>{preparationDays > 0 ? `آماده‌سازی و ارسال تا ${preparationDays.toLocaleString("fa-IR")} روز کاری` : "ارسال قابل پیگیری"}</span><PackageCheck size={18} className="text-slate-500" /></span>
+        </div>
+      </div>
+    </aside>
+    {guideModal}
+  </>;
+
+  return <div className="grid gap-3">
+    {optionFields}
+    {addButton}
+    {msg && <small className="block mt-2 text-[var(--brand-accent)]">{msg}</small>}
+    {guideModal}
+  </div>;
 }
