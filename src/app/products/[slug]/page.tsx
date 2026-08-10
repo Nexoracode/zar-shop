@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { BadgePercent, CheckCircle2, PackageCheck, ShieldCheck, Star, Truck } from "lucide-react";
+import { CheckCircle2, PackageCheck, ShieldCheck, Star, Truck } from "lucide-react";
 import { AddToCart, ProductPurchaseProvider } from "@/components/add-to-cart";
 import { PriceTooltip } from "@/components/price-tooltip";
 import { ProductDetailGallery } from "@/components/product-detail-gallery";
@@ -51,15 +51,16 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   const baseTotal = product.fixedPrice ? Number(product.fixedPrice) : parts?.total ?? null;
   const discounted = baseTotal === null ? null : calculateDiscountedPrice(baseTotal, product);
   const total = discounted?.finalPrice ?? null;
-  const priceForVariant = (weightGrams: string | null, price: string | null) => {
+  const pricingForVariant = (weightGrams: string | null, price: string | null) => {
+    let variantBase: number | null = null;
     if (product.storeIndustry === "GENERAL") {
-      const basePrice = price ? Number(price) : product.fixedPrice ? Number(product.fixedPrice) : null;
-      return basePrice === null ? null : calculateDiscountedPrice(basePrice, product).finalPrice;
+      variantBase = price ? Number(price) : null;
+    } else if (weightGrams && rate !== null) {
+      variantBase = product.fixedPrice ? Number(product.fixedPrice) : calculateProductPrice({ goldPricePerGram18: rate, weightGrams: Number(weightGrams), purity: product.purity, makingFeeType: product.makingFeeType, makingFeeValue: Number(product.makingFeeValue), profitPercent: Number(product.profitPercent), taxPercent: Number(product.taxPercent) }).total;
     }
-    if (!weightGrams) return null;
-    if (product.fixedPrice) return calculateDiscountedPrice(Number(product.fixedPrice), product).finalPrice;
-    if (rate === null) return null;
-    return calculateDiscountedPrice(calculateProductPrice({ goldPricePerGram18: rate, weightGrams: Number(weightGrams), purity: product.purity, makingFeeType: product.makingFeeType, makingFeeValue: Number(product.makingFeeValue), profitPercent: Number(product.profitPercent), taxPercent: Number(product.taxPercent) }).total, product).finalPrice;
+    if (variantBase === null) return { price: null, originalPrice: null };
+    const variantDiscount = calculateDiscountedPrice(variantBase, product);
+    return { price: variantDiscount.finalPrice, originalPrice: variantDiscount.isActive ? variantDiscount.originalPrice : null };
   };
   const galleryMedia = product.media.reduce<Array<{ id: string; type: "IMAGE" | "VIDEO"; url: string; alt: string }>>((items, item) => {
     if (item.media.type === "IMAGE" || item.media.type === "VIDEO") items.push({ id: item.media.id, type: item.media.type, url: item.media.url, alt: item.media.alt ?? product.name });
@@ -78,7 +79,10 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
     id: option.id,
     name: option.name,
     kind: values.some((item) => item.colorId) ? "COLOR" as const : "SELECT" as const,
-    values: values.map((item) => ({ value: item.value, stock: item.stock ?? product.stock, weightGrams: item.weightGrams, price: priceForVariant(item.weightGrams, item.price), color: item.colorId ? colorsById.get(item.colorId) ?? null : null })),
+    values: values.map((item) => {
+      const pricing = pricingForVariant(item.weightGrams, item.price);
+      return { value: item.value, stock: item.stock ?? product.stock, weightGrams: item.weightGrams, ...pricing, color: item.colorId ? colorsById.get(item.colorId) ?? null : null };
+    }),
   }));
   const initialSelectedOptions = Object.fromEntries(cartOptions.flatMap((option) => {
     const firstAvailable = option.values.find((item) => item.stock > 0);
@@ -90,10 +94,8 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   const purchaseSummary = <div className="grid gap-3">
     <span className="text-xs text-slate-500">{product.storeIndustry === "GOLD" && !product.fixedPrice && rate !== null ? `محاسبه‌شده با نرخ ${formatMoney(rate, settings.currency)}` : "قیمت فروش محصول"}</span>
     {product.storeIndustry === "GOLD" && rate !== null && <PriceTooltip />}
-    {discounted?.isActive && <div className="flex items-center gap-2"><span className="text-xs text-slate-400 line-through">{formatMoney(discounted.originalPrice, settings.currency)}</span><span className="inline-flex items-center gap-1 rounded-full bg-rose-500 px-2 py-1 text-[10px] font-black text-white"><BadgePercent size={12} />{product.discountType === "PERCENT" ? `${Number(product.discountValue).toLocaleString("fa-IR")}٪` : "تخفیف"}</span></div>}
-    <strong className="text-left text-xl font-black text-slate-900" dir="rtl">{total === null ? "قیمت نامشخص" : formatMoney(total, settings.currency)}</strong>
-    <span className={`text-xs font-bold ${product.stock > 0 ? "text-emerald-600" : "text-rose-600"}`}>{product.stock > 0 ? catalogSettings.showProductStock ? `${product.stock.toLocaleString("fa-IR")} عدد موجود در انبار` : "موجود در انبار" : "در حال حاضر ناموجود"}</span>
   </div>;
+  const purchaseMeta = <span className={`text-xs font-bold ${product.stock > 0 ? "text-emerald-600" : "text-rose-600"}`}>{product.stock > 0 ? catalogSettings.showProductStock ? `${product.stock.toLocaleString("fa-IR")} عدد موجود در انبار` : "موجود در انبار" : "در حال حاضر ناموجود"}</span>;
   const cartProps = {
     productId: product.id,
     currency: settings.currency,
@@ -103,6 +105,10 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
     disabled: product.stock < 1 || total === null,
     disabledLabel: product.stock < 1 ? "ناموجود" : "قیمت موقتاً نامشخص",
     purchaseSummary,
+    purchaseMeta,
+    purchasePrice: total,
+    purchaseOriginalPrice: discounted?.isActive ? discounted.originalPrice : null,
+    discountLabel: discounted?.isActive ? product.discountType === "PERCENT" ? `${Number(product.discountValue).toLocaleString("fa-IR")}٪` : "تخفیف" : null,
   };
 
   return <ProductPurchaseProvider initialSelectedOptions={initialSelectedOptions}><main className="bg-white px-4 pb-16 pt-5 sm:px-6 lg:pb-24">
@@ -123,9 +129,9 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
               <div className="mt-4 flex flex-wrap items-center gap-3 text-xs">
                 <span className="inline-flex items-center gap-1 font-bold text-slate-700"><Star size={16} className="fill-amber-400 text-amber-400" />{mockRating.toLocaleString("fa-IR")}</span><span className="text-slate-400">از ۵</span><span className="size-1 rounded-full bg-slate-300" /><span className="font-bold text-sky-600">{mockReviewCount.toLocaleString("fa-IR")} دیدگاه</span>
               </div>
+              <AddToCart {...cartProps} layout="product-detail" showPurchaseCard={false} />
               {primaryFeatures.length > 0 && <section className="mt-7" aria-labelledby="primary-features-title"><h2 id="primary-features-title" className="mb-3 text-base font-black text-slate-900">ویژگی‌ها</h2><div className="grid grid-cols-2 gap-2 sm:grid-cols-3">{primaryFeatures.map((feature) => <div key={feature.id} className="rounded-lg bg-slate-100 px-3 py-3"><span className="block text-[11px] text-slate-500">{feature.name}</span><strong className="mt-1 block truncate text-xs text-slate-800">{feature.values.join("، ")}</strong></div>)}</div></section>}
             </div>
-            <AddToCart {...cartProps} layout="product-detail" showPurchaseCard={false} />
           </section>
 
           <div className="mt-10 grid grid-cols-2 gap-3 border-y border-slate-200 py-5 text-xs text-slate-600 sm:grid-cols-4">
