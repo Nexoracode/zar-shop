@@ -58,6 +58,17 @@ export const productSchema = z.object({
   attributes: productAttributesSchema.default([]),
 });
 
+export type ProductInput = z.infer<typeof productSchema>;
+
+export function parseProductPatch(value: unknown): Partial<ProductInput> {
+  const parsed = productSchema.partial().parse(value);
+  if (typeof value !== "object" || value === null || Array.isArray(value)) return parsed;
+
+  return Object.fromEntries(
+    Object.entries(parsed).filter(([key]) => Object.prototype.hasOwnProperty.call(value, key)),
+  ) as Partial<ProductInput>;
+}
+
 export const completeProductSchema = productSchema.superRefine((product, context) => {
   if (product.storeIndustry === "GOLD" && product.weightGrams <= 0) {
     context.addIssue({ code: "custom", path: ["weightGrams"], message: "وزن محصول طلا باید بیشتر از صفر باشد." });

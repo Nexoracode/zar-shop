@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { apiError } from "@/lib/http";
 import { getCurrentUser } from "@/modules/auth/session";
-import { productSchema } from "@/modules/products/schemas";
+import { parseProductPatch } from "@/modules/products/schemas";
 import { hasPermission } from "@/modules/auth/permissions";
 import { areOptionColorsValid } from "@/modules/products/color-validation";
 import { sanitizeProductDescription } from "@/modules/products/rich-text";
@@ -29,7 +29,7 @@ export async function PATCH(request: Request, context: Context) {
       },
     });
     if (!existingProduct) return NextResponse.json({ message: "محصول پیدا نشد." }, { status: 404 });
-    const { mediaIds, options, optionGuideId, attributes, storeIndustry: _ignoredIndustry, ...input } = productSchema.partial().parse(await request.json());
+    const { mediaIds, options, optionGuideId, attributes, storeIndustry: _ignoredIndustry, ...input } = parseProductPatch(await request.json());
     void _ignoredIndustry;
     if (existingProduct.storeIndustry === "GOLD" && options?.some((option) => option.values.some((item) => item.price !== null))) {
       return NextResponse.json({ message: "برای محصول طلا، قیمت تنوع از وزن آن محاسبه می‌شود." }, { status: 422 });
