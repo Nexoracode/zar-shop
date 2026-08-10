@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { generalHomepageSettingsDefaults, homepageHeroSettingsInputSchema, homepageLayoutSettingsInputSchema, homepageMainSettingsInputSchema, homepageMenuSettingsInputSchema, homepageOverviewSettingsInputSchema, homepageSettingsDefaults, homepageSettingsInputSchema, homepageTilesSettingsInputSchema } from "./homepage-settings";
+import { generalHomepageSettingsDefaults, homepageHeroSettingsInputSchema, homepageLayoutSettingsInputSchema, homepageMainSettingsInputSchema, homepageMenuSettingsInputSchema, homepageOverviewSettingsInputSchema, homepagePromoSettingsInputSchema, homepageSettingsDefaults, homepageSettingsInputSchema, homepageTilesSettingsInputSchema } from "./homepage-settings";
 
 test("general storefront starts with copy independent from the gold template", () => {
   assert.notEqual(generalHomepageSettingsDefaults.heroTitle, homepageSettingsDefaults.heroTitle);
@@ -161,4 +161,12 @@ test("homepage menu can be updated independently from main settings", () => {
   const main = homepageMainSettingsInputSchema.parse(homepageSettingsDefaults);
   assert.equal(menu.menuItems[0].label, "پیشنهادها");
   assert.equal("menuItems" in main, false);
+});
+
+test("homepage promo can be updated independently from main settings", () => {
+  const promo = homepagePromoSettingsInputSchema.parse(homepageSettingsDefaults);
+  const main = homepageMainSettingsInputSchema.parse(homepageSettingsDefaults);
+  assert.equal(promo.promoBannerEnabled, homepageSettingsDefaults.promoBannerEnabled);
+  assert.equal("promoBannerEnabled" in main, false);
+  assert.equal("promoDesktopMediaId" in main, false);
 });

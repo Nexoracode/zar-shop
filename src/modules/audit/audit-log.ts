@@ -26,6 +26,7 @@ const actionLabels: Record<string, string> = {
   HOMEPAGE_HERO_SETTINGS_UPDATE: "ویرایش اسلایدر صفحه اصلی",
   HOMEPAGE_TILES_SETTINGS_UPDATE: "ویرایش تایل‌های صفحه اصلی",
   HOMEPAGE_LAYOUT_SETTINGS_UPDATE: "ویرایش چینش صفحه اصلی",
+  HOMEPAGE_PROMO_SETTINGS_UPDATE: "ویرایش پروموبنر صفحه اصلی",
   CONTENT_SETTINGS_UPDATE: "ویرایش محتوا و FAQ",
   COMMUNICATION_SETTINGS_UPDATE: "ویرایش تنظیمات پیامک",
   PAYMENT_GATEWAY_CONFIG_UPSERT: "ثبت یا ویرایش درگاه پرداخت",

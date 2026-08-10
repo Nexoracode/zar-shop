@@ -156,10 +156,17 @@ function validateTileGroupLayout(value: { sections: z.infer<typeof sectionSchema
 
 export const homepageOverviewSettingsInputSchema = homepageOverviewSettingsObjectSchema.superRefine(validateTileGroupLayout);
 
-export const homepageMainSettingsInputSchema = homepageOverviewSettingsObjectSchema.omit({ sections: true, menuItems: true, tileGroups: true });
+export const homepageMainSettingsInputSchema = homepageOverviewSettingsObjectSchema.omit({ sections: true, menuItems: true, tileGroups: true, promoBannerEnabled: true, promoBannerHref: true, promoDesktopMediaId: true, promoMobileMediaId: true });
 
 export const homepageMenuSettingsInputSchema = z.object({
   menuItems: homepageOverviewSettingsObjectSchema.shape.menuItems,
+});
+
+export const homepagePromoSettingsInputSchema = homepageOverviewSettingsObjectSchema.pick({
+  promoBannerEnabled: true,
+  promoBannerHref: true,
+  promoDesktopMediaId: true,
+  promoMobileMediaId: true,
 });
 
 export const homepageTilesSettingsInputSchema = z.object({

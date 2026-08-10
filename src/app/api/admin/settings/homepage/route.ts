@@ -19,8 +19,6 @@ export async function PATCH(request: Request) {
     if (!actor || !isAdminRole(actor.role)) return NextResponse.json({ message: "دسترسی غیرمجاز است." }, { status: 403 });
     const input = homepageMainSettingsInputSchema.parse(await request.json());
     const mediaIds = [...new Set([
-      input.promoDesktopMediaId,
-      input.promoMobileMediaId,
       ...input.treasureCards.map((card) => card.mediaId),
       ...input.licenses.map((license) => license.mediaId),
     ].filter((id): id is string => Boolean(id)))];

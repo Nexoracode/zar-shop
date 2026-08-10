@@ -8,6 +8,7 @@ test("audit actions have readable labels and stable kinds", () => {
   assert.equal(auditActionKind("PRODUCT_CREATE"), "CREATE");
   assert.equal(auditActionKind("PROMOTION_DELETE"), "DELETE");
   assert.equal(auditActionKind("ADMIN_LOGIN"), "ACCESS");
+  assert.equal(auditActionLabel("HOMEPAGE_PROMO_SETTINGS_UPDATE"), "ویرایش پروموبنر صفحه اصلی");
 });
 
 test("audit metadata recursively hides sensitive values", () => {
