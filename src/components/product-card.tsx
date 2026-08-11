@@ -42,11 +42,11 @@ type ProductCardProps = {
 export function ProductCard({ href, name, category, industry, weight, purity, makingFee, discountPercent, price, originalPrice, image, storefrontVariant = "default", imageTone = 0, stock, rating, colors = [] }: ProductCardProps) {
   if (storefrontVariant === "catalog") {
     return <Link href={href} className="group relative flex min-h-[390px] min-w-0 flex-col border-b border-l border-slate-200 bg-white p-4 transition duration-200 hover:z-10 hover:shadow-[0_6px_24px_rgba(0,0,0,.09)] focus-visible:z-10 focus-visible:outline-2 focus-visible:outline-[var(--brand-primary)]">
+      {colors.length > 0 && <span className="absolute right-2 top-5 z-10 flex flex-col gap-0.5" aria-label={`${colors.length.toLocaleString("fa-IR")} رنگ موجود`}>
+        {colors.slice(0, 5).map((color) => <span key={color.id} title={color.name} className="size-2.5 rounded-full border border-black/15 ring-1 ring-white" style={{ backgroundColor: color.hex }} />)}
+      </span>}
       <div className="relative mx-auto aspect-square w-full max-w-[245px] overflow-hidden">
         {image ? <Image src={image.src} alt={image.alt} width={500} height={500} className="h-full w-full object-contain transition-transform duration-300 group-hover:scale-[1.025]" /> : <GeneralProductPlaceholder />}
-        {colors.length > 0 && <span className="absolute left-1 top-3 flex flex-col gap-1" aria-label={`${colors.length.toLocaleString("fa-IR")} رنگ موجود`}>
-          {colors.slice(0, 5).map((color) => <span key={color.id} title={color.name} className="size-3.5 rounded-full border border-black/15 ring-1 ring-white" style={{ backgroundColor: color.hex }} />)}
-        </span>}
       </div>
       <div className="flex min-h-0 flex-1 flex-col pt-3 text-right">
         <h3 className="m-0 line-clamp-2 min-h-12 text-[0.78rem] font-bold leading-6 text-slate-800">{name}</h3>
