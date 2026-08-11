@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useState, useTransition, type ReactNode } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Accordion, Checkbox, Slider, Spinner } from "@heroui/react";
-import { ChevronDown, SlidersHorizontal } from "lucide-react";
+import { SlidersHorizontal } from "lucide-react";
 
 type Facets = {
   colors: Array<{ id: string; name: string; hex: string; count: number }>;
@@ -54,6 +54,9 @@ export function StorefrontCatalogFilters({ facets, selectedColors, selectedAttri
   const [priceValues, setPriceValues] = useState<[number, number]>([resolvedMinPrice, resolvedMaxPrice]);
   const activeCount = selectedColors.length + selectedAttributes.length + Number(minPrice !== undefined) + Number(maxPrice !== undefined) + Number(Boolean(inStock));
   const priceStep = Math.max(1, greatestCommonDivisor(priceBounds.max - priceBounds.min, 1_000_000));
+  const priceRangeSize = Math.max(1, priceBounds.max - priceBounds.min);
+  const selectedPriceStart = (priceValues[0] - priceBounds.min) / priceRangeSize * 100;
+  const selectedPriceWidth = (priceValues[1] - priceValues[0]) / priceRangeSize * 100;
 
   function navigate(next: URLSearchParams) {
     next.delete("page");
@@ -91,35 +94,40 @@ export function StorefrontCatalogFilters({ facets, selectedColors, selectedAttri
       {activeCount > 0 && <Link href={resetHref} scroll={false} className="text-[11px] font-bold text-[var(--brand-primary)]">حذف فیلترها</Link>}
     </div>
 
-    {facets.priceRange && <section className="border-b border-slate-100 py-5" aria-labelledby="price-filter-title">
-      <h3 id="price-filter-title" className="mb-4 text-sm font-bold text-slate-800">محدوده قیمت</h3>
-      <div className="mb-5 flex items-center justify-between gap-3 text-[11px] text-slate-500">
-        <span>از <strong className="text-xs text-slate-800">{priceValues[0].toLocaleString("fa-IR")}</strong> تومان</span>
-        <span>تا <strong className="text-xs text-slate-800">{priceValues[1].toLocaleString("fa-IR")}</strong> تومان</span>
-      </div>
-      <Slider aria-label="محدوده قیمت" minValue={priceBounds.min} maxValue={priceBounds.max} step={priceStep} value={priceValues} onChange={(value) => setPriceValues(normalizeSliderValue(value))} onChangeEnd={updatePrice} className="w-full" dir="ltr">
-        <Slider.Track className="relative h-6 w-full">
-          <span className="absolute inset-x-0 top-1/2 h-1 -translate-y-1/2 rounded-full bg-slate-200" />
-          <Slider.Fill className="absolute top-1/2 h-1 -translate-y-1/2 rounded-full bg-[var(--brand-primary)]" />
-          <Slider.Thumb index={0} aria-label="حداقل قیمت" className="top-1/2 size-5 -translate-y-1/2 rounded-full border-[5px] border-[var(--brand-primary)] bg-white shadow-sm outline-none ring-white focus-visible:ring-2" />
-          <Slider.Thumb index={1} aria-label="حداکثر قیمت" className="top-1/2 size-5 -translate-y-1/2 rounded-full border-[5px] border-[var(--brand-primary)] bg-white shadow-sm outline-none ring-white focus-visible:ring-2" />
-        </Slider.Track>
-      </Slider>
-    </section>}
-
-    <div className="border-b border-slate-100 py-3">
-      <FilterCheckbox selected={Boolean(inStock)} onChange={updateStock}><span className="block text-xs font-bold text-slate-700">فقط کالاهای موجود</span></FilterCheckbox>
-    </div>
-
-    <Accordion dir="rtl" variant="surface" hideSeparator className="w-full bg-transparent p-0 text-right" aria-label="فیلترهای محصولات">
+    <Accordion dir="rtl" variant="surface" hideSeparator allowsMultipleExpanded defaultExpandedKeys={facets.priceRange ? ["catalog-price"] : []} className="w-full bg-transparent p-0 text-right" aria-label="فیلترهای محصولات">
+      {facets.priceRange && <Accordion.Item id="catalog-price" className="border-b border-slate-100 bg-transparent">
+        <Accordion.Heading><Accordion.Trigger className="flex w-full items-center bg-transparent py-4 text-right text-sm font-bold text-slate-800 hover:bg-transparent data-[hovered=true]:bg-transparent">محدوده قیمت<Accordion.Indicator className="mr-auto size-4 shrink-0" /></Accordion.Trigger></Accordion.Heading>
+        <Accordion.Panel><Accordion.Body className="pb-5">
+          <div className="grid gap-5 px-1">
+            <div className="grid grid-cols-[22px_minmax(0,1fr)_34px] items-center gap-1.5">
+              <span className="text-[11px] text-slate-400">از</span><strong dir="ltr" className="truncate text-center text-xl font-black tracking-tight text-slate-800">{priceValues[0].toLocaleString("fa-IR")}</strong><span className="text-[9px] leading-3 text-slate-500">تومان</span>
+            </div>
+            <div className="grid grid-cols-[22px_minmax(0,1fr)_34px] items-center gap-1.5">
+              <span className="text-[11px] text-slate-400">تا</span><strong dir="ltr" className="truncate text-center text-xl font-black tracking-tight text-slate-800">{priceValues[1].toLocaleString("fa-IR")}</strong><span className="text-[9px] leading-3 text-slate-500">تومان</span>
+            </div>
+          </div>
+          <Slider aria-label="محدوده قیمت" minValue={priceBounds.min} maxValue={priceBounds.max} step={priceStep} value={priceValues} onChange={(value) => setPriceValues(normalizeSliderValue(value))} onChangeEnd={updatePrice} className="mt-5 w-full" dir="rtl">
+            <Slider.Track className="relative h-6 w-full">
+              <span className="absolute inset-x-0 top-1/2 h-1 -translate-y-1/2 rounded-full bg-slate-200" />
+              <span className="absolute top-1/2 h-1 -translate-y-1/2 rounded-full bg-[var(--brand-primary)]" style={{ right: `${selectedPriceStart}%`, width: `${selectedPriceWidth}%` }} />
+              <Slider.Thumb index={0} aria-label="حداقل قیمت" className="top-1/2 size-5 -translate-y-1/2 rounded-full border-[5px] border-[var(--brand-primary)] bg-white shadow-sm outline-none ring-white focus-visible:ring-2" />
+              <Slider.Thumb index={1} aria-label="حداکثر قیمت" className="top-1/2 size-5 -translate-y-1/2 rounded-full border-[5px] border-[var(--brand-primary)] bg-white shadow-sm outline-none ring-white focus-visible:ring-2" />
+            </Slider.Track>
+          </Slider>
+          <div className="mt-1 flex items-center justify-between text-[9px] text-slate-400"><span>ارزان‌ترین</span><span>گران‌ترین</span></div>
+        </Accordion.Body></Accordion.Panel>
+      </Accordion.Item>}
+    </Accordion>
+    <div className="border-b border-slate-100 py-3"><FilterCheckbox selected={Boolean(inStock)} onChange={updateStock}><span className="block text-xs font-bold text-slate-700">فقط کالاهای موجود</span></FilterCheckbox></div>
+    <Accordion dir="rtl" variant="surface" hideSeparator allowsMultipleExpanded className="w-full bg-transparent p-0 text-right" aria-label="فیلترهای ویژگی محصول">
       {facets.colors.length > 0 && <Accordion.Item id="catalog-colors" className="border-b border-slate-100 bg-transparent">
-        <Accordion.Heading><Accordion.Trigger className="flex w-full items-center justify-between bg-transparent py-4 text-right text-sm font-bold text-slate-800 hover:bg-transparent data-[hovered=true]:bg-transparent">رنگ<Accordion.Indicator><ChevronDown size={16} /></Accordion.Indicator></Accordion.Trigger></Accordion.Heading>
+        <Accordion.Heading><Accordion.Trigger className="flex w-full items-center bg-transparent py-4 text-right text-sm font-bold text-slate-800 hover:bg-transparent data-[hovered=true]:bg-transparent">رنگ<Accordion.Indicator className="mr-auto size-4 shrink-0" /></Accordion.Trigger></Accordion.Heading>
         <Accordion.Panel><Accordion.Body className="max-h-52 overflow-y-auto pb-4">
           {facets.colors.map((color) => <FilterCheckbox key={color.id} selected={selectedColorSet.has(color.id)} onChange={(selected) => updateMultiValue("color", color.id, selected)}><span className="flex min-w-0 items-center gap-2 text-xs text-slate-700"><span className="size-4 shrink-0 rounded-full border border-black/10" style={{ backgroundColor: color.hex }} /><span className="truncate">{color.name}</span><span className="mr-auto text-[10px] text-slate-400">{color.count.toLocaleString("fa-IR")}</span></span></FilterCheckbox>)}
         </Accordion.Body></Accordion.Panel>
       </Accordion.Item>}
       {facets.attributes.map((attribute) => <Accordion.Item key={attribute.id} id={`catalog-attribute-${attribute.id}`} className="border-b border-slate-100 bg-transparent">
-        <Accordion.Heading><Accordion.Trigger className="flex w-full items-center justify-between bg-transparent py-4 text-right text-sm font-bold text-slate-800 hover:bg-transparent data-[hovered=true]:bg-transparent">{attribute.name}<Accordion.Indicator><ChevronDown size={16} /></Accordion.Indicator></Accordion.Trigger></Accordion.Heading>
+        <Accordion.Heading><Accordion.Trigger className="flex w-full items-center bg-transparent py-4 text-right text-sm font-bold text-slate-800 hover:bg-transparent data-[hovered=true]:bg-transparent">{attribute.name}<Accordion.Indicator className="mr-auto size-4 shrink-0" /></Accordion.Trigger></Accordion.Heading>
         <Accordion.Panel><Accordion.Body className="max-h-52 overflow-y-auto pb-4">
           {attribute.values.map((item) => {
             const token = `${attribute.id}::${item.value}`;
