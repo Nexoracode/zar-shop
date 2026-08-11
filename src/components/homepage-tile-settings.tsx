@@ -3,7 +3,8 @@
 import Image from "next/image";
 import { useState, type DragEvent, type FormEvent } from "react";
 import { Alert, Button, Card, Chip, Input, toast } from "@heroui/react";
-import { GripVertical, Images, LayoutGrid, Plus, Save, Trash2, Upload } from "lucide-react";
+import { GripVertical, Images, LayoutGrid, Plus, Trash2, Upload } from "lucide-react";
+import { AdminSaveButton } from "@/components/admin-save-button";
 import { AdminSectionHelp } from "@/components/admin-section-help";
 import { adminFieldClass } from "@/components/admin-ui";
 import { HeroSelectField } from "@/components/hero-select-field";
@@ -100,7 +101,7 @@ export function HomepageTileSettings({ initialSettings }: { initialSettings: Hom
           })}</div>}
         </Card.Content>
       </Card>
-      <Card variant="secondary" className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4 shadow-sm"><div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"><div><strong className="block text-sm">ذخیره تنظیمات تایل‌ها</strong><p className="m-0 mt-1 text-xs text-[var(--muted)]">ردیف‌ها، تصاویر، لینک‌ها و ترتیب داخلی تایل‌ها با هم ذخیره می‌شوند.</p></div><Button type="submit" variant="primary" isPending={saving} className="min-h-11 shrink-0 gap-2 px-5"><Save size={16} />ذخیره تنظیمات تایل‌ها</Button></div></Card>
+      <Card variant="secondary" className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4 shadow-sm"><div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"><div><strong className="block text-sm">ذخیره تنظیمات تایل‌ها</strong><p className="m-0 mt-1 text-xs text-[var(--muted)]">ردیف‌ها، تصاویر، لینک‌ها و ترتیب داخلی تایل‌ها با هم ذخیره می‌شوند.</p></div><AdminSaveButton isSaving={saving} label="ذخیره تنظیمات تایل‌ها" /></div></Card>
     </form>
     <MediaPickerDialog open={pickerTarget !== null} scope="HOMEPAGE" allowedTypes={["IMAGE"]} selected={selectedMedia ? [selectedMedia] : []} onClose={() => setPickerTarget(null)} onConfirm={(items) => { const media = items[0] ?? null; if (!pickerTarget) return; const [, groupId, tileId] = pickerTarget.split(":"); setGroups((current) => current.map((group) => group.id === groupId ? { ...group, tiles: group.tiles.map((tile) => tile.id === tileId ? { ...tile, media } : tile) } : group)); }} />
   </>;

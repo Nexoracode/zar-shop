@@ -6,10 +6,11 @@ import { useState, type FormEvent, type ReactNode } from "react";
 import { Alert, Button, Card, Chip, Input, Label, Tabs, TextArea, buttonVariants, toast } from "@heroui/react";
 import {
   Bell, Boxes, CheckCircle2, CircleDollarSign, Clock3, CreditCard, Eye, EyeOff, FileQuestion, FileText,
-  Globe2, GripVertical, Images, LayoutDashboard, Mail, MapPin, Megaphone, PackageCheck, Palette, Plus, Save,
+  Globe2, GripVertical, Images, LayoutDashboard, Mail, MapPin, Megaphone, PackageCheck, Palette, Plus,
   Search, Settings2, ShieldCheck, Smartphone, Sparkles, Store, Trash2, Truck, Upload, Users, ListTree, ChevronLeft,
 } from "lucide-react";
 import { AdminCheckbox } from "@/components/admin-checkbox";
+import { AdminSaveButton } from "@/components/admin-save-button";
 import { AdminSectionHelp, type AdminSectionHelpBlock } from "@/components/admin-section-help";
 import { HeroSelectField } from "@/components/hero-select-field";
 import { adminFieldClass, adminLabelClass } from "@/components/admin-ui";
@@ -65,7 +66,7 @@ export function GeneralSettings({ initialSettings }: { initialSettings: GeneralS
     <SettingCard icon={<Settings2 size={19} />} title="وضعیت و دسترسی فروشگاه" description="کنترل نمایش عمومی و تجربه حساب کاربری" className="lg:col-span-2" help={{ summary: "این گزینه‌ها مشخص می‌کنند چه کسانی و در چه وضعیتی به فروشگاه دسترسی داشته باشند.", blocks: [{ title: "اثر هر وضعیت", items: ["فروشگاه فعال، نمایش عمومی سایت را کنترل می‌کند.", "خرید مهمان اجازه ثبت سفارش بدون ساخت حساب را می‌دهد.", "حالت تعمیر و نگهداری فروشگاه را برای مشتریان می‌بندد؛ مدیران همچنان به پنل دسترسی دارند."] }, { title: "نکته مهم", tone: "important", description: "حالت تعمیر و نگهداری را فقط برای بازه‌های کوتاه فعال کنید؛ مشتریان در این مدت امکان خرید ندارند." }] }}>
       <div className="grid gap-3 md:grid-cols-3"><AdminCheckbox isSelected={isStoreActive} onChange={setIsStoreActive} icon={<Globe2 size={17} />} description="فروشگاه برای کاربران قابل مشاهده باشد">فروشگاه فعال</AdminCheckbox><AdminCheckbox isSelected={guestCheckout} onChange={setGuestCheckout} icon={<Users size={17} />} description="خرید بدون ساخت حساب امکان‌پذیر باشد">خرید مهمان</AdminCheckbox><AdminCheckbox isSelected={maintenanceMode} onChange={setMaintenanceMode} icon={<ShieldCheck size={17} />} description="نمایش صفحه در حال بروزرسانی به بازدیدکنندگان">حالت تعمیر و نگهداری</AdminCheckbox></div>
     </SettingCard>
-  </SettingsGrid><Card variant="secondary" className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4 shadow-sm"><div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"><div><strong className="block text-sm">ذخیره تنظیمات عمومی</strong><p className="m-0 mt-1 text-xs text-[var(--muted)]">اطلاعات و وضعیت عمومی فروشگاه با هم ذخیره می‌شوند.</p></div><Button type="submit" variant="primary" isPending={saving} className="min-h-11 gap-2 px-5"><Save size={16} />ذخیره تنظیمات</Button></div></Card></form>;
+  </SettingsGrid><Card variant="secondary" className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4 shadow-sm"><div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"><div><strong className="block text-sm">ذخیره تنظیمات عمومی</strong><p className="m-0 mt-1 text-xs text-[var(--muted)]">اطلاعات و وضعیت عمومی فروشگاه با هم ذخیره می‌شوند.</p></div><AdminSaveButton isSaving={saving} label="ذخیره تنظیمات" /></div></Card></form>;
 }
 
 const treasureCardMeta: Record<HomepageTreasureCardId, { title: string; hint: string }> = {
@@ -163,7 +164,7 @@ export function HomepageSettings({ initialSettings, industry }: { initialSetting
       {industry === "GOLD" && <Card variant="secondary" className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4 shadow-sm">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div><strong className="block text-sm">ذخیره تغییرات صفحه اصلی</strong><p className="m-0 mt-1 text-xs text-[var(--muted)]">تصاویر گنجینه و مجوزها با هم ذخیره می‌شوند.</p></div>
-          <Button type="submit" variant="primary" isPending={saving} className="min-h-11 shrink-0 gap-2 px-5"><Save size={16} />ذخیره تنظیمات صفحه اصلی</Button>
+          <AdminSaveButton isSaving={saving} label="ذخیره تنظیمات صفحه اصلی" />
         </div>
       </Card>}
     </form>
@@ -208,7 +209,7 @@ export function BrandSettings({ initialSettings, industry }: { initialSettings: 
     <SettingCard icon={<Smartphone size={19} />} title="قواعد نمایش" description="ظاهر مشترک صفحات محصول و فهرست" className="lg:col-span-2">
       <div className={`grid gap-3 ${industry === "GOLD" ? "md:grid-cols-3" : "md:grid-cols-2"}`}><AdminCheckbox isSelected={stickyHeader} onChange={setStickyHeader} description="هدر هنگام اسکرول در دسترس بماند">هدر چسبان</AdminCheckbox><AdminCheckbox isSelected={compactGrid} onChange={setCompactGrid} description="محصولات در موبایل دو ستونه باشند">گرید فشرده موبایل</AdminCheckbox>{industry === "GOLD" && <AdminCheckbox isSelected={livePrice} onChange={setLivePrice} description="نرخ طلا بدون رفرش بروزرسانی شود">بروزرسانی زنده قیمت</AdminCheckbox>}</div>
     </SettingCard>
-  </SettingsGrid><Card variant="secondary" className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4 shadow-sm"><div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"><div><strong className="block text-sm">ذخیره ظاهر و برند سایت</strong><p className="m-0 mt-1 text-xs text-[var(--muted)]">رنگ‌ها، لوگوها و قواعد نمایش با هم ذخیره می‌شوند.</p></div><Button type="submit" variant="primary" isPending={saving} className="min-h-11 gap-2 px-5"><Save size={16} />ذخیره تنظیمات ظاهر و برند</Button></div></Card></form>
+  </SettingsGrid><Card variant="secondary" className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4 shadow-sm"><div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"><div><strong className="block text-sm">ذخیره ظاهر و برند سایت</strong><p className="m-0 mt-1 text-xs text-[var(--muted)]">رنگ‌ها، لوگوها و قواعد نمایش با هم ذخیره می‌شوند.</p></div><AdminSaveButton isSaving={saving} label="ذخیره تنظیمات ظاهر و برند" /></div></Card></form>
     <MediaPickerDialog open={picker !== null} scope="BRAND" allowedTypes={["IMAGE"]} selected={picker && assets[picker] ? [assets[picker]!] : []} onClose={() => setPicker(null)} onConfirm={(items) => { if (picker) setAssets((current) => ({ ...current, [picker]: items[0] ?? null })); }} />
   </>;
 }
@@ -257,7 +258,7 @@ export function OrderSettings({ initialSettings }: { initialSettings: OrderSetti
       <div className="grid gap-4 sm:grid-cols-2"><Field label="حداکثر تعداد هر قلم"><HeroNumberInput value={settings.maxOrderItemQuantity} onValueChange={(value) => set("maxOrderItemQuantity", Number(value))} min={1} max={100} variant="secondary" className={adminFieldClass} /></Field><HeroSelectField name="order-default-status" label="وضعیت اولیه" value="PENDING_PAYMENT" disabled includeEmptyOption={false} options={[{ value: "PENDING_PAYMENT", label: "در انتظار پرداخت (ثابت)" }]} /></div>
       <AdminCheckbox isSelected={settings.revalidateGoldAtCheckout} onChange={(value) => set("revalidateGoldAtCheckout", value)} description="پیش از ساخت سفارش، نرخ طلا از منبع اصلی دوباره دریافت و مبلغ سمت سرور محاسبه شود">بازبینی نرخ طلا هنگام ثبت سفارش</AdminCheckbox>
     </SettingCard>
-  </SettingsGrid><Card variant="secondary" className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4 shadow-sm"><div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"><div><strong className="block text-sm">ذخیره تنظیمات سفارش و انقضا</strong><p className="m-0 mt-1 text-xs text-[var(--muted)]">تمام قواعد این تب با هم ذخیره و روی سفارش‌های جدید اعمال می‌شوند.</p></div><Button type="submit" variant="primary" isPending={saving} className="min-h-11 gap-2 px-5"><Save size={16} />ذخیره تنظیمات</Button></div></Card></form>;
+  </SettingsGrid><Card variant="secondary" className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4 shadow-sm"><div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"><div><strong className="block text-sm">ذخیره تنظیمات سفارش و انقضا</strong><p className="m-0 mt-1 text-xs text-[var(--muted)]">تمام قواعد این تب با هم ذخیره و روی سفارش‌های جدید اعمال می‌شوند.</p></div><AdminSaveButton isSaving={saving} label="ذخیره تنظیمات" /></div></Card></form>;
 }
 
 export function CatalogSettings({ initialSettings }: { initialSettings: CatalogSettingsData }) {
@@ -302,7 +303,7 @@ export function CatalogSettings({ initialSettings }: { initialSettings: CatalogS
       <Field label="حداکثر عمر نرخ جایگزین (دقیقه)"><HeroNumberInput value={settings.goldPriceFallbackMinutes} onValueChange={(value) => set("goldPriceFallbackMinutes", Number(value))} min={1} max={1440} variant="secondary" className={adminFieldClass} /></Field>
       <Alert status="warning"><Alert.Description>اگر نرخ معتبر اصلی یا جایگزین کنترل‌شده در دسترس نباشد، فروش متوقف می‌شود. نرخ و تمام اجزای قیمت نیز هنگام ثبت سفارش به‌صورت ثابت ذخیره می‌شوند.</Alert.Description></Alert>
     </SettingCard>}
-  </SettingsGrid><Card variant="secondary" className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4 shadow-sm"><div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"><div><strong className="block text-sm">{isGold ? "ذخیره تنظیمات محصول و قیمت طلا" : "ذخیره تنظیمات محصولات"}</strong><p className="m-0 mt-1 text-xs text-[var(--muted)]">تمام تنظیمات این صفحه با هم ذخیره و بلافاصله روی فروشگاه اعمال می‌شوند.</p></div><Button type="submit" variant="primary" isPending={saving} className="min-h-11 gap-2 px-5"><Save size={16} />ذخیره تنظیمات</Button></div></Card></form>;
+  </SettingsGrid><Card variant="secondary" className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4 shadow-sm"><div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"><div><strong className="block text-sm">{isGold ? "ذخیره تنظیمات محصول و قیمت طلا" : "ذخیره تنظیمات محصولات"}</strong><p className="m-0 mt-1 text-xs text-[var(--muted)]">تمام تنظیمات این صفحه با هم ذخیره و بلافاصله روی فروشگاه اعمال می‌شوند.</p></div><AdminSaveButton isSaving={saving} label="ذخیره تنظیمات" /></div></Card></form>;
 }
 
 export function CommerceSettings({ initialSettings, configuredGatewayCount }: { initialSettings: CommerceSettingsData; configuredGatewayCount: number }) {
@@ -337,7 +338,7 @@ export function CommerceSettings({ initialSettings, configuredGatewayCount }: { 
         <div className="grid gap-3 2xl:grid-cols-2"><AdminCheckbox isSelected={settings.insuredShippingEnabled} onChange={(value) => set("insuredShippingEnabled", value)} icon={<Truck size={18} />} description="هزینه پس از دریافت نشانی و بر اساس وزن مرسوله محاسبه می‌شود">ارسال بیمه‌شده</AdminCheckbox><AdminCheckbox isSelected={settings.inStorePickupEnabled} onChange={(value) => set("inStorePickupEnabled", value)} icon={<MapPin size={18} />} description="مشتری سفارش پرداخت‌شده را بدون هزینه ارسال از فروشگاه تحویل می‌گیرد">تحویل حضوری</AdminCheckbox></div>
       </section>
     </SettingCard>
-  </div><Card variant="secondary" className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4 shadow-sm"><div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"><div><strong className="block text-sm">ذخیره تنظیمات ارسال و پرداخت</strong><p className="m-0 mt-1 text-xs text-[var(--muted)]">وضعیت درگاه و روش‌های تحویل با هم ذخیره می‌شوند.</p></div><Button type="submit" variant="primary" isPending={saving} className="min-h-11 gap-2 px-5"><Save size={16} />ذخیره تنظیمات</Button></div></Card></form>;
+  </div><Card variant="secondary" className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4 shadow-sm"><div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"><div><strong className="block text-sm">ذخیره تنظیمات ارسال و پرداخت</strong><p className="m-0 mt-1 text-xs text-[var(--muted)]">وضعیت درگاه و روش‌های تحویل با هم ذخیره می‌شوند.</p></div><AdminSaveButton isSaving={saving} label="ذخیره تنظیمات" /></div></Card></form>;
 }
 
 export function ContentSettings({ initialSettings }: { initialSettings: ContentSettingsData }) {
@@ -406,7 +407,7 @@ export function ContentSettings({ initialSettings }: { initialSettings: ContentS
         </div>
       </SettingCard>
     </SettingsGrid>
-    <Card variant="secondary" className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4 shadow-sm"><div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"><div><strong className="block text-sm">ذخیره محتوای سایت</strong><p className="m-0 mt-1 text-xs text-[var(--muted)]">ترتیب FAQ، وضعیت انتشار و محتوای تمام صفحات با هم ذخیره می‌شوند.</p></div><Button type="submit" variant="primary" isPending={saving} className="min-h-11 gap-2 px-5"><Save size={16} />ذخیره تنظیمات محتوا</Button></div></Card>
+      <Card variant="secondary" className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4 shadow-sm"><div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"><div><strong className="block text-sm">ذخیره محتوای سایت</strong><p className="m-0 mt-1 text-xs text-[var(--muted)]">ترتیب FAQ، وضعیت انتشار و محتوای تمام صفحات با هم ذخیره می‌شوند.</p></div><AdminSaveButton isSaving={saving} label="ذخیره تنظیمات محتوا" /></div></Card>
   </form>;
 }
 
@@ -440,6 +441,6 @@ function SettingCard({ icon, title, description, children, className = "", help 
 
 function Field({ label, children }: { label: string; children: ReactNode }) { return <div className={adminLabelClass}><Label className="text-xs font-bold text-[var(--muted)]">{label}</Label>{children}</div>; }
 
-function DemoFooter({ onPress }: { onPress: () => void }) { return <div className="flex justify-end border-t border-[var(--border)] pt-4"><Button type="button" variant="primary" onPress={onPress} className="gap-2"><Save size={16} />ذخیره تنظیمات</Button></div>; }
+function DemoFooter({ onPress }: { onPress: () => void }) { return <div className="flex justify-end border-t border-[var(--border)] pt-4"><AdminSaveButton type="button" isSaving={false} label="ذخیره تنظیمات" onPress={onPress} /></div>; }
 
 function MethodRow({ icon, title, description, active = false }: { icon: ReactNode; title: string; description: string; active?: boolean }) { return <div className="flex items-center gap-3 rounded-xl border border-[var(--border)] bg-[var(--surface-secondary)] p-3"><span className="grid size-9 shrink-0 place-items-center rounded-lg bg-[var(--surface)] text-[var(--muted)]">{icon}</span><div className="min-w-0 flex-1"><strong className="block text-sm">{title}</strong><span className="mt-0.5 block text-[11px] text-[var(--muted)]">{description}</span></div><Chip size="sm" variant="soft" className={active ? "text-emerald-700" : "text-slate-500"}><Chip.Label>{active ? "فعال" : "غیرفعال"}</Chip.Label></Chip></div>; }

@@ -4,8 +4,9 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
-import { Button, Card, Input, Spinner, TextArea, toast } from "@heroui/react";
-import { ChevronRight, FolderTree, ImageIcon, Save, Sparkles, Trash2 } from "lucide-react";
+import { Button, Card, Input, TextArea, toast } from "@heroui/react";
+import { ChevronRight, FolderTree, ImageIcon, Sparkles, Trash2 } from "lucide-react";
+import { AdminSaveButton } from "@/components/admin-save-button";
 import { MediaPickerDialog } from "@/components/media-picker-dialog";
 import type { MediaChoice } from "@/components/media-library";
 import { HeroSelectField } from "@/components/hero-select-field";
@@ -144,7 +145,7 @@ export function CategoryForm({ categories, category }: { categories: CategoryOpt
             </div>
           </Card.Content>
         </Card>
-        <Button type="submit" isPending={loading} variant="primary" fullWidth className="min-h-12 gap-2 bg-[#172b4d] text-sm font-bold text-white shadow-lg">{({ isPending }) => <>{isPending ? <Spinner color="current" size="sm" /> : <Save size={17} />}{isPending ? "در حال ذخیره..." : category ? "ذخیره تغییرات" : "ثبت دسته‌بندی"}</>}</Button>
+        <AdminSaveButton isSaving={loading} label={category ? "ذخیره تغییرات" : "ثبت دسته‌بندی"} fullWidth />
         <Link href="/admin/categories" className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white text-sm font-bold text-slate-600"><ChevronRight size={16} />بازگشت به دسته‌بندی‌ها</Link>
       </aside>
 

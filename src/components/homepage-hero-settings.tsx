@@ -3,7 +3,8 @@
 import Image from "next/image";
 import { useState, type DragEvent, type FormEvent, type ReactNode } from "react";
 import { Alert, Button, Card, Input, Label, Modal, TextArea, toast } from "@heroui/react";
-import { GripVertical, Images, ListOrdered, Plus, Save, Sparkles, Trash2, Upload, X } from "lucide-react";
+import { GripVertical, Images, ListOrdered, Plus, Sparkles, Trash2, Upload, X } from "lucide-react";
+import { AdminSaveButton } from "@/components/admin-save-button";
 import { adminFieldClass, adminLabelClass } from "@/components/admin-ui";
 import { AdminSectionHelp } from "@/components/admin-section-help";
 import { HeroSelectField } from "@/components/hero-select-field";
@@ -153,7 +154,7 @@ export function HomepageHeroSettings({ initialSettings }: { initialSettings: Hom
         </Card.Content>
       </Card>
 
-      <Card variant="secondary" className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4 shadow-sm"><div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"><div><strong className="block text-sm">ذخیره تنظیمات هیرو</strong><p className="m-0 mt-1 text-xs text-[var(--muted)]">محتوا، ترتیب تصاویر و لینک‌های اختصاصی با هم ذخیره می‌شوند.</p></div><Button type="submit" variant="primary" isPending={saving} className="min-h-11 shrink-0 gap-2 px-5"><Save size={16} />ذخیره تنظیمات هیرو</Button></div></Card>
+      <Card variant="secondary" className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4 shadow-sm"><div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"><div><strong className="block text-sm">ذخیره تنظیمات هیرو</strong><p className="m-0 mt-1 text-xs text-[var(--muted)]">محتوا، ترتیب تصاویر و لینک‌های اختصاصی با هم ذخیره می‌شوند.</p></div><AdminSaveButton isSaving={saving} label="ذخیره تنظیمات هیرو" /></div></Card>
     </form>
     <MediaPickerDialog open={pickerTarget !== null} scope="HOMEPAGE" allowedTypes={["IMAGE"]} selected={selectedMedia ? [selectedMedia] : []} onClose={() => setPickerTarget(null)} onConfirm={(items) => { const media = items[0] ?? null; if (!pickerTarget) return; const id = pickerTarget.slice(pickerTarget.indexOf(":") + 1); setSlides((current) => current.map((slide) => slide.id === id ? pickerTarget.startsWith("desktop:") ? { ...slide, desktopMedia: media } : { ...slide, mobileMedia: media } : slide)); }} />
     <Modal.Backdrop isOpen={orderOpen} onOpenChange={(open) => { setOrderOpen(open); if (!open) setDraggedSlideId(null); }} variant="blur">

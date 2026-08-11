@@ -2,7 +2,8 @@
 
 import { useState, type FormEvent, type ReactNode } from "react";
 import { Alert, Button, Card, Chip, Input, Label, toast } from "@heroui/react";
-import { GripVertical, ListTree, Plus, Save, Trash2 } from "lucide-react";
+import { GripVertical, ListTree, Plus, Trash2 } from "lucide-react";
+import { AdminSaveButton } from "@/components/admin-save-button";
 import { AdminSectionHelp } from "@/components/admin-section-help";
 import { HeroSelectField } from "@/components/hero-select-field";
 import { adminFieldClass } from "@/components/admin-ui";
@@ -76,7 +77,7 @@ export function HomepageMenuSettings({ initialSettings, linkOptions }: { initial
         </Card>)}</div> : <Alert status="warning"><Alert.Description>هنوز آیتمی برای منوی بالای سایت تعریف نشده است.</Alert.Description></Alert>}
       </Card.Content>
     </Card>
-    <Card variant="secondary" className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-3 shadow-sm"><div className="flex items-center justify-between gap-3"><div><strong className="block text-sm">ذخیره منوی بالای سایت</strong><p className="m-0 mt-1 text-xs text-[var(--muted)]">تمام آیتم‌ها و ترتیب آن‌ها با هم ذخیره می‌شوند.</p></div><Button type="submit" variant="primary" isPending={saving} className="min-h-10 shrink-0 gap-2 px-4 text-xs"><Save size={15} />ذخیره منو</Button></div></Card>
+    <Card variant="secondary" className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-3 shadow-sm"><div className="flex items-center justify-between gap-3"><div><strong className="block text-sm">ذخیره منوی بالای سایت</strong><p className="m-0 mt-1 text-xs text-[var(--muted)]">تمام آیتم‌ها و ترتیب آن‌ها با هم ذخیره می‌شوند.</p></div><AdminSaveButton isSaving={saving} label="ذخیره منو" /></div></Card>
   </form>;
 }
 

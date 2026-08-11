@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, type DragEvent, type FormEvent } from "react";
-import { Button, Card, Input, Modal, Spinner, toast } from "@heroui/react";
-import { Boxes, GripVertical, ListOrdered, ListPlus, Minus, Plus, Save, Tags, Trash2, X } from "lucide-react";
+import { Button, Card, Input, Modal, toast } from "@heroui/react";
+import { Boxes, GripVertical, ListOrdered, ListPlus, Minus, Plus, Tags, Trash2, X } from "lucide-react";
 import { AdminCheckbox } from "@/components/admin-checkbox";
+import { AdminSaveButton } from "@/components/admin-save-button";
 import { AdminSectionHelp } from "@/components/admin-section-help";
 import { adminFieldClass, adminLabelClass } from "@/components/admin-ui";
 import { HeroSelectField } from "@/components/hero-select-field";
@@ -228,7 +229,7 @@ export function CategoryAttributesForm({ categoryId, initialGroups }: { category
       </div>
     </Card.Content></Card>
 
-    <Card variant="secondary" className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm"><div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div><strong className="block text-sm text-slate-800">ذخیره ساختار ویژگی‌ها</strong><p className="mt-1 text-xs text-slate-400">ویژگی‌های استفاده‌شده در محصولات بدون حذف مقدار آن‌ها قابل حذف نیستند.</p></div><Button type="submit" variant="primary" isPending={saving} className="min-h-11 shrink-0 gap-2 px-5 font-bold">{({ isPending }) => <>{isPending ? <Spinner size="sm" color="current" /> : <Save size={16} />}{isPending ? "در حال ذخیره..." : "ذخیره ویژگی‌ها"}</>}</Button></div></Card>
+    <Card variant="secondary" className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm"><div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div><strong className="block text-sm text-slate-800">ذخیره ساختار ویژگی‌ها</strong><p className="mt-1 text-xs text-slate-400">ویژگی‌های استفاده‌شده در محصولات بدون حذف مقدار آن‌ها قابل حذف نیستند.</p></div><AdminSaveButton isSaving={saving} label="ذخیره ویژگی‌ها" /></div></Card>
   </form>
 
   <Modal.Backdrop isOpen={sortOpen} onOpenChange={(open) => { setSortOpen(open); if (!open) setDraggedId(null); }} variant="blur">

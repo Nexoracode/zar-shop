@@ -2,9 +2,10 @@
 
 import { useState, type FormEvent, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import { Button, Card, Chip, Input, Spinner, toast } from "@heroui/react";
-import { BadgePercent, Check, Eye, EyeOff, Gift, Pencil, Save, ShoppingBag, Trash2, Truck } from "lucide-react";
+import { Button, Card, Chip, Input, toast } from "@heroui/react";
+import { BadgePercent, Check, Eye, EyeOff, Gift, Pencil, ShoppingBag, Trash2, Truck } from "lucide-react";
 import { AdminCheckbox } from "@/components/admin-checkbox";
+import { AdminSaveButton } from "@/components/admin-save-button";
 import { AdminSectionHelp } from "@/components/admin-section-help";
 import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
 import { HeroDateRangeField } from "@/components/hero-date-range-field";
@@ -203,7 +204,7 @@ export function AdminPromotions({ initialItems = [], initialEditing = null, mode
             <PromotionFields type={selectedType} editing={editing} />
             <AdminCheckbox isSelected={isActive} onChange={setIsActive} icon={isActive ? <Eye size={16} /> : <EyeOff size={16} />} description="فقط پروموشن فعال و در بازه اعتبار وارد محاسبات سفارش می‌شود.">پروموشن فعال باشد</AdminCheckbox>
           </div>
-          <div className="mt-5 flex flex-col-reverse gap-2 border-t border-[var(--border)] pt-4 sm:flex-row sm:justify-end"><Button type="button" variant="secondary" isDisabled={saving} onPress={() => editing ? router.push("/admin/promotions") : resetForm(selectedType)} className="min-h-10 px-4 text-xs">{editing ? "انصراف از ویرایش" : "پاک‌کردن فرم"}</Button><Button type="submit" variant="primary" isPending={saving} className="min-h-10 gap-2 bg-violet-700 px-5 text-xs font-bold text-white">{({ isPending }) => <>{isPending ? <Spinner color="current" size="sm" /> : <Save size={15} />}{isPending ? "در حال ذخیره..." : editing ? "ذخیره تغییرات" : "ذخیره پروموشن"}</>}</Button></div>
+          <div className="mt-5 flex flex-col-reverse gap-2 border-t border-[var(--border)] pt-4 sm:flex-row sm:justify-end"><Button type="button" variant="secondary" isDisabled={saving} onPress={() => editing ? router.push("/admin/promotions") : resetForm(selectedType)} className="min-h-10 px-4 text-xs">{editing ? "انصراف از ویرایش" : "پاک‌کردن فرم"}</Button><AdminSaveButton isSaving={saving} label={editing ? "ذخیره تغییرات" : "ذخیره پروموشن"} /></div>
         </Card.Content></Card>
       </form>
       </> : null}

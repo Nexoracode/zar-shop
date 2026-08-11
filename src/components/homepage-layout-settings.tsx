@@ -2,7 +2,8 @@
 
 import { useState, type DragEvent, type FormEvent } from "react";
 import { Button, Card, Chip, toast } from "@heroui/react";
-import { Eye, EyeOff, GripVertical, LayoutDashboard, Save } from "lucide-react";
+import { Eye, EyeOff, GripVertical, LayoutDashboard } from "lucide-react";
+import { AdminSaveButton } from "@/components/admin-save-button";
 import { AdminSectionHelp } from "@/components/admin-section-help";
 import { HomepageLayoutPreview } from "@/components/homepage-layout-preview";
 import type { HomepageLayoutItemId, HomepageSectionId, HomepageSettings } from "@/modules/settings/homepage-settings";
@@ -92,6 +93,6 @@ export function HomepageLayoutSettings({ initialSettings }: { initialSettings: H
         <HomepageLayoutPreview sections={sections} settings={initialSettings} />
       </div></Card.Content>
     </Card>
-    <Card variant="secondary" className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4 shadow-sm"><div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"><div><strong className="block text-sm">ذخیره چینش صفحه اصلی</strong><p className="m-0 mt-1 text-xs text-[var(--muted)]">ترتیب و وضعیت همه بخش‌ها با هم ذخیره می‌شوند.</p></div><Button type="submit" variant="primary" isPending={saving} className="min-h-11 shrink-0 gap-2 px-5"><Save size={16} />ذخیره چینش</Button></div></Card>
+      <Card variant="secondary" className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4 shadow-sm"><div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"><div><strong className="block text-sm">ذخیره چینش صفحه اصلی</strong><p className="m-0 mt-1 text-xs text-[var(--muted)]">ترتیب و وضعیت همه بخش‌ها با هم ذخیره می‌شوند.</p></div><AdminSaveButton isSaving={saving} label="ذخیره چینش" /></div></Card>
   </form>;
 }

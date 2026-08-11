@@ -2,8 +2,9 @@
 
 import { useState, type FormEvent } from "react";
 import Link from "next/link";
-import { Button, Card, Spinner, toast } from "@heroui/react";
-import { CheckCircle2, ListChecks, Save } from "lucide-react";
+import { Card, toast } from "@heroui/react";
+import { CheckCircle2, ListChecks } from "lucide-react";
+import { AdminSaveButton } from "@/components/admin-save-button";
 import { ProductAttributesFields } from "@/components/product-attributes-fields";
 import type { CategoryAttributeGroup, ProductAttributeValue } from "@/modules/products/attributes";
 
@@ -49,6 +50,6 @@ export function ProductAttributesForm({ productId, categoryId, categoryName, gro
       {[{ label: "کل ویژگی‌ها", value: definitions.length }, { label: "تکمیل‌شده", value: completedCount }, { label: "مهم و تکمیل‌شده", value: importantCount }].map((item) => <Card key={item.label} variant="secondary" className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm"><strong className="block text-lg font-black text-slate-800">{item.value.toLocaleString("fa-IR")}</strong><span className="mt-1 block text-[10px] text-slate-500 sm:text-xs">{item.label}</span></Card>)}
     </div>
     <ProductAttributesFields groups={groups} values={values} onChange={setValues} />
-    <Card variant="secondary" className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm"><div className="flex min-h-12 items-center justify-between gap-4"><div className="min-w-0"><strong className="block text-[13px] font-black text-slate-800">ذخیره ویژگی‌های محصول</strong><span className="mt-1 hidden text-[11px] text-slate-500 sm:block">{completedCount.toLocaleString("fa-IR")} ویژگی از {definitions.length.toLocaleString("fa-IR")} ویژگی تکمیل شده است.</span></div><Button type="submit" size="sm" variant="primary" isPending={saving} isDisabled={saving} aria-label={saving ? "در حال ذخیره ویژگی‌ها" : "ذخیره ویژگی‌ها"} className="!h-10 !min-h-10 shrink-0 gap-2 rounded-lg px-4 !text-[11px] !font-normal">{saving ? <><Spinner size="sm" color="current" />در حال ذخیره...</> : <>{completedCount === definitions.length ? <CheckCircle2 className="!size-[15px]" /> : <Save className="!size-[15px]" />}ذخیره ویژگی‌ها</>}</Button></div></Card>
+    <Card variant="secondary" className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm"><div className="flex min-h-12 items-center justify-between gap-4"><div className="min-w-0"><strong className="block text-[13px] font-black text-slate-800">ذخیره ویژگی‌های محصول</strong><span className="mt-1 hidden text-[11px] text-slate-500 sm:block">{completedCount.toLocaleString("fa-IR")} ویژگی از {definitions.length.toLocaleString("fa-IR")} ویژگی تکمیل شده است.</span></div><AdminSaveButton isSaving={saving} label="ذخیره ویژگی‌ها" icon={completedCount === definitions.length ? <CheckCircle2 className="!size-[15px]" /> : undefined} /></div></Card>
   </form>;
 }

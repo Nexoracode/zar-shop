@@ -3,8 +3,9 @@
 import Image from "next/image";
 import { useState, type FormEvent } from "react";
 import { Button, Card, Input, Label, toast } from "@heroui/react";
-import { Images, Megaphone, Save, Trash2, Upload } from "lucide-react";
+import { Images, Megaphone, Trash2, Upload } from "lucide-react";
 import { AdminCheckbox } from "@/components/admin-checkbox";
+import { AdminSaveButton } from "@/components/admin-save-button";
 import { AdminSectionHelp } from "@/components/admin-section-help";
 import { adminFieldClass } from "@/components/admin-ui";
 import type { MediaChoice } from "@/components/media-library";
@@ -69,7 +70,7 @@ export function HomepagePromoSettings({ initialSettings }: { initialSettings: Ho
         </Card.Content>
       </Card>
       <Card variant="secondary" className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-3 shadow-sm">
-        <div className="flex items-center justify-between gap-3"><div><strong className="block text-sm">ذخیره پروموبنر</strong><p className="m-0 mt-1 text-xs text-[var(--muted)]">این تنظیمات مستقل از سایر بخش‌های صفحه اصلی ذخیره می‌شوند.</p></div><Button type="submit" variant="primary" isPending={saving} className="min-h-10 shrink-0 gap-2 px-4 text-xs"><Save size={15} />ذخیره</Button></div>
+      <div className="flex items-center justify-between gap-3"><div><strong className="block text-sm">ذخیره پروموبنر</strong><p className="m-0 mt-1 text-xs text-[var(--muted)]">این تنظیمات مستقل از سایر بخش‌های صفحه اصلی ذخیره می‌شوند.</p></div><AdminSaveButton isSaving={saving} label="ذخیره" /></div>
       </Card>
     </form>
     <MediaPickerDialog open={pickerTarget !== null} scope="HOMEPAGE" allowedTypes={["IMAGE"]} selected={selectedMedia ? [selectedMedia] : []} onClose={() => setPickerTarget(null)} onConfirm={(items) => { const media = items[0] ?? null; if (pickerTarget === "desktop") setDesktopMedia(media); else if (pickerTarget === "mobile") setMobileMedia(media); setPickerTarget(null); }} />
