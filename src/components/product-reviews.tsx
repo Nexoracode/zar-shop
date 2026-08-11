@@ -117,7 +117,7 @@ export function ProductReviews({ productId, initialData, isAuthenticated }: Prop
     </aside>
 
     <div className="min-w-0">
-      {!data.reviews.length ? <div className="rounded-xl border border-dashed border-slate-200 px-5 py-12 text-center text-sm text-slate-500">هنوز دیدگاهی برای این محصول ثبت نشده است.</div> : <div className="divide-y divide-slate-200 border-y border-slate-200">{data.reviews.map((review) => <ReviewCard key={review.id} review={review} authenticated={isAuthenticated} busyReviewId={busyReviewId} onReply={openComposer} onVote={vote} onReport={setReporting} />)}</div>}
+      {!data.reviews.length ? <p className="py-10 text-center text-xs text-slate-400">هنوز دیدگاهی برای این محصول ثبت نشده است.</p> : <div className="divide-y divide-slate-200 border-y border-slate-200">{data.reviews.map((review) => <ReviewCard key={review.id} review={review} authenticated={isAuthenticated} busyReviewId={busyReviewId} onReply={openComposer} onVote={vote} onReport={setReporting} />)}</div>}
     </div>
 
     <Modal.Backdrop isOpen={composeOpen} onOpenChange={setComposeOpen}>
