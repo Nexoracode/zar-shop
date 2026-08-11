@@ -119,7 +119,7 @@ export function HomepageHeroSettings({ initialSettings }: { initialSettings: Hom
   const selectedMedia = pickerTarget?.startsWith("desktop:") ? selectedSlide?.desktopMedia ?? null : selectedSlide?.mobileMedia ?? null;
 
   return <>
-    <form onSubmit={submit} className="grid gap-5" dir="rtl">
+    <form onSubmit={submit} className="admin-sticky-save-form grid gap-5" dir="rtl">
       <Card variant="secondary" className="overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-sm">
         <Card.Header className="flex-row items-center gap-3 border-b border-[var(--border)] p-5">
           <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-[var(--accent)]/10 text-[var(--accent)]"><Sparkles size={19} /></span>

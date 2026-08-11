@@ -152,6 +152,21 @@ body {
 [data-theme="zar-dark"] .admin-content [class~="text-[#846325]"],
 [data-theme="zar-dark"] .admin-content [class~="text-[#9a7434]"] { color: var(--warning) !important; }
 
+.admin-sticky-save-form > :last-child {
+  position: sticky;
+  bottom: max(0.75rem, env(safe-area-inset-bottom));
+  z-index: 35;
+  background: color-mix(in srgb, var(--surface) 94%, transparent) !important;
+  box-shadow: 0 -8px 28px rgb(15 23 42 / 0.12) !important;
+  backdrop-filter: blur(14px);
+}
+
+@media (max-width: 640px) {
+  .admin-sticky-save-form > :last-child {
+    bottom: max(0.5rem, env(safe-area-inset-bottom));
+  }
+}
+
 button,
 input,
 textarea,

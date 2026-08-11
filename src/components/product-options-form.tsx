@@ -108,7 +108,7 @@ export function ProductOptionsForm({ productId, productStock, storeIndustry, col
     }
   }
 
-  return <form onSubmit={submit} className="grid gap-4">
+  return <form onSubmit={submit} className="admin-sticky-save-form grid gap-4">
     <Card variant="secondary" className="rounded-xl border border-slate-200/80 bg-white shadow-sm">
       <Card.Content className="p-4 sm:p-5">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-4">

@@ -52,7 +52,7 @@ export function HomepagePromoSettings({ initialSettings }: { initialSettings: Ho
   const selectedMedia = pickerTarget === "desktop" ? desktopMedia : mobileMedia;
 
   return <>
-    <form onSubmit={submit} className="grid gap-4">
+    <form onSubmit={submit} className="admin-sticky-save-form grid gap-4">
       <Card variant="secondary" className="overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-sm">
         <Card.Header className="flex items-start gap-3 border-b border-[var(--border)] p-4">
           <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[var(--accent)]/10 text-[var(--accent)]"><Megaphone size={18} /></span>

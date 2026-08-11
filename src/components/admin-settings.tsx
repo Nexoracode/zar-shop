@@ -51,7 +51,7 @@ export function GeneralSettings({ initialSettings }: { initialSettings: GeneralS
     }
   }
 
-  return <form onSubmit={submit} className="grid gap-5"><SettingsGrid>
+  return <form onSubmit={submit} className="admin-sticky-save-form grid gap-5"><SettingsGrid>
     <SettingCard icon={<Store size={19} />} title="هویت فروشگاه" description="اطلاعات اصلی نمایش‌داده‌شده در سایت و فاکتور">
       <div className="grid gap-4 sm:grid-cols-2"><Field label="نام فروشگاه"><Input name="storeName" required defaultValue={initialSettings.storeName} variant="secondary" className={adminFieldClass} /></Field><Field label="شعار کوتاه"><Input name="tagline" required defaultValue={initialSettings.tagline} variant="secondary" className={adminFieldClass} /></Field></div>
       <Field label="توضیح کوتاه فروشگاه"><TextArea name="shortDescription" required defaultValue={initialSettings.shortDescription} rows={3} variant="secondary" className={adminFieldClass} /></Field>
@@ -124,7 +124,7 @@ export function HomepageSettings({ initialSettings, industry }: { initialSetting
   const selectedLicense = licenses.find((license) => license.id === selectedLicenseId) ?? licenses[1];
 
   return <>
-    <form onSubmit={submit} className="grid gap-5"><SettingsGrid>
+    <form onSubmit={submit} className={`${industry === "GOLD" ? "admin-sticky-save-form " : ""}grid gap-5`}><SettingsGrid>
       <SettingCard icon={<Megaphone size={19} />} title="پروموبنر بالای سایت" description={initialSettings.promoBannerEnabled ? "فعال" : "غیرفعال"}>
         <div className="flex items-center justify-between gap-3"><strong className="text-xs">تصاویر، لینک و وضعیت نمایش</strong><Link href="/admin/settings/homepage/promo" className={buttonVariants({ variant: "primary", size: "sm", className: "min-h-9 shrink-0 gap-1 rounded-lg px-3 text-xs font-bold" })}>مدیریت<ChevronLeft size={14} /></Link></div>
       </SettingCard>
@@ -197,7 +197,7 @@ export function BrandSettings({ initialSettings, industry }: { initialSettings: 
     } catch (reason) { toast.danger("ذخیره ظاهر و برند انجام نشد", { description: reason instanceof Error ? reason.message : "خطای ناشناخته" }); } finally { setSaving(false); }
   }
 
-  return <><form onSubmit={submit} className="grid gap-5"><SettingsGrid>
+  return <><form onSubmit={submit} className="admin-sticky-save-form grid gap-5"><SettingsGrid>
     <SettingCard icon={<Palette size={19} />} title="رنگ‌های برند" description="رنگ‌های اصلی رابط فروشگاه" help={{ summary: "رنگ‌های پایه به توکن‌های رابط تبدیل می‌شوند و روی دکمه‌ها، لینک‌ها، تأکیدها و وضعیت‌های سایت اثر می‌گذارند.", blocks: [{ title: "کاربرد رنگ‌ها", items: ["رنگ اصلی برای اکشن‌های مهم، لینک‌ها و وضعیت انتخاب‌شده استفاده می‌شود.", "رنگ مکمل برای تأکیدهای ثانویه و تزئینات برند است.", "رنگ پس‌زمینه سطح عمومی صفحات را تعیین می‌کند.", "رنگ خطر برای خطاها و عملیات حساس استفاده می‌شود."] }, { title: "کنتراست", tone: "important", description: "کنترل کنتراست را فعال نگه دارید تا رنگ متن روی دکمه‌ها به‌صورت خوانا انتخاب شود. پس از تغییر رنگ اصلی، حالت روشن و تاریک را بررسی کنید." }] }}>
       <div className="grid gap-3 sm:grid-cols-2"><BrandColorField label="رنگ اصلی" value={colors.primary} onChange={(value) => setColors((current) => ({ ...current, primary: value }))} /><BrandColorField label="رنگ تأکیدی" value={colors.accent} onChange={(value) => setColors((current) => ({ ...current, accent: value }))} /><BrandColorField label="پس‌زمینه" value={colors.background} onChange={(value) => setColors((current) => ({ ...current, background: value }))} /><BrandColorField label="رنگ خطا و هشدار" value={colors.danger} onChange={(value) => setColors((current) => ({ ...current, danger: value }))} /></div>
       <AdminCheckbox isSelected={enforceContrast} onChange={setEnforceContrast} description="رنگ متن روی رنگ اصلی به‌صورت خودکار خوانا انتخاب شود">کنترل خودکار دسترس‌پذیری رنگ</AdminCheckbox>
@@ -235,7 +235,7 @@ export function OrderSettings({ initialSettings }: { initialSettings: OrderSetti
     } finally { setSaving(false); }
   }
 
-  return <form onSubmit={submit} className="grid gap-5"><SettingsGrid>
+  return <form onSubmit={submit} className="admin-sticky-save-form grid gap-5"><SettingsGrid>
     <SettingCard icon={<Clock3 size={19} />} title="انقضای سفارش‌های بدون اقدام" description="مانند فروشگاه‌های بزرگ، سفارش پرداخت‌نشده پس از مهلت تعیین‌شده منقضی می‌شود" className="lg:col-span-2" help={{ summary: "این قواعد چرخه سفارش پرداخت‌نشده و بازگرداندن منابع رزروشده را کنترل می‌کنند.", blocks: [{ title: "زمان‌بندی", items: ["مهلت انقضا مدت نهایی فرصت پرداخت مشتری است.", "زمان هشدار باید کمتر از مهلت انقضا باشد.", "مبدأ زمان مشخص می‌کند شمارش از ایجاد سفارش یا رویداد پیکربندی‌شده آغاز شود."] }, { title: "پس از انقضا", description: "بر اساس اکشن انتخاب‌شده، سفارش منقضی می‌شود و موجودی یا سهم پروموشن رزروشده قابل بازگردانی است." }, { title: "رقابت پرداخت و انقضا", tone: "important", description: "پرداخت تأییدشده در رقابت هم‌زمان با انقضا اولویت دارد. پردازش سفارش، پرداخت و پروموشن تراکنشی و idempotent است." }] }}>
       <div className="grid gap-5 lg:grid-cols-[minmax(240px,0.7fr)_minmax(0,1.3fr)]">
         <div className="grid content-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-amber-950">
@@ -292,7 +292,7 @@ export function CatalogSettings({ initialSettings }: { initialSettings: CatalogS
     } finally { setSaving(false); }
   }
 
-  return <form onSubmit={submit} className="grid gap-5"><SettingsGrid>
+  return <form onSubmit={submit} className="admin-sticky-save-form grid gap-5"><SettingsGrid>
     <SettingCard icon={<Boxes size={19} />} title="موجودی و نمایش محصولات" description="قواعد نمایش کاتالوگ و هشدارهای مدیریت موجودی" help={{ summary: "نمایش موجودی، محصولات ناموجود و اندازه خروجی‌های کاتالوگ از این بخش کنترل می‌شود.", blocks: [{ title: "آستانه موجودی کم", description: "وقتی موجودی محصول یا تنوع به این عدد برسد، در پنل به‌عنوان نیازمند بررسی شناخته می‌شود." }, { title: "محصول ناموجود", description: "می‌توانید محصول ناموجود را مخفی کنید یا برای آگاهی و بازگشت بعدی مشتری نمایش دهید." }, { title: "تعداد نمایش", description: "اندازه صفحه مبنای API و فهرست‌های فروشگاه است؛ مقدار بسیار بالا زمان پاسخ و حجم داده را افزایش می‌دهد." }] }}>
       <div className="grid gap-4 sm:grid-cols-2"><Field label="آستانه هشدار موجودی کم"><HeroNumberInput value={settings.catalogLowStockThreshold} onValueChange={(value) => set("catalogLowStockThreshold", Number(value))} min={0} max={10000} variant="secondary" className={adminFieldClass} /></Field><Field label="تعداد محصولات هر صفحه"><HeroNumberInput value={settings.catalogPageSize} onValueChange={(value) => set("catalogPageSize", Number(value))} min={4} max={100} variant="secondary" className={adminFieldClass} /></Field></div>
       <div className="grid gap-3 sm:grid-cols-2"><AdminCheckbox isSelected={settings.hideOutOfStockProducts} onChange={(value) => set("hideOutOfStockProducts", value)} description="محصول بدون موجودی در فهرست و نتایج فروشگاه نمایش داده نشود">مخفی‌کردن محصولات ناموجود</AdminCheckbox><AdminCheckbox isSelected={settings.showProductStock} onChange={(value) => set("showProductStock", value)} description="تعداد دقیق موجودی در مشخصات صفحه محصول نمایش داده شود">نمایش تعداد دقیق موجودی</AdminCheckbox></div>
@@ -324,7 +324,7 @@ export function CommerceSettings({ initialSettings, configuredGatewayCount }: { 
     } finally { setSaving(false); }
   }
 
-  return <form onSubmit={submit} className="grid gap-5"><div className="grid items-start gap-5 lg:grid-cols-[minmax(280px,0.82fr)_minmax(0,1.18fr)]">
+  return <form onSubmit={submit} className="admin-sticky-save-form grid gap-5"><div className="grid items-start gap-5 lg:grid-cols-[minmax(280px,0.82fr)_minmax(0,1.18fr)]">
     <SettingCard icon={<CreditCard size={19} />} title="روش‌های پرداخت" description="درگاه‌ها و ترتیب نمایش در تسویه حساب" help={{ summary: "فعال‌بودن پرداخت آنلاین و دسترسی مشتری به درگاه‌های ثبت‌شده از اینجا کنترل می‌شود.", blocks: [{ title: "پیش‌نیاز", description: "ابتدا حداقل یک درگاه را در صفحه مدیریت درگاه‌ها با شناسه معتبر ثبت کنید، سپس پرداخت آنلاین را فعال کنید." }, { title: "محیط آزمایشی", tone: "important", description: "قبل از انتشار، مطمئن شوید درگاه اصلی فعال است و تنظیم sandbox فقط در محیط توسعه روشن مانده است." }] }}>
       <AdminCheckbox isSelected={settings.onlinePaymentEnabled} onChange={(value) => set("onlinePaymentEnabled", value)} icon={<CreditCard size={18} />} description="در صورت غیرفعال‌شدن، ایجاد سفارش و انتقال به درگاه متوقف می‌شود">پرداخت آنلاین</AdminCheckbox>
       <div className={`flex items-center justify-between gap-3 rounded-xl border p-3 ${configuredGatewayCount ? "border-emerald-200 bg-emerald-50 text-emerald-800" : "border-amber-200 bg-amber-50 text-amber-800"}`}><span className="flex items-center gap-2 text-sm font-bold">{configuredGatewayCount ? <CheckCircle2 size={17} /> : <CreditCard size={17} />}درگاه‌های ثبت‌شده</span><Chip size="sm" variant="soft"><Chip.Label>{configuredGatewayCount.toLocaleString("fa-IR")} درگاه</Chip.Label></Chip></div>
@@ -388,7 +388,7 @@ export function ContentSettings({ initialSettings }: { initialSettings: ContentS
     } finally { setSaving(false); }
   }
 
-  return <form onSubmit={submit} className="grid gap-5">
+  return <form onSubmit={submit} className="admin-sticky-save-form grid gap-5">
     <SettingsGrid>
       <SettingCard icon={<FileQuestion size={19} />} title="سوالات متداول" description="برای تغییر ترتیب، هر سوال را از دستگیره جابه‌جا کنید" className="lg:col-span-2" help={{ summary: "سؤال‌ها، پاسخ‌ها، وضعیت انتشار و ترتیب نمایش FAQ در همین کارت مدیریت می‌شوند.", blocks: [{ title: "مدیریت سؤال", items: ["سؤال و پاسخ روشن و کوتاه بنویسید.", "برای پنهان‌کردن موقت، وضعیت انتشار را خاموش کنید.", "برای تغییر ترتیب، دستگیره سؤال را گرفته و در جای جدید رها کنید."] }, { title: "حذف", tone: "important", description: "حذف سؤال پس از ذخیره نهایی می‌شود. برای نگهداری سابقه، در صورت تردید آن را غیرفعال کنید." }] }}>
         <div className="grid gap-3">{faqs.map((faq, index) => <div key={faq.id} onDragOver={(event) => event.preventDefault()} onDrop={() => dropFaq(faq.id)} className={`grid gap-3 rounded-xl border bg-[var(--surface-secondary)] p-3 transition sm:grid-cols-[auto_auto_minmax(0,1fr)_auto] ${draggedFaqId === faq.id ? "border-[var(--accent)] opacity-50" : "border-[var(--border)]"}`}>

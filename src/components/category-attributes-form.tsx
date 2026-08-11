@@ -154,7 +154,7 @@ export function CategoryAttributesForm({ categoryId, initialGroups }: { category
   const allowsMultiple = selectedAttribute?.allowsMultiple ?? newAttributeAllowsMultiple;
   const important = selectedAttribute?.important ?? newAttributeImportant;
 
-  return <form onSubmit={submit} className="grid gap-4">
+  return <form onSubmit={submit} className="admin-sticky-save-form grid gap-4">
     <Card variant="secondary" className="rounded-xl border border-slate-200 bg-white shadow-sm"><Card.Content className="p-4 sm:p-5">
       <div className="mb-4 flex items-center gap-3 border-b border-slate-100 pb-4"><span className="grid size-10 place-items-center rounded-xl bg-violet-50 text-violet-700"><ListPlus size={19} /></span><div className="min-w-0"><h2 className="m-0 text-base font-black text-slate-800">افزودن ویژگی و مقدار</h2><p className="mt-1 text-xs text-slate-400">از موارد قبلی انتخاب کنید یا مورد جدید بسازید.</p></div><div className="mr-auto"><AdminSectionHelp title="افزودن ویژگی و مقدار" summary="در این بخش ساختار مشخصات محصولات این دسته را تعریف می‌کنید." blocks={[
         { title: "ترتیب ثبت", items: ["ابتدا یک گروه موجود مثل «مشخصات کلی» را انتخاب کنید یا گزینه ثبت گروه جدید را بزنید.", "بعد ویژگی‌های همان گروه را از فهرست انتخاب کنید یا یک ویژگی تازه بسازید.", "یک یا چند مقدار پیشنهادی وارد کنید؛ برای ورود هم‌زمان چند مقدار، آن‌ها را با کاما جدا کنید.", "دکمه «ثبت مقدار ویژگی» تغییر را به فهرست پایین اضافه می‌کند؛ برای اعمال نهایی باید در انتهای صفحه ذخیره کنید."] },

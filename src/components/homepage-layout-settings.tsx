@@ -69,7 +69,7 @@ export function HomepageLayoutSettings({ initialSettings }: { initialSettings: H
     }
   }
 
-  return <form onSubmit={submit} className="grid gap-5" dir="rtl">
+  return <form onSubmit={submit} className="admin-sticky-save-form grid gap-5" dir="rtl">
     <Card variant="secondary" className="overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-sm">
       <Card.Header className="flex-row items-center gap-3 border-b border-[var(--border)] p-5"><span className="grid size-11 shrink-0 place-items-center rounded-xl bg-[var(--accent)]/10 text-[var(--accent)]"><LayoutDashboard size={19} /></span><div className="min-w-0"><Card.Title className="text-base font-black">چینش صفحه اصلی</Card.Title><Card.Description className="mt-1 text-xs text-[var(--muted)]">هر بخش و هر ردیف تایل را مستقل در جای دلخواه قرار دهید</Card.Description></div><div className="mr-auto"><AdminSectionHelp title="چینش صفحه اصلی" summary="ترتیب و وضعیت تمام بخش‌ها از این صفحه مدیریت می‌شود و پیش‌نمایش هم‌زمان تغییر می‌کند." blocks={[{ title: "تغییر ترتیب", items: ["دستگیره هر ردیف را نگه دارید.", "آن را بین بخش‌های دیگر بکشید و رها کنید.", "هر بخش را مستقل فعال یا غیرفعال کنید."] }, { title: "پیش‌نمایش", description: "نمای دسکتاپ یا موبایل را انتخاب کنید تا نتیجه تقریبی چینش را پیش از ذخیره ببینید." }]} /></div></Card.Header>
       <Card.Content className="p-5"><div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(320px,0.72fr)]">

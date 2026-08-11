@@ -81,7 +81,7 @@ export function HomepageTileSettings({ initialSettings }: { initialSettings: Hom
   const selectedMedia = pickerParts ? groups.find((group) => group.id === pickerParts[1])?.tiles.find((tile) => tile.id === pickerParts[2])?.media ?? null : null;
 
   return <>
-    <form onSubmit={submit} className="grid gap-5" dir="rtl">
+    <form onSubmit={submit} className="admin-sticky-save-form grid gap-5" dir="rtl">
       <Card variant="secondary" className="overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-sm">
         <Card.Header className="flex-row items-center justify-between gap-3 border-b border-[var(--border)] p-5">
           <div className="flex items-center gap-3"><span className="grid size-11 shrink-0 place-items-center rounded-xl bg-[var(--accent)]/10 text-[var(--accent)]"><LayoutGrid size={19} /></span><div><Card.Title className="text-base font-black">ردیف‌های تایل</Card.Title><Card.Description className="mt-1 text-xs text-[var(--muted)]">ساخت ردیف‌های تصویری با چیدمان و لینک مستقل</Card.Description></div></div>
