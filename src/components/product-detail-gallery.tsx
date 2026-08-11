@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
-import { Button, Modal, toast } from "@heroui/react";
+import { Button, Modal, ProgressBar, toast } from "@heroui/react";
 import { Bell, ChartNoAxesCombined, ChevronLeft, ChevronRight, Ellipsis, Heart, ImageIcon, Info, List, Play, Scale, Share2, X } from "lucide-react";
 
 type ProductGalleryMedia = {
@@ -18,16 +18,19 @@ type ProductDetailGalleryProps = {
   productCode: string;
   hasDiscount?: boolean;
   discountEndsAt?: string | null;
+  soldPercent?: number;
 };
 
 function formatCountdown(endAt: string | null | undefined, now: number) {
   if (!endAt) return null;
   const remaining = Math.max(0, new Date(endAt).getTime() - now);
   const totalSeconds = Math.floor(remaining / 1000);
-  const hours = Math.floor(totalSeconds / 3600);
+  const days = Math.floor(totalSeconds / 86400);
+  const hours = Math.floor((totalSeconds % 86400) / 3600);
   const minutes = Math.floor((totalSeconds % 3600) / 60);
   const seconds = totalSeconds % 60;
-  return [hours, minutes, seconds].map((value) => value.toLocaleString("fa-IR", { minimumIntegerDigits: 2, useGrouping: false })).join(" : ");
+  const clock = [hours, minutes, seconds].map((value) => value.toLocaleString("fa-IR", { minimumIntegerDigits: 2, useGrouping: false })).join(" : ");
+  return days > 0 ? `${days.toLocaleString("fa-IR")} روز : ${clock}` : clock;
 }
 
 function GalleryMedia({ item, productName, priority = false, modal = false }: { item: ProductGalleryMedia | undefined; productName: string; priority?: boolean; modal?: boolean }) {
@@ -61,7 +64,7 @@ function renderFullscreenGallery({ media, selected, selectedIndex, productName, 
   </Modal.Backdrop>;
 }
 
-export function ProductDetailGallery({ media, productName, productCode, hasDiscount = false, discountEndsAt = null }: ProductDetailGalleryProps) {
+export function ProductDetailGallery({ media, productName, productCode, hasDiscount = false, discountEndsAt = null, soldPercent = 97 }: ProductDetailGalleryProps) {
   const [selectedId, setSelectedId] = useState(media[0]?.id ?? "");
   const [favorite, setFavorite] = useState(false);
   const [priceAlert, setPriceAlert] = useState(false);
@@ -70,6 +73,7 @@ export function ProductDetailGallery({ media, productName, productCode, hasDisco
   const selected = media[selectedIndex] ?? media[0];
   const previewMedia = useMemo(() => media.slice(0, 5), [media]);
   const countdown = formatCountdown(discountEndsAt, now);
+  const normalizedSoldPercent = Math.min(100, Math.max(0, soldPercent));
 
   useEffect(() => {
     if (!hasDiscount || !discountEndsAt) return;
@@ -105,7 +109,7 @@ export function ProductDetailGallery({ media, productName, productCode, hasDisco
   ];
 
   return <section className="min-w-0 lg:col-start-1 lg:row-span-2 lg:row-start-1" aria-label="گالری محصول">
-    {hasDiscount && countdown && <div className="mb-5 flex min-h-12 items-center justify-between gap-4 bg-[#fdecf0] px-4 text-xs font-black text-rose-600 sm:px-5"><span>پیشنهاد شگفت‌انگیز</span><span dir="ltr" className="tabular-nums">{countdown}</span></div>}
+    {hasDiscount && countdown && <div className="mb-5 flex min-h-12 items-center gap-3 bg-[#fdecf0] px-3 text-[11px] font-black text-rose-600 sm:gap-4 sm:px-5 sm:text-xs"><span className="shrink-0">پیشنهاد شگفت‌انگیز</span><div className="flex min-w-0 flex-1 items-center gap-2 text-slate-500"><span className="shrink-0 font-medium"><strong className="text-rose-600">{normalizedSoldPercent.toLocaleString("fa-IR")}٪</strong> فروش رفته</span><ProgressBar value={normalizedSoldPercent} aria-label="درصد فروش محصول" dir="ltr" className="min-w-8 flex-1"><ProgressBar.Track className="h-1 overflow-hidden rounded-full bg-rose-100"><ProgressBar.Fill className="h-full rounded-full bg-rose-500" /></ProgressBar.Track></ProgressBar></div><span dir="rtl" className="shrink-0 whitespace-nowrap tabular-nums">{countdown}</span></div>}
 
     <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
       <div className="flex shrink-0 flex-row gap-1 sm:w-10 sm:flex-col" aria-label="عملیات محصول">
