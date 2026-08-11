@@ -25,6 +25,7 @@ export function ProductDetailSectionNav() {
         : 0;
       const navigationHeight = Math.round(detailNavigation?.getBoundingClientRect().height ?? 53);
       root.style.setProperty("--storefront-sticky-header-offset", `${headerOffset}px`);
+      root.style.setProperty("--product-primary-purchase-offset", `${headerOffset + 24}px`);
       root.style.setProperty("--product-detail-anchor-offset", `${headerOffset + 96}px`);
       root.style.setProperty("--product-detail-purchase-offset", `${headerOffset + navigationHeight + 24}px`);
     };
@@ -39,6 +40,7 @@ export function ProductDetailSectionNav() {
       resizeObserver?.disconnect();
       window.removeEventListener("resize", updateStickyOffsets);
       root.style.removeProperty("--storefront-sticky-header-offset");
+      root.style.removeProperty("--product-primary-purchase-offset");
       root.style.removeProperty("--product-detail-anchor-offset");
       root.style.removeProperty("--product-detail-purchase-offset");
     };
