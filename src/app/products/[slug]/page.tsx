@@ -120,7 +120,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
       <div className="grid items-stretch gap-7 lg:grid-cols-[minmax(0,1fr)_320px]">
         <div className="min-w-0">
           <section className="grid items-start gap-7 lg:grid-cols-[minmax(330px,1.05fr)_minmax(0,1.1fr)] lg:grid-rows-[auto_auto] lg:gap-x-7 lg:gap-y-5">
-            <ProductDetailGallery media={galleryMedia} productName={product.name} productCode={product.sku} />
+            <ProductDetailGallery media={galleryMedia} productName={product.name} productCode={product.sku} hasDiscount={Boolean(discounted?.isActive)} discountEndsAt={discounted?.isActive && product.discountEndsAt ? product.discountEndsAt.toISOString() : null} />
 
             <div className="min-w-0 lg:col-start-2 lg:row-start-1">
               {product.category && <Link href={`/products?category=${encodeURIComponent(product.category.slug)}`} className="text-sm font-bold text-sky-600 hover:text-sky-700">{product.category.name}</Link>}
