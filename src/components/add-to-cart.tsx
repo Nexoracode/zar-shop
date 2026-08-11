@@ -93,7 +93,7 @@ export function AddToCart({ productId, options = [], optionGuide, disabled, disa
   if (layout === "product-detail") return <>
     {showOptionFields && optionFields && <section className="grid gap-4 pt-7 lg:col-start-2 lg:row-start-2" aria-label="انتخاب تنوع محصول">{optionFields}</section>}
     {showPurchaseCard && <aside className={purchaseCardClassName ?? "lg:col-start-3 lg:row-span-2 lg:row-start-1"}>
-      <div className="grid gap-4 rounded-xl border border-slate-200/80 bg-slate-50/40 p-4 shadow-sm lg:sticky lg:top-24">
+      <div className="grid gap-4 rounded-xl border border-slate-200/80 bg-slate-50/40 p-4 lg:sticky lg:top-24">
         <strong className="text-base font-black text-slate-900">خرید این محصول</strong>
         {purchaseSummary}
         {displayedOriginalPrice !== null && displayedPrice !== null && displayedOriginalPrice > displayedPrice && <div className="flex items-center gap-2"><span className="text-xs text-slate-400 line-through">{formatMoney(displayedOriginalPrice, currency)}</span>{discountLabel && <span className="inline-flex items-center rounded-full bg-rose-500 px-2 py-1 text-[10px] font-black text-white">{discountLabel}</span>}</div>}
