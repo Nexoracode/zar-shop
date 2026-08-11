@@ -1,9 +1,8 @@
 "use client";
 
-import Link from "next/link";
 import { useState } from "react";
 import { Alert, Button, Input, Modal, Spinner, TextArea, toast } from "@heroui/react";
-import { Flag, MessageCircleReply, Star, ThumbsDown, ThumbsUp, X } from "lucide-react";
+import { Flag, MessageCircleReply, Star, ThumbsDown, ThumbsUp } from "lucide-react";
 import type { StorefrontReview, StorefrontReviewData } from "@/modules/reviews/service";
 
 type Props = {
@@ -118,23 +117,23 @@ export function ProductReviews({ productId, initialData, isAuthenticated }: Prop
       {!data.reviews.length ? <div className="rounded-xl border border-dashed border-slate-200 px-5 py-12 text-center text-sm text-slate-500">هنوز دیدگاهی برای این محصول ثبت نشده است.</div> : <div className="divide-y divide-slate-200 border-y border-slate-200">{data.reviews.map((review) => <ReviewCard key={review.id} review={review} authenticated={isAuthenticated} busyReviewId={busyReviewId} onReply={openComposer} onVote={vote} onReport={setReporting} />)}</div>}
     </div>
 
-    <Modal.Backdrop isOpen={composeOpen} onOpenChange={setComposeOpen} variant="blur">
-      <Modal.Container size="md" placement="center" scroll="inside"><Modal.Dialog aria-label={replyTo ? "ثبت پاسخ دیدگاه" : "ثبت امتیاز و دیدگاه"} dir="rtl" className="mx-3 max-h-[calc(100dvh-32px)] bg-white">
-        <Modal.Header className="flex-row items-center justify-between border-b border-slate-200 px-5 py-4"><div><Modal.Heading className="text-base font-black text-slate-900">{replyTo ? `پاسخ به ${replyTo.author.name}` : "ثبت امتیاز و دیدگاه"}</Modal.Heading><p className="mb-0 mt-1 text-xs text-slate-500">دیدگاه شما پیش از انتشار توسط مدیریت بررسی می‌شود.</p></div><Modal.CloseTrigger aria-label="بستن" className="grid size-9 place-items-center rounded-lg text-slate-500 hover:bg-slate-100"><X size={18} /></Modal.CloseTrigger></Modal.Header>
-        <Modal.Body className="grid gap-5 p-5">{!isAuthenticated ? <Alert status="warning"><Alert.Description>برای ثبت دیدگاه باید وارد حساب کاربری شوید.</Alert.Description></Alert> : <>
+    <Modal.Backdrop isOpen={composeOpen} onOpenChange={setComposeOpen}>
+      <Modal.Container size="md" placement="center" scroll="inside"><Modal.Dialog aria-label={replyTo ? "ثبت پاسخ دیدگاه" : "ثبت امتیاز و دیدگاه"} dir="rtl">
+        <Modal.Header><Modal.Heading>{replyTo ? `پاسخ به ${replyTo.author.name}` : "ثبت امتیاز و دیدگاه"}</Modal.Heading><Modal.CloseTrigger aria-label="بستن" /></Modal.Header>
+        <Modal.Body><p className="text-sm text-slate-500">دیدگاه شما پیش از انتشار توسط مدیریت بررسی می‌شود.</p>{!isAuthenticated ? <Alert status="warning"><Alert.Description>برای ثبت دیدگاه باید وارد حساب کاربری شوید.</Alert.Description></Alert> : <>
           {!replyTo && <div><span className="mb-2 block text-xs font-bold text-slate-700">امتیاز شما</span><div className="flex gap-1" dir="ltr">{[1, 2, 3, 4, 5].map((star) => <Button key={star} type="button" isIconOnly variant="ghost" aria-label={`${star} ستاره`} onPress={() => setRating(star)} className="size-10 min-w-10 text-amber-400"><Star size={24} fill={star <= rating ? "currentColor" : "none"} /></Button>)}</div></div>}
           {!replyTo && <label className="grid gap-1.5 text-xs font-bold text-slate-700">عنوان دیدگاه<Input value={title} onChange={(event) => setTitle(event.target.value)} maxLength={120} placeholder="خلاصه تجربه شما" variant="secondary" className="w-full" /></label>}
           <label className="grid gap-1.5 text-xs font-bold text-slate-700">متن {replyTo ? "پاسخ" : "دیدگاه"}<TextArea value={body} onChange={(event) => setBody(event.target.value)} minLength={3} maxLength={3000} rows={6} placeholder="تجربه خود را با جزئیات بنویسید" variant="secondary" className="w-full" /></label>
         </>}</Modal.Body>
-        <Modal.Footer className="flex-row justify-start gap-2 border-t border-slate-200 px-5 py-4">{isAuthenticated ? <Button type="button" variant="primary" isPending={submitting} isDisabled={submitting || body.trim().length < 3 || (!replyTo && (!title.trim() || rating === 0))} onPress={() => void submitReview()} className="min-h-10 rounded-lg bg-[var(--brand-primary)] px-5 text-xs">ثبت و ارسال برای بررسی</Button> : <Link href="/login" className="inline-flex min-h-10 items-center rounded-lg bg-[var(--brand-primary)] px-5 text-xs font-bold text-[var(--brand-primary-foreground)]">ورود به حساب کاربری</Link>}<Button type="button" variant="secondary" onPress={() => setComposeOpen(false)} className="min-h-10 rounded-lg text-xs">انصراف</Button></Modal.Footer>
+        <Modal.Footer><Button type="button" variant="secondary" onPress={() => setComposeOpen(false)}>انصراف</Button>{isAuthenticated ? <Button type="button" variant="primary" isPending={submitting} isDisabled={submitting || body.trim().length < 3 || (!replyTo && (!title.trim() || rating === 0))} onPress={() => void submitReview()}>ثبت دیدگاه</Button> : <Button type="button" variant="primary" onPress={() => { window.location.href = "/login"; }}>ورود به حساب کاربری</Button>}</Modal.Footer>
       </Modal.Dialog></Modal.Container>
     </Modal.Backdrop>
 
-    <Modal.Backdrop isOpen={Boolean(reporting)} onOpenChange={(open) => { if (!open) setReporting(null); }} variant="blur">
-      <Modal.Container size="sm" placement="center"><Modal.Dialog aria-label="گزارش دیدگاه" dir="rtl" className="mx-3 bg-white">
-        <Modal.Header className="flex-row items-center justify-between border-b border-slate-200 px-5 py-4"><Modal.Heading className="text-base font-black">گزارش دیدگاه</Modal.Heading><Modal.CloseTrigger aria-label="بستن" className="grid size-9 place-items-center rounded-lg text-slate-500 hover:bg-slate-100"><X size={18} /></Modal.CloseTrigger></Modal.Header>
-        <Modal.Body className="grid gap-4 p-5"><div className="flex flex-wrap gap-2">{reportReasons.map((reason) => <Button key={reason.value} type="button" variant={reportReason === reason.value ? "primary" : "secondary"} onPress={() => setReportReason(reason.value)} className="min-h-9 rounded-full px-3 text-xs">{reason.label}</Button>)}</div><TextArea value={reportDetails} onChange={(event) => setReportDetails(event.target.value)} maxLength={500} rows={4} placeholder="توضیحات تکمیلی (اختیاری)" variant="secondary" /></Modal.Body>
-        <Modal.Footer className="flex-row justify-start gap-2 border-t border-slate-200 p-4"><Button type="button" variant="danger" isPending={reportBusy} onPress={() => void submitReport()} className="min-h-10 text-xs">ثبت گزارش</Button><Button type="button" variant="secondary" onPress={() => setReporting(null)} className="min-h-10 text-xs">انصراف</Button></Modal.Footer>
+    <Modal.Backdrop isOpen={Boolean(reporting)} onOpenChange={(open) => { if (!open) setReporting(null); }}>
+      <Modal.Container size="sm" placement="center" scroll="inside"><Modal.Dialog aria-label="گزارش دیدگاه" dir="rtl">
+        <Modal.Header><Modal.Heading>گزارش دیدگاه</Modal.Heading><Modal.CloseTrigger aria-label="بستن" /></Modal.Header>
+        <Modal.Body><div className="flex flex-wrap gap-2">{reportReasons.map((reason) => <Button key={reason.value} type="button" variant={reportReason === reason.value ? "primary" : "secondary"} onPress={() => setReportReason(reason.value)}>{reason.label}</Button>)}</div><TextArea value={reportDetails} onChange={(event) => setReportDetails(event.target.value)} maxLength={500} rows={4} placeholder="توضیحات تکمیلی (اختیاری)" variant="secondary" /></Modal.Body>
+        <Modal.Footer><Button type="button" variant="secondary" onPress={() => setReporting(null)}>انصراف</Button><Button type="button" variant="danger" isPending={reportBusy} onPress={() => void submitReport()}>ثبت گزارش</Button></Modal.Footer>
       </Modal.Dialog></Modal.Container>
     </Modal.Backdrop>
   </div>;
