@@ -5,7 +5,7 @@ const stableIdSchema = z.string().trim().min(8).max(80).regex(/^[a-zA-Z0-9_-]+$/
 export const categoryAttributeDefinitionSchema = z.object({
   id: stableIdSchema,
   name: z.string().trim().min(2).max(100),
-  allowsMultiple: z.boolean().default(false),
+  allowsMultiple: z.boolean().default(true),
   important: z.boolean().default(false),
   suggestedValues: z.array(z.string().trim().min(1).max(2000)).max(100).default([]).refine(
     (values) => new Set(values).size === values.length,
@@ -73,7 +73,6 @@ export function validateProductAttributes(definitionsValue: unknown, attributesV
   for (const item of parsed.data) {
     const definition = definitionsById.get(item.attributeId);
     if (!definition) return { ok: false as const, message: "یکی از ویژگی‌ها متعلق به دسته‌بندی انتخاب‌شده نیست." };
-    if (!definition.allowsMultiple && item.values.length > 1) return { ok: false as const, message: `ویژگی «${definition.name}» فقط یک مقدار می‌پذیرد.` };
   }
   return { ok: true as const, data: parsed.data };
 }

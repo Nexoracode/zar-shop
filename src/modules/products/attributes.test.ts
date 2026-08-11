@@ -29,9 +29,9 @@ test("category attributes keep selectable suggested values", () => {
   assert.deepEqual(result[0].attributes[0].suggestedValues, ["۱۲۸ گیگابایت", "۲۵۶ گیگابایت"]);
 });
 
-test("single-value category attributes reject multiple product values", () => {
+test("all category attributes accept multiple product values", () => {
   const result = validateProductAttributes(definitions, [{ attributeId: "attribute_ram", values: ["۸", "۱۲"] }]);
-  assert.equal(result.ok, false);
+  assert.equal(result.ok, true);
 });
 
 test("product attributes reject definitions from another category", () => {
