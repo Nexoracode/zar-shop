@@ -59,17 +59,13 @@ function PriceRangeSlider({ bounds, step, value, onChange, onChangeEnd }: {
   const selectedStart = (value[0] - bounds.min) / rangeSize * 100;
   const selectedWidth = (value[1] - value[0]) / rangeSize * 100;
 
-  return <Slider aria-label="محدوده قیمت" minValue={bounds.min} maxValue={bounds.max} step={step} value={value} onChange={onChange} onChangeEnd={onChangeEnd} className="mt-5 w-full px-1" dir="rtl">
-    <Slider.Track className="relative h-8 w-full">
-      <span className="absolute inset-x-0 top-1/2 h-1 -translate-y-1/2 rounded-full bg-slate-200" />
-      <span className="absolute top-1/2 h-1 -translate-y-1/2 rounded-full bg-[var(--brand-primary)]" style={{ right: `${selectedStart}%`, width: `${selectedWidth}%` }} />
-      <Slider.Thumb index={0} aria-label="حداقل قیمت" className="top-1/2 size-[18px] -translate-y-1/2 rounded-full border-[4px] border-[var(--brand-primary)] bg-white outline-none ring-white transition-transform data-[dragging=true]:scale-110 focus-visible:ring-2" />
-      <Slider.Thumb index={1} aria-label="حداکثر قیمت" className="top-1/2 size-[18px] -translate-y-1/2 rounded-full border-[4px] border-[var(--brand-primary)] bg-white outline-none ring-white transition-transform data-[dragging=true]:scale-110 focus-visible:ring-2" />
+  return <Slider aria-label="محدوده قیمت" minValue={bounds.min} maxValue={bounds.max} step={step} value={value} onChange={onChange} onChangeEnd={onChangeEnd} className="mt-4 w-full px-2" dir="rtl">
+    <Slider.Track className="relative !h-7 w-full !rounded-none !border-x-0 !bg-transparent">
+      <span className="pointer-events-none absolute inset-x-0 top-1/2 h-1 -translate-y-1/2 rounded-full bg-slate-200" />
+      <span className="pointer-events-none absolute top-1/2 h-1 -translate-y-1/2 rounded-full bg-[var(--brand-primary)]" style={{ right: `${selectedStart}%`, width: `${selectedWidth}%` }} />
+      <Slider.Thumb index={0} aria-label="حداقل قیمت" className="!top-1/2 !size-4 !h-4 !w-4 !-translate-y-1/2 !rounded-full !border-2 !border-solid !border-[var(--brand-primary)] !bg-white !shadow-none outline-none after:!hidden data-[dragging=true]:!scale-110 focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)]" />
+      <Slider.Thumb index={1} aria-label="حداکثر قیمت" className="!top-1/2 !size-4 !h-4 !w-4 !-translate-y-1/2 !rounded-full !border-2 !border-solid !border-[var(--brand-primary)] !bg-white !shadow-none outline-none after:!hidden data-[dragging=true]:!scale-110 focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)]" />
     </Slider.Track>
-    <Slider.Marks className="flex items-center justify-between text-[10px] text-slate-400">
-      <span className="flex items-center gap-1"><span className="size-1 rounded-full bg-slate-300" />ارزان‌ترین</span>
-      <span className="flex items-center gap-1">گران‌ترین<span className="size-1 rounded-full bg-slate-300" /></span>
-    </Slider.Marks>
   </Slider>;
 }
 
