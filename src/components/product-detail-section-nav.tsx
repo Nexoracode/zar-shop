@@ -15,11 +15,37 @@ export function ProductDetailSectionNav() {
   const [activeSection, setActiveSection] = useState<SectionId>("introduction");
 
   useEffect(() => {
+    const root = document.documentElement;
+    const storefrontHeader = document.querySelector<HTMLElement>(".storefront-shell > header");
+
+    const updateStickyOffsets = () => {
+      const headerOffset = storefrontHeader && getComputedStyle(storefrontHeader).position === "sticky"
+        ? Math.round(storefrontHeader.getBoundingClientRect().height)
+        : 0;
+      root.style.setProperty("--storefront-sticky-header-offset", `${headerOffset}px`);
+      root.style.setProperty("--product-detail-anchor-offset", `${headerOffset + 96}px`);
+    };
+
+    updateStickyOffsets();
+    const resizeObserver = storefrontHeader ? new ResizeObserver(updateStickyOffsets) : null;
+    if (storefrontHeader) resizeObserver?.observe(storefrontHeader);
+    window.addEventListener("resize", updateStickyOffsets);
+
+    return () => {
+      resizeObserver?.disconnect();
+      window.removeEventListener("resize", updateStickyOffsets);
+      root.style.removeProperty("--storefront-sticky-header-offset");
+      root.style.removeProperty("--product-detail-anchor-offset");
+    };
+  }, []);
+
+  useEffect(() => {
     let frameId = 0;
 
     const updateActiveSection = () => {
       frameId = 0;
-      const activationLine = 104;
+      const headerOffset = Number.parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--storefront-sticky-header-offset")) || 0;
+      const activationLine = headerOffset + 104;
       let nextSection: SectionId = "introduction";
 
       for (const section of sections) {
@@ -45,7 +71,7 @@ export function ProductDetailSectionNav() {
     };
   }, []);
 
-  return <div className="sticky top-0 z-40 mt-10 w-full bg-white/95 backdrop-blur">
+  return <div className="sticky z-40 mt-10 w-full bg-white/95 backdrop-blur" style={{ top: "var(--storefront-sticky-header-offset, 0px)" }}>
     <nav className="flex w-full gap-7 overflow-x-auto border-b border-slate-200 px-1 text-sm font-normal text-slate-600" aria-label="بخش‌های صفحه محصول">
       {sections.map((section) => {
         const active = activeSection === section.id;

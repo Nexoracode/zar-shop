@@ -157,17 +157,17 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
 
       <div className="grid items-stretch gap-7 lg:grid-cols-[minmax(0,1fr)_320px]">
         <div className="min-w-0">
-      <section id="introduction" className="scroll-mt-24 border-b border-slate-200 py-9" aria-labelledby="introduction-title">
+      <section id="introduction" className="border-b border-slate-200 py-9" style={{ scrollMarginTop: "var(--product-detail-anchor-offset, 96px)" }} aria-labelledby="introduction-title">
         <SectionTitle id="introduction-title">معرفی</SectionTitle>
         <div className="rich-text-content max-w-5xl text-sm leading-8 text-slate-600" dangerouslySetInnerHTML={{ __html: sanitizeProductDescription(product.description || `<p>${product.name} با تضمین اصالت، اطلاعات شفاف و ارسال قابل پیگیری از ${settings.storeName} عرضه می‌شود.</p>`) }} />
       </section>
 
-      <section id="specifications" className="scroll-mt-24 border-b border-slate-200 py-9" aria-labelledby="specifications-title">
+      <section id="specifications" className="border-b border-slate-200 py-9" style={{ scrollMarginTop: "var(--product-detail-anchor-offset, 96px)" }} aria-labelledby="specifications-title">
         <SectionTitle id="specifications-title">مشخصات</SectionTitle>
         <ProductSpecifications groups={specificationGroups} />
       </section>
 
-      <section id="reviews" className="scroll-mt-24 py-9" aria-labelledby="reviews-title">
+      <section id="reviews" className="py-9" style={{ scrollMarginTop: "var(--product-detail-anchor-offset, 96px)" }} aria-labelledby="reviews-title">
         <SectionTitle id="reviews-title">امتیاز و دیدگاه کاربران</SectionTitle>
         <div className="grid gap-8 lg:grid-cols-[260px_minmax(0,1fr)]">
           <aside className="h-fit rounded-xl border border-slate-200 p-5 lg:sticky lg:top-24">
