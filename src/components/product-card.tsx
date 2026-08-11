@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { Heart } from "lucide-react";
+import { Heart, Star } from "lucide-react";
 
 const galleryImageBackgrounds = [
   "linear-gradient(145deg, var(--surface), var(--surface-tertiary))",
@@ -32,11 +32,38 @@ type ProductCardProps = {
   price: string;
   originalPrice?: string;
   image?: { src: string; alt: string };
-  storefrontVariant?: "default" | "gallery";
+  storefrontVariant?: "default" | "gallery" | "catalog";
   imageTone?: number;
+  stock?: number;
+  rating?: number;
+  colors?: Array<{ id: string; name: string; hex: string }>;
 };
 
-export function ProductCard({ href, name, category, industry, weight, purity, makingFee, discountPercent, price, originalPrice, image, storefrontVariant = "default", imageTone = 0 }: ProductCardProps) {
+export function ProductCard({ href, name, category, industry, weight, purity, makingFee, discountPercent, price, originalPrice, image, storefrontVariant = "default", imageTone = 0, stock, rating, colors = [] }: ProductCardProps) {
+  if (storefrontVariant === "catalog") {
+    return <Link href={href} className="group relative flex min-h-[390px] min-w-0 flex-col border-b border-l border-slate-200 bg-white p-4 transition duration-200 hover:z-10 hover:shadow-[0_6px_24px_rgba(0,0,0,.09)] focus-visible:z-10 focus-visible:outline-2 focus-visible:outline-[var(--brand-primary)]">
+      <div className="relative mx-auto aspect-square w-full max-w-[245px] overflow-hidden">
+        {image ? <Image src={image.src} alt={image.alt} width={500} height={500} className="h-full w-full object-contain transition-transform duration-300 group-hover:scale-[1.025]" /> : <GeneralProductPlaceholder />}
+        {colors.length > 0 && <span className="absolute left-1 top-3 flex flex-col gap-1" aria-label={`${colors.length.toLocaleString("fa-IR")} رنگ موجود`}>
+          {colors.slice(0, 5).map((color) => <span key={color.id} title={color.name} className="size-3.5 rounded-full border border-black/15 ring-1 ring-white" style={{ backgroundColor: color.hex }} />)}
+        </span>}
+      </div>
+      <div className="flex min-h-0 flex-1 flex-col pt-3 text-right">
+        <h3 className="m-0 line-clamp-2 min-h-12 text-[0.78rem] font-bold leading-6 text-slate-800">{name}</h3>
+        <div className="mt-2 flex min-h-6 items-center justify-between gap-3">
+          {stock !== undefined && stock > 0 && stock < 5 ? <span className="text-[0.66rem] font-bold text-[var(--danger)]">تنها {stock.toLocaleString("fa-IR")} عدد در انبار باقی مانده</span> : <span />}
+          {rating !== undefined && <span className="mr-auto inline-flex shrink-0 items-center gap-1 text-[0.7rem] font-bold text-slate-700"><Star size={13} className="fill-amber-400 text-amber-400" />{rating.toLocaleString("fa-IR", { maximumFractionDigits: 1 })}</span>}
+        </div>
+        <div className="mt-auto grid min-h-[58px] content-end gap-1 pt-3">
+          <div className="flex items-center justify-end gap-2">
+            {discountPercent !== undefined && discountPercent > 0 && <span className="rounded-full bg-[var(--danger)] px-2 py-0.5 text-[0.65rem] font-black text-[var(--danger-foreground)]">٪{discountPercent.toLocaleString("fa-IR")}</span>}
+            <strong className="text-sm font-black text-slate-900">{price}</strong>
+          </div>
+          {originalPrice ? <span className="pl-1 text-left text-[0.7rem] text-slate-400 line-through">{originalPrice}</span> : <span aria-hidden="true" className="invisible text-[0.7rem]">بدون تخفیف</span>}
+        </div>
+      </div>
+    </Link>;
+  }
   const isGallery = storefrontVariant === "gallery";
   const imageBackground = industry === "GENERAL" ? generalImageBackgrounds[Math.abs(imageTone) % generalImageBackgrounds.length] : galleryImageBackgrounds[Math.abs(imageTone) % galleryImageBackgrounds.length];
   return (

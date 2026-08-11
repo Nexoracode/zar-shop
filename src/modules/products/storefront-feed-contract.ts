@@ -21,6 +21,9 @@ export type StorefrontProductCardItem = {
   price: string;
   originalPrice?: string;
   image?: { src: string; alt: string };
+  stock?: number;
+  rating?: number;
+  colors?: Array<{ id: string; name: string; hex: string }>;
 };
 
 export type StorefrontProductFeed = {

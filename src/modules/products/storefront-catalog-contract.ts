@@ -9,12 +9,20 @@ const optionalTomanAmount = z.preprocess(
   z.coerce.number().int().nonnegative().max(10_000_000_000).optional(),
 );
 
+const optionalStringList = z.preprocess(
+  (value) => value === null || value === undefined || value === "" ? undefined : Array.isArray(value) ? value : [value],
+  z.array(z.string().trim().min(1).max(300)).max(100).optional(),
+);
+
 export const storefrontCatalogQuerySchema = z.object({
   q: z.preprocess((value) => value === null || value === undefined || value === "" ? undefined : value, z.string().trim().min(1).max(100).optional()),
   sortby: z.enum(storefrontCatalogSorts).default("newest"),
   MinPrice: optionalTomanAmount,
   MaxPrice: optionalTomanAmount,
   category: z.string().trim().min(1).max(120).optional(),
+  color: optionalStringList,
+  attr: optionalStringList,
+  inStock: z.preprocess((value) => value === "1" || value === "true" ? true : undefined, z.boolean().optional()),
   page: z.coerce.number().int().positive().default(1),
 }).superRefine((query, context) => {
   if (query.MinPrice !== undefined && query.MaxPrice !== undefined && query.MinPrice > query.MaxPrice) {
@@ -26,7 +34,12 @@ export type StorefrontCatalogQuery = z.infer<typeof storefrontCatalogQuerySchema
 
 export type StorefrontCatalogResult = {
   items: StorefrontProductCardItem[];
-  filters: Pick<StorefrontCatalogQuery, "q" | "sortby" | "MinPrice" | "MaxPrice" | "category">;
+  filters: Pick<StorefrontCatalogQuery, "q" | "sortby" | "MinPrice" | "MaxPrice" | "category" | "color" | "attr" | "inStock">;
+  facets: {
+    colors: Array<{ id: string; name: string; hex: string; count: number }>;
+    attributes: Array<{ id: string; name: string; values: Array<{ value: string; count: number }> }>;
+    priceRange: { min: number; max: number } | null;
+  };
   pagination: { page: number; pageSize: number; totalItems: number; totalPages: number };
 };
 

@@ -12,6 +12,13 @@ test("catalog query accepts and trims a storefront search", () => {
   assert.equal(query.q, "انگشتر طلا");
 });
 
+test("catalog query accepts repeated color and attribute filters", () => {
+  const query = storefrontCatalogQuerySchema.parse({ color: ["red", "blue"], attr: ["ram::8 GB", "ram::12 GB"], inStock: "1" });
+  assert.deepEqual(query.color, ["red", "blue"]);
+  assert.deepEqual(query.attr, ["ram::8 GB", "ram::12 GB"]);
+  assert.equal(query.inStock, true);
+});
+
 test("catalog query rejects an inverted price range", () => {
   assert.equal(storefrontCatalogQuerySchema.safeParse({ MinPrice: 100, MaxPrice: 50 }).success, false);
 });
