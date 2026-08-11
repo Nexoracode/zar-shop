@@ -17,18 +17,22 @@ export function ProductDetailSectionNav() {
   useEffect(() => {
     const root = document.documentElement;
     const storefrontHeader = document.querySelector<HTMLElement>(".storefront-shell > header");
+    const detailNavigation = document.querySelector<HTMLElement>('nav[aria-label="بخش‌های صفحه محصول"]');
 
     const updateStickyOffsets = () => {
       const headerOffset = storefrontHeader && getComputedStyle(storefrontHeader).position === "sticky"
         ? Math.round(storefrontHeader.getBoundingClientRect().height)
         : 0;
+      const navigationHeight = Math.round(detailNavigation?.getBoundingClientRect().height ?? 53);
       root.style.setProperty("--storefront-sticky-header-offset", `${headerOffset}px`);
       root.style.setProperty("--product-detail-anchor-offset", `${headerOffset + 96}px`);
+      root.style.setProperty("--product-detail-purchase-offset", `${headerOffset + navigationHeight + 24}px`);
     };
 
     updateStickyOffsets();
-    const resizeObserver = storefrontHeader ? new ResizeObserver(updateStickyOffsets) : null;
+    const resizeObserver = storefrontHeader || detailNavigation ? new ResizeObserver(updateStickyOffsets) : null;
     if (storefrontHeader) resizeObserver?.observe(storefrontHeader);
+    if (detailNavigation) resizeObserver?.observe(detailNavigation);
     window.addEventListener("resize", updateStickyOffsets);
 
     return () => {
@@ -36,6 +40,7 @@ export function ProductDetailSectionNav() {
       window.removeEventListener("resize", updateStickyOffsets);
       root.style.removeProperty("--storefront-sticky-header-offset");
       root.style.removeProperty("--product-detail-anchor-offset");
+      root.style.removeProperty("--product-detail-purchase-offset");
     };
   }, []);
 

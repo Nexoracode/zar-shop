@@ -184,7 +184,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
         </div>
       </section>
         </div>
-        <AddToCart {...cartProps} layout="product-detail" showOptionFields={false} purchaseCardClassName="order-first h-full pt-6 lg:order-none" />
+        <AddToCart {...cartProps} layout="product-detail" showOptionFields={false} purchaseCardClassName="order-first h-full pt-6 lg:order-none" purchaseCardStickyTop="var(--product-detail-purchase-offset, 6rem)" />
       </div>
     </div>
   </main></ProductPurchaseProvider>;

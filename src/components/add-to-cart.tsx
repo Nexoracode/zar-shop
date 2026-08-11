@@ -29,7 +29,7 @@ export function ProductPurchaseProvider({ children, initialSelectedOptions = {} 
   return <ProductPurchaseContext.Provider value={{ selectedOptions, setSelectedOptions, message, setMessage, loading, setLoading }}>{children}</ProductPurchaseContext.Provider>;
 }
 
-export function AddToCart({ productId, options = [], optionGuide, disabled, disabledLabel = "ناموجود", currency = "IRR", layout = "default", purchaseSummary, purchaseMeta, purchasePrice = null, purchaseOriginalPrice = null, discountLabel, preparationDays = 0, showOptionFields = true, showPurchaseCard = true, purchaseCardClassName }: { productId: string; options?: ProductOption[]; optionGuide?: OptionGuide | null; disabled: boolean; disabledLabel?: string; currency?: "IRR" | "IRT"; layout?: "default" | "product-detail"; purchaseSummary?: ReactNode; purchaseMeta?: ReactNode; purchasePrice?: number | null; purchaseOriginalPrice?: number | null; discountLabel?: string | null; preparationDays?: number; showOptionFields?: boolean; showPurchaseCard?: boolean; purchaseCardClassName?: string }) {
+export function AddToCart({ productId, options = [], optionGuide, disabled, disabledLabel = "ناموجود", currency = "IRR", layout = "default", purchaseSummary, purchaseMeta, purchasePrice = null, purchaseOriginalPrice = null, discountLabel, preparationDays = 0, showOptionFields = true, showPurchaseCard = true, purchaseCardClassName, purchaseCardStickyTop = "6rem" }: { productId: string; options?: ProductOption[]; optionGuide?: OptionGuide | null; disabled: boolean; disabledLabel?: string; currency?: "IRR" | "IRT"; layout?: "default" | "product-detail"; purchaseSummary?: ReactNode; purchaseMeta?: ReactNode; purchasePrice?: number | null; purchaseOriginalPrice?: number | null; discountLabel?: string | null; preparationDays?: number; showOptionFields?: boolean; showPurchaseCard?: boolean; purchaseCardClassName?: string; purchaseCardStickyTop?: string }) {
   const router = useRouter();
   const sharedState = useContext(ProductPurchaseContext);
   const [localMessage, setLocalMessage] = useState("");
@@ -93,7 +93,7 @@ export function AddToCart({ productId, options = [], optionGuide, disabled, disa
   if (layout === "product-detail") return <>
     {showOptionFields && optionFields && <section className="grid gap-4 pt-7 lg:col-start-2 lg:row-start-2" aria-label="انتخاب تنوع محصول">{optionFields}</section>}
     {showPurchaseCard && <aside className={purchaseCardClassName ?? "lg:col-start-3 lg:row-span-2 lg:row-start-1"}>
-      <div className="grid gap-4 rounded-xl border border-slate-200/80 bg-slate-50/40 p-4 lg:sticky lg:top-24">
+      <div className="grid gap-4 rounded-xl border border-slate-200/80 bg-slate-50/40 p-4 lg:sticky" style={{ top: purchaseCardStickyTop }}>
         <strong className="text-base font-black text-slate-900">خرید این محصول</strong>
         {purchaseSummary}
         {displayedOriginalPrice !== null && displayedPrice !== null && displayedOriginalPrice > displayedPrice && <div className="flex items-center gap-2"><span className="text-xs text-slate-400 line-through">{formatMoney(displayedOriginalPrice, currency)}</span>{discountLabel && <span className="inline-flex items-center rounded-full bg-rose-500 px-2 py-1 text-[10px] font-black text-white">{discountLabel}</span>}</div>}
