@@ -23,6 +23,7 @@ export const storefrontCatalogQuerySchema = z.object({
   color: optionalStringList,
   attr: optionalStringList,
   inStock: z.preprocess((value) => value === "1" || value === "true" ? true : undefined, z.boolean().optional()),
+  hasDiscount: z.preprocess((value) => value === "1" || value === "true" ? true : undefined, z.boolean().optional()),
   page: z.coerce.number().int().positive().default(1),
 }).superRefine((query, context) => {
   if (query.MinPrice !== undefined && query.MaxPrice !== undefined && query.MinPrice > query.MaxPrice) {
@@ -34,7 +35,7 @@ export type StorefrontCatalogQuery = z.infer<typeof storefrontCatalogQuerySchema
 
 export type StorefrontCatalogResult = {
   items: StorefrontProductCardItem[];
-  filters: Pick<StorefrontCatalogQuery, "q" | "sortby" | "MinPrice" | "MaxPrice" | "category" | "color" | "attr" | "inStock">;
+  filters: Pick<StorefrontCatalogQuery, "q" | "sortby" | "MinPrice" | "MaxPrice" | "category" | "color" | "attr" | "inStock" | "hasDiscount">;
   facets: {
     colors: Array<{ id: string; name: string; hex: string; count: number }>;
     attributes: Array<{ id: string; name: string; values: Array<{ value: string; count: number }> }>;

@@ -21,6 +21,10 @@ export async function GET(request: Request) {
       MinPrice: params.get("MinPrice"),
       MaxPrice: params.get("MaxPrice"),
       category: params.get("category") ?? undefined,
+      color: params.getAll("color"),
+      attr: params.getAll("attr"),
+      inStock: params.get("inStock") ?? undefined,
+      hasDiscount: params.get("hasDiscount") ?? undefined,
       page: params.get("page") ?? undefined,
     });
     const categories = query.category ? await db.category.findMany({ where: { isActive: true }, orderBy: [{ sortOrder: "asc" }, { name: "asc" }] }) : [];

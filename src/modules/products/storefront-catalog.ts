@@ -139,7 +139,10 @@ export async function getStorefrontCatalog(query: StorefrontCatalogQuery, catego
     }
   }
   const availablePrices = pricedProducts.flatMap(({ finalPriceRials }) => finalPriceRials === null ? [] : [finalPriceRials / 10]);
-  const filteredProducts = pricedProducts.filter(({ product, finalPriceRials }) => matchesTomanPrice(finalPriceRials, query.MinPrice, query.MaxPrice) && matchesFacetFilters(product, query));
+  const filteredProducts = pricedProducts.filter(({ product, finalPriceRials, originalPriceRials }) =>
+    (!query.hasDiscount || originalPriceRials !== undefined)
+    && matchesTomanPrice(finalPriceRials, query.MinPrice, query.MaxPrice)
+    && matchesFacetFilters(product, query));
 
   const sortedProducts = sortProducts(filteredProducts, query.sortby);
   const pageSize = catalogSettings.catalogPageSize;
@@ -149,7 +152,7 @@ export async function getStorefrontCatalog(query: StorefrontCatalogQuery, catego
   const pageProducts = sortedProducts.slice((page - 1) * pageSize, page * pageSize);
 
   return {
-    filters: { q: query.q, sortby: query.sortby, MinPrice: query.MinPrice, MaxPrice: query.MaxPrice, category: query.category, color: query.color, attr: query.attr, inStock: query.inStock },
+    filters: { q: query.q, sortby: query.sortby, MinPrice: query.MinPrice, MaxPrice: query.MaxPrice, category: query.category, color: query.color, attr: query.attr, inStock: query.inStock, hasDiscount: query.hasDiscount },
     facets: {
       colors: colors.map((color) => ({ ...color, count: colorCounts.get(color.id) ?? 0 })).filter((color) => color.count > 0),
       attributes: [...attributeDefinitions].flatMap(([id, name]) => {

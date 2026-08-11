@@ -20,6 +20,7 @@ type ProductSearchParams = {
   color?: string | string[];
   attr?: string | string[];
   inStock?: string;
+  hasDiscount?: string;
 };
 
 type ProductHrefState = {
@@ -32,6 +33,7 @@ type ProductHrefState = {
   color?: string[];
   attr?: string[];
   inStock?: string;
+  hasDiscount?: string;
 };
 
 export const dynamic = "force-dynamic";
@@ -70,6 +72,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
       color: query.color,
       attr: query.attr,
       inStock: query.inStock ? "1" : undefined,
+      hasDiscount: query.hasDiscount ? "1" : undefined,
       page: query.page > 1 ? query.page.toString() : undefined,
       ...overrides,
     };
@@ -82,11 +85,12 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
     for (const color of values.color ?? []) next.append("color", color);
     for (const attribute of values.attr ?? []) next.append("attr", attribute);
     if (values.inStock) next.set("inStock", values.inStock);
+    if (values.hasDiscount) next.set("hasDiscount", values.hasDiscount);
     if (values.page && values.page !== "1") next.set("page", values.page);
     return `/products?${next.toString()}`;
   }
 
-  const resetFiltersHref = productsHref({ MinPrice: undefined, MaxPrice: undefined, color: [], attr: [], inStock: undefined, page: undefined });
+  const resetFiltersHref = productsHref({ MinPrice: undefined, MaxPrice: undefined, color: [], attr: [], inStock: undefined, hasDiscount: undefined, page: undefined });
   const filters = <StorefrontCatalogFilters
     key={[query.MinPrice, query.MaxPrice].join("|")}
     facets={catalog.facets}
@@ -95,6 +99,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
     minPrice={query.MinPrice}
     maxPrice={query.MaxPrice}
     inStock={query.inStock}
+    hasDiscount={query.hasDiscount}
     resetHref={resetFiltersHref}
   />;
 

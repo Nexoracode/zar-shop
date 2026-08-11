@@ -19,6 +19,7 @@ type Props = {
   minPrice?: number;
   maxPrice?: number;
   inStock?: boolean;
+  hasDiscount?: boolean;
   resetHref: string;
 };
 
@@ -81,7 +82,7 @@ function PriceRangeSlider({ bounds, step, value, onChange, onChangeEnd }: {
   </div>;
 }
 
-export function StorefrontCatalogFilters({ facets, selectedColors, selectedAttributes, minPrice, maxPrice, inStock, resetHref }: Props) {
+export function StorefrontCatalogFilters({ facets, selectedColors, selectedAttributes, minPrice, maxPrice, inStock, hasDiscount, resetHref }: Props) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -92,7 +93,7 @@ export function StorefrontCatalogFilters({ facets, selectedColors, selectedAttri
   const resolvedMinPrice = Math.min(Math.max(minPrice ?? priceBounds.min, priceBounds.min), priceBounds.max);
   const resolvedMaxPrice = Math.max(Math.min(maxPrice ?? priceBounds.max, priceBounds.max), priceBounds.min);
   const [priceValues, setPriceValues] = useState<[number, number]>([resolvedMinPrice, resolvedMaxPrice]);
-  const activeCount = selectedColors.length + selectedAttributes.length + Number(minPrice !== undefined) + Number(maxPrice !== undefined) + Number(Boolean(inStock));
+  const activeCount = selectedColors.length + selectedAttributes.length + Number(minPrice !== undefined) + Number(maxPrice !== undefined) + Number(Boolean(inStock)) + Number(Boolean(hasDiscount));
   const priceStep = Math.max(1, greatestCommonDivisor(priceBounds.max - priceBounds.min, 1_000_000));
 
   function navigate(next: URLSearchParams) {
@@ -116,6 +117,12 @@ export function StorefrontCatalogFilters({ facets, selectedColors, selectedAttri
     navigate(next);
   }
 
+  function updateDiscount(selected: boolean) {
+    const next = new URLSearchParams(searchParams.toString());
+    if (selected) next.set("hasDiscount", "1"); else next.delete("hasDiscount");
+    navigate(next);
+  }
+
   function updatePrice(value: number | number[]) {
     const [nextMin, nextMax] = normalizeSliderValue(value);
     const next = new URLSearchParams(searchParams.toString());
@@ -132,7 +139,7 @@ export function StorefrontCatalogFilters({ facets, selectedColors, selectedAttri
     </div>
 
     <Accordion dir="rtl" variant="surface" hideSeparator allowsMultipleExpanded defaultExpandedKeys={facets.priceRange ? ["catalog-price"] : []} className="w-full bg-transparent p-0 text-right" aria-label="فیلترهای محصولات">
-      {facets.priceRange && <Accordion.Item id="catalog-price" className="border-b border-slate-100 bg-transparent">
+      {facets.priceRange && <Accordion.Item id="catalog-price" className="mb-2 rounded-xl border border-slate-200/80 bg-white px-3">
         <Accordion.Heading><Accordion.Trigger className="relative flex w-full items-center bg-transparent py-4 pl-7 text-sm font-bold text-slate-800 hover:bg-transparent data-[hovered=true]:bg-transparent"><FilterAccordionTitle>محدوده قیمت</FilterAccordionTitle></Accordion.Trigger></Accordion.Heading>
         <Accordion.Panel><Accordion.Body className="pb-5 pt-1">
           <div className="overflow-hidden rounded-xl border border-slate-200 bg-slate-50/70 px-3">
@@ -155,15 +162,18 @@ export function StorefrontCatalogFilters({ facets, selectedColors, selectedAttri
         </Accordion.Body></Accordion.Panel>
       </Accordion.Item>}
     </Accordion>
-    <div className="border-b border-slate-100 py-3"><FilterCheckbox selected={Boolean(inStock)} onChange={updateStock}><span className="block text-xs font-bold text-slate-700">فقط کالاهای موجود</span></FilterCheckbox></div>
+    <div className="mb-2 overflow-hidden rounded-xl border border-slate-200/80 bg-white px-3">
+      <div className="border-b border-slate-100"><FilterCheckbox selected={Boolean(inStock)} onChange={updateStock}><span className="block text-xs font-bold text-slate-700">فقط کالاهای موجود</span></FilterCheckbox></div>
+      <FilterCheckbox selected={Boolean(hasDiscount)} onChange={updateDiscount}><span className="block text-xs font-bold text-slate-700">فقط محصولات دارای تخفیف</span></FilterCheckbox>
+    </div>
     <Accordion dir="rtl" variant="surface" hideSeparator allowsMultipleExpanded className="w-full bg-transparent p-0 text-right" aria-label="فیلترهای ویژگی محصول">
-      {facets.colors.length > 0 && <Accordion.Item id="catalog-colors" className="border-b border-slate-100 bg-transparent">
+      {facets.colors.length > 0 && <Accordion.Item id="catalog-colors" className="mb-2 rounded-xl border border-slate-200/80 bg-white px-3">
         <Accordion.Heading><Accordion.Trigger className="relative flex w-full items-center bg-transparent py-4 pl-7 text-sm font-bold text-slate-800 hover:bg-transparent data-[hovered=true]:bg-transparent"><FilterAccordionTitle>رنگ</FilterAccordionTitle></Accordion.Trigger></Accordion.Heading>
         <Accordion.Panel><Accordion.Body className="max-h-52 overflow-y-auto pb-4">
           {facets.colors.map((color) => <FilterCheckbox key={color.id} selected={selectedColorSet.has(color.id)} onChange={(selected) => updateMultiValue("color", color.id, selected)}><span className="flex min-w-0 items-center gap-2 text-xs text-slate-700"><span className="size-4 shrink-0 rounded-full border border-black/10" style={{ backgroundColor: color.hex }} /><span className="truncate">{color.name}</span><span className="mr-auto text-[10px] text-slate-400">{color.count.toLocaleString("fa-IR")}</span></span></FilterCheckbox>)}
         </Accordion.Body></Accordion.Panel>
       </Accordion.Item>}
-      {facets.attributes.map((attribute) => <Accordion.Item key={attribute.id} id={`catalog-attribute-${attribute.id}`} className="border-b border-slate-100 bg-transparent">
+      {facets.attributes.map((attribute) => <Accordion.Item key={attribute.id} id={`catalog-attribute-${attribute.id}`} className="mb-2 rounded-xl border border-slate-200/80 bg-white px-3">
         <Accordion.Heading><Accordion.Trigger className="relative flex w-full items-center bg-transparent py-4 pl-7 text-sm font-bold text-slate-800 hover:bg-transparent data-[hovered=true]:bg-transparent"><FilterAccordionTitle>{attribute.name}</FilterAccordionTitle></Accordion.Trigger></Accordion.Heading>
         <Accordion.Panel><Accordion.Body className="max-h-52 overflow-y-auto pb-4">
           {attribute.values.map((item) => {
