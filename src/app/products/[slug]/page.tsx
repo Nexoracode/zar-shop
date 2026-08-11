@@ -12,6 +12,7 @@ import { calculateDiscountedPrice } from "@/modules/products/discount";
 import { parseOptionValues } from "@/modules/products/options";
 import { calculateProductPrice } from "@/modules/products/pricing";
 import { sanitizeProductDescription } from "@/modules/products/rich-text";
+import { calculateSoldPercent, completedSaleOrderStatuses } from "@/modules/products/sales";
 import { getStorefrontProductFeed } from "@/modules/products/storefront-feed";
 import { getGoldPriceForDisplay } from "@/modules/gold/gold-price.service";
 import { getCatalogSettings } from "@/modules/settings/catalog-settings";
@@ -41,10 +42,14 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
     .map((option) => ({ option, values: parseOptionValues(option.values).filter((item) => item.isActive) }))
     .filter(({ values }) => values.length > 0);
   const colorIds = [...new Set(optionValues.flatMap(({ values }) => values.flatMap((item) => item.colorId ? [item.colorId] : [])))];
-  const colors = colorIds.length ? await db.color.findMany({ where: { id: { in: colorIds }, isActive: true }, select: { id: true, name: true, hex: true } }) : [];
+  const [colors, soldAggregate] = await Promise.all([
+    colorIds.length ? db.color.findMany({ where: { id: { in: colorIds }, isActive: true }, select: { id: true, name: true, hex: true } }) : Promise.resolve([]),
+    db.orderItem.aggregate({ where: { productId: product.id, order: { status: { in: [...completedSaleOrderStatuses] } } }, _sum: { quantity: true } }),
+  ]);
+  const soldPercent = calculateSoldPercent(soldAggregate._sum.quantity ?? 0, product.stock);
   const colorsById = new Map(colors.map((color) => [color.id, color]));
   const attributeGroups = buildProductAttributeGroups(product.category?.attributeSchema, product.attributes);
-  const primaryFeatures = attributeGroups.flatMap((group) => group.attributes).slice(0, 4);
+  const primaryFeatures = attributeGroups.flatMap((group) => group.attributes).slice(0, 2);
 
   const rate = gold ? Number(gold.pricePerGram18) : null;
   const parts = product.storeIndustry === "GOLD" && rate !== null ? calculateProductPrice({ goldPricePerGram18: rate, weightGrams: Number(product.weightGrams), purity: product.purity, makingFeeType: product.makingFeeType, makingFeeValue: Number(product.makingFeeValue), profitPercent: Number(product.profitPercent), taxPercent: Number(product.taxPercent) }) : null;
@@ -120,7 +125,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
       <div className="grid items-stretch gap-7 lg:grid-cols-[minmax(0,1fr)_320px]">
         <div className="min-w-0">
           <section className="grid items-start gap-7 lg:grid-cols-[minmax(330px,1.05fr)_minmax(0,1.1fr)] lg:grid-rows-[auto_auto] lg:gap-x-7 lg:gap-y-5">
-            <ProductDetailGallery media={galleryMedia} productName={product.name} productCode={product.sku} hasDiscount={Boolean(discounted?.isActive)} discountEndsAt={discounted?.isActive && product.discountEndsAt ? product.discountEndsAt.toISOString() : null} soldPercent={97} />
+            <ProductDetailGallery media={galleryMedia} productName={product.name} productCode={product.sku} hasDiscount={Boolean(discounted?.isActive)} discountEndsAt={discounted?.isActive && product.discountEndsAt ? product.discountEndsAt.toISOString() : null} soldPercent={soldPercent} />
 
             <div className="min-w-0 lg:col-start-2 lg:row-start-1">
               {product.category && <Link href={`/products?category=${encodeURIComponent(product.category.slug)}`} className="text-sm font-bold text-sky-600 hover:text-sky-700">{product.category.name}</Link>}
@@ -130,7 +135,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
                 <span className="inline-flex items-center gap-1 font-bold text-slate-700"><Star size={16} className="fill-amber-400 text-amber-400" />{mockRating.toLocaleString("fa-IR")}</span><span className="text-slate-400">از ۵</span><span className="size-1 rounded-full bg-slate-300" /><span className="font-bold text-sky-600">{mockReviewCount.toLocaleString("fa-IR")} دیدگاه</span>
               </div>
               <AddToCart {...cartProps} layout="product-detail" showPurchaseCard={false} />
-              {primaryFeatures.length > 0 && <section className="mt-7" aria-labelledby="primary-features-title"><h2 id="primary-features-title" className="mb-3 text-base font-black text-slate-900">ویژگی‌ها</h2><div className="grid grid-cols-2 gap-2 sm:grid-cols-3">{primaryFeatures.map((feature) => <div key={feature.id} className="rounded-lg bg-slate-100 px-3 py-3"><span className="block text-[11px] text-slate-500">{feature.name}</span><strong className="mt-1 block truncate text-xs text-slate-800">{feature.values.join("، ")}</strong></div>)}</div></section>}
+              {primaryFeatures.length > 0 && <section className="mt-8" aria-labelledby="primary-features-title"><h2 id="primary-features-title" className="mb-4 text-base font-black text-slate-900">ویژگی‌ها</h2><div className="grid grid-cols-2 gap-2">{primaryFeatures.map((feature) => <div key={feature.id} className="min-h-[62px] rounded-lg bg-[#f3f3f5] px-3 py-2.5 text-right"><span className="block text-[11px] text-slate-400">{feature.name}</span><strong className="mt-1 block truncate text-xs text-slate-700">{feature.values.join("، ")}</strong></div>)}</div><div className="mt-4 flex items-center gap-4"><span className="h-px flex-1 bg-slate-200" /><Link href="#specifications" className="inline-flex min-h-10 shrink-0 items-center gap-2 rounded-lg border border-slate-200 px-4 text-xs font-bold text-slate-800 transition hover:border-slate-400">مشاهده همه ویژگی‌ها <span aria-hidden="true">‹</span></Link><span className="h-px flex-1 bg-slate-200" /></div></section>}
             </div>
           </section>
         </div>

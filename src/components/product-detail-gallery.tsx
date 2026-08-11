@@ -64,7 +64,7 @@ function renderFullscreenGallery({ media, selected, selectedIndex, productName, 
   </Modal.Backdrop>;
 }
 
-export function ProductDetailGallery({ media, productName, productCode, hasDiscount = false, discountEndsAt = null, soldPercent = 97 }: ProductDetailGalleryProps) {
+export function ProductDetailGallery({ media, productName, productCode, hasDiscount = false, discountEndsAt = null, soldPercent = 0 }: ProductDetailGalleryProps) {
   const [selectedId, setSelectedId] = useState(media[0]?.id ?? "");
   const [favorite, setFavorite] = useState(false);
   const [priceAlert, setPriceAlert] = useState(false);
