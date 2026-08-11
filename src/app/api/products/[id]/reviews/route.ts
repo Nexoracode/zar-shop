@@ -28,9 +28,6 @@ export async function POST(request: Request, context: Context) {
       const parent = await db.productReview.findUnique({ where: { id: input.parentId }, select: { id: true, productId: true, parentId: true, status: true } });
       if (!parent || parent.productId !== productId || parent.status !== "APPROVED") return NextResponse.json({ message: "دیدگاه موردنظر برای پاسخ پیدا نشد." }, { status: 404 });
       if (parent.parentId) return NextResponse.json({ message: "پاسخ فقط برای دیدگاه اصلی قابل ثبت است." }, { status: 422 });
-    } else {
-      const existing = await db.productReview.findFirst({ where: { productId, userId: user.id, parentId: null, status: { in: ["PENDING", "APPROVED"] } }, select: { id: true } });
-      if (existing) return NextResponse.json({ message: "شما قبلاً برای این محصول دیدگاه ثبت کرده‌اید." }, { status: 409 });
     }
 
     const isVerifiedPurchase = await hasPurchasedProduct(user.id, productId);
