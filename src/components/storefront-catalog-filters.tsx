@@ -33,8 +33,11 @@ function FilterCheckbox({ selected, onChange, children }: { selected: boolean; o
   </Checkbox>;
 }
 
-function normalizeSliderValue(value: number | number[]) {
-  return Array.isArray(value) ? [value[0] ?? 0, value[1] ?? value[0] ?? 0] as [number, number] : [value, value] as [number, number];
+function normalizeSliderValue(value: number | number[]): [number, number] {
+  if (!Array.isArray(value)) return [value, value] as [number, number];
+  const first = value[0] ?? 0;
+  const second = value[1] ?? first;
+  return first <= second ? [first, second] : [second, first];
 }
 
 function greatestCommonDivisor(left: number, right: number): number {
@@ -55,12 +58,19 @@ function PriceRangeSlider({ bounds, step, value, onChange, onChangeEnd }: {
   onChange: (value: number | number[]) => void;
   onChangeEnd: (value: number | number[]) => void;
 }) {
+  const mirrorValue = (item: number) => bounds.min + bounds.max - item;
+  const visualValue: [number, number] = [mirrorValue(value[1]), mirrorValue(value[0])];
+  const mapVisualValue = (nextValue: number | number[]): [number, number] => {
+    const [visualMin, visualMax] = normalizeSliderValue(nextValue);
+    return [mirrorValue(visualMax), mirrorValue(visualMin)];
+  };
+
   return <div className="mt-4 px-2">
-    <Slider aria-label="محدوده قیمت" minValue={bounds.min} maxValue={bounds.max} step={step} value={value} onChange={onChange} onChangeEnd={onChangeEnd} className="w-full" dir="rtl">
+    <Slider aria-label="محدوده قیمت" minValue={bounds.min} maxValue={bounds.max} step={step} value={visualValue} onChange={(nextValue) => onChange(mapVisualValue(nextValue))} onChangeEnd={(nextValue) => onChangeEnd(mapVisualValue(nextValue))} className="w-full" dir="rtl">
       <Slider.Track className="!border-x-transparent">
         {({ state }) => <>
           <Slider.Fill />
-          {state.values.map((_, index) => <Slider.Thumb key={index} index={index} aria-label={index === 0 ? "حداقل قیمت" : "حداکثر قیمت"} />)}
+          {state.values.map((_, index) => <Slider.Thumb key={index} index={index} aria-label={index === 0 ? "حداکثر قیمت" : "حداقل قیمت"} />)}
         </>}
       </Slider.Track>
     </Slider>
