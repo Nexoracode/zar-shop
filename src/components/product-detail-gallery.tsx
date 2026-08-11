@@ -29,8 +29,8 @@ function formatCountdown(endAt: string | null | undefined, now: number) {
   const hours = Math.floor((totalSeconds % 86400) / 3600);
   const minutes = Math.floor((totalSeconds % 3600) / 60);
   const seconds = totalSeconds % 60;
-  const clock = [hours, minutes, seconds].map((value) => value.toLocaleString("fa-IR", { minimumIntegerDigits: 2, useGrouping: false })).join(" : ");
-  return days > 0 ? `${days.toLocaleString("fa-IR")} روز : ${clock}` : clock;
+  const clock = [hours, minutes, seconds].map((value) => value.toLocaleString("fa-IR", { minimumIntegerDigits: 2, useGrouping: false })).join(":");
+  return { days, clock };
 }
 
 function GalleryMedia({ item, productName, priority = false, modal = false }: { item: ProductGalleryMedia | undefined; productName: string; priority?: boolean; modal?: boolean }) {
@@ -74,6 +74,7 @@ export function ProductDetailGallery({ media, productName, productCode, hasDisco
   const previewMedia = useMemo(() => media.slice(0, 5), [media]);
   const countdown = formatCountdown(discountEndsAt, now);
   const normalizedSoldPercent = Math.min(100, Math.max(0, soldPercent));
+  const showSoldProgress = normalizedSoldPercent > 50;
 
   useEffect(() => {
     if (!hasDiscount || !discountEndsAt) return;
@@ -109,7 +110,7 @@ export function ProductDetailGallery({ media, productName, productCode, hasDisco
   ];
 
   return <section className="min-w-0 lg:col-start-1 lg:row-span-2 lg:row-start-1" aria-label="گالری محصول">
-    {hasDiscount && countdown && <div className="mb-5 flex min-h-12 items-center gap-3 bg-[#fdecf0] px-3 text-[11px] font-black text-rose-600 sm:gap-4 sm:px-5 sm:text-xs"><span className="shrink-0">پیشنهاد شگفت‌انگیز</span><div className="flex min-w-0 flex-1 items-center gap-2 text-slate-500"><span className="shrink-0 font-medium"><strong className="text-rose-600">{normalizedSoldPercent.toLocaleString("fa-IR")}٪</strong> فروش رفته</span><ProgressBar value={normalizedSoldPercent} aria-label="درصد فروش محصول" dir="ltr" className="min-w-8 flex-1"><ProgressBar.Track className="h-1 overflow-hidden rounded-full bg-rose-100"><ProgressBar.Fill className="h-full rounded-full bg-rose-500" /></ProgressBar.Track></ProgressBar></div><span dir="rtl" className="shrink-0 whitespace-nowrap tabular-nums">{countdown}</span></div>}
+    {hasDiscount && countdown && <div className="mb-5 flex min-h-12 items-center gap-3 bg-[#fdecf0] px-3 text-[11px] font-black text-rose-600 sm:gap-4 sm:px-5 sm:text-xs"><span className="shrink-0">پیشنهاد شگفت‌انگیز</span>{showSoldProgress && <div className="flex min-w-0 flex-1 items-center gap-2 text-slate-500"><span className="shrink-0 font-medium"><strong className="text-rose-600">{normalizedSoldPercent.toLocaleString("fa-IR")}٪</strong> فروش رفته</span><ProgressBar value={normalizedSoldPercent} aria-label="درصد فروش محصول" dir="ltr" className="min-w-8 flex-1"><ProgressBar.Track className="h-1 overflow-hidden rounded-full bg-rose-100"><ProgressBar.Fill className="h-full rounded-full bg-rose-500" /></ProgressBar.Track></ProgressBar></div>}<span className={`${showSoldProgress ? "" : "mr-auto"} shrink-0 whitespace-nowrap tabular-nums`}>{countdown.days > 0 && <span>{countdown.days.toLocaleString("fa-IR")} روز : </span>}<bdi dir="ltr">{countdown.clock}</bdi></span></div>}
 
     <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
       <div className="flex shrink-0 flex-row gap-1 sm:w-10 sm:flex-col" aria-label="عملیات محصول">
