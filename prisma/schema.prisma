@@ -36,6 +36,18 @@ enum ProductDiscountType {
   FIXED
 }
 
+enum ProductReviewStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum ProductReviewReportStatus {
+  PENDING
+  RESOLVED
+  DISMISSED
+}
+
 enum PromotionType {
   COUPON
   FREE_SHIPPING
@@ -130,6 +142,11 @@ model User {
   auditLogs            AuditLog[]            @relation("AuditActor")
   promotionRedemptions PromotionRedemption[]
   promotionRewards     PromotionReward[]
+  productReviews       ProductReview[]             @relation("ProductReviewAuthor")
+  moderatedReviews     ProductReview[]             @relation("ProductReviewModerator")
+  productReviewVotes   ProductReviewVote[]
+  productReviewReports ProductReviewReport[]        @relation("ProductReviewReporter")
+  resolvedReviewReports ProductReviewReport[]       @relation("ProductReviewReportResolver")
 }
 
 model Session {
@@ -227,11 +244,75 @@ model Product {
   media            ProductMedia[]
   orderItems       OrderItem[]
   cartItems        CartItem[]
+  reviews          ProductReview[]
 
   @@index([categoryId, status])
   @@index([optionGuideId])
   @@index([featured, status])
   @@index([discountEndsAt])
+}
+
+model ProductReview {
+  id                 String              @id @default(cuid())
+  productId          String
+  userId             String
+  parentId           String?
+  rating             Int?
+  title              String?             @db.VarChar(120)
+  body               String              @db.Text
+  status             ProductReviewStatus @default(PENDING)
+  isVerifiedPurchase Boolean             @default(false)
+  moderatedById      String?
+  moderatedAt        DateTime?
+  moderationNote     String?             @db.VarChar(500)
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  product            Product             @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user               User                @relation("ProductReviewAuthor", fields: [userId], references: [id], onDelete: Cascade)
+  parent             ProductReview?      @relation("ProductReviewThread", fields: [parentId], references: [id], onDelete: Cascade)
+  replies            ProductReview[]     @relation("ProductReviewThread")
+  moderatedBy        User?               @relation("ProductReviewModerator", fields: [moderatedById], references: [id], onDelete: SetNull)
+  votes              ProductReviewVote[]
+  reports            ProductReviewReport[]
+
+  @@index([productId, status, createdAt])
+  @@index([userId, createdAt])
+  @@index([parentId, status, createdAt])
+  @@index([moderatedById])
+}
+
+model ProductReviewVote {
+  id        String        @id @default(cuid())
+  reviewId  String
+  userId    String
+  value     Int
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  review    ProductReview @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([reviewId, userId])
+  @@index([userId, createdAt])
+}
+
+model ProductReviewReport {
+  id           String                    @id @default(cuid())
+  reviewId     String
+  userId       String
+  reason       String                    @db.VarChar(50)
+  details      String?                   @db.VarChar(500)
+  status       ProductReviewReportStatus @default(PENDING)
+  resolvedById String?
+  resolvedAt   DateTime?
+  createdAt    DateTime                  @default(now())
+  updatedAt    DateTime                  @updatedAt
+  review       ProductReview             @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  user         User                      @relation("ProductReviewReporter", fields: [userId], references: [id], onDelete: Cascade)
+  resolvedBy   User?                     @relation("ProductReviewReportResolver", fields: [resolvedById], references: [id], onDelete: SetNull)
+
+  @@unique([reviewId, userId])
+  @@index([status, createdAt])
+  @@index([resolvedById])
 }
 
 model StoreSetting {

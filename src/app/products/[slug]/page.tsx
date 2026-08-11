@@ -7,6 +7,7 @@ import { ProductDetailGallery } from "@/components/product-detail-gallery";
 import { ProductDetailSectionNav } from "@/components/product-detail-section-nav";
 import { ProductCard } from "@/components/product-card";
 import { ProductSpecifications } from "@/components/product-specifications";
+import { ProductReviews } from "@/components/product-reviews";
 import { db } from "@/lib/db";
 import { formatMoney } from "@/lib/format";
 import { buildProductAttributeGroups } from "@/modules/products/attributes";
@@ -19,24 +20,19 @@ import { getStorefrontProductFeed } from "@/modules/products/storefront-feed";
 import { getGoldPriceForDisplay } from "@/modules/gold/gold-price.service";
 import { getCatalogSettings } from "@/modules/settings/catalog-settings";
 import { getGeneralStoreSettings } from "@/modules/settings/general-settings";
+import { getCurrentUser } from "@/modules/auth/session";
+import { getStorefrontProductReviews } from "@/modules/reviews/service";
 
 export const dynamic = "force-dynamic";
-
-const mockReviewCount = 127;
-const mockRating = 4.6;
-const mockReviews = [
-  { id: "review-1", name: "مریم احمدی", date: "۱۸ مرداد ۱۴۰۵", rating: 5, title: "کیفیت عالی", body: "کیفیت ساخت خیلی خوب بود و محصول کاملاً سالم و با بسته‌بندی مرتب به دستم رسید." },
-  { id: "review-2", name: "علی رضایی", date: "۱۲ مرداد ۱۴۰۵", rating: 4, title: "مطابق تصاویر", body: "ظاهر و مشخصات محصول دقیقاً با توضیحات صفحه هماهنگ بود. از خریدم رضایت دارم." },
-  { id: "review-3", name: "سارا محمدی", date: "۶ مرداد ۱۴۰۵", rating: 5, title: "پیشنهاد می‌کنم", body: "ارسال سریع انجام شد و تجربه خرید خوبی داشتم. برای خرید دوباره هم انتخابش می‌کنم." },
-];
 
 export default async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const settings = await getGeneralStoreSettings();
-  const [product, gold, catalogSettings] = await Promise.all([
+  const [product, gold, catalogSettings, currentUser] = await Promise.all([
     db.product.findFirst({ where: { slug, status: "ACTIVE", storeIndustry: settings.industry }, include: { category: true, media: { include: { media: true }, orderBy: { position: "asc" } }, options: { orderBy: { position: "asc" } }, optionGuide: true } }),
     settings.industry === "GOLD" ? getGoldPriceForDisplay() : Promise.resolve(null),
     getCatalogSettings(),
+    getCurrentUser(),
   ]);
   if (!product) notFound();
 
@@ -44,9 +40,10 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
     .map((option) => ({ option, values: parseOptionValues(option.values).filter((item) => item.isActive) }))
     .filter(({ values }) => values.length > 0);
   const colorIds = [...new Set(optionValues.flatMap(({ values }) => values.flatMap((item) => item.colorId ? [item.colorId] : [])))];
-  const [colors, soldAggregate] = await Promise.all([
+  const [colors, soldAggregate, reviewData] = await Promise.all([
     colorIds.length ? db.color.findMany({ where: { id: { in: colorIds }, isActive: true }, select: { id: true, name: true, hex: true } }) : Promise.resolve([]),
     db.orderItem.aggregate({ where: { productId: product.id, order: { status: { in: [...completedSaleOrderStatuses] } } }, _sum: { quantity: true } }),
+    getStorefrontProductReviews(product.id, currentUser?.id ?? null),
   ]);
   const soldPercent = calculateSoldPercent(soldAggregate._sum.quantity ?? 0, product.stock);
   const colorsById = new Map(colors.map((color) => [color.id, color]));
@@ -134,7 +131,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
               <h1 className="mb-4 mt-3 text-xl font-normal leading-9 text-slate-900 sm:text-2xl">{product.name}</h1>
               <p dir="ltr" className="border-b border-slate-200 pb-4 text-left text-xs text-slate-400">{product.sku}</p>
               <div className="mt-4 flex flex-wrap items-center gap-3 text-xs">
-                <span className="inline-flex items-center gap-1 font-bold text-slate-700"><Star size={16} className="fill-amber-400 text-amber-400" />{mockRating.toLocaleString("fa-IR")}</span><span className="text-slate-400">از ۵</span><span className="size-1 rounded-full bg-slate-300" /><span className="font-bold text-[var(--brand-accent)]">{mockReviewCount.toLocaleString("fa-IR")} دیدگاه</span>
+                <span className="inline-flex items-center gap-1 font-bold text-slate-700"><Star size={16} className="fill-amber-400 text-amber-400" />{reviewData.summary.average.toLocaleString("fa-IR", { maximumFractionDigits: 1 })}</span><span className="text-slate-400">از ۵</span><span className="size-1 rounded-full bg-slate-300" /><Link href="#reviews" className="font-bold text-[var(--brand-accent)]">{reviewData.summary.count.toLocaleString("fa-IR")} دیدگاه</Link>
               </div>
               <AddToCart {...cartProps} layout="product-detail" showPurchaseCard={false} />
               {primaryFeatures.length > 0 && <section className="mt-8" aria-labelledby="primary-features-title"><h2 id="primary-features-title" className="mb-4 text-base font-normal text-slate-900">ویژگی‌ها</h2><div className="grid grid-cols-2 gap-2">{primaryFeatures.map((feature) => <div key={feature.id} className="min-h-[62px] rounded-lg bg-[var(--surface-tertiary)] px-3 py-2.5 text-right"><span className="block text-[11px] text-slate-400">{feature.name}</span><strong className="mt-1 block truncate text-xs font-normal text-slate-700">{feature.values.join("، ")}</strong></div>)}</div><div className="mt-4 flex items-center gap-4"><span className="h-px flex-1 bg-slate-200" /><Link href="#specifications" className="inline-flex min-h-10 shrink-0 items-center gap-2 rounded-lg border border-slate-200 px-4 text-xs font-normal text-slate-800 transition hover:border-slate-400">مشاهده همه ویژگی‌ها <span aria-hidden="true">‹</span></Link><span className="h-px flex-1 bg-slate-200" /></div></section>}
@@ -169,19 +166,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
 
       <section id="reviews" className="py-9" style={{ scrollMarginTop: "var(--product-detail-anchor-offset, 96px)" }} aria-labelledby="reviews-title">
         <SectionTitle id="reviews-title">امتیاز و دیدگاه کاربران</SectionTitle>
-        <div className="grid gap-8 lg:grid-cols-[260px_minmax(0,1fr)]">
-          <aside className="h-fit rounded-xl border border-slate-200 p-5 lg:sticky lg:top-24">
-            <div className="flex items-end gap-2"><strong className="text-3xl font-black text-slate-900">{mockRating.toLocaleString("fa-IR")}</strong><span className="pb-1 text-xs text-slate-400">از ۵</span></div>
-            <div className="my-3 flex gap-1 text-amber-400" aria-label={`${mockRating.toLocaleString("fa-IR")} از ۵ ستاره`}>{[1, 2, 3, 4, 5].map((star) => <Star key={star} size={18} fill={star <= 4 ? "currentColor" : "none"} />)}</div>
-            <p className="text-xs text-slate-500">از مجموع {mockReviewCount.toLocaleString("fa-IR")} دیدگاه ثبت‌شده</p>
-            <div className="mt-5 grid gap-2.5">{[5, 4, 3, 2, 1].map((score, index) => <div key={score} className="grid grid-cols-[28px_1fr] items-center gap-2 text-[10px] text-slate-500"><span>{score.toLocaleString("fa-IR")}</span><span className="h-1.5 overflow-hidden rounded-full bg-slate-100"><span className="block h-full rounded-full bg-amber-400" style={{ width: `${[72, 18, 6, 3, 1][index]}%` }} /></span></div>)}</div>
-          </aside>
-          <div className="divide-y divide-slate-200 border-y border-slate-200">{mockReviews.map((review) => <article key={review.id} className="py-6 first:pt-0">
-            <div className="mb-3 flex flex-wrap items-center gap-3"><span className="rounded bg-[var(--success)] px-2 py-1 text-xs font-black text-[var(--success-foreground)]">{review.rating.toLocaleString("fa-IR")}</span><strong className="text-sm text-slate-900">{review.title}</strong><span className="mr-auto text-[11px] text-slate-400">{review.date}</span></div>
-            <p className="text-sm leading-7 text-slate-600">{review.body}</p>
-            <div className="mt-4 flex items-center gap-2 text-xs text-slate-400"><span className="grid size-7 place-items-center rounded-full bg-slate-100 font-black text-slate-500">{review.name.slice(0, 1)}</span>{review.name}<span className="rounded-full bg-slate-100 px-2 py-1 text-[10px]">خریدار محصول</span></div>
-          </article>)}</div>
-        </div>
+        <ProductReviews productId={product.id} initialData={reviewData} isAuthenticated={Boolean(currentUser && !currentUser.isGuest)} />
       </section>
         </div>
         <AddToCart {...cartProps} layout="product-detail" showOptionFields={false} purchaseCardClassName="order-first h-full pt-6 lg:order-none" purchaseCardStickyTop="var(--product-detail-purchase-offset, 6rem)" />

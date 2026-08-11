@@ -3,6 +3,11 @@ export type AuditActionKind = "CREATE" | "UPDATE" | "DELETE" | "ACCESS" | "SYSTE
 const actionLabels: Record<string, string> = {
   PRODUCT_CREATE: "ثبت محصول",
   PRODUCT_UPDATE: "ویرایش محصول",
+  PRODUCT_REVIEW_APPROVE: "تأیید دیدگاه محصول",
+  PRODUCT_REVIEW_REJECT: "رد دیدگاه محصول",
+  PRODUCT_REVIEW_DELETE: "حذف دیدگاه محصول",
+  PRODUCT_REVIEW_REPLY: "پاسخ مدیریت به دیدگاه",
+  PRODUCT_REVIEW_REPORT_UPDATE: "رسیدگی به گزارش دیدگاه",
   CATEGORY_CREATE: "ثبت دسته‌بندی",
   CATEGORY_UPDATE: "ویرایش دسته‌بندی",
   CATEGORY_DELETE: "حذف دسته‌بندی",
@@ -44,6 +49,8 @@ const actionLabels: Record<string, string> = {
 
 const entityLabels: Record<string, string> = {
   Product: "محصول",
+  ProductReview: "دیدگاه محصول",
+  ProductReviewReport: "گزارش دیدگاه",
   Category: "دسته‌بندی",
   Color: "رنگ",
   MediaAsset: "رسانه",
