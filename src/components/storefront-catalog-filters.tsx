@@ -140,7 +140,7 @@ export function StorefrontCatalogFilters({ facets, selectedColors, selectedAttri
 
     <Accordion dir="rtl" variant="surface" hideSeparator allowsMultipleExpanded defaultExpandedKeys={facets.priceRange ? ["catalog-price"] : []} className="w-full bg-transparent p-0 text-right" aria-label="فیلترهای محصولات">
       {facets.priceRange && <Accordion.Item id="catalog-price" className="mb-2 rounded-xl border border-slate-200/80 bg-white px-3">
-        <Accordion.Heading><Accordion.Trigger className="relative flex w-full items-center bg-transparent py-4 pl-7 text-sm font-bold text-slate-800 hover:bg-transparent data-[hovered=true]:bg-transparent"><FilterAccordionTitle>محدوده قیمت</FilterAccordionTitle></Accordion.Trigger></Accordion.Heading>
+        <Accordion.Heading><Accordion.Trigger className="relative flex w-full items-center border-b border-transparent bg-transparent py-4 pl-7 text-sm font-bold text-slate-800 hover:bg-transparent aria-expanded:border-slate-100 data-[hovered=true]:bg-transparent"><FilterAccordionTitle>محدوده قیمت</FilterAccordionTitle></Accordion.Trigger></Accordion.Heading>
         <Accordion.Panel><Accordion.Body className="pb-5 pt-1">
           <div className="overflow-hidden rounded-xl border border-slate-200 bg-slate-50/70 px-3">
             <div className="flex min-h-12 items-center justify-between gap-3 border-b border-slate-200">
@@ -168,13 +168,13 @@ export function StorefrontCatalogFilters({ facets, selectedColors, selectedAttri
     </div>
     <Accordion dir="rtl" variant="surface" hideSeparator allowsMultipleExpanded className="w-full bg-transparent p-0 text-right" aria-label="فیلترهای ویژگی محصول">
       {facets.colors.length > 0 && <Accordion.Item id="catalog-colors" className="mb-2 rounded-xl border border-slate-200/80 bg-white px-3">
-        <Accordion.Heading><Accordion.Trigger className="relative flex w-full items-center bg-transparent py-4 pl-7 text-sm font-bold text-slate-800 hover:bg-transparent data-[hovered=true]:bg-transparent"><FilterAccordionTitle>رنگ</FilterAccordionTitle></Accordion.Trigger></Accordion.Heading>
+        <Accordion.Heading><Accordion.Trigger className="relative flex w-full items-center border-b border-transparent bg-transparent py-4 pl-7 text-sm font-bold text-slate-800 hover:bg-transparent aria-expanded:border-slate-100 data-[hovered=true]:bg-transparent"><FilterAccordionTitle>رنگ</FilterAccordionTitle></Accordion.Trigger></Accordion.Heading>
         <Accordion.Panel><Accordion.Body className="max-h-52 overflow-y-auto pb-4">
           {facets.colors.map((color) => <FilterCheckbox key={color.id} selected={selectedColorSet.has(color.id)} onChange={(selected) => updateMultiValue("color", color.id, selected)}><span className="flex min-w-0 items-center gap-2 text-xs text-slate-700"><span className="size-4 shrink-0 rounded-full border border-black/10" style={{ backgroundColor: color.hex }} /><span className="truncate">{color.name}</span><span className="mr-auto text-[10px] text-slate-400">{color.count.toLocaleString("fa-IR")}</span></span></FilterCheckbox>)}
         </Accordion.Body></Accordion.Panel>
       </Accordion.Item>}
       {facets.attributes.map((attribute) => <Accordion.Item key={attribute.id} id={`catalog-attribute-${attribute.id}`} className="mb-2 rounded-xl border border-slate-200/80 bg-white px-3">
-        <Accordion.Heading><Accordion.Trigger className="relative flex w-full items-center bg-transparent py-4 pl-7 text-sm font-bold text-slate-800 hover:bg-transparent data-[hovered=true]:bg-transparent"><FilterAccordionTitle>{attribute.name}</FilterAccordionTitle></Accordion.Trigger></Accordion.Heading>
+        <Accordion.Heading><Accordion.Trigger className="relative flex w-full items-center border-b border-transparent bg-transparent py-4 pl-7 text-sm font-bold text-slate-800 hover:bg-transparent aria-expanded:border-slate-100 data-[hovered=true]:bg-transparent"><FilterAccordionTitle>{attribute.name}</FilterAccordionTitle></Accordion.Trigger></Accordion.Heading>
         <Accordion.Panel><Accordion.Body className="max-h-52 overflow-y-auto pb-4">
           {attribute.values.map((item) => {
             const token = `${attribute.id}::${item.value}`;
