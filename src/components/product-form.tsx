@@ -17,7 +17,6 @@ import { completeProductSchema } from "@/modules/products/schemas";
 import { RichTextEditor } from "@/components/rich-text-editor";
 import { HeroDateRangeField } from "@/components/hero-date-range-field";
 import { HeroNumberInput } from "@/components/hero-number-input";
-import { ProductAttributesFields } from "@/components/product-attributes-fields";
 import type { CategoryAttributeGroup, ProductAttributeValue } from "@/modules/products/attributes";
 
 type EditableProduct = {
@@ -72,13 +71,16 @@ export function ProductForm({ storeIndustry, categories = [], product }: Props) 
   const [discountRange, setDiscountRange] = useState<{ start: string; end: string } | null>(() => product?.discountStartsAt && product.discountEndsAt ? { start: product.discountStartsAt, end: product.discountEndsAt } : null);
   const [draggedMediaId, setDraggedMediaId] = useState<string | null>(null);
   const [categoryId, setCategoryId] = useState(product?.categoryId ?? "");
-  const [attributes, setAttributes] = useState<ProductAttributeValue[]>(product?.attributes ?? []);
   const selectedCategory = categories.find((category) => category.id === categoryId);
+  const attributeDefinitions = selectedCategory?.attributeGroups.flatMap((group) => group.attributes) ?? [];
+  const currentAttributes = product?.categoryId === categoryId ? product.attributes : [];
+  const completedAttributeIds = new Set(currentAttributes.filter((attribute) => attribute.values.length).map((attribute) => attribute.attributeId));
+  const completedAttributeCount = attributeDefinitions.filter((attribute) => completedAttributeIds.has(attribute.id)).length;
+  const importantAttributeCount = attributeDefinitions.filter((attribute) => attribute.important && completedAttributeIds.has(attribute.id)).length;
+  const categoryChanged = Boolean(product && product.categoryId !== categoryId);
 
   function changeCategory(nextCategoryId: string) {
     setCategoryId(nextCategoryId);
-    const allowedIds = new Set(categories.find((category) => category.id === nextCategoryId)?.attributeGroups.flatMap((group) => group.attributes.map((attribute) => attribute.id)) ?? []);
-    setAttributes((current) => current.filter((attribute) => allowedIds.has(attribute.attributeId)));
   }
 
   function moveMedia(targetId: string) {
@@ -97,6 +99,7 @@ export function ProductForm({ storeIndustry, categories = [], product }: Props) 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault(); setLoading(true);
     const form = new FormData(event.currentTarget);
+    const afterSave = form.get("afterSave") === "attributes" ? "attributes" : "options";
     const body = {
       sku: form.get("sku"), name: form.get("name"), slug: form.get("slug"), description, categoryId: categoryId || null,
       storeIndustry, purity: storeIndustry === "GOLD" ? Number(form.get("purity")) : 750, weightGrams: storeIndustry === "GOLD" ? Number(form.get("weightGrams")) : 0,
@@ -107,7 +110,7 @@ export function ProductForm({ storeIndustry, categories = [], product }: Props) 
       discountValue: discountEnabled ? Number(form.get("discountValue")) : null,
       discountStartsAt: discountEnabled ? discountRange?.start ?? null : null,
       discountEndsAt: discountEnabled ? discountRange?.end ?? null : null,
-      featured: form.get("featured") === "on", mediaIds: selectedMedia.map((media) => media.id), options: product?.options ?? [], optionGuideId: optionGuide?.id ?? null, attributes,
+      featured: form.get("featured") === "on", mediaIds: selectedMedia.map((media) => media.id), options: product?.options ?? [], optionGuideId: optionGuide?.id ?? null, attributes: currentAttributes,
     };
     const validation = completeProductSchema.safeParse(body);
     if (!validation.success) {
@@ -121,8 +124,8 @@ export function ProductForm({ storeIndustry, categories = [], product }: Props) 
       const result = await response.json().catch(() => null);
       if (!response.ok) throw new Error(apiErrorMessage(result, "ذخیره محصول ناموفق بود.", productFieldLabels));
       if (!product && (!result || typeof result.id !== "string")) throw new Error("شناسه محصول جدید از سرور دریافت نشد.");
-      toast.success(product ? "تغییرات محصول ذخیره شد" : "محصول جدید ثبت شد", { description: product ? "اطلاعات محصول با موفقیت به‌روزرسانی شد." : "اکنون تنوع‌ها و موجودی هر مقدار را مدیریت کنید.", timeout: 4000 });
-      router.push(product ? "/admin/products" : `/admin/products/${result.id}/options`); router.refresh();
+      toast.success(product ? "تغییرات محصول ذخیره شد" : "محصول جدید ثبت شد", { description: product ? "اطلاعات محصول با موفقیت به‌روزرسانی شد." : afterSave === "attributes" ? "اکنون ویژگی‌های توصیفی محصول را تکمیل کنید." : "اکنون تنوع‌ها و موجودی هر مقدار را مدیریت کنید.", timeout: 4000 });
+      router.push(product ? "/admin/products" : `/admin/products/${result.id}/${afterSave}`); router.refresh();
     } catch (reason) {
       const message = reason instanceof Error ? reason.message : "ارتباط با سرور برقرار نشد.";
       toast.danger("ذخیره محصول انجام نشد", { description: message, timeout: 5000 });
@@ -168,8 +171,8 @@ export function ProductForm({ storeIndustry, categories = [], product }: Props) 
           <div className={`${adminLabelClass} mt-4`}>توضیحات محصول<RichTextEditor value={product?.description} onChange={setDescription} /></div>
         </FormSection>
 
-        <FormSection icon={<ListChecks size={18} />} title="ویژگی‌های محصول" description="این موارد براساس دسته‌بندی انتخاب‌شده تعیین می‌شوند و روی قیمت یا موجودی اثر ندارند." help={{ summary: "مشخصات توصیفی محصول از ساختار ویژگی‌های دسته انتخاب‌شده خوانده می‌شوند.", blocks: [{ title: "روش تکمیل", items: ["ابتدا دسته‌بندی صحیح محصول را در اطلاعات پایه انتخاب کنید.", "برای هر ویژگی یک یا چند مقدار متناسب با نوع آن ثبت کنید.", "اگر مقدار آماده وجود ندارد، مقدار جدید را در همان فیلد وارد کنید."] }, { title: "ویژگی یا تنوع", tone: "important", description: "ویژگی فقط برای نمایش مشخصات است. رنگ، سایز، وزن، قیمت یا موجودی انتخابی مشتری باید در بخش تنوع محصول ثبت شود." }, { title: "ساختار دسته", description: "اگر این بخش خالی است، ابتدا در صفحه ویژگی‌های دسته‌بندی گروه‌ها و ویژگی‌های آن دسته را تعریف کنید." }] }}>
-          {!categoryId ? <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 px-5 py-8 text-center text-xs text-slate-500">ابتدا دسته‌بندی محصول را انتخاب کنید.</div> : selectedCategory?.attributeGroups.length ? <ProductAttributesFields groups={selectedCategory.attributeGroups} values={attributes} onChange={setAttributes} /> : <div className="rounded-xl border border-dashed border-amber-300 bg-amber-50 px-5 py-8 text-center"><strong className="block text-sm text-amber-900">برای این دسته‌بندی ویژگی تعریف نشده است</strong><p className="mt-1 text-xs text-amber-700">از صفحه دسته‌بندی‌ها وارد مدیریت ویژگی‌های همین دسته شوید.</p><Link href={`/admin/categories/${categoryId}/attributes`} className="mt-3 inline-flex min-h-9 items-center justify-center rounded-lg bg-white px-4 text-xs font-bold text-amber-800 shadow-sm">تعریف ویژگی‌های دسته</Link></div>}
+        <FormSection icon={<ListChecks size={18} />} title="ویژگی‌های محصول" description="خلاصه مشخصات ثبت‌شده؛ افزودن و ویرایش در صفحه اختصاصی انجام می‌شود." help={{ summary: "فرم اصلی محصول فقط وضعیت تکمیل ویژگی‌ها را نشان می‌دهد تا صفحه خلوت و سریع باقی بماند.", blocks: [{ title: "مدیریت مستقل", description: "پس از ثبت محصول، از دکمه مدیریت ویژگی‌ها وارد صفحه اختصاصی شوید و مقادیر توصیفی را تکمیل کنید." }, { title: "تغییر دسته‌بندی", tone: "important", description: "اگر دسته‌بندی محصول را تغییر داده‌اید، ابتدا فرم را ذخیره کنید؛ سپس ویژگی‌های متناسب با دسته جدید را وارد کنید." }] }}>
+          {!categoryId ? <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 px-5 py-7 text-center text-xs text-slate-500">برای مشاهده ویژگی‌ها ابتدا دسته‌بندی محصول را انتخاب کنید.</div> : <div className="grid gap-3 rounded-xl border border-slate-200 bg-slate-50/60 p-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center sm:p-4"><div className="grid grid-cols-3 gap-2">{[{ label: "تعریف‌شده", value: attributeDefinitions.length }, { label: "تکمیل‌شده", value: completedAttributeCount }, { label: "مهم", value: importantAttributeCount }].map((item) => <div key={item.label} className="rounded-lg border border-slate-200 bg-white px-3 py-2"><strong className="block text-base font-black text-slate-800">{item.value.toLocaleString("fa-IR")}</strong><span className="text-[10px] text-slate-500">{item.label}</span></div>)}</div><div className="flex justify-end">{product ? categoryChanged ? <span className="rounded-lg bg-amber-50 px-3 py-2 text-[11px] font-bold text-amber-700">ابتدا تغییر دسته را ذخیره کنید</span> : <Link href={`/admin/products/${product.id}/attributes`} className="inline-flex min-h-10 items-center justify-center rounded-xl bg-violet-700 px-5 text-xs font-bold text-white">مدیریت ویژگی‌ها</Link> : <Button type="submit" name="afterSave" value="attributes" variant="primary" isPending={loading} className="min-h-10 gap-2 bg-violet-700 px-5 text-xs font-bold text-white">{({ isPending }) => <>{isPending ? <Spinner color="current" size="sm" /> : <Save size={15} />}{isPending ? "در حال ثبت..." : "ثبت و مدیریت ویژگی‌ها"}</>}</Button>}</div></div>}
         </FormSection>
 
         <FormSection icon={<Ruler size={18} />} title="تنوع‌های محصول" description="هر نوع ویژگی قابل انتخاب مثل سایز، رنگ، طول یا نوع قفل را تعریف کنید." help={{ summary: "مدیریت کامل تنوع در صفحه مستقل انجام می‌شود تا موجودی، وزن یا قیمت هر مقدار جدا ثبت شود.", blocks: [{ title: "محصول جدید", description: "ابتدا محصول را ذخیره کنید؛ سپس سیستم شما را به صفحه مدیریت تنوع همان محصول منتقل می‌کند." }, { title: "محصول موجود", description: "از دکمه مدیریت تنوع وارد صفحه اختصاصی شوید و گروه‌ها، مقادیر، ترتیب و وضعیت آن‌ها را تغییر دهید." }, { title: "راهنمای انتخاب", description: "می‌توانید یک تصویر یا PDF راهنما برای انتخاب سایز یا مدل ثبت کنید تا مشتری پیش از انتخاب تنوع آن را ببیند." }] }}>
