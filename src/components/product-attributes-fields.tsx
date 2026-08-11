@@ -33,14 +33,14 @@ export function ProductAttributesFields({ groups, values, onChange }: Props) {
   return <div className="grid gap-3">
     {groups.map((group) => <section key={group.id} className="min-w-0 overflow-hidden rounded-xl border border-slate-200 bg-slate-50/50">
       <header className="flex min-h-11 items-center gap-2 border-b border-slate-200 bg-white px-3 py-2.5"><span className="grid size-7 shrink-0 place-items-center rounded-lg bg-violet-50 text-violet-600"><ListChecks size={14} /></span><strong className="min-w-0 truncate text-xs font-black text-slate-800">{group.name}</strong><span className="mr-auto shrink-0 rounded-full bg-slate-100 px-2 py-1 text-[9px] font-bold text-slate-500">{group.attributes.length.toLocaleString("fa-IR")} ویژگی</span></header>
-      <div className="grid min-w-0 gap-2.5 p-2.5 sm:p-3 md:grid-cols-2 2xl:grid-cols-3">
+      <div className="grid min-w-0 gap-3 p-3 md:grid-cols-2">
         {group.attributes.map((attribute) => {
           const currentValues = valuesById.get(attribute.id) ?? [];
           const draft = drafts[attribute.id] ?? "";
-          return <article key={attribute.id} className="min-w-0 rounded-lg border border-slate-200 bg-white p-2.5 shadow-[0_1px_2px_rgba(15,23,42,0.03)]">
-            <div className="min-w-0"><TruncatedTextTooltip text={attribute.name} className="max-w-full text-[11px] font-black leading-5 text-slate-700" /></div>
+          return <article key={attribute.id} className="flex min-h-[145px] min-w-0 flex-col rounded-xl border border-slate-200 bg-white p-3 shadow-[0_1px_2px_rgba(15,23,42,0.03)]">
+            <div className="min-w-0"><TruncatedTextTooltip text={attribute.name} className="max-w-full text-xs font-black leading-5 text-slate-700" /></div>
             <div className="mt-2 flex min-w-0 items-center gap-1.5"><Input value={draft} onChange={(event) => setDrafts((current) => ({ ...current, [attribute.id]: event.target.value }))} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); addMultipleValue(attribute.id); } }} aria-label={`مقدار ${attribute.name}`} placeholder="مقدار؛ چند مورد با کاما" fullWidth variant="secondary" className="!h-[30px] !min-h-[30px] min-w-0 !rounded-lg border border-[var(--field-border)] bg-[var(--field-background)] !px-2.5 !py-1 !text-[11px] text-[var(--field-foreground)] outline-none transition placeholder:!text-[9px] placeholder:text-[var(--field-placeholder)] focus:border-[var(--field-border-focus)] focus:ring-2 focus:ring-[var(--focus)]/10" /><Button type="button" isIconOnly size="sm" variant="secondary" isDisabled={!draft.trim()} aria-label={`افزودن مقدار ${attribute.name}`} onPress={() => addMultipleValue(attribute.id)} className="!size-[30px] !min-h-[30px] !min-w-[30px] shrink-0 !rounded-lg !p-0"><Plus className="!size-3.5" /></Button></div>
-            <div className="mt-2 min-w-0 border-t border-slate-100 pt-2">{currentValues.length ? <div className="flex min-w-0 flex-wrap items-center gap-1.5">{currentValues.map((value) => <SelectedValue key={value} value={value} onRemove={() => removeValue(attribute.id, value)} />)}</div> : <span className="block text-[9px] leading-6 text-slate-400">مقداری برای این ویژگی ثبت نشده است.</span>}</div>
+            <div className="mt-auto min-w-0 border-t border-slate-100 pt-2.5">{currentValues.length ? <div className="flex min-w-0 flex-wrap items-center gap-1.5">{currentValues.map((value) => <SelectedValue key={value} value={value} onRemove={() => removeValue(attribute.id, value)} />)}</div> : <span className="block text-[10px] leading-6 text-slate-400">مقداری برای این ویژگی ثبت نشده است.</span>}</div>
           </article>;
         })}
       </div>
