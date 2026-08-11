@@ -55,14 +55,20 @@ function PriceRangeSlider({ bounds, step, value, onChange, onChangeEnd }: {
   onChange: (value: number | number[]) => void;
   onChangeEnd: (value: number | number[]) => void;
 }) {
-  return <Slider aria-label="محدوده قیمت" minValue={bounds.min} maxValue={bounds.max} step={step} value={value} onChange={onChange} onChangeEnd={onChangeEnd} className="mt-4 w-full px-2" dir="rtl">
-    <Slider.Track>
-      {({ state }) => <>
-        <Slider.Fill />
-        {state.values.map((_, index) => <Slider.Thumb key={index} index={index} aria-label={index === 0 ? "حداقل قیمت" : "حداکثر قیمت"} />)}
-      </>}
-    </Slider.Track>
-  </Slider>;
+  return <div className="mt-4 px-2">
+    <Slider aria-label="محدوده قیمت" minValue={bounds.min} maxValue={bounds.max} step={step} value={value} onChange={onChange} onChangeEnd={onChangeEnd} className="w-full" dir="rtl">
+      <Slider.Track className="!border-x-transparent">
+        {({ state }) => <>
+          <Slider.Fill />
+          {state.values.map((_, index) => <Slider.Thumb key={index} index={index} aria-label={index === 0 ? "حداقل قیمت" : "حداکثر قیمت"} />)}
+        </>}
+      </Slider.Track>
+    </Slider>
+    <div className="mt-1 flex items-center justify-between text-[10px] leading-4 text-slate-500" aria-hidden="true">
+      <span>ارزان‌ترین</span>
+      <span>گران‌ترین</span>
+    </div>
+  </div>;
 }
 
 export function StorefrontCatalogFilters({ facets, selectedColors, selectedAttributes, minPrice, maxPrice, inStock, resetHref }: Props) {
