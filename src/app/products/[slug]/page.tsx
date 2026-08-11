@@ -4,6 +4,7 @@ import { CheckCircle2, PackageCheck, ShieldCheck, Star, Truck } from "lucide-rea
 import { AddToCart, ProductPurchaseProvider } from "@/components/add-to-cart";
 import { PriceTooltip } from "@/components/price-tooltip";
 import { ProductDetailGallery } from "@/components/product-detail-gallery";
+import { ProductDetailSectionNav } from "@/components/product-detail-section-nav";
 import { ProductCard } from "@/components/product-card";
 import { ProductSpecifications } from "@/components/product-specifications";
 import { db } from "@/lib/db";
@@ -152,13 +153,10 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
         {relatedProducts.length > 0 ? <div className="flex snap-x gap-4 overflow-x-auto pb-3">{relatedProducts.map((item, index) => <div key={item.id} className="w-[176px] min-w-[176px] snap-start sm:w-[210px] sm:min-w-[210px]"><ProductCard {...item} storefrontVariant="gallery" imageTone={index} /></div>)}</div> : <p className="rounded-xl bg-slate-50 px-4 py-6 text-center text-xs text-slate-500">در حال حاضر کالای مرتبط دیگری در این دسته‌بندی ثبت نشده است.</p>}
       </section>}
 
-      <div className="mt-2 grid items-stretch gap-7 lg:grid-cols-[minmax(0,1fr)_320px]">
+      <ProductDetailSectionNav />
+
+      <div className="grid items-stretch gap-7 lg:grid-cols-[minmax(0,1fr)_320px]">
         <div className="min-w-0">
-
-      <nav className="sticky top-0 z-20 mt-10 flex gap-7 overflow-x-auto border-b border-slate-200 bg-white/95 px-1 py-4 text-sm font-bold text-slate-600 backdrop-blur" aria-label="بخش‌های صفحه محصول">
-        <Link href="#introduction" className="shrink-0 hover:text-rose-500">معرفی</Link><Link href="#specifications" className="shrink-0 hover:text-rose-500">مشخصات</Link><Link href="#reviews" className="shrink-0 hover:text-rose-500">دیدگاه‌ها</Link>
-      </nav>
-
       <section id="introduction" className="scroll-mt-24 border-b border-slate-200 py-9" aria-labelledby="introduction-title">
         <SectionTitle id="introduction-title">معرفی</SectionTitle>
         <div className="rich-text-content max-w-5xl text-sm leading-8 text-slate-600" dangerouslySetInnerHTML={{ __html: sanitizeProductDescription(product.description || `<p>${product.name} با تضمین اصالت، اطلاعات شفاف و ارسال قابل پیگیری از ${settings.storeName} عرضه می‌شود.</p>`) }} />
