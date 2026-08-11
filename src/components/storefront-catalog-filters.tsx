@@ -48,6 +48,31 @@ function FilterAccordionTitle({ children }: { children: ReactNode }) {
   </>;
 }
 
+function PriceRangeSlider({ bounds, step, value, onChange, onChangeEnd }: {
+  bounds: { min: number; max: number };
+  step: number;
+  value: [number, number];
+  onChange: (value: number | number[]) => void;
+  onChangeEnd: (value: number | number[]) => void;
+}) {
+  const rangeSize = Math.max(1, bounds.max - bounds.min);
+  const selectedStart = (value[0] - bounds.min) / rangeSize * 100;
+  const selectedWidth = (value[1] - value[0]) / rangeSize * 100;
+
+  return <Slider aria-label="محدوده قیمت" minValue={bounds.min} maxValue={bounds.max} step={step} value={value} onChange={onChange} onChangeEnd={onChangeEnd} className="mt-5 w-full px-1" dir="rtl">
+    <Slider.Track className="relative h-8 w-full">
+      <span className="absolute inset-x-0 top-1/2 h-1 -translate-y-1/2 rounded-full bg-slate-200" />
+      <span className="absolute top-1/2 h-1 -translate-y-1/2 rounded-full bg-[var(--brand-primary)]" style={{ right: `${selectedStart}%`, width: `${selectedWidth}%` }} />
+      <Slider.Thumb index={0} aria-label="حداقل قیمت" className="top-1/2 size-[18px] -translate-y-1/2 rounded-full border-[4px] border-[var(--brand-primary)] bg-white outline-none ring-white transition-transform data-[dragging=true]:scale-110 focus-visible:ring-2" />
+      <Slider.Thumb index={1} aria-label="حداکثر قیمت" className="top-1/2 size-[18px] -translate-y-1/2 rounded-full border-[4px] border-[var(--brand-primary)] bg-white outline-none ring-white transition-transform data-[dragging=true]:scale-110 focus-visible:ring-2" />
+    </Slider.Track>
+    <Slider.Marks className="flex items-center justify-between text-[10px] text-slate-400">
+      <span className="flex items-center gap-1"><span className="size-1 rounded-full bg-slate-300" />ارزان‌ترین</span>
+      <span className="flex items-center gap-1">گران‌ترین<span className="size-1 rounded-full bg-slate-300" /></span>
+    </Slider.Marks>
+  </Slider>;
+}
+
 export function StorefrontCatalogFilters({ facets, selectedColors, selectedAttributes, minPrice, maxPrice, inStock, resetHref }: Props) {
   const router = useRouter();
   const pathname = usePathname();
@@ -61,9 +86,6 @@ export function StorefrontCatalogFilters({ facets, selectedColors, selectedAttri
   const [priceValues, setPriceValues] = useState<[number, number]>([resolvedMinPrice, resolvedMaxPrice]);
   const activeCount = selectedColors.length + selectedAttributes.length + Number(minPrice !== undefined) + Number(maxPrice !== undefined) + Number(Boolean(inStock));
   const priceStep = Math.max(1, greatestCommonDivisor(priceBounds.max - priceBounds.min, 1_000_000));
-  const priceRangeSize = Math.max(1, priceBounds.max - priceBounds.min);
-  const selectedPriceStart = (priceValues[0] - priceBounds.min) / priceRangeSize * 100;
-  const selectedPriceWidth = (priceValues[1] - priceValues[0]) / priceRangeSize * 100;
 
   function navigate(next: URLSearchParams) {
     next.delete("page");
@@ -121,15 +143,7 @@ export function StorefrontCatalogFilters({ facets, selectedColors, selectedAttri
               </span>
             </div>
           </div>
-          <Slider aria-label="محدوده قیمت" minValue={priceBounds.min} maxValue={priceBounds.max} step={priceStep} value={priceValues} onChange={(value) => setPriceValues(normalizeSliderValue(value))} onChangeEnd={updatePrice} className="mt-5 w-full px-1" dir="rtl">
-            <Slider.Track className="relative h-8 w-full">
-              <span className="absolute inset-x-0 top-1/2 h-1 -translate-y-1/2 rounded-full bg-slate-200" />
-              <span className="absolute top-1/2 h-1 -translate-y-1/2 rounded-full bg-[var(--brand-primary)]" style={{ right: `${selectedPriceStart}%`, width: `${selectedPriceWidth}%` }} />
-              <Slider.Thumb index={0} aria-label="حداقل قیمت" className="top-1/2 size-[18px] -translate-y-1/2 rounded-full border-[4px] border-[var(--brand-primary)] bg-white outline-none ring-white transition-transform data-[dragging=true]:scale-110 focus-visible:ring-2" />
-              <Slider.Thumb index={1} aria-label="حداکثر قیمت" className="top-1/2 size-[18px] -translate-y-1/2 rounded-full border-[4px] border-[var(--brand-primary)] bg-white outline-none ring-white transition-transform data-[dragging=true]:scale-110 focus-visible:ring-2" />
-            </Slider.Track>
-          </Slider>
-          <div className="flex items-center justify-between px-1 text-[10px] text-slate-400"><span>ارزان‌ترین</span><span>گران‌ترین</span></div>
+          <PriceRangeSlider bounds={priceBounds} step={priceStep} value={priceValues} onChange={(value) => setPriceValues(normalizeSliderValue(value))} onChangeEnd={updatePrice} />
         </Accordion.Body></Accordion.Panel>
       </Accordion.Item>}
     </Accordion>
