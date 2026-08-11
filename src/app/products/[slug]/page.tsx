@@ -148,9 +148,9 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
         <span className="flex items-center gap-2"><ShieldCheck size={22} className="text-slate-500" />ضمانت اصالت کالا</span><span className="flex items-center gap-2"><Truck size={22} className="text-slate-500" />ارسال قابل پیگیری</span><span className="flex items-center gap-2"><PackageCheck size={22} className="text-slate-500" />بسته‌بندی مطمئن</span><span className="flex items-center gap-2"><CheckCircle2 size={22} className="text-slate-500" />پرداخت امن</span>
       </div>
 
-      {product.category && <section className="mt-12 border-t border-slate-200 py-8" aria-labelledby="related-products-title">
-        <div className="mb-6 flex items-center justify-between gap-4"><h2 id="related-products-title" className="relative w-fit pb-3 text-lg font-black text-slate-900 after:absolute after:inset-x-0 after:bottom-0 after:h-[3px] after:rounded-full after:bg-[var(--brand-primary)]">کالاهای مرتبط</h2><Link href={`/products?category=${encodeURIComponent(product.category.slug)}`} className="shrink-0 text-xs font-bold text-[var(--brand-accent)] transition-colors hover:text-[var(--brand-primary)]">مشاهده همه</Link></div>
-        {relatedProducts.length > 0 ? <div className="flex snap-x gap-4 overflow-x-auto pb-3">{relatedProducts.map((item, index) => <div key={item.id} className="w-[176px] min-w-[176px] snap-start sm:w-[210px] sm:min-w-[210px]"><ProductCard {...item} storefrontVariant="gallery" imageTone={index} /></div>)}</div> : <p className="rounded-xl bg-slate-50 px-4 py-6 text-center text-xs text-slate-500">در حال حاضر کالای مرتبط دیگری در این دسته‌بندی ثبت نشده است.</p>}
+      {product.category && relatedProducts.length > 0 && <section className="mt-12 border-t border-slate-200 py-8" aria-labelledby="related-products-title">
+        <div className="mb-6 flex items-center justify-between gap-4"><h2 id="related-products-title" className="relative w-fit pb-3 text-lg font-black text-slate-900 after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 after:rounded-full after:bg-[var(--brand-primary)]">کالاهای مرتبط</h2><Link href={`/products?category=${encodeURIComponent(product.category.slug)}`} className="shrink-0 text-xs font-bold text-[var(--brand-accent)] transition-colors hover:text-[var(--brand-primary)]">مشاهده همه</Link></div>
+        <div className="flex snap-x gap-4 overflow-x-auto pb-3">{relatedProducts.map((item, index) => <div key={item.id} className="w-[176px] min-w-[176px] snap-start sm:w-[210px] sm:min-w-[210px]"><ProductCard {...item} storefrontVariant="gallery" imageTone={index} /></div>)}</div>
       </section>}
 
       <ProductDetailSectionNav />
@@ -191,5 +191,5 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
 }
 
 function SectionTitle({ id, children }: { id: string; children: string }) {
-  return <h2 id={id} className="relative mb-8 w-fit pb-3 text-lg font-black text-slate-900 after:absolute after:inset-x-0 after:bottom-0 after:h-[3px] after:rounded-full after:bg-[var(--brand-primary)]">{children}</h2>;
+  return <h2 id={id} className="relative mb-8 w-fit pb-3 text-lg font-black text-slate-900 after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 after:rounded-full after:bg-[var(--brand-primary)]">{children}</h2>;
 }
