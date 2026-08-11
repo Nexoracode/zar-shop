@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Alert, Button, Input, Label, Modal, Spinner, TextArea, toast } from "@heroui/react";
-import { Flag, MessageCircleReply, Star, ThumbsDown, ThumbsUp } from "lucide-react";
+import { ListFilter, MessageCircleReply, MoreVertical, Star, ThumbsDown, ThumbsUp } from "lucide-react";
 import type { StorefrontReview, StorefrontReviewData } from "@/modules/reviews/service";
 
 type Props = {
@@ -10,6 +10,8 @@ type Props = {
   initialData: StorefrontReviewData;
   isAuthenticated: boolean;
 };
+
+type ReviewSort = "helpful" | "newest" | "buyers";
 
 const reportReasons = [
   { value: "SPAM", label: "هرزنامه" },
@@ -44,6 +46,8 @@ export function ProductReviews({ productId, initialData, isAuthenticated }: Prop
   const [reportReason, setReportReason] = useState<(typeof reportReasons)[number]["value"]>("SPAM");
   const [reportDetails, setReportDetails] = useState("");
   const [reportBusy, setReportBusy] = useState(false);
+  const [sort, setSort] = useState<ReviewSort>("helpful");
+  const [expandedReviewIds, setExpandedReviewIds] = useState<Set<string>>(new Set());
 
   async function refreshReviews() {
     const response = await fetch(`/api/products/${productId}/reviews`, { cache: "no-store" });
@@ -107,6 +111,18 @@ export function ProductReviews({ productId, initialData, isAuthenticated }: Prop
   }
 
   const { summary } = data;
+  const visibleReviews = [...data.reviews]
+    .filter((review) => sort !== "buyers" || review.author.isVerifiedPurchase)
+    .sort((left, right) => sort === "newest"
+      ? right.createdAt.localeCompare(left.createdAt)
+      : (right.votes.likes - right.votes.dislikes) - (left.votes.likes - left.votes.dislikes) || right.createdAt.localeCompare(left.createdAt));
+  function toggleExpandedReview(id: string) {
+    setExpandedReviewIds((current) => {
+      const next = new Set(current);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }
   return <div className="grid gap-8 lg:grid-cols-[260px_minmax(0,1fr)]" dir="rtl">
     <aside className="h-fit rounded-xl border border-slate-200 p-5 lg:sticky lg:top-24">
       <div className="flex items-end gap-2"><strong className="text-3xl font-black text-slate-900">{summary.average.toLocaleString("fa-IR", { maximumFractionDigits: 1 })}</strong><span className="pb-1 text-xs text-slate-400">از ۵</span></div>
@@ -117,7 +133,12 @@ export function ProductReviews({ productId, initialData, isAuthenticated }: Prop
     </aside>
 
     <div className="min-w-0">
-      {!data.reviews.length ? <div className="rounded-xl border border-dashed border-slate-200 px-5 py-12 text-center text-sm text-slate-500">هنوز دیدگاهی برای این محصول ثبت نشده است.</div> : <div className="divide-y divide-slate-200 border-y border-slate-200">{data.reviews.map((review) => <ReviewCard key={review.id} review={review} authenticated={isAuthenticated} busyReviewId={busyReviewId} onReply={openComposer} onVote={vote} onReport={setReporting} />)}</div>}
+      {data.reviews.length > 0 && <div className="flex min-h-14 flex-wrap items-center gap-1 border-b border-slate-200 text-xs text-slate-500"><span className="ml-1 inline-flex items-center gap-1.5 font-bold text-slate-700"><ListFilter size={17} />مرتب‌سازی:</span>{([
+        { id: "helpful", label: "مفیدترین" },
+        { id: "newest", label: "جدیدترین" },
+        { id: "buyers", label: "دیدگاه خریداران" },
+      ] as const).map((option) => <Button key={option.id} type="button" size="sm" variant="ghost" onPress={() => setSort(option.id)} className={`relative min-h-9 rounded-none px-2 text-xs after:absolute after:inset-x-2 after:bottom-0 after:h-px after:bg-[var(--brand-primary)] ${sort === option.id ? "font-bold text-[var(--brand-primary)] after:scale-x-100" : "text-slate-500 after:scale-x-0"}`}>{option.label}</Button>)}<span className="mr-auto text-[11px] text-slate-400">{visibleReviews.length.toLocaleString("fa-IR")} دیدگاه</span></div>}
+      {!data.reviews.length ? <div className="rounded-xl border border-dashed border-slate-200 px-5 py-12 text-center text-sm text-slate-500">هنوز دیدگاهی برای این محصول ثبت نشده است.</div> : !visibleReviews.length ? <p className="py-12 text-center text-xs text-slate-400">دیدگاهی مطابق این فیلتر وجود ندارد.</p> : <div className="divide-y divide-slate-200 border-b border-slate-200">{visibleReviews.map((review) => <ReviewCard key={review.id} review={review} authenticated={isAuthenticated} busyReviewId={busyReviewId} expandedReviewIds={expandedReviewIds} onToggleExpanded={toggleExpandedReview} onReply={openComposer} onVote={vote} onReport={setReporting} />)}</div>}
     </div>
 
     <Modal.Backdrop isOpen={composeOpen} onOpenChange={setComposeOpen}>
@@ -142,26 +163,28 @@ export function ProductReviews({ productId, initialData, isAuthenticated }: Prop
   </div>;
 }
 
-function ReviewCard({ review, authenticated, busyReviewId, onReply, onVote, onReport }: {
+function ReviewCard({ review, authenticated, busyReviewId, expandedReviewIds, onToggleExpanded, onReply, onVote, onReport }: {
   review: StorefrontReview;
   authenticated: boolean;
   busyReviewId: string | null;
+  expandedReviewIds: Set<string>;
+  onToggleExpanded: (id: string) => void;
   onReply: (review: StorefrontReview) => void;
   onVote: (review: StorefrontReview, value: -1 | 1) => void;
   onReport: (review: StorefrontReview) => void;
 }) {
   const pending = review.status === "PENDING";
   const busy = busyReviewId === review.id;
-  return <article className={`relative py-6 ${pending ? "rounded-xl bg-amber-50/60 px-4" : ""}`}>
-    <div className="mb-3 flex flex-wrap items-center gap-3">{review.rating && <span className="rounded bg-[var(--success)] px-2 py-1 text-xs font-black text-[var(--success-foreground)]">{review.rating.toLocaleString("fa-IR")}</span>}{review.title && <strong className="text-sm text-slate-900">{review.title}</strong>}<span className="mr-auto text-[11px] text-slate-400">{new Date(review.createdAt).toLocaleDateString("fa-IR")}</span></div>
-    <p className="whitespace-pre-wrap break-words text-sm leading-7 text-slate-600">{review.body}</p>
-    <div className="mt-4 flex flex-wrap items-center gap-2 text-xs text-slate-400"><span className="grid size-7 place-items-center rounded-full bg-slate-100 font-black text-slate-500">{review.author.name.slice(0, 1)}</span><span>{review.author.name}</span>{review.author.isManagement ? <span className="rounded-full bg-[var(--brand-primary)]/10 px-2 py-1 text-[10px] font-bold text-[var(--brand-primary)]">پاسخ مدیریت</span> : review.author.isVerifiedPurchase ? <span className="rounded-full bg-emerald-50 px-2 py-1 text-[10px] font-bold text-emerald-700">خریدار محصول</span> : <span className="rounded-full bg-slate-100 px-2 py-1 text-[10px]">کاربر عادی</span>}</div>
-    {pending ? <p className="mb-0 mt-3 text-[11px] leading-6 text-slate-400">این دیدگاه فقط برای شما قابل مشاهده است؛ در حال بررسی مدیریت است و پس از تأیید برای همه نمایش داده می‌شود.</p> : <div className="mt-4 flex flex-wrap items-center gap-1.5 border-t border-slate-100 pt-3">
-      <Button type="button" variant="ghost" size="sm" isDisabled={busy || review.isOwn} onPress={() => onVote(review, 1)} className={`min-h-8 gap-1 text-[11px] ${review.votes.current === 1 ? "text-[var(--brand-primary)]" : "text-slate-500"}`}>{busy ? <Spinner size="sm" /> : <ThumbsUp size={14} />}{review.votes.likes.toLocaleString("fa-IR")}</Button>
-      <Button type="button" variant="ghost" size="sm" isDisabled={busy || review.isOwn} onPress={() => onVote(review, -1)} className={`min-h-8 gap-1 text-[11px] ${review.votes.current === -1 ? "text-rose-600" : "text-slate-500"}`}><ThumbsDown size={14} />{review.votes.dislikes.toLocaleString("fa-IR")}</Button>
+  const expanded = expandedReviewIds.has(review.id);
+  const longBody = review.body.length > 280;
+  const displayedBody = longBody && !expanded ? `${review.body.slice(0, 280).trimEnd()}…` : review.body;
+  return <article className="relative py-6">
+    <header className="flex items-start gap-3"><span className="grid size-10 shrink-0 place-items-center rounded-full bg-slate-100 text-sm font-bold text-slate-500">{review.author.name.slice(0, 1)}</span><div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><strong className="text-sm font-bold text-slate-800">{review.author.name}</strong>{review.author.isManagement ? <span className="text-[10px] font-bold text-[var(--brand-primary)]">مدیریت فروشگاه</span> : review.author.isVerifiedPurchase ? <span className="text-[10px] text-emerald-700">خریدار محصول</span> : <span className="text-[10px] text-slate-400">کاربر عادی</span>}{review.rating && <span className="inline-flex items-center gap-1 text-[10px] text-amber-500"><Star size={12} fill="currentColor" />{review.rating.toLocaleString("fa-IR")}</span>}</div></div><div className="mr-auto flex shrink-0 items-center gap-1 text-[11px] text-slate-400"><span>{new Date(review.createdAt).toLocaleDateString("fa-IR")}</span>{!pending && !review.isOwn && <Button type="button" isIconOnly size="sm" variant="ghost" isDisabled={review.reportedByCurrentUser} aria-label={review.reportedByCurrentUser ? "گزارش شده" : "گزارش دیدگاه"} onPress={() => authenticated ? onReport(review) : toast.danger("برای گزارش دیدگاه وارد حساب کاربری شوید.")} className="size-8 min-h-8 min-w-8 text-slate-400"><MoreVertical size={17} /></Button>}</div></header>
+    <div className="mt-4 text-sm leading-8 text-slate-700">{review.title && <strong className="mb-1 block font-bold text-slate-800">{review.title}</strong>}<p className="mb-0 whitespace-pre-wrap break-words">{displayedBody}</p>{longBody && <Button type="button" size="sm" variant="ghost" onPress={() => onToggleExpanded(review.id)} className="mt-1 min-h-8 px-0 text-xs font-bold text-[var(--brand-primary)]">{expanded ? "بستن" : "ادامه"} ‹</Button>}</div>
+    {pending ? <p className="mb-0 mt-3 text-[11px] leading-6 text-slate-400">این دیدگاه فقط برای شما قابل مشاهده است؛ در حال بررسی مدیریت است و پس از تأیید برای همه نمایش داده می‌شود.</p> : <div className="mt-5 flex flex-wrap items-center gap-2">
       {!review.parentId && <Button type="button" variant="ghost" size="sm" onPress={() => onReply(review)} className="min-h-8 gap-1 text-[11px] text-slate-500"><MessageCircleReply size={14} />پاسخ</Button>}
-      {!review.isOwn && <Button type="button" variant="ghost" size="sm" isDisabled={review.reportedByCurrentUser} onPress={() => authenticated ? onReport(review) : toast.danger("برای گزارش دیدگاه وارد حساب کاربری شوید.")} className="mr-auto min-h-8 gap-1 text-[11px] text-slate-400"><Flag size={13} />{review.reportedByCurrentUser ? "گزارش شده" : "گزارش"}</Button>}
+      <div className="mr-auto flex items-center gap-1"><Button type="button" variant="ghost" size="sm" isDisabled={busy || review.isOwn} onPress={() => onVote(review, 1)} className={`min-h-8 gap-1 text-[11px] ${review.votes.current === 1 ? "text-[var(--brand-primary)]" : "text-slate-500"}`}>{busy ? <Spinner size="sm" /> : <ThumbsUp size={16} />}{review.votes.likes.toLocaleString("fa-IR")}</Button><span className="text-slate-300">·</span><Button type="button" variant="ghost" size="sm" isDisabled={busy || review.isOwn} onPress={() => onVote(review, -1)} className={`min-h-8 gap-1 text-[11px] ${review.votes.current === -1 ? "text-rose-600" : "text-slate-500"}`}><ThumbsDown size={16} />{review.votes.dislikes.toLocaleString("fa-IR")}</Button></div>
     </div>}
-    {review.replies.length > 0 && <div className="relative mr-4 mt-4 border-r-2 border-slate-200 pr-6">{review.replies.map((reply) => <div key={reply.id} className="relative before:absolute before:-right-6 before:top-8 before:w-5 before:border-t-2 before:border-slate-200"><ReviewCard review={reply} authenticated={authenticated} busyReviewId={busyReviewId} onReply={onReply} onVote={onVote} onReport={onReport} /></div>)}</div>}
+    {review.replies.length > 0 && <div className="relative mr-4 mt-4 border-r-2 border-slate-200 pr-6">{review.replies.map((reply) => <div key={reply.id} className="relative before:absolute before:-right-6 before:top-8 before:w-5 before:border-t-2 before:border-slate-200"><ReviewCard review={reply} authenticated={authenticated} busyReviewId={busyReviewId} expandedReviewIds={expandedReviewIds} onToggleExpanded={onToggleExpanded} onReply={onReply} onVote={onVote} onReport={onReport} /></div>)}</div>}
   </article>;
 }
