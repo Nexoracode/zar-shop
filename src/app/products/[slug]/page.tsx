@@ -5,6 +5,7 @@ import { AddToCart, ProductPurchaseProvider } from "@/components/add-to-cart";
 import { PriceTooltip } from "@/components/price-tooltip";
 import { ProductDetailGallery } from "@/components/product-detail-gallery";
 import { ProductCard } from "@/components/product-card";
+import { ProductSpecifications } from "@/components/product-specifications";
 import { db } from "@/lib/db";
 import { formatMoney } from "@/lib/format";
 import { buildProductAttributeGroups } from "@/modules/products/attributes";
@@ -165,9 +166,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
 
       <section id="specifications" className="scroll-mt-24 border-b border-slate-200 py-9" aria-labelledby="specifications-title">
         <SectionTitle id="specifications-title">مشخصات</SectionTitle>
-        <div className="grid gap-10">
-          {specificationGroups.map((group) => <SpecificationGroup key={group.id} title={group.name} rows={group.rows} />)}
-        </div>
+        <ProductSpecifications groups={specificationGroups} />
       </section>
 
       <section id="reviews" className="scroll-mt-24 py-9" aria-labelledby="reviews-title">
@@ -195,8 +194,4 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
 
 function SectionTitle({ id, children }: { id: string; children: string }) {
   return <h2 id={id} className="relative mb-8 w-fit pb-3 text-lg font-black text-slate-900 after:absolute after:inset-x-0 after:bottom-0 after:h-[3px] after:rounded-full after:bg-rose-500">{children}</h2>;
-}
-
-function SpecificationGroup({ title, rows }: { title: string; rows: Array<{ label: string; value: string }> }) {
-  return <div><h3 className="mb-4 text-sm font-black text-slate-800">{title}</h3><dl className="m-0 max-w-5xl">{rows.map((row) => <div key={`${title}-${row.label}`} className="grid border-b border-slate-100 py-4 sm:grid-cols-[220px_minmax(0,1fr)] sm:gap-8"><dt className="mb-2 text-xs text-slate-400 sm:mb-0">{row.label}</dt><dd className="m-0 text-sm leading-7 text-slate-700">{row.value}</dd></div>)}</dl></div>;
 }
