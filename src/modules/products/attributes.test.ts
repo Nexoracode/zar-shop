@@ -6,12 +6,12 @@ const definitions = [{
   id: "group_general",
   name: "مشخصات کلی",
   attributes: [
-    { id: "attribute_ram", name: "رم", allowsMultiple: false },
-    { id: "attribute_suitable", name: "مناسب برای", allowsMultiple: true },
+    { id: "attribute_ram", name: "رم" },
+    { id: "attribute_suitable", name: "مناسب برای" },
   ],
 }];
 
-test("category attributes support grouped single and multiple values", () => {
+test("category attributes define groups and names while product values stay independent", () => {
   assert.equal(categoryAttributeSchema.safeParse(definitions).success, true);
   const result = validateProductAttributes(definitions, [
     { attributeId: "attribute_ram", values: ["۱۲ گیگابایت"] },
@@ -20,13 +20,13 @@ test("category attributes support grouped single and multiple values", () => {
   assert.equal(result.ok, true);
 });
 
-test("category attributes keep selectable suggested values", () => {
+test("legacy category value metadata is removed while parsing definitions", () => {
   const result = categoryAttributeSchema.parse([{
     id: "group_specs",
     name: "مشخصات فنی",
     attributes: [{ id: "attribute_memory", name: "حافظه", allowsMultiple: false, suggestedValues: ["۱۲۸ گیگابایت", "۲۵۶ گیگابایت"] }],
   }]);
-  assert.deepEqual(result[0].attributes[0].suggestedValues, ["۱۲۸ گیگابایت", "۲۵۶ گیگابایت"]);
+  assert.deepEqual(result[0].attributes[0], { id: "attribute_memory", name: "حافظه", important: false });
 });
 
 test("all category attributes accept multiple product values", () => {
@@ -48,7 +48,7 @@ test("category attributes default to non-important", () => {
   const parsed = categoryAttributeSchema.parse([{
     id: "group_general",
     name: "General specifications",
-    attributes: [{ id: "attribute_ram", name: "RAM", allowsMultiple: false }],
+    attributes: [{ id: "attribute_ram", name: "RAM" }],
   }]);
   assert.equal(parsed[0].attributes[0].important, false);
 });
@@ -57,7 +57,7 @@ test("important category attributes are exposed to the storefront", () => {
   const groups = buildProductAttributeGroups([{
     id: "group_general",
     name: "General specifications",
-    attributes: [{ id: "attribute_ram", name: "RAM", allowsMultiple: false, important: true }],
+    attributes: [{ id: "attribute_ram", name: "RAM", important: true }],
   }], [{ attributeId: "attribute_ram", values: ["12 GB"] }]);
   assert.equal(groups[0].attributes[0].important, true);
 });

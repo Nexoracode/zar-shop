@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Button, Input, Tooltip } from "@heroui/react";
+import { Button, Input } from "@heroui/react";
 import { ListChecks, Plus, X } from "lucide-react";
 import { adminFieldClass } from "@/components/admin-ui";
 import { TruncatedTextTooltip } from "@/components/hero";
@@ -37,12 +37,8 @@ export function ProductAttributesFields({ groups, values, onChange }: Props) {
       <div className="grid min-w-0 gap-3 p-3 sm:p-4 lg:grid-cols-2">
         {group.attributes.map((attribute) => {
           const currentValues = valuesById.get(attribute.id) ?? [];
-          const availableSuggestions = attribute.suggestedValues.filter((value) => !currentValues.includes(value));
-          return <article key={attribute.id} className="flex min-h-[230px] min-w-0 flex-col rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
+          return <article key={attribute.id} className="flex min-h-[180px] min-w-0 flex-col rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
             <div className="min-w-0 border-b border-slate-100 pb-3"><TruncatedTextTooltip text={attribute.name} className="max-w-full text-xs font-black text-slate-700" /></div>
-
-            <div className="mt-3 min-w-0"><span className="mb-2 block text-[10px] font-bold text-slate-400">مقادیر پیشنهادی</span>{availableSuggestions.length ? <div className="flex min-w-0 flex-wrap gap-1.5">{availableSuggestions.map((value) => <SuggestedValueButton key={value} value={value} onPress={() => addMultipleValues(attribute.id, [value])} />)}</div> : <span className="block text-[10px] leading-5 text-slate-400">مقدار پیشنهادی دیگری وجود ندارد.</span>}</div>
-
             <div className="mt-3 grid min-w-0 gap-2 sm:grid-cols-[minmax(0,1fr)_auto]"><Input value={drafts[attribute.id] ?? ""} onChange={(event) => setDrafts((current) => ({ ...current, [attribute.id]: event.target.value }))} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); addMultipleValue(attribute.id); } }} placeholder="یک یا چند مقدار؛ با کاما جدا کنید" fullWidth variant="secondary" className={`${adminFieldClass} min-w-0`} /><Button type="button" variant="secondary" onPress={() => addMultipleValue(attribute.id)} className="min-h-11 shrink-0 gap-1 px-3 text-xs font-bold"><Plus size={14} />افزودن</Button></div>
 
             <div className="mt-auto min-w-0 border-t border-slate-100 pt-3"><span className="mb-2 block text-[10px] font-bold text-slate-400">مقادیر ثبت‌شده</span>{currentValues.length ? <div className="flex min-w-0 flex-wrap gap-1.5">{currentValues.map((value) => <SelectedValue key={value} value={value} onRemove={() => removeValue(attribute.id, value)} />)}</div> : <span className="block text-[10px] text-slate-400">هنوز مقداری ثبت نشده است.</span>}</div>
@@ -51,10 +47,6 @@ export function ProductAttributesFields({ groups, values, onChange }: Props) {
       </div>
     </section>)}
   </div>;
-}
-
-function SuggestedValueButton({ value, onPress }: { value: string; onPress: () => void }) {
-  return <Tooltip delay={200} closeDelay={100}><Tooltip.Trigger><Button type="button" size="sm" variant="secondary" onPress={onPress} className="h-8 min-h-8 max-w-full rounded-md px-2 text-[10px] font-bold"><span className="max-w-[180px] truncate">{value}</span></Button></Tooltip.Trigger><Tooltip.Content showArrow dir="rtl" className="z-50 max-w-sm border border-[var(--border)] bg-[var(--overlay)] px-3 py-2 text-right text-xs leading-6 text-[var(--overlay-foreground)] shadow-lg">{value}</Tooltip.Content></Tooltip>;
 }
 
 function SelectedValue({ value, onRemove }: { value: string; onRemove: () => void }) {

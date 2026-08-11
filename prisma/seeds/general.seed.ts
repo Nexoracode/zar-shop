@@ -1,11 +1,11 @@
 import type { DevelopmentCategorySeed, DevelopmentStoreSeed } from "./types";
 
-function mobileAttribute(id: string, name: string, suggestedValues: string[], allowsMultiple = suggestedValues.length > 1) {
-  return { id, name, allowsMultiple, suggestedValues };
+function mobileAttribute(id: string, name: string, values: string[]) {
+  return { id, name, values };
 }
 
 // Structured from Digikala product dkp-20127115 (Apple iPhone 17 CH 256GB/8GB).
-const mobileAttributeSchema = [
+const mobileAttributeSeedSchema = [
   { id: "mobile_general", name: "مشخصات کلی", attributes: [
     mobileAttribute("mobile_region", "ریجن", ["چین"]),
     mobileAttribute("mobile_phone_type", "نوع گوشی موبایل", ["سیستم عامل iOS"]),
@@ -82,11 +82,17 @@ const mobileAttributeSchema = [
     mobileAttribute("mobile_battery_specs", "مشخصات باتری", ["شارژ ۵۰ درصدی در ۲۰ دقیقه با PD3.2 و AVS، شارژ بی‌سیم ۲۵ وات MagSafe، شارژ بی‌سیم ۱۵ وات Qi2 و شارژ معکوس باسیم ۴.۵ وات"]),
     mobileAttribute("mobile_box_contents", "اقلام همراه", ["کابل USB Type-C", "دفترچه راهنما"]),
   ] },
-] satisfies NonNullable<DevelopmentCategorySeed["attributeSchema"]>;
+] as const;
 
-const iphone17Attributes = mobileAttributeSchema.flatMap((group) => group.attributes.map((attribute) => ({
+const mobileAttributeSchema: NonNullable<DevelopmentCategorySeed["attributeSchema"]> = mobileAttributeSeedSchema.map((group) => ({
+  id: group.id,
+  name: group.name,
+  attributes: group.attributes.map((attribute) => ({ id: attribute.id, name: attribute.name })),
+}));
+
+const iphone17Attributes = mobileAttributeSeedSchema.flatMap((group) => group.attributes.map((attribute) => ({
   attributeId: attribute.id,
-  values: attribute.suggestedValues,
+  values: [...attribute.values],
 })));
 
 export const generalStoreSeed: DevelopmentStoreSeed = {
@@ -95,12 +101,12 @@ export const generalStoreSeed: DevelopmentStoreSeed = {
   tagline: "انتخاب بهتر برای زندگی روزمره",
   shortDescription: "فروشگاه آزمایشی محصولات عمومی با قیمت ثابت، موجودی و تخفیف زمان‌دار",
   categories: [
-    { name: "کالای دیجیتال", slug: "digital-products", description: "لوازم دیجیتال و جانبی پرکاربرد", attributeSchema: [{ id: "group_digital", name: "مشخصات فنی", attributes: [{ id: "digital_brand", name: "برند", allowsMultiple: false }, { id: "digital_ram", name: "رم", allowsMultiple: false }, { id: "digital_suitable", name: "مناسب برای", allowsMultiple: true }] }] },
+    { name: "کالای دیجیتال", slug: "digital-products", description: "لوازم دیجیتال و جانبی پرکاربرد", attributeSchema: [{ id: "group_digital", name: "مشخصات فنی", attributes: [{ id: "digital_brand", name: "برند" }, { id: "digital_ram", name: "رم" }, { id: "digital_suitable", name: "مناسب برای" }] }] },
     { name: "موبایل", slug: "mobile-phones", parentSlug: "digital-products", description: "گوشی‌های موبایل هوشمند با مشخصات فنی کامل", attributeSchema: mobileAttributeSchema },
-    { name: "خانه و آشپزخانه", slug: "home-kitchen", description: "محصولات کاربردی خانه و آشپزخانه", attributeSchema: [{ id: "group_home", name: "مشخصات کلی", attributes: [{ id: "home_material", name: "جنس", allowsMultiple: false }, { id: "home_usage", name: "کاربرد", allowsMultiple: true }] }] },
-    { name: "مد و پوشاک", slug: "fashion-clothing", description: "پوشاک و اکسسوری روزمره", attributeSchema: [{ id: "group_fashion", name: "جزئیات محصول", attributes: [{ id: "fashion_material", name: "جنس پارچه", allowsMultiple: false }, { id: "fashion_suitable", name: "مناسب برای", allowsMultiple: true }] }] },
-    { name: "ورزش و سفر", slug: "sport-travel", description: "لوازم ورزشی، کمپ و سفر", attributeSchema: [{ id: "group_sport", name: "مشخصات استفاده", attributes: [{ id: "sport_capacity", name: "ظرفیت", allowsMultiple: false }, { id: "sport_usage", name: "مناسب برای", allowsMultiple: true }] }] },
-    { name: "زیبایی و سلامت", slug: "beauty-health", description: "محصولات مراقبت شخصی و سلامت", attributeSchema: [{ id: "group_beauty", name: "مشخصات مراقبتی", attributes: [{ id: "beauty_skin", name: "نوع پوست", allowsMultiple: true }, { id: "beauty_origin", name: "کشور سازنده", allowsMultiple: false }] }] },
+    { name: "خانه و آشپزخانه", slug: "home-kitchen", description: "محصولات کاربردی خانه و آشپزخانه", attributeSchema: [{ id: "group_home", name: "مشخصات کلی", attributes: [{ id: "home_material", name: "جنس" }, { id: "home_usage", name: "کاربرد" }] }] },
+    { name: "مد و پوشاک", slug: "fashion-clothing", description: "پوشاک و اکسسوری روزمره", attributeSchema: [{ id: "group_fashion", name: "جزئیات محصول", attributes: [{ id: "fashion_material", name: "جنس پارچه" }, { id: "fashion_suitable", name: "مناسب برای" }] }] },
+    { name: "ورزش و سفر", slug: "sport-travel", description: "لوازم ورزشی، کمپ و سفر", attributeSchema: [{ id: "group_sport", name: "مشخصات استفاده", attributes: [{ id: "sport_capacity", name: "ظرفیت" }, { id: "sport_usage", name: "مناسب برای" }] }] },
+    { name: "زیبایی و سلامت", slug: "beauty-health", description: "محصولات مراقبت شخصی و سلامت", attributeSchema: [{ id: "group_beauty", name: "مشخصات مراقبتی", attributes: [{ id: "beauty_skin", name: "نوع پوست" }, { id: "beauty_origin", name: "کشور سازنده" }] }] },
   ],
   products: [
     { sku: "DEV-GEN-001", name: "هدفون بی‌سیم نوا", slug: "nova-wireless-headphones", categorySlug: "digital-products", description: "هدفون بی‌سیم سبک با شارژدهی مناسب استفاده روزمره.", stock: 18, fixedPrice: "32900000", discountPercent: "10", featured: true, attributes: [{ attributeId: "digital_brand", values: ["نوا"] }, { attributeId: "digital_ram", values: ["۱۲ گیگابایت"] }, { attributeId: "digital_suitable", values: ["آقایان", "خانم‌ها"] }] },

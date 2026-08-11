@@ -5,12 +5,7 @@ const stableIdSchema = z.string().trim().min(8).max(80).regex(/^[a-zA-Z0-9_-]+$/
 export const categoryAttributeDefinitionSchema = z.object({
   id: stableIdSchema,
   name: z.string().trim().min(2).max(100),
-  allowsMultiple: z.boolean().default(true),
   important: z.boolean().default(false),
-  suggestedValues: z.array(z.string().trim().min(1).max(2000)).max(100).default([]).refine(
-    (values) => new Set(values).size === values.length,
-    "مقادیر پیشنهادی یک ویژگی نباید تکراری باشند.",
-  ),
 });
 
 export const categoryAttributeGroupSchema = z.object({
