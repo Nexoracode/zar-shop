@@ -55,20 +55,12 @@ function PriceRangeSlider({ bounds, step, value, onChange, onChangeEnd }: {
   onChange: (value: number | number[]) => void;
   onChangeEnd: (value: number | number[]) => void;
 }) {
-  const rangeSize = Math.max(1, bounds.max - bounds.min);
-  const selectedStart = (value[0] - bounds.min) / rangeSize * 100;
-  const selectedWidth = (value[1] - value[0]) / rangeSize * 100;
-
   return <Slider aria-label="محدوده قیمت" minValue={bounds.min} maxValue={bounds.max} step={step} value={value} onChange={onChange} onChangeEnd={onChangeEnd} className="mt-4 w-full px-2" dir="rtl">
-    <Slider.Track className="relative !h-11 w-full !rounded-none !border-x-0 !bg-transparent">
-      <span className="pointer-events-none absolute inset-x-0 top-2.5 h-1 -translate-y-1/2 rounded-full bg-slate-200" />
-      <span className="pointer-events-none absolute top-2.5 h-1 -translate-y-1/2 rounded-full bg-[var(--brand-primary)]" style={{ right: `${selectedStart}%`, width: `${selectedWidth}%` }} />
-      <span className="pointer-events-none absolute right-1/3 top-6 h-1.5 w-px bg-slate-300" />
-      <span className="pointer-events-none absolute left-1/3 top-6 h-1.5 w-px bg-slate-300" />
-      <span className="pointer-events-none absolute right-0 top-7 text-[10px] leading-4 text-slate-500">ارزان‌ترین</span>
-      <span className="pointer-events-none absolute left-0 top-7 text-[10px] leading-4 text-slate-500">گران‌ترین</span>
-      <Slider.Thumb index={0} aria-label="حداقل قیمت" className="!top-2.5 !size-5 !h-5 !w-5 !-translate-y-1/2 !rounded-full !border-0 !bg-[var(--brand-primary)] !shadow-none outline-none after:!hidden data-[dragging=true]:!scale-110 focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-2" />
-      <Slider.Thumb index={1} aria-label="حداکثر قیمت" className="!top-2.5 !size-5 !h-5 !w-5 !-translate-y-1/2 !rounded-full !border-0 !bg-[var(--brand-primary)] !shadow-none outline-none after:!hidden data-[dragging=true]:!scale-110 focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-2" />
+    <Slider.Track>
+      {({ state }) => <>
+        <Slider.Fill />
+        {state.values.map((_, index) => <Slider.Thumb key={index} index={index} aria-label={index === 0 ? "حداقل قیمت" : "حداکثر قیمت"} />)}
+      </>}
     </Slider.Track>
   </Slider>;
 }
