@@ -7,6 +7,7 @@ import { Accordion, Checkbox, Slider, Spinner } from "@heroui/react";
 import { SlidersHorizontal } from "lucide-react";
 
 type Facets = {
+  brands: Array<{ value: string; count: number }>;
   colors: Array<{ id: string; name: string; hex: string; count: number }>;
   attributes: Array<{ id: string; name: string; values: Array<{ value: string; count: number }> }>;
   priceRange: { min: number; max: number } | null;
@@ -14,12 +15,16 @@ type Facets = {
 
 type Props = {
   facets: Facets;
+  categoryScoped: boolean;
+  selectedBrands: string[];
   selectedColors: string[];
   selectedAttributes: string[];
   minPrice?: number;
   maxPrice?: number;
   inStock?: boolean;
   hasDiscount?: boolean;
+  freeShipping?: boolean;
+  sameDayDelivery?: boolean;
   resetHref: string;
 };
 
@@ -82,18 +87,19 @@ function PriceRangeSlider({ bounds, step, value, onChange, onChangeEnd }: {
   </div>;
 }
 
-export function StorefrontCatalogFilters({ facets, selectedColors, selectedAttributes, minPrice, maxPrice, inStock, hasDiscount, resetHref }: Props) {
+export function StorefrontCatalogFilters({ facets, categoryScoped, selectedBrands, selectedColors, selectedAttributes, minPrice, maxPrice, inStock, hasDiscount, freeShipping, sameDayDelivery, resetHref }: Props) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
+  const selectedBrandSet = new Set(selectedBrands);
   const selectedColorSet = new Set(selectedColors);
   const selectedAttributeSet = new Set(selectedAttributes);
   const priceBounds = facets.priceRange ?? { min: 0, max: 1 };
   const resolvedMinPrice = Math.min(Math.max(minPrice ?? priceBounds.min, priceBounds.min), priceBounds.max);
   const resolvedMaxPrice = Math.max(Math.min(maxPrice ?? priceBounds.max, priceBounds.max), priceBounds.min);
   const [priceValues, setPriceValues] = useState<[number, number]>([resolvedMinPrice, resolvedMaxPrice]);
-  const activeCount = selectedColors.length + selectedAttributes.length + Number(minPrice !== undefined) + Number(maxPrice !== undefined) + Number(Boolean(inStock)) + Number(Boolean(hasDiscount));
+  const activeCount = selectedBrands.length + selectedColors.length + selectedAttributes.length + Number(minPrice !== undefined) + Number(maxPrice !== undefined) + Number(Boolean(inStock)) + Number(Boolean(hasDiscount)) + Number(Boolean(freeShipping)) + Number(Boolean(sameDayDelivery));
   const priceStep = Math.max(1, greatestCommonDivisor(priceBounds.max - priceBounds.min, 1_000_000));
 
   function navigate(next: URLSearchParams) {
@@ -102,7 +108,7 @@ export function StorefrontCatalogFilters({ facets, selectedColors, selectedAttri
     startTransition(() => router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false }));
   }
 
-  function updateMultiValue(name: "color" | "attr", value: string, selected: boolean) {
+  function updateMultiValue(name: "brand" | "color" | "attr", value: string, selected: boolean) {
     const next = new URLSearchParams(searchParams.toString());
     const values = next.getAll(name).filter((item) => item !== value);
     if (selected) values.push(value);
@@ -111,15 +117,9 @@ export function StorefrontCatalogFilters({ facets, selectedColors, selectedAttri
     navigate(next);
   }
 
-  function updateStock(selected: boolean) {
+  function updateBooleanValue(name: "inStock" | "hasDiscount" | "freeShipping" | "sameDayDelivery", selected: boolean) {
     const next = new URLSearchParams(searchParams.toString());
-    if (selected) next.set("inStock", "1"); else next.delete("inStock");
-    navigate(next);
-  }
-
-  function updateDiscount(selected: boolean) {
-    const next = new URLSearchParams(searchParams.toString());
-    if (selected) next.set("hasDiscount", "1"); else next.delete("hasDiscount");
+    if (selected) next.set(name, "1"); else next.delete(name);
     navigate(next);
   }
 
@@ -163,17 +163,25 @@ export function StorefrontCatalogFilters({ facets, selectedColors, selectedAttri
       </Accordion.Item>}
     </Accordion>
     <div className="mb-2 overflow-hidden rounded-xl border border-slate-200/80 bg-white px-3">
-      <div className="border-b border-slate-100"><FilterCheckbox selected={Boolean(inStock)} onChange={updateStock}><span className="block text-xs font-bold text-slate-700">فقط کالاهای موجود</span></FilterCheckbox></div>
-      <FilterCheckbox selected={Boolean(hasDiscount)} onChange={updateDiscount}><span className="block text-xs font-bold text-slate-700">فقط محصولات دارای تخفیف</span></FilterCheckbox>
+      <div className="border-b border-slate-100"><FilterCheckbox selected={Boolean(inStock)} onChange={(selected) => updateBooleanValue("inStock", selected)}><span className="block text-xs font-bold text-slate-700">فقط کالاهای موجود</span></FilterCheckbox></div>
+      <div className="border-b border-slate-100"><FilterCheckbox selected={Boolean(hasDiscount)} onChange={(selected) => updateBooleanValue("hasDiscount", selected)}><span className="block text-xs font-bold text-slate-700">فقط محصولات دارای تخفیف</span></FilterCheckbox></div>
+      <div className="border-b border-slate-100"><FilterCheckbox selected={Boolean(freeShipping)} onChange={(selected) => updateBooleanValue("freeShipping", selected)}><span className="block text-xs font-bold text-slate-700">فقط ارسال رایگان</span></FilterCheckbox></div>
+      <FilterCheckbox selected={Boolean(sameDayDelivery)} onChange={(selected) => updateBooleanValue("sameDayDelivery", selected)}><span className="block text-xs font-bold text-slate-700">فقط ارسال امروز</span></FilterCheckbox>
     </div>
     <Accordion dir="rtl" variant="surface" hideSeparator allowsMultipleExpanded className="w-full bg-transparent p-0 text-right" aria-label="فیلترهای ویژگی محصول">
-      {facets.colors.length > 0 && <Accordion.Item id="catalog-colors" className="mb-2 rounded-xl border border-slate-200/80 bg-white px-3">
+      {!categoryScoped && facets.brands.length > 0 && <Accordion.Item id="catalog-brands" className="mb-2 rounded-xl border border-slate-200/80 bg-white px-3">
+        <Accordion.Heading><Accordion.Trigger className="relative flex w-full items-center border-b border-slate-100 bg-transparent py-[6px] pl-7 text-xs font-bold text-slate-800 hover:bg-transparent data-[hovered=true]:bg-transparent"><FilterAccordionTitle>برند</FilterAccordionTitle></Accordion.Trigger></Accordion.Heading>
+        <Accordion.Panel><Accordion.Body className="max-h-52 overflow-y-auto pb-4">
+          {facets.brands.map((brand) => <FilterCheckbox key={brand.value} selected={selectedBrandSet.has(brand.value)} onChange={(selected) => updateMultiValue("brand", brand.value, selected)}><span className="flex min-w-0 items-center gap-2 text-xs text-slate-700"><span className="truncate">{brand.value}</span><span className="mr-auto text-[10px] text-slate-400">{brand.count.toLocaleString("fa-IR")}</span></span></FilterCheckbox>)}
+        </Accordion.Body></Accordion.Panel>
+      </Accordion.Item>}
+      {categoryScoped && facets.colors.length > 0 && <Accordion.Item id="catalog-colors" className="mb-2 rounded-xl border border-slate-200/80 bg-white px-3">
         <Accordion.Heading><Accordion.Trigger className="relative flex w-full items-center border-b border-slate-100 bg-transparent py-[6px] pl-7 text-xs font-bold text-slate-800 hover:bg-transparent data-[hovered=true]:bg-transparent"><FilterAccordionTitle>رنگ</FilterAccordionTitle></Accordion.Trigger></Accordion.Heading>
         <Accordion.Panel><Accordion.Body className="max-h-52 overflow-y-auto pb-4">
           {facets.colors.map((color) => <FilterCheckbox key={color.id} selected={selectedColorSet.has(color.id)} onChange={(selected) => updateMultiValue("color", color.id, selected)}><span className="flex min-w-0 items-center gap-2 text-xs text-slate-700"><span className="size-4 shrink-0 rounded-full border border-black/10" style={{ backgroundColor: color.hex }} /><span className="truncate">{color.name}</span><span className="mr-auto text-[10px] text-slate-400">{color.count.toLocaleString("fa-IR")}</span></span></FilterCheckbox>)}
         </Accordion.Body></Accordion.Panel>
       </Accordion.Item>}
-      {facets.attributes.map((attribute) => <Accordion.Item key={attribute.id} id={`catalog-attribute-${attribute.id}`} className="mb-2 rounded-xl border border-slate-200/80 bg-white px-3">
+      {categoryScoped && facets.attributes.map((attribute) => <Accordion.Item key={attribute.id} id={`catalog-attribute-${attribute.id}`} className="mb-2 rounded-xl border border-slate-200/80 bg-white px-3">
         <Accordion.Heading><Accordion.Trigger className="relative flex w-full items-center border-b border-slate-100 bg-transparent py-[6px] pl-7 text-xs font-bold text-slate-800 hover:bg-transparent data-[hovered=true]:bg-transparent"><FilterAccordionTitle>{attribute.name}</FilterAccordionTitle></Accordion.Trigger></Accordion.Heading>
         <Accordion.Panel><Accordion.Body className="max-h-52 overflow-y-auto pb-4">
           {attribute.values.map((item) => {

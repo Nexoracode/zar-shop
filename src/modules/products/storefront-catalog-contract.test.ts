@@ -13,11 +13,14 @@ test("catalog query accepts and trims a storefront search", () => {
 });
 
 test("catalog query accepts repeated and boolean filters", () => {
-  const query = storefrontCatalogQuerySchema.parse({ color: ["red", "blue"], attr: ["ram::8 GB", "ram::12 GB"], inStock: "1", hasDiscount: "true" });
+  const query = storefrontCatalogQuerySchema.parse({ brand: ["اپل", "سامسونگ"], color: ["red", "blue"], attr: ["ram::8 GB", "ram::12 GB"], inStock: "1", hasDiscount: "true", freeShipping: "1", sameDayDelivery: "true" });
+  assert.deepEqual(query.brand, ["اپل", "سامسونگ"]);
   assert.deepEqual(query.color, ["red", "blue"]);
   assert.deepEqual(query.attr, ["ram::8 GB", "ram::12 GB"]);
   assert.equal(query.inStock, true);
   assert.equal(query.hasDiscount, true);
+  assert.equal(query.freeShipping, true);
+  assert.equal(query.sameDayDelivery, true);
 });
 
 test("catalog query rejects an inverted price range", () => {

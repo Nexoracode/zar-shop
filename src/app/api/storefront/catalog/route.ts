@@ -21,10 +21,13 @@ export async function GET(request: Request) {
       MinPrice: params.get("MinPrice"),
       MaxPrice: params.get("MaxPrice"),
       category: params.get("category") ?? undefined,
+      brand: params.getAll("brand"),
       color: params.getAll("color"),
       attr: params.getAll("attr"),
       inStock: params.get("inStock") ?? undefined,
       hasDiscount: params.get("hasDiscount") ?? undefined,
+      freeShipping: params.get("freeShipping") ?? undefined,
+      sameDayDelivery: params.get("sameDayDelivery") ?? undefined,
       page: params.get("page") ?? undefined,
     });
     const categories = query.category ? await db.category.findMany({ where: { isActive: true }, orderBy: [{ sortOrder: "asc" }, { name: "asc" }] }) : [];

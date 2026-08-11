@@ -8,6 +8,7 @@ import { parseOptionValues } from "@/modules/products/options";
 import { calculateProductPrice } from "@/modules/products/pricing";
 import { matchesTomanPrice, type StorefrontCatalogQuery, type StorefrontCatalogResult } from "@/modules/products/storefront-catalog-contract";
 import { getCatalogSettings } from "@/modules/settings/catalog-settings";
+import { baseShippingFee, getCommerceSettings } from "@/modules/settings/commerce-settings";
 import { getGeneralStoreSettings } from "@/modules/settings/general-settings";
 
 const catalogProductSelect = {
@@ -27,6 +28,7 @@ const catalogProductSelect = {
   discountStartsAt: true,
   discountEndsAt: true,
   stock: true,
+  preparationDays: true,
   attributes: true,
   createdAt: true,
   category: { select: { name: true } },
@@ -61,12 +63,19 @@ function selectedAttributeValues(tokens: string[] | undefined) {
   return selected;
 }
 
-function matchesFacetFilters(product: CatalogProduct, query: StorefrontCatalogQuery) {
+function productBrandValues(product: CatalogProduct, brandAttributeIds: Set<string>) {
+  return [...new Set(parseProductAttributes(product.attributes).flatMap((attribute) => brandAttributeIds.has(attribute.attributeId) ? attribute.values : []))];
+}
+
+function matchesFacetFilters(product: CatalogProduct, query: StorefrontCatalogQuery, brandAttributeIds: Set<string>, categoryScoped: boolean) {
   if (query.inStock && product.stock <= 0) return false;
-  const selectedColors = new Set(query.color ?? []);
+  if (query.sameDayDelivery && product.preparationDays !== 0) return false;
+  const selectedBrands = new Set(query.brand ?? []);
+  if (selectedBrands.size > 0 && !productBrandValues(product, brandAttributeIds).some((value) => selectedBrands.has(value))) return false;
+  const selectedColors = new Set(categoryScoped ? query.color ?? [] : []);
   if (selectedColors.size > 0 && !productColorIds(product).some((id) => selectedColors.has(id))) return false;
   const attributes = new Map(parseProductAttributes(product.attributes).map((attribute) => [attribute.attributeId, new Set(attribute.values)]));
-  for (const [attributeId, selectedValues] of selectedAttributeValues(query.attr)) {
+  for (const [attributeId, selectedValues] of selectedAttributeValues(categoryScoped ? query.attr : undefined)) {
     const productValues = attributes.get(attributeId);
     if (!productValues || ![...selectedValues].some((value) => productValues.has(value))) return false;
   }
@@ -89,7 +98,7 @@ function sortProducts(items: PricedProduct[], sortby: StorefrontCatalogQuery["so
 }
 
 export async function getStorefrontCatalog(query: StorefrontCatalogQuery, categoryIds?: string[]): Promise<StorefrontCatalogResult> {
-  const [settings, catalogSettings] = await Promise.all([getGeneralStoreSettings(), getCatalogSettings()]);
+  const [settings, catalogSettings, commerceSettings] = await Promise.all([getGeneralStoreSettings(), getCatalogSettings(), getCommerceSettings()]);
   const where: Prisma.ProductWhereInput = {
     status: "ACTIVE",
     storeIndustry: settings.industry,
@@ -129,6 +138,9 @@ export async function getStorefrontCatalog(query: StorefrontCatalogQuery, catego
   for (const product of products) for (const colorId of productColorIds(product)) colorCounts.set(colorId, (colorCounts.get(colorId) ?? 0) + 1);
 
   const attributeDefinitions = new Map(facetCategories.flatMap((category) => parseCategoryAttributeSchema(category.attributeSchema).flatMap((group) => group.attributes.map((attribute) => [attribute.id, attribute.name] as const))));
+  const brandAttributeIds = new Set([...attributeDefinitions].flatMap(([id, name]) => ["برند", "brand"].includes(name.trim().toLocaleLowerCase("fa-IR")) ? [id] : []));
+  const brandCounts = new Map<string, number>();
+  for (const product of products) for (const value of productBrandValues(product, brandAttributeIds)) brandCounts.set(value, (brandCounts.get(value) ?? 0) + 1);
   const attributeValueCounts = new Map<string, Map<string, number>>();
   for (const product of products) {
     for (const attribute of parseProductAttributes(product.attributes)) {
@@ -141,8 +153,9 @@ export async function getStorefrontCatalog(query: StorefrontCatalogQuery, catego
   const availablePrices = pricedProducts.flatMap(({ finalPriceRials }) => finalPriceRials === null ? [] : [finalPriceRials / 10]);
   const filteredProducts = pricedProducts.filter(({ product, finalPriceRials, originalPriceRials }) =>
     (!query.hasDiscount || originalPriceRials !== undefined)
+    && (!query.freeShipping || commerceSettings.insuredShippingEnabled && finalPriceRials !== null && baseShippingFee(commerceSettings, finalPriceRials, "INSURED_SHIPPING") === 0)
     && matchesTomanPrice(finalPriceRials, query.MinPrice, query.MaxPrice)
-    && matchesFacetFilters(product, query));
+    && matchesFacetFilters(product, query, brandAttributeIds, Boolean(categoryIds)));
 
   const sortedProducts = sortProducts(filteredProducts, query.sortby);
   const pageSize = catalogSettings.catalogPageSize;
@@ -152,13 +165,14 @@ export async function getStorefrontCatalog(query: StorefrontCatalogQuery, catego
   const pageProducts = sortedProducts.slice((page - 1) * pageSize, page * pageSize);
 
   return {
-    filters: { q: query.q, sortby: query.sortby, MinPrice: query.MinPrice, MaxPrice: query.MaxPrice, category: query.category, color: query.color, attr: query.attr, inStock: query.inStock, hasDiscount: query.hasDiscount },
+    filters: { q: query.q, sortby: query.sortby, MinPrice: query.MinPrice, MaxPrice: query.MaxPrice, category: query.category, brand: query.brand, color: categoryIds ? query.color : undefined, attr: categoryIds ? query.attr : undefined, inStock: query.inStock, hasDiscount: query.hasDiscount, freeShipping: query.freeShipping, sameDayDelivery: query.sameDayDelivery },
     facets: {
-      colors: colors.map((color) => ({ ...color, count: colorCounts.get(color.id) ?? 0 })).filter((color) => color.count > 0),
-      attributes: [...attributeDefinitions].flatMap(([id, name]) => {
+      brands: [...brandCounts].map(([value, count]) => ({ value, count })).sort((left, right) => left.value.localeCompare(right.value, "fa")),
+      colors: categoryIds ? colors.map((color) => ({ ...color, count: colorCounts.get(color.id) ?? 0 })).filter((color) => color.count > 0) : [],
+      attributes: categoryIds ? [...attributeDefinitions].flatMap(([id, name]) => {
         const values = [...(attributeValueCounts.get(id) ?? [])].map(([value, count]) => ({ value, count })).sort((left, right) => left.value.localeCompare(right.value, "fa"));
         return values.length ? [{ id, name, values }] : [];
-      }),
+      }) : [],
       priceRange: availablePrices.length ? { min: Math.floor(Math.min(...availablePrices)), max: Math.ceil(Math.max(...availablePrices)) } : null,
     },
     pagination: { page, pageSize, totalItems, totalPages },

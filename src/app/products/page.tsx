@@ -17,10 +17,13 @@ type ProductSearchParams = {
   sortby?: string;
   MinPrice?: string;
   MaxPrice?: string;
+  brand?: string | string[];
   color?: string | string[];
   attr?: string | string[];
   inStock?: string;
   hasDiscount?: string;
+  freeShipping?: string;
+  sameDayDelivery?: string;
 };
 
 type ProductHrefState = {
@@ -30,10 +33,13 @@ type ProductHrefState = {
   sortby?: string;
   MinPrice?: string;
   MaxPrice?: string;
+  brand?: string[];
   color?: string[];
   attr?: string[];
   inStock?: string;
   hasDiscount?: string;
+  freeShipping?: string;
+  sameDayDelivery?: string;
 };
 
 export const dynamic = "force-dynamic";
@@ -69,10 +75,13 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
       sortby: query.sortby,
       MinPrice: query.MinPrice?.toString(),
       MaxPrice: query.MaxPrice?.toString(),
-      color: query.color,
-      attr: query.attr,
+      brand: query.brand,
+      color: selectedCategory ? query.color : undefined,
+      attr: selectedCategory ? query.attr : undefined,
       inStock: query.inStock ? "1" : undefined,
       hasDiscount: query.hasDiscount ? "1" : undefined,
+      freeShipping: query.freeShipping ? "1" : undefined,
+      sameDayDelivery: query.sameDayDelivery ? "1" : undefined,
       page: query.page > 1 ? query.page.toString() : undefined,
       ...overrides,
     };
@@ -82,24 +91,31 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
     if (values.sortby) next.set("sortby", values.sortby);
     if (values.MinPrice) next.set("MinPrice", values.MinPrice);
     if (values.MaxPrice) next.set("MaxPrice", values.MaxPrice);
+    for (const brand of values.brand ?? []) next.append("brand", brand);
     for (const color of values.color ?? []) next.append("color", color);
     for (const attribute of values.attr ?? []) next.append("attr", attribute);
     if (values.inStock) next.set("inStock", values.inStock);
     if (values.hasDiscount) next.set("hasDiscount", values.hasDiscount);
+    if (values.freeShipping) next.set("freeShipping", values.freeShipping);
+    if (values.sameDayDelivery) next.set("sameDayDelivery", values.sameDayDelivery);
     if (values.page && values.page !== "1") next.set("page", values.page);
     return `/products?${next.toString()}`;
   }
 
-  const resetFiltersHref = productsHref({ MinPrice: undefined, MaxPrice: undefined, color: [], attr: [], inStock: undefined, hasDiscount: undefined, page: undefined });
+  const resetFiltersHref = productsHref({ MinPrice: undefined, MaxPrice: undefined, brand: [], color: [], attr: [], inStock: undefined, hasDiscount: undefined, freeShipping: undefined, sameDayDelivery: undefined, page: undefined });
   const filters = <StorefrontCatalogFilters
     key={[query.MinPrice, query.MaxPrice].join("|")}
     facets={catalog.facets}
-    selectedColors={query.color ?? []}
-    selectedAttributes={query.attr ?? []}
+    categoryScoped={Boolean(selectedCategory)}
+    selectedBrands={query.brand ?? []}
+    selectedColors={selectedCategory ? query.color ?? [] : []}
+    selectedAttributes={selectedCategory ? query.attr ?? [] : []}
     minPrice={query.MinPrice}
     maxPrice={query.MaxPrice}
     inStock={query.inStock}
     hasDiscount={query.hasDiscount}
+    freeShipping={query.freeShipping}
+    sameDayDelivery={query.sameDayDelivery}
     resetHref={resetFiltersHref}
   />;
 
