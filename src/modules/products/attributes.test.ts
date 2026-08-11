@@ -43,3 +43,21 @@ test("storefront attribute groups omit empty definitions", () => {
   const groups = buildProductAttributeGroups(definitions, [{ attributeId: "attribute_ram", values: ["۱۲ گیگابایت"] }]);
   assert.deepEqual(groups, [{ id: "group_general", name: "مشخصات کلی", attributes: [{ id: "attribute_ram", name: "رم", values: ["۱۲ گیگابایت"] }] }]);
 });
+
+test("category attributes default to non-important", () => {
+  const parsed = categoryAttributeSchema.parse([{
+    id: "group_general",
+    name: "General specifications",
+    attributes: [{ id: "attribute_ram", name: "RAM", allowsMultiple: false }],
+  }]);
+  assert.equal(parsed[0].attributes[0].important, false);
+});
+
+test("important category attributes are exposed to the storefront", () => {
+  const groups = buildProductAttributeGroups([{
+    id: "group_general",
+    name: "General specifications",
+    attributes: [{ id: "attribute_ram", name: "RAM", allowsMultiple: false, important: true }],
+  }], [{ attributeId: "attribute_ram", values: ["12 GB"] }]);
+  assert.equal(groups[0].attributes[0].important, true);
+});

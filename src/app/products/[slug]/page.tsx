@@ -49,7 +49,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   const soldPercent = calculateSoldPercent(soldAggregate._sum.quantity ?? 0, product.stock);
   const colorsById = new Map(colors.map((color) => [color.id, color]));
   const attributeGroups = buildProductAttributeGroups(product.category?.attributeSchema, product.attributes);
-  const primaryFeatures = attributeGroups.flatMap((group) => group.attributes).slice(0, 2);
+  const primaryFeatures = attributeGroups.flatMap((group) => group.attributes).filter((attribute) => attribute.important);
 
   const rate = gold ? Number(gold.pricePerGram18) : null;
   const parts = product.storeIndustry === "GOLD" && rate !== null ? calculateProductPrice({ goldPricePerGram18: rate, weightGrams: Number(product.weightGrams), purity: product.purity, makingFeeType: product.makingFeeType, makingFeeValue: Number(product.makingFeeValue), profitPercent: Number(product.profitPercent), taxPercent: Number(product.taxPercent) }) : null;

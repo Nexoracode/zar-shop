@@ -6,6 +6,7 @@ export const categoryAttributeDefinitionSchema = z.object({
   id: stableIdSchema,
   name: z.string().trim().min(2).max(100),
   allowsMultiple: z.boolean().default(false),
+  important: z.boolean().default(false),
   suggestedValues: z.array(z.string().trim().min(1).max(2000)).max(100).default([]).refine(
     (values) => new Set(values).size === values.length,
     "مقادیر پیشنهادی یک ویژگی نباید تکراری باشند.",
@@ -83,7 +84,7 @@ export function buildProductAttributeGroups(definitionsValue: unknown, attribute
   return definitions.flatMap((group) => {
     const attributes = group.attributes.flatMap((attribute) => {
       const values = valuesById.get(attribute.id) ?? [];
-      return values.length ? [{ id: attribute.id, name: attribute.name, values }] : [];
+      return values.length ? [{ id: attribute.id, name: attribute.name, values, ...(attribute.important ? { important: true } : {}) }] : [];
     });
     return attributes.length ? [{ id: group.id, name: group.name, attributes }] : [];
   });

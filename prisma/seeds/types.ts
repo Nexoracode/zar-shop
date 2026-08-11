@@ -5,7 +5,7 @@ export type DevelopmentCategorySeed = {
   slug: string;
   description: string;
   parentSlug?: string;
-  attributeSchema?: Array<{ id: string; name: string; attributes: Array<{ id: string; name: string; allowsMultiple: boolean; suggestedValues?: string[] }> }>;
+  attributeSchema?: Array<{ id: string; name: string; attributes: Array<{ id: string; name: string; allowsMultiple: boolean; important?: boolean; suggestedValues?: string[] }> }>;
 };
 
 export type DevelopmentProductSeed = {

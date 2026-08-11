@@ -26,6 +26,7 @@ export function CategoryAttributesForm({ categoryId, initialGroups }: { category
   const [newGroupName, setNewGroupName] = useState("");
   const [newAttributeName, setNewAttributeName] = useState("");
   const [newAttributeAllowsMultiple, setNewAttributeAllowsMultiple] = useState(false);
+  const [newAttributeImportant, setNewAttributeImportant] = useState(false);
   const [valueDraft, setValueDraft] = useState("");
   const [saving, setSaving] = useState(false);
   const selectedGroup = groups.find((group) => group.id === selectedGroupId);
@@ -62,7 +63,7 @@ export function CategoryAttributesForm({ categoryId, initialGroups }: { category
           return;
         }
         const attributeId = stableId("attribute");
-        setGroups((current) => current.map((group) => group.id === selectedGroup.id ? { ...group, attributes: [...group.attributes, { id: attributeId, name, allowsMultiple: newAttributeAllowsMultiple, suggestedValues }] } : group));
+        setGroups((current) => current.map((group) => group.id === selectedGroup.id ? { ...group, attributes: [...group.attributes, { id: attributeId, name, allowsMultiple: newAttributeAllowsMultiple, important: newAttributeImportant, suggestedValues }] } : group));
         setSelectedAttributeId(attributeId);
         setNewAttributeName("");
       }
@@ -79,7 +80,7 @@ export function CategoryAttributesForm({ categoryId, initialGroups }: { category
       }
       const groupId = stableId("group");
       const attributeId = stableId("attribute");
-      setGroups((current) => [...current, { id: groupId, name: groupName, attributes: [{ id: attributeId, name: attributeName, allowsMultiple: newAttributeAllowsMultiple, suggestedValues }] }]);
+      setGroups((current) => [...current, { id: groupId, name: groupName, attributes: [{ id: attributeId, name: attributeName, allowsMultiple: newAttributeAllowsMultiple, important: newAttributeImportant, suggestedValues }] }]);
       setSelectedGroupId(groupId);
       setSelectedAttributeId(attributeId);
       setNewGroupName("");
@@ -94,6 +95,14 @@ export function CategoryAttributesForm({ categoryId, initialGroups }: { category
       return;
     }
     setGroups((current) => current.map((group) => group.id === selectedGroup.id ? { ...group, attributes: group.attributes.map((attribute) => attribute.id === selectedAttribute.id ? { ...attribute, allowsMultiple } : attribute) } : group));
+  }
+
+  function setImportant(important: boolean) {
+    if (!selectedGroup || !selectedAttribute) {
+      setNewAttributeImportant(important);
+      return;
+    }
+    setGroups((current) => current.map((group) => group.id === selectedGroup.id ? { ...group, attributes: group.attributes.map((attribute) => attribute.id === selectedAttribute.id ? { ...attribute, important } : attribute) } : group));
   }
 
   function removeSuggestedValue(groupId: string, attributeId: string, value: string) {
@@ -143,6 +152,7 @@ export function CategoryAttributesForm({ categoryId, initialGroups }: { category
 
   const attributeOptions = selectedGroup?.attributes ?? [];
   const allowsMultiple = selectedAttribute?.allowsMultiple ?? newAttributeAllowsMultiple;
+  const important = selectedAttribute?.important ?? newAttributeImportant;
 
   return <form onSubmit={submit} className="grid gap-4">
     <Card variant="secondary" className="rounded-xl border border-slate-200 bg-white shadow-sm"><Card.Content className="p-4 sm:p-5">
@@ -158,6 +168,7 @@ export function CategoryAttributesForm({ categoryId, initialGroups }: { category
           <HeroSelectField name="attributeDefinition" label="ویژگی" value={selectedAttributeId} includeEmptyOption={false} options={[...attributeOptions.map((attribute) => ({ value: attribute.id, label: attribute.name })), { value: newItemKey, label: "+ ثبت ویژگی جدید" }]} onValueChange={setSelectedAttributeId} />
           {selectedAttributeId === newItemKey && <label className={adminLabelClass}>نام ویژگی جدید<Input value={newAttributeName} onChange={(event) => setNewAttributeName(event.target.value)} placeholder="مثلاً رم یا مناسب برای" fullWidth variant="secondary" className={adminFieldClass} /></label>}
           <AdminCheckbox isSelected={allowsMultiple} onChange={setAllowsMultiple} description="برای مواردی مثل مناسب برای: آقایان، خانم‌ها">چند مقدار برای محصول قابل انتخاب باشد</AdminCheckbox>
+          <AdminCheckbox isSelected={important} onChange={setImportant} description="در خلاصه ویژگی‌های بالای صفحه جزئیات محصول نمایش داده شود">ویژگی مهم</AdminCheckbox>
         </div>
         <div className="grid content-start gap-3 rounded-xl border border-slate-200 bg-white p-3 sm:p-4">
           <label className={adminLabelClass}>مقدار ویژگی<Input value={valueDraft} onChange={(event) => setValueDraft(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); addDefinitionValue(); } }} placeholder="مثلاً ۸، ۱۲، ۱۶ گیگابایت" fullWidth variant="secondary" className={adminFieldClass} /><span className="text-[10px] font-normal text-slate-400">برای ثبت چند مقدار، آن‌ها را با کاما جدا کنید.</span></label>
