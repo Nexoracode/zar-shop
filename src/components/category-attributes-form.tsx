@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
-import { Button, Card, Input, Spinner, toast } from "@heroui/react";
-import { Boxes, ListPlus, Minus, Plus, Save, Tags, Trash2 } from "lucide-react";
+import { useState, type DragEvent, type FormEvent } from "react";
+import { Button, Card, Input, Modal, Spinner, toast } from "@heroui/react";
+import { Boxes, GripVertical, ListOrdered, ListPlus, Minus, Plus, Save, Tags, Trash2, X } from "lucide-react";
 import { AdminCheckbox } from "@/components/admin-checkbox";
 import { AdminSectionHelp } from "@/components/admin-section-help";
 import { adminFieldClass, adminLabelClass } from "@/components/admin-ui";
@@ -10,6 +10,7 @@ import { HeroSelectField } from "@/components/hero-select-field";
 import { categoryAttributeSchema, type CategoryAttributeGroup } from "@/modules/products/attributes";
 
 const newItemKey = "__new__";
+type SortMode = "groups" | "attributes";
 
 function stableId(prefix: string) {
   return `${prefix}_${crypto.randomUUID().replaceAll("-", "")}`;
@@ -23,6 +24,11 @@ export function CategoryAttributesForm({ categoryId, initialGroups }: { category
   const [newAttributeName, setNewAttributeName] = useState("");
   const [newAttributeImportant, setNewAttributeImportant] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [sortOpen, setSortOpen] = useState(false);
+  const [sortMode, setSortMode] = useState<SortMode | null>(null);
+  const [sortGroupId, setSortGroupId] = useState("");
+  const [draftOrder, setDraftOrder] = useState<string[]>([]);
+  const [draggedId, setDraggedId] = useState<string | null>(null);
   const selectedGroup = groups.find((group) => group.id === selectedGroupId);
   const selectedAttribute = selectedGroup?.attributes.find((attribute) => attribute.id === selectedAttributeId);
 
@@ -98,6 +104,77 @@ export function CategoryAttributesForm({ categoryId, initialGroups }: { category
     }
   }
 
+  function openSortEditor() {
+    setSortMode(null);
+    setSortGroupId(groups[0]?.id ?? "");
+    setDraftOrder([]);
+    setDraggedId(null);
+    setSortOpen(true);
+  }
+
+  function chooseSortMode(mode: SortMode) {
+    setSortMode(mode);
+    if (mode === "groups") {
+      setDraftOrder(groups.map((group) => group.id));
+      return;
+    }
+    const groupId = sortGroupId || groups[0]?.id || "";
+    setSortGroupId(groupId);
+    setDraftOrder(groups.find((group) => group.id === groupId)?.attributes.map((attribute) => attribute.id) ?? []);
+  }
+
+  function selectSortGroup(groupId: string) {
+    setSortGroupId(groupId);
+    setDraftOrder(groups.find((group) => group.id === groupId)?.attributes.map((attribute) => attribute.id) ?? []);
+  }
+
+  function moveDraftItem(targetId: string, after: boolean) {
+    if (!draggedId || draggedId === targetId) return;
+    setDraftOrder((current) => {
+      const sourceIndex = current.indexOf(draggedId);
+      const targetIndex = current.indexOf(targetId);
+      if (sourceIndex < 0 || targetIndex < 0) return current;
+      const next = [...current];
+      const [source] = next.splice(sourceIndex, 1);
+      let insertIndex = targetIndex + (after ? 1 : 0);
+      if (sourceIndex < insertIndex) insertIndex -= 1;
+      next.splice(insertIndex, 0, source);
+      return next;
+    });
+  }
+
+  function moveDraftItemByOffset(id: string, offset: number) {
+    setDraftOrder((current) => {
+      const sourceIndex = current.indexOf(id);
+      const targetIndex = sourceIndex + offset;
+      if (sourceIndex < 0 || targetIndex < 0 || targetIndex >= current.length) return current;
+      const next = [...current];
+      [next[sourceIndex], next[targetIndex]] = [next[targetIndex], next[sourceIndex]];
+      return next;
+    });
+  }
+
+  function applySortOrder() {
+    if (sortMode === "groups") {
+      const groupById = new Map(groups.map((group) => [group.id, group]));
+      setGroups(draftOrder.flatMap((id) => {
+        const group = groupById.get(id);
+        return group ? [group] : [];
+      }));
+    } else if (sortMode === "attributes" && sortGroupId) {
+      setGroups((current) => current.map((group) => {
+        if (group.id !== sortGroupId) return group;
+        const attributeById = new Map(group.attributes.map((attribute) => [attribute.id, attribute]));
+        return { ...group, attributes: draftOrder.flatMap((id) => {
+          const attribute = attributeById.get(id);
+          return attribute ? [attribute] : [];
+        }) };
+      }));
+    }
+    setSortOpen(false);
+    setDraggedId(null);
+  }
+
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const validation = categoryAttributeSchema.safeParse(groups);
@@ -122,7 +199,7 @@ export function CategoryAttributesForm({ categoryId, initialGroups }: { category
   const attributeOptions = selectedGroup?.attributes ?? [];
   const important = selectedAttribute?.important ?? newAttributeImportant;
 
-  return <form onSubmit={submit} className="admin-sticky-save-form grid gap-4">
+  return <><form onSubmit={submit} className="admin-sticky-save-form grid gap-4">
     <Card variant="secondary" className="rounded-xl border border-slate-200 bg-white shadow-sm"><Card.Content className="p-4 sm:p-5">
       <div className="mb-4 flex items-center gap-3 border-b border-slate-100 pb-4"><span className="grid size-10 place-items-center rounded-xl bg-violet-50 text-violet-700"><ListPlus size={19} /></span><div className="min-w-0"><h2 className="m-0 text-base font-black text-slate-800">افزودن ویژگی</h2><p className="mt-1 text-xs text-slate-400">ساختار ویژگی‌های مشترک محصولات این دسته را تعریف کنید.</p></div><div className="mr-auto"><AdminSectionHelp title="افزودن ویژگی" summary="در این بخش فقط گروه و نام ویژگی‌های محصولات این دسته را تعریف می‌کنید." blocks={[
         { title: "ترتیب ثبت", items: ["ابتدا یک گروه موجود مثل «مشخصات کلی» را انتخاب کنید یا یک گروه جدید بسازید.", "سپس نام ویژگی را تعریف کنید؛ مثل «حافظه داخلی» یا «جنس بدنه».", "مقدار ویژگی در این صفحه ثبت نمی‌شود و برای هر محصول در صفحه ویژگی‌های همان محصول تعیین خواهد شد.", "برای اعمال نهایی تغییرات، در انتهای صفحه دکمه ذخیره را بزنید."] },
@@ -139,9 +216,10 @@ export function CategoryAttributesForm({ categoryId, initialGroups }: { category
     </Card.Content></Card>
 
     <Card variant="secondary" className="rounded-xl border border-slate-200 bg-white shadow-sm"><Card.Content className="p-4 sm:p-5">
-      <div className="mb-4 flex items-center gap-3 border-b border-slate-100 pb-4"><span className="grid size-10 place-items-center rounded-xl bg-slate-100 text-slate-600"><Boxes size={19} /></span><div className="min-w-0"><h2 className="m-0 text-base font-black text-slate-800">فهرست ویژگی‌های دسته</h2><p className="mt-1 text-xs text-slate-400">گروه‌ها و نام ویژگی‌های ثبت‌شده را مرور کنید.</p></div><div className="mr-auto"><AdminSectionHelp title="فهرست ویژگی‌های دسته" summary="پیش‌نمایش ساختاری است که برای فرم ویژگی‌های محصولات این دسته استفاده می‌شود." blocks={[
+      <div className="mb-4 flex items-center gap-3 border-b border-slate-100 pb-4"><span className="grid size-10 place-items-center rounded-xl bg-slate-100 text-slate-600"><Boxes size={19} /></span><div className="min-w-0"><h2 className="m-0 text-base font-black text-slate-800">فهرست ویژگی‌های دسته</h2><p className="mt-1 text-xs text-slate-400">گروه‌ها و نام ویژگی‌های ثبت‌شده را مرور کنید.</p></div><div className="mr-auto flex items-center gap-2"><Button type="button" isIconOnly size="sm" variant="secondary" isDisabled={!groups.length} aria-label="مرتب‌سازی گروه‌ها و ویژگی‌ها" onPress={openSortEditor}><ListOrdered size={16} /></Button><AdminSectionHelp title="فهرست ویژگی‌های دسته" summary="پیش‌نمایش ساختاری است که برای فرم ویژگی‌های محصولات این دسته استفاده می‌شود." blocks={[
         { title: "ساختار فهرست", description: "هر کارت خاکستری یک گروه است و ردیف‌های داخل آن نام ویژگی‌هایی هستند که محصولات این دسته می‌توانند داشته باشند." },
-        { title: "ویرایش و حذف", items: ["برای حذف یک ویژگی، آیکون سطل همان ویژگی را بزنید.", "برای حذف کل گروه و همه ویژگی‌های داخل آن، آیکون سطل سربرگ گروه را بزنید.", "حذف‌ها تا قبل از زدن دکمه ذخیره فقط در همین فرم هستند و هنوز در دیتابیس اعمال نشده‌اند."] },
+        { title: "ویرایش و حذف", items: ["برای حذف یک ویژگی، علامت منفی کنار نام آن را بزنید.", "برای حذف کل گروه و همه ویژگی‌های داخل آن، آیکون سطل سربرگ گروه را بزنید.", "حذف‌ها تا قبل از زدن دکمه ذخیره فقط در همین فرم هستند و هنوز در دیتابیس اعمال نشده‌اند."] },
+        { title: "مرتب‌سازی", description: "از آیکون ترتیب در سربرگ استفاده کنید و سپس مرتب‌سازی گروه‌ها یا ویژگی‌های یکی از گروه‌ها را انتخاب کنید." },
         { title: "محدودیت حذف", tone: "important", description: "اگر ویژگی روی محصولی استفاده شده باشد، سیستم اجازه حذف مخرب آن را نمی‌دهد. ابتدا مقدار آن ویژگی را از محصولات مرتبط بردارید." },
       ]} /></div></div>
       <div className="grid gap-3">
@@ -151,5 +229,35 @@ export function CategoryAttributesForm({ categoryId, initialGroups }: { category
     </Card.Content></Card>
 
     <Card variant="secondary" className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm"><div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div><strong className="block text-sm text-slate-800">ذخیره ساختار ویژگی‌ها</strong><p className="mt-1 text-xs text-slate-400">ویژگی‌های استفاده‌شده در محصولات بدون حذف مقدار آن‌ها قابل حذف نیستند.</p></div><Button type="submit" variant="primary" isPending={saving} className="min-h-11 shrink-0 gap-2 px-5 font-bold">{({ isPending }) => <>{isPending ? <Spinner size="sm" color="current" /> : <Save size={16} />}{isPending ? "در حال ذخیره..." : "ذخیره ویژگی‌ها"}</>}</Button></div></Card>
-  </form>;
+  </form>
+
+  <Modal.Backdrop isOpen={sortOpen} onOpenChange={(open) => { setSortOpen(open); if (!open) setDraggedId(null); }} variant="blur">
+    <Modal.Container size="lg" placement="center" scroll="inside">
+      <Modal.Dialog aria-label="مرتب‌سازی گروه‌ها و ویژگی‌ها" dir="rtl" className="mx-3 max-h-[calc(100dvh-32px)] overflow-hidden bg-white text-slate-900">
+        <Modal.Header className="flex-row items-center justify-between border-b border-slate-200 p-5"><div><Modal.Heading className="text-base font-black">مرتب‌سازی ویژگی‌های دسته</Modal.Heading><p className="mb-0 mt-1 text-xs text-slate-500">{sortMode ? "آیتم‌ها را بگیرید و در جایگاه دلخواه رها کنید." : "مشخص کنید کدام بخش مرتب شود."}</p></div><Modal.CloseTrigger aria-label="بستن" className="grid size-9 place-items-center rounded-lg text-slate-500 transition hover:bg-slate-100"><X size={18} /></Modal.CloseTrigger></Modal.Header>
+        <Modal.Body className="grid gap-4 p-5">
+          {!sortMode ? <div className="grid gap-3 sm:grid-cols-2">
+            <Button type="button" variant="secondary" onPress={() => chooseSortMode("groups")} className="h-auto min-h-24 items-start justify-start rounded-xl border border-slate-200 bg-slate-50 p-4 text-right"><span><strong className="block text-sm text-slate-800">ترتیب گروه‌ها</strong><small className="mt-2 block font-normal leading-5 text-slate-500">جای گروه‌هایی مثل مشخصات کلی و مشخصات فنی را تغییر دهید.</small></span></Button>
+            <Button type="button" variant="secondary" onPress={() => chooseSortMode("attributes")} className="h-auto min-h-24 items-start justify-start rounded-xl border border-slate-200 bg-slate-50 p-4 text-right"><span><strong className="block text-sm text-slate-800">ترتیب ویژگی‌های یک گروه</strong><small className="mt-2 block font-normal leading-5 text-slate-500">یک گروه را انتخاب کنید و ویژگی‌های داخل آن را مرتب کنید.</small></span></Button>
+          </div> : <>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+              {sortMode === "attributes" ? <div className="min-w-0 flex-1"><HeroSelectField name="sortAttributeGroup" label="گروه ویژگی" value={sortGroupId} includeEmptyOption={false} options={groups.map((group) => ({ value: group.id, label: group.name }))} onValueChange={selectSortGroup} /></div> : <div><strong className="block text-sm text-slate-800">ترتیب گروه‌ها</strong><span className="mt-1 block text-xs text-slate-500">ترتیب نمایش گروه‌ها در مشخصات محصول</span></div>}
+              <Button type="button" size="sm" variant="ghost" onPress={() => { setSortMode(null); setDraftOrder([]); setDraggedId(null); }} className="shrink-0 text-xs text-slate-500">تغییر نوع مرتب‌سازی</Button>
+            </div>
+            <div className="grid gap-2">{draftOrder.map((id, index) => {
+              const item = sortMode === "groups" ? groups.find((group) => group.id === id) : groups.find((group) => group.id === sortGroupId)?.attributes.find((attribute) => attribute.id === id);
+              if (!item) return null;
+              return <div key={id} draggable tabIndex={0} onKeyDown={(event) => { if (event.key === "ArrowUp") { event.preventDefault(); moveDraftItemByOffset(id, -1); } else if (event.key === "ArrowDown") { event.preventDefault(); moveDraftItemByOffset(id, 1); } }} onDragStart={(event: DragEvent<HTMLDivElement>) => { event.dataTransfer.effectAllowed = "move"; event.dataTransfer.setData("text/plain", id); setDraggedId(id); }} onDragOver={(event) => { event.preventDefault(); event.dataTransfer.dropEffect = "move"; const bounds = event.currentTarget.getBoundingClientRect(); moveDraftItem(id, event.clientY > bounds.top + bounds.height / 2); }} onDrop={(event) => { event.preventDefault(); setDraggedId(null); }} onDragEnd={() => setDraggedId(null)} className={`flex cursor-grab items-center gap-3 rounded-xl border p-3 outline-none transition focus:border-violet-400 active:cursor-grabbing ${draggedId === id ? "border-violet-400 bg-violet-50 opacity-60" : "border-slate-200 bg-slate-50"}`}>
+                <GripVertical size={18} className="shrink-0 text-slate-400" />
+                <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-white text-xs font-black text-slate-500">{(index + 1).toLocaleString("fa-IR")}</span>
+                <strong className="min-w-0 flex-1 truncate text-sm text-slate-700">{item.name}</strong>
+              </div>;
+            })}</div>
+          </>}
+        </Modal.Body>
+        {sortMode && <Modal.Footer className="flex-row justify-start gap-2 border-t border-slate-200 p-4"><Button type="button" variant="primary" onPress={applySortOrder}>اعمال ترتیب</Button><Button type="button" variant="secondary" onPress={() => setSortOpen(false)}>انصراف</Button></Modal.Footer>}
+      </Modal.Dialog>
+    </Modal.Container>
+  </Modal.Backdrop>
+  </>;
 }
