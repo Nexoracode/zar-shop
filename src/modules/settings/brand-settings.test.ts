@@ -12,5 +12,8 @@ test("brand settings reject invalid colors", () => {
 
 test("brand css selects a readable foreground", () => {
   const settings = brandSettingsSchema.parse({ ...brandSettingsDefaults, mainLogoMedia: null, darkLogoMedia: null, faviconMedia: null, socialImageMedia: null });
-  assert.equal(brandCssVariables(settings)["--brand-primary-foreground"], "#FFFFFF");
+  const variables = brandCssVariables(settings);
+  assert.equal(variables["--brand-primary-foreground"], "#FFFFFF");
+  assert.equal(variables["--brand-danger-foreground"], "#FFFFFF");
+  assert.equal(variables["--danger-foreground"], "#FFFFFF");
 });

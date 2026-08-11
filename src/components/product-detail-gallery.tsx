@@ -101,20 +101,20 @@ export function ProductDetailGallery({ media, productName, productCode, hasDisco
   }
 
   const actions = [
-    { label: favorite ? "حذف از علاقه‌مندی‌ها" : "افزودن به علاقه‌مندی‌ها", icon: <Heart size={23} className={favorite ? "fill-rose-500 text-rose-500" : ""} />, onPress: () => setFavorite((value) => !value) },
+    { label: favorite ? "حذف از علاقه‌مندی‌ها" : "افزودن به علاقه‌مندی‌ها", icon: <Heart size={23} className={favorite ? "fill-[var(--danger)] text-[var(--danger)]" : ""} />, onPress: () => setFavorite((value) => !value) },
     { label: "اشتراک‌گذاری محصول", icon: <Share2 size={22} />, onPress: () => void shareProduct() },
-    { label: priceAlert ? "غیرفعال‌کردن اطلاع‌رسانی" : "اطلاع‌رسانی تغییرات محصول", icon: <Bell size={22} className={priceAlert ? "fill-slate-700" : ""} />, onPress: () => setPriceAlert((value) => !value) },
+    { label: priceAlert ? "غیرفعال‌کردن اطلاع‌رسانی" : "اطلاع‌رسانی تغییرات محصول", icon: <Bell size={22} className={priceAlert ? "fill-[var(--brand-accent)] text-[var(--brand-accent)]" : ""} />, onPress: () => setPriceAlert((value) => !value) },
     { label: "نمودار قیمت", icon: <ChartNoAxesCombined size={22} />, onPress: () => toast.success("نمودار قیمت در مرحله اتصال API فعال می‌شود") },
     { label: "مقایسه محصول", icon: <Scale size={21} />, onPress: () => toast.success("مقایسه محصول در مرحله اتصال API فعال می‌شود") },
     { label: "مشخصات محصول", icon: <List size={22} />, onPress: () => document.getElementById("specifications")?.scrollIntoView({ behavior: "smooth" }) },
   ];
 
   return <section className="min-w-0 lg:col-start-1 lg:row-span-2 lg:row-start-1" aria-label="گالری محصول">
-    {hasDiscount && countdown && <div className="mb-5 flex min-h-12 items-center gap-3 bg-[#fdecf0] px-3 text-[11px] font-black text-rose-600 sm:gap-4 sm:px-5 sm:text-xs"><span className="shrink-0">پیشنهاد شگفت‌انگیز</span>{showSoldProgress && <div className="flex min-w-0 flex-1 items-center gap-2 text-slate-500"><span className="shrink-0 font-medium"><strong className="text-rose-600">{normalizedSoldPercent.toLocaleString("fa-IR")}٪</strong> فروش رفته</span><ProgressBar value={normalizedSoldPercent} aria-label="درصد فروش محصول" dir="ltr" className="min-w-8 flex-1"><ProgressBar.Track className="h-1 overflow-hidden rounded-full bg-rose-100"><ProgressBar.Fill className="h-full rounded-full bg-rose-500" /></ProgressBar.Track></ProgressBar></div>}<span dir="ltr" className={`${showSoldProgress ? "" : "mr-auto"} flex shrink-0 items-center gap-2 whitespace-nowrap tabular-nums`}>{countdown.days > 0 && <span dir="rtl" className="inline-flex h-7 items-center rounded-md border border-rose-200 bg-white/70 px-2 text-[10px] font-bold text-rose-600 sm:text-[11px]">{countdown.days.toLocaleString("fa-IR")} روز</span>}<bdi dir="ltr">{countdown.clock}</bdi></span></div>}
+    {hasDiscount && countdown && <div className="mb-5 flex min-h-12 items-center gap-3 px-3 text-[11px] font-black text-[var(--danger)] sm:gap-4 sm:px-5 sm:text-xs" style={{ backgroundColor: "color-mix(in srgb, var(--danger) 10%, white)" }}><span className="shrink-0">پیشنهاد شگفت‌انگیز</span>{showSoldProgress && <div className="flex min-w-0 flex-1 items-center gap-2 text-slate-500"><span className="shrink-0 font-medium"><strong className="text-[var(--danger)]">{normalizedSoldPercent.toLocaleString("fa-IR")}٪</strong> فروش رفته</span><ProgressBar value={normalizedSoldPercent} aria-label="درصد فروش محصول" dir="ltr" className="min-w-8 flex-1"><ProgressBar.Track className="h-1 overflow-hidden rounded-full" style={{ backgroundColor: "color-mix(in srgb, var(--danger) 18%, white)" }}><ProgressBar.Fill className="h-full rounded-full bg-[var(--danger)]" /></ProgressBar.Track></ProgressBar></div>}<span dir="ltr" className={`${showSoldProgress ? "" : "mr-auto"} flex shrink-0 items-center gap-2 whitespace-nowrap tabular-nums`}>{countdown.days > 0 && <span dir="rtl" className="inline-flex h-7 items-center rounded-md border bg-white/70 px-2 text-[10px] font-bold text-[var(--danger)] sm:text-[11px]" style={{ borderColor: "color-mix(in srgb, var(--danger) 28%, white)" }}>{countdown.days.toLocaleString("fa-IR")} روز</span>}<bdi dir="ltr">{countdown.clock}</bdi></span></div>}
 
     <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
       <div className="flex shrink-0 flex-row gap-1 sm:w-10 sm:flex-col" aria-label="عملیات محصول">
-        {actions.map((action) => <Button key={action.label} type="button" isIconOnly variant="ghost" size="sm" aria-label={action.label} onPress={action.onPress} className="size-10 min-h-10 min-w-10 rounded-full text-slate-700 hover:bg-slate-100">{action.icon}</Button>)}
+        {actions.map((action) => <Button key={action.label} type="button" isIconOnly variant="ghost" size="sm" aria-label={action.label} onPress={action.onPress} className="size-10 min-h-10 min-w-10 rounded-full text-slate-700 hover:bg-[var(--surface-tertiary)] hover:text-[var(--brand-primary)]">{action.icon}</Button>)}
       </div>
       <div className="relative grid aspect-square min-w-0 flex-1 place-items-center overflow-hidden bg-white">
         <GalleryMedia item={selected} productName={productName} priority />
@@ -122,11 +122,11 @@ export function ProductDetailGallery({ media, productName, productCode, hasDisco
     </div>
 
     {media.length > 1 && <div className="mt-4 flex items-stretch justify-center gap-2 overflow-x-auto pb-1" role="group" aria-label="انتخاب تصویر محصول">
-      {previewMedia.map((item) => <Button key={item.id} type="button" isIconOnly variant="secondary" aria-label={`نمایش ${item.alt || productName}`} aria-pressed={item.id === selected?.id} onPress={() => setSelectedId(item.id)} className={`relative size-[74px] min-h-[74px] min-w-[74px] overflow-hidden rounded-lg border bg-white p-0 ${item.id === selected?.id ? "border-slate-500" : "border-slate-200 hover:border-slate-400"}`}>
+      {previewMedia.map((item) => <Button key={item.id} type="button" isIconOnly variant="secondary" aria-label={`نمایش ${item.alt || productName}`} aria-pressed={item.id === selected?.id} onPress={() => setSelectedId(item.id)} className={`relative size-[74px] min-h-[74px] min-w-[74px] overflow-hidden rounded-lg border bg-white p-0 ${item.id === selected?.id ? "border-[var(--brand-accent)]" : "border-slate-200 hover:border-[var(--brand-accent)]"}`}>
         {item.type === "IMAGE" ? <Image src={item.url} alt={item.alt || productName} fill sizes="74px" className="object-contain p-1.5" /> : <><video src={item.url} muted className="h-full w-full object-cover" aria-hidden="true" /><span className="absolute inset-0 grid place-items-center bg-black/20 text-white"><Play size={20} fill="currentColor" /></span></>}
       </Button>)}
       <Modal>
-        <Button type="button" isIconOnly variant="secondary" aria-label="مشاهده همه تصاویر" className="relative size-[74px] min-h-[74px] min-w-[74px] cursor-pointer overflow-hidden rounded-lg border border-slate-200 bg-slate-100 p-0 outline-none focus-visible:ring-2 focus-visible:ring-slate-500">
+        <Button type="button" isIconOnly variant="secondary" aria-label="مشاهده همه تصاویر" className="relative size-[74px] min-h-[74px] min-w-[74px] cursor-pointer overflow-hidden rounded-lg border border-slate-200 bg-slate-100 p-0 outline-none hover:border-[var(--brand-accent)] focus-visible:ring-2 focus-visible:ring-[var(--brand-accent)]">
           {media[media.length - 1]?.type === "IMAGE" && <Image src={media[media.length - 1].url} alt="" fill sizes="74px" className="scale-110 object-cover blur-[5px]" />}
           <span className="absolute inset-0 grid place-items-center bg-white/45 text-slate-700"><Ellipsis size={28} /></span>
         </Button>

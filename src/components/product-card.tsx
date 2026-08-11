@@ -3,21 +3,21 @@ import Link from "next/link";
 import { Heart } from "lucide-react";
 
 const galleryImageBackgrounds = [
-  "bg-[linear-gradient(145deg,#fcfcfc,#f3f3f3)]",
-  "bg-[linear-gradient(145deg,#f8f8f8,#ebebeb)]",
-  "bg-[linear-gradient(145deg,#f3f3f3,#e2e2e2)]",
-  "bg-[linear-gradient(145deg,#eeeeee,#d8d8d8)]",
+  "linear-gradient(145deg, var(--surface), var(--surface-tertiary))",
+  "linear-gradient(145deg, var(--surface-secondary), color-mix(in srgb, var(--foreground) 8%, var(--surface)))",
+  "linear-gradient(145deg, var(--surface-tertiary), color-mix(in srgb, var(--foreground) 12%, var(--surface)))",
+  "linear-gradient(145deg, color-mix(in srgb, var(--foreground) 5%, var(--surface)), color-mix(in srgb, var(--foreground) 15%, var(--surface)))",
 ] as const;
 
 const generalImageBackgrounds = [
-  "bg-[linear-gradient(145deg,#fff5f5,#ffe4e6)]",
-  "bg-[linear-gradient(145deg,#eff6ff,#dbeafe)]",
-  "bg-[linear-gradient(145deg,#fffbeb,#fef3c7)]",
-  "bg-[linear-gradient(145deg,#ecfdf5,#d1fae5)]",
+  "linear-gradient(145deg, color-mix(in srgb, var(--brand-primary) 4%, white), color-mix(in srgb, var(--brand-primary) 13%, white))",
+  "linear-gradient(145deg, color-mix(in srgb, var(--brand-accent) 4%, white), color-mix(in srgb, var(--brand-accent) 13%, white))",
+  "linear-gradient(145deg, color-mix(in srgb, var(--brand-primary) 5%, white), color-mix(in srgb, var(--brand-accent) 12%, white))",
+  "linear-gradient(145deg, color-mix(in srgb, var(--brand-accent) 5%, white), color-mix(in srgb, var(--brand-primary) 12%, white))",
 ] as const;
 
 function GeneralProductPlaceholder() {
-  return <div className="h-full w-full bg-[#f1f2f4]" aria-hidden="true" />;
+  return <div className="h-full w-full bg-[var(--surface-tertiary)]" aria-hidden="true" />;
 }
 
 type ProductCardProps = {
@@ -41,11 +41,11 @@ export function ProductCard({ href, name, category, industry, weight, purity, ma
   const imageBackground = industry === "GENERAL" ? generalImageBackgrounds[Math.abs(imageTone) % generalImageBackgrounds.length] : galleryImageBackgrounds[Math.abs(imageTone) % galleryImageBackgrounds.length];
   return (
     <Link
-      className={`group min-w-0 bg-white transition-all duration-[250ms] ease-out ${isGallery ? "block h-full" : "hover:-translate-y-[5px] hover:shadow-[0_18px_42px_rgba(23,35,59,0.09)]"}`}
+      className={`group min-w-0 bg-white transition-all duration-[250ms] ease-out focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brand-accent)] ${isGallery ? "block h-full" : "hover:-translate-y-[5px] hover:shadow-[0_18px_42px_color-mix(in_srgb,var(--brand-primary)_12%,transparent)]"}`}
       href={href}
     >
       {/* Media */}
-      <div className={`relative overflow-hidden ${isGallery ? `aspect-square rounded-[7px] ${imageBackground}` : "aspect-[1/1.08] bg-[#f3f3f3]"}`}>
+      <div className={`relative overflow-hidden ${isGallery ? "aspect-square rounded-[7px]" : "aspect-[1/1.08] bg-[var(--surface-tertiary)]"}`} style={isGallery ? { background: imageBackground } : undefined}>
         {image ? (
           <Image
             src={image.src}
@@ -61,13 +61,13 @@ export function ProductCard({ href, name, category, industry, weight, purity, ma
           </div>
         )}
         <span className={`absolute top-2.5 max-w-[70%] truncate px-2 py-1 text-[0.62rem] ${isGallery ? "left-2.5 rounded-[4px] bg-white/90 text-slate-600 shadow-sm" : "right-2.5 border border-[var(--brand-accent)]/30 bg-white/90 text-[var(--brand-accent)]"}`}>{industry === "GOLD" ? (isGallery ? `${weight} گرم` : `طلای ${purity}`) : category}</span>
-        {isGallery && <span className="absolute right-2.5 top-2.5 grid size-7 place-items-center rounded-full bg-white/90 text-[#777]"><Heart size={15} /></span>}
-        {isGallery && makingFee ? <span className="absolute bottom-2.5 right-2.5 rounded-[4px] bg-slate-100 px-2 py-1 text-[0.6rem] font-bold text-slate-600 shadow-sm">{makingFee.type === "PERCENT" ? <>اجرت {makingFee.value.toLocaleString("fa-IR")}٪{makingFee.value < 5 && " | کم‌اجرت"}</> : "اجرت ثابت"}</span> : isGallery && discountPercent !== undefined && discountPercent > 0 ? <span className="absolute bottom-2.5 right-2.5 rounded-[4px] bg-rose-600 px-2 py-1 text-[0.6rem] font-bold text-white">٪{discountPercent.toLocaleString("fa-IR")}</span> : null}
+        {isGallery && <span className="absolute right-2.5 top-2.5 grid size-7 place-items-center rounded-full bg-white/90 text-slate-500"><Heart size={15} /></span>}
+        {isGallery && makingFee ? <span className="absolute bottom-2.5 right-2.5 rounded-[4px] bg-slate-100 px-2 py-1 text-[0.6rem] font-bold text-slate-600 shadow-sm">{makingFee.type === "PERCENT" ? <>اجرت {makingFee.value.toLocaleString("fa-IR")}٪{makingFee.value < 5 && " | کم‌اجرت"}</> : "اجرت ثابت"}</span> : isGallery && discountPercent !== undefined && discountPercent > 0 ? <span className="absolute bottom-2.5 right-2.5 rounded-[4px] bg-[var(--danger)] px-2 py-1 text-[0.6rem] font-bold text-[var(--danger-foreground)]">٪{discountPercent.toLocaleString("fa-IR")}</span> : null}
       </div>
 
       {/* Content */}
       <div className={`px-1 pb-4 sm:pb-5 ${isGallery ? "pt-2 text-right" : "px-2.5 pt-2.5 text-center sm:px-[15px] sm:pt-[17px]"}`}>
-        {!isGallery && <span className="text-[0.7rem] text-[#747982]">{industry === "GOLD" ? `${category} · ${weight} گرم` : category}</span>}
+        {!isGallery && <span className="text-[0.7rem] text-[var(--muted)]">{industry === "GOLD" ? `${category} · ${weight} گرم` : category}</span>}
         <h3 className={`font-medium ${isGallery ? `mb-1 mt-0 line-clamp-2 h-10 overflow-hidden text-[0.76rem] leading-5 sm:text-[0.82rem] ${industry === "GENERAL" ? "text-slate-700" : ""}` : "mb-[7px] mt-[5px] min-h-8 text-[0.82rem] sm:text-[0.95rem]"}`}>{name}</h3>
         <div className={isGallery ? "grid min-h-9 grid-rows-[1rem_1.125rem] content-start justify-items-start gap-0.5" : ""}>
           {originalPrice ? <span className={`${isGallery ? "block" : "ml-2"} text-[0.7rem] text-slate-400 line-through`}>{originalPrice}</span> : isGallery ? <span aria-hidden="true" className="invisible block text-[0.7rem]">بدون تخفیف</span> : null}

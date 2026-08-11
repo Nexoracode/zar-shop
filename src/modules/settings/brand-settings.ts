@@ -65,6 +65,7 @@ export function brandCssVariables(settings: BrandSettings) {
     "--brand-accent-foreground": settings.enforceColorContrast ? foregroundFor(settings.brandAccentColor) : "#FFFFFF",
     "--brand-background": settings.brandBackgroundColor,
     "--brand-danger": settings.brandDangerColor,
+    "--brand-danger-foreground": settings.enforceColorContrast ? foregroundFor(settings.brandDangerColor) : "#FFFFFF",
     "--accent": settings.brandPrimaryColor,
     "--accent-foreground": settings.enforceColorContrast ? foregroundFor(settings.brandPrimaryColor) : "#FFFFFF",
     "--focus": settings.brandAccentColor,
@@ -72,5 +73,6 @@ export function brandCssVariables(settings: BrandSettings) {
     "--warning-foreground": settings.enforceColorContrast ? foregroundFor(settings.brandAccentColor) : "#17233B",
     "--background": settings.brandBackgroundColor,
     "--danger": settings.brandDangerColor,
+    "--danger-foreground": settings.enforceColorContrast ? foregroundFor(settings.brandDangerColor) : "#FFFFFF",
   } as Record<string, string>;
 }

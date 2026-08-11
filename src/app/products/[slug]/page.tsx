@@ -102,7 +102,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
     <span className="text-xs text-slate-500">{product.storeIndustry === "GOLD" && !product.fixedPrice && rate !== null ? `محاسبه‌شده با نرخ ${formatMoney(rate, settings.currency)}` : "قیمت فروش محصول"}</span>
     {product.storeIndustry === "GOLD" && rate !== null && <PriceTooltip />}
   </div>;
-  const purchaseMeta = <span className={`text-xs font-bold ${product.stock > 0 ? "text-emerald-600" : "text-rose-600"}`}>{product.stock > 0 ? catalogSettings.showProductStock ? `${product.stock.toLocaleString("fa-IR")} عدد موجود در انبار` : "موجود در انبار" : "در حال حاضر ناموجود"}</span>;
+  const purchaseMeta = <span className={`text-xs font-bold ${product.stock > 0 ? "text-[var(--success)]" : "text-[var(--danger)]"}`}>{product.stock > 0 ? catalogSettings.showProductStock ? `${product.stock.toLocaleString("fa-IR")} عدد موجود در انبار` : "موجود در انبار" : "در حال حاضر ناموجود"}</span>;
   const cartProps = {
     productId: product.id,
     currency: settings.currency,
@@ -130,14 +130,14 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
             <ProductDetailGallery media={galleryMedia} productName={product.name} productCode={product.sku} hasDiscount={Boolean(discounted?.isActive)} discountEndsAt={discounted?.isActive && product.discountEndsAt ? product.discountEndsAt.toISOString() : null} soldPercent={soldPercent} />
 
             <div className="min-w-0 lg:col-start-2 lg:row-start-1">
-              {product.category && <Link href={`/products?category=${encodeURIComponent(product.category.slug)}`} className="text-sm font-bold text-sky-600 hover:text-sky-700">{product.category.name}</Link>}
+              {product.category && <Link href={`/products?category=${encodeURIComponent(product.category.slug)}`} className="text-sm font-bold text-[var(--brand-accent)] transition-colors hover:text-[var(--brand-primary)]">{product.category.name}</Link>}
               <h1 className="mb-4 mt-3 text-xl font-normal leading-9 text-slate-900 sm:text-2xl">{product.name}</h1>
               <p dir="ltr" className="border-b border-slate-200 pb-4 text-left text-xs text-slate-400">{product.sku}</p>
               <div className="mt-4 flex flex-wrap items-center gap-3 text-xs">
-                <span className="inline-flex items-center gap-1 font-bold text-slate-700"><Star size={16} className="fill-amber-400 text-amber-400" />{mockRating.toLocaleString("fa-IR")}</span><span className="text-slate-400">از ۵</span><span className="size-1 rounded-full bg-slate-300" /><span className="font-bold text-sky-600">{mockReviewCount.toLocaleString("fa-IR")} دیدگاه</span>
+                <span className="inline-flex items-center gap-1 font-bold text-slate-700"><Star size={16} className="fill-[var(--warning)] text-[var(--warning)]" />{mockRating.toLocaleString("fa-IR")}</span><span className="text-slate-400">از ۵</span><span className="size-1 rounded-full bg-slate-300" /><span className="font-bold text-[var(--brand-accent)]">{mockReviewCount.toLocaleString("fa-IR")} دیدگاه</span>
               </div>
               <AddToCart {...cartProps} layout="product-detail" showPurchaseCard={false} />
-              {primaryFeatures.length > 0 && <section className="mt-8" aria-labelledby="primary-features-title"><h2 id="primary-features-title" className="mb-4 text-base font-normal text-slate-900">ویژگی‌ها</h2><div className="grid grid-cols-2 gap-2">{primaryFeatures.map((feature) => <div key={feature.id} className="min-h-[62px] rounded-lg bg-[#f3f3f5] px-3 py-2.5 text-right"><span className="block text-[11px] text-slate-400">{feature.name}</span><strong className="mt-1 block truncate text-xs font-normal text-slate-700">{feature.values.join("، ")}</strong></div>)}</div><div className="mt-4 flex items-center gap-4"><span className="h-px flex-1 bg-slate-200" /><Link href="#specifications" className="inline-flex min-h-10 shrink-0 items-center gap-2 rounded-lg border border-slate-200 px-4 text-xs font-normal text-slate-800 transition hover:border-slate-400">مشاهده همه ویژگی‌ها <span aria-hidden="true">‹</span></Link><span className="h-px flex-1 bg-slate-200" /></div></section>}
+              {primaryFeatures.length > 0 && <section className="mt-8" aria-labelledby="primary-features-title"><h2 id="primary-features-title" className="mb-4 text-base font-normal text-slate-900">ویژگی‌ها</h2><div className="grid grid-cols-2 gap-2">{primaryFeatures.map((feature) => <div key={feature.id} className="min-h-[62px] rounded-lg bg-[var(--surface-tertiary)] px-3 py-2.5 text-right"><span className="block text-[11px] text-slate-400">{feature.name}</span><strong className="mt-1 block truncate text-xs font-normal text-slate-700">{feature.values.join("، ")}</strong></div>)}</div><div className="mt-4 flex items-center gap-4"><span className="h-px flex-1 bg-slate-200" /><Link href="#specifications" className="inline-flex min-h-10 shrink-0 items-center gap-2 rounded-lg border border-[var(--brand-accent)]/35 px-4 text-xs font-normal text-[var(--brand-accent)] transition hover:border-[var(--brand-accent)] hover:text-[var(--brand-primary)]">مشاهده همه ویژگی‌ها <span aria-hidden="true">‹</span></Link><span className="h-px flex-1 bg-slate-200" /></div></section>}
             </div>
           </section>
         </div>
@@ -149,7 +149,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
       </div>
 
       {product.category && <section className="mt-12 border-t border-slate-200 py-8" aria-labelledby="related-products-title">
-        <div className="mb-6 flex items-center justify-between gap-4"><h2 id="related-products-title" className="relative w-fit pb-3 text-lg font-black text-slate-900 after:absolute after:inset-x-0 after:bottom-0 after:h-[3px] after:rounded-full after:bg-rose-500">کالاهای مرتبط</h2><Link href={`/products?category=${encodeURIComponent(product.category.slug)}`} className="shrink-0 text-xs font-bold text-slate-700 hover:text-slate-950">مشاهده همه</Link></div>
+        <div className="mb-6 flex items-center justify-between gap-4"><h2 id="related-products-title" className="relative w-fit pb-3 text-lg font-black text-slate-900 after:absolute after:inset-x-0 after:bottom-0 after:h-[3px] after:rounded-full after:bg-[var(--brand-primary)]">کالاهای مرتبط</h2><Link href={`/products?category=${encodeURIComponent(product.category.slug)}`} className="shrink-0 text-xs font-bold text-[var(--brand-accent)] transition-colors hover:text-[var(--brand-primary)]">مشاهده همه</Link></div>
         {relatedProducts.length > 0 ? <div className="flex snap-x gap-4 overflow-x-auto pb-3">{relatedProducts.map((item, index) => <div key={item.id} className="w-[176px] min-w-[176px] snap-start sm:w-[210px] sm:min-w-[210px]"><ProductCard {...item} storefrontVariant="gallery" imageTone={index} /></div>)}</div> : <p className="rounded-xl bg-slate-50 px-4 py-6 text-center text-xs text-slate-500">در حال حاضر کالای مرتبط دیگری در این دسته‌بندی ثبت نشده است.</p>}
       </section>}
 
@@ -172,12 +172,12 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
         <div className="grid gap-8 lg:grid-cols-[260px_minmax(0,1fr)]">
           <aside className="h-fit rounded-xl border border-slate-200 p-5 lg:sticky lg:top-24">
             <div className="flex items-end gap-2"><strong className="text-3xl font-black text-slate-900">{mockRating.toLocaleString("fa-IR")}</strong><span className="pb-1 text-xs text-slate-400">از ۵</span></div>
-            <div className="my-3 flex gap-1 text-amber-400" aria-label={`${mockRating.toLocaleString("fa-IR")} از ۵ ستاره`}>{[1, 2, 3, 4, 5].map((star) => <Star key={star} size={18} fill={star <= 4 ? "currentColor" : "none"} />)}</div>
+            <div className="my-3 flex gap-1 text-[var(--warning)]" aria-label={`${mockRating.toLocaleString("fa-IR")} از ۵ ستاره`}>{[1, 2, 3, 4, 5].map((star) => <Star key={star} size={18} fill={star <= 4 ? "currentColor" : "none"} />)}</div>
             <p className="text-xs text-slate-500">از مجموع {mockReviewCount.toLocaleString("fa-IR")} دیدگاه ثبت‌شده</p>
-            <div className="mt-5 grid gap-2.5">{[5, 4, 3, 2, 1].map((score, index) => <div key={score} className="grid grid-cols-[28px_1fr] items-center gap-2 text-[10px] text-slate-500"><span>{score.toLocaleString("fa-IR")}</span><span className="h-1.5 overflow-hidden rounded-full bg-slate-100"><span className="block h-full rounded-full bg-amber-400" style={{ width: `${[72, 18, 6, 3, 1][index]}%` }} /></span></div>)}</div>
+            <div className="mt-5 grid gap-2.5">{[5, 4, 3, 2, 1].map((score, index) => <div key={score} className="grid grid-cols-[28px_1fr] items-center gap-2 text-[10px] text-slate-500"><span>{score.toLocaleString("fa-IR")}</span><span className="h-1.5 overflow-hidden rounded-full bg-slate-100"><span className="block h-full rounded-full bg-[var(--warning)]" style={{ width: `${[72, 18, 6, 3, 1][index]}%` }} /></span></div>)}</div>
           </aside>
           <div className="divide-y divide-slate-200 border-y border-slate-200">{mockReviews.map((review) => <article key={review.id} className="py-6 first:pt-0">
-            <div className="mb-3 flex flex-wrap items-center gap-3"><span className="rounded bg-emerald-500 px-2 py-1 text-xs font-black text-white">{review.rating.toLocaleString("fa-IR")}</span><strong className="text-sm text-slate-900">{review.title}</strong><span className="mr-auto text-[11px] text-slate-400">{review.date}</span></div>
+            <div className="mb-3 flex flex-wrap items-center gap-3"><span className="rounded bg-[var(--success)] px-2 py-1 text-xs font-black text-[var(--success-foreground)]">{review.rating.toLocaleString("fa-IR")}</span><strong className="text-sm text-slate-900">{review.title}</strong><span className="mr-auto text-[11px] text-slate-400">{review.date}</span></div>
             <p className="text-sm leading-7 text-slate-600">{review.body}</p>
             <div className="mt-4 flex items-center gap-2 text-xs text-slate-400"><span className="grid size-7 place-items-center rounded-full bg-slate-100 font-black text-slate-500">{review.name.slice(0, 1)}</span>{review.name}<span className="rounded-full bg-slate-100 px-2 py-1 text-[10px]">خریدار محصول</span></div>
           </article>)}</div>
@@ -191,5 +191,5 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
 }
 
 function SectionTitle({ id, children }: { id: string; children: string }) {
-  return <h2 id={id} className="relative mb-8 w-fit pb-3 text-lg font-black text-slate-900 after:absolute after:inset-x-0 after:bottom-0 after:h-[3px] after:rounded-full after:bg-rose-500">{children}</h2>;
+  return <h2 id={id} className="relative mb-8 w-fit pb-3 text-lg font-black text-slate-900 after:absolute after:inset-x-0 after:bottom-0 after:h-[3px] after:rounded-full after:bg-[var(--brand-primary)]">{children}</h2>;
 }

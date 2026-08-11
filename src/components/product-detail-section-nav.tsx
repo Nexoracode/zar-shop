@@ -87,7 +87,7 @@ export function ProductDetailSectionNav() {
           href={`#${section.id}`}
           aria-current={active ? "location" : undefined}
           onClick={() => setActiveSection(section.id)}
-          className={`relative shrink-0 py-4 transition-colors after:absolute after:inset-x-0 after:bottom-0 after:h-[3px] after:rounded-t-full after:transition-opacity ${active ? "text-rose-500 after:bg-rose-500 after:opacity-100" : "hover:text-slate-900 after:opacity-0"}`}
+          className={`relative shrink-0 py-4 transition-colors after:absolute after:inset-x-0 after:bottom-0 after:h-[3px] after:rounded-t-full after:transition-opacity ${active ? "text-[var(--brand-primary)] after:bg-[var(--brand-primary)] after:opacity-100" : "hover:text-[var(--brand-primary)] after:opacity-0"}`}
         >{section.label}</Link>;
       })}
     </nav>

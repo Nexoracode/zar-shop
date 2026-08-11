@@ -33,7 +33,7 @@ export function ProductSpecifications({ groups }: { groups: SpecificationGroup[]
         </dl>
       </section>)}
     </div>
-    {totalRows > collapsedRowCount && <Button type="button" size="sm" variant="ghost" aria-expanded={expanded} aria-controls="product-specification-groups" onPress={() => setExpanded((current) => !current)} className="mt-5 min-h-9 gap-1.5 px-0 text-xs font-normal text-sky-600 hover:bg-transparent hover:text-sky-700">
+    {totalRows > collapsedRowCount && <Button type="button" size="sm" variant="ghost" aria-expanded={expanded} aria-controls="product-specification-groups" onPress={() => setExpanded((current) => !current)} className="mt-5 min-h-9 gap-1.5 px-0 text-xs font-normal text-[var(--brand-accent)] hover:bg-transparent hover:text-[var(--brand-primary)]">
       {expanded ? <><ChevronUp size={14} />بستن</> : <><ChevronDown size={14} />مشاهده بیشتر</>}
     </Button>}
   </div>;
