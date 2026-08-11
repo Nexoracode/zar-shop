@@ -88,13 +88,13 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
 
   const resetFiltersHref = productsHref({ MinPrice: undefined, MaxPrice: undefined, color: [], attr: [], inStock: undefined, page: undefined });
   const filters = <StorefrontCatalogFilters
+    key={[query.MinPrice, query.MaxPrice].join("|")}
     facets={catalog.facets}
     selectedColors={query.color ?? []}
     selectedAttributes={query.attr ?? []}
     minPrice={query.MinPrice}
     maxPrice={query.MaxPrice}
     inStock={query.inStock}
-    hidden={{ q: query.q, category: query.category, sortby: query.sortby }}
     resetHref={resetFiltersHref}
   />;
 
