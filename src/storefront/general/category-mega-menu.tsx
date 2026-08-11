@@ -44,7 +44,7 @@ export function GeneralCategoryMegaMenu({ categories, enabled = true }: { catego
     openTimerRef.current = setTimeout(() => {
       openTimerRef.current = null;
       setOpen(true);
-    }, 1000);
+    }, 400);
   }
 
   useEffect(() => () => {
