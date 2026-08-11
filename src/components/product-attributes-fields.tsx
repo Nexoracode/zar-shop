@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { Button, Input } from "@heroui/react";
 import { ListChecks, Plus, X } from "lucide-react";
-import { adminFieldClass } from "@/components/admin-ui";
 import { TruncatedTextTooltip } from "@/components/hero";
 import type { CategoryAttributeGroup, ProductAttributeValue } from "@/modules/products/attributes";
 
@@ -31,17 +30,17 @@ export function ProductAttributesFields({ groups, values, onChange }: Props) {
     onChange([...values.filter((item) => item.attributeId !== attributeId), ...(remaining.length ? [{ attributeId, values: remaining }] : [])]);
   }
 
-  return <div className="grid gap-4">
-    {groups.map((group) => <section key={group.id} className="min-w-0 overflow-hidden rounded-xl border border-slate-200 bg-slate-50/60">
-      <header className="flex items-center gap-2 border-b border-slate-200 bg-white px-4 py-3"><ListChecks size={16} className="shrink-0 text-violet-600" /><strong className="min-w-0 truncate text-sm text-slate-800">{group.name}</strong><span className="mr-auto shrink-0 text-[10px] text-slate-400">{group.attributes.length.toLocaleString("fa-IR")} ویژگی</span></header>
-      <div className="grid min-w-0 gap-3 p-3 sm:p-4 lg:grid-cols-2">
+  return <div className="grid gap-3">
+    {groups.map((group) => <section key={group.id} className="min-w-0 overflow-hidden rounded-xl border border-slate-200 bg-slate-50/50">
+      <header className="flex min-h-11 items-center gap-2 border-b border-slate-200 bg-white px-3 py-2.5"><span className="grid size-7 shrink-0 place-items-center rounded-lg bg-violet-50 text-violet-600"><ListChecks size={14} /></span><strong className="min-w-0 truncate text-xs font-black text-slate-800">{group.name}</strong><span className="mr-auto shrink-0 rounded-full bg-slate-100 px-2 py-1 text-[9px] font-bold text-slate-500">{group.attributes.length.toLocaleString("fa-IR")} ویژگی</span></header>
+      <div className="grid min-w-0 gap-2.5 p-2.5 sm:p-3 md:grid-cols-2 2xl:grid-cols-3">
         {group.attributes.map((attribute) => {
           const currentValues = valuesById.get(attribute.id) ?? [];
-          return <article key={attribute.id} className="flex min-h-[180px] min-w-0 flex-col rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
-            <div className="min-w-0 border-b border-slate-100 pb-3"><TruncatedTextTooltip text={attribute.name} className="max-w-full text-xs font-black text-slate-700" /></div>
-            <div className="mt-3 grid min-w-0 gap-2 sm:grid-cols-[minmax(0,1fr)_auto]"><Input value={drafts[attribute.id] ?? ""} onChange={(event) => setDrafts((current) => ({ ...current, [attribute.id]: event.target.value }))} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); addMultipleValue(attribute.id); } }} placeholder="یک یا چند مقدار؛ با کاما جدا کنید" fullWidth variant="secondary" className={`${adminFieldClass} min-w-0`} /><Button type="button" variant="secondary" onPress={() => addMultipleValue(attribute.id)} className="min-h-11 shrink-0 gap-1 px-3 text-xs font-bold"><Plus size={14} />افزودن</Button></div>
-
-            <div className="mt-auto min-w-0 border-t border-slate-100 pt-3"><span className="mb-2 block text-[10px] font-bold text-slate-400">مقادیر ثبت‌شده</span>{currentValues.length ? <div className="flex min-w-0 flex-wrap gap-1.5">{currentValues.map((value) => <SelectedValue key={value} value={value} onRemove={() => removeValue(attribute.id, value)} />)}</div> : <span className="block text-[10px] text-slate-400">هنوز مقداری ثبت نشده است.</span>}</div>
+          const draft = drafts[attribute.id] ?? "";
+          return <article key={attribute.id} className="min-w-0 rounded-lg border border-slate-200 bg-white p-2.5 shadow-[0_1px_2px_rgba(15,23,42,0.03)]">
+            <div className="min-w-0"><TruncatedTextTooltip text={attribute.name} className="max-w-full text-[11px] font-black leading-5 text-slate-700" /></div>
+            <div className="mt-2 flex min-w-0 items-center gap-1.5"><Input value={draft} onChange={(event) => setDrafts((current) => ({ ...current, [attribute.id]: event.target.value }))} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); addMultipleValue(attribute.id); } }} aria-label={`مقدار ${attribute.name}`} placeholder="مقدار؛ چند مورد با کاما" fullWidth variant="secondary" className="min-h-9 min-w-0 rounded-lg border border-[var(--field-border)] bg-[var(--field-background)] px-2.5 py-1.5 text-xs text-[var(--field-foreground)] outline-none transition placeholder:text-[var(--field-placeholder)] focus:border-[var(--field-border-focus)] focus:ring-2 focus:ring-[var(--focus)]/10" /><Button type="button" size="sm" variant="secondary" isDisabled={!draft.trim()} onPress={() => addMultipleValue(attribute.id)} className="min-h-9 shrink-0 gap-1 rounded-lg px-2.5 text-[11px] font-bold"><Plus size={13} />افزودن</Button></div>
+            <div className="mt-2 min-w-0 border-t border-slate-100 pt-2">{currentValues.length ? <div className="flex min-w-0 flex-wrap items-center gap-1.5">{currentValues.map((value) => <SelectedValue key={value} value={value} onRemove={() => removeValue(attribute.id, value)} />)}</div> : <span className="block text-[9px] leading-6 text-slate-400">مقداری برای این ویژگی ثبت نشده است.</span>}</div>
           </article>;
         })}
       </div>
@@ -50,5 +49,5 @@ export function ProductAttributesFields({ groups, values, onChange }: Props) {
 }
 
 function SelectedValue({ value, onRemove }: { value: string; onRemove: () => void }) {
-  return <span className="flex min-h-8 max-w-full min-w-0 items-center gap-1 rounded-md bg-violet-50 px-2 text-[11px] font-bold text-violet-700"><span className="min-w-0 flex-1"><TruncatedTextTooltip text={value} className="max-w-[220px]" /></span><Button type="button" isIconOnly size="sm" variant="ghost" aria-label={`حذف ${value}`} onPress={onRemove} className="size-5 min-h-5 min-w-5 shrink-0 rounded text-violet-500"><X size={11} /></Button></span>;
+  return <span className="inline-flex h-7 max-w-full min-w-0 items-center gap-1 rounded-md border border-violet-100 bg-violet-50 pr-2 pl-1 text-violet-700"><span className="flex min-w-0 items-center"><TruncatedTextTooltip text={value} className="max-w-[190px] text-[10px] font-bold leading-none" /></span><Button type="button" isIconOnly size="sm" variant="ghost" aria-label={`حذف ${value}`} onPress={onRemove} className="grid size-5 min-h-5 min-w-5 shrink-0 place-items-center self-center rounded p-0 text-violet-400 hover:bg-violet-100 hover:text-violet-700"><X size={10} /></Button></span>;
 }
