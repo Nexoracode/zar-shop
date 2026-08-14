@@ -4,9 +4,12 @@ import { db } from "@/lib/db";
 import { apiError } from "@/lib/http";
 import { createSession } from "@/modules/auth/session";
 import { registerSchema } from "@/modules/auth/schemas";
+import { consumeRegistrationAttempt, rateLimitResponse } from "@/modules/auth/rate-limit";
 
 export async function POST(request: Request) {
   try {
+    const blockedUntil = await consumeRegistrationAttempt(request);
+    if (blockedUntil) return rateLimitResponse(blockedUntil);
     const input = registerSchema.parse(await request.json());
     const exists = await db.user.findFirst({ where: { OR: [{ email: input.email }, { phone: input.phone }] } });
     if (exists) return NextResponse.json({ message: "ایمیل یا شماره موبایل قبلاً ثبت شده است." }, { status: 409 });

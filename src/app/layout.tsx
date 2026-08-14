@@ -10,6 +10,10 @@ import { brandCssVariables, getBrandSettings } from "@/modules/settings/brand-se
 import { StorefrontFooter, StorefrontHeader } from "@/storefront/resolve-chrome";
 import "./globals.css";
 
+// The root layout reads tenant/store settings from MySQL for every request.
+// Keeping the segment dynamic prevents build-time database rendering and stale branding.
+export const dynamic = "force-dynamic";
+
 export async function generateMetadata(): Promise<Metadata> {
   const [requestHeaders, settings, brand] = await Promise.all([headers(), getGeneralStoreSettings(), getBrandSettings()]);
   const host = requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host") ?? "localhost:3000";

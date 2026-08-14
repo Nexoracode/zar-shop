@@ -43,6 +43,7 @@ const actionLabels: Record<string, string> = {
   MANUAL_SMS_DELETE: "حذف سابقه پیامک",
   ORDER_AUTO_EXPIRED: "انقضای خودکار سفارش",
   ORDER_EXPIRATION_NOTIFICATION: "هشدار انقضای سفارش",
+  PAID_ORDER_INVENTORY_SHORTAGE: "کسری موجودی سفارش پرداخت‌شده",
   ADMIN_LOGIN: "ورود به پنل مدیریت",
   ADMIN_LOGOUT: "خروج از پنل مدیریت",
 };
@@ -83,7 +84,7 @@ export function auditActionKind(action: string): AuditActionKind {
   if (action === "ADMIN_LOGIN" || action === "ADMIN_LOGOUT") return "ACCESS";
   if (action.includes("DELETE")) return "DELETE";
   if (action.includes("CREATE") || action.includes("UPLOAD") || action.includes("SEND")) return "CREATE";
-  if (action.includes("AUTO_") || action.includes("NOTIFICATION")) return "SYSTEM";
+  if (action.includes("AUTO_") || action.includes("NOTIFICATION") || action === "PAID_ORDER_INVENTORY_SHORTAGE") return "SYSTEM";
   return "UPDATE";
 }
 

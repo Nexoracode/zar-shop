@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Alert, Button, Chip, Input, Label, Modal, Spinner, TextArea, toast } from "@heroui/react";
 import { ListFilter, MessageCircleReply, MoreVertical, Star, ThumbsDown, ThumbsUp } from "lucide-react";
 import type { StorefrontReview, StorefrontReviewData } from "@/modules/reviews/service";
@@ -34,6 +35,7 @@ function updateReview(items: StorefrontReview[], id: string, update: (review: St
 }
 
 export function ProductReviews({ productId, initialData, isAuthenticated }: Props) {
+  const router = useRouter();
   const [data, setData] = useState(initialData);
   const [composeOpen, setComposeOpen] = useState(false);
   const [replyTo, setReplyTo] = useState<StorefrontReview | null>(null);
@@ -149,7 +151,7 @@ export function ProductReviews({ productId, initialData, isAuthenticated }: Prop
           {!replyTo && <Label className="grid gap-2 text-xs font-bold text-slate-700">عنوان دیدگاه<Input value={title} onChange={(event) => setTitle(event.target.value)} maxLength={120} placeholder="خلاصه تجربه شما" variant="primary" className={reviewInputClass} /></Label>}
           <Label className="grid gap-2 text-xs font-bold text-slate-700">متن {replyTo ? "پاسخ" : "دیدگاه"}<TextArea value={body} onChange={(event) => setBody(event.target.value)} minLength={3} maxLength={3000} rows={6} placeholder="تجربه خود را با جزئیات بنویسید" variant="primary" className={reviewTextAreaClass} /></Label>
         </>}</div></Modal.Body>
-        <Modal.Footer><Button type="button" variant="secondary" onPress={() => setComposeOpen(false)}>انصراف</Button>{isAuthenticated ? <Button type="button" variant="primary" isPending={submitting} isDisabled={submitting || body.trim().length < 3 || (!replyTo && (!title.trim() || rating === 0))} onPress={() => void submitReview()}>ثبت دیدگاه</Button> : <Button type="button" variant="primary" onPress={() => { window.location.href = "/login"; }}>ورود به حساب کاربری</Button>}</Modal.Footer>
+        <Modal.Footer><Button type="button" variant="secondary" onPress={() => setComposeOpen(false)}>انصراف</Button>{isAuthenticated ? <Button type="button" variant="primary" isPending={submitting} isDisabled={submitting || body.trim().length < 3 || (!replyTo && (!title.trim() || rating === 0))} onPress={() => void submitReview()}>ثبت دیدگاه</Button> : <Button type="button" variant="primary" onPress={() => router.push("/login")}>ورود به حساب کاربری</Button>}</Modal.Footer>
       </Modal.Dialog></Modal.Container>
     </Modal.Backdrop>
 

@@ -25,14 +25,14 @@ export default async function CartPage() {
     getCommerceSettings(),
   ]);
   const items = ((cart?.items ?? []) as CartItemRow[]).filter((item) => item.product.storeIndustry === settings.industry);
-  const rate = gold ? Number(gold.pricePerGram18) : null;
+  const rate = gold?.pricePerGram18 ?? null;
   const hasGoldItems = items.some((item) => item.product.storeIndustry === "GOLD");
   const getItemPricing = (item: CartItemRow) => {
     const p = item.product;
-    const selectedWeight = getSelectedOptionWeight(p.options, item.selectedOptions, Number(p.weightGrams));
+    const selectedWeight = getSelectedOptionWeight(p.options, item.selectedOptions, p.weightGrams);
     const baseAmount = p.storeIndustry === "GENERAL"
       ? getSelectedOptionPrice(p.options, item.selectedOptions, Number(p.fixedPrice ?? 0))
-      : p.fixedPrice ? Number(p.fixedPrice) : rate === null ? null : calculateProductPrice({ goldPricePerGram18: rate, weightGrams: selectedWeight, purity: p.purity, makingFeeType: p.makingFeeType, makingFeeValue: Number(p.makingFeeValue), profitPercent: Number(p.profitPercent), taxPercent: Number(p.taxPercent) }).total;
+      : p.fixedPrice ? Number(p.fixedPrice) : rate === null ? null : calculateProductPrice({ goldPricePerGram18: rate, weightGrams: selectedWeight, purity: p.purity, makingFeeType: p.makingFeeType, makingFeeValue: p.makingFeeValue, profitPercent: p.profitPercent, taxPercent: p.taxPercent }).total;
     return baseAmount === null ? null : calculateDiscountedPrice(baseAmount, p);
   };
   const getItemAmount = (item: CartItemRow) => getItemPricing(item)?.finalPrice ?? null;
@@ -51,7 +51,7 @@ export default async function CartPage() {
             <span className="inline-block text-[var(--brand-accent)] text-[0.78rem] font-bold tracking-[0.03em] mb-[5px]">خرید امن</span>
             <h1 className="mt-0 mb-0">سبد خرید</h1>
           </div>
-          {hasGoldItems && <ChipRoot variant="soft" className="bg-[#efe5d1] text-[#785b27]"><ChipLabel>نرخ مبنا: {rate === null ? "موقتاً در دسترس نیست" : formatMoney(rate, settings.currency)}</ChipLabel></ChipRoot>}
+          {hasGoldItems && <ChipRoot variant="soft" className="bg-[var(--surface-secondary)] text-[var(--brand-accent)]"><ChipLabel>نرخ مبنا: {rate === null ? "موقتاً در دسترس نیست" : formatMoney(rate.toString(), settings.currency)}</ChipLabel></ChipRoot>}
         </div>
 
         {!items.length ? (
@@ -70,13 +70,13 @@ export default async function CartPage() {
                     const p = item.product;
                     const amount = getItemAmount(item);
                     const pricing = getItemPricing(item);
-                    const selectedWeight = getSelectedOptionWeight(p.options, item.selectedOptions, Number(p.weightGrams));
+                    const selectedWeight = getSelectedOptionWeight(p.options, item.selectedOptions, p.weightGrams);
                     const optionSummary = `${p.sku}${optionEntries(item.selectedOptions).map(([name, value]) => ` · ${name}: ${value}`).join("")}`;
                     return (
                       <TableRow id={item.id} key={item.id}>
                         <TableCell className="w-80 max-w-80 px-4 py-[14px]"><TruncatedTextTooltip text={p.name} className="max-w-72 font-bold" /><TruncatedTextTooltip text={optionSummary} className="max-w-72 text-[0.82rem] text-[#747982]" /></TableCell>
                         <TableCell className="px-4 py-[14px]">{item.quantity}</TableCell>
-                        <TableCell className="px-4 py-[14px]">{p.storeIndustry === "GOLD" ? `${selectedWeight.toLocaleString("fa-IR", { maximumFractionDigits: 3 })} گرم` : "—"}</TableCell>
+                        <TableCell className="px-4 py-[14px]">{p.storeIndustry === "GOLD" ? `${Number(selectedWeight).toLocaleString("fa-IR", { maximumFractionDigits: 3 })} گرم` : "—"}</TableCell>
                         <TableCell className="px-4 py-[14px]">
                           {amount === null ? "قیمت موقتاً نامشخص" : <span>{pricing?.isActive && <small className="ml-2 text-slate-400 line-through">{formatMoney(pricing.originalPrice * item.quantity, settings.currency)}</small>}{formatMoney(amount * item.quantity, settings.currency)}</span>}
                         </TableCell>

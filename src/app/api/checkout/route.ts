@@ -16,6 +16,7 @@ import { getOrderSettings, orderExpiresAt } from "@/modules/settings/order-setti
 import { expirePendingOrders } from "@/modules/orders/expiration";
 import { baseShippingFee, estimatedReadyAt, getCommerceSettings } from "@/modules/settings/commerce-settings";
 import { sendAutomatedSms } from "@/modules/communications/sms-service";
+import { InventoryUnavailableError, releaseInventory, reserveInventory } from "@/modules/orders/inventory";
 
 type ItemWithProduct = Prisma.CartItemGetPayload<{ include: { product: { include: { options: true } } } }>;
 type PriceParts = ReturnType<typeof calculateProductPrice>;
@@ -50,11 +51,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: "نوع بعضی محصولات سبد خرید با قالب فعلی فروشگاه سازگار نیست؛ لطفاً سبد خرید را بازبینی کنید." }, { status: 409 });
     }
     const needsGoldRate = cart.items.some((item) => item.product.storeIndustry === "GOLD");
-    let rate = 0;
+    let rate = "0";
     if (needsGoldRate) {
       try {
         const gold = await getGoldPrice({ force: orderSettings.revalidateGoldAtCheckout });
-        rate = Number(gold.pricePerGram18);
+        rate = gold.pricePerGram18.toString();
       } catch (error) {
         console.error("[checkout] Gold price is unavailable; checkout was stopped.", error);
         return NextResponse.json(
@@ -68,15 +69,15 @@ export async function POST(request: Request) {
       if (item.quantity > orderSettings.maxOrderItemQuantity) throw new Error(`حداکثر تعداد مجاز برای هر قلم ${orderSettings.maxOrderItemQuantity.toLocaleString("fa-IR")} عدد است.`);
       if (p.status !== "ACTIVE" || p.stock < item.quantity) throw new Error(`موجودی ${p.name} کافی نیست.`);
       if (!isOptionSnapshotValid(p.options, item.selectedOptions, item.quantity, p.stock)) throw new Error(`تنوع انتخاب‌شده برای ${p.name} غیرفعال یا ناموجود است.`);
-      const selectedWeight = getSelectedOptionWeight(p.options, item.selectedOptions, Number(p.weightGrams));
+      const selectedWeight = getSelectedOptionWeight(p.options, item.selectedOptions, p.weightGrams);
       const parts = calculateProductPrice({
         goldPricePerGram18: rate,
         weightGrams: p.storeIndustry === "GOLD" ? selectedWeight : 0,
         purity: p.purity,
         makingFeeType: p.makingFeeType,
-        makingFeeValue: Number(p.makingFeeValue),
-        profitPercent: Number(p.profitPercent),
-        taxPercent: Number(p.taxPercent),
+        makingFeeValue: p.makingFeeValue,
+        profitPercent: p.profitPercent,
+        taxPercent: p.taxPercent,
       });
       const originalUnitPrice = p.storeIndustry === "GENERAL"
         ? getSelectedOptionPrice(p.options, item.selectedOptions, Number(p.fixedPrice ?? 0))
@@ -93,6 +94,8 @@ export async function POST(request: Request) {
     const tax = lines.reduce((sum: number, line: CheckoutLine) => sum + line.parts.tax * line.item.quantity, 0);
     const preparationDays = Math.max(...lines.map((line) => line.p.preparationDays));
     const order = await db.$transaction(async (tx) => {
+      const inventoryItems = lines.map(({ item, p }) => ({ productId: p.id, quantity: item.quantity, selectedOptions: item.selectedOptions }));
+      await reserveInventory(tx, inventoryItems);
       const shippingFee = baseShippingFee(commerceSettings, merchandiseAmount, deliveryMethod);
       const promotions = await resolveCheckoutPromotions(tx, { userId: user.id, couponCode, merchandiseAmount, shippingFee, city: address.city });
       const shipping = Math.max(0, shippingFee - promotions.shippingDiscount);
@@ -108,6 +111,7 @@ export async function POST(request: Request) {
           deliveryMethod,
           preparationDaysSnapshot: preparationDays,
           estimatedReadyAt: estimatedReadyAt(preparationDays, createdAt),
+          inventoryReserved: true,
           goldPriceSnapshot: rate,
           subtotal,
           productDiscount,
@@ -122,7 +126,7 @@ export async function POST(request: Request) {
             create: lines.map(({ item, p, parts, originalUnitPrice, discountAmount, unitPrice, total: lineTotal }: CheckoutLine) => ({
               productId: p.id, sku: p.sku, name: p.name, selectedOptions: optionEntries(item.selectedOptions).length ? Object.fromEntries(optionEntries(item.selectedOptions)) : undefined, quantity: item.quantity,
               storeIndustry: p.storeIndustry,
-              weightGrams: getSelectedOptionWeight(p.options, item.selectedOptions, Number(p.weightGrams)), purity: p.purity, makingFee: parts.makingFee,
+              weightGrams: getSelectedOptionWeight(p.options, item.selectedOptions, p.weightGrams), purity: p.purity, makingFee: parts.makingFee,
               profit: parts.profit, tax: parts.tax, originalUnitPrice, discountAmount, unitPrice, total: lineTotal,
             })),
           },
@@ -154,12 +158,15 @@ export async function POST(request: Request) {
       return NextResponse.json({ redirectUrl: paymentRequest.redirectUrl });
     } catch (error) {
       await db.$transaction(async (tx) => {
+        const pendingOrder = await tx.order.findUnique({ where: { id: order.id }, include: { items: true } });
+        if (pendingOrder?.inventoryReserved) await releaseInventory(tx, pendingOrder.items);
         await tx.promotionReward.updateMany({ where: { redeemedOrderId: order.id, redeemedAt: null }, data: { redeemedOrderId: null } });
         await tx.order.delete({ where: { id: order.id } });
       });
       throw error;
     }
   } catch (error) {
+    if (error instanceof InventoryUnavailableError) return NextResponse.json({ message: error.message }, { status: 409 });
     if (error instanceof PromotionValidationError) return NextResponse.json({ message: error.message }, { status: 422 });
     if (error instanceof Error && (error.message.startsWith("موجودی") || error.message.startsWith("تنوع") || error.message.startsWith("قیمت") || error.message.startsWith("حداکثر تعداد"))) return NextResponse.json({ message: error.message }, { status: 409 });
     return apiError(error);

@@ -1,6 +1,7 @@
 import { db } from "@/lib/db";
 import { getOrderSettings } from "@/modules/settings/order-settings";
 import { sendAutomatedSms } from "@/modules/communications/sms-service";
+import { releaseInventory } from "@/modules/orders/inventory";
 
 export type ExpirationRunResult = { inspected: number; expired: number; cancelled: number; notified: number };
 
@@ -11,7 +12,7 @@ export async function expirePendingOrders(now = new Date()): Promise<ExpirationR
 
   const candidates = await db.order.findMany({
     where: { status: "PENDING_PAYMENT", expiresAt: { lte: now }, expirationHandledAt: null, payments: { none: { status: "SUCCESS" } } },
-    select: { id: true, orderNumber: true, user: { select: { phone: true } } },
+    select: { id: true, orderNumber: true, inventoryReserved: true, items: true, user: { select: { phone: true } } },
     take: 100,
     orderBy: { expiresAt: "asc" },
   });
@@ -22,11 +23,16 @@ export async function expirePendingOrders(now = new Date()): Promise<ExpirationR
       const nextStatus = settings.orderExpirationAction === "EXPIRE" ? "EXPIRED" : settings.orderExpirationAction === "CANCEL" ? "CANCELLED" : undefined;
       const updated = await transaction.order.updateMany({
         where: { id: order.id, status: "PENDING_PAYMENT", expiresAt: { lte: now }, expirationHandledAt: null, payments: { none: { status: "SUCCESS" } } },
-        data: { ...(nextStatus ? { status: nextStatus, expiredAt: now } : {}), expirationHandledAt: now },
+        data: {
+          ...(nextStatus ? { status: nextStatus, expiredAt: now } : {}),
+          ...(nextStatus && settings.releaseReservedInventory && order.inventoryReserved ? { inventoryReserved: false } : {}),
+          expirationHandledAt: now,
+        },
       });
       if (updated.count !== 1) return false;
 
       if (nextStatus) {
+        if (settings.releaseReservedInventory && order.inventoryReserved) await releaseInventory(transaction, order.items);
         await transaction.payment.updateMany({ where: { orderId: order.id, status: { in: ["INITIATED", "PENDING"] } }, data: { status: "CANCELLED" } });
         if (settings.restorePromotionOnExpiry) {
           await transaction.promotionReward.updateMany({ where: { redeemedOrderId: order.id, redeemedAt: null }, data: { redeemedOrderId: null } });

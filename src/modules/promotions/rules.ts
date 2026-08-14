@@ -8,9 +8,10 @@ export type PromotionRule = {
 
 export function calculatePromotionDiscount(amount: number, rule: PromotionRule) {
   if (!Number.isFinite(amount) || amount <= 1 || !Number.isFinite(rule.discountValue) || rule.discountValue <= 0) return 0;
-  const requested = rule.discountType === "PERCENT"
-    ? Math.round(amount * Math.min(rule.discountValue, 100) / 100)
-    : Math.round(rule.discountValue);
+  const value = new Prisma.Decimal(rule.discountValue);
+  const requested = (rule.discountType === "PERCENT"
+    ? new Prisma.Decimal(amount).mul(Prisma.Decimal.min(value, 100)).div(100)
+    : value).toDecimalPlaces(0, Prisma.Decimal.ROUND_HALF_UP).toNumber();
   const capped = rule.maxDiscountAmount && rule.maxDiscountAmount > 0 ? Math.min(requested, Math.round(rule.maxDiscountAmount)) : requested;
   return Math.min(Math.max(0, capped), Math.max(0, Math.round(amount) - 1));
 }
@@ -29,3 +30,4 @@ export function matchesShippingScope(scope: string | null | undefined, city: str
   return false;
 }
 
+import { Prisma } from "@generated/prisma/client";

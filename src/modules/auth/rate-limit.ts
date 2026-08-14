@@ -1,0 +1,81 @@
+import { createHmac } from "node:crypto";
+import { db } from "@/lib/db";
+import { env } from "@/lib/env";
+
+type RateLimitPolicy = { maxAttempts: number; windowMs: number; blockMs: number };
+type RateLimitState = { attempts: number; windowStartedAt: Date; blockedUntil: Date | null };
+
+export const loginRateLimitPolicy: RateLimitPolicy = { maxAttempts: 5, windowMs: 15 * 60_000, blockMs: 15 * 60_000 };
+export const registrationRateLimitPolicy: RateLimitPolicy = { maxAttempts: 3, windowMs: 60 * 60_000, blockMs: 60 * 60_000 };
+
+function requestIp(request: Request) {
+  return request.headers.get("cf-connecting-ip")
+    ?? request.headers.get("x-real-ip")
+    ?? request.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
+    ?? "unknown";
+}
+
+function key(scope: string, value: string) {
+  return createHmac("sha256", env.AUTH_SECRET).update(`${scope}:${value.trim().toLowerCase()}`).digest("hex");
+}
+
+export function nextRateLimitState(current: RateLimitState | null, policy: RateLimitPolicy, now = new Date()): RateLimitState {
+  const windowExpired = !current || now.getTime() - current.windowStartedAt.getTime() >= policy.windowMs;
+  const attempts = windowExpired ? 1 : current.attempts + 1;
+  return {
+    attempts,
+    windowStartedAt: windowExpired ? now : current.windowStartedAt,
+    blockedUntil: attempts >= policy.maxAttempts ? new Date(now.getTime() + policy.blockMs) : null,
+  };
+}
+
+async function isBlocked(keyHash: string, now = new Date()) {
+  const state = await db.authRateLimit.findUnique({ where: { keyHash } });
+  return state?.blockedUntil && state.blockedUntil > now ? state.blockedUntil : null;
+}
+
+async function recordAttempt(keyHash: string, policy: RateLimitPolicy, now = new Date()) {
+  return db.$transaction(async (transaction) => {
+    const current = await transaction.authRateLimit.findUnique({ where: { keyHash } });
+    const next = nextRateLimitState(current, policy, now);
+    await transaction.authRateLimit.upsert({
+      where: { keyHash },
+      create: { keyHash, ...next },
+      update: next,
+    });
+    return next.blockedUntil;
+  });
+}
+
+export async function assertLoginAllowed(request: Request, email: string) {
+  const keys = [key("login-account", email), key("login-ip", requestIp(request))];
+  const blocks = await Promise.all(keys.map((item) => isBlocked(item)));
+  return blocks.find((value): value is Date => Boolean(value)) ?? null;
+}
+
+export async function recordLoginFailure(request: Request, email: string) {
+  await Promise.all([
+    recordAttempt(key("login-account", email), loginRateLimitPolicy),
+    recordAttempt(key("login-ip", requestIp(request)), loginRateLimitPolicy),
+  ]);
+}
+
+export async function clearLoginFailures(request: Request, email: string) {
+  await db.authRateLimit.deleteMany({ where: { keyHash: { in: [key("login-account", email), key("login-ip", requestIp(request))] } } });
+}
+
+export async function consumeRegistrationAttempt(request: Request) {
+  const keyHash = key("register-ip", requestIp(request));
+  const blocked = await isBlocked(keyHash);
+  if (blocked) return blocked;
+  await recordAttempt(keyHash, registrationRateLimitPolicy);
+  return null;
+}
+
+export function rateLimitResponse(blockedUntil: Date) {
+  const retryAfter = Math.max(1, Math.ceil((blockedUntil.getTime() - Date.now()) / 1000));
+  return Response.json(
+    { message: "تعداد درخواست‌ها بیش از حد مجاز است؛ کمی بعد دوباره تلاش کنید." },
+    { status: 429, headers: { "Retry-After": String(retryAfter) } },
+  );
+}

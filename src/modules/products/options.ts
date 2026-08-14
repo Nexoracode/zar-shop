@@ -57,13 +57,30 @@ export function decrementSelectedOptionStocks(options: ProductOptionLike[], snap
   }));
 }
 
-export function getSelectedOptionWeight(options: ProductOptionLike[], snapshot: unknown, fallbackWeight: number) {
+export function decrementSelectedOptionStocksStrict(options: ProductOptionLike[], snapshot: unknown, quantity: number, fallbackStock: number) {
+  if (!isOptionSnapshotValid(options, snapshot, quantity, fallbackStock)) {
+    throw new Error("Selected product option is unavailable");
+  }
+  return decrementSelectedOptionStocks(options, snapshot, quantity, fallbackStock);
+}
+
+export function incrementSelectedOptionStocks(options: ProductOptionLike[], snapshot: unknown, quantity: number) {
+  const selected = Object.fromEntries(optionEntries(snapshot));
+  return options.map((option) => ({
+    id: option.id,
+    values: parseOptionValues(option.values).map((item) => item.value === selected[option.name] && item.stock !== null
+      ? { ...item, stock: item.stock + quantity }
+      : item),
+  }));
+}
+
+export function getSelectedOptionWeight(options: ProductOptionLike[], snapshot: unknown, fallbackWeight: number | string | { toString(): string }) {
   const selected = Object.fromEntries(optionEntries(snapshot));
   const selectedWeights = options.flatMap((option) => {
     const value = parseOptionValues(option.values).find((item) => item.value === selected[option.name]);
-    return value?.weightGrams ? [Number(value.weightGrams)] : [];
+    return value?.weightGrams ? [value.weightGrams] : [];
   });
-  return selectedWeights[0] ?? fallbackWeight;
+  return selectedWeights[0] ?? fallbackWeight.toString();
 }
 
 export function getSelectedOptionPrice(options: ProductOptionLike[], snapshot: unknown, fallbackPrice: number) {

@@ -8,17 +8,19 @@ export type ProductDiscountLike = {
 };
 
 export function isProductDiscountActive(product: ProductDiscountLike, now = new Date()) {
-  const value = Number(product.discountValue ?? 0);
+  const value = new Prisma.Decimal(product.discountValue?.toString() ?? 0);
   const startsAt = product.discountStartsAt ? new Date(product.discountStartsAt) : null;
   const endsAt = product.discountEndsAt ? new Date(product.discountEndsAt) : null;
-  return Boolean(product.discountType && value > 0 && startsAt && endsAt && now >= startsAt && now <= endsAt);
+  return Boolean(product.discountType && value.greaterThan(0) && startsAt && endsAt && now >= startsAt && now <= endsAt);
 }
 
 export function calculateDiscountedPrice(price: number, product: ProductDiscountLike, now = new Date()) {
-  const value = Number(product.discountValue ?? 0);
+  const value = new Prisma.Decimal(product.discountValue?.toString() ?? 0);
   const isActive = isProductDiscountActive(product, now);
   if (!isActive || price <= 0) return { originalPrice: price, discountAmount: 0, finalPrice: price, isActive: false };
-  const requestedDiscount = product.discountType === "PERCENT" ? Math.round(price * (value / 100)) : Math.round(value);
+  const requestedDiscount = (product.discountType === "PERCENT" ? new Prisma.Decimal(price).mul(value).div(100) : value)
+    .toDecimalPlaces(0, Prisma.Decimal.ROUND_HALF_UP)
+    .toNumber();
   const discountAmount = Math.min(Math.max(0, requestedDiscount), Math.max(0, price - 1));
   return { originalPrice: price, discountAmount, finalPrice: price - discountAmount, isActive: discountAmount > 0 };
 }
@@ -42,3 +44,4 @@ export function formatTehranDateInput(value: Date | null | undefined) {
   const part = (type: Intl.DateTimeFormatPartTypes) => parts.find((item) => item.type === type)?.value ?? "";
   return `${part("year")}-${part("month")}-${part("day")}`;
 }
+import { Prisma } from "@generated/prisma/client";

@@ -2,10 +2,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { env } from "@/lib/env";
 import { getPaymentProvider } from "@/modules/payments/payment-provider";
-import { decrementSelectedOptionStocks } from "@/modules/products/options";
-import type { PrismaClient } from "@generated/prisma/client";
-import { issueNextPurchaseRewards } from "@/modules/promotions/service";
-import { generalStoreSettingsDefaults } from "@/modules/settings/general-settings";
+import { finalizeVerifiedPayment } from "@/modules/payments/payment-finalization";
 import { sendAutomatedSms } from "@/modules/communications/sms-service";
 
 export async function GET(request: Request) {
@@ -14,102 +11,39 @@ export async function GET(request: Request) {
   const status = url.searchParams.get("Status") ?? url.searchParams.get("status");
   if (!authority || status !== "OK") {
     if (authority) {
-      const cancelled = await db.payment.findUnique({ where: { authority }, select: { id: true, orderId: true, status: true } });
-      if (cancelled && cancelled.status !== "SUCCESS") {
-        await db.$transaction(async (tx) => {
-          await tx.payment.update({ where: { id: cancelled.id }, data: { status: "CANCELLED" } });
-          await tx.promotionReward.updateMany({ where: { redeemedOrderId: cancelled.orderId, redeemedAt: null }, data: { redeemedOrderId: null } });
-          await tx.promotionRedemption.deleteMany({ where: { orderId: cancelled.orderId } });
-        });
-      }
+      await db.payment.updateMany({ where: { authority, status: { notIn: ["SUCCESS", "REFUNDED"] } }, data: { status: "CANCELLED" } });
     }
     return NextResponse.redirect(`${env.APP_URL}/account?payment=cancelled`);
   }
 
-  const payment = await db.payment.findUnique({
-    where: { authority },
-    include: { order: { include: { items: true, user: true } } },
-  });
+  const payment = await db.payment.findUnique({ where: { authority }, include: { order: true } });
   if (!payment) return NextResponse.redirect(`${env.APP_URL}/account?payment=missing`);
   if (payment.status === "SUCCESS") return NextResponse.redirect(`${env.APP_URL}/invoices/${payment.orderId}`);
+  if (!payment.amount.equals(payment.order.total)) {
+    await db.payment.updateMany({ where: { id: payment.id, status: { not: "SUCCESS" } }, data: { status: "FAILED" } });
+    return NextResponse.redirect(`${env.APP_URL}/account?payment=failed`);
+  }
+
+  let referenceId: string;
+  try {
+    referenceId = (await getPaymentProvider(payment.provider).verify(authority, Number(payment.amount))).referenceId;
+  } catch {
+    await db.payment.updateMany({ where: { id: payment.id, status: { not: "SUCCESS" } }, data: { status: "FAILED" } });
+    return NextResponse.redirect(`${env.APP_URL}/account?payment=failed`);
+  }
 
   try {
-    const verified = await getPaymentProvider(payment.provider).verify(authority, Number(payment.amount));
-    await db.$transaction(async (tx) => {
-      const transaction = tx as unknown as PrismaClient;
-      const payable = await transaction.order.updateMany({
-        where: {
-          id: payment.orderId,
-          OR: [
-            { status: "PENDING_PAYMENT" },
-            { status: { in: ["EXPIRED", "CANCELLED"] }, expiredAt: { not: null } },
-          ],
-        },
-        data: { status: "PAID", expiredAt: null },
-      });
-      if (payable.count !== 1) throw new Error("وضعیت سفارش اجازه ثبت پرداخت را نمی‌دهد.");
-      await transaction.payment.update({
-        where: { id: payment.id },
-        data: { status: "SUCCESS", referenceId: verified.referenceId, paidAt: new Date() },
-      });
-      await transaction.promotionReward.updateMany({ where: { redeemedOrderId: payment.orderId, redeemedAt: null }, data: { redeemedAt: new Date() } });
-      for (const item of payment.order.items) {
-        if (item.productId) {
-          const currentProduct = await transaction.product.findUnique({ where: { id: item.productId }, include: { options: true } });
-          if (!currentProduct) continue;
-          const updatedOptions = decrementSelectedOptionStocks(currentProduct.options, item.selectedOptions, item.quantity, currentProduct.stock);
-          for (const option of updatedOptions) {
-            await transaction.productOption.update({ where: { id: option.id }, data: { values: option.values } });
-          }
-          await transaction.product.update({
-            where: { id: item.productId },
-            data: { stock: { decrement: item.quantity } },
-          });
-        }
-      }
-      const sellerSettings = await transaction.storeSetting.findUnique({
-        where: { id: "main" },
-        select: { industry: true, storeName: true, supportPhone: true, supportEmail: true, storeAddress: true, legalIdentifier: true, currency: true, timezone: true },
-      });
-      await transaction.invoice.create({
-        data: {
-          invoiceNumber: `INV-${Date.now()}`,
-          orderId: payment.orderId,
-          sellerData: {
-            name: sellerSettings?.storeName ?? generalStoreSettingsDefaults.storeName,
-            phone: sellerSettings?.supportPhone,
-            email: sellerSettings?.supportEmail,
-            address: sellerSettings?.storeAddress,
-            nationalId: sellerSettings?.legalIdentifier,
-            economicCode: sellerSettings?.legalIdentifier,
-            currency: sellerSettings?.currency ?? generalStoreSettingsDefaults.currency,
-            timezone: sellerSettings?.timezone ?? generalStoreSettingsDefaults.timezone,
-            industry: sellerSettings?.industry ?? generalStoreSettingsDefaults.industry,
-          },
-          buyerData: {
-            name: payment.order.user.isGuest ? String((payment.order.shippingAddress as { recipient?: string } | null)?.recipient ?? "") : `${payment.order.user.firstName ?? ""} ${payment.order.user.lastName ?? ""}`.trim(),
-            nationalId: payment.order.user.nationalId,
-            email: payment.order.user.isGuest ? null : payment.order.user.email,
-            phone: (payment.order.shippingAddress as { phone?: string } | null)?.phone,
-            address: payment.order.shippingAddress,
-          },
-        },
-      });
-      await issueNextPurchaseRewards(transaction, {
-        orderId: payment.orderId,
-        userId: payment.order.userId,
-        merchandiseAmount: Number(payment.order.subtotal) - Number(payment.order.productDiscount),
-      });
-      await transaction.cartItem.deleteMany({ where: { cart: { userId: payment.order.userId } } });
+    const result = await db.$transaction((transaction) => finalizeVerifiedPayment(transaction, payment.id, referenceId));
+    if (!result.alreadyCompleted) {
+      try { await sendAutomatedSms("paymentSuccess", result.phone, { orderNumber: result.orderNumber }); } catch (smsError) { console.error("[sms] Payment-success notification failed.", smsError); }
+    }
+    return NextResponse.redirect(`${env.APP_URL}/invoices/${result.orderId}`);
+  } catch (error) {
+    console.error("[payment] Provider verified the payment, but local finalization needs a retry.", error);
+    await db.payment.updateMany({
+      where: { id: payment.id, status: { not: "SUCCESS" } },
+      data: { status: "PENDING", providerData: { verifiedReferenceId: referenceId, finalizationPending: true } },
     });
-    try { await sendAutomatedSms("paymentSuccess", (payment.order.shippingAddress as { phone?: string } | null)?.phone, { orderNumber: payment.order.orderNumber }); } catch (smsError) { console.error("[sms] Payment-success notification failed.", smsError); }
-    return NextResponse.redirect(`${env.APP_URL}/invoices/${payment.orderId}`);
-  } catch {
-    await db.$transaction(async (tx) => {
-      await tx.payment.update({ where: { id: payment.id }, data: { status: "FAILED" } });
-      await tx.promotionReward.updateMany({ where: { redeemedOrderId: payment.orderId, redeemedAt: null }, data: { redeemedOrderId: null } });
-      await tx.promotionRedemption.deleteMany({ where: { orderId: payment.orderId } });
-    });
-    return NextResponse.redirect(`${env.APP_URL}/account?payment=failed`);
+    return NextResponse.redirect(`${env.APP_URL}/account?payment=review`);
   }
 }

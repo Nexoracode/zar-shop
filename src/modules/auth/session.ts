@@ -7,14 +7,18 @@ import type { UserRole } from "@generated/prisma/enums";
 import { SESSION_COOKIE } from "@/modules/auth/constants";
 import { adminRoles, adminStartPath, hasPermission, type AdminPermission } from "@/modules/auth/permissions";
 
-const SESSION_AGE_MS = 1000 * 60 * 60 * 24 * 14;
+export const SESSION_AGE_MS = 1000 * 60 * 60 * 24 * 14;
 
-const hash = (token: string) => createHash("sha256").update(token).digest("hex");
+export const hashSessionToken = (token: string) => createHash("sha256").update(token).digest("hex");
+
+export function sessionIsUsable(session: { expiresAt: Date; user: { status: string } } | null, now = new Date()) {
+  return Boolean(session && session.expiresAt > now && session.user.status === "ACTIVE");
+}
 
 export async function createSession(userId: string) {
   const token = randomBytes(32).toString("base64url");
   await db.session.create({
-    data: { tokenHash: hash(token), userId, expiresAt: new Date(Date.now() + SESSION_AGE_MS) },
+    data: { tokenHash: hashSessionToken(token), userId, expiresAt: new Date(Date.now() + SESSION_AGE_MS) },
   });
   const store = await cookies();
   store.set(SESSION_COOKIE, token, {
@@ -43,7 +47,7 @@ export async function createGuestSessionUser() {
 export async function destroySession() {
   const store = await cookies();
   const token = store.get(SESSION_COOKIE)?.value;
-  if (token) await db.session.deleteMany({ where: { tokenHash: hash(token) } });
+  if (token) await db.session.deleteMany({ where: { tokenHash: hashSessionToken(token) } });
   store.delete(SESSION_COOKIE);
 }
 
@@ -51,10 +55,14 @@ export async function getCurrentUser() {
   const token = (await cookies()).get(SESSION_COOKIE)?.value;
   if (!token) return null;
   const session = await db.session.findUnique({
-    where: { tokenHash: hash(token) },
+    where: { tokenHash: hashSessionToken(token) },
     include: { user: true },
   });
-  if (!session || session.expiresAt < new Date() || session.user.status !== "ACTIVE") return null;
+  if (!session) return null;
+  if (!sessionIsUsable(session)) {
+    await db.session.deleteMany({ where: { id: session.id } });
+    return null;
+  }
   return session.user;
 }
 

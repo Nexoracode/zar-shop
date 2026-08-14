@@ -50,8 +50,8 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   const attributeGroups = buildProductAttributeGroups(product.category?.attributeSchema, product.attributes);
   const primaryFeatures = attributeGroups.flatMap((group) => group.attributes).filter((attribute) => attribute.important);
 
-  const rate = gold ? Number(gold.pricePerGram18) : null;
-  const parts = product.storeIndustry === "GOLD" && rate !== null ? calculateProductPrice({ goldPricePerGram18: rate, weightGrams: Number(product.weightGrams), purity: product.purity, makingFeeType: product.makingFeeType, makingFeeValue: Number(product.makingFeeValue), profitPercent: Number(product.profitPercent), taxPercent: Number(product.taxPercent) }) : null;
+  const rate = gold?.pricePerGram18 ?? null;
+  const parts = product.storeIndustry === "GOLD" && rate !== null ? calculateProductPrice({ goldPricePerGram18: rate, weightGrams: product.weightGrams, purity: product.purity, makingFeeType: product.makingFeeType, makingFeeValue: product.makingFeeValue, profitPercent: product.profitPercent, taxPercent: product.taxPercent }) : null;
   const baseTotal = product.fixedPrice ? Number(product.fixedPrice) : parts?.total ?? null;
   const discounted = baseTotal === null ? null : calculateDiscountedPrice(baseTotal, product);
   const total = discounted?.finalPrice ?? null;
@@ -60,7 +60,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
     if (product.storeIndustry === "GENERAL") {
       variantBase = price ? Number(price) : null;
     } else if (weightGrams && rate !== null) {
-      variantBase = product.fixedPrice ? Number(product.fixedPrice) : calculateProductPrice({ goldPricePerGram18: rate, weightGrams: Number(weightGrams), purity: product.purity, makingFeeType: product.makingFeeType, makingFeeValue: Number(product.makingFeeValue), profitPercent: Number(product.profitPercent), taxPercent: Number(product.taxPercent) }).total;
+      variantBase = product.fixedPrice ? Number(product.fixedPrice) : calculateProductPrice({ goldPricePerGram18: rate, weightGrams, purity: product.purity, makingFeeType: product.makingFeeType, makingFeeValue: product.makingFeeValue, profitPercent: product.profitPercent, taxPercent: product.taxPercent }).total;
     }
     if (variantBase === null) return { price: null, originalPrice: null };
     const variantDiscount = calculateDiscountedPrice(variantBase, product);
@@ -96,7 +96,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
     ? (await getStorefrontProductFeed({ sort: "POPULAR", page: 1, pageSize: 8, categoryId: product.categoryId, excludeProductId: product.id })).items
     : [];
   const purchaseSummary = <div className="grid gap-3">
-    <span className="text-xs text-slate-500">{product.storeIndustry === "GOLD" && !product.fixedPrice && rate !== null ? `محاسبه‌شده با نرخ ${formatMoney(rate, settings.currency)}` : "قیمت فروش محصول"}</span>
+    <span className="text-xs text-slate-500">{product.storeIndustry === "GOLD" && !product.fixedPrice && rate !== null ? `محاسبه‌شده با نرخ ${formatMoney(rate.toString(), settings.currency)}` : "قیمت فروش محصول"}</span>
     {product.storeIndustry === "GOLD" && rate !== null && <PriceTooltip />}
   </div>;
   const purchaseMeta = <span className={`text-xs font-bold ${product.stock > 0 ? "text-[var(--success)]" : "text-[var(--danger)]"}`}>{product.stock > 0 ? catalogSettings.showProductStock ? `${product.stock.toLocaleString("fa-IR")} عدد موجود در انبار` : "موجود در انبار" : "در حال حاضر ناموجود"}</span>;

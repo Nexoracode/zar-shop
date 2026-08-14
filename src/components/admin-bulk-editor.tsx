@@ -1,8 +1,8 @@
 "use client";
 
-import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from "react";
+import { createContext, useContext, useMemo, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import { toast } from "@heroui/react";
+import { Checkbox, toast } from "@heroui/react";
 import { CheckSquare, Loader2 } from "lucide-react";
 import { HeroSelectField, type HeroSelectOption } from "@/components/hero-select-field";
 import { AdminTableRefreshButton } from "@/components/admin-table-refresh";
@@ -13,7 +13,6 @@ type BulkContextValue = {
   toggleAll: () => void;
   allSelected: boolean;
   partiallySelected: boolean;
-  selectAllRef: RefObject<HTMLInputElement | null>;
 };
 
 const BulkContext = createContext<BulkContextValue | null>(null);
@@ -29,21 +28,13 @@ export function AdminBulkEditor({ entity, entityLabel, ids, actions, children }:
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [action, setAction] = useState("");
   const [loading, setLoading] = useState(false);
-  const selectAllRef = useRef<HTMLInputElement>(null);
   const allSelected = ids.length > 0 && ids.every((id) => selected.has(id));
   const partiallySelected = selected.size > 0 && !allSelected;
-
-  useEffect(() => {
-    if (!selectAllRef.current) return;
-    selectAllRef.current.checked = allSelected;
-    selectAllRef.current.indeterminate = partiallySelected;
-  }, [allSelected, partiallySelected]);
 
   const value = useMemo<BulkContextValue>(() => ({
     selected,
     allSelected,
     partiallySelected,
-    selectAllRef,
     toggle: (id) => setSelected((current) => { const next = new Set(current); if (next.has(id)) next.delete(id); else next.add(id); return next; }),
     toggleAll: () => setSelected((current) => ids.length > 0 && ids.every((id) => current.has(id)) ? new Set() : new Set(ids)),
   }), [allSelected, ids, partiallySelected, selected]);
@@ -71,7 +62,7 @@ export function AdminBulkEditor({ entity, entityLabel, ids, actions, children }:
       <div className="hidden md:block">
         <div className="flex flex-wrap items-end gap-3 border-b border-slate-100 bg-white px-4 py-3">
           <div className="ml-auto flex min-h-10 items-center gap-4 text-xs font-bold text-slate-600">
-            <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2"><AdminBulkSelectAll /><span>انتخاب همه</span></label>
+            <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2"><AdminBulkSelectAll /><span>انتخاب همه</span></div>
             <span className="flex items-center gap-2">{loading ? <Loader2 size={17} className="animate-spin text-[#9a7434]" /> : <CheckSquare size={17} className="text-[#9a7434]" />}{loading ? "در حال اعمال تغییر..." : selected.size ? `${selected.size.toLocaleString("fa-IR")} ${entityLabel} انتخاب شده` : `برای ویرایش سریع، ${entityLabel} را انتخاب کنید`}</span>
           </div>
           <HeroSelectField name={`${entity}-bulk-action`} label="ویرایش سریع" value={action} disabled={!selected.size || loading} onValueChange={(value) => { setAction(value); if (value) void apply(value); }} options={[{ value: "", label: "انتخاب عملیات؛ اعمال خودکار" }, ...actions]} className="w-72" />
@@ -83,16 +74,13 @@ export function AdminBulkEditor({ entity, entityLabel, ids, actions, children }:
   );
 }
 
-function SelectionCheckbox({ checked, indeterminate = false, disabled = false, label, onChange, inputRef }: { checked: boolean; indeterminate?: boolean; disabled?: boolean; label: string; onChange: () => void; inputRef?: RefObject<HTMLInputElement | null> }) {
-  const localRef = useRef<HTMLInputElement>(null);
-  const ref = inputRef ?? localRef;
-  useEffect(() => { if (ref.current) ref.current.indeterminate = indeterminate; }, [indeterminate, ref]);
-  return <input ref={ref} type="checkbox" checked={checked} disabled={disabled} onChange={onChange} aria-label={label} className="h-4 w-4 cursor-pointer accent-[#172b4d] disabled:cursor-not-allowed disabled:opacity-35" />;
+function SelectionCheckbox({ checked, indeterminate = false, disabled = false, label, onChange }: { checked: boolean; indeterminate?: boolean; disabled?: boolean; label: string; onChange: () => void }) {
+  return <Checkbox isSelected={checked} isIndeterminate={indeterminate} isDisabled={disabled} onChange={onChange} aria-label={label}><Checkbox.Control className="size-4 rounded border-2 border-[var(--field-border)] bg-[var(--surface)] text-[var(--accent-foreground)] data-[selected]:border-[var(--accent)] data-[selected]:bg-[var(--accent)]"><Checkbox.Indicator className="grid size-full place-items-center" /></Checkbox.Control></Checkbox>;
 }
 
 export function AdminBulkSelectAll() {
-  const { allSelected, partiallySelected, selectAllRef, toggleAll } = useBulkSelection();
-  return <SelectionCheckbox inputRef={selectAllRef} checked={allSelected} indeterminate={partiallySelected} label="انتخاب همه ردیف‌های این صفحه" onChange={toggleAll} />;
+  const { allSelected, partiallySelected, toggleAll } = useBulkSelection();
+  return <SelectionCheckbox checked={allSelected} indeterminate={partiallySelected} label="انتخاب همه ردیف‌های این صفحه" onChange={toggleAll} />;
 }
 
 export function AdminBulkCheckbox({ id, label, disabled = false }: { id: string; label: string; disabled?: boolean }) {

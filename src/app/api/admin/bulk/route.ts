@@ -5,6 +5,7 @@ import { db } from "@/lib/db";
 import { getCurrentUser } from "@/modules/auth/session";
 import { hasPermission } from "@/modules/auth/permissions";
 import { auditRequestContext } from "@/modules/audit/request-context";
+import { releaseInventory } from "@/modules/orders/inventory";
 
 const bodySchema = z.object({
   entity: z.enum(["products", "categories", "orders", "users"]),
@@ -50,7 +51,25 @@ export async function PATCH(request: Request) {
     const allowedCurrentStatuses: Partial<Record<OrderStatus, OrderStatus[]>> = { PROCESSING: ["PAID"], SHIPPED: ["PROCESSING"], DELIVERED: ["SHIPPED"], CANCELLED: ["PENDING_PAYMENT"] };
     const allowed = allowedCurrentStatuses[status];
     if (!allowed) return NextResponse.json({ message: "این وضعیت برای ویرایش سریع مجاز نیست." }, { status: 422 });
-    updated = (await db.order.updateMany({ where: { id: { in: uniqueIds }, status: { in: allowed } }, data: { status } })).count;
+    if (status === "CANCELLED") {
+      updated = await db.$transaction(async (transaction) => {
+        let count = 0;
+        for (const id of uniqueIds) {
+          const order = await transaction.order.findFirst({ where: { id, status: "PENDING_PAYMENT" }, include: { items: true } });
+          if (!order) continue;
+          const cancelled = await transaction.order.updateMany({ where: { id, status: "PENDING_PAYMENT" }, data: { status: "CANCELLED", inventoryReserved: false } });
+          if (cancelled.count !== 1) continue;
+          if (order.inventoryReserved) await releaseInventory(transaction, order.items);
+          await transaction.payment.updateMany({ where: { orderId: id, status: { in: ["INITIATED", "PENDING"] } }, data: { status: "CANCELLED" } });
+          await transaction.promotionReward.updateMany({ where: { redeemedOrderId: id, redeemedAt: null }, data: { redeemedOrderId: null } });
+          await transaction.promotionRedemption.deleteMany({ where: { orderId: id } });
+          count += 1;
+        }
+        return count;
+      });
+    } else {
+      updated = (await db.order.updateMany({ where: { id: { in: uniqueIds }, status: { in: allowed } }, data: { status } })).count;
+    }
   } else {
     if (!action.startsWith("status:")) return NextResponse.json({ message: "عملیات کاربر معتبر نیست." }, { status: 422 });
     const status = action.slice(7) as UserStatus;

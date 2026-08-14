@@ -14,6 +14,7 @@ import {
 } from "@/modules/admin/labels";
 import { requirePermission } from "@/modules/auth/session";
 import { optionEntries } from "@/modules/products/options";
+import { AlertDescription, AlertRoot } from "@/components/hero";
 
 type PageParams = Promise<{ id: string }>;
 
@@ -93,6 +94,8 @@ export default async function OrderDetailsPage({ params }: { params: PageParams 
         backLabel="بازگشت به سفارش‌ها"
         action={<AdminStatusBadge tone={orderStatusTones[order.status]}>{orderStatusLabels[order.status]}</AdminStatusBadge>}
       />
+
+      {successfulPayment && !order.inventoryReserved && <AlertRoot status="danger" className="mb-5"><AlertDescription>پرداخت این سفارش تأیید شده، اما موجودی آن به‌طور کامل رزرو نشده است. پیش از پردازش یا ارسال، موجودی اقلام را بررسی و تعیین تکلیف کنید.</AlertDescription></AlertRoot>}
 
       <section className="mb-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
         <AdminPanel className="p-4"><span className="mb-2 flex items-center gap-2 text-xs text-slate-400"><CreditCard size={16} /> مبلغ نهایی</span><strong className="text-base text-[#17233b]">{formatMoney(order.total.toString())}</strong></AdminPanel>

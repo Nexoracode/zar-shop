@@ -2,7 +2,7 @@ import { requireUser } from "@/modules/auth/session";
 import { db } from "@/lib/db";
 import { formatDate, formatMoney } from "@/lib/format";
 import type { Order } from "@generated/prisma/client";
-import { Button, Card, Table, TableBody, TableCell, TableColumn, TableContent, TableHeader, TableRow, TableScrollContainer } from "@/components/hero";
+import { AlertDescription, AlertRoot, Button, Card, Table, TableBody, TableCell, TableColumn, TableContent, TableHeader, TableRow, TableScrollContainer } from "@/components/hero";
 import { AdminStatusBadge } from "@/components/admin-ui";
 import { orderStatusLabels, orderStatusTones } from "@/modules/admin/labels";
 import { getGeneralStoreSettings } from "@/modules/settings/general-settings";
@@ -11,8 +11,16 @@ import { expirePendingOrders } from "@/modules/orders/expiration";
 import { OrderExpiryCountdown } from "@/components/order-expiry-countdown";
 import { SmsConsentPreference } from "@/components/sms-consent-preference";
 
-export default async function AccountPage() {
+const paymentMessages = {
+  cancelled: { status: "warning" as const, text: "پرداخت لغو شد؛ سفارش تا پایان مهلت پرداخت برای شما نگه داشته می‌شود." },
+  failed: { status: "danger" as const, text: "تأیید پرداخت ناموفق بود. اگر مبلغی کسر شده است، نتیجه را از پشتیبانی پیگیری کنید." },
+  missing: { status: "danger" as const, text: "اطلاعات پرداخت پیدا نشد." },
+  review: { status: "warning" as const, text: "پرداخت در درگاه تأیید شده و ثبت نهایی آن در حال بررسی خودکار است؛ دوباره پرداخت نکنید." },
+};
+
+export default async function AccountPage({ searchParams }: { searchParams: Promise<{ payment?: string }> }) {
   const user = await requireUser();
+  const paymentMessage = paymentMessages[(await searchParams).payment as keyof typeof paymentMessages];
   await expirePendingOrders();
   const [orders, settings, orderSettings] = await Promise.all([db.order.findMany({ where: { userId: user.id }, orderBy: { createdAt: "desc" }, take: 20 }), getGeneralStoreSettings(), getOrderSettings()]);
   const displayName = user.isGuest ? "خریدار مهمان" : user.firstName ? `${user.firstName} ${user.lastName ?? ""}` : user.email;
@@ -32,6 +40,8 @@ export default async function AccountPage() {
             </Button>
           </form>
         </div>
+
+        {paymentMessage && <AlertRoot status={paymentMessage.status} className="mb-5"><AlertDescription>{paymentMessage.text}</AlertDescription></AlertRoot>}
 
         {/* Stats */}
         <div className="mt-[22px] grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-[14px]">

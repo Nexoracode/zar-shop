@@ -83,7 +83,8 @@
 - رمز عبور فقط به‌صورت hash امن ذخیره شود.
 - نشست‌ها با cookie امن، `HttpOnly` و `SameSite` مناسب مدیریت شوند.
 - کنترل نقش فقط در رابط کاربری کافی نیست؛ هر API مدیریتی باید مجوز کاربر را سمت سرور بررسی کند.
-- نقش‌های اصلی پروژه `CUSTOMER`، `OPERATOR` و `ADMIN` هستند.
+- نقش‌های اصلی پروژه `CUSTOMER`، `ADMIN`، `CATALOG_MANAGER`، `USER_MANAGER` و `ORDER_MANAGER` هستند.
+- نقش‌های تخصصی مدیریت باید بر اساس مجوزهای دامنه‌ای اعمال شوند؛ `CATALOG_MANAGER` فقط کاتالوگ، `USER_MANAGER` فقط کاربران و `ORDER_MANAGER` فقط سفارش‌ها را مدیریت می‌کند و دسترسی کامل فقط برای `ADMIN` است.
 - عملیات حساس مدیریتی باید در Audit Log ثبت شوند.
 - پیام خطا نباید secret، stack trace یا جزئیات داخلی دیتابیس را افشا کند.
 - آپلود فایل باید محدودیت نوع، اندازه و نام امن داشته باشد.
@@ -143,3 +144,13 @@
 - پس از هر تسک نتیجه بررسی‌ها، چک‌لیست و شناسه commit به کاربر گزارش شود.
 - Agent نباید به‌صورت خودکار push انجام دهد.
 - فقط وقتی کاربر در پیام خود عبارت «خوب آخرین تغییر» را بنویسد، Agent مجاز و موظف است commitهای آماده را به remote شاخه فعلی push کند.
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+# This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->

@@ -62,7 +62,7 @@ export async function getStorefrontProductFeed(input: { sort: StorefrontProductS
       take: pageSize,
     }),
   ]);
-  const goldPrice = gold ? Number(gold.pricePerGram18) : null;
+  const goldPrice = gold?.pricePerGram18 ?? null;
 
   return {
     sort: input.sort,
@@ -70,12 +70,12 @@ export async function getStorefrontProductFeed(input: { sort: StorefrontProductS
     items: products.map((product) => {
       const calculated = goldPrice === null || product.storeIndustry !== "GOLD" ? null : calculateProductPrice({
         goldPricePerGram18: goldPrice,
-        weightGrams: Number(product.weightGrams),
+        weightGrams: product.weightGrams,
         purity: product.purity,
         makingFeeType: product.makingFeeType,
-        makingFeeValue: Number(product.makingFeeValue),
-        profitPercent: Number(product.profitPercent),
-        taxPercent: Number(product.taxPercent),
+        makingFeeValue: product.makingFeeValue,
+        profitPercent: product.profitPercent,
+        taxPercent: product.taxPercent,
       });
       const baseAmount = product.fixedPrice ? Number(product.fixedPrice) : calculated?.total ?? null;
       const discounted = baseAmount === null ? null : calculateDiscountedPrice(baseAmount, product);
