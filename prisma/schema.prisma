@@ -152,6 +152,8 @@ model User {
   productReviewVotes    ProductReviewVote[]
   productReviewReports  ProductReviewReport[] @relation("ProductReviewReporter")
   resolvedReviewReports ProductReviewReport[] @relation("ProductReviewReportResolver")
+  productFavorites      ProductFavorite[]
+  productVisits         ProductVisit[]
 }
 
 model Session {
@@ -213,7 +215,7 @@ model Address {
 
 model Province {
   id              String    @id @default(cuid())
-  externalId      Int       @unique
+  externalId      Int
   name            String    @db.VarChar(100)
   slug            String    @db.VarChar(120)
   latitude        Decimal?  @db.Decimal(10, 7)
@@ -227,11 +229,12 @@ model Province {
   addresses       Address[]
 
   @@index([isActive, name])
+  @@unique([source, externalId])
 }
 
 model City {
   id              String    @id @default(cuid())
-  externalId      Int       @unique
+  externalId      Int
   provinceId      String
   name            String    @db.VarChar(120)
   slug            String    @db.VarChar(140)
@@ -246,6 +249,7 @@ model City {
   addresses       Address[]
 
   @@index([provinceId, isActive, name])
+  @@unique([source, externalId])
 }
 
 model Category {
@@ -315,6 +319,8 @@ model Product {
   orderItems       OrderItem[]
   cartItems        CartItem[]
   reviews          ProductReview[]
+  favorites        ProductFavorite[]
+  visits           ProductVisit[]
 
   @@index([categoryId, status])
   @@index([optionGuideId])
@@ -383,6 +389,33 @@ model ProductReviewReport {
   @@unique([reviewId, userId])
   @@index([status, createdAt])
   @@index([resolvedById])
+}
+
+model ProductFavorite {
+  id        String   @id @default(cuid())
+  userId    String
+  productId String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, productId])
+  @@index([userId, createdAt])
+  @@index([productId])
+}
+
+model ProductVisit {
+  id        String   @id @default(cuid())
+  userId    String
+  productId String
+  visitCount Int     @default(1)
+  visitedAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, productId])
+  @@index([userId, visitedAt])
+  @@index([productId])
 }
 
 model StoreSetting {

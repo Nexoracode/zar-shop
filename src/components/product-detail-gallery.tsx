@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { Button, Modal, ProgressBar, toast } from "@heroui/react";
 import { Bell, ChartNoAxesCombined, ChevronLeft, ChevronRight, Ellipsis, Heart, ImageIcon, Info, List, Play, Scale, Share2, X } from "lucide-react";
@@ -13,12 +14,15 @@ type ProductGalleryMedia = {
 };
 
 type ProductDetailGalleryProps = {
+  productId: string;
   media: ProductGalleryMedia[];
   productName: string;
   productCode: string;
   hasDiscount?: boolean;
   discountEndsAt?: string | null;
   soldPercent?: number;
+  authenticated?: boolean;
+  initialFavorite?: boolean;
 };
 
 function formatCountdown(endAt: string | null | undefined, now: number) {
@@ -64,9 +68,10 @@ function renderFullscreenGallery({ media, selected, selectedIndex, productName, 
   </Modal.Backdrop>;
 }
 
-export function ProductDetailGallery({ media, productName, productCode, hasDiscount = false, discountEndsAt = null, soldPercent = 0 }: ProductDetailGalleryProps) {
+export function ProductDetailGallery({ productId, media, productName, productCode, hasDiscount = false, discountEndsAt = null, soldPercent = 0, authenticated = false, initialFavorite = false }: ProductDetailGalleryProps) {
+  const router = useRouter();
   const [selectedId, setSelectedId] = useState(media[0]?.id ?? "");
-  const [favorite, setFavorite] = useState(false);
+  const [favorite, setFavorite] = useState(initialFavorite);
   const [priceAlert, setPriceAlert] = useState(false);
   const [now, setNow] = useState(() => Date.now());
   const selectedIndex = Math.max(0, media.findIndex((item) => item.id === selectedId));
@@ -100,8 +105,17 @@ export function ProductDetailGallery({ media, productName, productCode, hasDisco
     }
   }
 
+  async function toggleFavorite() {
+    if (!authenticated) { router.push(`/login?next=${encodeURIComponent(window.location.pathname)}`); return; }
+    const next = !favorite;
+    const response = await fetch(`/api/account/favorites/${productId}`, { method: next ? "PUT" : "DELETE" });
+    if (!response.ok) { toast.danger("تغییر علاقه‌مندی انجام نشد"); return; }
+    setFavorite(next);
+    toast.success(next ? "به علاقه‌مندی‌ها اضافه شد" : "از علاقه‌مندی‌ها حذف شد");
+  }
+
   const actions = [
-    { label: favorite ? "حذف از علاقه‌مندی‌ها" : "افزودن به علاقه‌مندی‌ها", icon: <Heart size={23} className={favorite ? "fill-[var(--danger)] text-[var(--danger)]" : ""} />, onPress: () => setFavorite((value) => !value) },
+    { label: favorite ? "حذف از علاقه‌مندی‌ها" : "افزودن به علاقه‌مندی‌ها", icon: <Heart size={23} className={favorite ? "fill-[var(--danger)] text-[var(--danger)]" : ""} />, onPress: () => void toggleFavorite() },
     { label: "اشتراک‌گذاری محصول", icon: <Share2 size={22} />, onPress: () => void shareProduct() },
     { label: priceAlert ? "غیرفعال‌کردن اطلاع‌رسانی" : "اطلاع‌رسانی تغییرات محصول", icon: <Bell size={22} className={priceAlert ? "fill-[var(--brand-accent)] text-[var(--brand-accent)]" : ""} />, onPress: () => setPriceAlert((value) => !value) },
     { label: "نمودار قیمت", icon: <ChartNoAxesCombined size={22} />, onPress: () => toast.success("نمودار قیمت در مرحله اتصال API فعال می‌شود") },

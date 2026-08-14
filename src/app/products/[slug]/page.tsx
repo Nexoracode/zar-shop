@@ -22,6 +22,7 @@ import { getCatalogSettings } from "@/modules/settings/catalog-settings";
 import { getGeneralStoreSettings } from "@/modules/settings/general-settings";
 import { getCurrentUser } from "@/modules/auth/session";
 import { getStorefrontProductReviews } from "@/modules/reviews/service";
+import { ProductActivityTracker } from "@/components/product-activity-tracker";
 
 export const dynamic = "force-dynamic";
 
@@ -40,10 +41,11 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
     .map((option) => ({ option, values: parseOptionValues(option.values).filter((item) => item.isActive) }))
     .filter(({ values }) => values.length > 0);
   const colorIds = [...new Set(optionValues.flatMap(({ values }) => values.flatMap((item) => item.colorId ? [item.colorId] : [])))];
-  const [colors, soldAggregate, reviewData] = await Promise.all([
+  const [colors, soldAggregate, reviewData, initialFavorite] = await Promise.all([
     colorIds.length ? db.color.findMany({ where: { id: { in: colorIds }, isActive: true }, select: { id: true, name: true, hex: true } }) : Promise.resolve([]),
     db.orderItem.aggregate({ where: { productId: product.id, order: { status: { in: [...completedSaleOrderStatuses] } } }, _sum: { quantity: true } }),
     getStorefrontProductReviews(product.id, currentUser?.id ?? null),
+    currentUser && !currentUser.isGuest ? db.productFavorite.findUnique({ where: { userId_productId: { userId: currentUser.id, productId: product.id } }, select: { id: true } }).then(Boolean) : Promise.resolve(false),
   ]);
   const soldPercent = calculateSoldPercent(soldAggregate._sum.quantity ?? 0, product.stock);
   const colorsById = new Map(colors.map((color) => [color.id, color]));
@@ -115,7 +117,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
     discountLabel: discounted?.isActive ? product.discountType === "PERCENT" ? `${Number(product.discountValue).toLocaleString("fa-IR")}٪` : "تخفیف" : null,
   };
 
-  return <ProductPurchaseProvider initialSelectedOptions={initialSelectedOptions}><main className="bg-white px-4 pb-16 pt-5 antialiased sm:px-6 lg:pb-24">
+  return <ProductPurchaseProvider initialSelectedOptions={initialSelectedOptions}><ProductActivityTracker productId={product.id} enabled={Boolean(currentUser && !currentUser.isGuest)} /><main className="bg-white px-4 pb-16 pt-5 antialiased sm:px-6 lg:pb-24">
     <div className="mx-auto w-full max-w-[1440px]">
       <nav className="mb-6 flex flex-wrap items-center gap-2 text-xs text-slate-500" aria-label="مسیر محصول">
         <Link href="/" className="transition hover:text-slate-900">خانه</Link><span>/</span><Link href="/products" className="transition hover:text-slate-900">محصولات</Link>{product.category && <><span>/</span><Link href={`/products?category=${encodeURIComponent(product.category.slug)}`} className="transition hover:text-slate-900">{product.category.name}</Link></>}
@@ -124,7 +126,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
       <div className="grid items-stretch gap-7 lg:grid-cols-[minmax(0,1fr)_320px]">
         <div className="min-w-0">
           <section className="grid items-start gap-7 lg:grid-cols-[minmax(330px,1.05fr)_minmax(0,1.1fr)] lg:grid-rows-[auto_auto] lg:gap-x-7 lg:gap-y-5">
-            <ProductDetailGallery media={galleryMedia} productName={product.name} productCode={product.sku} hasDiscount={Boolean(discounted?.isActive)} discountEndsAt={discounted?.isActive && product.discountEndsAt ? product.discountEndsAt.toISOString() : null} soldPercent={soldPercent} />
+            <ProductDetailGallery productId={product.id} media={galleryMedia} productName={product.name} productCode={product.sku} hasDiscount={Boolean(discounted?.isActive)} discountEndsAt={discounted?.isActive && product.discountEndsAt ? product.discountEndsAt.toISOString() : null} soldPercent={soldPercent} authenticated={Boolean(currentUser && !currentUser.isGuest)} initialFavorite={initialFavorite} />
 
             <div className="min-w-0 lg:col-start-2 lg:row-start-1">
               {product.category && <Link href={`/products?category=${encodeURIComponent(product.category.slug)}`} className="text-sm font-bold text-[var(--brand-accent)] transition-colors hover:text-[var(--brand-primary)]">{product.category.name}</Link>}
