@@ -22,6 +22,7 @@ type Props = {
   disabled?: boolean;
   searchable?: boolean;
   className?: string;
+  controlClassName?: string;
   onValueChange?: (value: string) => void;
 };
 
@@ -40,6 +41,7 @@ export function HeroSelectField({
   disabled,
   searchable = false,
   className = "",
+  controlClassName = "",
   onValueChange,
 }: Props) {
   const [internalValue, setInternalValue] = useState(defaultValue);
@@ -71,8 +73,8 @@ export function HeroSelectField({
           aria-label={ariaLabel ?? label ?? name}
           menuTrigger="focus"
         >
-          {label && <Label className="mb-1.5 text-xs font-bold text-slate-600">{label}</Label>}
-          <ComboBox.InputGroup className="min-h-11 rounded-xl border border-slate-200 bg-white px-3.5 shadow-none focus-within:border-[var(--brand-primary)] focus-within:ring-2 focus-within:ring-[var(--brand-primary)]/15">
+          {label && <Label className="mb-2 text-xs font-medium text-slate-600">{label}{required && <span className="mr-0.5 text-[var(--danger)]">*</span>}</Label>}
+          <ComboBox.InputGroup className={`min-h-11 rounded-xl border border-slate-200 bg-white px-3.5 shadow-none focus-within:border-[var(--brand-primary)] focus-within:ring-2 focus-within:ring-[var(--brand-primary)]/15 ${controlClassName}`}>
             <Input placeholder={`جستجو و انتخاب ${label ?? "گزینه"}`} className="min-h-11 w-full border-0 bg-transparent px-0 text-sm outline-none" />
             <ComboBox.Trigger aria-label={`نمایش فهرست ${label ?? name}`} />
           </ComboBox.InputGroup>
@@ -99,8 +101,8 @@ export function HeroSelectField({
         fullWidth
         aria-label={ariaLabel ?? label ?? name}
       >
-        {label && <Label className="mb-1.5 text-xs font-bold text-slate-600">{label}</Label>}
-        <Select.Trigger className="min-h-11 rounded-xl border border-slate-200 bg-white px-3.5 text-sm shadow-none">
+        {label && <Label className="mb-2 text-xs font-medium text-slate-600">{label}{required && <span className="mr-0.5 text-[var(--danger)]">*</span>}</Label>}
+        <Select.Trigger className={`min-h-11 rounded-xl border border-slate-200 bg-white px-3.5 text-sm shadow-none ${controlClassName}`}>
           <Select.Value />
           <Select.Indicator />
         </Select.Trigger>
