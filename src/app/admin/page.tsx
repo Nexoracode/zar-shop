@@ -33,7 +33,7 @@ import {
 } from "@/components/hero";
 import { requirePermission } from "@/modules/auth/session";
 import { getCatalogSettings } from "@/modules/settings/catalog-settings";
-import { AdminTableRefreshButton } from "@/components/admin-table-refresh";
+import { AdminBulkCheckbox, AdminBulkEditor } from "@/components/admin-bulk-editor";
 
 export default async function AdminPage() {
   const actor = await requirePermission("dashboard:view");
@@ -128,13 +128,14 @@ export default async function AdminPage() {
         <AdminPanel>
           <div className="flex items-center justify-between gap-3 border-b border-slate-100 px-4 py-4 sm:px-5">
             <div><h2 className="m-0 text-base font-black text-slate-800">آخرین سفارش‌ها</h2><p className="m-0 text-xs text-slate-400">جدیدترین فعالیت‌های خرید فروشگاه</p></div>
-            <div className="flex items-center gap-2"><AdminTableRefreshButton /><Link href="/admin/orders" className="inline-flex items-center gap-1 text-xs font-bold text-[#846325]">همه سفارش‌ها<ArrowLeft size={14} /></Link></div>
+            <Link href="/admin/orders" className="inline-flex items-center gap-1 text-xs font-bold text-[#846325]">همه سفارش‌ها<ArrowLeft size={14} /></Link>
           </div>
           {recentOrders.length ? (
             <>
-              <Table className="hidden md:block"><TableScrollContainer><TableContent aria-label="آخرین سفارش‌ها" className="w-full min-w-[620px]"><TableHeader>{["شماره سفارش", "مشتری", "اقلام", "مبلغ", "وضعیت", "تاریخ"].map((title, index) => <TableColumn id={title} key={title} isRowHeader={index === 0} className="bg-slate-50/70 px-4 py-3 text-right text-[0.7rem] font-bold text-slate-500">{title}</TableColumn>)}</TableHeader><TableBody>{recentOrders.map((order) => {
+              <AdminBulkEditor entity="orders" entityLabel="سفارش" ids={recentOrders.map((order) => order.id)} actions={[{ value: "status:PROCESSING", label: "شروع آماده‌سازی سفارش‌های پرداخت‌شده" }, { value: "status:SHIPPED", label: "ثبت ارسال سفارش‌های در حال آماده‌سازی" }, { value: "status:DELIVERED", label: "ثبت تحویل سفارش‌های ارسال‌شده" }, { value: "status:CANCELLED", label: "لغو سفارش‌های پرداخت‌نشده" }]}><Table><TableScrollContainer><TableContent aria-label="آخرین سفارش‌ها" className="w-full min-w-[680px]"><TableHeader><TableColumn id="select" className="w-12 bg-slate-50/70 px-3 py-3 text-center"><span className="sr-only">انتخاب</span></TableColumn>{["شماره سفارش", "مشتری", "اقلام", "مبلغ", "وضعیت", "تاریخ"].map((title, index) => <TableColumn id={title} key={title} isRowHeader={index === 0} className="bg-slate-50/70 px-4 py-3 text-right text-[0.7rem] font-bold text-slate-500">{title}</TableColumn>)}</TableHeader><TableBody>{recentOrders.map((order) => {
                     const customerName = [order.user.firstName, order.user.lastName].filter(Boolean).join(" ") || order.user.email;
                     return <TableRow id={order.id} key={order.id} className="transition hover:bg-slate-50/60">
+                      <TableCell className="w-12 px-3 py-3 text-center"><AdminBulkCheckbox id={order.id} label={`انتخاب سفارش ${order.orderNumber}`} /></TableCell>
                       <TableCell className="px-4 py-3 text-xs font-bold text-slate-700">{order.orderNumber}</TableCell>
                       <TableCell className="w-44 max-w-44 px-4 py-3"><TruncatedTextTooltip text={customerName} className="max-w-36 text-xs text-slate-600" /></TableCell>
                       <TableCell className="px-4 py-3 text-xs text-slate-500">{order._count.items.toLocaleString("fa-IR")}</TableCell>
@@ -142,7 +143,7 @@ export default async function AdminPage() {
                       <TableCell className="px-4 py-3"><AdminStatusBadge tone={orderStatusTones[order.status]}>{orderStatusLabels[order.status]}</AdminStatusBadge></TableCell>
                       <TableCell className="whitespace-nowrap px-4 py-3 text-xs text-slate-400">{formatDate(order.createdAt)}</TableCell>
                     </TableRow>;
-                  })}</TableBody></TableContent></TableScrollContainer></Table>
+                  })}</TableBody></TableContent></TableScrollContainer></Table></AdminBulkEditor>
               <div className="divide-y divide-slate-100 md:hidden">
                 {recentOrders.map((order) => {
                   const customerName = [order.user.firstName, order.user.lastName].filter(Boolean).join(" ") || order.user.email;

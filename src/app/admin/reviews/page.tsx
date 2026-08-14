@@ -3,6 +3,7 @@ import Link from "next/link";
 import { CalendarDays, Eye, Flag, MessageCircleReply, MessageSquareText, Star, ThumbsUp, UserRound } from "lucide-react";
 import { AdminEmptyState, AdminPageHeader, AdminPanel, AdminStatusBadge } from "@/components/admin-ui";
 import { AdminListFilters } from "@/components/admin-list-filters";
+import { AdminBulkCheckbox, AdminBulkEditor } from "@/components/admin-bulk-editor";
 import { AdminPagination } from "@/components/admin-pagination";
 import { Table, TableBody, TableCell, TableColumn, TableContent, TableHeader, TableRow, TruncatedTextTooltip } from "@/components/hero";
 import { resolveAdminPagination } from "@/lib/admin-pagination";
@@ -132,17 +133,19 @@ export default async function AdminReviewsPage({ searchParams }: { searchParams:
         {!reviews.length ? <AdminEmptyState title="دیدگاهی پیدا نشد" description="هنوز دیدگاهی ثبت نشده یا فیلترهای انتخاب‌شده نتیجه‌ای ندارند." /> : (
           <>
             <div className="divide-y divide-slate-100 xl:hidden">{reviews.map((review) => <ReviewCard key={review.id} review={review} />)}</div>
-            <div className="hidden xl:block">
+            <AdminBulkEditor entity="reviews" entityLabel="دیدگاه" ids={reviews.map((review) => review.id)} actions={[{ value: "status:APPROVED", label: "تأیید و انتشار دیدگاه‌ها" }, { value: "status:REJECTED", label: "رد دیدگاه‌ها" }]} desktopClassName="hidden xl:block">
               <Table><TableContent aria-label="فهرست دیدگاه‌های محصولات" className="w-full table-fixed"><TableHeader>
-                <TableColumn id="review" isRowHeader className="w-[34%] bg-slate-50/70 px-4 py-4 text-right text-xs font-bold text-slate-500">دیدگاه و محصول</TableColumn>
-                <TableColumn id="author" className="w-[17%] bg-slate-50/70 px-4 py-4 text-right text-xs font-bold text-slate-500">نویسنده</TableColumn>
-                <TableColumn id="rating" className="w-[11%] bg-slate-50/70 px-4 py-4 text-right text-xs font-bold text-slate-500">امتیاز</TableColumn>
+                <TableColumn id="select" className="w-[5%] bg-slate-50/70 px-3 py-4 text-center"><span className="sr-only">انتخاب</span></TableColumn>
+                <TableColumn id="review" isRowHeader className="w-[31%] bg-slate-50/70 px-4 py-4 text-right text-xs font-bold text-slate-500">دیدگاه و محصول</TableColumn>
+                <TableColumn id="author" className="w-[16%] bg-slate-50/70 px-4 py-4 text-right text-xs font-bold text-slate-500">نویسنده</TableColumn>
+                <TableColumn id="rating" className="w-[10%] bg-slate-50/70 px-4 py-4 text-right text-xs font-bold text-slate-500">امتیاز</TableColumn>
                 <TableColumn id="engagement" className="w-[13%] bg-slate-50/70 px-4 py-4 text-right text-xs font-bold text-slate-500">تعامل</TableColumn>
                 <TableColumn id="status" className="w-[18%] bg-slate-50/70 px-4 py-4 text-right text-xs font-bold text-slate-500">وضعیت</TableColumn>
                 <TableColumn id="action" className="w-[7%] bg-slate-50/70 px-4 py-4 text-center text-xs font-bold text-slate-500"><span className="sr-only">عملیات</span></TableColumn>
               </TableHeader><TableBody>{reviews.map((review) => {
                 const name = authorName(review);
                 return <TableRow id={review.id} key={review.id} className="transition hover:bg-slate-50/60">
+                  <TableCell className={`${cell} text-center`}><AdminBulkCheckbox id={review.id} label={`انتخاب دیدگاه ${review.title || name}`} /></TableCell>
                   <TableCell className={cell}><div className="min-w-0"><TruncatedTextTooltip text={review.title || review.body} className="font-bold text-slate-800" /><div className="mt-1 flex min-w-0 items-center gap-1.5 text-[11px] text-slate-400"><MessageSquareText size={12} className="shrink-0" /><TruncatedTextTooltip text={review.product.name} className="max-w-full" /></div></div></TableCell>
                   <TableCell className={cell}><div className="flex min-w-0 items-center gap-2"><span className="grid size-8 shrink-0 place-items-center rounded-lg bg-slate-100 text-xs font-bold text-slate-500"><UserRound size={14} /></span><div className="min-w-0"><TruncatedTextTooltip text={name} displayText={authorFirstName(review)} className="font-bold text-slate-700" />{review.isVerifiedPurchase && <span className="text-[10px] text-emerald-600">خریدار محصول</span>}</div></div></TableCell>
                   <TableCell className={cell}><Rating value={review.rating} /></TableCell>
@@ -151,7 +154,7 @@ export default async function AdminReviewsPage({ searchParams }: { searchParams:
                   <TableCell className={`${cell} text-center`}><Link href={`/admin/reviews/${review.id}`} aria-label="مشاهده و مدیریت دیدگاه" title="بررسی دیدگاه" className="inline-flex size-9 items-center justify-center rounded-lg border border-slate-200 text-slate-600 transition hover:border-[var(--accent)] hover:text-[var(--accent)]"><Eye size={15} /></Link></TableCell>
                 </TableRow>;
               })}</TableBody></TableContent></Table>
-            </div>
+            </AdminBulkEditor>
             <AdminPagination {...pagination} />
           </>
         )}

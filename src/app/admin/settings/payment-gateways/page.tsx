@@ -9,6 +9,7 @@ export const metadata: Metadata = { title: "درگاه‌های پرداخت" };
 
 export default async function PaymentGatewaysPage() {
   await requireAdminUser();
+  const configs = await getPublicGatewayConfigs();
 
   return <>
     <AdminPageHeader
@@ -19,6 +20,6 @@ export default async function PaymentGatewaysPage() {
       backLabel="بازگشت به تنظیمات"
       action={<AdminPrimaryLink href="/admin/settings/payment-gateways/new"><Plus size={17} />افزودن درگاه</AdminPrimaryLink>}
     />
-    <PaymentGatewayManager mode="list" initialConfigs={await getPublicGatewayConfigs()} />
+    <PaymentGatewayManager key={configs.map((config) => config.updatedAt).join("|")} mode="list" initialConfigs={configs} />
   </>;
 }

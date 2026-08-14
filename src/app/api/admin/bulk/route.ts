@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { OrderStatus, ProductStatus, UserStatus } from "@generated/prisma/enums";
+import { OrderStatus, ProductReviewStatus, ProductStatus, UserStatus } from "@generated/prisma/enums";
 import { db } from "@/lib/db";
 import { getCurrentUser } from "@/modules/auth/session";
 import { hasPermission } from "@/modules/auth/permissions";
@@ -8,7 +8,7 @@ import { auditRequestContext } from "@/modules/audit/request-context";
 import { releaseInventory } from "@/modules/orders/inventory";
 
 const bodySchema = z.object({
-  entity: z.enum(["products", "categories", "orders", "users"]),
+  entity: z.enum(["products", "categories", "orders", "users", "reviews", "colors", "paymentGateways", "smsProviders", "smsCampaigns"]),
   action: z.string().min(1).max(191),
   ids: z.array(z.string().min(1)).min(1).max(100),
 });
@@ -16,6 +16,7 @@ const bodySchema = z.object({
 const productStatuses = new Set(Object.values(ProductStatus));
 const orderStatuses = new Set(Object.values(OrderStatus));
 const userStatuses = new Set(Object.values(UserStatus));
+const reviewStatuses = new Set(Object.values(ProductReviewStatus));
 
 export async function PATCH(request: Request) {
   const actor = await getCurrentUser();
@@ -24,8 +25,10 @@ export async function PATCH(request: Request) {
   if (!parsed.success) return NextResponse.json({ message: "اطلاعات ویرایش گروهی معتبر نیست." }, { status: 422 });
   const { entity, action, ids } = parsed.data;
   const uniqueIds = [...new Set(ids)];
+  const adminOnlyEntities = new Set(["paymentGateways", "smsProviders", "smsCampaigns"]);
+  if (adminOnlyEntities.has(entity) && actor.role !== "ADMIN") return NextResponse.json({ message: "این عملیات فقط برای مدیر اصلی مجاز است." }, { status: 403 });
   const permission = entity === "orders" ? "orders:manage" : entity === "users" ? "users:manage" : "catalog:manage";
-  if (!hasPermission(actor.role, permission)) return NextResponse.json({ message: "برای این عملیات دسترسی کافی ندارید." }, { status: 403 });
+  if (!adminOnlyEntities.has(entity) && !hasPermission(actor.role, permission)) return NextResponse.json({ message: "برای این عملیات دسترسی کافی ندارید." }, { status: 403 });
 
   let updated = 0;
   if (entity === "products") {
@@ -70,11 +73,32 @@ export async function PATCH(request: Request) {
     } else {
       updated = (await db.order.updateMany({ where: { id: { in: uniqueIds }, status: { in: allowed } }, data: { status } })).count;
     }
-  } else {
+  } else if (entity === "users") {
     if (!action.startsWith("status:")) return NextResponse.json({ message: "عملیات کاربر معتبر نیست." }, { status: 422 });
     const status = action.slice(7) as UserStatus;
     if (!userStatuses.has(status)) return NextResponse.json({ message: "وضعیت کاربر معتبر نیست." }, { status: 422 });
     updated = (await db.user.updateMany({ where: { id: { in: uniqueIds, not: actor.id }, role: { not: "ADMIN" } }, data: { status } })).count;
+  } else if (entity === "reviews") {
+    if (!action.startsWith("status:")) return NextResponse.json({ message: "عملیات دیدگاه معتبر نیست." }, { status: 422 });
+    const status = action.slice(7) as ProductReviewStatus;
+    if (!reviewStatuses.has(status) || status === "PENDING") return NextResponse.json({ message: "وضعیت دیدگاه معتبر نیست." }, { status: 422 });
+    updated = await db.$transaction(async (transaction) => {
+      const result = await transaction.productReview.updateMany({ where: { id: { in: uniqueIds } }, data: { status, moderatedAt: new Date(), moderatedById: actor.id } });
+      if (status === "REJECTED") await transaction.productReview.updateMany({ where: { parentId: { in: uniqueIds }, status: "APPROVED" }, data: { status: "REJECTED", moderatedAt: new Date(), moderatedById: actor.id, moderationNote: "دیدگاه اصلی به‌صورت گروهی رد شده است." } });
+      return result.count;
+    });
+  } else if (entity === "colors") {
+    if (action !== "active:on" && action !== "active:off") return NextResponse.json({ message: "عملیات رنگ معتبر نیست." }, { status: 422 });
+    updated = (await db.color.updateMany({ where: { id: { in: uniqueIds } }, data: { isActive: action === "active:on" } })).count;
+  } else if (entity === "paymentGateways") {
+    if (action !== "delete") return NextResponse.json({ message: "عملیات درگاه پرداخت معتبر نیست." }, { status: 422 });
+    updated = (await db.paymentGatewayConfig.deleteMany({ where: { id: { in: uniqueIds } } })).count;
+  } else if (entity === "smsProviders") {
+    if (action !== "delete") return NextResponse.json({ message: "عملیات ارائه‌دهنده پیامک معتبر نیست." }, { status: 422 });
+    updated = (await db.smsProviderConfig.deleteMany({ where: { id: { in: uniqueIds } } })).count;
+  } else {
+    if (action !== "delete") return NextResponse.json({ message: "عملیات تاریخچه پیامک معتبر نیست." }, { status: 422 });
+    updated = (await db.smsCampaign.deleteMany({ where: { id: { in: uniqueIds }, actorId: { not: null } } })).count;
   }
 
   if (!updated) return NextResponse.json({ message: "هیچ‌کدام از موارد انتخاب‌شده شرایط این تغییر را ندارند." }, { status: 409 });
