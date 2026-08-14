@@ -85,7 +85,7 @@ export function AdminBulkEditor({ entity, entityLabel, ids, actions, children, d
 }
 
 function SelectionCheckbox({ checked, indeterminate = false, disabled = false, label, onChange }: { checked: boolean; indeterminate?: boolean; disabled?: boolean; label: string; onChange: () => void }) {
-  return <Checkbox isSelected={checked} isIndeterminate={indeterminate} isDisabled={disabled} onChange={onChange} aria-label={label}><Checkbox.Control className="size-4 rounded border-2 border-[var(--field-border)] bg-[var(--surface)] text-[var(--accent-foreground)] data-[selected]:border-[var(--accent)] data-[selected]:bg-[var(--accent)]"><Checkbox.Indicator className="grid size-full place-items-center" /></Checkbox.Control></Checkbox>;
+  return <Checkbox isSelected={checked} isIndeterminate={indeterminate} isDisabled={disabled} onChange={onChange}><Checkbox.Content aria-label={label} className="cursor-pointer disabled:cursor-not-allowed"><Checkbox.Control className="size-4 rounded border-2 border-[var(--field-border)] bg-[var(--surface)] text-[var(--accent-foreground)] data-[selected]:border-[var(--accent)] data-[selected]:bg-[var(--accent)]"><Checkbox.Indicator className="grid size-full place-items-center" /></Checkbox.Control></Checkbox.Content></Checkbox>;
 }
 
 export function AdminBulkSelectAll() {
