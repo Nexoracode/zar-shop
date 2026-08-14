@@ -28,6 +28,10 @@ function authorName(review: ReviewRow) {
   return `${review.user.firstName ?? ""} ${review.user.lastName ?? ""}`.trim() || review.user.phone || "کاربر";
 }
 
+function authorFirstName(review: ReviewRow) {
+  return review.user.firstName?.trim() || "کاربر";
+}
+
 function Rating({ value }: { value: number | null }) {
   if (!value) return <span className="text-xs text-slate-400">بدون امتیاز</span>;
   return (
@@ -140,7 +144,7 @@ export default async function AdminReviewsPage({ searchParams }: { searchParams:
                 const name = authorName(review);
                 return <TableRow id={review.id} key={review.id} className="transition hover:bg-slate-50/60">
                   <TableCell className={cell}><div className="min-w-0"><TruncatedTextTooltip text={review.title || review.body} className="font-bold text-slate-800" /><div className="mt-1 flex min-w-0 items-center gap-1.5 text-[11px] text-slate-400"><MessageSquareText size={12} className="shrink-0" /><TruncatedTextTooltip text={review.product.name} className="max-w-full" /></div></div></TableCell>
-                  <TableCell className={cell}><div className="flex min-w-0 items-center gap-2"><span className="grid size-8 shrink-0 place-items-center rounded-lg bg-slate-100 text-xs font-bold text-slate-500"><UserRound size={14} /></span><div className="min-w-0"><TruncatedTextTooltip text={name} className="font-bold text-slate-700" />{review.isVerifiedPurchase && <span className="text-[10px] text-emerald-600">خریدار محصول</span>}</div></div></TableCell>
+                  <TableCell className={cell}><div className="flex min-w-0 items-center gap-2"><span className="grid size-8 shrink-0 place-items-center rounded-lg bg-slate-100 text-xs font-bold text-slate-500"><UserRound size={14} /></span><div className="min-w-0"><TruncatedTextTooltip text={name} displayText={authorFirstName(review)} className="font-bold text-slate-700" />{review.isVerifiedPurchase && <span className="text-[10px] text-emerald-600">خریدار محصول</span>}</div></div></TableCell>
                   <TableCell className={cell}><Rating value={review.rating} /></TableCell>
                   <TableCell className={cell}><Engagement review={review} /></TableCell>
                   <TableCell className={cell}><AdminStatusBadge tone={tones[review.status]}>{labels[review.status]}</AdminStatusBadge><span className="mt-1.5 block text-[10px] text-slate-400">{formatDateTime(review.createdAt)}</span></TableCell>
