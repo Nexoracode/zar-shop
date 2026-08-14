@@ -1,11 +1,13 @@
 "use client";
 import Image from "next/image";
+import Link from "next/link";
 import { createContext, useContext, useState } from "react";
 import type { Dispatch, ReactNode, SetStateAction } from "react";
 import { useRouter } from "next/navigation";
 import { Button, Modal, Spinner, toast } from "@heroui/react";
-import { FileText, PackageCheck, Ruler, ShieldCheck, X } from "lucide-react";
+import { Check, FileText, PackageCheck, Plus, Ruler, ShieldCheck, ShoppingCart, X } from "lucide-react";
 import { formatMoney } from "@/lib/format";
+import { notifyCartUpdated } from "@/components/storefront-cart-link";
 
 type OptionGuide = { url: string; type: "IMAGE" | "DOCUMENT"; title: string };
 type ProductOption = { id: string; name: string; kind: "COLOR" | "SELECT"; values: Array<{ value: string; stock: number; weightGrams: string | null; price: number | null; originalPrice: number | null; color: { name: string; hex: string } | null }> };
@@ -45,6 +47,7 @@ export function AddToCart({ productId, options = [], optionGuide, disabled, disa
   const selectedOptions = sharedState?.selectedOptions ?? localSelectedOptions;
   const setSelectedOptions = sharedState?.setSelectedOptions ?? setLocalSelectedOptions;
   const [guideOpen, setGuideOpen] = useState(false);
+  const [addedQuantity, setAddedQuantity] = useState(0);
   const optionStockUnavailable = options.some((option) => !option.values.some((item) => item.stock > 0));
   const selectedPriceValue = options.flatMap((option) => option.values.filter((item) => selectedOptions[option.id] === item.value)).find((item) => item.price !== null);
   const selectedColorValue = options.filter((option) => option.kind === "COLOR").flatMap((option) => option.values.filter((item) => selectedOptions[option.id] === item.value)).find((item) => item.color);
@@ -68,7 +71,11 @@ export function AddToCart({ productId, options = [], optionGuide, disabled, disa
     setLoading(false);
     if (r.status === 401) { router.push("/login?next=/cart"); return; }
     setMsg(data.message ?? "");
-    if (r.ok) router.refresh();
+    if (r.ok) {
+      if (typeof data.itemCount === "number") notifyCartUpdated(data.itemCount);
+      if (typeof data.quantity === "number") setAddedQuantity(data.quantity);
+      router.refresh();
+    }
   }
 
   const optionFields = options.length > 0 ? <div className="grid gap-4">
@@ -78,7 +85,7 @@ export function AddToCart({ productId, options = [], optionGuide, disabled, disa
           return <div key={option.id} className="grid gap-3">{option.kind === "COLOR" ? <><span className="inline-flex items-center gap-2 text-sm font-medium text-slate-800">{selectedValue?.color && <span className="size-3.5 rounded-full border border-black/10" style={{ backgroundColor: selectedValue.color.hex }} />}رنگ: <strong className="text-slate-900">{selectedValue?.color?.name ?? selectedValue?.value ?? "انتخاب کنید"}</strong></span><div className="flex flex-wrap gap-4 px-1 py-1" role="group" aria-label={`انتخاب ${option.name}`}>{option.values.map((item) => { const selected = selectedOptions[option.id] === item.value; const unavailable = item.stock < 1; return <Button key={item.value} type="button" isIconOnly variant="secondary" isDisabled={unavailable} aria-pressed={selected} aria-label={`${item.value}${item.color ? `، رنگ ${item.color.name}` : ""}${unavailable ? "، ناموجود" : selected ? "، انتخاب‌شده" : ""}`} onPress={() => setSelectedOptions((current) => ({ ...current, [option.id]: item.value }))} className={`relative size-11 min-h-11 min-w-11 rounded-full border bg-white p-1 transition ${unavailable ? "border-slate-200 opacity-45" : selected ? "border-[var(--brand-accent)]" : "border-slate-300 hover:border-[var(--brand-accent)]"}`} style={selected ? { boxShadow: "0 0 0 3px white, 0 0 0 5px var(--brand-accent)" } : undefined}><span className="block size-full rounded-full border border-black/10" style={{ backgroundColor: item.color?.hex ?? "var(--separator)" }} />{selected && <span className="absolute inset-0 grid place-items-center text-lg font-black text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">✓</span>}{unavailable && <span className="absolute inset-1 rotate-45 border-l border-slate-500" />}</Button>; })}</div></> : <><span className="text-xs font-bold text-slate-600">{option.name}</span><div className="flex flex-wrap gap-2" role="group" aria-label={`انتخاب ${option.name}`}>{option.values.map((item) => { const selected = selectedOptions[option.id] === item.value; const unavailable = item.stock < 1; return <Button key={item.value} type="button" variant="secondary" isDisabled={unavailable} aria-pressed={selected} aria-label={`${item.value}${item.weightGrams ? `، وزن ${item.weightGrams} گرم` : ""}${unavailable ? "، ناموجود" : selected ? "، انتخاب‌شده" : ""}`} onPress={() => setSelectedOptions((current) => ({ ...current, [option.id]: item.value }))} className={`min-h-10 min-w-12 rounded-lg border px-3 text-sm font-bold transition ${unavailable ? "border-slate-200 bg-slate-100 text-slate-400 line-through" : selected ? "border-[var(--brand-accent)] bg-[var(--brand-accent)] text-[var(--brand-accent-foreground)] ring-2 ring-[var(--brand-accent)]/25" : "border-[var(--border)] bg-white text-[var(--brand-primary)] hover:border-[var(--brand-accent)]"}`}>{item.value}{item.weightGrams && <small className="mr-1 text-[10px] opacity-75">{item.weightGrams} گرم</small>}{unavailable && <small className="mr-1 text-[10px]">ناموجود</small>}</Button>; })}</div></>}</div>;
         })}
       </div> : null;
-  const addButton = <Button
+  const primaryAddButton = <Button
         onPress={() => void add()}
         isDisabled={disabled || optionStockUnavailable}
         isPending={loading}
@@ -88,6 +95,7 @@ export function AddToCart({ productId, options = [], optionGuide, disabled, disa
       >
         {({ isPending }) => <>{isPending && <Spinner color="current" size="sm" />}{disabled ? disabledLabel : optionStockUnavailable ? "تنوع موجودی ندارد" : isPending ? "در حال افزودن..." : "افزودن به سبد"}</>}
       </Button>;
+  const addButton = addedQuantity > 0 ? <div className="grid gap-2"><div className="flex min-h-12 items-center overflow-hidden rounded-lg border border-[var(--brand-primary)] bg-[var(--surface)]"><Button type="button" isIconOnly variant="ghost" isPending={loading} aria-label="افزودن یک عدد دیگر" onPress={() => void add()} className="size-11 min-h-11 min-w-11 text-[var(--brand-primary)]"><Plus size={17} /></Button><span className="grid min-w-9 flex-1 place-items-center text-sm font-black text-[var(--brand-primary)]">{addedQuantity.toLocaleString("fa-IR")}</span><span className="ml-3 flex items-center gap-1 text-xs font-bold text-emerald-700"><Check size={15} />در سبد شما</span></div><Link href="/cart" className="flex min-h-11 items-center justify-center gap-2 rounded-lg bg-[var(--brand-primary)] px-4 text-sm font-black text-[var(--brand-primary-foreground)]"><ShoppingCart size={17} />مشاهده سبد خرید</Link></div> : primaryAddButton;
   const guideModal = optionGuide && <Modal.Backdrop isOpen={guideOpen} onOpenChange={setGuideOpen} variant="blur"><Modal.Container size="lg" placement="center"><Modal.Dialog aria-label="راهنمای انتخاب محصول" className="mx-3 max-h-[calc(100dvh-32px)] overflow-hidden bg-white"><Modal.Header className="flex-row items-center justify-between border-b border-slate-200 px-5 py-4"><div><Modal.Heading className="text-base font-black text-slate-900">راهنمای انتخاب</Modal.Heading><p className="mt-1 text-xs text-slate-500">{optionGuide.title}</p></div><Modal.CloseTrigger aria-label="بستن راهنمای انتخاب" className="grid h-9 w-9 place-items-center rounded-lg text-slate-500 hover:bg-slate-100"><X size={18} /></Modal.CloseTrigger></Modal.Header><Modal.Body className="min-h-64 bg-slate-50 p-3 sm:p-5">{optionGuide.type === "IMAGE" ? <div className="relative min-h-[55vh] w-full overflow-hidden rounded-xl bg-white"><Image src={optionGuide.url} alt={optionGuide.title} fill sizes="90vw" className="object-contain" /></div> : <div className="grid gap-3"><iframe src={optionGuide.url} title={optionGuide.title} className="h-[65vh] w-full rounded-xl border border-slate-200 bg-white" /><a href={optionGuide.url} target="_blank" rel="noreferrer" className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-[var(--brand-accent)]/40 bg-white text-sm font-bold text-[var(--brand-accent)] transition-colors hover:border-[var(--brand-accent)] hover:text-[var(--brand-primary)]"><FileText size={16} />باز کردن فایل PDF در صفحه جدید</a></div>}</Modal.Body></Modal.Dialog></Modal.Container></Modal.Backdrop>;
 
   if (layout === "product-detail") return <>

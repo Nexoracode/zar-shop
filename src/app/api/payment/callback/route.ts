@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { env } from "@/lib/env";
-import { getPaymentProvider } from "@/modules/payments/payment-provider";
+import { getStorefrontPaymentProvider } from "@/modules/payments/storefront-methods";
 import { finalizeVerifiedPayment } from "@/modules/payments/payment-finalization";
 import { sendAutomatedSms } from "@/modules/communications/sms-service";
 
@@ -26,7 +26,7 @@ export async function GET(request: Request) {
 
   let referenceId: string;
   try {
-    referenceId = (await getPaymentProvider(payment.provider).verify(authority, Number(payment.amount))).referenceId;
+    referenceId = (await (await getStorefrontPaymentProvider(payment.provider)).verify(authority, Number(payment.amount))).referenceId;
   } catch {
     await db.payment.updateMany({ where: { id: payment.id, status: { not: "SUCCESS" } }, data: { status: "FAILED" } });
     return NextResponse.redirect(`${env.APP_URL}/account?payment=failed`);

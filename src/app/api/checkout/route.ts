@@ -7,7 +7,7 @@ import { getCurrentUser } from "@/modules/auth/session";
 import { getGoldPrice } from "@/modules/gold/gold-price.service";
 import { calculateProductPrice } from "@/modules/products/pricing";
 import { getSelectedOptionPrice, getSelectedOptionWeight, isOptionSnapshotValid, optionEntries } from "@/modules/products/options";
-import { getPaymentProvider } from "@/modules/payments/payment-provider";
+import { getStorefrontPaymentMethods, getStorefrontPaymentProvider, storefrontPaymentMethodSchema } from "@/modules/payments/storefront-methods";
 import type { Prisma } from "@generated/prisma/client";
 import { calculateDiscountedPrice } from "@/modules/products/discount";
 import { PromotionValidationError, resolveCheckoutPromotions } from "@/modules/promotions/service";
@@ -31,6 +31,7 @@ const addressSchema = z.object({
   addressLine: z.string().min(10).max(1000),
   couponCode: z.string().trim().max(64).optional().default(""),
   deliveryMethod: z.enum(["INSURED_SHIPPING", "STORE_PICKUP"]),
+  paymentProvider: storefrontPaymentMethodSchema,
 });
 
 export async function POST(request: Request) {
@@ -42,7 +43,10 @@ export async function POST(request: Request) {
     if (user.isGuest && !generalSettings.guestCheckout) return NextResponse.json({ message: "برای ادامه خرید وارد حساب شوید." }, { status: 403 });
     if (!commerceSettings.onlinePaymentEnabled) return NextResponse.json({ message: "پرداخت آنلاین موقتاً غیرفعال است." }, { status: 503 });
     const input = addressSchema.parse(await request.json());
-    const { couponCode, deliveryMethod, ...address } = input;
+    const { couponCode, deliveryMethod, paymentProvider, ...address } = input;
+    const availableMethods = await getStorefrontPaymentMethods();
+    if (!availableMethods.some((method) => method.id === paymentProvider)) return NextResponse.json({ message: "روش پرداخت انتخاب‌شده در دسترس نیست." }, { status: 422 });
+    const selectedPaymentProvider = await getStorefrontPaymentProvider(paymentProvider);
     if (deliveryMethod === "INSURED_SHIPPING" && !commerceSettings.insuredShippingEnabled) return NextResponse.json({ message: "ارسال بیمه‌شده در حال حاضر فعال نیست." }, { status: 422 });
     if (deliveryMethod === "STORE_PICKUP" && !commerceSettings.inStorePickupEnabled) return NextResponse.json({ message: "تحویل حضوری در حال حاضر فعال نیست." }, { status: 422 });
     const cart = await db.cart.findUnique({ where: { userId: user.id }, include: { items: { include: { product: { include: { options: true } } } } } });
@@ -148,10 +152,10 @@ export async function POST(request: Request) {
       return created;
     });
     try {
-      const paymentRequest = await getPaymentProvider().request({ amount: Number(order.total), orderId: order.id, callbackUrl: `${env.APP_URL}/api/payment/callback`, description: `پرداخت سفارش ${order.orderNumber}` });
+      const paymentRequest = await selectedPaymentProvider.request({ amount: Number(order.total), orderId: order.id, callbackUrl: `${env.APP_URL}/api/payment/callback`, description: `پرداخت سفارش ${order.orderNumber}` });
       await db.$transaction(async (transaction) => {
         const paymentStartedAt = new Date();
-        await transaction.payment.create({ data: { orderId: order.id, provider: env.PAYMENT_PROVIDER, authority: paymentRequest.authority, amount: order.total, status: "PENDING" } });
+        await transaction.payment.create({ data: { orderId: order.id, provider: paymentProvider, authority: paymentRequest.authority, amount: order.total, status: "PENDING" } });
         if (orderSettings.orderExpirationStart === "PAYMENT_STARTED_AT") await transaction.order.update({ where: { id: order.id }, data: { expiresAt: orderExpiresAt(orderSettings, paymentStartedAt) } });
       });
       try { await sendAutomatedSms("orderCreated", input.phone, { orderNumber: order.orderNumber }); } catch (smsError) { console.error("[sms] Order-created notification failed.", smsError); }

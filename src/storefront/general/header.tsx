@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { Bell, Headphones, Home, LayoutDashboard, Menu, ShoppingCart, UserRound } from "lucide-react";
+import { Bell, Headphones, Home, LayoutDashboard, Menu, UserRound } from "lucide-react";
 import type { User } from "@generated/prisma/client";
 import { db } from "@/lib/db";
 import { normalizeNumericValue } from "@/lib/persian-numbers";
@@ -9,22 +9,26 @@ import type { GeneralStoreSettingsInput } from "@/modules/settings/general-setti
 import type { HomepageMenuItem } from "@/modules/settings/homepage-settings";
 import { GeneralHeaderMenuRow } from "@/storefront/general/header-menu-row";
 import { StorefrontSearch } from "@/components/storefront-search";
+import { StorefrontCartLink } from "@/components/storefront-cart-link";
 
 type Props = { settings: GeneralStoreSettingsInput; brand: BrandSettings; user: User | null; menuItems: HomepageMenuItem[] };
 
 export async function GeneralHeader({ settings, brand, user, menuItems }: Props) {
-  const categories = await db.category.findMany({
-    where: { isActive: true, parentId: null },
-    include: {
-      image: { select: { url: true, alt: true, type: true } },
-      children: {
-        where: { isActive: true },
-        include: { children: { where: { isActive: true }, orderBy: [{ sortOrder: "asc" }, { name: "asc" }] } },
-        orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
+  const [categories, cartCount] = await Promise.all([
+    db.category.findMany({
+      where: { isActive: true, parentId: null },
+      include: {
+        image: { select: { url: true, alt: true, type: true } },
+        children: {
+          where: { isActive: true },
+          include: { children: { where: { isActive: true }, orderBy: [{ sortOrder: "asc" }, { name: "asc" }] } },
+          orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
+        },
       },
-    },
-    orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
-  });
+      orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
+    }),
+    user ? db.cartItem.aggregate({ where: { cart: { userId: user.id } }, _sum: { quantity: true } }).then((result) => result._sum.quantity ?? 0) : Promise.resolve(0),
+  ]);
   const accountHref = user ? (user.isGuest ? "/cart" : "/account") : "/login";
   const logo = brand.mainLogoMedia
     ? <span className="relative block h-10 w-28"><Image src={brand.mainLogoMedia.url} alt={brand.mainLogoMedia.alt ?? settings.storeName} fill sizes="112px" className="object-contain" /></span>
@@ -44,7 +48,7 @@ export async function GeneralHeader({ settings, brand, user, menuItems }: Props)
           <Link href={accountHref} aria-label="اعلان‌ها" className="grid size-10 place-items-center rounded-lg transition hover:bg-slate-100"><Bell size={20} strokeWidth={1.7} /></Link>
           <Link href={accountHref} aria-label="حساب کاربری" className="grid size-10 place-items-center rounded-lg transition hover:bg-slate-100"><UserRound size={21} strokeWidth={1.7} /></Link>
           <span className="mx-2 h-6 w-px bg-slate-200" />
-          <Link href="/cart" aria-label="سبد خرید" className="grid size-10 place-items-center rounded-lg transition hover:bg-slate-100"><ShoppingCart size={21} strokeWidth={1.7} /></Link>
+          <StorefrontCartLink initialCount={cartCount} className="grid size-10 place-items-center rounded-lg transition hover:bg-slate-100" />
           {user?.role !== "CUSTOMER" && user && <Link href="/admin" aria-label="پنل مدیریت"><LayoutDashboard size={20} /></Link>}
         </div>
       </div>
@@ -52,7 +56,7 @@ export async function GeneralHeader({ settings, brand, user, menuItems }: Props)
     </header>
     <nav className="fixed inset-x-0 bottom-0 z-50 grid h-[66px] grid-cols-4 border-t border-[#e7e9ed] bg-white/95 text-[#6f7480] shadow-[0_-5px_20px_rgba(0,0,0,.05)] backdrop-blur lg:hidden" aria-label="ناوبری موبایل">
       <Link href="/" className="grid place-items-center content-center text-[var(--brand-primary)]"><Home size={21} /><small className="sr-only">خانه</small></Link>
-      <Link href="/cart" className="grid place-items-center content-center"><ShoppingCart size={21} /><small className="sr-only">سبد خرید</small></Link>
+      <StorefrontCartLink initialCount={cartCount} mobile className="grid place-items-center content-center" />
       {settings.supportPhone ? <a href={`tel:${normalizeNumericValue(settings.supportPhone, false)}`} className="grid place-items-center content-center"><Headphones size={21} /><small className="sr-only">پشتیبانی</small></a> : <Link href="/pages/contact" className="grid place-items-center content-center"><Headphones size={21} /><small className="sr-only">پشتیبانی</small></Link>}
       <Link href={accountHref} className="grid place-items-center content-center"><UserRound size={21} /><small className="sr-only">حساب کاربری</small></Link>
     </nav>

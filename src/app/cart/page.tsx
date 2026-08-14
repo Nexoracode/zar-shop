@@ -1,101 +1,87 @@
 import Link from "next/link";
-import { AlertDescription, AlertRoot, Card, ChipLabel, ChipRoot, Table, TableBody, TableCell, TableColumn, TableContent, TableHeader, TableRow, TableScrollContainer, TruncatedTextTooltip } from "@/components/hero";
-import { requireUser } from "@/modules/auth/session";
+import { BadgePercent, ChevronLeft, PackageOpen, ShieldCheck, ShoppingCart, Truck } from "lucide-react";
+import { AlertDescription, AlertRoot, Card, ChipLabel, ChipRoot } from "@/components/hero";
+import { getCurrentUser } from "@/modules/auth/session";
 import { db } from "@/lib/db";
 import { getGoldPriceForDisplay } from "@/modules/gold/gold-price.service";
 import { calculateProductPrice } from "@/modules/products/pricing";
 import { formatMoney } from "@/lib/format";
-import { CheckoutForm } from "@/components/checkout-form";
+import { CartItemCard } from "@/components/cart-item-card";
 import type { Prisma } from "@generated/prisma/client";
 import { getSelectedOptionPrice, getSelectedOptionWeight, optionEntries } from "@/modules/products/options";
 import { calculateDiscountedPrice } from "@/modules/products/discount";
 import { getGeneralStoreSettings } from "@/modules/settings/general-settings";
 import { getCommerceSettings } from "@/modules/settings/commerce-settings";
+import { getOrderSettings } from "@/modules/settings/order-settings";
 
-type CartItemRow = Prisma.CartItemGetPayload<{ include: { product: { include: { options: true } } } }>;
+type CartItemRow = Prisma.CartItemGetPayload<{ include: { product: { include: { options: true; media: { include: { media: true } } } } } }>;
 
 export const dynamic = "force-dynamic";
 
 export default async function CartPage() {
-  const user = await requireUser();
-  const [cart, gold, settings, commerceSettings] = await Promise.all([
-    db.cart.findUnique({ where: { userId: user.id }, include: { items: { include: { product: { include: { options: true } } } } } }),
+  const user = await getCurrentUser();
+  const [cart, gold, settings, commerceSettings, orderSettings] = await Promise.all([
+    user ? db.cart.findUnique({ where: { userId: user.id }, include: { items: { orderBy: { id: "asc" }, include: { product: { include: { options: true, media: { where: { isCover: true }, include: { media: true }, take: 1 } } } } } } }) : Promise.resolve(null),
     getGoldPriceForDisplay(),
     getGeneralStoreSettings(),
     getCommerceSettings(),
+    getOrderSettings(),
   ]);
   const items = ((cart?.items ?? []) as CartItemRow[]).filter((item) => item.product.storeIndustry === settings.industry);
   const rate = gold?.pricePerGram18 ?? null;
   const hasGoldItems = items.some((item) => item.product.storeIndustry === "GOLD");
-  const getItemPricing = (item: CartItemRow) => {
-    const p = item.product;
-    const selectedWeight = getSelectedOptionWeight(p.options, item.selectedOptions, p.weightGrams);
-    const baseAmount = p.storeIndustry === "GENERAL"
-      ? getSelectedOptionPrice(p.options, item.selectedOptions, Number(p.fixedPrice ?? 0))
-      : p.fixedPrice ? Number(p.fixedPrice) : rate === null ? null : calculateProductPrice({ goldPricePerGram18: rate, weightGrams: selectedWeight, purity: p.purity, makingFeeType: p.makingFeeType, makingFeeValue: p.makingFeeValue, profitPercent: p.profitPercent, taxPercent: p.taxPercent }).total;
-    return baseAmount === null ? null : calculateDiscountedPrice(baseAmount, p);
-  };
-  const getItemAmount = (item: CartItemRow) => getItemPricing(item)?.finalPrice ?? null;
-  const itemAmounts = items.map(getItemAmount);
-  const total = itemAmounts.some((amount) => amount === null)
-    ? null
-    : itemAmounts.reduce<number>((sum, amount, index) => sum + Number(amount) * items[index].quantity, 0);
+  const pricedItems = items.map((item) => {
+    const product = item.product;
+    const selectedWeight = getSelectedOptionWeight(product.options, item.selectedOptions, product.weightGrams);
+    const baseAmount = product.storeIndustry === "GENERAL"
+      ? getSelectedOptionPrice(product.options, item.selectedOptions, Number(product.fixedPrice ?? 0))
+      : product.fixedPrice ? Number(product.fixedPrice) : rate === null ? null : calculateProductPrice({ goldPricePerGram18: rate, weightGrams: selectedWeight, purity: product.purity, makingFeeType: product.makingFeeType, makingFeeValue: product.makingFeeValue, profitPercent: product.profitPercent, taxPercent: product.taxPercent }).total;
+    return { item, selectedWeight, pricing: baseAmount === null ? null : calculateDiscountedPrice(baseAmount, product) };
+  });
+  const priceUnavailable = pricedItems.some((line) => line.pricing === null);
+  const subtotal = priceUnavailable ? null : pricedItems.reduce((sum, line) => sum + line.pricing!.originalPrice * line.item.quantity, 0);
+  const merchandiseTotal = priceUnavailable ? null : pricedItems.reduce((sum, line) => sum + line.pricing!.finalPrice * line.item.quantity, 0);
+  const productDiscount = subtotal === null || merchandiseTotal === null ? null : subtotal - merchandiseTotal;
+  const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
   const preparationDays = items.length ? Math.max(...items.map((item) => item.product.preparationDays)) : 0;
+  const remainingForFreeShipping = merchandiseTotal !== null && commerceSettings.freeShippingThreshold !== null ? Math.max(0, commerceSettings.freeShippingThreshold - merchandiseTotal) : null;
 
   return (
-    <main className="px-5 py-12 sm:px-6 sm:py-[86px]">
-      <div className="mx-auto w-full max-w-[1240px]">
-        {/* Panel head */}
-        <div className="flex justify-between items-center gap-5 mb-6">
+    <main className="bg-[var(--background)] px-4 py-8 sm:px-6 sm:py-12">
+      <div className="mx-auto w-full max-w-[1280px]">
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
           <div>
-            <span className="inline-block text-[var(--brand-accent)] text-[0.78rem] font-bold tracking-[0.03em] mb-[5px]">خرید امن</span>
-            <h1 className="mt-0 mb-0">سبد خرید</h1>
+            <h1 className="m-0 text-xl font-black sm:text-2xl">سبد خرید شما</h1>
+            <p className="mb-0 mt-2 text-sm text-[var(--muted)]">{itemCount ? `${itemCount.toLocaleString("fa-IR")} کالا در سبد خرید` : "هنوز کالایی انتخاب نکرده‌اید"}</p>
           </div>
           {hasGoldItems && <ChipRoot variant="soft" className="bg-[var(--surface-secondary)] text-[var(--brand-accent)]"><ChipLabel>نرخ مبنا: {rate === null ? "موقتاً در دسترس نیست" : formatMoney(rate.toString(), settings.currency)}</ChipLabel></ChipRoot>}
         </div>
 
         {!items.length ? (
-          <Card variant="secondary" className="py-12 text-center border border-[#e7e6e2] bg-white text-[#747982]">
-            سبد خرید خالی است.
-            <br />
-            <Link href="/products" className="min-h-[46px] mt-4 px-6 py-[9px] inline-flex items-center justify-center border border-[var(--brand-primary)] text-[var(--brand-primary)] rounded-sm transition-all hover:-translate-y-[2px]">
-              مشاهده محصولات
-            </Link>
+          <Card variant="secondary" className="grid min-h-[360px] place-items-center rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-8 text-center shadow-sm">
+            <div><span className="mx-auto grid size-24 place-items-center rounded-full bg-[var(--surface-secondary)] text-[var(--muted)]"><PackageOpen size={42} strokeWidth={1.4} /></span><h2 className="mb-0 mt-6 text-lg font-black">سبد خرید شما خالی است</h2><p className="mx-auto mb-0 mt-2 max-w-md text-sm leading-7 text-[var(--muted)]">می‌توانید برای مشاهده محصولات و انتخاب کالای موردنظر به فروشگاه برگردید.</p><Link href="/products" className="mt-6 inline-flex min-h-11 items-center gap-2 rounded-lg bg-[var(--brand-primary)] px-6 text-sm font-bold text-[var(--brand-primary-foreground)]">مشاهده محصولات<ChevronLeft size={17} /></Link></div>
           </Card>
         ) : (
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_380px] xl:grid-cols-[minmax(0,1fr)_420px] xl:gap-[30px]">
-            {/* Table */}
-            <Table><TableScrollContainer><TableContent aria-label="اقلام سبد خرید" className="w-full min-w-[700px]"><TableHeader>{["محصول", "تعداد", "وزن", "مبلغ"].map((h, index) => <TableColumn id={h} key={h} isRowHeader={index === 0} className="bg-[#f8f7f4] px-4 py-[14px] text-right text-[0.82rem] text-[#747982]">{h}</TableColumn>)}</TableHeader><TableBody>
-                  {items.map((item) => {
-                    const p = item.product;
-                    const amount = getItemAmount(item);
-                    const pricing = getItemPricing(item);
-                    const selectedWeight = getSelectedOptionWeight(p.options, item.selectedOptions, p.weightGrams);
-                    const optionSummary = `${p.sku}${optionEntries(item.selectedOptions).map(([name, value]) => ` · ${name}: ${value}`).join("")}`;
-                    return (
-                      <TableRow id={item.id} key={item.id}>
-                        <TableCell className="w-80 max-w-80 px-4 py-[14px]"><TruncatedTextTooltip text={p.name} className="max-w-72 font-bold" /><TruncatedTextTooltip text={optionSummary} className="max-w-72 text-[0.82rem] text-[#747982]" /></TableCell>
-                        <TableCell className="px-4 py-[14px]">{item.quantity}</TableCell>
-                        <TableCell className="px-4 py-[14px]">{p.storeIndustry === "GOLD" ? `${Number(selectedWeight).toLocaleString("fa-IR", { maximumFractionDigits: 3 })} گرم` : "—"}</TableCell>
-                        <TableCell className="px-4 py-[14px]">
-                          {amount === null ? "قیمت موقتاً نامشخص" : <span>{pricing?.isActive && <small className="ml-2 text-slate-400 line-through">{formatMoney(pricing.originalPrice * item.quantity, settings.currency)}</small>}{formatMoney(amount * item.quantity, settings.currency)}</span>}
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                  <TableRow id="total">
-                    <TableCell className="px-4 py-[14px]"><strong>جمع کل</strong></TableCell>
-                    <TableCell className="px-4 py-[14px]">—</TableCell><TableCell className="px-4 py-[14px]">—</TableCell>
-                    <TableCell className="px-4 py-[14px]"><strong>
-                      {total === null ? "قابل محاسبه نیست" : formatMoney(total, settings.currency)}
-                    </strong></TableCell>
-                  </TableRow>
-                </TableBody></TableContent></TableScrollContainer></Table>
-            {total === null ? (
-              <AlertRoot status="warning" className="self-start"><AlertDescription>نرخ لحظه‌ای طلا موقتاً در دسترس نیست. سبد خرید شما حفظ شده است و پس از برقراری سرویس می‌توانید پرداخت را ادامه دهید.</AlertDescription></AlertRoot>
-            ) : (
-              <div className="grid self-start gap-3"><Card variant="secondary" className="rounded-xl border border-[var(--brand-accent)]/20 bg-white p-3 text-xs text-[#606774]"><p className="m-0">هزینه ارسال پس از دریافت نشانی و بر اساس وزن مرسوله محاسبه می‌شود.</p><p className="mb-0 mt-2 text-[11px]">زمان آماده‌سازی سفارش: {preparationDays.toLocaleString("fa-IR")} روز</p></Card><CheckoutForm settings={commerceSettings} /></div>
-            )}
+          <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_340px] xl:grid-cols-[minmax(0,1fr)_380px]">
+            <section className="overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-sm" aria-label="اقلام سبد خرید">
+              <div className="flex items-center gap-3 border-b border-[var(--border)] px-5 py-4"><ShoppingCart size={20} className="text-[var(--brand-primary)]" /><strong className="text-sm">کالاهای سبد خرید</strong><span className="text-xs text-[var(--muted)]">({itemCount.toLocaleString("fa-IR")} کالا)</span></div>
+              {pricedItems.map(({ item, selectedWeight, pricing }) => {
+                const product = item.product;
+                const cover = product.media[0]?.media;
+                return pricing ? <CartItemCard key={item.id} id={item.id} name={product.name} slug={product.slug} imageUrl={cover?.type === "IMAGE" ? cover.url : null} imageAlt={cover?.alt ?? product.name} quantity={item.quantity} maxQuantity={Math.min(orderSettings.maxOrderItemQuantity, product.stock)} optionSummary={optionEntries(item.selectedOptions).map(([name, value]) => `${name}: ${value}`)} weight={product.storeIndustry === "GOLD" ? `${Number(selectedWeight).toLocaleString("fa-IR", { maximumFractionDigits: 3 })} گرم` : null} unitPrice={pricing.finalPrice} originalUnitPrice={pricing.isActive ? pricing.originalPrice : null} currency={settings.currency} preparationDays={product.preparationDays} /> : <AlertRoot key={item.id} status="warning" className="m-4"><AlertDescription>قیمت «{product.name}» موقتاً قابل محاسبه نیست.</AlertDescription></AlertRoot>;
+              })}
+            </section>
+
+            {priceUnavailable || subtotal === null || merchandiseTotal === null ? <AlertRoot status="warning"><AlertDescription>نرخ لحظه‌ای طلا موقتاً در دسترس نیست. سبد خرید شما حفظ شده است.</AlertDescription></AlertRoot> : <aside className="grid gap-4 lg:sticky lg:top-24">
+              <Card variant="secondary" className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 shadow-sm">
+                <dl className="m-0 grid gap-4 text-sm"><div className="flex items-center justify-between gap-4 text-[var(--muted)]"><dt>قیمت کالاها ({itemCount.toLocaleString("fa-IR")})</dt><dd>{formatMoney(subtotal, settings.currency)}</dd></div>{productDiscount! > 0 && <div className="flex items-center justify-between gap-4 font-bold text-[var(--danger)]"><dt>تخفیف کالاها</dt><dd>{formatMoney(productDiscount!, settings.currency)}</dd></div>}<div className="flex items-center justify-between gap-4 border-t border-[var(--border)] pt-4 font-black"><dt>جمع سبد خرید</dt><dd>{formatMoney(merchandiseTotal, settings.currency)}</dd></div></dl>
+                <p className="mb-0 mt-4 text-[11px] leading-6 text-[var(--muted)]">هزینه ارسال بر اساس نشانی، روش تحویل و تخفیف‌های فعال در مرحله بعد محاسبه می‌شود.</p>
+                <Link href="/checkout" className="mt-5 flex min-h-12 w-full items-center justify-center gap-2 rounded-lg bg-[var(--brand-primary)] px-5 text-sm font-black text-[var(--brand-primary-foreground)] shadow-sm transition hover:brightness-110">ادامه فرایند خرید<ChevronLeft size={18} /></Link>
+              </Card>
+              {remainingForFreeShipping !== null && <Card variant="secondary" className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 text-xs leading-6 text-[var(--muted)]"><span className="flex items-center gap-2 font-bold text-[var(--foreground)]"><Truck size={17} />ارسال سفارش</span><p className="mb-0 mt-2">{remainingForFreeShipping === 0 ? "سفارش شما مشمول ارسال رایگان است." : `${formatMoney(remainingForFreeShipping, settings.currency)} تا ارسال رایگان فاصله دارید.`}</p><p className="mb-0 mt-1">آماده‌سازی تا {preparationDays.toLocaleString("fa-IR")} روز کاری</p></Card>}
+              <div className="flex items-center gap-2 px-2 text-[11px] text-[var(--muted)]"><ShieldCheck size={16} />پرداخت امن و حفاظت از اطلاعات خرید</div>
+              {productDiscount! > 0 && <div className="flex items-center gap-2 px-2 text-[11px] font-bold text-[var(--danger)]"><BadgePercent size={16} />{formatMoney(productDiscount!, settings.currency)} سود شما از تخفیف کالاها</div>}
+            </aside>}
           </div>
         )}
       </div>
