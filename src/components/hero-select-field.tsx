@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Label, ListBox, Select } from "@heroui/react";
+import { ComboBox, Input, Label, ListBox, Select } from "@heroui/react";
 
 export type HeroSelectOption = {
   value: string;
@@ -20,6 +20,7 @@ type Props = {
   includeEmptyOption?: boolean;
   required?: boolean;
   disabled?: boolean;
+  searchable?: boolean;
   className?: string;
   onValueChange?: (value: string) => void;
 };
@@ -37,6 +38,7 @@ export function HeroSelectField({
   includeEmptyOption = true,
   required,
   disabled,
+  searchable = false,
   className = "",
   onValueChange,
 }: Props) {
@@ -52,6 +54,36 @@ export function HeroSelectField({
     const normalized = raw === emptyKey || raw == null ? "" : String(raw);
     if (value === undefined) setInternalValue(normalized);
     onValueChange?.(normalized);
+  }
+
+  if (searchable) {
+    return (
+      <div className={className}>
+        <input type="hidden" name={name} value={selectedValue} />
+        <ComboBox
+          items={options}
+          selectedKey={selectedValue || null}
+          onSelectionChange={change}
+          isRequired={required}
+          isDisabled={disabled}
+          variant="secondary"
+          fullWidth
+          aria-label={ariaLabel ?? label ?? name}
+          menuTrigger="focus"
+        >
+          {label && <Label className="mb-1.5 text-xs font-bold text-slate-600">{label}</Label>}
+          <ComboBox.InputGroup className="min-h-11 rounded-xl border border-slate-200 bg-white px-3.5 shadow-none focus-within:border-[var(--brand-primary)] focus-within:ring-2 focus-within:ring-[var(--brand-primary)]/15">
+            <Input placeholder={`جستجو و انتخاب ${label ?? "گزینه"}`} className="min-h-11 w-full border-0 bg-transparent px-0 text-sm outline-none" />
+            <ComboBox.Trigger aria-label={`نمایش فهرست ${label ?? name}`} />
+          </ComboBox.InputGroup>
+          <ComboBox.Popover className="z-[180] max-h-80 overflow-hidden" dir="rtl">
+            <ListBox items={options} className="max-h-72 overflow-y-auto p-1">
+              {(option) => <ListBox.Item id={option.value} textValue={option.label} isDisabled={option.disabled}><Label>{option.label}</Label><ListBox.ItemIndicator /></ListBox.Item>}
+            </ListBox>
+          </ComboBox.Popover>
+        </ComboBox>
+      </div>
+    );
   }
 
   return (
@@ -72,8 +104,8 @@ export function HeroSelectField({
           <Select.Value />
           <Select.Indicator />
         </Select.Trigger>
-        <Select.Popover className="z-[180]">
-          <ListBox>
+        <Select.Popover className="z-[180] max-h-80 overflow-hidden" dir="rtl">
+          <ListBox className="max-h-72 overflow-y-auto">
             {normalizedOptions.map((option) => {
               const id = option.value || emptyKey;
               return (
