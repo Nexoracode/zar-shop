@@ -21,6 +21,7 @@ import { StorefrontCartLink } from "@/components/storefront-cart-link";
 import { db } from "@/lib/db";
 import { DeliveryAddressPicker } from "@/components/delivery-address-picker";
 import { serializeAddress } from "@/modules/account/addresses";
+import { StorefrontAccountMenu } from "@/components/storefront-account-menu";
 
 export async function GoldHeader({ settings, brand, user, menuItems }: { settings: GeneralStoreSettingsInput; brand: BrandSettings; user: User | null; menuItems: HomepageMenuItem[] }) {
   const [gold, catalogSettings, cartCount, addresses] = await Promise.all([
@@ -66,7 +67,7 @@ export async function GoldHeader({ settings, brand, user, menuItems }: { setting
         <nav className="mr-10 flex h-full min-w-0 items-center gap-9 overflow-hidden text-sm" aria-label="منوی اصلی فروشگاه">
           {menuItems.map((item) => <Link key={item.id} href={item.href} className="flex h-full shrink-0 items-center border-b-2 border-transparent transition hover:border-[var(--success)] hover:text-[var(--success)]">{item.label}</Link>)}
         </nav>
-        <div className="mr-auto flex items-center gap-5 text-[#555]"><StorefrontSearch /><span className="h-7 w-px bg-[#ddd]" /><Link href={accountHref} aria-label="حساب کاربری"><UserRound size={22} strokeWidth={1.5} /></Link><StorefrontCartLink initialCount={cartCount} iconSize={22} />{user?.role !== "CUSTOMER" && user && <Link href="/admin" aria-label="پنل مدیریت"><LayoutDashboard size={20} /></Link>}</div>
+        <div className="mr-auto flex items-center gap-5 text-[#555]"><StorefrontSearch /><span className="h-7 w-px bg-[#ddd]" /><StorefrontAccountMenu user={user ? { firstName: user.firstName, lastName: user.lastName, email: user.email, phone: user.phone, isGuest: user.isGuest } : null} /><StorefrontCartLink initialCount={cartCount} iconSize={22} />{user?.role !== "CUSTOMER" && user && <Link href="/admin" aria-label="پنل مدیریت"><LayoutDashboard size={20} /></Link>}</div>
       </div>
 
       <div className="flex h-8 items-center justify-between bg-[#fdf9f2] px-4 text-[0.64rem] lg:hidden">

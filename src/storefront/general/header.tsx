@@ -12,6 +12,7 @@ import { StorefrontSearch } from "@/components/storefront-search";
 import { StorefrontCartLink } from "@/components/storefront-cart-link";
 import { DeliveryAddressPicker } from "@/components/delivery-address-picker";
 import { serializeAddress } from "@/modules/account/addresses";
+import { StorefrontAccountMenu } from "@/components/storefront-account-menu";
 
 type Props = { settings: GeneralStoreSettingsInput; brand: BrandSettings; user: User | null; menuItems: HomepageMenuItem[] };
 
@@ -50,7 +51,7 @@ export async function GeneralHeader({ settings, brand, user, menuItems }: Props)
         <StorefrontSearch variant="field" />
         <div className="mr-auto flex items-center gap-1 text-[#323741]">
           <Link href={accountHref} aria-label="اعلان‌ها" className="grid size-10 place-items-center rounded-lg transition hover:bg-slate-100"><Bell size={20} strokeWidth={1.7} /></Link>
-          <Link href={accountHref} aria-label="حساب کاربری" className="grid size-10 place-items-center rounded-lg transition hover:bg-slate-100"><UserRound size={21} strokeWidth={1.7} /></Link>
+          <StorefrontAccountMenu user={user ? { firstName: user.firstName, lastName: user.lastName, email: user.email, phone: user.phone, isGuest: user.isGuest } : null} />
           <span className="mx-2 h-6 w-px bg-slate-200" />
           <StorefrontCartLink initialCount={cartCount} className="grid size-10 place-items-center rounded-lg transition hover:bg-slate-100" />
           {user?.role !== "CUSTOMER" && user && <Link href="/admin" aria-label="پنل مدیریت"><LayoutDashboard size={20} /></Link>}
