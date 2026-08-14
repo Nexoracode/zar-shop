@@ -22,13 +22,8 @@ type ItemWithProduct = Prisma.CartItemGetPayload<{ include: { product: { include
 type PriceParts = ReturnType<typeof calculateProductPrice>;
 type CheckoutLine = { item: ItemWithProduct; p: ItemWithProduct["product"]; parts: PriceParts; originalUnitPrice: number; discountAmount: number; unitPrice: number; total: number };
 
-const addressSchema = z.object({
-  recipient: z.string().min(3).max(150),
-  phone: z.string().regex(/^09\d{9}$/),
-  province: z.string().min(2).max(100),
-  city: z.string().min(2).max(100),
-  postalCode: z.string().min(5).max(20),
-  addressLine: z.string().min(10).max(1000),
+const checkoutSchema = z.object({
+  addressId: z.string().cuid(),
   couponCode: z.string().trim().max(64).optional().default(""),
   deliveryMethod: z.enum(["INSURED_SHIPPING", "STORE_PICKUP"]),
   paymentProvider: storefrontPaymentMethodSchema,
@@ -42,8 +37,28 @@ export async function POST(request: Request) {
     if (!isStorefrontAvailable(generalSettings, user.role)) return NextResponse.json({ message: "فروشگاه در حال حاضر امکان ثبت سفارش ندارد." }, { status: 503 });
     if (user.isGuest && !generalSettings.guestCheckout) return NextResponse.json({ message: "برای ادامه خرید وارد حساب شوید." }, { status: 403 });
     if (!commerceSettings.onlinePaymentEnabled) return NextResponse.json({ message: "پرداخت آنلاین موقتاً غیرفعال است." }, { status: 503 });
-    const input = addressSchema.parse(await request.json());
-    const { couponCode, deliveryMethod, paymentProvider, ...address } = input;
+    const input = checkoutSchema.parse(await request.json());
+    const { couponCode, deliveryMethod, paymentProvider, addressId } = input;
+    const selectedAddress = await db.address.findFirst({
+      where: { id: addressId, userId: user.id, type: "SHIPPING" },
+      include: { provinceRef: true, cityRef: true },
+    });
+    if (!selectedAddress) return NextResponse.json({ message: "نشانی انتخاب‌شده معتبر نیست؛ لطفاً دوباره نشانی تحویل را انتخاب کنید." }, { status: 422 });
+    const address = {
+      addressId: selectedAddress.id,
+      title: selectedAddress.title,
+      recipientType: selectedAddress.recipientType,
+      recipient: selectedAddress.recipient,
+      recipientNationalId: selectedAddress.recipientNationalId,
+      phone: selectedAddress.phone,
+      province: selectedAddress.provinceRef?.name ?? selectedAddress.province,
+      city: selectedAddress.cityRef?.name ?? selectedAddress.city,
+      postalCode: selectedAddress.postalCode,
+      addressLine: selectedAddress.addressLine,
+      plaque: selectedAddress.plaque,
+      unit: selectedAddress.unit,
+      floor: selectedAddress.floor,
+    };
     const availableMethods = await getStorefrontPaymentMethods();
     if (!availableMethods.some((method) => method.id === paymentProvider)) return NextResponse.json({ message: "روش پرداخت انتخاب‌شده در دسترس نیست." }, { status: 422 });
     const selectedPaymentProvider = await getStorefrontPaymentProvider(paymentProvider);
@@ -145,6 +160,7 @@ export async function POST(request: Request) {
           } : undefined,
         },
       });
+      await tx.address.update({ where: { id: selectedAddress.id }, data: { lastUsedAt: createdAt } });
       if (promotions.rewardId) {
         const reserved = await tx.promotionReward.updateMany({ where: { id: promotions.rewardId, redeemedOrderId: null }, data: { redeemedOrderId: created.id } });
         if (reserved.count !== 1) throw new PromotionValidationError("پاداش خرید بعدی هم‌زمان در سفارش دیگری استفاده شده است.");
@@ -158,7 +174,7 @@ export async function POST(request: Request) {
         await transaction.payment.create({ data: { orderId: order.id, provider: paymentProvider, authority: paymentRequest.authority, amount: order.total, status: "PENDING" } });
         if (orderSettings.orderExpirationStart === "PAYMENT_STARTED_AT") await transaction.order.update({ where: { id: order.id }, data: { expiresAt: orderExpiresAt(orderSettings, paymentStartedAt) } });
       });
-      try { await sendAutomatedSms("orderCreated", input.phone, { orderNumber: order.orderNumber }); } catch (smsError) { console.error("[sms] Order-created notification failed.", smsError); }
+      try { await sendAutomatedSms("orderCreated", address.phone, { orderNumber: order.orderNumber }); } catch (smsError) { console.error("[sms] Order-created notification failed.", smsError); }
       return NextResponse.json({ redirectUrl: paymentRequest.redirectUrl });
     } catch (error) {
       await db.$transaction(async (tx) => {

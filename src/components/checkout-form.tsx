@@ -1,16 +1,17 @@
 "use client";
 
-import { useRef, useState } from "react";
-import { Alert, Button, Card, Input, Spinner, TextArea, toast } from "@heroui/react";
+import { useEffect, useRef, useState } from "react";
+import { Alert, Button, Card, Input, Spinner, toast } from "@heroui/react";
 import { BadgePercent, Building2, Check, ChevronLeft, CreditCard, MapPin, PackageCheck, ShieldCheck, Truck } from "lucide-react";
 import { formatMoney } from "@/lib/format";
 import type { CommerceSettings } from "@/modules/settings/commerce-settings";
 import type { StorefrontPaymentMethod } from "@/modules/payments/storefront-methods";
+import { ADDRESS_UPDATED_EVENT, DeliveryAddressPicker } from "@/components/delivery-address-picker";
+import type { StorefrontAddress } from "@/components/address-form";
 
-type Address = { recipient?: string; phone?: string; province?: string; city?: string; postalCode?: string; addressLine?: string };
 type Quote = { subtotal: number; productDiscount: number; merchandiseAmount: number; promotionDiscount: number; shipping: number; shippingDiscount: number; total: number; applications: Array<{ title: string; code: string | null; discountAmount: number; shippingDiscount: number }> };
 
-export function CheckoutForm({ settings, paymentMethods, currency, itemCount, initialQuote, initialAddress }: { settings: CommerceSettings; paymentMethods: StorefrontPaymentMethod[]; currency: "IRR" | "IRT"; itemCount: number; initialQuote: Quote; initialAddress?: Address | null }) {
+export function CheckoutForm({ settings, paymentMethods, currency, itemCount, initialQuote, initialAddresses, user }: { settings: CommerceSettings; paymentMethods: StorefrontPaymentMethod[]; currency: "IRR" | "IRT"; itemCount: number; initialQuote: Quote; initialAddresses: StorefrontAddress[]; user: { firstName: string | null; lastName: string | null; phone: string | null } }) {
   const formRef = useRef<HTMLFormElement>(null);
   const defaultDelivery = settings.insuredShippingEnabled ? "INSURED_SHIPPING" : "STORE_PICKUP";
   const [deliveryMethod, setDeliveryMethod] = useState<"INSURED_SHIPPING" | "STORE_PICKUP">(defaultDelivery);
@@ -22,13 +23,23 @@ export function CheckoutForm({ settings, paymentMethods, currency, itemCount, in
   const [checkingCoupon, setCheckingCoupon] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [selectedAddress, setSelectedAddress] = useState<StorefrontAddress | null>(initialAddresses.find((item) => item.isDefault) ?? initialAddresses[0] ?? null);
+
+  useEffect(() => {
+    const update = (event: Event) => {
+      const detail = (event as CustomEvent<{ address?: StorefrontAddress; deletedId?: string; fallback?: StorefrontAddress }>).detail;
+      if (detail.deletedId) setSelectedAddress((current) => current?.id === detail.deletedId ? detail.fallback ?? null : current);
+      if (detail.address) setSelectedAddress((current) => detail.address!.isDefault || current?.id === detail.address!.id || !current ? detail.address! : current);
+    };
+    window.addEventListener(ADDRESS_UPDATED_EVENT, update);
+    return () => window.removeEventListener(ADDRESS_UPDATED_EVENT, update);
+  }, []);
 
   async function refreshQuote(nextDelivery = deliveryMethod, nextCoupon = couponCode) {
     setCheckingCoupon(true); setCouponError(""); setCouponMessage("");
-    const form = formRef.current;
-    const city = form ? String(new FormData(form).get("city") ?? "") : "";
+    if (!selectedAddress) { setCouponError("ابتدا نشانی تحویل را ثبت و انتخاب کنید."); setCheckingCoupon(false); return; }
     try {
-      const response = await fetch("/api/checkout/preview", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ couponCode: nextCoupon, city, deliveryMethod: nextDelivery }) });
+      const response = await fetch("/api/checkout/preview", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ couponCode: nextCoupon, addressId: selectedAddress.id, deliveryMethod: nextDelivery }) });
       const result = await response.json().catch(() => null);
       if (!response.ok) throw new Error(result?.message ?? "بررسی تخفیف انجام نشد.");
       setQuote(result as Quote);
@@ -40,6 +51,7 @@ export function CheckoutForm({ settings, paymentMethods, currency, itemCount, in
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault(); setLoading(true); setError("");
+    if (!selectedAddress) { setError("برای ثبت سفارش ابتدا نشانی تحویل را اضافه و انتخاب کنید."); setLoading(false); return; }
     const body = Object.fromEntries(new FormData(event.currentTarget));
     const response = await fetch("/api/checkout", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
     const data = await response.json().catch(() => null);
@@ -49,15 +61,15 @@ export function CheckoutForm({ settings, paymentMethods, currency, itemCount, in
   }
 
   const fieldClass = "w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-3 outline-none focus:border-[var(--brand-primary)] focus:ring-2 focus:ring-[var(--brand-primary)]/15";
-  const labelClass = "grid gap-2 text-xs font-bold text-[var(--foreground)]";
 
   return (
     <form ref={formRef} onSubmit={submit} className="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_350px]" dir="rtl">
       <div className="grid gap-5">
         <Card variant="secondary" className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-sm">
           <Card.Content className="p-5 sm:p-6">
-            <div className="mb-5 flex items-start gap-3"><span className="grid size-10 shrink-0 place-items-center rounded-full bg-[var(--brand-primary)]/10 text-[var(--brand-primary)]"><MapPin size={20} /></span><div><h2 className="m-0 text-base font-black">نشانی و مشخصات تحویل</h2><p className="mb-0 mt-1 text-xs text-[var(--muted)]">اطلاعات تحویل‌گیرنده را دقیق وارد کنید.</p></div></div>
-            <div className="grid gap-4 sm:grid-cols-2"><label className={labelClass}>نام تحویل‌گیرنده<Input name="recipient" defaultValue={initialAddress?.recipient ?? ""} required fullWidth variant="secondary" className={fieldClass} /></label><label className={labelClass}>شماره تماس<Input name="phone" defaultValue={initialAddress?.phone ?? ""} dir="ltr" inputMode="tel" pattern="09[0-9]{9}" required fullWidth variant="secondary" className={fieldClass} /></label><label className={labelClass}>استان<Input name="province" defaultValue={initialAddress?.province ?? ""} required fullWidth variant="secondary" className={fieldClass} /></label><label className={labelClass}>شهر<Input name="city" defaultValue={initialAddress?.city ?? ""} required fullWidth variant="secondary" className={fieldClass} /></label><label className={labelClass}>کد پستی<Input name="postalCode" defaultValue={initialAddress?.postalCode ?? ""} dir="ltr" inputMode="numeric" required fullWidth variant="secondary" className={fieldClass} /></label><label className={`${labelClass} sm:col-span-2`}>نشانی کامل<TextArea name="addressLine" defaultValue={initialAddress?.addressLine ?? ""} rows={3} required fullWidth variant="secondary" className={fieldClass} /></label></div>
+            <input type="hidden" name="addressId" value={selectedAddress?.id ?? ""} />
+            <div className="mb-5 flex items-start justify-between gap-4"><div className="flex items-start gap-3"><span className="grid size-10 shrink-0 place-items-center rounded-full bg-[var(--brand-primary)]/10 text-[var(--brand-primary)]"><MapPin size={20} /></span><div><h2 className="m-0 text-base font-black">نشانی تحویل سفارش</h2><p className="mb-0 mt-1 text-xs text-[var(--muted)]">نشانی و تحویل‌گیرنده را پیش از پرداخت بررسی کنید.</p></div></div><DeliveryAddressPicker initialAddresses={initialAddresses} user={user} /></div>
+            {selectedAddress ? <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-secondary)]/45 p-4"><div className="flex flex-wrap items-center gap-2"><strong className="text-sm">{selectedAddress.title}</strong>{selectedAddress.isDefault && <span className="rounded-full bg-[var(--brand-primary)] px-2 py-0.5 text-[10px] font-bold text-[var(--brand-primary-foreground)]">پیش‌فرض</span>}{selectedAddress.recipientType === "OTHER" && <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-bold text-amber-700">ارسال به دیگری</span>}</div><p className="mb-0 mt-3 text-sm leading-7">{selectedAddress.province}، {selectedAddress.city}، {selectedAddress.addressLine}، پلاک {selectedAddress.plaque}{selectedAddress.unit ? `، واحد ${selectedAddress.unit}` : ""}</p><div className="mt-3 flex flex-wrap gap-x-6 gap-y-2 text-xs text-[var(--muted)]"><span>گیرنده: <b>{selectedAddress.recipient}</b></span><span dir="ltr">{selectedAddress.phone}</span><span>کد پستی: <b dir="ltr">{selectedAddress.postalCode}</b></span></div></div> : <Alert status="warning"><Alert.Description>برای ادامه، اولین نشانی تحویل خود را ثبت کنید.</Alert.Description></Alert>}
           </Card.Content>
         </Card>
 
@@ -69,7 +81,7 @@ export function CheckoutForm({ settings, paymentMethods, currency, itemCount, in
       </div>
 
       <aside className="grid gap-4 lg:sticky lg:top-24">
-        <Card variant="secondary" className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 shadow-sm"><div className="mb-5 flex items-center justify-between"><strong className="text-base font-black">خلاصه سفارش</strong><span className="text-xs text-[var(--muted)]">{itemCount.toLocaleString("fa-IR")} کالا</span></div><dl className="m-0 grid gap-4 text-sm"><div className="flex justify-between gap-4 text-[var(--muted)]"><dt>قیمت کالاها</dt><dd>{formatMoney(quote.subtotal, currency)}</dd></div>{quote.productDiscount > 0 && <div className="flex justify-between gap-4 font-bold text-[var(--danger)]"><dt>تخفیف کالاها</dt><dd>{formatMoney(quote.productDiscount, currency)}</dd></div>}{quote.promotionDiscount > 0 && <div className="flex justify-between gap-4 font-bold text-emerald-700"><dt>کد تخفیف</dt><dd>{formatMoney(quote.promotionDiscount, currency)}</dd></div>}<div className="flex justify-between gap-4 text-[var(--muted)]"><dt>هزینه ارسال</dt><dd>{quote.shipping === 0 ? "رایگان" : formatMoney(quote.shipping, currency)}</dd></div>{quote.shippingDiscount > 0 && <div className="flex justify-between gap-4 font-bold text-emerald-700"><dt>تخفیف ارسال</dt><dd>{formatMoney(quote.shippingDiscount, currency)}</dd></div>}<div className="flex justify-between gap-4 border-t border-[var(--border)] pt-4 text-base font-black"><dt>مبلغ قابل پرداخت</dt><dd>{formatMoney(quote.total, currency)}</dd></div></dl>{quote.applications.length > 0 && <div className="mt-4 grid gap-2">{quote.applications.map((application) => <div key={`${application.title}-${application.code ?? "auto"}`} className="rounded-lg bg-emerald-50 px-3 py-2 text-xs text-emerald-800"><strong>{application.title}</strong>{application.code && <span className="mr-2" dir="ltr">{application.code}</span>}</div>)}</div>}{error && <Alert status="danger" className="mt-4"><Alert.Description>{error}</Alert.Description></Alert>}{!settings.onlinePaymentEnabled && <Alert status="warning" className="mt-4"><Alert.Description>پرداخت آنلاین موقتاً غیرفعال است.</Alert.Description></Alert>}<Button type="submit" fullWidth variant="primary" isPending={loading} isDisabled={!settings.onlinePaymentEnabled || !paymentProvider || checkingCoupon} className="mt-5 min-h-12 gap-2 rounded-lg bg-[var(--brand-primary)] px-5 font-black text-[var(--brand-primary-foreground)]">{({ isPending }) => <>{isPending && <Spinner color="current" size="sm" />}{isPending ? "در حال ثبت سفارش..." : "ثبت سفارش و پرداخت"}<ChevronLeft size={18} /></>}</Button><div className="mt-4 flex items-start gap-2 text-[11px] leading-6 text-[var(--muted)]"><ShieldCheck size={16} className="mt-1 shrink-0" />با ثبت سفارش، اطلاعات و مبلغ نهایی در سمت سرور کنترل و سپس به درگاه منتقل می‌شود.</div></Card>
+        <Card variant="secondary" className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 shadow-sm"><div className="mb-5 flex items-center justify-between"><strong className="text-base font-black">خلاصه سفارش</strong><span className="text-xs text-[var(--muted)]">{itemCount.toLocaleString("fa-IR")} کالا</span></div><dl className="m-0 grid gap-4 text-sm"><div className="flex justify-between gap-4 text-[var(--muted)]"><dt>قیمت کالاها</dt><dd>{formatMoney(quote.subtotal, currency)}</dd></div>{quote.productDiscount > 0 && <div className="flex justify-between gap-4 font-bold text-[var(--danger)]"><dt>تخفیف کالاها</dt><dd>{formatMoney(quote.productDiscount, currency)}</dd></div>}{quote.promotionDiscount > 0 && <div className="flex justify-between gap-4 font-bold text-emerald-700"><dt>کد تخفیف</dt><dd>{formatMoney(quote.promotionDiscount, currency)}</dd></div>}<div className="flex justify-between gap-4 text-[var(--muted)]"><dt>هزینه ارسال</dt><dd>{quote.shipping === 0 ? "رایگان" : formatMoney(quote.shipping, currency)}</dd></div>{quote.shippingDiscount > 0 && <div className="flex justify-between gap-4 font-bold text-emerald-700"><dt>تخفیف ارسال</dt><dd>{formatMoney(quote.shippingDiscount, currency)}</dd></div>}<div className="flex justify-between gap-4 border-t border-[var(--border)] pt-4 text-base font-black"><dt>مبلغ قابل پرداخت</dt><dd>{formatMoney(quote.total, currency)}</dd></div></dl>{quote.applications.length > 0 && <div className="mt-4 grid gap-2">{quote.applications.map((application) => <div key={`${application.title}-${application.code ?? "auto"}`} className="rounded-lg bg-emerald-50 px-3 py-2 text-xs text-emerald-800"><strong>{application.title}</strong>{application.code && <span className="mr-2" dir="ltr">{application.code}</span>}</div>)}</div>}{error && <Alert status="danger" className="mt-4"><Alert.Description>{error}</Alert.Description></Alert>}{!settings.onlinePaymentEnabled && <Alert status="warning" className="mt-4"><Alert.Description>پرداخت آنلاین موقتاً غیرفعال است.</Alert.Description></Alert>}<Button type="submit" fullWidth variant="primary" isPending={loading} isDisabled={!settings.onlinePaymentEnabled || !paymentProvider || checkingCoupon || !selectedAddress} className="mt-5 min-h-12 gap-2 rounded-lg bg-[var(--brand-primary)] px-5 font-black text-[var(--brand-primary-foreground)]">{({ isPending }) => <>{isPending && <Spinner color="current" size="sm" />}{isPending ? "در حال ثبت سفارش..." : "ثبت سفارش و پرداخت"}<ChevronLeft size={18} /></>}</Button><div className="mt-4 flex items-start gap-2 text-[11px] leading-6 text-[var(--muted)]"><ShieldCheck size={16} className="mt-1 shrink-0" />با ثبت سفارش، اطلاعات و مبلغ نهایی در سمت سرور کنترل و سپس به درگاه منتقل می‌شود.</div></Card>
         <Card variant="secondary" className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 text-xs text-[var(--muted)]"><span className="flex items-center gap-2 font-bold text-[var(--foreground)]"><PackageCheck size={17} />سفارش شما محفوظ است</span><p className="mb-0 mt-2 leading-6">موجودی پس از ثبت سفارش تا پایان مهلت پرداخت برای شما رزرو می‌شود.</p></Card>
       </aside>
     </form>

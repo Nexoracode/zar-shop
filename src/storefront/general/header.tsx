@@ -10,11 +10,13 @@ import type { HomepageMenuItem } from "@/modules/settings/homepage-settings";
 import { GeneralHeaderMenuRow } from "@/storefront/general/header-menu-row";
 import { StorefrontSearch } from "@/components/storefront-search";
 import { StorefrontCartLink } from "@/components/storefront-cart-link";
+import { DeliveryAddressPicker } from "@/components/delivery-address-picker";
+import { serializeAddress } from "@/modules/account/addresses";
 
 type Props = { settings: GeneralStoreSettingsInput; brand: BrandSettings; user: User | null; menuItems: HomepageMenuItem[] };
 
 export async function GeneralHeader({ settings, brand, user, menuItems }: Props) {
-  const [categories, cartCount] = await Promise.all([
+  const [categories, cartCount, addresses] = await Promise.all([
     db.category.findMany({
       where: { isActive: true, parentId: null },
       include: {
@@ -28,6 +30,7 @@ export async function GeneralHeader({ settings, brand, user, menuItems }: Props)
       orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
     }),
     user ? db.cartItem.aggregate({ where: { cart: { userId: user.id } }, _sum: { quantity: true } }).then((result) => result._sum.quantity ?? 0) : Promise.resolve(0),
+    user ? db.address.findMany({ where: { userId: user.id, type: "SHIPPING" }, include: { provinceRef: true, cityRef: true }, orderBy: [{ isDefault: "desc" }, { lastUsedAt: "desc" }, { createdAt: "desc" }] }).then((items) => items.map(serializeAddress)) : Promise.resolve([]),
   ]);
   const accountHref = user ? (user.isGuest ? "/cart" : "/account") : "/login";
   const logo = brand.mainLogoMedia
@@ -41,6 +44,7 @@ export async function GeneralHeader({ settings, brand, user, menuItems }: Props)
         <Link href="/" aria-label={`${settings.storeName}، صفحه اصلی`}>{logo}</Link>
         <StorefrontSearch className="absolute left-4" />
       </div>
+      <div className="flex min-h-10 items-center border-t border-slate-100 px-4 lg:hidden"><DeliveryAddressPicker initialAddresses={addresses} authenticated={Boolean(user)} user={{ firstName: user?.firstName ?? null, lastName: user?.lastName ?? null, phone: user?.phone ?? null }} compact /></div>
       <div className="hidden h-[72px] grid-cols-[auto_minmax(320px,500px)_1fr] items-center gap-8 px-10 lg:grid">
         <Link href="/" aria-label={`${settings.storeName}، صفحه اصلی`}>{logo}</Link>
         <StorefrontSearch variant="field" />
@@ -52,7 +56,7 @@ export async function GeneralHeader({ settings, brand, user, menuItems }: Props)
           {user?.role !== "CUSTOMER" && user && <Link href="/admin" aria-label="پنل مدیریت"><LayoutDashboard size={20} /></Link>}
         </div>
       </div>
-      <GeneralHeaderMenuRow categories={categories} menuItems={menuItems} deliveryHref={accountHref} />
+      <GeneralHeaderMenuRow categories={categories} menuItems={menuItems} deliveryPicker={<DeliveryAddressPicker initialAddresses={addresses} authenticated={Boolean(user)} user={{ firstName: user?.firstName ?? null, lastName: user?.lastName ?? null, phone: user?.phone ?? null }} compact />} />
     </header>
     <nav className="fixed inset-x-0 bottom-0 z-50 grid h-[66px] grid-cols-4 border-t border-[#e7e9ed] bg-white/95 text-[#6f7480] shadow-[0_-5px_20px_rgba(0,0,0,.05)] backdrop-blur lg:hidden" aria-label="ناوبری موبایل">
       <Link href="/" className="grid place-items-center content-center text-[var(--brand-primary)]"><Home size={21} /><small className="sr-only">خانه</small></Link>

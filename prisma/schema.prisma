@@ -119,34 +119,39 @@ enum AddressType {
   BILLING
 }
 
+enum AddressRecipientType {
+  SELF
+  OTHER
+}
+
 model User {
-  id                   String                @id @default(cuid())
-  email                String                @unique @db.VarChar(191)
-  phone                String?               @unique @db.VarChar(20)
-  passwordHash         String                @db.VarChar(191)
-  firstName            String?               @db.VarChar(100)
-  lastName             String?               @db.VarChar(100)
-  nationalId           String?               @unique @db.VarChar(20)
-  role                 UserRole              @default(CUSTOMER)
-  status               UserStatus            @default(ACTIVE)
-  emailVerifiedAt      DateTime?
-  lastLoginAt          DateTime?
-  isGuest              Boolean               @default(false)
-  smsMarketingConsent  Boolean               @default(false)
-  createdAt            DateTime              @default(now())
-  updatedAt            DateTime              @updatedAt
-  addresses            Address[]
-  orders               Order[]
-  cart                 Cart?
-  sessions             Session[]
-  auditLogs            AuditLog[]            @relation("AuditActor")
-  promotionRedemptions PromotionRedemption[]
-  promotionRewards     PromotionReward[]
-  productReviews       ProductReview[]             @relation("ProductReviewAuthor")
-  moderatedReviews     ProductReview[]             @relation("ProductReviewModerator")
-  productReviewVotes   ProductReviewVote[]
-  productReviewReports ProductReviewReport[]        @relation("ProductReviewReporter")
-  resolvedReviewReports ProductReviewReport[]       @relation("ProductReviewReportResolver")
+  id                    String                @id @default(cuid())
+  email                 String                @unique @db.VarChar(191)
+  phone                 String?               @unique @db.VarChar(20)
+  passwordHash          String                @db.VarChar(191)
+  firstName             String?               @db.VarChar(100)
+  lastName              String?               @db.VarChar(100)
+  nationalId            String?               @unique @db.VarChar(20)
+  role                  UserRole              @default(CUSTOMER)
+  status                UserStatus            @default(ACTIVE)
+  emailVerifiedAt       DateTime?
+  lastLoginAt           DateTime?
+  isGuest               Boolean               @default(false)
+  smsMarketingConsent   Boolean               @default(false)
+  createdAt             DateTime              @default(now())
+  updatedAt             DateTime              @updatedAt
+  addresses             Address[]
+  orders                Order[]
+  cart                  Cart?
+  sessions              Session[]
+  auditLogs             AuditLog[]            @relation("AuditActor")
+  promotionRedemptions  PromotionRedemption[]
+  promotionRewards      PromotionReward[]
+  productReviews        ProductReview[]       @relation("ProductReviewAuthor")
+  moderatedReviews      ProductReview[]       @relation("ProductReviewModerator")
+  productReviewVotes    ProductReviewVote[]
+  productReviewReports  ProductReviewReport[] @relation("ProductReviewReporter")
+  resolvedReviewReports ProductReviewReport[] @relation("ProductReviewReportResolver")
 }
 
 model Session {
@@ -162,48 +167,102 @@ model Session {
 }
 
 model AuthRateLimit {
-  keyHash         String   @id @db.Char(64)
-  attempts        Int      @default(0)
+  keyHash         String    @id @db.Char(64)
+  attempts        Int       @default(0)
   windowStartedAt DateTime
   blockedUntil    DateTime?
-  updatedAt       DateTime @updatedAt
+  updatedAt       DateTime  @updatedAt
 
   @@index([blockedUntil])
   @@index([updatedAt])
 }
 
 model Address {
-  id          String      @id @default(cuid())
-  userId      String
-  type        AddressType @default(SHIPPING)
-  title       String      @db.VarChar(100)
-  recipient   String      @db.VarChar(150)
-  phone       String      @db.VarChar(20)
-  province    String      @db.VarChar(100)
-  city        String      @db.VarChar(100)
-  postalCode  String      @db.VarChar(20)
-  addressLine String      @db.Text
-  isDefault   Boolean     @default(false)
-  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                  String               @id @default(cuid())
+  userId              String
+  type                AddressType          @default(SHIPPING)
+  title               String               @db.VarChar(100)
+  recipient           String               @db.VarChar(150)
+  recipientType       AddressRecipientType @default(SELF)
+  recipientNationalId String?              @db.VarChar(20)
+  phone               String               @db.VarChar(20)
+  province            String               @db.VarChar(100)
+  provinceId          String?
+  city                String               @db.VarChar(100)
+  cityId              String?
+  postalCode          String               @db.VarChar(20)
+  addressLine         String               @db.Text
+  plaque              String?              @db.VarChar(20)
+  unit                String?              @db.VarChar(20)
+  floor               String?              @db.VarChar(20)
+  latitude            Decimal?             @db.Decimal(10, 7)
+  longitude           Decimal?             @db.Decimal(10, 7)
+  isDefault           Boolean              @default(false)
+  lastUsedAt          DateTime?
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  user                User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  provinceRef         Province?            @relation(fields: [provinceId], references: [id], onDelete: SetNull)
+  cityRef             City?                @relation(fields: [cityId], references: [id], onDelete: SetNull)
 
   @@index([userId])
+  @@index([userId, isDefault])
+  @@index([provinceId])
+  @@index([cityId])
+}
+
+model Province {
+  id              String    @id @default(cuid())
+  externalId      Int       @unique
+  name            String    @db.VarChar(100)
+  slug            String    @db.VarChar(120)
+  latitude        Decimal?  @db.Decimal(10, 7)
+  longitude       Decimal?  @db.Decimal(10, 7)
+  source          String    @default("IRAN_POST_GITHUB") @db.VarChar(50)
+  sourceUpdatedAt DateTime
+  isActive        Boolean   @default(true)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  cities          City[]
+  addresses       Address[]
+
+  @@index([isActive, name])
+}
+
+model City {
+  id              String    @id @default(cuid())
+  externalId      Int       @unique
+  provinceId      String
+  name            String    @db.VarChar(120)
+  slug            String    @db.VarChar(140)
+  latitude        Decimal?  @db.Decimal(10, 7)
+  longitude       Decimal?  @db.Decimal(10, 7)
+  source          String    @default("IRAN_POST_GITHUB") @db.VarChar(50)
+  sourceUpdatedAt DateTime
+  isActive        Boolean   @default(true)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  province        Province  @relation(fields: [provinceId], references: [id], onDelete: Restrict)
+  addresses       Address[]
+
+  @@index([provinceId, isActive, name])
 }
 
 model Category {
-  id          String      @id @default(cuid())
-  name        String      @db.VarChar(100)
-  slug        String      @unique @db.VarChar(120)
-  description String?     @db.Text
-  parentId    String?
-  imageId     String?
-  isActive    Boolean     @default(true)
-  featured    Boolean     @default(false)
-  sortOrder   Int         @default(0)
+  id              String      @id @default(cuid())
+  name            String      @db.VarChar(100)
+  slug            String      @unique @db.VarChar(120)
+  description     String?     @db.Text
+  parentId        String?
+  imageId         String?
+  isActive        Boolean     @default(true)
+  featured        Boolean     @default(false)
+  sortOrder       Int         @default(0)
   attributeSchema Json?
-  parent      Category?   @relation("CategoryTree", fields: [parentId], references: [id], onDelete: SetNull)
-  children    Category[]  @relation("CategoryTree")
-  image       MediaAsset? @relation("CategoryImage", fields: [imageId], references: [id], onDelete: SetNull)
-  products    Product[]
+  parent          Category?   @relation("CategoryTree", fields: [parentId], references: [id], onDelete: SetNull)
+  children        Category[]  @relation("CategoryTree")
+  image           MediaAsset? @relation("CategoryImage", fields: [imageId], references: [id], onDelete: SetNull)
+  products        Product[]
 
   @@index([parentId])
   @@index([imageId])
@@ -264,25 +323,25 @@ model Product {
 }
 
 model ProductReview {
-  id                 String              @id @default(cuid())
+  id                 String                @id @default(cuid())
   productId          String
   userId             String
   parentId           String?
   rating             Int?
-  title              String?             @db.VarChar(120)
-  body               String              @db.Text
-  status             ProductReviewStatus @default(PENDING)
-  isVerifiedPurchase Boolean             @default(false)
+  title              String?               @db.VarChar(120)
+  body               String                @db.Text
+  status             ProductReviewStatus   @default(PENDING)
+  isVerifiedPurchase Boolean               @default(false)
   moderatedById      String?
   moderatedAt        DateTime?
-  moderationNote     String?             @db.VarChar(500)
-  createdAt          DateTime            @default(now())
-  updatedAt          DateTime            @updatedAt
-  product            Product             @relation(fields: [productId], references: [id], onDelete: Cascade)
-  user               User                @relation("ProductReviewAuthor", fields: [userId], references: [id], onDelete: Cascade)
-  parent             ProductReview?      @relation("ProductReviewThread", fields: [parentId], references: [id], onDelete: Cascade)
-  replies            ProductReview[]     @relation("ProductReviewThread")
-  moderatedBy        User?               @relation("ProductReviewModerator", fields: [moderatedById], references: [id], onDelete: SetNull)
+  moderationNote     String?               @db.VarChar(500)
+  createdAt          DateTime              @default(now())
+  updatedAt          DateTime              @updatedAt
+  product            Product               @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user               User                  @relation("ProductReviewAuthor", fields: [userId], references: [id], onDelete: Cascade)
+  parent             ProductReview?        @relation("ProductReviewThread", fields: [parentId], references: [id], onDelete: Cascade)
+  replies            ProductReview[]       @relation("ProductReviewThread")
+  moderatedBy        User?                 @relation("ProductReviewModerator", fields: [moderatedById], references: [id], onDelete: SetNull)
   votes              ProductReviewVote[]
   reports            ProductReviewReport[]
 
@@ -327,89 +386,89 @@ model ProductReviewReport {
 }
 
 model StoreSetting {
-  id                   String        @id @default("main") @db.VarChar(20)
-  industry             StoreIndustry @default(GOLD)
-  storeName            String        @default("زر گالری") @db.VarChar(120)
-  tagline              String        @default("طلا، روایت ماندگار شما") @db.VarChar(191)
-  shortDescription     String        @default("فروش آنلاین زیورآلات طلای ۱۸ عیار با قیمت روز و فاکتور رسمی") @db.VarChar(500)
-  currency             String        @default("IRR") @db.VarChar(3)
-  timezone             String        @default("Asia/Tehran") @db.VarChar(50)
-  supportPhone         String?       @db.VarChar(30)
-  supportEmail         String?       @db.VarChar(191)
-  storeAddress         String?       @db.Text
-  legalIdentifier      String?       @db.VarChar(80)
-  supportHours         String?       @db.VarChar(191)
-  isStoreActive        Boolean       @default(true)
-  guestCheckout        Boolean       @default(true)
-  maintenanceMode      Boolean       @default(false)
-  defaultShippingFee   Decimal       @default(0) @db.Decimal(18, 0)
-  homepageSections     Json?
-  menuCategoryIds      Json?
-  homepageTreasureCards Json?
-  homepageTileGroups    Json?
-  homepageHeroSlides   Json?
-  homepageLicenses     Json?
-  generalHomepageSettings Json?
-  heroContentMode      String        @default("WITH_CONTENT") @db.VarChar(20)
-  heroTitle            String        @default("درخشش ماندگار، انتخابی مطمئن") @db.VarChar(191)
-  heroDescription      String        @default("جدیدترین زیورآلات طلا با قیمت لحظه‌ای") @db.VarChar(500)
-  heroButtonLabel      String        @default("مشاهده محصولات") @db.VarChar(80)
-  heroButtonHref       String        @default("/products") @db.VarChar(500)
-  heroDesktopMediaId   String?
-  heroMobileMediaId    String?
-  promoBannerEnabled   Boolean       @default(false)
-  promoBannerHref      String?       @db.VarChar(500)
-  promoDesktopMediaId  String?
-  promoMobileMediaId   String?
-  createdAt            DateTime      @default(now())
-  updatedAt            DateTime      @updatedAt
-  heroDesktopMedia     MediaAsset?   @relation("HomepageHeroDesktop", fields: [heroDesktopMediaId], references: [id], onDelete: SetNull)
-  heroMobileMedia      MediaAsset?   @relation("HomepageHeroMobile", fields: [heroMobileMediaId], references: [id], onDelete: SetNull)
-  promoDesktopMedia    MediaAsset?   @relation("HomepagePromoDesktop", fields: [promoDesktopMediaId], references: [id], onDelete: SetNull)
-  promoMobileMedia     MediaAsset?   @relation("HomepagePromoMobile", fields: [promoMobileMediaId], references: [id], onDelete: SetNull)
-  brandPrimaryColor    String        @default("#1C3155") @db.VarChar(7)
-  brandAccentColor     String        @default("#B5904C") @db.VarChar(7)
-  brandBackgroundColor String        @default("#F7F6F3") @db.VarChar(7)
-  brandDangerColor     String        @default("#B8423A") @db.VarChar(7)
-  enforceColorContrast Boolean       @default(true)
-  stickyStoreHeader    Boolean       @default(true)
-  compactMobileGrid    Boolean       @default(true)
-  liveGoldPrice        Boolean       @default(true)
-  mainLogoMediaId      String?
-  darkLogoMediaId      String?
-  faviconMediaId       String?
-  socialImageMediaId   String?
-  mainLogoMedia        MediaAsset?   @relation("BrandMainLogo", fields: [mainLogoMediaId], references: [id], onDelete: SetNull)
-  darkLogoMedia        MediaAsset?   @relation("BrandDarkLogo", fields: [darkLogoMediaId], references: [id], onDelete: SetNull)
-  faviconMedia         MediaAsset?   @relation("BrandFavicon", fields: [faviconMediaId], references: [id], onDelete: SetNull)
-  socialImageMedia     MediaAsset?   @relation("BrandSocialImage", fields: [socialImageMediaId], references: [id], onDelete: SetNull)
-  orderExpirationEnabled    Boolean               @default(true)
-  orderExpirationMinutes    Int                   @default(15)
-  orderWarningMinutes       Int                   @default(5)
-  orderExpirationStart      OrderExpirationStart  @default(CREATED_AT)
-  orderExpirationAction     OrderExpirationAction @default(EXPIRE)
-  showOrderCountdown        Boolean               @default(true)
-  releaseReservedInventory  Boolean               @default(true)
-  restorePromotionOnExpiry  Boolean               @default(true)
-  minimumOrderAmount        Decimal               @default(5000000) @db.Decimal(18, 0)
-  orderNumberPrefix         String                @default("ZG") @db.VarChar(10)
-  maxOrderItemQuantity      Int                   @default(5)
-  revalidateGoldAtCheckout  Boolean               @default(true)
-  onlinePaymentEnabled      Boolean               @default(true)
-  freeShippingThreshold     Decimal?              @default(100000000) @db.Decimal(18, 0)
-  preparationDays           Int                   @default(2)
-  insuredShippingEnabled    Boolean               @default(true)
-  inStorePickupEnabled      Boolean               @default(true)
-  calculateShippingAfterAddress Boolean           @default(true)
-  catalogLowStockThreshold Int                    @default(3)
-  catalogPageSize          Int                    @default(24)
-  hideOutOfStockProducts   Boolean                @default(true)
-  showProductStock         Boolean                @default(true)
-  goldPriceRefreshSeconds  Int                    @default(60)
-  goldPriceCacheSeconds    Int                    @default(120)
-  goldPriceFallbackMinutes Int                    @default(15)
-  faqItems              Json?
-  contentPages          Json?
+  id                            String                @id @default("main") @db.VarChar(20)
+  industry                      StoreIndustry         @default(GOLD)
+  storeName                     String                @default("زر گالری") @db.VarChar(120)
+  tagline                       String                @default("طلا، روایت ماندگار شما") @db.VarChar(191)
+  shortDescription              String                @default("فروش آنلاین زیورآلات طلای ۱۸ عیار با قیمت روز و فاکتور رسمی") @db.VarChar(500)
+  currency                      String                @default("IRR") @db.VarChar(3)
+  timezone                      String                @default("Asia/Tehran") @db.VarChar(50)
+  supportPhone                  String?               @db.VarChar(30)
+  supportEmail                  String?               @db.VarChar(191)
+  storeAddress                  String?               @db.Text
+  legalIdentifier               String?               @db.VarChar(80)
+  supportHours                  String?               @db.VarChar(191)
+  isStoreActive                 Boolean               @default(true)
+  guestCheckout                 Boolean               @default(true)
+  maintenanceMode               Boolean               @default(false)
+  defaultShippingFee            Decimal               @default(0) @db.Decimal(18, 0)
+  homepageSections              Json?
+  menuCategoryIds               Json?
+  homepageTreasureCards         Json?
+  homepageTileGroups            Json?
+  homepageHeroSlides            Json?
+  homepageLicenses              Json?
+  generalHomepageSettings       Json?
+  heroContentMode               String                @default("WITH_CONTENT") @db.VarChar(20)
+  heroTitle                     String                @default("درخشش ماندگار، انتخابی مطمئن") @db.VarChar(191)
+  heroDescription               String                @default("جدیدترین زیورآلات طلا با قیمت لحظه‌ای") @db.VarChar(500)
+  heroButtonLabel               String                @default("مشاهده محصولات") @db.VarChar(80)
+  heroButtonHref                String                @default("/products") @db.VarChar(500)
+  heroDesktopMediaId            String?
+  heroMobileMediaId             String?
+  promoBannerEnabled            Boolean               @default(false)
+  promoBannerHref               String?               @db.VarChar(500)
+  promoDesktopMediaId           String?
+  promoMobileMediaId            String?
+  createdAt                     DateTime              @default(now())
+  updatedAt                     DateTime              @updatedAt
+  heroDesktopMedia              MediaAsset?           @relation("HomepageHeroDesktop", fields: [heroDesktopMediaId], references: [id], onDelete: SetNull)
+  heroMobileMedia               MediaAsset?           @relation("HomepageHeroMobile", fields: [heroMobileMediaId], references: [id], onDelete: SetNull)
+  promoDesktopMedia             MediaAsset?           @relation("HomepagePromoDesktop", fields: [promoDesktopMediaId], references: [id], onDelete: SetNull)
+  promoMobileMedia              MediaAsset?           @relation("HomepagePromoMobile", fields: [promoMobileMediaId], references: [id], onDelete: SetNull)
+  brandPrimaryColor             String                @default("#1C3155") @db.VarChar(7)
+  brandAccentColor              String                @default("#B5904C") @db.VarChar(7)
+  brandBackgroundColor          String                @default("#F7F6F3") @db.VarChar(7)
+  brandDangerColor              String                @default("#B8423A") @db.VarChar(7)
+  enforceColorContrast          Boolean               @default(true)
+  stickyStoreHeader             Boolean               @default(true)
+  compactMobileGrid             Boolean               @default(true)
+  liveGoldPrice                 Boolean               @default(true)
+  mainLogoMediaId               String?
+  darkLogoMediaId               String?
+  faviconMediaId                String?
+  socialImageMediaId            String?
+  mainLogoMedia                 MediaAsset?           @relation("BrandMainLogo", fields: [mainLogoMediaId], references: [id], onDelete: SetNull)
+  darkLogoMedia                 MediaAsset?           @relation("BrandDarkLogo", fields: [darkLogoMediaId], references: [id], onDelete: SetNull)
+  faviconMedia                  MediaAsset?           @relation("BrandFavicon", fields: [faviconMediaId], references: [id], onDelete: SetNull)
+  socialImageMedia              MediaAsset?           @relation("BrandSocialImage", fields: [socialImageMediaId], references: [id], onDelete: SetNull)
+  orderExpirationEnabled        Boolean               @default(true)
+  orderExpirationMinutes        Int                   @default(15)
+  orderWarningMinutes           Int                   @default(5)
+  orderExpirationStart          OrderExpirationStart  @default(CREATED_AT)
+  orderExpirationAction         OrderExpirationAction @default(EXPIRE)
+  showOrderCountdown            Boolean               @default(true)
+  releaseReservedInventory      Boolean               @default(true)
+  restorePromotionOnExpiry      Boolean               @default(true)
+  minimumOrderAmount            Decimal               @default(5000000) @db.Decimal(18, 0)
+  orderNumberPrefix             String                @default("ZG") @db.VarChar(10)
+  maxOrderItemQuantity          Int                   @default(5)
+  revalidateGoldAtCheckout      Boolean               @default(true)
+  onlinePaymentEnabled          Boolean               @default(true)
+  freeShippingThreshold         Decimal?              @default(100000000) @db.Decimal(18, 0)
+  preparationDays               Int                   @default(2)
+  insuredShippingEnabled        Boolean               @default(true)
+  inStorePickupEnabled          Boolean               @default(true)
+  calculateShippingAfterAddress Boolean               @default(true)
+  catalogLowStockThreshold      Int                   @default(3)
+  catalogPageSize               Int                   @default(24)
+  hideOutOfStockProducts        Boolean               @default(true)
+  showProductStock              Boolean               @default(true)
+  goldPriceRefreshSeconds       Int                   @default(60)
+  goldPriceCacheSeconds         Int                   @default(120)
+  goldPriceFallbackMinutes      Int                   @default(15)
+  faqItems                      Json?
+  contentPages                  Json?
 
   @@index([heroDesktopMediaId])
   @@index([heroMobileMediaId])
@@ -578,18 +637,18 @@ model SmsProviderConfig {
 }
 
 model CommunicationSetting {
-  id                    String   @id @default("main")
-  smsEnabled            Boolean  @default(false)
-  inAppEnabled          Boolean  @default(true)
-  adminPhone            String?  @db.VarChar(20)
-  orderCreatedSms       Boolean  @default(false)
-  paymentSuccessSms     Boolean  @default(true)
-  orderShippedSms       Boolean  @default(true)
-  orderExpiredSms       Boolean  @default(false)
-  lowStockAdminSms      Boolean  @default(false)
-  templates             Json?
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
+  id                String   @id @default("main")
+  smsEnabled        Boolean  @default(false)
+  inAppEnabled      Boolean  @default(true)
+  adminPhone        String?  @db.VarChar(20)
+  orderCreatedSms   Boolean  @default(false)
+  paymentSuccessSms Boolean  @default(true)
+  orderShippedSms   Boolean  @default(true)
+  orderExpiredSms   Boolean  @default(false)
+  lowStockAdminSms  Boolean  @default(false)
+  templates         Json?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 }
 
 model SmsCampaign {

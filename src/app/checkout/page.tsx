@@ -13,18 +13,19 @@ import { baseShippingFee, getCommerceSettings } from "@/modules/settings/commerc
 import { getGeneralStoreSettings } from "@/modules/settings/general-settings";
 import { resolveCheckoutPromotions } from "@/modules/promotions/service";
 import { getStorefrontPaymentMethods } from "@/modules/payments/storefront-methods";
+import { serializeAddress } from "@/modules/account/addresses";
 
 export const dynamic = "force-dynamic";
 
 export default async function CheckoutPage() {
   const user = await requireUser();
-  const [cart, gold, settings, commerceSettings, paymentMethods, address] = await Promise.all([
+  const [cart, gold, settings, commerceSettings, paymentMethods, addresses] = await Promise.all([
     db.cart.findUnique({ where: { userId: user.id }, include: { items: { include: { product: { include: { options: true } } } } } }),
     getGoldPriceForDisplay(),
     getGeneralStoreSettings(),
     getCommerceSettings(),
     getStorefrontPaymentMethods(),
-    db.address.findFirst({ where: { userId: user.id }, orderBy: [{ isDefault: "desc" }, { id: "desc" }] }),
+    db.address.findMany({ where: { userId: user.id, type: "SHIPPING" }, orderBy: [{ isDefault: "desc" }, { lastUsedAt: "desc" }, { createdAt: "desc" }], include: { provinceRef: true, cityRef: true } }),
   ]);
   if (!cart?.items.length) redirect("/cart");
   const items = cart.items.filter((item) => item.product.storeIndustry === settings.industry);
@@ -46,7 +47,8 @@ export default async function CheckoutPage() {
   const productDiscount = subtotal - merchandiseAmount;
   const deliveryMethod = commerceSettings.insuredShippingEnabled ? "INSURED_SHIPPING" : "STORE_PICKUP";
   const shippingFee = baseShippingFee(commerceSettings, merchandiseAmount, deliveryMethod);
-  const promotions = await resolveCheckoutPromotions(db, { userId: user.id, merchandiseAmount, shippingFee, city: address?.city ?? "" });
+  const defaultAddress = addresses.find((address) => address.isDefault) ?? addresses[0];
+  const promotions = await resolveCheckoutPromotions(db, { userId: user.id, merchandiseAmount, shippingFee, city: defaultAddress?.cityRef?.name ?? defaultAddress?.city ?? "" });
   const shipping = Math.max(0, shippingFee - promotions.shippingDiscount);
   const initialQuote = { subtotal, productDiscount, merchandiseAmount, promotionDiscount: promotions.promotionDiscount, shipping, shippingDiscount: promotions.shippingDiscount, total: merchandiseAmount - promotions.promotionDiscount + shipping, applications: promotions.applications.map((item) => ({ title: item.title, code: item.code, discountAmount: item.discountAmount, shippingDiscount: item.shippingDiscount })) };
   const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
@@ -57,7 +59,7 @@ export default async function CheckoutPage() {
         <Link href="/cart" className="mb-5 inline-flex items-center gap-2 text-sm font-bold text-[var(--muted)] transition hover:text-[var(--brand-primary)]"><ChevronRight size={17} />بازگشت به سبد خرید</Link>
         <div className="mb-7 flex items-center justify-center gap-2 text-xs sm:gap-4 sm:text-sm" aria-label="مراحل خرید"><span className="flex items-center gap-2 text-[var(--muted)]"><ShoppingCart size={18} />سبد خرید</span><span className="h-px w-8 bg-[var(--border)] sm:w-16" /><strong className="flex items-center gap-2 text-[var(--brand-primary)]"><MapPin size={18} />ارسال و پرداخت</strong><span className="h-px w-8 bg-[var(--border)] sm:w-16" /><span className="flex items-center gap-2 text-[var(--muted)]"><CreditCard size={18} />تکمیل خرید</span></div>
         <div className="mb-6"><h1 className="m-0 text-xl font-black sm:text-2xl">تکمیل سفارش</h1><p className="mb-0 mt-2 text-sm text-[var(--muted)]">نشانی، شیوه تحویل، تخفیف و روش پرداخت را بررسی کنید.</p></div>
-        <CheckoutForm settings={commerceSettings} paymentMethods={paymentMethods} currency={settings.currency} itemCount={itemCount} initialQuote={initialQuote} initialAddress={address} />
+        <CheckoutForm settings={commerceSettings} paymentMethods={paymentMethods} currency={settings.currency} itemCount={itemCount} initialQuote={initialQuote} initialAddresses={addresses.map(serializeAddress)} user={{ firstName: user.firstName, lastName: user.lastName, phone: user.phone }} />
       </div>
     </main>
   );

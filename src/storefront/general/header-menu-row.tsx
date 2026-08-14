@@ -1,12 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { MapPin } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { GeneralCategoryMegaMenu, type MenuCategory } from "@/storefront/general/category-mega-menu";
 import type { HomepageMenuItem } from "@/modules/settings/homepage-settings";
 
-export function GeneralHeaderMenuRow({ categories, menuItems, deliveryHref }: { categories: MenuCategory[]; menuItems: HomepageMenuItem[]; deliveryHref: string }) {
+export function GeneralHeaderMenuRow({ categories, menuItems, deliveryPicker }: { categories: MenuCategory[]; menuItems: HomepageMenuItem[]; deliveryPicker: ReactNode }) {
   const [visible, setVisible] = useState(true);
   const lastScrollY = useRef(0);
   const direction = useRef<"up" | "down">("up");
@@ -76,10 +75,7 @@ export function GeneralHeaderMenuRow({ categories, menuItems, deliveryHref }: { 
             </Link>
           ))}
         </nav>
-        <Link href={deliveryHref} className="mr-auto flex shrink-0 items-center gap-2 pr-6 text-[11px] text-slate-600 transition hover:text-[var(--brand-primary)]">
-          <MapPin size={17} />
-          انتخاب نشانی تحویل
-        </Link>
+        <div className="mr-auto flex shrink-0 items-center pr-6">{deliveryPicker}</div>
       </div>
     </div>
   );

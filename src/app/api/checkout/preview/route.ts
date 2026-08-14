@@ -13,7 +13,7 @@ import { PromotionValidationError, resolveCheckoutPromotions } from "@/modules/p
 
 const schema = z.object({
   couponCode: z.string().trim().max(64).default(""),
-  city: z.string().trim().max(100).default(""),
+  addressId: z.string().cuid(),
   deliveryMethod: z.enum(["INSURED_SHIPPING", "STORE_PICKUP"]),
 });
 
@@ -22,12 +22,14 @@ export async function POST(request: Request) {
     const user = await getCurrentUser();
     if (!user) return NextResponse.json({ message: "برای بررسی سفارش ابتدا وارد حساب شوید." }, { status: 401 });
     const input = schema.parse(await request.json());
-    const [cart, gold, commerceSettings, generalSettings] = await Promise.all([
+    const [cart, gold, commerceSettings, generalSettings, address] = await Promise.all([
       db.cart.findUnique({ where: { userId: user.id }, include: { items: { include: { product: { include: { options: true } } } } } }),
       getGoldPriceForDisplay(),
       getCommerceSettings(),
       getGeneralStoreSettings(),
+      db.address.findFirst({ where: { id: input.addressId, userId: user.id, type: "SHIPPING" }, include: { cityRef: true } }),
     ]);
+    if (!address) return NextResponse.json({ message: "نشانی انتخاب‌شده معتبر نیست." }, { status: 422 });
     if (!isStorefrontAvailable(generalSettings, user.role)) return NextResponse.json({ message: "فروشگاه در حال حاضر امکان بررسی سفارش را ندارد." }, { status: 503 });
     if (!cart?.items.length) return NextResponse.json({ message: "سبد خرید خالی است." }, { status: 409 });
     if (cart.items.some((item) => item.product.storeIndustry !== generalSettings.industry)) return NextResponse.json({ message: "بعضی کالاهای سبد با قالب فعلی فروشگاه سازگار نیستند." }, { status: 409 });
@@ -47,7 +49,7 @@ export async function POST(request: Request) {
     const merchandiseAmount = prices.reduce((sum, item) => sum + item.final * item.quantity, 0);
     const productDiscount = subtotal - merchandiseAmount;
     const shippingFee = baseShippingFee(commerceSettings, merchandiseAmount, input.deliveryMethod);
-    const promotions = await resolveCheckoutPromotions(db, { userId: user.id, couponCode: input.couponCode, merchandiseAmount, shippingFee, city: input.city });
+    const promotions = await resolveCheckoutPromotions(db, { userId: user.id, couponCode: input.couponCode, merchandiseAmount, shippingFee, city: address.cityRef?.name ?? address.city });
     const shipping = Math.max(0, shippingFee - promotions.shippingDiscount);
     return NextResponse.json({
       subtotal,

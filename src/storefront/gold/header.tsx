@@ -19,12 +19,15 @@ import type { HomepageMenuItem } from "@/modules/settings/homepage-settings";
 import { StorefrontSearch } from "@/components/storefront-search";
 import { StorefrontCartLink } from "@/components/storefront-cart-link";
 import { db } from "@/lib/db";
+import { DeliveryAddressPicker } from "@/components/delivery-address-picker";
+import { serializeAddress } from "@/modules/account/addresses";
 
 export async function GoldHeader({ settings, brand, user, menuItems }: { settings: GeneralStoreSettingsInput; brand: BrandSettings; user: User | null; menuItems: HomepageMenuItem[] }) {
-  const [gold, catalogSettings, cartCount] = await Promise.all([
+  const [gold, catalogSettings, cartCount, addresses] = await Promise.all([
     settings.industry === "GOLD" ? getGoldPriceForDisplay() : Promise.resolve(null),
     getCatalogSettings(),
     user ? db.cartItem.aggregate({ where: { cart: { userId: user.id } }, _sum: { quantity: true } }).then((result) => result._sum.quantity ?? 0) : Promise.resolve(0),
+    user ? db.address.findMany({ where: { userId: user.id, type: "SHIPPING" }, include: { provinceRef: true, cityRef: true }, orderBy: [{ isDefault: "desc" }, { lastUsedAt: "desc" }, { createdAt: "desc" }] }).then((items) => items.map(serializeAddress)) : Promise.resolve([]),
   ]);
   const accountHref = user ? (user.isGuest ? "/cart" : "/account") : "/login";
   const goldPrice = settings.industry === "GOLD" ? <StorefrontGoldPrice initialPrice={gold ? Number(gold.pricePerGram18) : null} currency={settings.currency} live={brand.liveGoldPrice} refreshSeconds={catalogSettings.goldPriceRefreshSeconds} showLabel={false} /> : null;
@@ -43,6 +46,7 @@ export async function GoldHeader({ settings, brand, user, menuItems }: { setting
       <div className="hidden h-10 bg-[#fdf9f2] lg:block">
         <div className="flex h-full w-full items-center justify-between px-10 text-[0.68rem] text-[#4d4b47]">
           <strong className="font-normal">قیمت لحظه‌ای طلای ۱۸ عیار: <span className="font-bold text-[var(--brand-primary)]">{goldPrice}</span></strong>
+          <DeliveryAddressPicker initialAddresses={addresses} authenticated={Boolean(user)} user={{ firstName: user?.firstName ?? null, lastName: user?.lastName ?? null, phone: user?.phone ?? null }} compact />
           <nav className="flex items-center gap-7" aria-label="دسترسی‌های اطلاعاتی">
             <Link href="/#trust">مشتریان ما</Link><Link href="/pages/about">درباره ما</Link><Link href="/pages/contact">تماس با ما</Link>
           </nav>
@@ -68,6 +72,7 @@ export async function GoldHeader({ settings, brand, user, menuItems }: { setting
       <div className="flex h-8 items-center justify-between bg-[#fdf9f2] px-4 text-[0.64rem] lg:hidden">
         <span>قیمت لحظه‌ای طلای ۱۸ عیار:</span><strong className="text-[var(--brand-primary)]">{goldPrice}</strong>
       </div>
+      <div className="flex min-h-10 items-center border-t border-[#eee9e2] px-4 lg:hidden"><DeliveryAddressPicker initialAddresses={addresses} authenticated={Boolean(user)} user={{ firstName: user?.firstName ?? null, lastName: user?.lastName ?? null, phone: user?.phone ?? null }} compact /></div>
     </header>
 
     <nav className="fixed inset-x-0 bottom-0 z-50 grid h-[66px] grid-cols-4 border-t border-[#eee9e2] bg-white/95 text-[#6f706f] shadow-[0_-5px_20px_rgba(0,0,0,.05)] backdrop-blur lg:hidden" aria-label="ناوبری موبایل">
