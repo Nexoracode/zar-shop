@@ -4,11 +4,11 @@ import type { ReactNode } from "react";
 import { ChevronLeft, ImageIcon, PackageSearch } from "lucide-react";
 
 export function AccountPageHeader({ title, description, action }: { title: string; description: string; action?: ReactNode }) {
-  return <header className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 shadow-sm"><div><h1 className="m-0 text-lg font-black sm:text-xl">{title}</h1><p className="mb-0 mt-2 text-xs text-[var(--muted)]">{description}</p></div>{action}</header>;
+  return <header className="flex min-h-24 flex-wrap items-center justify-between gap-4 rounded-xl border border-[var(--border)] bg-[var(--surface)] px-6 py-5"><div><h1 className="m-0 text-base font-black">{title}</h1><p className="mb-0 mt-2 text-xs text-[var(--muted)]">{description}</p></div>{action}</header>;
 }
 
-export function AccountEmptyState({ title, description, href = "/products", linkLabel = "مشاهده محصولات" }: { title: string; description: string; href?: string; linkLabel?: string }) {
-  return <div className="grid min-h-64 place-items-center rounded-2xl border border-dashed border-[var(--border)] bg-[var(--surface)] p-6 text-center"><div><PackageSearch size={42} className="mx-auto text-[var(--muted)]" /><strong className="mt-4 block text-sm">{title}</strong><p className="mx-auto mb-0 mt-2 max-w-md text-xs leading-6 text-[var(--muted)]">{description}</p><Link href={href} className="mt-4 inline-flex items-center gap-1 text-xs font-bold text-[var(--brand-primary)]">{linkLabel}<ChevronLeft size={15} /></Link></div></div>;
+export function AccountEmptyState({ title, description, href = "/products", linkLabel = "مشاهده محصولات", embedded = false }: { title: string; description: string; href?: string; linkLabel?: string; embedded?: boolean }) {
+  return <div className={`grid min-h-64 place-items-center bg-[var(--surface)] p-6 text-center ${embedded ? "" : "rounded-2xl border border-dashed border-[var(--border)]"}`}><div><PackageSearch size={42} className="mx-auto text-[var(--muted)]" /><strong className="mt-4 block text-sm">{title}</strong><p className="mx-auto mb-0 mt-2 max-w-md text-xs leading-6 text-[var(--muted)]">{description}</p><Link href={href} className="mt-4 inline-flex items-center gap-1 text-xs font-bold text-[var(--brand-primary)]">{linkLabel}<ChevronLeft size={15} /></Link></div></div>;
 }
 
 export type AccountProductItem = { id: string; name: string; slug: string; category: string | null; image: { url: string; alt: string | null } | null };
