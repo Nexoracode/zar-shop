@@ -2,7 +2,7 @@
 
 import { useEffect, useState, type FormEvent } from "react";
 import { Alert, Button, Input, Spinner, TextArea } from "@heroui/react";
-import { Check, UserRound, UsersRound } from "lucide-react";
+import { Check } from "lucide-react";
 import { HeroSelectField } from "@/components/hero-select-field";
 
 export type StorefrontAddress = {
@@ -14,7 +14,6 @@ export type StorefrontAddress = {
 type Option = { id: string; name: string };
 
 export function AddressForm({ initial, user, onSaved, onCancel }: { initial?: StorefrontAddress | null; user: { firstName: string | null; lastName: string | null; phone: string | null }; onSaved: (address: StorefrontAddress) => void; onCancel: () => void }) {
-  const [recipientType, setRecipientType] = useState<"SELF" | "OTHER">(initial?.recipientType ?? "SELF");
   const [provinceId, setProvinceId] = useState(initial?.provinceId ?? "");
   const [cityId, setCityId] = useState(initial?.cityId ?? "");
   const [provinces, setProvinces] = useState<Option[]>([]);
@@ -42,7 +41,7 @@ export function AddressForm({ initial, user, onSaved, onCancel }: { initial?: St
     event.preventDefault(); setSaving(true); setError("");
     const form = new FormData(event.currentTarget);
     const payload = {
-      title: form.get("title"), recipientType, recipient: form.get("recipient"), recipientNationalId: recipientType === "OTHER" ? form.get("recipientNationalId") : "", phone: form.get("phone"),
+      title: form.get("title"), recipientType: initial?.recipientType ?? "SELF", recipient: initial?.recipient ?? selfName, recipientNationalId: initial?.recipientNationalId ?? "", phone: initial?.phone ?? user.phone ?? "",
       provinceId, cityId, postalCode: form.get("postalCode"), addressLine: form.get("addressLine"), plaque: form.get("plaque"), unit: form.get("unit"), floor: form.get("floor"), isDefault,
     };
     try {
@@ -57,16 +56,12 @@ export function AddressForm({ initial, user, onSaved, onCancel }: { initial?: St
   const fieldClass = "min-h-12 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm shadow-none focus:border-[var(--brand-primary)] focus:ring-2 focus:ring-[var(--brand-primary)]/15";
   const labelClass = "grid gap-2 text-xs font-medium text-slate-600";
   const selectClass = "min-h-12 rounded-lg border-slate-300";
-  const recipientName = initial?.recipient ?? selfName;
-  const recipientPhone = initial?.phone ?? user.phone ?? "";
-
   return <form onSubmit={submit} className="grid gap-6 px-5 pt-5" dir="rtl">
     <div className="grid gap-4 sm:grid-cols-2"><HeroSelectField name="provinceIdField" label="استان" searchable value={provinceId} onValueChange={(value) => { setProvinceId(value); setCityId(""); setCities([]); setLocationsLoading(Boolean(value)); }} required disabled={locationsLoading && !provinces.length} options={provinces.map((item) => ({ value: item.id, label: item.name }))} controlClassName={selectClass} /><HeroSelectField name="cityIdField" label="شهر" searchable value={cityId} onValueChange={setCityId} required disabled={!provinceId || locationsLoading} options={cities.map((item) => ({ value: item.id, label: item.name }))} controlClassName={selectClass} /></div>
     <label className={labelClass}><span>آدرس<span className="mr-0.5 text-[var(--danger)]">*</span></span><TextArea name="addressLine" defaultValue={initial?.addressLine ?? ""} required minLength={10} maxLength={1000} rows={2} fullWidth variant="secondary" className={fieldClass} placeholder="مثال: خیابان، کوچه و جزئیات آدرس" /><span className="text-[11px] font-normal leading-6 text-slate-400">در صورت تغییر این بخش و ناهماهنگی آن با موقعیت مکانی، ممکن است ارسال سفارش با مشکل مواجه شود.</span></label>
     <div className="grid grid-cols-2 gap-4"><label className={labelClass}><span>پلاک<span className="mr-0.5 text-[var(--danger)]">*</span></span><Input name="plaque" defaultValue={initial?.plaque ?? ""} required fullWidth variant="secondary" className={fieldClass} /></label><label className={labelClass}>واحد<Input name="unit" defaultValue={initial?.unit ?? ""} fullWidth variant="secondary" className={fieldClass} /></label></div>
     <div className="grid grid-cols-2 gap-4"><label className={labelClass}><span>کدپستی<span className="mr-0.5 text-[var(--danger)]">*</span></span><Input name="postalCode" defaultValue={initial?.postalCode ?? ""} required dir="ltr" inputMode="numeric" minLength={10} maxLength={10} fullWidth variant="secondary" className={fieldClass} placeholder="باید ۱۰ رقمی باشد" /></label><label className={labelClass}>طبقه<Input name="floor" defaultValue={initial?.floor ?? ""} fullWidth variant="secondary" className={fieldClass} /></label></div>
-    <div className="border-t border-[var(--border)] pt-5"><strong className="mb-3 block text-sm">تحویل‌گیرنده سفارش</strong><div className="grid gap-2 sm:grid-cols-2"><Button type="button" variant="secondary" onPress={() => setRecipientType("SELF")} className={`h-auto min-h-16 justify-start gap-3 rounded-lg border px-4 text-right ${recipientType === "SELF" ? "border-[var(--brand-primary)] bg-[var(--brand-primary)]/5 ring-1 ring-[var(--brand-primary)]" : "border-[var(--border)]"}`}><UserRound size={20} /><span><b className="block">خودم</b><small className="font-normal text-[var(--muted)]">تحویل به صاحب حساب</small></span>{recipientType === "SELF" && <Check size={17} className="mr-auto" />}</Button><Button type="button" variant="secondary" onPress={() => setRecipientType("OTHER")} className={`h-auto min-h-16 justify-start gap-3 rounded-lg border px-4 text-right ${recipientType === "OTHER" ? "border-[var(--brand-primary)] bg-[var(--brand-primary)]/5 ring-1 ring-[var(--brand-primary)]" : "border-[var(--border)]"}`}><UsersRound size={20} /><span><b className="block">شخص دیگر</b><small className="font-normal text-[var(--muted)]">ارسال هدیه یا تحویل به دیگری</small></span>{recipientType === "OTHER" && <Check size={17} className="mr-auto" />}</Button></div></div>
-    <div className="grid gap-4 sm:grid-cols-2"><label className={labelClass}>عنوان آدرس<Input name="title" defaultValue={initial?.title ?? "خانه"} required fullWidth variant="secondary" className={fieldClass} placeholder="مثلاً خانه یا محل کار" /></label><label className={labelClass}>نام و نام خانوادگی گیرنده<Input key={`${initial?.id ?? "new"}-${recipientType}-name`} name="recipient" defaultValue={recipientType === "SELF" ? selfName || recipientName : initial?.recipientType === "OTHER" ? recipientName : ""} required fullWidth variant="secondary" className={fieldClass} /></label><label className={labelClass}>شماره موبایل گیرنده<Input key={`${initial?.id ?? "new"}-${recipientType}-phone`} name="phone" defaultValue={recipientType === "SELF" ? user.phone ?? recipientPhone : initial?.recipientType === "OTHER" ? recipientPhone : ""} required dir="ltr" inputMode="tel" pattern="09[0-9]{9}" fullWidth variant="secondary" className={fieldClass} /></label>{recipientType === "OTHER" && <label className={labelClass}>کد ملی گیرنده<Input name="recipientNationalId" defaultValue={initial?.recipientNationalId ?? ""} required dir="ltr" inputMode="numeric" minLength={10} maxLength={10} fullWidth variant="secondary" className={fieldClass} /></label>}</div>
+    <label className={labelClass}>عنوان آدرس<Input name="title" defaultValue={initial?.title ?? "خانه"} required fullWidth variant="secondary" className={fieldClass} placeholder="مثلاً خانه یا محل کار" /></label>
     <Button type="button" variant="secondary" onPress={() => setIsDefault((value) => !value)} aria-pressed={isDefault} className={`min-h-12 justify-start gap-3 rounded-lg border px-4 ${isDefault ? "border-[var(--brand-primary)] bg-[var(--brand-primary)]/5 text-[var(--brand-primary)]" : "border-[var(--border)]"}`}><span className={`grid size-5 place-items-center rounded border ${isDefault ? "border-[var(--brand-primary)] bg-[var(--brand-primary)] text-[var(--brand-primary-foreground)]" : "border-[var(--border)]"}`}>{isDefault && <Check size={14} />}</span>این آدرس، انتخاب پیش‌فرض تحویل باشد</Button>
     {locationsLoading && <div className="flex items-center gap-2 text-xs text-[var(--muted)]"><Spinner size="sm" />در حال دریافت اطلاعات استان و شهر…</div>}
     {error && <Alert status="danger"><Alert.Description>{error}</Alert.Description></Alert>}

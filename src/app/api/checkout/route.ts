@@ -17,17 +17,18 @@ import { expirePendingOrders } from "@/modules/orders/expiration";
 import { baseShippingFee, estimatedReadyAt, getCommerceSettings } from "@/modules/settings/commerce-settings";
 import { sendAutomatedSms } from "@/modules/communications/sms-service";
 import { InventoryUnavailableError, releaseInventory, reserveInventory } from "@/modules/orders/inventory";
+import { checkoutRecipientSchema } from "@/modules/orders/checkout-recipient";
 
 type ItemWithProduct = Prisma.CartItemGetPayload<{ include: { product: { include: { options: true } } } }>;
 type PriceParts = ReturnType<typeof calculateProductPrice>;
 type CheckoutLine = { item: ItemWithProduct; p: ItemWithProduct["product"]; parts: PriceParts; originalUnitPrice: number; discountAmount: number; unitPrice: number; total: number };
 
-const checkoutSchema = z.object({
+const checkoutSchema = checkoutRecipientSchema.and(z.object({
   addressId: z.string().cuid(),
   couponCode: z.string().trim().max(64).optional().default(""),
   deliveryMethod: z.enum(["INSURED_SHIPPING", "STORE_PICKUP"]),
   paymentProvider: storefrontPaymentMethodSchema,
-});
+}));
 
 export async function POST(request: Request) {
   try {
@@ -38,7 +39,7 @@ export async function POST(request: Request) {
     if (user.isGuest && !generalSettings.guestCheckout) return NextResponse.json({ message: "برای ادامه خرید وارد حساب شوید." }, { status: 403 });
     if (!commerceSettings.onlinePaymentEnabled) return NextResponse.json({ message: "پرداخت آنلاین موقتاً غیرفعال است." }, { status: 503 });
     const input = checkoutSchema.parse(await request.json());
-    const { couponCode, deliveryMethod, paymentProvider, addressId } = input;
+    const { couponCode, deliveryMethod, paymentProvider, addressId, recipientType, recipient, recipientPhone, recipientNationalId } = input;
     const selectedAddress = await db.address.findFirst({
       where: { id: addressId, userId: user.id, type: "SHIPPING" },
       include: { provinceRef: true, cityRef: true },
@@ -47,10 +48,10 @@ export async function POST(request: Request) {
     const address = {
       addressId: selectedAddress.id,
       title: selectedAddress.title,
-      recipientType: selectedAddress.recipientType,
-      recipient: selectedAddress.recipient,
-      recipientNationalId: selectedAddress.recipientNationalId,
-      phone: selectedAddress.phone,
+      recipientType,
+      recipient,
+      recipientNationalId,
+      phone: recipientPhone,
       province: selectedAddress.provinceRef?.name ?? selectedAddress.province,
       city: selectedAddress.cityRef?.name ?? selectedAddress.city,
       postalCode: selectedAddress.postalCode,

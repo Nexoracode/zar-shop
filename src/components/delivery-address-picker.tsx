@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Button, Modal, toast } from "@heroui/react";
-import { Check, ChevronLeft, MapPin, Pencil, Plus, Trash2, UserRound, X } from "lucide-react";
+import { Check, ChevronLeft, MapPin, Pencil, Plus, Trash2, X } from "lucide-react";
 import { AddressForm, type StorefrontAddress } from "@/components/address-form";
 
 export const ADDRESS_UPDATED_EVENT = "storefront:address-updated";
@@ -64,9 +64,9 @@ export function DeliveryAddressPicker({ initialAddresses, user, authenticated = 
 
   const trigger = mode === "create"
     ? <Button type="button" variant="ghost" onPress={() => { setEditing("new"); setOpen(true); }} className="h-auto min-h-10 gap-2 bg-transparent px-0 text-sm font-bold text-[var(--brand-primary)] hover:bg-transparent data-[hovered=true]:bg-transparent"><Plus size={21} />افزودن آدرس جدید</Button>
-    : <Button type="button" variant="ghost" onPress={() => setOpen(true)} className={`h-auto min-h-0 gap-2 bg-transparent p-0 text-right hover:bg-transparent data-[hovered=true]:bg-transparent ${compact ? "max-w-64 text-[11px]" : "text-xs"}`}><MapPin size={compact ? 16 : 18} className="shrink-0 text-[var(--brand-primary)]" /><span className={`block max-w-52 truncate ${selected ? "text-[var(--foreground)]" : "text-amber-600/90"}`}>{selected ? `ارسال به (${selected.title})` : "انتخاب آدرس"}</span><ChevronLeft size={14} className="shrink-0 text-[var(--muted)]" /></Button>;
+    : <Button type="button" variant="ghost" onPress={() => setOpen(true)} className={`h-auto min-h-0 gap-2 bg-transparent p-0 text-right font-normal hover:bg-transparent data-[hovered=true]:bg-transparent ${compact ? "max-w-64 text-[10px]" : "text-[11px]"}`}><MapPin size={compact ? 16 : 18} className="shrink-0 text-[var(--brand-primary)]" /><span className={`block max-w-52 truncate ${selected ? "text-[var(--foreground)]" : "text-amber-600/90"}`}>{selected ? `ارسال به (${selected.title})` : "انتخاب آدرس"}</span><ChevronLeft size={14} className="shrink-0 text-[var(--muted)]" /></Button>;
 
-  if (!authenticated) return <a href="/login?next=/account" className="flex items-center gap-2 text-[11px] text-amber-600/90"><MapPin size={17} className="text-[var(--brand-primary)]" />انتخاب آدرس<ChevronLeft size={14} className="text-[var(--muted)]" /></a>;
+  if (!authenticated) return <a href="/login?next=/account" className="flex items-center gap-2 text-[10px] font-normal text-amber-600/90"><MapPin size={17} className="text-[var(--brand-primary)]" />انتخاب آدرس<ChevronLeft size={14} className="text-[var(--muted)]" /></a>;
 
   return <>
     {trigger}
@@ -82,7 +82,7 @@ export function DeliveryAddressPicker({ initialAddresses, user, authenticated = 
                 {editing ? editing === "new" ? "افزودن آدرس جدید" : "ویرایش آدرس" : "انتخاب آدرس تحویل"}
               </Modal.Heading>
               <p className="mb-0 mt-0.5 text-[11px] leading-5 text-[var(--muted)] sm:text-xs">
-                {editing ? "اطلاعات نشانی و تحویل‌گیرنده را کامل کنید." : "آدرسی را که سفارش به آن ارسال می‌شود انتخاب کنید."}
+                {editing ? "اطلاعات نشانی را کامل کنید." : "آدرسی را که سفارش به آن ارسال می‌شود انتخاب کنید."}
               </p>
             </div>
             <Modal.CloseTrigger aria-label="بستن" className="grid size-9 place-items-center rounded-xl text-[var(--muted)] transition hover:bg-[var(--surface-secondary)] hover:text-[var(--foreground)]">
@@ -106,10 +106,8 @@ export function DeliveryAddressPicker({ initialAddresses, user, authenticated = 
                           <span className="flex flex-wrap items-center gap-2">
                             <strong className="text-sm font-black text-[var(--foreground)]">{address.title}</strong>
                             {address.isDefault && <span className="rounded-full bg-[var(--brand-primary)]/10 px-2 py-0.5 text-[10px] font-bold text-[var(--brand-primary)]">انتخاب‌شده</span>}
-                            {address.recipientType === "OTHER" && <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-bold text-amber-700">گیرنده دیگر</span>}
                           </span>
                           <span className="mt-2 block text-xs leading-7 text-[var(--muted)]">{address.province}، {address.city}، {address.addressLine}، پلاک {address.plaque}{address.unit ? `، واحد ${address.unit}` : ""}</span>
-                          <span className="mt-2 flex items-center gap-2 text-[11px] text-[var(--muted)]"><UserRound size={14} />گیرنده: <b className="font-bold text-[var(--foreground)]">{address.recipient}</b></span>
                         </span>
                       </Button>
                       <div className="flex shrink-0 gap-1">

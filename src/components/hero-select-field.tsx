@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { ComboBox, Input, Label, ListBox, Select } from "@heroui/react";
 
 import { includesNormalizedText } from "@/lib/text-search";
@@ -47,15 +47,21 @@ export function HeroSelectField({
   onValueChange,
 }: Props) {
   const [internalValue, setInternalValue] = useState(defaultValue);
+  const [searchText, setSearchText] = useState("");
   const selectedValue = value ?? internalValue;
   const selectedKey = selectedValue || emptyKey;
   const normalizedOptions = !includeEmptyOption || options.some((option) => option.value === "")
     ? options
     : [{ value: "", label: placeholder }, ...options];
+  const filteredOptions = useMemo(
+    () => searchText ? options.filter((option) => includesNormalizedText(option.label, searchText)) : options,
+    [options, searchText],
+  );
 
   function change(next: React.Key | React.Key[] | null) {
     const raw = Array.isArray(next) ? next[0] : next;
     const normalized = raw === emptyKey || raw == null ? "" : String(raw);
+    if (normalized) setSearchText("");
     if (value === undefined) setInternalValue(normalized);
     onValueChange?.(normalized);
   }
@@ -65,8 +71,9 @@ export function HeroSelectField({
       <div className={`min-w-0 ${className}`}>
         <input type="hidden" name={name} value={selectedValue} />
         <ComboBox
-          items={options}
-          defaultFilter={includesNormalizedText}
+          items={filteredOptions}
+          defaultFilter={() => true}
+          onInputChange={setSearchText}
           selectedKey={selectedValue || null}
           onSelectionChange={change}
           isRequired={required}
