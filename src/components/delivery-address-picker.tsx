@@ -72,7 +72,7 @@ export function DeliveryAddressPicker({ initialAddresses, user, authenticated = 
     {trigger}
     <Modal.Backdrop isOpen={open} onOpenChange={(next) => { setOpen(next); if (!next) setEditing(null); }} variant="blur">
       <Modal.Container placement="center" size="lg">
-        <Modal.Dialog aria-label="انتخاب نشانی تحویل" dir="rtl" className="mx-3 max-h-[calc(100dvh-24px)] max-w-[560px] overflow-hidden rounded-3xl border border-[var(--border)] bg-[var(--surface)] shadow-2xl">
+        <Modal.Dialog aria-label="انتخاب نشانی تحویل" dir="rtl" className="mx-3 max-h-[calc(100dvh-24px)] max-w-[560px] overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface)] shadow-2xl">
           <Modal.Header className="flex-row items-center gap-3 border-b border-[var(--border)] px-5 py-4 sm:px-6 sm:py-5">
             <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-[var(--brand-primary)]/10 text-[var(--brand-primary)]">
               <MapPin size={21} />

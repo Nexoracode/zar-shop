@@ -60,7 +60,7 @@ export function HeroSelectField({
 
   if (searchable) {
     return (
-      <div className={className}>
+      <div className={`min-w-0 ${className}`}>
         <input type="hidden" name={name} value={selectedValue} />
         <ComboBox
           items={options}
@@ -72,15 +72,16 @@ export function HeroSelectField({
           fullWidth
           aria-label={ariaLabel ?? label ?? name}
           menuTrigger="focus"
+          className="min-w-0"
         >
           {label && <Label className="mb-2 text-xs font-medium text-slate-600">{label}{required && <span className="mr-0.5 text-[var(--danger)]">*</span>}</Label>}
-          <ComboBox.InputGroup className={`min-h-11 rounded-xl border border-slate-200 bg-white px-3.5 shadow-none focus-within:border-[var(--brand-primary)] focus-within:ring-2 focus-within:ring-[var(--brand-primary)]/15 ${controlClassName}`}>
-            <Input placeholder={`جستجو و انتخاب ${label ?? "گزینه"}`} className="min-h-11 w-full border-0 bg-transparent px-0 text-sm outline-none" />
-            <ComboBox.Trigger aria-label={`نمایش فهرست ${label ?? name}`} />
+          <ComboBox.InputGroup className={`min-h-11 min-w-0 rounded-xl border border-slate-200 bg-white px-3.5 shadow-none focus-within:border-[var(--brand-primary)] focus-within:ring-2 focus-within:ring-[var(--brand-primary)]/15 ${controlClassName}`}>
+            <Input dir="rtl" placeholder={`جستجو و انتخاب ${label ?? "گزینه"}`} className="min-h-11 min-w-0 flex-1 border-0 bg-transparent px-0 pl-9 text-right text-sm outline-none" />
+            <ComboBox.Trigger aria-label={`نمایش فهرست ${label ?? name}`} className="end-1 size-8 h-8 rounded-lg p-0 pe-0 text-[var(--muted)] hover:bg-[var(--surface-secondary)]" />
           </ComboBox.InputGroup>
-          <ComboBox.Popover className="z-[180] max-h-80 overflow-hidden" dir="rtl">
-            <ListBox items={options} className="max-h-72 overflow-y-auto p-1">
-              {(option) => <ListBox.Item id={option.value} textValue={option.label} isDisabled={option.disabled}><Label>{option.label}</Label><ListBox.ItemIndicator /></ListBox.Item>}
+          <ComboBox.Popover className="z-[180] w-[var(--trigger-width)] max-w-[calc(100vw-2rem)] overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface)] shadow-xl" dir="rtl">
+            <ListBox items={options} className="max-h-64 overflow-y-auto p-1 text-right">
+              {(option) => <ListBox.Item id={option.value} textValue={option.label} isDisabled={option.disabled} className="min-h-10 rounded-lg px-3 text-right"><Label className="min-w-0 flex-1 truncate">{option.label}</Label><ListBox.ItemIndicator /></ListBox.Item>}
             </ListBox>
           </ComboBox.Popover>
         </ComboBox>
@@ -89,7 +90,7 @@ export function HeroSelectField({
   }
 
   return (
-    <div className={className}>
+    <div className={`min-w-0 ${className}`}>
       <input type="hidden" name={name} value={selectedValue} />
       <Select
         selectedKey={selectedKey}
