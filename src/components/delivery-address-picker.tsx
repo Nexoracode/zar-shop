@@ -122,7 +122,7 @@ export function DeliveryAddressPicker({ initialAddresses, user, authenticated = 
                     <div>
                       <span className="mx-auto grid size-14 place-items-center rounded-2xl bg-[var(--brand-primary)]/8 text-[var(--brand-primary)]"><MapPin size={26} /></span>
                       <strong className="mt-4 block text-sm font-black text-[var(--foreground)]">هنوز آدرسی ثبت نکرده‌اید</strong>
-                      <p className="mb-0 mt-1 text-xs leading-6 text-[var(--muted)]">اولین آدرسی که اضافه کنید به‌صورت پیش‌فرض انتخاب می‌شود.</p>
+                      <p className="mb-0 mt-1 text-xs leading-6 text-[var(--muted)]">آدرس جدید پس از ثبت به‌صورت خودکار انتخاب می‌شود.</p>
                     </div>
                   </div>
                 )}

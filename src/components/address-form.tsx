@@ -21,7 +21,6 @@ export function AddressForm({ initial, user, onSaved, onCancel }: { initial?: St
   const [locationsLoading, setLocationsLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
-  const [isDefault, setIsDefault] = useState(initial?.isDefault ?? false);
   const selfName = `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim();
 
   useEffect(() => {
@@ -42,7 +41,7 @@ export function AddressForm({ initial, user, onSaved, onCancel }: { initial?: St
     const form = new FormData(event.currentTarget);
     const payload = {
       title: form.get("title"), recipientType: initial?.recipientType ?? "SELF", recipient: initial?.recipient ?? selfName, recipientNationalId: initial?.recipientNationalId ?? "", phone: initial?.phone ?? user.phone ?? "",
-      provinceId, cityId, postalCode: form.get("postalCode"), addressLine: form.get("addressLine"), plaque: form.get("plaque"), unit: form.get("unit"), floor: form.get("floor"), isDefault,
+      provinceId, cityId, postalCode: form.get("postalCode"), addressLine: form.get("addressLine"), plaque: form.get("plaque"), unit: form.get("unit"), floor: form.get("floor"),
     };
     try {
       const response = await fetch(initial ? `/api/account/addresses/${initial.id}` : "/api/account/addresses", { method: initial ? "PATCH" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(initial ? { action: "update", data: payload } : payload) });
@@ -62,9 +61,8 @@ export function AddressForm({ initial, user, onSaved, onCancel }: { initial?: St
     <div className="grid grid-cols-2 gap-4"><label className={labelClass}><span>پلاک<span className="mr-0.5 text-[var(--danger)]">*</span></span><Input name="plaque" defaultValue={initial?.plaque ?? ""} required fullWidth variant="secondary" className={fieldClass} /></label><label className={labelClass}>واحد<Input name="unit" defaultValue={initial?.unit ?? ""} fullWidth variant="secondary" className={fieldClass} /></label></div>
     <div className="grid grid-cols-2 gap-4"><label className={labelClass}><span>کدپستی<span className="mr-0.5 text-[var(--danger)]">*</span></span><Input name="postalCode" defaultValue={initial?.postalCode ?? ""} required dir="ltr" inputMode="numeric" minLength={10} maxLength={10} fullWidth variant="secondary" className={fieldClass} placeholder="باید ۱۰ رقمی باشد" /></label><label className={labelClass}>طبقه<Input name="floor" defaultValue={initial?.floor ?? ""} fullWidth variant="secondary" className={fieldClass} /></label></div>
     <label className={labelClass}>عنوان آدرس<Input name="title" defaultValue={initial?.title ?? "خانه"} required fullWidth variant="secondary" className={fieldClass} placeholder="مثلاً خانه یا محل کار" /></label>
-    <Button type="button" variant="secondary" onPress={() => setIsDefault((value) => !value)} aria-pressed={isDefault} className={`min-h-12 justify-start gap-3 rounded-lg border px-4 ${isDefault ? "border-[var(--brand-primary)] bg-[var(--brand-primary)]/5 text-[var(--brand-primary)]" : "border-[var(--border)]"}`}><span className={`grid size-5 place-items-center rounded border ${isDefault ? "border-[var(--brand-primary)] bg-[var(--brand-primary)] text-[var(--brand-primary-foreground)]" : "border-[var(--border)]"}`}>{isDefault && <Check size={14} />}</span>این آدرس، انتخاب پیش‌فرض تحویل باشد</Button>
     {locationsLoading && <div className="flex items-center gap-2 text-xs text-[var(--muted)]"><Spinner size="sm" />در حال دریافت اطلاعات استان و شهر…</div>}
     {error && <Alert status="danger"><Alert.Description>{error}</Alert.Description></Alert>}
-    <div className="sticky bottom-0 z-10 -mx-5 flex justify-end border-t border-[var(--border)] bg-white px-5 py-4"><Button type="submit" variant="primary" isPending={saving} isDisabled={!provinceId || !cityId || locationsLoading} className="min-h-12 min-w-44 rounded-lg bg-[var(--brand-primary)] px-6 font-black text-[var(--brand-primary-foreground)]">{initial ? "ذخیره تغییرات" : "تأیید و ادامه"}</Button>{initial && <Button type="button" variant="ghost" isDisabled={saving} onPress={onCancel} className="mr-2 min-h-12 px-4 text-[var(--muted)]">انصراف</Button>}</div>
+    <div className="sticky bottom-0 z-10 -mx-5 flex flex-col-reverse gap-2 border-t border-[var(--border)] bg-white px-5 py-4 sm:flex-row sm:justify-end"><Button type="submit" variant="primary" fullWidth isPending={saving} isDisabled={!provinceId || !cityId || locationsLoading} className="min-h-12 justify-center gap-2 rounded-lg border border-[var(--brand-primary)] bg-[var(--brand-primary)] px-6 font-black text-[var(--brand-primary-foreground)] shadow-sm sm:w-auto sm:min-w-44"><Check size={17} /> <span>{initial ? "ذخیره تغییرات" : "تأیید و ثبت آدرس"}</span></Button>{initial && <Button type="button" variant="ghost" isDisabled={saving} onPress={onCancel} className="min-h-12 px-4 text-[var(--muted)]">انصراف</Button>}</div>
   </form>;
 }

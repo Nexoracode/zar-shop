@@ -26,9 +26,8 @@ export async function POST(request: Request) {
       if (count >= 10) throw new Error("حداکثر ۱۰ نشانی می‌توانید ثبت کنید.");
       const location = await resolveLocation(transaction, input.provinceId, input.cityId);
       if (!location) throw new Error("استان و شهر انتخاب‌شده معتبر نیست.");
-      const makeDefault = input.isDefault || count === 0;
-      if (makeDefault) await transaction.address.updateMany({ where: { userId: user.id, type: "SHIPPING" }, data: { isDefault: false } });
-      return transaction.address.create({ data: { ...input, userId: user.id, type: "SHIPPING", province: location.province.name, city: location.city.name, isDefault: makeDefault }, include });
+      await transaction.address.updateMany({ where: { userId: user.id, type: "SHIPPING", isDefault: true }, data: { isDefault: false } });
+      return transaction.address.create({ data: { ...input, userId: user.id, type: "SHIPPING", province: location.province.name, city: location.city.name, isDefault: true }, include });
     });
     return NextResponse.json({ item: serializeAddress(address) }, { status: 201 });
   } catch (error) {
