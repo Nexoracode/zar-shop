@@ -76,7 +76,7 @@ export function HeroSelectField({
         >
           {label && <Label className="mb-2 text-xs font-medium text-slate-600">{label}{required && <span className="mr-0.5 text-[var(--danger)]">*</span>}</Label>}
           <ComboBox.InputGroup className={`min-h-11 min-w-0 rounded-lg border border-slate-300 bg-white px-3.5 shadow-none focus-within:border-slate-400 focus-within:ring-0 ${controlClassName}`}>
-            <Input dir="rtl" placeholder="" className="min-h-11 min-w-0 flex-1 border-0 bg-transparent px-0 pl-9 text-right text-sm outline-none" />
+            <Input dir="rtl" placeholder="" className="hero-combobox-input min-h-11 min-w-0 flex-1 border-0 bg-transparent px-0 pl-9 text-right text-sm outline-none" />
             <ComboBox.Trigger aria-label={`نمایش فهرست ${label ?? name}`} className="end-1 size-8 h-8 rounded-md p-0 pe-0 text-slate-600" />
           </ComboBox.InputGroup>
           <ComboBox.Popover offset={4} className="z-[180] w-[var(--trigger-width)] max-w-[calc(100vw-2rem)] overflow-hidden rounded-md border border-slate-200 bg-white shadow-sm" dir="rtl">

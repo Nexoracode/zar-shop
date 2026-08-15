@@ -53,6 +53,22 @@ html[dir="rtl"] [data-slot="modal-header"]:has([data-slot="modal-close-trigger"]
   padding-left: 4rem;
 }
 
+/* A ComboBox already has a visible InputGroup boundary. Prevent HeroUI's
+   inner Input focus/validation ring from drawing a second nested field. */
+.hero-combobox-input,
+.hero-combobox-input:hover,
+.hero-combobox-input:focus,
+.hero-combobox-input:focus-visible,
+.hero-combobox-input[data-focused="true"],
+.hero-combobox-input[data-focus-visible="true"],
+.hero-combobox-input[data-invalid="true"] {
+  border-color: transparent !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
 .storefront-shell {
   min-height: 100dvh;
   background: var(--brand-background, #f7f6f3);
