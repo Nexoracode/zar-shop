@@ -42,6 +42,17 @@ body {
   line-height: 1.8;
 }
 
+/* HeroUI positions modal close triggers on the right by default. Keep them on
+   the visual end in RTL and reserve enough header space for long titles. */
+html[dir="rtl"] [data-slot="modal-close-trigger"] {
+  right: auto;
+  left: 1rem;
+}
+
+html[dir="rtl"] [data-slot="modal-header"]:has([data-slot="modal-close-trigger"]) {
+  padding-left: 4rem;
+}
+
 .storefront-shell {
   min-height: 100dvh;
   background: var(--brand-background, #f7f6f3);

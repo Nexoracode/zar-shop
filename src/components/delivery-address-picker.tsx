@@ -68,5 +68,79 @@ export function DeliveryAddressPicker({ initialAddresses, user, authenticated = 
 
   if (!authenticated) return <a href="/login?next=/account" className="flex items-center gap-2 text-[11px] text-amber-600/90"><MapPin size={17} className="text-[var(--brand-primary)]" />انتخاب آدرس<ChevronLeft size={14} className="text-[var(--muted)]" /></a>;
 
-  return <>{trigger}<Modal.Backdrop isOpen={open} onOpenChange={(next) => { setOpen(next); if (!next) setEditing(null); }} variant="blur"><Modal.Container placement="center" size="lg"><Modal.Dialog aria-label="انتخاب نشانی تحویل" dir="rtl" className="mx-3 max-h-[calc(100dvh-16px)] max-w-[550px] overflow-hidden rounded-[18px] bg-[var(--surface)]"><Modal.Header className="flex-row items-center justify-between border-b border-[var(--border)] px-5 py-4"><Modal.Heading className="text-base font-black">{editing ? editing === "new" ? "افزودن آدرس جدید" : "ویرایش آدرس" : "انتخاب نشانی تحویل"}</Modal.Heading><Modal.CloseTrigger aria-label="بستن" className="grid size-9 place-items-center rounded-lg text-slate-600"><X size={21} /></Modal.CloseTrigger></Modal.Header><Modal.Body className={`overflow-y-auto ${editing ? "p-0" : "p-5"}`}>{editing ? <AddressForm initial={editing === "new" ? null : editing} user={user} onSaved={replace} onCancel={() => setEditing(null)} /> : <div className="grid gap-3">{addresses.map((address) => <article key={address.id} className={`rounded-xl border p-4 transition ${address.isDefault ? "border-[var(--brand-primary)] bg-[var(--brand-primary)]/5" : "border-[var(--border)]"}`}><div className="flex items-start gap-3"><Button type="button" variant="ghost" onPress={() => void select(address)} isPending={busy === address.id} className="h-auto min-w-0 flex-1 justify-start gap-3 bg-transparent p-0 text-right hover:bg-transparent data-[hovered=true]:bg-transparent"><span className={`mt-1 grid size-5 shrink-0 place-items-center rounded-full border ${address.isDefault ? "border-[var(--brand-primary)] bg-[var(--brand-primary)] text-[var(--brand-primary-foreground)]" : "border-[var(--border)]"}`}>{address.isDefault && <Check size={13} />}</span><span className="min-w-0"><strong className="block text-sm">{address.title}</strong><span className="mt-2 block text-xs leading-6 text-[var(--muted)]">{address.province}، {address.city}، {address.addressLine}، پلاک {address.plaque}</span><span className="mt-2 flex items-center gap-2 text-xs text-[var(--muted)]"><UserRound size={14} />{address.recipient}{address.recipientType === "OTHER" && <b className="rounded-full bg-amber-50 px-2 py-0.5 text-[10px] text-amber-700">گیرنده دیگر</b>}</span></span></Button><div className="flex shrink-0 gap-1"><Button type="button" isIconOnly size="sm" variant="ghost" aria-label={`ویرایش ${address.title}`} onPress={() => setEditing(address)}><Pencil size={15} /></Button><Button type="button" isIconOnly size="sm" variant="danger-soft" aria-label={`حذف ${address.title}`} isDisabled={busy === address.id} onPress={() => void remove(address)}><Trash2 size={15} /></Button></div></div></article>)}{!addresses.length && <div className="grid min-h-48 place-items-center rounded-xl border border-dashed border-[var(--border)] text-center"><div><MapPin className="mx-auto text-[var(--muted)]" size={34} /><strong className="mt-3 block text-sm">هنوز نشانی ثبت نکرده‌اید</strong><p className="mb-0 mt-1 text-xs text-[var(--muted)]">اولین نشانی به‌صورت پیش‌فرض انتخاب می‌شود.</p></div></div>}<Button type="button" variant="secondary" onPress={() => setEditing("new")} className="min-h-12 justify-start gap-2 rounded-xl border border-[var(--brand-primary)] px-4 font-bold text-[var(--brand-primary)]"><Plus size={18} />افزودن نشانی جدید</Button></div>}</Modal.Body></Modal.Dialog></Modal.Container></Modal.Backdrop></>;
+  return <>
+    {trigger}
+    <Modal.Backdrop isOpen={open} onOpenChange={(next) => { setOpen(next); if (!next) setEditing(null); }} variant="blur">
+      <Modal.Container placement="center" size="lg">
+        <Modal.Dialog aria-label="انتخاب نشانی تحویل" dir="rtl" className="mx-3 max-h-[calc(100dvh-24px)] max-w-[560px] overflow-hidden rounded-3xl border border-[var(--border)] bg-[var(--surface)] shadow-2xl">
+          <Modal.Header className="flex-row items-center gap-3 border-b border-[var(--border)] px-5 py-4 sm:px-6 sm:py-5">
+            <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-[var(--brand-primary)]/10 text-[var(--brand-primary)]">
+              <MapPin size={21} />
+            </span>
+            <div className="min-w-0">
+              <Modal.Heading className="truncate text-base font-black text-[var(--foreground)] sm:text-lg">
+                {editing ? editing === "new" ? "افزودن آدرس جدید" : "ویرایش آدرس" : "انتخاب آدرس تحویل"}
+              </Modal.Heading>
+              <p className="mb-0 mt-0.5 text-[11px] leading-5 text-[var(--muted)] sm:text-xs">
+                {editing ? "اطلاعات نشانی و تحویل‌گیرنده را کامل کنید." : "آدرسی را که سفارش به آن ارسال می‌شود انتخاب کنید."}
+              </p>
+            </div>
+            <Modal.CloseTrigger aria-label="بستن" className="grid size-9 place-items-center rounded-xl text-[var(--muted)] transition hover:bg-[var(--surface-secondary)] hover:text-[var(--foreground)]">
+              <X size={19} />
+            </Modal.CloseTrigger>
+          </Modal.Header>
+
+          <Modal.Body className={`overflow-y-auto ${editing ? "p-0" : "bg-[var(--surface-secondary)]/70 p-4 sm:p-5"}`}>
+            {editing ? (
+              <AddressForm initial={editing === "new" ? null : editing} user={user} onSaved={replace} onCancel={() => setEditing(null)} />
+            ) : (
+              <div className="grid gap-3">
+                {addresses.map((address) => (
+                  <article key={address.id} className={`rounded-2xl border bg-[var(--surface)] p-4 shadow-sm transition sm:p-5 ${address.isDefault ? "border-[var(--brand-primary)] ring-2 ring-[var(--brand-primary)]/10" : "border-[var(--border)] hover:border-[var(--brand-primary)]/35"}`}>
+                    <div className="flex items-start gap-3">
+                      <Button type="button" variant="ghost" onPress={() => void select(address)} isPending={busy === address.id} className="h-auto min-w-0 flex-1 justify-start gap-3 bg-transparent p-0 text-right hover:bg-transparent data-[hovered=true]:bg-transparent">
+                        <span className={`mt-0.5 grid size-6 shrink-0 place-items-center rounded-full border-2 ${address.isDefault ? "border-[var(--brand-primary)] bg-[var(--brand-primary)] text-[var(--brand-primary-foreground)]" : "border-[var(--border)] bg-[var(--surface)]"}`}>
+                          {address.isDefault && <Check size={14} />}
+                        </span>
+                        <span className="min-w-0 flex-1">
+                          <span className="flex flex-wrap items-center gap-2">
+                            <strong className="text-sm font-black text-[var(--foreground)]">{address.title}</strong>
+                            {address.isDefault && <span className="rounded-full bg-[var(--brand-primary)]/10 px-2 py-0.5 text-[10px] font-bold text-[var(--brand-primary)]">انتخاب‌شده</span>}
+                            {address.recipientType === "OTHER" && <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-bold text-amber-700">گیرنده دیگر</span>}
+                          </span>
+                          <span className="mt-2 block text-xs leading-7 text-[var(--muted)]">{address.province}، {address.city}، {address.addressLine}، پلاک {address.plaque}{address.unit ? `، واحد ${address.unit}` : ""}</span>
+                          <span className="mt-2 flex items-center gap-2 text-[11px] text-[var(--muted)]"><UserRound size={14} />گیرنده: <b className="font-bold text-[var(--foreground)]">{address.recipient}</b></span>
+                        </span>
+                      </Button>
+                      <div className="flex shrink-0 gap-1">
+                        <Button type="button" isIconOnly size="sm" variant="ghost" aria-label={`ویرایش ${address.title}`} onPress={() => setEditing(address)} className="rounded-lg text-[var(--muted)] hover:text-[var(--brand-primary)]"><Pencil size={15} /></Button>
+                        <Button type="button" isIconOnly size="sm" variant="danger-soft" aria-label={`حذف ${address.title}`} isDisabled={busy === address.id} onPress={() => void remove(address)} className="rounded-lg"><Trash2 size={15} /></Button>
+                      </div>
+                    </div>
+                  </article>
+                ))}
+                {!addresses.length && (
+                  <div className="grid min-h-56 place-items-center rounded-2xl border border-dashed border-[var(--border)] bg-[var(--surface)] px-6 text-center shadow-sm">
+                    <div>
+                      <span className="mx-auto grid size-14 place-items-center rounded-2xl bg-[var(--brand-primary)]/8 text-[var(--brand-primary)]"><MapPin size={26} /></span>
+                      <strong className="mt-4 block text-sm font-black text-[var(--foreground)]">هنوز آدرسی ثبت نکرده‌اید</strong>
+                      <p className="mb-0 mt-1 text-xs leading-6 text-[var(--muted)]">اولین آدرسی که اضافه کنید به‌صورت پیش‌فرض انتخاب می‌شود.</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </Modal.Body>
+
+          {!editing && (
+            <Modal.Footer className="border-t border-[var(--border)] bg-[var(--surface)] px-4 py-4 sm:px-5">
+              <Button type="button" variant="primary" fullWidth onPress={() => setEditing("new")} className="min-h-12 justify-center gap-2 rounded-xl bg-[var(--brand-primary)] px-5 font-bold text-[var(--brand-primary-foreground)]">
+                <Plus size={18} />افزودن آدرس جدید
+              </Button>
+            </Modal.Footer>
+          )}
+        </Modal.Dialog>
+      </Modal.Container>
+    </Modal.Backdrop>
+  </>;
 }
