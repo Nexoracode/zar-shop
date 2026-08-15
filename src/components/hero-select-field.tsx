@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { ComboBox, Input, Label, ListBox, Select } from "@heroui/react";
 
+import { includesNormalizedText } from "@/lib/text-search";
+
 export type HeroSelectOption = {
   value: string;
   label: string;
@@ -64,6 +66,7 @@ export function HeroSelectField({
         <input type="hidden" name={name} value={selectedValue} />
         <ComboBox
           items={options}
+          defaultFilter={includesNormalizedText}
           selectedKey={selectedValue || null}
           onSelectionChange={change}
           isRequired={required}
@@ -80,8 +83,8 @@ export function HeroSelectField({
             <ComboBox.Trigger aria-label={`نمایش فهرست ${label ?? name}`} className="end-1 size-8 h-8 rounded-md p-0 pe-0 text-slate-600" />
           </ComboBox.InputGroup>
           <ComboBox.Popover offset={4} className="z-[180] w-[var(--trigger-width)] max-w-[calc(100vw-2rem)] overflow-hidden rounded-md border border-slate-200 bg-white shadow-sm" dir="rtl">
-            <ListBox items={options} className="max-h-48 overflow-y-auto px-0 py-1 text-right">
-              {(option) => <ListBox.Item id={option.value} textValue={option.label} isDisabled={option.disabled} className="min-h-8 rounded-md px-3 text-right"><Label className="min-w-0 flex-1 truncate">{option.label}</Label><ListBox.ItemIndicator /></ListBox.Item>}
+            <ListBox className="max-h-48 overflow-y-auto px-0 py-1 text-right">
+              {(option: HeroSelectOption) => <ListBox.Item id={option.value} textValue={option.label} isDisabled={option.disabled} className="min-h-8 rounded-md px-3 text-right"><Label className="min-w-0 flex-1 truncate">{option.label}</Label><ListBox.ItemIndicator /></ListBox.Item>}
             </ListBox>
           </ComboBox.Popover>
         </ComboBox>
