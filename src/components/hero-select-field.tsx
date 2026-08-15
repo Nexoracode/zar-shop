@@ -22,6 +22,7 @@ type Props = {
   includeEmptyOption?: boolean;
   required?: boolean;
   disabled?: boolean;
+  error?: string;
   searchable?: boolean;
   className?: string;
   controlClassName?: string;
@@ -41,6 +42,7 @@ export function HeroSelectField({
   includeEmptyOption = true,
   required,
   disabled,
+  error,
   searchable = false,
   className = "",
   controlClassName = "",
@@ -78,6 +80,7 @@ export function HeroSelectField({
           onSelectionChange={change}
           isRequired={required}
           isDisabled={disabled}
+          isInvalid={Boolean(error)}
           variant="secondary"
           fullWidth
           aria-label={ariaLabel ?? label ?? name}
@@ -85,7 +88,7 @@ export function HeroSelectField({
           className="min-w-0"
         >
           {label && <Label className="mb-2 text-xs font-medium text-slate-600">{label}{required && <span className="mr-0.5 text-[var(--danger)]">*</span>}</Label>}
-          <ComboBox.InputGroup className={`min-h-11 min-w-0 rounded-lg border border-slate-300 bg-white px-3.5 shadow-none focus-within:border-slate-400 focus-within:ring-0 ${controlClassName}`}>
+          <ComboBox.InputGroup className={`min-h-11 min-w-0 rounded-lg border bg-white px-3.5 shadow-none focus-within:ring-2 ${controlClassName} ${error ? "border-[var(--danger)] focus-within:border-[var(--danger)] focus-within:ring-[var(--danger)]/15" : "border-slate-300 focus-within:border-slate-400 focus-within:ring-0"}`}>
             <Input dir="rtl" placeholder="" className="hero-combobox-input min-h-11 min-w-0 flex-1 border-0 bg-transparent px-0 pl-9 text-right text-sm outline-none" />
             <ComboBox.Trigger aria-label={`نمایش فهرست ${label ?? name}`} className="end-1 size-8 h-8 rounded-md p-0 pe-0 text-slate-600" />
           </ComboBox.InputGroup>
@@ -95,6 +98,7 @@ export function HeroSelectField({
             </ListBox>
           </ComboBox.Popover>
         </ComboBox>
+        {error && <span role="alert" className="mt-1.5 block text-[11px] font-normal text-[var(--danger)]">{error}</span>}
       </div>
     );
   }
@@ -108,12 +112,13 @@ export function HeroSelectField({
         placeholder={placeholder}
         isRequired={required}
         isDisabled={disabled}
+        isInvalid={Boolean(error)}
         variant="secondary"
         fullWidth
         aria-label={ariaLabel ?? label ?? name}
       >
         {label && <Label className="mb-2 text-xs font-medium text-slate-600">{label}{required && <span className="mr-0.5 text-[var(--danger)]">*</span>}</Label>}
-        <Select.Trigger className={`min-h-11 rounded-xl border border-slate-200 bg-white px-3.5 text-sm shadow-none ${controlClassName}`}>
+        <Select.Trigger className={`min-h-11 rounded-xl border bg-white px-3.5 text-sm shadow-none ${controlClassName} ${error ? "border-[var(--danger)] ring-2 ring-[var(--danger)]/15" : "border-slate-200"}`}>
           <Select.Value />
           <Select.Indicator />
         </Select.Trigger>
@@ -131,6 +136,7 @@ export function HeroSelectField({
           </ListBox>
         </Select.Popover>
       </Select>
+      {error && <span role="alert" className="mt-1.5 block text-[11px] font-normal text-[var(--danger)]">{error}</span>}
     </div>
   );
 }
