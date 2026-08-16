@@ -34,7 +34,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
   const [settings, homepageSettings, brandSettings, user] = await Promise.all([getGeneralStoreSettings(), getHomepageSettings(), getBrandSettings(), getCurrentUser()]);
   return (
     <html lang="fa" dir="rtl" data-theme="zar" data-scroll-behavior="smooth">
-      <body>
+      <body style={brandCssVariables(brandSettings)}>
         <AppChrome
           header={<><SitePromoBanner settings={homepageSettings} /><StorefrontHeader settings={settings} brand={brandSettings} user={user} menuItems={homepageSettings.menuItems} /></>}
           footer={<StorefrontFooter settings={settings} brand={brandSettings} />}
