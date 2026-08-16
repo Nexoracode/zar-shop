@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
 import { Button, Modal, toast } from "@heroui/react";
 import { Check, ChevronLeft, MapPin, Pencil, Plus, Trash2, X } from "lucide-react";
 import { AddressForm, type StorefrontAddress } from "@/components/address-form";
@@ -13,6 +13,12 @@ export function DeliveryAddressPicker({ initialAddresses, user, authenticated = 
   const [editing, setEditing] = useState<StorefrontAddress | "new" | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const selected = addresses.find((item) => item.isDefault) ?? addresses[0];
+  const compactTriggerStyle = compact ? {
+    "--button-bg": "#fff7ed",
+    "--button-bg-hover": "#ffedd5",
+    "--button-bg-pressed": "#fed7aa",
+    "--button-fg": "#c65f1a",
+  } as CSSProperties : undefined;
 
   useEffect(() => {
     const synchronize = (event: Event) => {
@@ -64,9 +70,9 @@ export function DeliveryAddressPicker({ initialAddresses, user, authenticated = 
 
   const trigger = mode === "create"
     ? <Button type="button" variant="ghost" onPress={() => { setEditing("new"); setOpen(true); }} className="h-auto min-h-10 gap-2 bg-transparent px-0 text-sm font-bold text-[var(--brand-primary)] hover:bg-transparent data-[hovered=true]:bg-transparent"><Plus size={21} />افزودن آدرس جدید</Button>
-    : <Button type="button" variant="ghost" onPress={() => setOpen(true)} className={`h-auto min-h-0 gap-2 bg-transparent p-0 text-right font-normal hover:bg-transparent data-[hovered=true]:bg-transparent ${compact ? "max-w-64 text-[10px]" : "text-[11px]"}`}><MapPin size={compact ? 16 : 18} className="shrink-0 text-[var(--brand-primary)]" /><span className={`block max-w-52 truncate ${selected ? "text-[var(--foreground)]" : "text-amber-600/90"}`}>{selected ? `ارسال به (${selected.title})` : "انتخاب آدرس"}</span><ChevronLeft size={14} className="shrink-0 text-[var(--muted)]" /></Button>;
+    : <Button type="button" variant="ghost" onPress={() => setOpen(true)} style={compactTriggerStyle} className={`h-auto gap-2 text-right font-normal ${compact ? "min-h-9 max-w-64 rounded-lg px-3 py-2 text-xs" : "min-h-0 bg-transparent p-0 text-[11px] hover:bg-transparent data-[hovered=true]:bg-transparent"}`}><MapPin size={compact ? 16 : 18} className={`shrink-0 ${compact ? "text-current" : "text-[var(--brand-primary)]"}`} /><span className={`block max-w-52 truncate ${compact ? "text-current" : selected ? "text-[var(--foreground)]" : "text-amber-600/90"}`}>{selected ? `ارسال به (${selected.title})` : "انتخاب آدرس"}</span><ChevronLeft size={14} className={`shrink-0 ${compact ? "text-current" : "text-[var(--muted)]"}`} /></Button>;
 
-  if (!authenticated) return <a href="/login?next=/account" className="flex items-center gap-2 text-[10px] font-normal text-amber-600/90"><MapPin size={17} className="text-[var(--brand-primary)]" />انتخاب آدرس<ChevronLeft size={14} className="text-[var(--muted)]" /></a>;
+  if (!authenticated) return <a href="/login?next=/account" className={`flex items-center gap-2 font-normal ${compact ? "min-h-9 rounded-lg bg-orange-50 px-3 py-2 text-xs text-orange-700/85 transition hover:bg-orange-100" : "text-[10px] text-amber-600/90"}`}><MapPin size={17} className={compact ? "text-current" : "text-[var(--brand-primary)]"} />انتخاب آدرس<ChevronLeft size={14} className={compact ? "text-current" : "text-[var(--muted)]"} /></a>;
 
   return <>
     {trigger}
