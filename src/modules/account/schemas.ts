@@ -16,7 +16,6 @@ export const addressInputSchema = z.object({
   title: z.string().trim().min(2).max(100),
   recipientType: z.enum(["SELF", "OTHER"]),
   recipient: z.string().trim().min(3).max(150),
-  recipientNationalId: z.union([digits(10), z.literal("")]).optional().transform((value) => value || null),
   phone: z.string().transform((value) => normalizeNumericValue(value, false)).pipe(z.string().regex(/^09\d{9}$/)),
   provinceId: z.string().cuid(),
   cityId: z.string().cuid(),
@@ -28,8 +27,6 @@ export const addressInputSchema = z.object({
   latitude: z.coerce.number().min(24).max(40).nullable().optional(),
   longitude: z.coerce.number().min(43).max(64).nullable().optional(),
   isDefault: z.boolean().default(false),
-}).superRefine((value, context) => {
-  if (value.recipientType === "OTHER" && !value.recipientNationalId) context.addIssue({ code: "custom", path: ["recipientNationalId"], message: "کد ملی گیرنده لازم است." });
 });
 
 export const addressPatchSchema = z.discriminatedUnion("action", [

@@ -6,7 +6,6 @@ const address = {
   title: "خانه",
   recipientType: "SELF" as const,
   recipient: "علی رضایی",
-  recipientNationalId: "",
   phone: "09121234567",
   provinceId: "cm12345678901234567890123",
   cityId: "cm12345678901234567890124",
@@ -27,8 +26,7 @@ test("normalizes Persian digits in customer identity and address fields", () => 
   assert.equal(parsedProfile.email, "test@example.com");
 });
 
-test("requires a national id when the recipient is another person", () => {
+test("accepts another recipient without a national id", () => {
   const result = addressInputSchema.safeParse({ ...address, recipientType: "OTHER" });
-  assert.equal(result.success, false);
-  if (!result.success) assert.equal(result.error.issues.some((issue) => issue.path[0] === "recipientNationalId"), true);
+  assert.equal(result.success, true);
 });

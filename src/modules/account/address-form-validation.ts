@@ -4,9 +4,9 @@ export type AddressFormField = "provinceId" | "cityId" | "addressLine" | "plaque
 export type AddressFormErrors = Partial<Record<AddressFormField, string>>;
 
 export type AddressFormValues = Record<AddressFormField, string>;
-export type AddressRecipientField = "recipient" | "phone" | "recipientNationalId";
+export type AddressRecipientField = "recipient" | "phone";
 export type AddressRecipientErrors = Partial<Record<AddressRecipientField, string>>;
-export type AddressRecipientValues = { recipientType: "SELF" | "OTHER"; recipient: string; phone: string; recipientNationalId: string };
+export type AddressRecipientValues = { recipientType: "SELF" | "OTHER"; recipient: string; phone: string };
 
 export function validateAddressForm(values: AddressFormValues): AddressFormErrors {
   const errors: AddressFormErrors = {};
@@ -32,9 +32,7 @@ export function validateAddressRecipient(values: AddressRecipientValues): Addres
   const errors: AddressRecipientErrors = {};
   const recipient = values.recipient.trim();
   const phone = normalizeNumericValue(values.phone, false);
-  const nationalId = normalizeNumericValue(values.recipientNationalId, false);
   if (recipient.length < 3) errors.recipient = values.recipientType === "SELF" ? "نام و نام خانوادگی حساب کاربری را تکمیل کنید." : "نام و نام خانوادگی گیرنده را کامل وارد کنید.";
   if (!/^09\d{9}$/.test(phone)) errors.phone = values.recipientType === "SELF" ? "شماره موبایل حساب کاربری را تکمیل کنید." : "شماره موبایل گیرنده معتبر نیست.";
-  if (values.recipientType === "OTHER" && !/^\d{10}$/.test(nationalId)) errors.recipientNationalId = "کد ملی گیرنده باید ۱۰ رقم باشد.";
   return errors;
 }

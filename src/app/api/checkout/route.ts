@@ -39,7 +39,7 @@ export async function POST(request: Request) {
     if (user.isGuest && !generalSettings.guestCheckout) return NextResponse.json({ message: "برای ادامه خرید وارد حساب شوید." }, { status: 403 });
     if (!commerceSettings.onlinePaymentEnabled) return NextResponse.json({ message: "پرداخت آنلاین موقتاً غیرفعال است." }, { status: 503 });
     const input = checkoutSchema.parse(await request.json());
-    const { couponCode, deliveryMethod, paymentProvider, addressId, recipientType, recipient, recipientPhone, recipientNationalId } = input;
+    const { couponCode, deliveryMethod, paymentProvider, addressId, recipientType, recipient, recipientPhone } = input;
     const selectedAddress = await db.address.findFirst({
       where: { id: addressId, userId: user.id, type: "SHIPPING" },
       include: { provinceRef: true, cityRef: true },
@@ -50,7 +50,6 @@ export async function POST(request: Request) {
       title: selectedAddress.title,
       recipientType,
       recipient,
-      recipientNationalId,
       phone: recipientPhone,
       province: selectedAddress.provinceRef?.name ?? selectedAddress.province,
       city: selectedAddress.cityRef?.name ?? selectedAddress.city,

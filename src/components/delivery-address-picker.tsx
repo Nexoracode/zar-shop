@@ -87,10 +87,10 @@ export function DeliveryAddressPicker({ initialAddresses, user, authenticated = 
             </span>
             <div className="min-w-0">
               <Modal.Heading className="truncate text-sm font-black text-[var(--foreground)]">
-                {editing ? addressFormStep === 3 ? "تأیید اطلاعات آدرس" : editing === "new" ? "افزودن آدرس جدید" : "ویرایش آدرس" : "انتخاب آدرس تحویل"}
+                {editing ? addressFormStep === 1 ? editing === "new" ? "افزودن آدرس جدید" : "ویرایش آدرس" : addressFormStep === 2 ? "جزئیات آدرس" : "تأیید اطلاعات آدرس" : "انتخاب آدرس تحویل"}
               </Modal.Heading>
               <p className="mb-0 mt-0.5 text-[10px] leading-4 text-[var(--muted)]">
-                {editing ? addressFormStep === 1 ? "استان، شهر و نشانی را کامل کنید." : addressFormStep === 2 ? "جزئیات پستی را وارد کنید." : "اطلاعات را بررسی و گیرنده را مشخص کنید." : "آدرسی را که سفارش به آن ارسال می‌شود انتخاب کنید."}
+                {editing ? addressFormStep === 1 ? "نشانی دقیق را وارد کنید." : addressFormStep === 2 ? "استان، شهر و اطلاعات پستی را کامل کنید." : "نام آدرس و تحویل‌گیرنده را مشخص کنید." : "آدرسی را که سفارش به آن ارسال می‌شود انتخاب کنید."}
               </p>
             </div>
             <Modal.CloseTrigger aria-label="بستن" className="mr-auto grid size-8 place-items-center rounded-lg text-[var(--muted)] transition hover:bg-[var(--surface-secondary)] hover:text-[var(--foreground)]">

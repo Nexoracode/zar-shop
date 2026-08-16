@@ -8,7 +8,6 @@ export function serializeAddress(address: AddressRow) {
     title: address.title,
     recipientType: address.recipientType,
     recipient: address.recipient,
-    recipientNationalId: address.recipientNationalId,
     phone: address.phone,
     provinceId: address.provinceId,
     province: address.provinceRef?.name ?? address.province,

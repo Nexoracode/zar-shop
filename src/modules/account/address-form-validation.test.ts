@@ -23,13 +23,13 @@ test("accepts Persian postal-code digits and ignores optional fields", () => {
 });
 
 test("requires complete recipient details when delivering to another person", () => {
-  const errors = validateAddressRecipient({ recipientType: "OTHER", recipient: "", phone: "0912", recipientNationalId: "" });
+  const errors = validateAddressRecipient({ recipientType: "OTHER", recipient: "", phone: "0912" });
 
-  assert.deepEqual(Object.keys(errors).sort(), ["phone", "recipient", "recipientNationalId"]);
+  assert.deepEqual(Object.keys(errors).sort(), ["phone", "recipient"]);
 });
 
 test("accepts normalized recipient details for another person", () => {
-  const errors = validateAddressRecipient({ recipientType: "OTHER", recipient: "رضا مداحی", phone: "۰۹۱۲۳۴۵۶۷۸۹", recipientNationalId: "۱۲۳۴۵۶۷۸۹۰" });
+  const errors = validateAddressRecipient({ recipientType: "OTHER", recipient: "رضا مداحی", phone: "۰۹۱۲۳۴۵۶۷۸۹" });
 
   assert.deepEqual(errors, {});
 });
