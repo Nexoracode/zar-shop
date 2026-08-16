@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState, type CSSProperties, type FormEvent } from "react";
+import { useCallback, useEffect, useRef, useState, type CSSProperties, type FormEvent } from "react";
 import { Button, Input, Modal, Spinner } from "@heroui/react";
 import { Clock3, Grid2X2, History, Search, Sparkles, TrendingUp, X } from "lucide-react";
 
@@ -24,7 +24,7 @@ export function StorefrontSearch({ variant = "icon", className = "" }: { variant
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  function openSearch() {
+  const openSearch = useCallback(() => {
     const triggerRect = triggerRef.current?.getBoundingClientRect();
     const viewportWidth = window.innerWidth;
     const fieldPanelPadding = variant === "field" ? 8 : 0;
@@ -39,11 +39,21 @@ export function StorefrontSearch({ variant = "icon", className = "" }: { variant
     } catch {
       setRecent([]);
     }
-    setQuery("");
-    setResponse(emptyResponse);
     setError("");
     setOpen(true);
-  }
+  }, [variant]);
+
+  useEffect(() => {
+    function handleSearchShortcut(event: KeyboardEvent) {
+      if (!(event.ctrlKey || event.metaKey) || event.key.toLowerCase() !== "k") return;
+      if (!triggerRef.current?.getClientRects().length) return;
+      event.preventDefault();
+      openSearch();
+    }
+
+    window.addEventListener("keydown", handleSearchShortcut);
+    return () => window.removeEventListener("keydown", handleSearchShortcut);
+  }, [openSearch]);
 
   function remember(value: string) {
     const normalized = value.trim();
@@ -96,7 +106,7 @@ export function StorefrontSearch({ variant = "icon", className = "" }: { variant
   const popularTerms = response.query === "" ? response.popularTerms : [];
 
   return <>
-    {variant === "field" ? <Button ref={triggerRef} type="button" variant="ghost" onPress={openSearch} className={`relative flex h-11 w-full items-center justify-start rounded-xl bg-slate-100 pr-11 pl-4 text-xs font-normal text-slate-400 transition hover:bg-slate-200/70 hover:text-slate-600 ${className}`}><Search className="pointer-events-none absolute inset-y-0 right-4 my-auto !h-[19px] !w-[19px] shrink-0" size={19} /><span>جستجو</span></Button> : <Button ref={triggerRef} type="button" isIconOnly variant="ghost" onPress={openSearch} aria-label="جستجوی محصولات" className={`size-10 min-h-10 min-w-10 rounded-lg text-inherit ${className}`}><Search size={22} strokeWidth={1.7} /></Button>}
+    {variant === "field" ? <Button ref={triggerRef} type="button" variant="ghost" onPress={openSearch} className={`group relative flex h-11 w-full items-center justify-start rounded-xl bg-slate-100 pr-11 pl-24 text-xs font-normal text-slate-400 transition hover:bg-slate-200/70 hover:text-slate-600 ${className}`}><Search className="pointer-events-none absolute inset-y-0 right-4 my-auto !h-[19px] !w-[19px] shrink-0" size={19} /><span className={`min-w-0 truncate ${query ? "text-slate-700" : ""}`}>{query || "جستجو"}</span><kbd dir="ltr" aria-hidden="true" className="pointer-events-none absolute left-3 hidden items-center rounded-md border border-slate-300 bg-white/90 px-2 py-0.5 font-sans text-[10px] font-medium leading-5 text-slate-500 opacity-0 shadow-sm transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100 sm:inline-flex">Ctrl + K</kbd></Button> : <Button ref={triggerRef} type="button" isIconOnly variant="ghost" onPress={openSearch} aria-label="جستجوی محصولات" className={`size-10 min-h-10 min-w-10 rounded-lg text-inherit ${className}`}><Search size={22} strokeWidth={1.7} /></Button>}
 
     <Modal.Backdrop isOpen={open} onOpenChange={setOpen} className="z-[100] !bg-black/10 !backdrop-blur-none">
       <Modal.Container size="lg" placement="center" className="p-0">
