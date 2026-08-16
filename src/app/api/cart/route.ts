@@ -6,6 +6,7 @@ import { createGuestSessionUser, getCurrentUser } from "@/modules/auth/session";
 import { isOptionSnapshotValid, resolveOptionSelection } from "@/modules/products/options";
 import { getGeneralStoreSettings, isStorefrontAvailable } from "@/modules/settings/general-settings";
 import { getOrderSettings } from "@/modules/settings/order-settings";
+import { getCartSummary } from "@/modules/cart/cart-summary";
 
 const inputSchema = z.object({
   productId: z.string().cuid(),
@@ -21,6 +22,17 @@ const updateSchema = z.object({
 async function cartItemCount(userId: string) {
   const result = await db.cartItem.aggregate({ where: { cart: { userId } }, _sum: { quantity: true } });
   return result._sum.quantity ?? 0;
+}
+
+export async function GET() {
+  try {
+    const user = await getCurrentUser();
+    if (!user) {
+      const settings = await getGeneralStoreSettings();
+      return NextResponse.json({ itemCount: 0, items: [], subtotal: 0, total: 0, discount: 0, currency: settings.currency });
+    }
+    return NextResponse.json(await getCartSummary(user.id));
+  } catch (error) { return apiError(error); }
 }
 
 export async function POST(request: Request) {

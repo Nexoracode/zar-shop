@@ -53,7 +53,7 @@ export async function GeneralHeader({ settings, brand, user, menuItems }: Props)
           <Link href={accountHref} aria-label="اعلان‌ها" className="grid size-10 place-items-center rounded-lg transition hover:bg-slate-100"><Bell size={20} strokeWidth={1.7} /></Link>
           <StorefrontAccountMenu user={user ? { firstName: user.firstName, lastName: user.lastName, email: user.email, phone: user.phone, isGuest: user.isGuest } : null} />
           <span className="mx-2 h-6 w-px bg-slate-200" />
-          <StorefrontCartLink initialCount={cartCount} className="grid size-10 place-items-center rounded-lg transition hover:bg-slate-100" />
+          <StorefrontCartLink initialCount={cartCount} className="grid size-10 place-items-center rounded-lg transition hover:bg-[var(--brand-primary)]/8" />
           {user?.role !== "CUSTOMER" && user && <Link href="/admin" aria-label="پنل مدیریت"><LayoutDashboard size={20} /></Link>}
         </div>
       </div>
