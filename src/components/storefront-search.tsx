@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState, type CSSProperties, type FormEvent } from "react";
 import { Button, Input, Modal, Spinner } from "@heroui/react";
 import { Clock3, Grid2X2, History, Search, Sparkles, TrendingUp, X } from "lucide-react";
@@ -14,11 +14,18 @@ const emptyResponse: SearchResponse = { query: "", products: [], categories: [],
 const recentStorageKey = "storefront-recent-searches";
 
 export function StorefrontSearch({ variant = "icon", className = "" }: { variant?: "icon" | "field"; className?: string }) {
+  const searchParams = useSearchParams();
+  const routeQuery = searchParams.get("q")?.trim() ?? "";
+
+  return <StorefrontSearchContent key={routeQuery} variant={variant} className={className} initialQuery={routeQuery} />;
+}
+
+function StorefrontSearchContent({ variant, className, initialQuery }: { variant: "icon" | "field"; className: string; initialQuery: string }) {
   const router = useRouter();
   const triggerRef = useRef<HTMLButtonElement>(null);
   const [open, setOpen] = useState(false);
   const [panelStyle, setPanelStyle] = useState<CSSProperties>({ position: "fixed", top: 8, left: 8, width: "calc(100vw - 16px)", maxHeight: "calc(100dvh - 16px)" });
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState(initialQuery);
   const [recent, setRecent] = useState<string[]>([]);
   const [response, setResponse] = useState<SearchResponse>(emptyResponse);
   const [loading, setLoading] = useState(false);
@@ -73,6 +80,7 @@ export function StorefrontSearch({ variant = "icon", className = "" }: { variant
   function searchAll(value = query) {
     const normalized = value.trim();
     if (!normalized) return;
+    setQuery(normalized);
     remember(normalized);
     setOpen(false);
     router.push(`/products?q=${encodeURIComponent(normalized)}`);
