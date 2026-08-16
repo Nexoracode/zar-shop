@@ -2,7 +2,7 @@
 
 import { useEffect, useState, type CSSProperties } from "react";
 import { Button, Modal, toast } from "@heroui/react";
-import { Check, ChevronLeft, MapPin, Pencil, Plus, Trash2, X } from "lucide-react";
+import { ChevronLeft, MapPin, Plus, X } from "lucide-react";
 import { AddressForm, type AddressFormStep, type StorefrontAddress } from "@/components/address-form";
 
 export const ADDRESS_UPDATED_EVENT = "storefront:address-updated";
@@ -57,19 +57,6 @@ export function DeliveryAddressPicker({ initialAddresses, user, authenticated = 
     finally { setBusy(null); }
   }
 
-  async function remove(address: StorefrontAddress) {
-    setBusy(address.id);
-    try {
-      const response = await fetch(`/api/account/addresses/${address.id}`, { method: "DELETE" });
-      const result = await response.json().catch(() => null);
-      if (!response.ok) throw new Error(result?.message ?? "حذف نشانی انجام نشد.");
-      const next = addresses.filter((item) => item.id !== address.id);
-      if (address.isDefault && next[0]) next[0] = { ...next[0], isDefault: true };
-      setAddresses(next); window.dispatchEvent(new CustomEvent(ADDRESS_UPDATED_EVENT, { detail: { deletedId: address.id, fallback: next[0] } })); toast.success("نشانی حذف شد");
-    } catch (reason) { toast.danger("نشانی حذف نشد", { description: reason instanceof Error ? reason.message : "خطای ناشناخته" }); }
-    finally { setBusy(null); }
-  }
-
   const trigger = mode === "create"
     ? <Button type="button" variant="ghost" onPress={() => { setAddressFormStep(2); setEditing("new"); setOpen(true); }} className="h-auto min-h-10 gap-2 bg-transparent px-0 text-sm font-bold text-[var(--brand-primary)] hover:bg-transparent data-[hovered=true]:bg-transparent"><Plus size={21} />افزودن آدرس جدید</Button>
     : <Button type="button" variant="ghost" onPress={() => setOpen(true)} style={compactTriggerStyle} className={`h-auto gap-2 text-right font-normal ${compact ? "min-h-9 max-w-64 rounded-lg px-3 py-2 text-[11px]" : "min-h-0 bg-transparent p-0 text-[11px] hover:bg-transparent data-[hovered=true]:bg-transparent"}`}><MapPin size={compact ? 16 : 18} className={`shrink-0 ${compact ? "text-current" : "text-[var(--brand-primary)]"}`} /><span className={`block max-w-52 truncate ${compact ? "text-current" : selected ? "text-[var(--foreground)]" : "text-amber-600/90"}`}>{selected ? `ارسال به (${selected.title})` : "انتخاب آدرس"}</span><ChevronLeft size={14} className={`shrink-0 ${compact ? "text-current" : "text-[var(--muted)]"}`} /></Button>;
@@ -95,26 +82,15 @@ export function DeliveryAddressPicker({ initialAddresses, user, authenticated = 
               <AddressForm initial={editing === "new" ? null : editing} user={user} onSaved={replace} onCancel={() => { if (mode === "create") setOpen(false); else setEditing(null); }} onStepChange={setAddressFormStep} />
             ) : (
               <div className="grid gap-3">
+                <h3 className="mb-1 mt-0 text-sm font-black text-[var(--foreground)]">آدرس‌ها</h3>
                 {addresses.map((address) => (
-                  <article key={address.id} className={`rounded-2xl border bg-[var(--surface)] p-4 shadow-sm transition sm:p-5 ${address.isDefault ? "border-[var(--brand-primary)] ring-2 ring-[var(--brand-primary)]/10" : "border-[var(--border)] hover:border-[var(--brand-primary)]/35"}`}>
-                    <div className="flex items-start gap-3">
-                      <Button type="button" variant="ghost" onPress={() => void select(address)} isPending={busy === address.id} className="h-auto min-w-0 flex-1 justify-start gap-3 bg-transparent p-0 text-right hover:bg-transparent data-[hovered=true]:bg-transparent">
-                        <span className={`mt-0.5 grid size-6 shrink-0 place-items-center rounded-full border-2 ${address.isDefault ? "border-[var(--brand-primary)] bg-[var(--brand-primary)] text-[var(--brand-primary-foreground)]" : "border-[var(--border)] bg-[var(--surface)]"}`}>
-                          {address.isDefault && <Check size={14} />}
-                        </span>
-                        <span className="min-w-0 flex-1">
-                          <span className="flex flex-wrap items-center gap-2">
-                            <strong className="text-sm font-black text-[var(--foreground)]">{address.title}</strong>
-                            {address.isDefault && <span className="rounded-full bg-[var(--brand-primary)]/10 px-2 py-0.5 text-[10px] font-bold text-[var(--brand-primary)]">انتخاب‌شده</span>}
-                          </span>
-                          <span className="mt-2 block text-xs leading-7 text-[var(--muted)]">{address.province}، {address.city}، {address.addressLine}، پلاک {address.plaque}{address.unit ? `، واحد ${address.unit}` : ""}</span>
-                        </span>
-                      </Button>
-                      <div className="flex shrink-0 gap-1">
-                        <Button type="button" isIconOnly size="sm" variant="ghost" aria-label={`ویرایش ${address.title}`} onPress={() => { setAddressFormStep(2); setEditing(address); }} className="rounded-lg text-[var(--muted)] hover:text-[var(--brand-primary)]"><Pencil size={15} /></Button>
-                        <Button type="button" isIconOnly size="sm" variant="danger-soft" aria-label={`حذف ${address.title}`} isDisabled={busy === address.id} onPress={() => void remove(address)} className="rounded-lg"><Trash2 size={15} /></Button>
-                      </div>
-                    </div>
+                  <article key={address.id} className={`overflow-hidden rounded-[14px] border bg-[var(--surface)] transition ${address.isDefault ? "border-[var(--brand-primary)]" : "border-[var(--border)] hover:border-[var(--brand-primary)]/50"}`}>
+                    <Button type="button" variant="ghost" fullWidth onPress={() => void select(address)} isPending={busy === address.id} className="h-auto min-h-0 justify-start bg-transparent px-4 py-3.5 text-right hover:bg-transparent data-[hovered=true]:bg-transparent">
+                      <span className="block min-w-0 flex-1">
+                        <span className="flex items-center gap-2 text-[var(--brand-primary)]"><MapPin size={19} className="shrink-0" /><strong className="truncate text-sm font-black">{address.title}</strong></span>
+                        <span className="mt-2 block truncate text-xs leading-6 text-[var(--muted)]">{address.addressLine}، پلاک {address.plaque}{address.unit ? `، واحد ${address.unit}` : ""}</span>
+                      </span>
+                    </Button>
                   </article>
                 ))}
                 {!addresses.length && (
