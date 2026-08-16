@@ -81,18 +81,10 @@ export function DeliveryAddressPicker({ initialAddresses, user, authenticated = 
     <Modal.Backdrop isOpen={open} onOpenChange={(next) => { setOpen(next); if (!next) { setEditing(null); setAddressFormStep(1); } }} variant="blur">
       <Modal.Container placement="center" size="lg">
         <Modal.Dialog aria-label="انتخاب نشانی تحویل" dir="rtl" className="mx-3 max-h-[calc(100dvh-24px)] max-w-[560px] overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface)] shadow-2xl">
-          <Modal.Header className="flex-row items-center gap-2.5 border-b border-[var(--border)] px-4 py-2.5 sm:px-5 sm:py-3">
-            <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-[var(--brand-primary)]/10 text-[var(--brand-primary)]">
-              <MapPin size={17} />
-            </span>
-            <div className="min-w-0">
-              <Modal.Heading className="truncate text-sm font-black text-[var(--foreground)]">
-                {editing ? addressFormStep === 1 ? editing === "new" ? "افزودن آدرس جدید" : "ویرایش آدرس" : addressFormStep === 2 ? "جزئیات آدرس" : "تأیید اطلاعات آدرس" : "انتخاب آدرس تحویل"}
-              </Modal.Heading>
-              <p className="mb-0 mt-0.5 text-[10px] leading-4 text-[var(--muted)]">
-                {editing ? addressFormStep === 1 ? "نشانی دقیق را وارد کنید." : addressFormStep === 2 ? "استان، شهر و اطلاعات پستی را کامل کنید." : "نام آدرس و تحویل‌گیرنده را مشخص کنید." : "آدرسی را که سفارش به آن ارسال می‌شود انتخاب کنید."}
-              </p>
-            </div>
+          <Modal.Header className="flex-row items-center border-b border-[var(--border)] px-5 py-4">
+            <Modal.Heading className="truncate text-base font-black text-[var(--foreground)]">
+              {editing ? addressFormStep === 3 ? "تأیید اطلاعات آدرس" : editing === "new" ? "افزودن آدرس جدید" : "ویرایش آدرس" : "انتخاب آدرس تحویل"}
+            </Modal.Heading>
             <Modal.CloseTrigger aria-label="بستن" className="mr-auto grid size-8 place-items-center rounded-lg text-[var(--muted)] transition hover:bg-[var(--surface-secondary)] hover:text-[var(--foreground)]">
               <X size={18} />
             </Modal.CloseTrigger>
@@ -119,7 +111,7 @@ export function DeliveryAddressPicker({ initialAddresses, user, authenticated = 
                         </span>
                       </Button>
                       <div className="flex shrink-0 gap-1">
-                        <Button type="button" isIconOnly size="sm" variant="ghost" aria-label={`ویرایش ${address.title}`} onPress={() => { setAddressFormStep(1); setEditing(address); }} className="rounded-lg text-[var(--muted)] hover:text-[var(--brand-primary)]"><Pencil size={15} /></Button>
+                        <Button type="button" isIconOnly size="sm" variant="ghost" aria-label={`ویرایش ${address.title}`} onPress={() => { setAddressFormStep(2); setEditing(address); }} className="rounded-lg text-[var(--muted)] hover:text-[var(--brand-primary)]"><Pencil size={15} /></Button>
                         <Button type="button" isIconOnly size="sm" variant="danger-soft" aria-label={`حذف ${address.title}`} isDisabled={busy === address.id} onPress={() => void remove(address)} className="rounded-lg"><Trash2 size={15} /></Button>
                       </div>
                     </div>
