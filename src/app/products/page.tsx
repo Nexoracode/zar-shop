@@ -121,7 +121,6 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
 
   return <main className="bg-white px-4 py-7 sm:px-6 lg:py-10">
     <div className="mx-auto w-full max-w-[1600px]">
-      {query.q && <p className="mb-5 text-sm text-slate-600">نتایج جستجو برای <strong className="text-slate-900">«{query.q}»</strong></p>}
       <div className="grid items-start gap-6 lg:grid-cols-[270px_minmax(0,1fr)]">
         <aside className="sticky top-[var(--storefront-sticky-offset,112px)] hidden lg:block" aria-label="فیلتر محصولات">{filters}</aside>
         <section className="min-w-0" aria-label="نتایج محصولات">
@@ -132,7 +131,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
             <span className="mr-auto text-[11px] text-slate-400">{total.toLocaleString("fa-IR")} کالا</span>
           </div>
 
-          <div className="mt-5 grid grid-cols-2 border-r border-t border-slate-200 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+          <div className="mt-5 grid grid-cols-2 border-r border-t border-slate-200 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
             {catalog.items.map((product) => <ProductCard key={product.id} {...product} storefrontVariant="catalog" />)}
             {!catalog.items.length && <div className="col-span-full grid min-h-72 place-items-center border-b border-l border-slate-200 px-4 text-center text-sm text-slate-500">محصولی مطابق فیلترهای انتخاب‌شده پیدا نشد.</div>}
           </div>
