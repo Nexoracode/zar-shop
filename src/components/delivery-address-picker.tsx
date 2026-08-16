@@ -81,7 +81,7 @@ export function DeliveryAddressPicker({ initialAddresses, user, authenticated = 
     <Modal.Backdrop isOpen={open} onOpenChange={(next) => { setOpen(next); if (!next) { setEditing(null); setAddressFormStep(2); } }} variant="blur">
       <Modal.Container placement="center" size="lg">
         <Modal.Dialog aria-label="انتخاب نشانی تحویل" dir="rtl" className="mx-3 max-h-[calc(100dvh-24px)] max-w-[560px] overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface)] shadow-2xl">
-          <Modal.Header className="flex-row items-center border-b border-[var(--border)] px-5 py-4">
+          <Modal.Header className="flex-row items-center border-b border-[var(--border)] px-5 py-3">
             <Modal.Heading className="truncate text-base font-black text-[var(--foreground)]">
               {editing ? addressFormStep === 3 ? "تأیید اطلاعات آدرس" : editing === "new" ? "افزودن آدرس جدید" : "ویرایش آدرس" : "انتخاب آدرس تحویل"}
             </Modal.Heading>
