@@ -18,6 +18,7 @@ export function DeliveryAddressPicker({ initialAddresses, user, authenticated = 
     "--button-bg-hover": "#ffedd5",
     "--button-bg-pressed": "#fed7aa",
     "--button-fg": "#c65f1a",
+    fontSize: "11px",
   } as CSSProperties : undefined;
 
   useEffect(() => {
