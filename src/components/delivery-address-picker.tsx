@@ -11,7 +11,7 @@ export function DeliveryAddressPicker({ initialAddresses, user, authenticated = 
   const [open, setOpen] = useState(false);
   const [addresses, setAddresses] = useState(initialAddresses);
   const [editing, setEditing] = useState<StorefrontAddress | "new" | null>(null);
-  const [addressFormStep, setAddressFormStep] = useState<AddressFormStep>(1);
+  const [addressFormStep, setAddressFormStep] = useState<AddressFormStep>(2);
   const [busy, setBusy] = useState<string | null>(null);
   const selected = addresses.find((item) => item.isDefault) ?? addresses[0];
   const compactTriggerStyle = compact ? {
@@ -71,14 +71,14 @@ export function DeliveryAddressPicker({ initialAddresses, user, authenticated = 
   }
 
   const trigger = mode === "create"
-    ? <Button type="button" variant="ghost" onPress={() => { setAddressFormStep(1); setEditing("new"); setOpen(true); }} className="h-auto min-h-10 gap-2 bg-transparent px-0 text-sm font-bold text-[var(--brand-primary)] hover:bg-transparent data-[hovered=true]:bg-transparent"><Plus size={21} />افزودن آدرس جدید</Button>
+    ? <Button type="button" variant="ghost" onPress={() => { setAddressFormStep(2); setEditing("new"); setOpen(true); }} className="h-auto min-h-10 gap-2 bg-transparent px-0 text-sm font-bold text-[var(--brand-primary)] hover:bg-transparent data-[hovered=true]:bg-transparent"><Plus size={21} />افزودن آدرس جدید</Button>
     : <Button type="button" variant="ghost" onPress={() => setOpen(true)} style={compactTriggerStyle} className={`h-auto gap-2 text-right font-normal ${compact ? "min-h-9 max-w-64 rounded-lg px-3 py-2 text-[11px]" : "min-h-0 bg-transparent p-0 text-[11px] hover:bg-transparent data-[hovered=true]:bg-transparent"}`}><MapPin size={compact ? 16 : 18} className={`shrink-0 ${compact ? "text-current" : "text-[var(--brand-primary)]"}`} /><span className={`block max-w-52 truncate ${compact ? "text-current" : selected ? "text-[var(--foreground)]" : "text-amber-600/90"}`}>{selected ? `ارسال به (${selected.title})` : "انتخاب آدرس"}</span><ChevronLeft size={14} className={`shrink-0 ${compact ? "text-current" : "text-[var(--muted)]"}`} /></Button>;
 
   if (!authenticated) return <a href="/login?next=/account" className={`flex items-center gap-2 font-normal ${compact ? "min-h-9 rounded-lg bg-orange-50 px-3 py-2 text-[11px] text-orange-700/85 transition hover:bg-orange-100" : "text-[10px] text-amber-600/90"}`}><MapPin size={17} className={compact ? "text-current" : "text-[var(--brand-primary)]"} />انتخاب آدرس<ChevronLeft size={14} className={compact ? "text-current" : "text-[var(--muted)]"} /></a>;
 
   return <>
     {trigger}
-    <Modal.Backdrop isOpen={open} onOpenChange={(next) => { setOpen(next); if (!next) { setEditing(null); setAddressFormStep(1); } }} variant="blur">
+    <Modal.Backdrop isOpen={open} onOpenChange={(next) => { setOpen(next); if (!next) { setEditing(null); setAddressFormStep(2); } }} variant="blur">
       <Modal.Container placement="center" size="lg">
         <Modal.Dialog aria-label="انتخاب نشانی تحویل" dir="rtl" className="mx-3 max-h-[calc(100dvh-24px)] max-w-[560px] overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface)] shadow-2xl">
           <Modal.Header className="flex-row items-center border-b border-[var(--border)] px-5 py-4">
@@ -132,7 +132,7 @@ export function DeliveryAddressPicker({ initialAddresses, user, authenticated = 
 
           {!editing && (
             <Modal.Footer className="border-t border-[var(--border)] bg-[var(--surface)] px-4 py-3 sm:px-5">
-              <Button type="button" variant="primary" fullWidth onPress={() => { setAddressFormStep(1); setEditing("new"); }} className="min-h-10 justify-center gap-2 rounded-lg bg-[var(--brand-primary)] px-5 text-sm font-bold text-[var(--brand-primary-foreground)]">
+              <Button type="button" variant="primary" fullWidth onPress={() => { setAddressFormStep(2); setEditing("new"); }} className="min-h-10 justify-center gap-2 rounded-lg bg-[var(--brand-primary)] px-5 text-sm font-bold text-[var(--brand-primary-foreground)]">
                 <Plus size={18} />افزودن آدرس جدید
               </Button>
             </Modal.Footer>

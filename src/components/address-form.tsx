@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Alert, Button, Input, Spinner, TextArea } from "@heroui/react";
-import { Check, ChevronLeft, LocateFixed, MapPin } from "lucide-react";
+import { Check, ChevronLeft } from "lucide-react";
 import { HeroSelectField } from "@/components/hero-select-field";
 import { validateAddressForm, validateAddressRecipient, type AddressFormErrors, type AddressFormField, type AddressRecipientErrors, type AddressRecipientField } from "@/modules/account/address-form-validation";
 
@@ -12,12 +12,12 @@ export type StorefrontAddress = {
   plaque: string | null; unit: string | null; floor: string | null; latitude: number | null; longitude: number | null; isDefault: boolean; lastUsedAt: string | null;
 };
 
-export type AddressFormStep = 1 | 2 | 3;
+export type AddressFormStep = 2 | 3;
 type Option = { id: string; name: string };
 
 export function AddressForm({ initial, user, onSaved, onCancel, onStepChange }: { initial?: StorefrontAddress | null; user: { firstName: string | null; lastName: string | null; phone: string | null }; onSaved: (address: StorefrontAddress) => void; onCancel: () => void; onStepChange?: (step: AddressFormStep) => void }) {
   const formRef = useRef<HTMLFormElement>(null);
-  const [step, setStep] = useState<AddressFormStep>(initial ? 2 : 1);
+  const [step, setStep] = useState<AddressFormStep>(2);
   const [recipientType, setRecipientType] = useState<"SELF" | "OTHER">(initial?.recipientType ?? "SELF");
   const [provinceId, setProvinceId] = useState(initial?.provinceId ?? "");
   const [cityId, setCityId] = useState(initial?.cityId ?? "");
@@ -28,9 +28,6 @@ export function AddressForm({ initial, user, onSaved, onCancel, onStepChange }: 
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState<AddressFormErrors>({});
   const [recipientErrors, setRecipientErrors] = useState<AddressRecipientErrors>({});
-  const [latitude, setLatitude] = useState<number | null>(initial?.latitude ?? null);
-  const [longitude, setLongitude] = useState<number | null>(initial?.longitude ?? null);
-  const [locating, setLocating] = useState(false);
   const selfName = `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim();
 
   useEffect(() => {
@@ -57,16 +54,16 @@ export function AddressForm({ initial, user, onSaved, onCancel, onStepChange }: 
     };
   }
 
-  function goToStep(nextStep: 2 | 3) {
+  function goToConfirmation() {
     if (!formRef.current) return;
     const form = new FormData(formRef.current);
     const allErrors = validateAddressForm(readAddressValues(form));
-    const fields: AddressFormField[] = nextStep === 2 ? [] : ["provinceId", "cityId", "addressLine", "plaque", "postalCode"];
+    const fields: AddressFormField[] = ["provinceId", "cityId", "addressLine", "plaque", "postalCode"];
     const relevantErrors = Object.fromEntries(fields.flatMap((field) => allErrors[field] ? [[field, allErrors[field]]] : [])) as AddressFormErrors;
     setFieldErrors(relevantErrors);
     if (Object.keys(relevantErrors).length) return;
-    setStep(nextStep);
-    onStepChange?.(nextStep);
+    setStep(3);
+    onStepChange?.(3);
   }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
@@ -92,8 +89,6 @@ export function AddressForm({ initial, user, onSaved, onCancel, onStepChange }: 
       plaque: form.get("plaque"),
       unit: form.get("unit"),
       floor: "",
-      latitude,
-      longitude,
     };
     try {
       const response = await fetch(initial ? `/api/account/addresses/${initial.id}` : "/api/account/addresses", { method: initial ? "PATCH" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(initial ? { action: "update", data: payload } : payload) });
@@ -112,28 +107,6 @@ export function AddressForm({ initial, user, onSaved, onCancel, onStepChange }: 
     setRecipientErrors((current) => current[field] ? { ...current, [field]: undefined } : current);
   }
 
-  function locateAddress() {
-    if (!navigator.geolocation) {
-      setError("موقعیت‌یابی در این مرورگر در دسترس نیست.");
-      return;
-    }
-    setLocating(true);
-    setError("");
-    navigator.geolocation.getCurrentPosition(
-      ({ coords }) => {
-        if (coords.latitude < 24 || coords.latitude > 40 || coords.longitude < 43 || coords.longitude > 64) {
-          setError("موقعیت فعلی خارج از محدوده ارسال فروشگاه است. می‌توانید جزئیات آدرس را دستی وارد کنید.");
-        } else {
-          setLatitude(coords.latitude);
-          setLongitude(coords.longitude);
-        }
-        setLocating(false);
-      },
-      () => { setError("دسترسی به موقعیت مکانی انجام نشد. می‌توانید بدون ثبت موقعیت ادامه دهید."); setLocating(false); },
-      { enableHighAccuracy: true, timeout: 10000 },
-    );
-  }
-
   const fieldClass = "min-h-12 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm shadow-none focus:border-[var(--brand-primary)] focus:ring-2 focus:ring-[var(--brand-primary)]/15";
   const inputFieldClass = `${fieldClass} h-12 max-h-12`;
   const labelClass = "grid content-start gap-2 text-xs font-medium text-slate-600";
@@ -145,17 +118,9 @@ export function AddressForm({ initial, user, onSaved, onCancel, onStepChange }: 
 
   return <form ref={formRef} onSubmit={submit} noValidate className="grid min-h-0" dir="rtl">
     <div className="grid gap-5 px-5 py-4 sm:px-6">
-      <section className={step === 1 ? "grid gap-5" : "hidden"} aria-hidden={step !== 1}>
-        <div className="relative grid min-h-64 place-items-center overflow-hidden rounded-xl border border-slate-200 bg-slate-100 [background-image:linear-gradient(30deg,transparent_40%,rgba(148,163,184,.3)_41%,rgba(148,163,184,.3)_43%,transparent_44%),linear-gradient(120deg,transparent_35%,rgba(148,163,184,.24)_36%,rgba(148,163,184,.24)_39%,transparent_40%)]">
-          <span className="grid size-12 place-items-center rounded-full bg-[var(--brand-primary)] text-[var(--brand-primary-foreground)] shadow-lg"><MapPin size={24} /></span>
-          <Button type="button" variant="secondary" isPending={locating} onPress={locateAddress} className="absolute bottom-4 min-h-10 gap-2 rounded-lg border border-[var(--border)] bg-white px-4 text-xs font-bold"><LocateFixed size={17} />موقعیت فعلی من</Button>
-        </div>
-        <p className="m-0 text-center text-xs leading-6 text-[var(--muted)]">موقعیت تقریبی نشانی را مشخص کنید یا برای ورود جزئیات آدرس ادامه دهید.</p>
-      </section>
-
       <section className={step === 2 ? "grid gap-5" : "hidden"} aria-hidden={step !== 2}>
         <div className="grid items-start gap-4 sm:grid-cols-2"><HeroSelectField name="provinceIdField" label="استان" searchable value={provinceId} onValueChange={(value) => { setProvinceId(value); setCityId(""); setCities([]); setLocationsLoading(Boolean(value)); clearFieldError("provinceId"); }} required disabled={locationsLoading && !provinces.length} error={fieldErrors.provinceId} reserveErrorSpace options={provinces.map((item) => ({ value: item.id, label: item.name }))} controlClassName={selectClass} /><HeroSelectField name="cityIdField" label="شهر" searchable value={cityId} onValueChange={(value) => { setCityId(value); clearFieldError("cityId"); }} required disabled={!provinceId || locationsLoading} error={fieldErrors.cityId} reserveErrorSpace options={cities.map((item) => ({ value: item.id, label: item.name }))} controlClassName={selectClass} /></div>
-        <label className={labelClass}><span>آدرس<span className="mr-0.5 text-[var(--danger)]">*</span></span><TextArea name="addressLine" defaultValue={initial?.addressLine ?? ""} onChange={() => clearFieldError("addressLine")} aria-invalid={Boolean(fieldErrors.addressLine)} minLength={10} maxLength={1000} rows={2} fullWidth variant="secondary" className={`${fieldClass} ${fieldErrors.addressLine ? invalidFieldClass : ""}`} placeholder="مثال: خیابان، کوچه و جزئیات آدرس" />{fieldError("addressLine")}<span className="text-[11px] font-normal leading-5 text-slate-400">در صورت تغییر این بخش و ناهماهنگی آن با موقعیت مکانی، ممکن است ارسال سفارش با مشکل مواجه شود.</span></label>
+        <label className={labelClass}><span>آدرس<span className="mr-0.5 text-[var(--danger)]">*</span></span><TextArea name="addressLine" defaultValue={initial?.addressLine ?? ""} onChange={() => clearFieldError("addressLine")} aria-invalid={Boolean(fieldErrors.addressLine)} minLength={10} maxLength={1000} rows={2} fullWidth variant="secondary" className={`${fieldClass} ${fieldErrors.addressLine ? invalidFieldClass : ""}`} placeholder="مثال: خیابان، کوچه و جزئیات آدرس" />{fieldError("addressLine")}<span className="text-[11px] font-normal leading-5 text-slate-400">نشانی را دقیق و مطابق اطلاعات پستی وارد کنید.</span></label>
         <div className="grid grid-cols-2 items-start gap-4"><label className={labelClass}><span>پلاک<span className="mr-0.5 text-[var(--danger)]">*</span></span><Input name="plaque" defaultValue={initial?.plaque ?? ""} onChange={() => clearFieldError("plaque")} aria-invalid={Boolean(fieldErrors.plaque)} fullWidth variant="secondary" className={`${inputFieldClass} ${fieldErrors.plaque ? invalidFieldClass : ""}`} />{fieldError("plaque")}</label><label className={labelClass}>واحد<Input name="unit" defaultValue={initial?.unit ?? ""} fullWidth variant="secondary" className={inputFieldClass} /><span aria-hidden="true" className="block min-h-4" /></label></div>
         <label className={labelClass}><span>کدپستی<span className="mr-0.5 text-[var(--danger)]">*</span></span><Input name="postalCode" defaultValue={initial?.postalCode ?? ""} onChange={() => clearFieldError("postalCode")} aria-invalid={Boolean(fieldErrors.postalCode)} dir="ltr" inputMode="numeric" minLength={10} maxLength={10} fullWidth variant="secondary" className={`${inputFieldClass} ${fieldErrors.postalCode ? invalidFieldClass : ""}`} placeholder="باید ۱۰ رقمی باشد" />{fieldError("postalCode")}</label>
       </section>
@@ -170,6 +135,6 @@ export function AddressForm({ initial, user, onSaved, onCancel, onStepChange }: 
       {error && <Alert status="danger"><Alert.Description>{error}</Alert.Description></Alert>}
     </div>
 
-    <div className="sticky bottom-0 z-10 flex gap-3 border-t border-[var(--border)] bg-white px-5 py-3 sm:px-6">{step < 3 ? <Button type="button" variant="primary" isDisabled={step === 2 && locationsLoading} onPress={() => goToStep(step === 1 ? 2 : 3)} style={primaryButtonStyle} className="mr-auto min-h-10 min-w-44 justify-center gap-2 rounded-lg px-6 text-sm font-black"><span>تأیید و ادامه</span><ChevronLeft size={16} /></Button> : <><Button type="button" variant="outline" fullWidth isDisabled={saving} onPress={onCancel} className="min-h-10 flex-1 rounded-lg border border-[var(--brand-primary)] bg-white text-sm font-bold text-[var(--brand-primary)]">انصراف</Button><Button type="submit" variant="primary" fullWidth isPending={saving} isDisabled={saving} style={primaryButtonStyle} className="min-h-10 flex-1 justify-center gap-2 rounded-lg px-5 text-sm font-black"><Check size={16} /><span>ذخیره آدرس</span></Button></>}</div>
+    <div className="sticky bottom-0 z-10 flex gap-3 border-t border-[var(--border)] bg-white px-5 py-3 sm:px-6">{step === 2 ? <Button type="button" variant="primary" isDisabled={locationsLoading} onPress={goToConfirmation} style={primaryButtonStyle} className="mr-auto min-h-10 min-w-44 justify-center gap-2 rounded-lg px-6 text-sm font-black"><span>تأیید و ادامه</span><ChevronLeft size={16} /></Button> : <><Button type="button" variant="outline" fullWidth isDisabled={saving} onPress={onCancel} className="min-h-10 flex-1 rounded-lg border border-[var(--brand-primary)] bg-white text-sm font-bold text-[var(--brand-primary)]">انصراف</Button><Button type="submit" variant="primary" fullWidth isPending={saving} isDisabled={saving} style={primaryButtonStyle} className="min-h-10 flex-1 justify-center gap-2 rounded-lg px-5 text-sm font-black"><Check size={16} /><span>ذخیره آدرس</span></Button></>}</div>
   </form>;
 }
