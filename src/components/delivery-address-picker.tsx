@@ -63,7 +63,7 @@ export function DeliveryAddressPicker({ initialAddresses, user, authenticated = 
   }
 
   const trigger = mode === "create"
-    ? <Button type="button" variant="ghost" onPress={() => { setEditing("new"); setOpen(true); }} className="h-auto min-h-10 gap-2 bg-transparent px-0 text-sm font-bold text-[var(--brand-primary)] hover:bg-transparent data-[hovered=true]:bg-transparent"><Plus size={21} />افزودن آدرس جدید</Button>
+    ? <Button type="button" variant="primary" onPress={() => { setEditing("new"); setOpen(true); }} className="min-h-10 gap-2 rounded-lg border border-[var(--brand-primary)] bg-[var(--brand-primary)] px-4 text-sm font-bold text-[var(--brand-primary-foreground)] hover:brightness-105"><Plus size={19} />افزودن آدرس جدید</Button>
     : <Button type="button" variant="ghost" onPress={() => setOpen(true)} className={`h-auto min-h-0 gap-2 bg-transparent p-0 text-right font-normal hover:bg-transparent data-[hovered=true]:bg-transparent ${compact ? "max-w-64 text-[10px]" : "text-[11px]"}`}><MapPin size={compact ? 16 : 18} className="shrink-0 text-[var(--brand-primary)]" /><span className={`block max-w-52 truncate ${selected ? "text-[var(--foreground)]" : "text-amber-600/90"}`}>{selected ? `ارسال به (${selected.title})` : "انتخاب آدرس"}</span><ChevronLeft size={14} className="shrink-0 text-[var(--muted)]" /></Button>;
 
   if (!authenticated) return <a href="/login?next=/account" className="flex items-center gap-2 text-[10px] font-normal text-amber-600/90"><MapPin size={17} className="text-[var(--brand-primary)]" />انتخاب آدرس<ChevronLeft size={14} className="text-[var(--muted)]" /></a>;

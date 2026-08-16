@@ -23,6 +23,7 @@ type Props = {
   required?: boolean;
   disabled?: boolean;
   error?: string;
+  reserveErrorSpace?: boolean;
   searchable?: boolean;
   className?: string;
   controlClassName?: string;
@@ -43,6 +44,7 @@ export function HeroSelectField({
   required,
   disabled,
   error,
+  reserveErrorSpace = false,
   searchable = false,
   className = "",
   controlClassName = "",
@@ -98,7 +100,7 @@ export function HeroSelectField({
             </ListBox>
           </ComboBox.Popover>
         </ComboBox>
-        {error && <span role="alert" className="mt-1.5 block text-[11px] font-normal text-[var(--danger)]">{error}</span>}
+        {(error || reserveErrorSpace) && <span role={error ? "alert" : undefined} aria-hidden={error ? undefined : true} className={`mt-1.5 block min-h-4 text-[11px] font-normal ${error ? "text-[var(--danger)]" : "invisible"}`}>{error ?? "بدون خطا"}</span>}
       </div>
     );
   }
@@ -136,7 +138,7 @@ export function HeroSelectField({
           </ListBox>
         </Select.Popover>
       </Select>
-      {error && <span role="alert" className="mt-1.5 block text-[11px] font-normal text-[var(--danger)]">{error}</span>}
+      {(error || reserveErrorSpace) && <span role={error ? "alert" : undefined} aria-hidden={error ? undefined : true} className={`mt-1.5 block min-h-4 text-[11px] font-normal ${error ? "text-[var(--danger)]" : "invisible"}`}>{error ?? "بدون خطا"}</span>}
     </div>
   );
 }
