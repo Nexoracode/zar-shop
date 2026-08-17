@@ -6,7 +6,7 @@ import { ArrowRight, FileCheck2, FileText, ImageIcon, ShieldCheck, Truck } from 
 import { AccountPaymentHistory, type AccountPaymentHistoryItem } from "@/components/account-payment-history";
 import { OrderItemReviewAction } from "@/components/order-item-review-action";
 import { db } from "@/lib/db";
-import { formatDate, formatDateTime, formatMoney } from "@/lib/format";
+import { formatDate, formatMoney } from "@/lib/format";
 import { orderStatusLabels, paymentStatusLabels } from "@/modules/admin/labels";
 import { requireUser } from "@/modules/auth/session";
 import { expirePendingOrders } from "@/modules/orders/expiration";
@@ -81,8 +81,10 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
     status: paymentStatusLabels[item.status],
     statusClassName: paymentStatusClasses[item.status] ?? "text-[var(--muted)]",
     amount: formatMoney(item.amount.toString(), settings.currency),
-    date: formatDateTime(item.createdAt),
+    date: formatDate(item.createdAt),
     referenceId: item.referenceId,
+    gateway: item.provider === "zarinpal" ? "پرداخت اینترنتی زرین‌پال" : "پرداخت اینترنتی",
+    isSuccessful: item.status === "SUCCESS",
   }));
 
   return <article className="overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface)]" dir="rtl">
@@ -97,7 +99,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
       <div className="grid gap-3 border-t border-[var(--border)] pt-4 text-xs leading-7"><p className="m-0"><span className="ml-2 text-[var(--muted)]">تحویل‌گیرنده</span><b>{recipient}</b><span className="mx-3 text-slate-300">•</span><span className="ml-2 text-[var(--muted)]">شماره موبایل</span><b dir="ltr">{phone}</b></p><p className="m-0"><span className="ml-2 text-[var(--muted)]">آدرس</span><b>{fullAddress}</b></p></div>
     </section>
 
-    <section className="grid gap-3 border-b border-[var(--border)] px-4 py-4 sm:grid-cols-[minmax(0,1fr)_210px] sm:px-6">
+    <section className="grid gap-3 border-b border-[var(--border)] px-4 py-4 sm:px-6">
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-sm"><span className="text-[var(--muted)]">مبلغ</span><b>{formatMoney(order.total.toString(), settings.currency)}</b><span className="text-slate-300">•</span><span className="text-[var(--muted)]">{payment?.provider === "zarinpal" ? "پرداخت اینترنتی زرین‌پال" : "پرداخت اینترنتی"}</span>{payment ? <span className={paymentStatusClasses[payment.status]}>{paymentStatusLabels[payment.status]}</span> : null}<span className="basis-full text-xs text-[var(--muted)]">هزینه ارسال {formatMoney(order.shipping.toString(), settings.currency)}</span></div>
       <AccountPaymentHistory items={paymentHistory} />
     </section>
@@ -110,8 +112,12 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
 
         <div className="mt-5 divide-y divide-[var(--border)] border-t border-[var(--border)]">{order.items.map((item) => {
           const media = item.product?.media[0]?.media;
-          const productBody = <><div className="relative grid size-24 shrink-0 place-items-center overflow-hidden rounded-lg bg-white sm:size-28">{media ? <Image src={media.url} alt={media.alt ?? item.name} fill sizes="112px" className="object-contain p-2" /> : <ImageIcon size={34} className="text-slate-300" />}</div><div className="min-w-0 flex-1"><h2 className="m-0 text-sm font-bold leading-7">{item.name}</h2><div className="mt-2 grid gap-1 text-[11px] text-[var(--muted)]">{optionEntries(item.selectedOptions).map(([name, optionValue]) => <span key={name}>{name}: <b className="text-[var(--foreground)]">{optionValue}</b></span>)}<span className="inline-flex items-center gap-1.5"><ShieldCheck size={14} />ضمانت اصالت و سلامت فیزیکی کالا</span><span className="inline-flex items-center gap-1.5"><FileCheck2 size={14} />تعداد: {item.quantity.toLocaleString("fa-IR")}</span></div><strong className="mt-3 block text-sm">{formatMoney(item.total.toString(), settings.currency)}</strong></div></>;
-          return <div key={item.id} className="py-5 first:pt-5 last:pb-0"><div className="flex items-start gap-4">{item.product ? <Link href={`/products/${item.product.slug}`} className="contents">{productBody}</Link> : productBody}</div>{order.status === "DELIVERED" && item.product ? <OrderItemReviewAction productId={item.product.id} productName={item.name} /> : null}</div>;
+          const productImage = <div className="relative grid size-24 place-items-center overflow-hidden rounded-lg bg-white sm:size-28">{media ? <Image src={media.url} alt={media.alt ?? item.name} fill sizes="112px" className="object-contain p-2" /> : <ImageIcon size={34} className="text-slate-300" />}</div>;
+          return <div key={item.id} className="py-5 first:pt-5 last:pb-0"><div className="grid grid-cols-[6rem_minmax(0,1fr)] items-start gap-x-4 gap-y-5 sm:grid-cols-[7rem_minmax(0,1fr)]">
+            {item.product ? <Link href={`/products/${item.product.slug}`} aria-label={`مشاهده ${item.name}`} className="rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brand-primary)]">{productImage}</Link> : productImage}
+            <div className="min-w-0"><h2 className="m-0 text-sm font-bold leading-7">{item.name}</h2><div className="mt-2 grid gap-1 text-[11px] text-[var(--muted)]">{optionEntries(item.selectedOptions).map(([name, optionValue]) => <span key={name}>{name}: <b className="text-[var(--foreground)]">{optionValue}</b></span>)}<span className="inline-flex items-center gap-1.5"><ShieldCheck size={14} />ضمانت اصالت و سلامت فیزیکی کالا</span><span className="inline-flex items-center gap-1.5"><FileCheck2 size={14} />تعداد: {item.quantity.toLocaleString("fa-IR")}</span></div><strong className="mt-3 block text-sm">{formatMoney(item.total.toString(), settings.currency)}</strong></div>
+            {order.status === "DELIVERED" && item.product ? <><strong className="pt-2 text-center text-xs text-[var(--foreground)]">امتیاز دهید</strong><OrderItemReviewAction productId={item.product.id} productName={item.name} /></> : null}
+          </div></div>;
         })}</div>
       </div>
     </section>

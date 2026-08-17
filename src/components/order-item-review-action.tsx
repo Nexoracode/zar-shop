@@ -18,9 +18,9 @@ async function responseMessage(response: Response) {
   return payload?.message ?? "ثبت دیدگاه با خطا روبه‌رو شد.";
 }
 
-function RatingSelector({ rating, onChange, compact = false }: { rating: number; onChange: (rating: number) => void; compact?: boolean }) {
+function RatingSelector({ rating, onChange, compact = false, showLabel = true }: { rating: number; onChange: (rating: number) => void; compact?: boolean; showLabel?: boolean }) {
   return <div className="flex items-start gap-3" dir="rtl">
-    <strong className={`${compact ? "pt-2" : "pt-3"} shrink-0 text-xs text-[var(--foreground)]`}>امتیاز دهید</strong>
+    {showLabel ? <strong className={`${compact ? "pt-2" : "pt-3"} shrink-0 text-xs text-[var(--foreground)]`}>امتیاز دهید</strong> : null}
     <div className="flex items-start gap-1" role="radiogroup" aria-label="امتیاز محصول">
       {scores.map((score) => <div key={score} className="grid justify-items-center gap-0.5">
         <Button
@@ -78,8 +78,8 @@ export function OrderItemReviewAction({ productId, productName }: Props) {
   }
 
   return <>
-    <div className="mt-4 flex flex-wrap items-end justify-between gap-4">
-      <RatingSelector rating={rating} onChange={setRating} compact />
+    <div className="flex flex-wrap items-end justify-between gap-4">
+      <RatingSelector rating={rating} onChange={setRating} compact showLabel={false} />
       <Button type="button" variant="secondary" onPress={openComposer} className="min-h-10 min-w-36 gap-2 border border-[var(--brand-primary)] text-xs font-bold text-[var(--brand-primary)]">
         <MessageCircle size={18} />ثبت دیدگاه
       </Button>
