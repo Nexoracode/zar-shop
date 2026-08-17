@@ -6,7 +6,7 @@ import { createGuestSessionUser, getCurrentUser } from "@/modules/auth/session";
 import { isOptionSnapshotValid, resolveOptionSelection } from "@/modules/products/options";
 import { getGeneralStoreSettings, isStorefrontAvailable } from "@/modules/settings/general-settings";
 import { getOrderSettings } from "@/modules/settings/order-settings";
-import { getCartSummary } from "@/modules/cart/cart-summary";
+import { getCartProductCount, getCartSummary } from "@/modules/cart/cart-summary";
 
 const inputSchema = z.object({
   productId: z.string().cuid(),
@@ -18,11 +18,6 @@ const updateSchema = z.object({
   cartItemId: z.string().cuid(),
   quantity: z.coerce.number().int().min(1),
 });
-
-async function cartItemCount(userId: string) {
-  const result = await db.cartItem.aggregate({ where: { cart: { userId } }, _sum: { quantity: true } });
-  return result._sum.quantity ?? 0;
-}
 
 export async function GET() {
   try {
@@ -57,7 +52,7 @@ export async function POST(request: Request) {
       create: { cartId: cart.id, productId: product.id, selectionKey: selection.selectionKey, selectedOptions: selection.snapshot ?? undefined, quantity: input.quantity },
       update: { quantity: nextQuantity },
     });
-    return NextResponse.json({ message: "به سبد خرید اضافه شد.", itemCount: await cartItemCount(user.id), quantity: nextQuantity });
+    return NextResponse.json({ message: "به سبد خرید اضافه شد.", itemCount: await getCartProductCount(user.id, settings.industry), quantity: nextQuantity });
   } catch (error) { return apiError(error); }
 }
 
@@ -72,7 +67,7 @@ export async function PATCH(request: Request) {
     if (!item) return NextResponse.json({ message: "این قلم در سبد خرید پیدا نشد." }, { status: 404 });
     if (item.product.stock < input.quantity || !isOptionSnapshotValid(item.product.options, item.selectedOptions, input.quantity, item.product.stock)) return NextResponse.json({ message: "موجودی کالا برای این تعداد کافی نیست." }, { status: 409 });
     await db.cartItem.update({ where: { id: item.id }, data: { quantity: input.quantity } });
-    return NextResponse.json({ message: "تعداد کالا به‌روزرسانی شد.", itemCount: await cartItemCount(user.id) });
+    return NextResponse.json({ message: "تعداد کالا به‌روزرسانی شد.", itemCount: await getCartProductCount(user.id, settings.industry) });
   } catch (error) { return apiError(error); }
 }
 
@@ -86,5 +81,5 @@ export async function DELETE(request: Request) {
   if (!cartItemId && !productId) return NextResponse.json({ message: "شناسه قلم سبد لازم است." }, { status: 400 });
   const cart = await db.cart.findUnique({ where: { userId: user.id } });
   if (cart) await db.cartItem.deleteMany({ where: { cartId: cart.id, ...(cartItemId ? { id: cartItemId } : { productId: productId! }) } });
-  return NextResponse.json({ ok: true, itemCount: await cartItemCount(user.id) });
+  return NextResponse.json({ ok: true, itemCount: await getCartProductCount(user.id, settings.industry) });
 }

@@ -22,12 +22,13 @@ import { db } from "@/lib/db";
 import { DeliveryAddressPicker } from "@/components/delivery-address-picker";
 import { serializeAddress } from "@/modules/account/addresses";
 import { StorefrontAccountMenu } from "@/components/storefront-account-menu";
+import { getCartProductCount } from "@/modules/cart/cart-summary";
 
 export async function GoldHeader({ settings, brand, user, menuItems }: { settings: GeneralStoreSettingsInput; brand: BrandSettings; user: User | null; menuItems: HomepageMenuItem[] }) {
   const [gold, catalogSettings, cartCount, addresses] = await Promise.all([
     settings.industry === "GOLD" ? getGoldPriceForDisplay() : Promise.resolve(null),
     getCatalogSettings(),
-    user ? db.cartItem.aggregate({ where: { cart: { userId: user.id } }, _sum: { quantity: true } }).then((result) => result._sum.quantity ?? 0) : Promise.resolve(0),
+    user ? getCartProductCount(user.id, settings.industry) : Promise.resolve(0),
     user ? db.address.findMany({ where: { userId: user.id, type: "SHIPPING" }, include: { provinceRef: true, cityRef: true }, orderBy: [{ isDefault: "desc" }, { lastUsedAt: "desc" }, { createdAt: "desc" }] }).then((items) => items.map(serializeAddress)) : Promise.resolve([]),
   ]);
   const accountHref = user ? (user.isGuest ? "/cart" : "/account") : "/login";

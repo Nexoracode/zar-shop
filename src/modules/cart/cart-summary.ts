@@ -5,6 +5,20 @@ import { calculateProductPrice } from "@/modules/products/pricing";
 import { getGoldPriceForDisplay } from "@/modules/gold/gold-price.service";
 import { getGeneralStoreSettings } from "@/modules/settings/general-settings";
 import { getOrderSettings } from "@/modules/settings/order-settings";
+import type { StoreIndustry } from "@generated/prisma/enums";
+
+export function countDistinctCartProducts(items: ReadonlyArray<{ productId: string }>) {
+  return new Set(items.map((item) => item.productId)).size;
+}
+
+export async function getCartProductCount(userId: string, storeIndustry: StoreIndustry) {
+  const products = await db.cartItem.findMany({
+    where: { cart: { userId }, product: { storeIndustry } },
+    distinct: ["productId"],
+    select: { productId: true },
+  });
+  return products.length;
+}
 
 export async function getCartSummary(userId: string) {
   const [settings, orderSettings, cart] = await Promise.all([
@@ -48,7 +62,7 @@ export async function getCartSummary(userId: string) {
       discountPercent: pricing?.isActive && pricing.originalPrice > 0 ? Math.round(((pricing.originalPrice - pricing.finalPrice) / pricing.originalPrice) * 100) : null,
     };
   });
-  const itemCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
+  const itemCount = countDistinctCartProducts(cartItems);
   const subtotal = priceUnavailable ? null : items.reduce((sum, item) => sum + (item.originalUnitPrice ?? item.unitPrice) * item.quantity, 0);
   const total = priceUnavailable ? null : items.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
 

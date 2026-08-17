@@ -13,6 +13,7 @@ import { StorefrontCartLink } from "@/components/storefront-cart-link";
 import { DeliveryAddressPicker } from "@/components/delivery-address-picker";
 import { serializeAddress } from "@/modules/account/addresses";
 import { StorefrontAccountMenu } from "@/components/storefront-account-menu";
+import { getCartProductCount } from "@/modules/cart/cart-summary";
 
 type Props = { settings: GeneralStoreSettingsInput; brand: BrandSettings; user: User | null; menuItems: HomepageMenuItem[] };
 
@@ -30,7 +31,7 @@ export async function GeneralHeader({ settings, brand, user, menuItems }: Props)
       },
       orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
     }),
-    user ? db.cartItem.aggregate({ where: { cart: { userId: user.id } }, _sum: { quantity: true } }).then((result) => result._sum.quantity ?? 0) : Promise.resolve(0),
+    user ? getCartProductCount(user.id, settings.industry) : Promise.resolve(0),
     user ? db.address.findMany({ where: { userId: user.id, type: "SHIPPING" }, include: { provinceRef: true, cityRef: true }, orderBy: [{ isDefault: "desc" }, { lastUsedAt: "desc" }, { createdAt: "desc" }] }).then((items) => items.map(serializeAddress)) : Promise.resolve([]),
   ]);
   const accountHref = user ? (user.isGuest ? "/cart" : "/account") : "/login";
