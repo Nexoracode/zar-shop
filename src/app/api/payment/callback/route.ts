@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { env } from "@/lib/env";
 import { getStorefrontPaymentProvider } from "@/modules/payments/storefront-methods";
+import { PaymentProviderError } from "@/modules/payments/payment-provider";
 import { finalizeVerifiedPayment } from "@/modules/payments/payment-finalization";
 import { sendAutomatedSms } from "@/modules/communications/sms-service";
 
@@ -27,9 +28,19 @@ export async function GET(request: Request) {
   let referenceId: string;
   try {
     referenceId = (await (await getStorefrontPaymentProvider(payment.provider)).verify(authority, Number(payment.amount))).referenceId;
-  } catch {
-    await db.payment.updateMany({ where: { id: payment.id, status: { not: "SUCCESS" } }, data: { status: "FAILED" } });
-    return NextResponse.redirect(`${env.APP_URL}/account?payment=failed`);
+  } catch (error) {
+    console.error("[payment] Zarinpal verification could not be completed.", error);
+    await db.payment.updateMany({
+      where: { id: payment.id, status: { not: "SUCCESS" } },
+      data: {
+        status: "PENDING",
+        providerData: {
+          verificationPending: true,
+          verificationErrorCode: error instanceof PaymentProviderError ? error.code ?? null : null,
+        },
+      },
+    });
+    return NextResponse.redirect(`${env.APP_URL}/account?payment=review`);
   }
 
   try {

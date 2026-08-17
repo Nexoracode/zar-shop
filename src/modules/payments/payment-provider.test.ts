@@ -13,10 +13,11 @@ test("creates a sandbox Zarinpal payment request in rial", async () => {
   }) as typeof fetch;
   try {
     const provider = new ZarinpalPaymentProvider({ merchantId: "00000000-0000-4000-8000-000000000000", sandbox: true });
-    const result = await provider.request({ amount: 5_000_000, orderId: "order-1", callbackUrl: "https://shop.test/api/payment/callback" });
+    const result = await provider.request({ amount: 5_000_000, orderId: "order-1", callbackUrl: "https://shop.test/api/payment/callback", mobile: "09121234567", email: "buyer@example.com" });
     assert.equal(requestUrl, "https://sandbox.zarinpal.com/pg/v4/payment/request.json");
     assert.equal(requestBody.amount, 5_000_000);
     assert.equal(requestBody.callback_url, "https://shop.test/api/payment/callback");
+    assert.deepEqual(requestBody.metadata, { mobile: "09121234567", email: "buyer@example.com" });
     assert.equal(result.redirectUrl, "https://sandbox.zarinpal.com/pg/StartPay/A000000000000000000000000000000001");
   } finally { globalThis.fetch = originalFetch; }
 });

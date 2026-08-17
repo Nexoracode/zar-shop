@@ -8,6 +8,7 @@ import { getGoldPrice } from "@/modules/gold/gold-price.service";
 import { calculateProductPrice } from "@/modules/products/pricing";
 import { getSelectedOptionPrice, getSelectedOptionWeight, isOptionSnapshotValid, optionEntries } from "@/modules/products/options";
 import { getStorefrontPaymentMethods, getStorefrontPaymentProvider, storefrontPaymentMethodSchema } from "@/modules/payments/storefront-methods";
+import { PaymentProviderError } from "@/modules/payments/payment-provider";
 import type { Prisma } from "@generated/prisma/client";
 import { calculateDiscountedPrice } from "@/modules/products/discount";
 import { PromotionValidationError, resolveCheckoutPromotions } from "@/modules/promotions/service";
@@ -165,10 +166,18 @@ export async function POST(request: Request) {
       return created;
     });
     try {
-      const paymentRequest = await selectedPaymentProvider.request({ amount: Number(order.total), orderId: order.id, callbackUrl: `${env.APP_URL}/api/payment/callback`, description: `پرداخت سفارش ${order.orderNumber}` });
+      const payment = await db.payment.create({ data: { orderId: order.id, provider: paymentProvider, amount: order.total, status: "INITIATED" } });
+      const paymentRequest = await selectedPaymentProvider.request({
+        amount: Number(order.total),
+        orderId: order.id,
+        callbackUrl: `${env.APP_URL}/api/payment/callback`,
+        description: `پرداخت سفارش ${order.orderNumber}`,
+        mobile: user.phone ?? address.phone,
+        email: user.isGuest ? undefined : user.email,
+      });
       await db.$transaction(async (transaction) => {
         const paymentStartedAt = new Date();
-        await transaction.payment.create({ data: { orderId: order.id, provider: paymentProvider, authority: paymentRequest.authority, amount: order.total, status: "PENDING" } });
+        await transaction.payment.update({ where: { id: payment.id }, data: { authority: paymentRequest.authority, status: "PENDING" } });
         if (orderSettings.orderExpirationStart === "PAYMENT_STARTED_AT") await transaction.order.update({ where: { id: order.id }, data: { expiresAt: orderExpiresAt(orderSettings, paymentStartedAt) } });
       });
       try { await sendAutomatedSms("orderCreated", address.phone, { orderNumber: order.orderNumber }); } catch (smsError) { console.error("[sms] Order-created notification failed.", smsError); }
@@ -178,6 +187,7 @@ export async function POST(request: Request) {
         const pendingOrder = await tx.order.findUnique({ where: { id: order.id }, include: { items: true } });
         if (pendingOrder?.inventoryReserved) await releaseInventory(tx, pendingOrder.items);
         await tx.promotionReward.updateMany({ where: { redeemedOrderId: order.id, redeemedAt: null }, data: { redeemedOrderId: null } });
+        await tx.payment.deleteMany({ where: { orderId: order.id } });
         await tx.order.delete({ where: { id: order.id } });
       });
       throw error;
@@ -185,6 +195,7 @@ export async function POST(request: Request) {
   } catch (error) {
     if (error instanceof InventoryUnavailableError) return NextResponse.json({ message: error.message }, { status: 409 });
     if (error instanceof PromotionValidationError) return NextResponse.json({ message: error.message }, { status: 422 });
+    if (error instanceof PaymentProviderError) return NextResponse.json({ message: "ارتباط با درگاه زرین‌پال برقرار نشد؛ لطفاً چند لحظه بعد دوباره تلاش کنید." }, { status: 502 });
     if (error instanceof Error && (error.message.startsWith("موجودی") || error.message.startsWith("تنوع") || error.message.startsWith("قیمت") || error.message.startsWith("حداکثر تعداد"))) return NextResponse.json({ message: error.message }, { status: 409 });
     return apiError(error);
   }
