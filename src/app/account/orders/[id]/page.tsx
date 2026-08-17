@@ -2,8 +2,9 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Prisma } from "@generated/prisma/client";
-import { ArrowRight, FileCheck2, FileText, ImageIcon, MessageCircle, ShieldCheck, Star, Truck } from "lucide-react";
+import { ArrowRight, FileCheck2, FileText, ImageIcon, ShieldCheck, Truck } from "lucide-react";
 import { AccountPaymentHistory, type AccountPaymentHistoryItem } from "@/components/account-payment-history";
+import { OrderItemReviewAction } from "@/components/order-item-review-action";
 import { db } from "@/lib/db";
 import { formatDate, formatDateTime, formatMoney } from "@/lib/format";
 import { orderStatusLabels, paymentStatusLabels } from "@/modules/admin/labels";
@@ -56,6 +57,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
           include: {
             product: {
               select: {
+                id: true,
                 slug: true,
                 media: { orderBy: [{ isCover: "desc" }, { position: "asc" }], take: 1, include: { media: true } },
               },
@@ -103,16 +105,13 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
     <section className="p-4 sm:p-6">
       <div className="rounded-xl border border-[var(--border)] p-4 sm:p-5">
         <div className="flex flex-wrap items-center gap-3 text-xs"><strong>مرسوله ۱ از ۱</strong><span className="text-slate-300">•</span><span className="inline-flex items-center gap-2 font-bold text-[var(--danger)]"><Truck size={17} />{order.deliveryMethod === "STORE_PICKUP" ? "تحویل حضوری" : "ارسال بیمه‌شده"}</span></div>
-        <div className="mt-5 grid gap-5 sm:grid-cols-[minmax(0,1fr)_minmax(220px,0.8fr)] sm:items-end">
-          <div><strong className={`block text-sm ${delivery.className.split(" ")[1]}`}>{delivery.label}</strong><span className="mt-3 block h-1.5 overflow-hidden rounded-full bg-slate-100"><span className={`block h-full rounded-full ${delivery.className.split(" ")[0]}`} style={{ width: `${delivery.progress}%` }} /></span></div>
-          <div className="text-xs leading-6"><span className="text-[var(--muted)]">{order.estimatedReadyAt ? "زمان تقریبی آماده‌سازی:" : "زمان آماده‌سازی:"}</span> <b>{order.estimatedReadyAt ? formatDate(order.estimatedReadyAt) : `${order.preparationDaysSnapshot.toLocaleString("fa-IR")} روز کاری`}</b></div>
-        </div>
+        <div className="mt-5"><strong className={`block text-sm ${delivery.className.split(" ")[1]}`}>{delivery.label}</strong><span className="mt-3 block h-1.5 overflow-hidden rounded-full bg-slate-100"><span className={`block h-full rounded-full ${delivery.className.split(" ")[0]}`} style={{ width: `${delivery.progress}%` }} /></span></div>
         <div className="mt-5 flex flex-wrap gap-x-4 gap-y-2 text-xs"><span><span className="text-[var(--muted)]">هزینه ارسال:</span> <b>{formatMoney(order.shipping.toString(), settings.currency)}</b></span><span className="text-slate-300">•</span><span><span className="text-[var(--muted)]">مبلغ مرسوله:</span> <b>{formatMoney(order.total.toString(), settings.currency)}</b></span><span className="sm:mr-auto"><span className="text-[var(--muted)]">کد پیگیری مرسوله:</span> <b>{order.status === "SHIPPED" || order.status === "DELIVERED" ? "در انتظار ثبت فروشگاه" : "پس از ارسال نمایش داده می‌شود"}</b></span></div>
 
         <div className="mt-5 divide-y divide-[var(--border)] border-t border-[var(--border)]">{order.items.map((item) => {
           const media = item.product?.media[0]?.media;
           const productBody = <><div className="relative grid size-24 shrink-0 place-items-center overflow-hidden rounded-lg bg-white sm:size-28">{media ? <Image src={media.url} alt={media.alt ?? item.name} fill sizes="112px" className="object-contain p-2" /> : <ImageIcon size={34} className="text-slate-300" />}</div><div className="min-w-0 flex-1"><h2 className="m-0 text-sm font-bold leading-7">{item.name}</h2><div className="mt-2 grid gap-1 text-[11px] text-[var(--muted)]">{optionEntries(item.selectedOptions).map(([name, optionValue]) => <span key={name}>{name}: <b className="text-[var(--foreground)]">{optionValue}</b></span>)}<span className="inline-flex items-center gap-1.5"><ShieldCheck size={14} />ضمانت اصالت و سلامت فیزیکی کالا</span><span className="inline-flex items-center gap-1.5"><FileCheck2 size={14} />تعداد: {item.quantity.toLocaleString("fa-IR")}</span></div><strong className="mt-3 block text-sm">{formatMoney(item.total.toString(), settings.currency)}</strong></div></>;
-          return <div key={item.id} className="py-5 first:pt-5 last:pb-0"><div className="flex items-start gap-4">{item.product ? <Link href={`/products/${item.product.slug}`} className="contents">{productBody}</Link> : productBody}</div>{order.status === "DELIVERED" && item.product ? <div className="mt-4 flex flex-wrap items-center justify-between gap-3"><span className="inline-flex items-center gap-1 text-amber-400" aria-label="امتیازدهی به محصول">{[1, 2, 3, 4, 5].map((star) => <Star key={star} size={20} />)}</span><Link href={`/products/${item.product.slug}#reviews`} className="inline-flex min-h-10 min-w-36 items-center justify-center gap-2 rounded-lg border border-[var(--brand-primary)] px-4 text-xs font-bold text-[var(--brand-primary)]"><MessageCircle size={18} />ثبت دیدگاه</Link></div> : null}</div>;
+          return <div key={item.id} className="py-5 first:pt-5 last:pb-0"><div className="flex items-start gap-4">{item.product ? <Link href={`/products/${item.product.slug}`} className="contents">{productBody}</Link> : productBody}</div>{order.status === "DELIVERED" && item.product ? <OrderItemReviewAction productId={item.product.id} productName={item.name} /> : null}</div>;
         })}</div>
       </div>
     </section>
