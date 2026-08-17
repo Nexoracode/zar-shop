@@ -187,20 +187,21 @@ export function StorefrontCartLink({ initialCount, className = "", iconSize = 21
   );
 
   return (
-    <div ref={triggerAreaRef} onPointerEnter={openPopover}>
+    <div ref={triggerAreaRef} onPointerEnter={openPopover} className="relative">
+      <Link
+        href="/cart"
+        aria-label={`سبد خرید، ${count.toLocaleString("fa-IR")} کالا`}
+        onClick={closePopover}
+        className={`relative z-10 block cursor-pointer bg-transparent outline-none transition focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)]/30 ${className}`}
+      >
+        <ShoppingCart size={iconSize} strokeWidth={1.7} />
+        {badge}
+      </Link>
       <Popover isOpen={isOpen}>
         <Popover.Trigger
-          aria-label={`سبد خرید، ${count.toLocaleString("fa-IR")} کالا`}
-          onPointerDown={(event) => {
-            if (event.button !== 0) return;
-            closePopover();
-            router.push("/cart");
-          }}
-          className={`relative cursor-pointer bg-transparent outline-none transition aria-expanded:bg-[var(--brand-primary)]/8 focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)]/30 ${className}`}
-        >
-          <ShoppingCart size={iconSize} strokeWidth={1.7} />
-          {badge}
-        </Popover.Trigger>
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0"
+        />
         <Popover.Content
           ref={contentRef}
           placement="bottom left"
