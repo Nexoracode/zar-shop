@@ -25,9 +25,9 @@ function InvoiceInfo({ label, value, ltr = false }: { label: string; value: stri
   return <div><dt className="text-[10px] text-slate-500">{label}</dt><dd className="m-0 mt-0.5 break-words text-xs font-bold text-slate-800" dir={ltr ? "ltr" : undefined}>{value}</dd></div>;
 }
 
-export default async function InvoicePage({ params }: { params: Promise<{ orderId: string }> }) {
+export default async function InvoicePage({ params, searchParams }: { params: Promise<{ orderId: string }>; searchParams: Promise<{ source?: string | string[] }> }) {
   const user = await requireUser();
-  const { orderId } = await params;
+  const [{ orderId }, query] = await Promise.all([params, searchParams]);
   const order = await db.order.findUnique({
     where: { id: orderId },
     include: { invoice: true, items: true, payments: { orderBy: { createdAt: "desc" } }, user: true },
@@ -36,6 +36,8 @@ export default async function InvoicePage({ params }: { params: Promise<{ orderI
   if (!order?.invoice) notFound();
   const canManageOrders = hasPermission(user.role, "orders:manage");
   if (order.userId !== user.id && !canManageOrders) redirect("/account");
+  const openedFromAdmin = query.source === "admin" && canManageOrders;
+  const backHref = openedFromAdmin || order.userId !== user.id ? `/admin/orders/${order.id}` : `/account/orders/${order.id}`;
 
   const seller = asRecord(order.invoice.sellerData);
   const buyer = asRecord(order.invoice.buyerData);
@@ -51,7 +53,7 @@ export default async function InvoicePage({ params }: { params: Promise<{ orderI
 
   return (
     <main className="invoice-page-shell min-h-screen bg-slate-100 px-3 py-6 sm:px-6">
-      <InvoiceActions backHref={canManageOrders ? `/admin/orders/${order.id}` : "/account"} />
+      <InvoiceActions backHref={backHref} />
 
       <article className="invoice-print-area mx-auto w-full max-w-[210mm] bg-white p-5 text-slate-900 shadow-[0_18px_60px_rgba(15,23,42,0.12)] sm:p-8">
         <header className="grid grid-cols-[1fr_auto_1fr] items-center border-2 border-slate-800 px-4 py-3">
