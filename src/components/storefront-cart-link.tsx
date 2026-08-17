@@ -44,8 +44,8 @@ export function StorefrontCartLink({ initialCount, className = "", iconSize = 21
   const [loading, setLoading] = useState(false);
   const [pendingItemId, setPendingItemId] = useState<string | null>(null);
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const triggerHovered = useRef(false);
-  const contentHovered = useRef(false);
+  const triggerAreaRef = useRef<HTMLDivElement | null>(null);
+  const contentRef = useRef<HTMLDivElement | null>(null);
 
   const loadSummary = useCallback(async () => {
     if (count === 0) {
@@ -79,9 +79,62 @@ export function StorefrontCartLink({ initialCount, className = "", iconSize = 21
     return () => window.removeEventListener(CART_UPDATED_EVENT, update);
   }, []);
 
-  useEffect(() => () => {
-    if (closeTimer.current) clearTimeout(closeTimer.current);
-  }, []);
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const containsPoint = (element: HTMLElement | null, x: number, y: number, tolerance = 0) => {
+      if (!element) return false;
+      const rect = element.getBoundingClientRect();
+      return x >= rect.left - tolerance
+        && x <= rect.right + tolerance
+        && y >= rect.top - tolerance
+        && y <= rect.bottom + tolerance;
+    };
+
+    const cancelScheduledClose = () => {
+      if (!closeTimer.current) return;
+      clearTimeout(closeTimer.current);
+      closeTimer.current = null;
+    };
+
+    const schedulePointerClose = () => {
+      if (closeTimer.current) return;
+      closeTimer.current = setTimeout(() => {
+        closeTimer.current = null;
+        setIsOpen(false);
+      }, 260);
+    };
+
+    const handlePointerMove = (event: PointerEvent) => {
+      const isOverTrigger = containsPoint(triggerAreaRef.current, event.clientX, event.clientY, 4);
+      const isOverContent = containsPoint(contentRef.current, event.clientX, event.clientY, 8);
+      if (isOverTrigger || isOverContent) cancelScheduledClose();
+      else schedulePointerClose();
+    };
+
+    const handlePointerDown = (event: PointerEvent) => {
+      const target = event.target as Node | null;
+      if (triggerAreaRef.current?.contains(target) || contentRef.current?.contains(target)) return;
+      cancelScheduledClose();
+      setIsOpen(false);
+    };
+
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      cancelScheduledClose();
+      setIsOpen(false);
+    };
+
+    document.addEventListener("pointermove", handlePointerMove, { passive: true });
+    document.addEventListener("pointerdown", handlePointerDown, true);
+    document.addEventListener("keydown", handleEscape);
+    return () => {
+      document.removeEventListener("pointermove", handlePointerMove);
+      document.removeEventListener("pointerdown", handlePointerDown, true);
+      document.removeEventListener("keydown", handleEscape);
+      cancelScheduledClose();
+    };
+  }, [isOpen]);
 
   function openPopover() {
     if (mobile || count === 0) return;
@@ -92,38 +145,8 @@ export function StorefrontCartLink({ initialCount, className = "", iconSize = 21
 
   function closePopover() {
     if (closeTimer.current) clearTimeout(closeTimer.current);
-    triggerHovered.current = false;
-    contentHovered.current = false;
+    closeTimer.current = null;
     setIsOpen(false);
-  }
-
-  function scheduleClose() {
-    if (mobile) return;
-    if (closeTimer.current) clearTimeout(closeTimer.current);
-    closeTimer.current = setTimeout(() => {
-      if (!triggerHovered.current && !contentHovered.current) setIsOpen(false);
-    }, 260);
-  }
-
-  function handleTriggerEnter() {
-    if (!isOpen) contentHovered.current = false;
-    triggerHovered.current = true;
-    openPopover();
-  }
-
-  function handleTriggerLeave() {
-    triggerHovered.current = false;
-    scheduleClose();
-  }
-
-  function handleContentEnter() {
-    contentHovered.current = true;
-    if (closeTimer.current) clearTimeout(closeTimer.current);
-  }
-
-  function handleContentLeave() {
-    contentHovered.current = false;
-    scheduleClose();
   }
 
   async function mutate(item: CartSummaryItem, nextQuantity?: number) {
@@ -161,8 +184,8 @@ export function StorefrontCartLink({ initialCount, className = "", iconSize = 21
   );
 
   return (
-    <div onMouseEnter={handleTriggerEnter} onMouseLeave={handleTriggerLeave}>
-      <Popover isOpen={isOpen} onOpenChange={(open) => { if (open) openPopover(); else if (triggerHovered.current || contentHovered.current) scheduleClose(); else closePopover(); }}>
+    <div ref={triggerAreaRef} onPointerEnter={openPopover}>
+      <Popover isOpen={isOpen}>
         <Popover.Trigger
           aria-label={`سبد خرید، ${count.toLocaleString("fa-IR")} کالا`}
           onClick={() => router.push("/cart")}
@@ -172,10 +195,10 @@ export function StorefrontCartLink({ initialCount, className = "", iconSize = 21
           {badge}
         </Popover.Trigger>
         <Popover.Content
+          ref={contentRef}
           placement="bottom left"
+          offset={8}
           dir="rtl"
-          onMouseEnter={handleContentEnter}
-          onMouseLeave={handleContentLeave}
           className="z-[200] w-[min(94vw,500px)] overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--surface)] p-0 text-right text-[var(--foreground)] shadow-[0_10px_30px_rgba(15,23,42,.2)]"
         >
           <Popover.Dialog dir="rtl" className="p-0 text-right">
