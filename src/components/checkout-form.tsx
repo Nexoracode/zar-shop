@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Alert, Button, Card, Input, Spinner, toast } from "@heroui/react";
-import { BadgePercent, Check, ChevronLeft, CreditCard, MapPin, PackageCheck, ShieldCheck } from "lucide-react";
+import { BadgePercent, Check, ChevronLeft, CreditCard, MapPin, PackageCheck, ShieldCheck, X } from "lucide-react";
 import { formatMoney } from "@/lib/format";
 import type { CommerceSettings } from "@/modules/settings/commerce-settings";
 import type { StorefrontPaymentMethod } from "@/modules/payments/storefront-methods";
@@ -41,10 +41,17 @@ export function CheckoutForm({ settings, paymentMethods, currency, itemCount, in
       const result = await response.json().catch(() => null);
       if (!response.ok) throw new Error(result?.message ?? "بررسی تخفیف انجام نشد.");
       setQuote(result as Quote);
-      setCouponMessage(nextCoupon.trim() ? "کد تخفیف با موفقیت اعمال شد." : "مبلغ سفارش به‌روزرسانی شد.");
+      setCouponMessage(nextCoupon.trim() ? "کد تخفیف با موفقیت اعمال شد." : "");
     } catch (reason) {
       setCouponError(reason instanceof Error ? reason.message : "بررسی تخفیف انجام نشد.");
     } finally { setCheckingCoupon(false); }
+  }
+
+  function clearCoupon() {
+    setCouponCode("");
+    setCouponMessage("");
+    setCouponError("");
+    void refreshQuote("");
   }
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
@@ -73,7 +80,7 @@ export function CheckoutForm({ settings, paymentMethods, currency, itemCount, in
 
         <Card variant="secondary" className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-sm"><Card.Content className="p-5 sm:p-6"><div className="mb-5 flex items-start gap-3"><span className="grid size-10 shrink-0 place-items-center rounded-full bg-[var(--brand-primary)]/10 text-[var(--brand-primary)]"><CreditCard size={20} /></span><div><h2 className="m-0 text-base font-bold">روش پرداخت</h2><p className="mb-0 mt-1 text-xs text-[var(--muted)]">پرداخت از طریق درگاه امن بانکی انجام می‌شود.</p></div></div><input type="hidden" name="paymentProvider" value={paymentProvider} /><div className="grid gap-3">{paymentMethods.map((method) => <Button key={method.id} type="button" variant="secondary" onPress={() => setPaymentProvider(method.id)} className={`h-auto min-h-20 justify-start gap-3 rounded-xl border p-4 text-right ${paymentProvider === method.id ? "border-[var(--brand-primary)] bg-[var(--brand-primary)]/5 ring-1 ring-[var(--brand-primary)]" : "border-[var(--border)]"}`}><span className="grid size-11 shrink-0 place-items-center rounded-xl bg-[var(--surface-secondary)] text-[var(--brand-primary)]"><CreditCard size={22} /></span><span><strong className="block">{method.name}</strong><small className="mt-1 block font-normal text-[var(--muted)]">{method.description}</small></span>{method.sandbox && <span className="mr-auto rounded-full bg-amber-50 px-2 py-1 text-[10px] font-bold text-amber-700">آزمایشی</span>}{paymentProvider === method.id && <Check size={18} className="text-[var(--brand-primary)]" />}</Button>)}</div></Card.Content></Card>
 
-        <Card variant="secondary" className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-sm"><Card.Content className="p-5 sm:p-6"><div className="mb-4 flex items-center gap-2"><BadgePercent size={19} className="text-[var(--brand-primary)]" /><h2 className="m-0 text-base font-bold">کد تخفیف</h2></div><div className="relative w-full sm:w-[46%]"><Input name="couponCode" value={couponCode} onChange={(event) => { setCouponCode(event.target.value.toUpperCase()); setCouponMessage(""); setCouponError(""); }} dir="rtl" fullWidth variant="secondary" className={`${fieldClass} pl-20 text-right text-[14px] uppercase placeholder:text-right placeholder:text-[14px]`} placeholder="کد تخفیف را وارد کنید" /><Button type="button" variant="ghost" isPending={checkingCoupon} isDisabled={!couponCode.trim()} onPress={() => void refreshQuote()} className="absolute left-2 top-1/2 z-10 h-8 min-h-8 -translate-y-1/2 bg-transparent px-2 text-sm font-medium text-[var(--brand-primary)] hover:bg-transparent data-[disabled=true]:cursor-not-allowed data-[hovered=true]:bg-transparent">بررسی</Button></div>{couponMessage && <p className="mb-0 mt-3 flex items-center gap-2 text-xs font-bold text-emerald-700"><Check size={15} />{couponMessage}</p>}{couponError && <p className="mb-0 mt-3 text-xs font-bold text-[var(--danger)]">{couponError}</p>}<p className="mb-0 mt-3 text-[11px] leading-6 text-[var(--muted)]">کد تخفیف هنگام ثبت نهایی سفارش دوباره در سرور اعتبارسنجی می‌شود.</p></Card.Content></Card>
+        <Card variant="secondary" className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-sm"><Card.Content className="p-5 sm:p-6"><div className="mb-4 flex items-center gap-2"><BadgePercent size={19} className="text-[var(--brand-primary)]" /><h2 className="m-0 text-base font-bold">کد تخفیف</h2></div><div className="relative w-full sm:w-[46%]"><Input name="couponCode" value={couponCode} onChange={(event) => { setCouponCode(event.target.value.toUpperCase()); setCouponMessage(""); setCouponError(""); }} dir="rtl" fullWidth variant="secondary" className={`${fieldClass} pl-24 text-right text-[14px] uppercase placeholder:text-right placeholder:text-[14px]`} placeholder="کد تخفیف را وارد کنید" />{couponCode && <Button type="button" isIconOnly variant="ghost" isDisabled={checkingCoupon} aria-label="حذف کد تخفیف" onPress={clearCoupon} className="absolute left-[62px] top-1/2 z-10 size-8 min-h-8 min-w-8 -translate-y-1/2 bg-transparent text-[var(--muted)] hover:bg-transparent hover:text-[var(--danger)] data-[hovered=true]:bg-transparent"><X size={15} /></Button>}<Button type="button" variant="ghost" isPending={checkingCoupon} isDisabled={!couponCode.trim()} onPress={() => void refreshQuote()} className="absolute left-2 top-1/2 z-10 h-8 min-h-8 -translate-y-1/2 bg-transparent px-2 text-sm font-medium text-[var(--brand-primary)] hover:bg-transparent data-[disabled=true]:cursor-not-allowed data-[hovered=true]:bg-transparent">بررسی</Button></div>{couponMessage && <p className="mb-0 mt-3 flex items-center gap-2 text-xs font-bold text-emerald-700"><Check size={15} />{couponMessage}</p>}{couponError && <p className="mb-0 mt-3 text-xs font-bold text-[var(--danger)]">{couponError}</p>}<p className="mb-0 mt-3 text-[11px] leading-6 text-[var(--muted)]">کد تخفیف هنگام ثبت نهایی سفارش دوباره در سرور اعتبارسنجی می‌شود.</p></Card.Content></Card>
       </div>
 
       <aside className="grid gap-4 lg:sticky lg:top-24">
