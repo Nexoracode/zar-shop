@@ -37,8 +37,8 @@ export async function GoldHeader({ settings, brand, user, menuItems }: { setting
     <span className="relative block h-10 w-24 sm:w-28"><Image src={brand.mainLogoMedia.url} alt={brand.mainLogoMedia.alt ?? settings.storeName} fill sizes="112px" className="object-contain" /></span>
   ) : (
     <span className="flex items-center gap-2.5 leading-none">
-      <span className="grid size-9 rotate-45 place-items-center border border-[var(--brand-primary)]"><span className="-rotate-45 text-xs font-black text-[var(--brand-primary)]">{settings.storeName.slice(0, 2)}</span></span>
-      <strong className="text-sm font-black text-[var(--brand-primary)]">{settings.storeName}</strong>
+      <span className="grid size-9 rotate-45 place-items-center border border-[var(--brand-primary)]"><span className="-rotate-45 text-xs font-bold text-[var(--brand-primary)]">{settings.storeName.slice(0, 2)}</span></span>
+      <strong className="text-sm font-bold text-[var(--brand-primary)]">{settings.storeName}</strong>
     </span>
   );
 

@@ -25,7 +25,7 @@ export function AdminPageHeader({ eyebrow, title, description, action, backHref,
       <div className="min-w-0">
         {backHref && <Link href={backHref} className="mb-4 inline-flex items-center gap-2 text-sm font-bold text-[var(--muted)] transition hover:text-[var(--foreground)]"><ChevronRight size={17} />{backLabel}</Link>}
         {eyebrow && <span className="mb-1 block text-xs font-bold text-[var(--warning)]">{eyebrow}</span>}
-        <h1 className="m-0 text-2xl font-black tracking-[-0.02em] text-[var(--foreground)] sm:text-3xl">{title}</h1>
+        <h1 className="m-0 text-2xl font-bold tracking-[-0.02em] text-[var(--foreground)] sm:text-3xl">{title}</h1>
         <p className="mb-0 mt-1 max-w-2xl text-sm text-[var(--muted)]">{description}</p>
       </div>
       {action && <div className="shrink-0">{action}</div>}

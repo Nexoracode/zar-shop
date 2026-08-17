@@ -45,7 +45,7 @@ export function AdminSectionHelp({ title, summary, blocks, placement = "bottom l
               <Info size={17} />
             </span>
             <div className="min-w-0 flex-1">
-              <Popover.Heading className="m-0 text-sm font-black text-[var(--overlay-foreground)]">راهنمای {title}</Popover.Heading>
+              <Popover.Heading className="m-0 text-sm font-bold text-[var(--overlay-foreground)]">راهنمای {title}</Popover.Heading>
               <p className="mt-1 text-[11px] leading-5 text-[var(--muted)]">{summary}</p>
             </div>
             <Button type="button" isIconOnly size="sm" variant="ghost" aria-label="بستن راهنما" onPress={() => setIsOpen(false)} className="size-8 min-h-8 min-w-8 shrink-0 rounded-lg text-[var(--muted)] hover:bg-[var(--surface-tertiary)] hover:text-[var(--foreground)]">
@@ -69,14 +69,14 @@ export function AdminSectionHelp({ title, summary, blocks, placement = "bottom l
                 >
                   <div className="flex items-center gap-2">
                     {block.tone === "important" ? <CircleAlert size={15} className="shrink-0 text-[var(--warning)]" /> : <Lightbulb size={15} className="shrink-0 text-[var(--accent)]" />}
-                    <h3 className="m-0 text-xs font-black text-[var(--overlay-foreground)]">{block.title}</h3>
+                    <h3 className="m-0 text-xs font-bold text-[var(--overlay-foreground)]">{block.title}</h3>
                   </div>
                   {block.description && <p className="m-0 text-[11px] leading-6 text-[var(--muted)]">{block.description}</p>}
                   {block.items?.length ? (
                     <ol className="m-0 grid list-none gap-2 p-0">
                       {block.items.map((item, itemIndex) => (
                         <li key={`${item}-${itemIndex}`} className="flex items-start gap-2 text-[11px] leading-6 text-[var(--muted)]">
-                          <span className="mt-1 grid size-5 shrink-0 place-items-center rounded-full bg-[var(--accent)]/10 text-[9px] font-black text-[var(--accent)]">
+                          <span className="mt-1 grid size-5 shrink-0 place-items-center rounded-full bg-[var(--accent)]/10 text-[9px] font-bold text-[var(--accent)]">
                             {(itemIndex + 1).toLocaleString("fa-IR")}
                           </span>
                           <span>{item}</span>

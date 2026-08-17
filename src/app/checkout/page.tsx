@@ -58,7 +58,7 @@ export default async function CheckoutPage() {
       <div className="mx-auto w-full max-w-[1280px]">
         <Link href="/cart" className="mb-5 inline-flex items-center gap-2 text-sm font-bold text-[var(--muted)] transition hover:text-[var(--brand-primary)]"><ChevronRight size={17} />بازگشت به سبد خرید</Link>
         <div className="mb-7 flex items-center justify-center gap-2 text-xs sm:gap-4 sm:text-sm" aria-label="مراحل خرید"><span className="flex items-center gap-2 text-[var(--muted)]"><ShoppingCart size={18} />سبد خرید</span><span className="h-px w-8 bg-[var(--border)] sm:w-16" /><strong className="flex items-center gap-2 text-[var(--brand-primary)]"><MapPin size={18} />ارسال و پرداخت</strong><span className="h-px w-8 bg-[var(--border)] sm:w-16" /><span className="flex items-center gap-2 text-[var(--muted)]"><CreditCard size={18} />تکمیل خرید</span></div>
-        <div className="mb-6"><h1 className="m-0 text-xl font-black sm:text-2xl">تکمیل سفارش</h1><p className="mb-0 mt-2 text-sm text-[var(--muted)]">نشانی، شیوه تحویل، تخفیف و روش پرداخت را بررسی کنید.</p></div>
+        <div className="mb-6"><h1 className="m-0 text-xl font-bold sm:text-2xl">تکمیل سفارش</h1><p className="mb-0 mt-2 text-sm text-[var(--muted)]">نشانی، شیوه تحویل، تخفیف و روش پرداخت را بررسی کنید.</p></div>
         <CheckoutForm settings={commerceSettings} paymentMethods={paymentMethods} currency={settings.currency} itemCount={itemCount} initialQuote={initialQuote} initialAddresses={addresses.map(serializeAddress)} user={{ firstName: user.firstName, lastName: user.lastName, phone: user.phone }} />
       </div>
     </main>

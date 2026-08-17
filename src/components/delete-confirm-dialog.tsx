@@ -44,7 +44,7 @@ export function DeleteConfirmDialog({
                 <Trash2 size={22} />
               </span>
               <div className="min-w-0">
-                <Modal.Heading className="text-base font-black text-slate-900 sm:text-lg">{title}</Modal.Heading>
+                <Modal.Heading className="text-base font-bold text-slate-900 sm:text-lg">{title}</Modal.Heading>
                 <p className="mt-1 text-xs text-slate-500">این عملیات قابل بازگشت نیست.</p>
               </div>
             </div>
@@ -58,7 +58,7 @@ export function DeleteConfirmDialog({
             {itemName ? (
               <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
                 <span className="block text-[11px] font-bold text-slate-400">مورد انتخاب‌شده</span>
-                <strong className="mt-1 block truncate text-sm font-black text-slate-800">{itemName}</strong>
+                <strong className="mt-1 block truncate text-sm font-bold text-slate-800">{itemName}</strong>
               </div>
             ) : null}
             <div className="mt-3 flex items-start gap-2.5 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-amber-900">

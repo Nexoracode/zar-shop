@@ -115,7 +115,7 @@ export default async function AdminPage() {
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
                 <span className="text-xs font-bold text-slate-500">{label}</span>
-                <strong className={`mt-2 block truncate font-black tracking-[-0.03em] text-slate-900 ${compact ? "text-lg xl:text-base 2xl:text-lg" : "text-2xl"}`}>{value}</strong>
+                <strong className={`mt-2 block truncate font-bold tracking-[-0.03em] text-slate-900 ${compact ? "text-lg xl:text-base 2xl:text-lg" : "text-2xl"}`}>{value}</strong>
               </div>
               <span className={`grid h-11 w-11 shrink-0 place-items-center rounded-xl ${tone}`}><Icon size={21} /></span>
             </div>
@@ -127,7 +127,7 @@ export default async function AdminPage() {
       <div className={`mt-6 grid gap-6 ${isFullAdmin ? "xl:grid-cols-[minmax(0,1.55fr)_minmax(280px,0.75fr)]" : "grid-cols-1"}`}>
         <AdminPanel>
           <div className="flex items-center justify-between gap-3 border-b border-slate-100 px-4 py-4 sm:px-5">
-            <div><h2 className="m-0 text-base font-black text-slate-800">آخرین سفارش‌ها</h2><p className="m-0 text-xs text-slate-400">جدیدترین فعالیت‌های خرید فروشگاه</p></div>
+            <div><h2 className="m-0 text-base font-bold text-slate-800">آخرین سفارش‌ها</h2><p className="m-0 text-xs text-slate-400">جدیدترین فعالیت‌های خرید فروشگاه</p></div>
             <Link href="/admin/orders" className="inline-flex items-center gap-1 text-xs font-bold text-[#846325]">همه سفارش‌ها<ArrowLeft size={14} /></Link>
           </div>
           {recentOrders.length ? (
@@ -159,12 +159,12 @@ export default async function AdminPage() {
 
         {isFullAdmin ? <div className="grid content-start gap-6">
           <AdminPanel>
-            <div className="flex items-center justify-between border-b border-slate-100 px-4 py-4 sm:px-5"><div className="flex items-center gap-2"><span className="grid h-9 w-9 place-items-center rounded-xl bg-rose-50 text-rose-600"><TriangleAlert size={18} /></span><div><h2 className="m-0 text-sm font-black text-slate-800">هشدار موجودی</h2><p className="m-0 text-[0.68rem] text-slate-400">محصولات با موجودی {catalogSettings.catalogLowStockThreshold.toLocaleString("fa-IR")} عدد یا کمتر</p></div></div></div>
+            <div className="flex items-center justify-between border-b border-slate-100 px-4 py-4 sm:px-5"><div className="flex items-center gap-2"><span className="grid h-9 w-9 place-items-center rounded-xl bg-rose-50 text-rose-600"><TriangleAlert size={18} /></span><div><h2 className="m-0 text-sm font-bold text-slate-800">هشدار موجودی</h2><p className="m-0 text-[0.68rem] text-slate-400">محصولات با موجودی {catalogSettings.catalogLowStockThreshold.toLocaleString("fa-IR")} عدد یا کمتر</p></div></div></div>
             {lowStockProducts.length ? <div className="divide-y divide-slate-100">{lowStockProducts.map((product) => <Link href={`/admin/products/${product.id}/edit`} key={product.id} className="flex items-center justify-between gap-3 px-4 py-3 transition hover:bg-slate-50 sm:px-5"><div className="min-w-0"><strong className="block truncate text-xs text-slate-700">{product.name}</strong><span className="text-[0.68rem] text-slate-400" dir="ltr">{product.sku}</span></div><AdminStatusBadge tone={product.stock === 0 ? "danger" : "warning"}>{product.stock === 0 ? "ناموجود" : `${product.stock.toLocaleString("fa-IR")} عدد`}</AdminStatusBadge></Link>)}</div> : <AdminEmptyState title="موجودی محصولات مناسب است" description="محصول کم‌موجودی وجود ندارد." />}
           </AdminPanel>
 
           <AdminPanel>
-            <div className="border-b border-slate-100 px-4 py-4 sm:px-5"><h2 className="m-0 text-sm font-black text-slate-800">دسترسی سریع</h2><p className="m-0 text-[0.68rem] text-slate-400">عملیات پرتکرار مدیریت فروشگاه</p></div>
+            <div className="border-b border-slate-100 px-4 py-4 sm:px-5"><h2 className="m-0 text-sm font-bold text-slate-800">دسترسی سریع</h2><p className="m-0 text-[0.68rem] text-slate-400">عملیات پرتکرار مدیریت فروشگاه</p></div>
             <div className="grid grid-cols-2 gap-2 p-3">
               {visibleShortcuts.map(({ href, label, description, icon: Icon }) => <Link href={href} key={href} className="group rounded-xl border border-slate-100 p-3 transition hover:border-[#dac69f] hover:bg-[#fffcf7]"><span className="mb-3 grid h-9 w-9 place-items-center rounded-xl bg-slate-100 text-slate-600 transition group-hover:bg-[#f4ead8] group-hover:text-[#846325]"><Icon size={18} /></span><strong className="block text-xs text-slate-700">{label}</strong><span className="mt-1 hidden text-[0.65rem] leading-5 text-slate-400 sm:block">{description}</span></Link>)}
             </div>

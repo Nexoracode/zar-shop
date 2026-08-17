@@ -55,13 +55,13 @@ export default async function InvoicePage({ params }: { params: Promise<{ orderI
 
       <article className="invoice-print-area mx-auto w-full max-w-[210mm] bg-white p-5 text-slate-900 shadow-[0_18px_60px_rgba(15,23,42,0.12)] sm:p-8">
         <header className="grid grid-cols-[1fr_auto_1fr] items-center border-2 border-slate-800 px-4 py-3">
-          <div className="text-right"><strong className="block text-lg font-black text-[#17233b]">{text(seller, "name", "زر گالری")}</strong><span className="text-[10px] text-slate-500">{text(seller, "industry", "GOLD") === "GOLD" ? "فروشگاه طلا و زیورآلات" : "فروشگاه اینترنتی"}</span></div>
-          <div className="px-4 text-center"><h1 className="m-0 text-xl font-black">فاکتور رسمی فروش</h1><span className="text-[10px] text-slate-500">صورتحساب کالا و خدمات</span></div>
+          <div className="text-right"><strong className="block text-lg font-bold text-[#17233b]">{text(seller, "name", "زر گالری")}</strong><span className="text-[10px] text-slate-500">{text(seller, "industry", "GOLD") === "GOLD" ? "فروشگاه طلا و زیورآلات" : "فروشگاه اینترنتی"}</span></div>
+          <div className="px-4 text-center"><h1 className="m-0 text-xl font-bold">فاکتور رسمی فروش</h1><span className="text-[10px] text-slate-500">صورتحساب کالا و خدمات</span></div>
           <dl className="m-0 space-y-1 text-left text-[10px]"><div><dt className="inline text-slate-500">شماره فاکتور: </dt><dd className="inline font-bold" dir="ltr">{order.invoice.invoiceNumber}</dd></div><div><dt className="inline text-slate-500">تاریخ صدور: </dt><dd className="inline font-bold">{formatDate(order.invoice.issuedAt)}</dd></div><div><dt className="inline text-slate-500">شماره سفارش: </dt><dd className="inline font-bold" dir="ltr">{order.orderNumber}</dd></div></dl>
         </header>
 
         <section className="mt-3 border border-slate-300">
-          <h2 className="m-0 border-b border-slate-300 bg-slate-100 px-3 py-1.5 text-xs font-black">مشخصات فروشنده</h2>
+          <h2 className="m-0 border-b border-slate-300 bg-slate-100 px-3 py-1.5 text-xs font-bold">مشخصات فروشنده</h2>
           <dl className="m-0 grid grid-cols-2 gap-x-5 gap-y-3 p-3 sm:grid-cols-4">
             <InvoiceInfo label="نام فروشنده" value={text(seller, "name", "زر گالری")} />
             <InvoiceInfo label="شناسه ملی" value={text(seller, "nationalId")} ltr />
@@ -73,7 +73,7 @@ export default async function InvoicePage({ params }: { params: Promise<{ orderI
         </section>
 
         <section className="mt-3 border border-slate-300">
-          <h2 className="m-0 border-b border-slate-300 bg-slate-100 px-3 py-1.5 text-xs font-black">مشخصات خریدار</h2>
+          <h2 className="m-0 border-b border-slate-300 bg-slate-100 px-3 py-1.5 text-xs font-bold">مشخصات خریدار</h2>
           <dl className="m-0 grid grid-cols-2 gap-x-5 gap-y-3 p-3 sm:grid-cols-4">
             <InvoiceInfo label="نام خریدار" value={buyerName} />
             <InvoiceInfo label="کد ملی" value={text(buyer, "nationalId", order.user.nationalId ?? "—")} ltr />
@@ -86,7 +86,7 @@ export default async function InvoicePage({ params }: { params: Promise<{ orderI
 
         <section className="mt-3 overflow-hidden">
           <table className="w-full table-fixed border-collapse" aria-label="اقلام فاکتور رسمی">
-            <thead className="bg-slate-100"><tr>{["ردیف", "شرح کالا", "کد کالا", "تعداد", "وزن", "عیار", "مبلغ واحد", "تخفیف", "اجرت", "سود", "مالیات", "مبلغ کل"].map((head) => <th key={head} className={`${cell} font-black text-slate-800`}>{head}</th>)}</tr></thead>
+            <thead className="bg-slate-100"><tr>{["ردیف", "شرح کالا", "کد کالا", "تعداد", "وزن", "عیار", "مبلغ واحد", "تخفیف", "اجرت", "سود", "مالیات", "مبلغ کل"].map((head) => <th key={head} className={`${cell} font-bold text-slate-800`}>{head}</th>)}</tr></thead>
             <tbody>
               {order.items.map((item, index) => (
                 <tr key={item.id}>
@@ -101,7 +101,7 @@ export default async function InvoicePage({ params }: { params: Promise<{ orderI
                   <td className={cell}>{item.storeIndustry === "GOLD" ? amount(item.makingFee.toString()) : "—"}</td>
                   <td className={cell}>{item.storeIndustry === "GOLD" ? amount(item.profit.toString()) : "—"}</td>
                   <td className={cell}>{item.storeIndustry === "GOLD" ? amount(item.tax.toString()) : "—"}</td>
-                  <td className={`${cell} font-black`}>{amount(item.total.toString())}</td>
+                  <td className={`${cell} font-bold`}>{amount(item.total.toString())}</td>
                 </tr>
               ))}
             </tbody>
@@ -123,7 +123,7 @@ export default async function InvoicePage({ params }: { params: Promise<{ orderI
             {Number(order.shippingDiscount) > 0 && <div className="flex justify-between border-b border-slate-200 px-3 py-2"><dt>تخفیف ارسال</dt><dd>{money(order.shippingDiscount.toString())}</dd></div>}
             <div className="flex justify-between border-b border-slate-200 px-3 py-2"><dt>ارسال</dt><dd>{money(order.shipping.toString())}</dd></div>
             <div className="flex justify-between border-b border-slate-200 px-3 py-2"><dt>مالیات</dt><dd>{money(order.tax.toString())}</dd></div>
-            <div className="flex justify-between bg-slate-100 px-3 py-2.5 font-black"><dt>مبلغ نهایی</dt><dd>{money(order.total.toString())}</dd></div>
+            <div className="flex justify-between bg-slate-100 px-3 py-2.5 font-bold"><dt>مبلغ نهایی</dt><dd>{money(order.total.toString())}</dd></div>
           </dl>
         </section>
 

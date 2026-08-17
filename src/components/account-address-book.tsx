@@ -74,11 +74,11 @@ export function AccountAddressBook({ initialAddresses, user }: AccountAddressBoo
   return <>
     <section id="addresses" className="rounded-xl border border-[var(--border)] bg-[var(--surface)]">
       <header className="flex min-h-20 flex-wrap items-center justify-between gap-4 px-4 py-5 sm:px-6">
-        <h2 className="relative m-0 w-fit pb-3 text-base font-black after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 after:bg-[var(--brand-primary)]">آدرس‌ها</h2>
+        <h2 className="relative m-0 w-fit pb-3 text-base font-bold after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 after:bg-[var(--brand-primary)]">آدرس‌ها</h2>
         <DeliveryAddressPicker mode="create" initialAddresses={addresses} user={user} />
       </header>
       <div className="px-4 pb-5 sm:px-6">
-        <h3 className="mb-4 mt-1 text-sm font-black">آدرس‌های من</h3>
+        <h3 className="mb-4 mt-1 text-sm font-bold">آدرس‌های من</h3>
         <div className="grid gap-3">
           {addresses.map((address) => <article key={address.id} className={`relative rounded-[10px] border py-4 pr-5 pl-14 ${address.isDefault ? "border-[var(--brand-primary)]" : "border-[var(--border)]"}`}>
             <Popover isOpen={menuAddressId === address.id} onOpenChange={(open) => setMenuAddressId(open ? address.id : null)}>
@@ -106,7 +106,7 @@ export function AccountAddressBook({ initialAddresses, user }: AccountAddressBoo
       <Modal.Container placement="center" size="lg">
         <Modal.Dialog aria-label="ویرایش آدرس" dir="rtl" className="mx-3 max-h-[calc(100dvh-24px)] max-w-[560px] overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface)] shadow-2xl">
           <Modal.Header className="flex-row items-center border-b border-[var(--border)] px-5 py-3">
-            <Modal.Heading className="truncate text-base font-black text-[var(--foreground)]">{editStep === 3 ? "تأیید اطلاعات آدرس" : "ویرایش آدرس"}</Modal.Heading>
+            <Modal.Heading className="truncate text-base font-bold text-[var(--foreground)]">{editStep === 3 ? "تأیید اطلاعات آدرس" : "ویرایش آدرس"}</Modal.Heading>
             <Modal.CloseTrigger aria-label="بستن" className="mr-auto grid size-8 place-items-center rounded-lg text-[var(--muted)] transition hover:bg-[var(--surface-secondary)] hover:text-[var(--foreground)]"><X size={18} /></Modal.CloseTrigger>
           </Modal.Header>
           <Modal.Body className="overflow-y-auto p-0">{editing && <AddressForm initial={editing} user={user} onSaved={finishEditing} onCancel={() => setEditing(null)} onStepChange={setEditStep} />}</Modal.Body>

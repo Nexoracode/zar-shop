@@ -44,6 +44,8 @@ export function StorefrontCartLink({ initialCount, className = "", iconSize = 21
   const [loading, setLoading] = useState(false);
   const [pendingItemId, setPendingItemId] = useState<string | null>(null);
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const triggerHovered = useRef(false);
+  const contentHovered = useRef(false);
 
   const loadSummary = useCallback(async () => {
     if (count === 0) {
@@ -88,10 +90,40 @@ export function StorefrontCartLink({ initialCount, className = "", iconSize = 21
     if (!summary && !loading) void loadSummary();
   }
 
+  function closePopover() {
+    if (closeTimer.current) clearTimeout(closeTimer.current);
+    triggerHovered.current = false;
+    contentHovered.current = false;
+    setIsOpen(false);
+  }
+
   function scheduleClose() {
     if (mobile) return;
     if (closeTimer.current) clearTimeout(closeTimer.current);
-    closeTimer.current = setTimeout(() => setIsOpen(false), 140);
+    closeTimer.current = setTimeout(() => {
+      if (!triggerHovered.current && !contentHovered.current) setIsOpen(false);
+    }, 260);
+  }
+
+  function handleTriggerEnter() {
+    if (!isOpen) contentHovered.current = false;
+    triggerHovered.current = true;
+    openPopover();
+  }
+
+  function handleTriggerLeave() {
+    triggerHovered.current = false;
+    scheduleClose();
+  }
+
+  function handleContentEnter() {
+    contentHovered.current = true;
+    if (closeTimer.current) clearTimeout(closeTimer.current);
+  }
+
+  function handleContentLeave() {
+    contentHovered.current = false;
+    scheduleClose();
   }
 
   async function mutate(item: CartSummaryItem, nextQuantity?: number) {
@@ -109,7 +141,7 @@ export function StorefrontCartLink({ initialCount, className = "", iconSize = 21
       notifyCartUpdated(nextCount);
       setSummary(null);
       if (nextCount > 0) await loadSummary();
-      else setIsOpen(false);
+      else closePopover();
       router.refresh();
     } catch (error) {
       toast.danger("سبد خرید به‌روزرسانی نشد", { description: error instanceof Error ? error.message : "خطای ناشناخته" });
@@ -118,7 +150,7 @@ export function StorefrontCartLink({ initialCount, className = "", iconSize = 21
     }
   }
 
-  const badge = count > 0 && <span className={`absolute grid h-[18px] min-w-[18px] place-items-center rounded-[5px] border-2 border-white bg-[var(--brand-primary)] px-0.5 text-[9px] font-black leading-none text-[var(--brand-primary-foreground)] ${mobile ? "right-[calc(50%-20px)] top-1" : "-bottom-0.5 -right-1"}`}>{Math.min(count, 99).toLocaleString("fa-IR")}{count > 99 ? "+" : ""}</span>;
+  const badge = count > 0 && <span className={`absolute grid h-[18px] min-w-[18px] place-items-center rounded-[5px] border-2 border-white bg-[var(--brand-primary)] px-0.5 text-[9px] font-bold leading-none text-[var(--brand-primary-foreground)] ${mobile ? "right-[calc(50%-20px)] top-1" : "-bottom-0.5 -right-1"}`}>{Math.min(count, 99).toLocaleString("fa-IR")}{count > 99 ? "+" : ""}</span>;
 
   if (mobile) return (
     <Link href="/cart" aria-label={`سبد خرید، ${count.toLocaleString("fa-IR")} کالا`} className={`relative ${className}`}>
@@ -129,8 +161,8 @@ export function StorefrontCartLink({ initialCount, className = "", iconSize = 21
   );
 
   return (
-    <div onMouseEnter={openPopover} onMouseLeave={scheduleClose}>
-      <Popover isOpen={isOpen} onOpenChange={(open) => { setIsOpen(open); if (open) openPopover(); }}>
+    <div onMouseEnter={handleTriggerEnter} onMouseLeave={handleTriggerLeave}>
+      <Popover isOpen={isOpen} onOpenChange={(open) => { if (open) openPopover(); else if (triggerHovered.current || contentHovered.current) scheduleClose(); else closePopover(); }}>
         <Popover.Trigger
           aria-label={`سبد خرید، ${count.toLocaleString("fa-IR")} کالا`}
           onClick={() => router.push("/cart")}
@@ -142,13 +174,13 @@ export function StorefrontCartLink({ initialCount, className = "", iconSize = 21
         <Popover.Content
           placement="bottom left"
           dir="rtl"
-          onMouseEnter={openPopover}
-          onMouseLeave={scheduleClose}
+          onMouseEnter={handleContentEnter}
+          onMouseLeave={handleContentLeave}
           className="z-[200] w-[min(94vw,500px)] overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--surface)] p-0 text-right text-[var(--foreground)] shadow-[0_10px_30px_rgba(15,23,42,.2)]"
         >
           <Popover.Dialog dir="rtl" className="p-0 text-right">
             <div className="flex items-center gap-2 border-b border-[var(--border)] px-4 py-4">
-              <Popover.Heading className="m-0 text-base font-black">خلاصه سبد خرید شما</Popover.Heading>
+              <Popover.Heading className="m-0 text-base font-bold">خلاصه سبد خرید شما</Popover.Heading>
               <span className="text-xs text-[var(--muted)]">{count.toLocaleString("fa-IR")} کالا</span>
             </div>
 
@@ -157,20 +189,20 @@ export function StorefrontCartLink({ initialCount, className = "", iconSize = 21
                 {summary.items.map((item) => {
                   const pending = pendingItemId === item.id;
                   return <article key={item.id} className="grid grid-cols-[76px_minmax(0,1fr)] gap-3 border-b border-[var(--border)] px-4 py-3 last:border-b-0">
-                    <Link href={`/products/${item.slug}`} onClick={() => setIsOpen(false)} className="relative block size-[76px] overflow-hidden rounded-lg bg-[var(--surface-secondary)]">
+                    <Link href={`/products/${item.slug}`} onClick={closePopover} className="relative block size-[76px] overflow-hidden rounded-lg bg-[var(--surface-secondary)]">
                       {item.imageUrl ? <Image src={item.imageUrl} alt={item.imageAlt} fill sizes="76px" className="object-contain p-1" /> : <span className="grid size-full place-items-center text-[10px] text-[var(--muted)]">بدون تصویر</span>}
                     </Link>
                     <div className="min-w-0">
-                      <Link href={`/products/${item.slug}`} onClick={() => setIsOpen(false)} className="line-clamp-2 text-xs font-bold leading-6 text-[var(--foreground)]">{item.name}</Link>
+                      <Link href={`/products/${item.slug}`} onClick={closePopover} className="line-clamp-2 text-xs font-bold leading-6 text-[var(--foreground)]">{item.name}</Link>
                       <div className="mt-3 flex items-end justify-between gap-3">
                         <div className="inline-flex h-10 shrink-0 items-center rounded-full border border-[var(--border)] bg-[var(--surface)]">
                           <Button type="button" isIconOnly variant="ghost" size="sm" isDisabled={pending || item.quantity >= item.maxQuantity} aria-label={`افزایش تعداد ${item.name}`} onPress={() => void mutate(item, item.quantity + 1)} className="size-9 min-h-9 min-w-9 rounded-full text-[var(--brand-primary)]"><Plus size={16} /></Button>
-                          <span className="grid min-w-7 place-items-center text-xs font-black text-[var(--brand-primary)]">{pending ? <Spinner size="sm" /> : item.quantity.toLocaleString("fa-IR")}</span>
+                          <span className="grid min-w-7 place-items-center text-xs font-bold text-[var(--brand-primary)]">{pending ? <Spinner size="sm" /> : item.quantity.toLocaleString("fa-IR")}</span>
                           <Button type="button" isIconOnly variant="ghost" size="sm" isDisabled={pending} aria-label={item.quantity === 1 ? `حذف ${item.name}` : `کاهش تعداد ${item.name}`} onPress={() => void mutate(item, item.quantity === 1 ? undefined : item.quantity - 1)} className="size-9 min-h-9 min-w-9 rounded-full text-[var(--brand-primary)]">{item.quantity === 1 ? <Trash2 size={15} /> : <Minus size={16} />}</Button>
                         </div>
                         <div className="text-left">
-                          {item.originalUnitPrice !== null && item.originalUnitPrice > item.unitPrice && <div className="mb-1 flex items-center justify-end gap-2"><span className="rounded-full bg-[var(--danger)] px-2 py-0.5 text-[10px] font-black text-white">{item.discountPercent?.toLocaleString("fa-IR")}٪</span><span className="text-[10px] text-[var(--muted)] line-through">{formatMoney(item.originalUnitPrice * item.quantity, summary.currency)}</span></div>}
-                          <strong className="block whitespace-nowrap text-sm font-black">{formatMoney(item.unitPrice * item.quantity, summary.currency)}</strong>
+                          {item.originalUnitPrice !== null && item.originalUnitPrice > item.unitPrice && <div className="mb-1 flex items-center justify-end gap-2"><span className="rounded-full bg-[var(--danger)] px-2 py-0.5 text-[10px] font-bold text-white">{item.discountPercent?.toLocaleString("fa-IR")}٪</span><span className="text-[10px] text-[var(--muted)] line-through">{formatMoney(item.originalUnitPrice * item.quantity, summary.currency)}</span></div>}
+                          <strong className="block whitespace-nowrap text-sm font-bold">{formatMoney(item.unitPrice * item.quantity, summary.currency)}</strong>
                         </div>
                       </div>
                     </div>
@@ -180,10 +212,10 @@ export function StorefrontCartLink({ initialCount, className = "", iconSize = 21
               <div className="grid grid-cols-[minmax(0,1fr)_minmax(170px,260px)] items-center gap-4 border-t border-[var(--border)] p-3">
                 <div className="min-w-0 text-xs">
                   <span className="block text-[var(--muted)]">مبلغ قابل پرداخت</span>
-                  <strong className="mt-1 block whitespace-nowrap text-sm font-black">{summary.total === null ? "قیمت موقتاً در دسترس نیست" : formatMoney(summary.total, summary.currency)}</strong>
+                  <strong className="mt-1 block whitespace-nowrap text-sm font-bold">{summary.total === null ? "قیمت موقتاً در دسترس نیست" : formatMoney(summary.total, summary.currency)}</strong>
                   {summary.discount !== null && summary.discount > 0 && <span className="mt-1 block text-[10px] font-bold text-[var(--danger)]">{formatMoney(summary.discount, summary.currency)} سود شما از خرید</span>}
                 </div>
-                <Link href="/cart" onClick={() => setIsOpen(false)} className="flex min-h-12 items-center justify-center rounded-lg bg-[var(--brand-primary)] px-5 text-sm font-black text-[var(--brand-primary-foreground)] transition hover:brightness-105">ثبت سفارش</Link>
+                <Link href="/cart" onClick={closePopover} className="flex min-h-12 items-center justify-center rounded-lg bg-[var(--brand-primary)] px-5 text-sm font-bold text-[var(--brand-primary-foreground)] transition hover:brightness-105">ثبت سفارش</Link>
               </div>
             </> : <div className="grid min-h-40 place-items-center px-5 text-sm text-[var(--muted)]">سبد خرید شما خالی است.</div>}
           </Popover.Dialog>

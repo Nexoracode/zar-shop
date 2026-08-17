@@ -59,7 +59,7 @@ function ReviewCard({ review }: { review: ReviewRow }) {
   return (
     <article className="p-4 sm:p-5">
       <div className="flex items-start gap-3">
-        <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-[var(--surface-tertiary)] text-sm font-black text-[var(--muted)]">{name.slice(0, 1)}</span>
+        <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-[var(--surface-tertiary)] text-sm font-bold text-[var(--muted)]">{name.slice(0, 1)}</span>
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <strong className="truncate text-sm text-slate-800">{name}</strong>

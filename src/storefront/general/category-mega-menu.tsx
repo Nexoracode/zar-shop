@@ -74,10 +74,10 @@ export function GeneralCategoryMegaMenu({ categories, enabled = true }: { catego
           })}
         </aside>
         <section key={activeCategory.id} className="storefront-mega-scroll min-w-0 flex-1 overflow-y-auto overscroll-contain px-7 py-6" aria-label={`زیر‌دسته‌های ${activeCategory.name}`}>
-          <Link href={`/products?category=${activeCategory.slug}`} onClick={() => setOpen(false)} className="mb-7 inline-flex items-center gap-1 text-xs font-black text-[var(--brand-primary)]">همه محصولات {activeCategory.name}<ChevronLeft size={14} /></Link>
+          <Link href={`/products?category=${activeCategory.slug}`} onClick={() => setOpen(false)} className="mb-7 inline-flex items-center gap-1 text-xs font-bold text-[var(--brand-primary)]">همه محصولات {activeCategory.name}<ChevronLeft size={14} /></Link>
           {activeCategory.children.length ? <div className="columns-2 gap-x-10 xl:columns-4">
             {activeCategory.children.map((child) => <section key={child.id} className="mb-8 inline-block w-full break-inside-avoid">
-              <Link href={`/products?category=${child.slug}`} onClick={() => setOpen(false)} className="mb-4 flex items-center gap-2 text-[0.8rem] font-black text-slate-800 transition hover:text-[var(--brand-primary)]"><span className="h-4 w-0.5 shrink-0 bg-[var(--brand-primary)]" /><span className="truncate">{child.name}</span><ChevronLeft size={13} className="shrink-0" /></Link>
+              <Link href={`/products?category=${child.slug}`} onClick={() => setOpen(false)} className="mb-4 flex items-center gap-2 text-[0.8rem] font-bold text-slate-800 transition hover:text-[var(--brand-primary)]"><span className="h-4 w-0.5 shrink-0 bg-[var(--brand-primary)]" /><span className="truncate">{child.name}</span><ChevronLeft size={13} className="shrink-0" /></Link>
               {child.children.length > 0 && <div className="grid gap-3 pr-2 text-xs text-slate-400">{child.children.map((grandchild) => <Link key={grandchild.id} href={`/products?category=${grandchild.slug}`} onClick={() => setOpen(false)} className="truncate transition hover:text-[var(--brand-primary)] hover:pr-1">{grandchild.name}</Link>)}</div>}
             </section>)}
           </div> : <div className="grid h-52 place-items-center border border-dashed border-slate-200 bg-slate-50 text-center text-xs text-slate-500"><span>برای این دسته هنوز زیر‌دسته‌ای ثبت نشده است.</span></div>}

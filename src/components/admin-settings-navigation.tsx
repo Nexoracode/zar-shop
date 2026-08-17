@@ -63,7 +63,7 @@ export function AdminSettingsNavigation({ industry }: { industry: StoreIndustry 
   return <div className="grid gap-8" dir="rtl">
     {groups.map((group) => <section key={group.id} aria-labelledby={`settings-${group.id}`} className="grid gap-3">
       <div>
-        <h2 id={`settings-${group.id}`} className="m-0 text-base font-black text-[var(--foreground)]">{group.title}</h2>
+        <h2 id={`settings-${group.id}`} className="m-0 text-base font-bold text-[var(--foreground)]">{group.title}</h2>
         <p className="mb-0 mt-1 text-xs text-[var(--muted)]">{group.description}</p>
       </div>
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
@@ -71,7 +71,7 @@ export function AdminSettingsNavigation({ industry }: { industry: StoreIndustry 
           <Card variant="secondary" className="h-full rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 shadow-sm transition duration-200 group-hover:-translate-y-0.5 group-hover:border-[var(--accent)]/45 group-hover:shadow-md sm:p-5">
             <div className="flex items-center gap-3">
               <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-[var(--accent)]/10 text-[var(--accent)]"><Icon size={20} /></span>
-              <div className="min-w-0 flex-1"><strong className="block text-sm font-black text-[var(--foreground)]">{title}</strong><span className="mt-1 block text-xs leading-5 text-[var(--muted)]">{description}</span></div>
+              <div className="min-w-0 flex-1"><strong className="block text-sm font-bold text-[var(--foreground)]">{title}</strong><span className="mt-1 block text-xs leading-5 text-[var(--muted)]">{description}</span></div>
               <ChevronLeft size={18} className="shrink-0 text-[var(--muted)] transition group-hover:-translate-x-1 group-hover:text-[var(--accent)]" />
             </div>
           </Card>

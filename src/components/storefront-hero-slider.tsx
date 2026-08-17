@@ -136,7 +136,7 @@ export function StorefrontHeroSlider({ slides, contentMode, title, description, 
 
       {contentMode === "WITH_CONTENT" && <>
         <span className="pointer-events-none absolute inset-0 z-10 bg-gradient-to-l from-black/35 via-transparent to-transparent" />
-        <div className="pointer-events-none relative z-20 mx-auto flex h-full w-[min(1440px,calc(100%-32px))] items-center lg:w-[min(1440px,calc(100%-80px))]"><div className="max-w-[480px] text-white"><h1 className="m-0 text-[clamp(2.2rem,5vw,4.4rem)] font-black leading-[1.25]">{title}</h1><p className="mb-6 mt-3 text-sm text-white/85">{description}</p><Link href={slides[activeIndex]?.href ?? "/products"} data-slider-control="true" className="pointer-events-auto inline-flex h-11 items-center rounded-md bg-[var(--brand-primary)] px-6 text-xs text-[var(--brand-primary-foreground)]">{buttonLabel}</Link></div></div>
+        <div className="pointer-events-none relative z-20 mx-auto flex h-full w-[min(1440px,calc(100%-32px))] items-center lg:w-[min(1440px,calc(100%-80px))]"><div className="max-w-[480px] text-white"><h1 className="m-0 text-[clamp(2.2rem,5vw,4.4rem)] font-bold leading-[1.25]">{title}</h1><p className="mb-6 mt-3 text-sm text-white/85">{description}</p><Link href={slides[activeIndex]?.href ?? "/products"} data-slider-control="true" className="pointer-events-auto inline-flex h-11 items-center rounded-md bg-[var(--brand-primary)] px-6 text-xs text-[var(--brand-primary-foreground)]">{buttonLabel}</Link></div></div>
       </>}
 
       {hasMultipleSlides && <>

@@ -127,7 +127,7 @@ export function ProductReviews({ productId, initialData, isAuthenticated }: Prop
   }
   return <div className="grid gap-8 lg:grid-cols-[260px_minmax(0,1fr)]" dir="rtl">
     <aside className="h-fit rounded-xl border border-slate-200 p-5 lg:sticky lg:top-24">
-      <div className="flex items-end gap-2"><strong className="text-3xl font-black text-slate-900">{summary.average.toLocaleString("fa-IR", { maximumFractionDigits: 1 })}</strong><span className="pb-1 text-xs text-slate-400">از ۵</span></div>
+      <div className="flex items-end gap-2"><strong className="text-3xl font-bold text-slate-900">{summary.average.toLocaleString("fa-IR", { maximumFractionDigits: 1 })}</strong><span className="pb-1 text-xs text-slate-400">از ۵</span></div>
       <div className="my-3 flex gap-1 text-amber-400" aria-label={`${summary.average.toLocaleString("fa-IR", { maximumFractionDigits: 1 })} از ۵ ستاره`}>{[1, 2, 3, 4, 5].map((star) => <Star key={star} size={18} fill={star <= Math.round(summary.average) ? "currentColor" : "none"} />)}</div>
       <p className="text-xs text-slate-500">از مجموع {summary.count.toLocaleString("fa-IR")} دیدگاه تأییدشده</p>
       <div className="mt-5 grid gap-2.5">{[5, 4, 3, 2, 1].map((score) => <div key={score} className="grid grid-cols-[28px_1fr] items-center gap-2 text-[10px] text-slate-500"><span>{score.toLocaleString("fa-IR")}</span><span className="h-1.5 overflow-hidden rounded-full bg-slate-100"><span className="block h-full rounded-full bg-amber-400" style={{ width: `${summary.count ? summary.distribution[score as 1 | 2 | 3 | 4 | 5] / summary.count * 100 : 0}%` }} /></span></div>)}</div>

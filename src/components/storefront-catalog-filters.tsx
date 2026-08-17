@@ -134,7 +134,7 @@ export function StorefrontCatalogFilters({ facets, categoryScoped, selectedBrand
   return <div className={`storefront-mega-scroll relative rounded-xl border border-slate-200 bg-white px-4 py-5 transition-opacity lg:max-h-[calc(100dvh-var(--storefront-sticky-offset,112px)-16px)] lg:overflow-y-auto ${isPending ? "opacity-65" : "opacity-100"}`} dir="rtl" aria-busy={isPending}>
     {isPending && <span className="sticky top-0 z-10 float-left grid size-7 place-items-center rounded-full bg-white shadow-sm" aria-label="در حال بروزرسانی نتایج"><Spinner size="sm" color="current" /></span>}
     <div className="flex items-center justify-between gap-3 border-b border-slate-100 pb-4">
-      <h2 className="m-0 flex items-center gap-2 text-base font-black text-slate-900"><SlidersHorizontal size={18} />فیلترها</h2>
+      <h2 className="m-0 flex items-center gap-2 text-base font-bold text-slate-900"><SlidersHorizontal size={18} />فیلترها</h2>
       {activeCount > 0 && <Link href={resetHref} scroll={false} className="text-[11px] font-bold text-[var(--brand-primary)]">حذف فیلترها</Link>}
     </div>
 

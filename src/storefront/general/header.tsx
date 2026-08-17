@@ -36,7 +36,7 @@ export async function GeneralHeader({ settings, brand, user, menuItems }: Props)
   const accountHref = user ? (user.isGuest ? "/cart" : "/account") : "/login";
   const logo = brand.mainLogoMedia
     ? <span className="relative block h-10 w-28"><Image src={brand.mainLogoMedia.url} alt={brand.mainLogoMedia.alt ?? settings.storeName} fill sizes="112px" className="object-contain" /></span>
-    : <strong className="text-base font-black text-[var(--brand-primary)]">{settings.storeName}</strong>;
+    : <strong className="text-base font-bold text-[var(--brand-primary)]">{settings.storeName}</strong>;
 
   return <>
     <header className={`relative z-50 border-b border-[#e7e9ed] bg-white shadow-[0_2px_10px_rgba(0,0,0,.035)] ${brand.stickyStoreHeader ? "sticky top-0" : ""}`}>

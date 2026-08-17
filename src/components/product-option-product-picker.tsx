@@ -116,7 +116,7 @@ export function ProductOptionProductPicker() {
           <Card.Content className="flex h-full min-h-0 flex-col p-4">
             <div className="mb-4 flex shrink-0 items-start gap-3 border-b border-slate-100 pb-4">
               <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-violet-50 text-violet-700"><PackageSearch size={20} /></span>
-              <div><h2 className="m-0 text-sm font-black text-slate-800">انتخاب محصول</h2><p className="mt-1 text-[11px] leading-5 text-slate-500">نام، کد کالا یا نشانی انگلیسی را بنویسید.</p></div>
+              <div><h2 className="m-0 text-sm font-bold text-slate-800">انتخاب محصول</h2><p className="mt-1 text-[11px] leading-5 text-slate-500">نام، کد کالا یا نشانی انگلیسی را بنویسید.</p></div>
             </div>
 
             <label className="grid shrink-0 gap-1.5 text-xs font-bold text-slate-600">
@@ -184,7 +184,7 @@ function DisabledOptionsPanel() {
     <Card variant="secondary" className="min-h-[420px] rounded-xl border border-slate-200 bg-white opacity-60 shadow-sm">
       <Card.Content className="grid gap-4 p-4 sm:p-5">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-4">
-          <div className="flex min-w-0 items-center gap-3"><span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-slate-100 text-slate-400"><ListPlus size={19} /></span><div className="min-w-0"><h2 className="m-0 text-base font-black text-slate-700">گروه‌های تنوع</h2><p className="mt-1 text-xs text-slate-400">پس از انتخاب محصول فعال می‌شود.</p></div></div>
+          <div className="flex min-w-0 items-center gap-3"><span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-slate-100 text-slate-400"><ListPlus size={19} /></span><div className="min-w-0"><h2 className="m-0 text-base font-bold text-slate-700">گروه‌های تنوع</h2><p className="mt-1 text-xs text-slate-400">پس از انتخاب محصول فعال می‌شود.</p></div></div>
           <Button type="button" variant="secondary" isDisabled className="shrink-0 gap-1.5 text-[11px]"><Plus size={14} />افزودن</Button>
         </div>
         <div className="grid gap-3">

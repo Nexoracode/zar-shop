@@ -56,8 +56,8 @@ export function ProductCard({ href, name, category, industry, weight, purity, ma
         </div>
         <div className="mt-auto grid min-h-[58px] content-end gap-1 pt-3">
           <div className="flex items-center justify-end gap-2">
-            {discountPercent !== undefined && discountPercent > 0 && <span className="rounded-full bg-[var(--danger)] px-2 py-0.5 text-[0.65rem] font-black text-[var(--danger-foreground)]">٪{discountPercent.toLocaleString("fa-IR")}</span>}
-            <strong className="text-sm font-black text-slate-900">{price}</strong>
+            {discountPercent !== undefined && discountPercent > 0 && <span className="rounded-full bg-[var(--danger)] px-2 py-0.5 text-[0.65rem] font-bold text-[var(--danger-foreground)]">٪{discountPercent.toLocaleString("fa-IR")}</span>}
+            <strong className="text-sm font-bold text-slate-900">{price}</strong>
           </div>
           {originalPrice ? <span className="pl-1 text-left text-[0.7rem] text-slate-400 line-through">{originalPrice}</span> : <span aria-hidden="true" className="invisible text-[0.7rem]">بدون تخفیف</span>}
         </div>

@@ -19,7 +19,7 @@ function SectionHeader({ icon, title, description, count }: { icon: ReactNode; t
     <div className="flex items-start gap-3 border-b border-slate-100 px-5 py-4 sm:px-6">
       <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-[var(--surface-tertiary)] text-[var(--accent)]">{icon}</span>
       <div className="min-w-0 flex-1">
-        <h2 className="m-0 text-sm font-black text-slate-800 sm:text-base">{title}</h2>
+        <h2 className="m-0 text-sm font-bold text-slate-800 sm:text-base">{title}</h2>
         {description && <p className="mb-0 mt-1 text-xs leading-5 text-slate-400">{description}</p>}
       </div>
       {typeof count === "number" && <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-500">{count.toLocaleString("fa-IR")}</span>}
@@ -81,7 +81,7 @@ export default async function AdminReviewPage({ params }: { params: Promise<{ id
         <main className="grid min-w-0 gap-5">
           <AdminPanel>
             <div className="flex flex-col gap-4 border-b border-slate-100 p-5 sm:flex-row sm:items-center sm:p-6">
-              <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-[var(--surface-tertiary)] text-lg font-black text-[var(--muted)]">{author.slice(0, 1)}</span>
+              <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-[var(--surface-tertiary)] text-lg font-bold text-[var(--muted)]">{author.slice(0, 1)}</span>
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2"><strong className="text-base text-slate-800">{author}</strong>{review.isVerifiedPurchase && <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-bold text-emerald-700"><BadgeCheck size={13} />خریدار تأییدشده</span>}</div>
                 <span className="mt-1 block text-xs text-slate-400">{formatDateTime(review.createdAt)}</span>
@@ -109,7 +109,7 @@ export default async function AdminReviewPage({ params }: { params: Promise<{ id
             {review.replies.length ? <div className="divide-y divide-slate-100">{review.replies.map((reply) => {
               const name = `${reply.user.firstName ?? ""} ${reply.user.lastName ?? ""}`.trim() || "کاربر";
               const isManagement = reply.user.role !== "CUSTOMER";
-              return <article key={reply.id} className="p-5 sm:p-6"><div className="flex items-start gap-3"><span className={`grid size-9 shrink-0 place-items-center rounded-xl text-xs font-black ${isManagement ? "bg-[var(--accent)]/10 text-[var(--accent)]" : "bg-slate-100 text-slate-500"}`}>{name.slice(0, 1)}</span><div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><strong className="text-xs text-slate-800">{name}</strong>{isManagement && <span className="rounded-full bg-[var(--accent)]/10 px-2 py-0.5 text-[10px] font-bold text-[var(--accent)]">مدیریت فروشگاه</span>}<AdminStatusBadge tone={statusTone[reply.status]}>{statusLabel[reply.status]}</AdminStatusBadge><span className="mr-auto text-[10px] text-slate-400">{formatDateTime(reply.createdAt)}</span></div><p className="mb-0 mt-3 whitespace-pre-wrap break-words text-sm leading-7 text-slate-600">{reply.body}</p></div></div></article>;
+              return <article key={reply.id} className="p-5 sm:p-6"><div className="flex items-start gap-3"><span className={`grid size-9 shrink-0 place-items-center rounded-xl text-xs font-bold ${isManagement ? "bg-[var(--accent)]/10 text-[var(--accent)]" : "bg-slate-100 text-slate-500"}`}>{name.slice(0, 1)}</span><div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><strong className="text-xs text-slate-800">{name}</strong>{isManagement && <span className="rounded-full bg-[var(--accent)]/10 px-2 py-0.5 text-[10px] font-bold text-[var(--accent)]">مدیریت فروشگاه</span>}<AdminStatusBadge tone={statusTone[reply.status]}>{statusLabel[reply.status]}</AdminStatusBadge><span className="mr-auto text-[10px] text-slate-400">{formatDateTime(reply.createdAt)}</span></div><p className="mb-0 mt-3 whitespace-pre-wrap break-words text-sm leading-7 text-slate-600">{reply.body}</p></div></div></article>;
             })}</div> : <div className="px-5 py-10 text-center"><MessageCircleReply size={24} className="mx-auto text-slate-300" /><p className="mb-0 mt-2 text-xs text-slate-400">هنوز پاسخی برای این دیدگاه ثبت نشده است.</p></div>}
           </AdminPanel>
 

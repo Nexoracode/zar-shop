@@ -43,7 +43,7 @@ export function StorefrontLicenses({ storeName, settings }: { storeName: string;
       <div className="grid size-14 place-items-center rounded-full border border-[#b9a886] bg-[#efe7d7] text-[#8a7448]"><DocumentIcon size={27} strokeWidth={1.5} /></div>
       <div>
         <p className="m-0 text-[10px] font-bold tracking-[0.18em] text-[#887d69]">جمهوری اسلامی ایران</p>
-        <h3 className="mb-2 mt-3 text-base font-black text-[#38342d] sm:text-lg">{selectedLicense.documentTitle}</h3>
+        <h3 className="mb-2 mt-3 text-base font-bold text-[#38342d] sm:text-lg">{selectedLicense.documentTitle}</h3>
         <p className="m-0 text-[10px] text-[#8c8374]">پیش‌نمایش محل درج تصویر مجوز رسمی فروشگاه</p>
       </div>
       <div className="grid w-full grid-cols-3 gap-4" aria-hidden="true"><span className="h-px bg-[#cfc5b4]" /><span className="h-px bg-[#cfc5b4]" /><span className="h-px bg-[#cfc5b4]" /></div>
@@ -54,7 +54,7 @@ export function StorefrontLicenses({ storeName, settings }: { storeName: string;
       <Tabs selectedKey={selectedKey} onSelectionChange={(key) => setSelectedKey(String(key))} className="w-full">
         <div className="grid items-center gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(360px,470px)] lg:gap-16">
           <div className="text-right">
-            <h2 className="mb-7 mt-0 text-2xl font-black text-[#242321] sm:text-3xl">مجوزهای {storeName}</h2>
+            <h2 className="mb-7 mt-0 text-2xl font-bold text-[#242321] sm:text-3xl">مجوزهای {storeName}</h2>
             <Tabs.List aria-label="مجوزهای فروشگاه" className="grid w-full grid-cols-[1fr_1.55fr_0.55fr] gap-2 bg-transparent p-0">
               {licenses.map((license) => <Tabs.Tab key={license.id} id={license.id} className="min-h-11 min-w-0 rounded-[6px] border border-[#ded9d1] bg-white px-2 text-xs font-bold text-[#55514b] outline-none transition-colors hover:bg-[#f8f5ef] data-[selected]:border-[#a9c9bd] data-[selected]:bg-[#edf5f1] data-[selected]:text-[#276655] sm:px-4 sm:text-sm">{license.title}</Tabs.Tab>)}
             </Tabs.List>

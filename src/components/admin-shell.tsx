@@ -52,7 +52,7 @@ export function AdminShell({ user, showGoldPrice, goldPrice, goldFetchedAt, noti
             <div className="flex items-center gap-1.5 sm:gap-2">
               <Popover>
                 <Popover.Trigger aria-label="نمایش پروفایل مدیر" className="relative grid h-10 w-10 cursor-pointer place-items-center rounded-full border border-[var(--border)] bg-[var(--surface-secondary)] p-0 outline-none transition hover:bg-[var(--surface-tertiary)] focus-visible:ring-2 focus-visible:ring-[var(--focus)]">
-                  <span className="grid h-8 w-8 place-items-center rounded-full bg-[var(--accent)] text-[11px] font-black text-[var(--accent-foreground)]">{fullName.slice(0, 1)}</span>
+                  <span className="grid h-8 w-8 place-items-center rounded-full bg-[var(--accent)] text-[11px] font-bold text-[var(--accent-foreground)]">{fullName.slice(0, 1)}</span>
                   <span className="absolute bottom-0 left-0 h-3 w-3 rounded-full border-2 border-[var(--surface)] bg-emerald-500" aria-label="آنلاین" />
                 </Popover.Trigger>
                 <Popover.Content dir="rtl" placement="bottom right" className="w-[min(90vw,300px)] rounded-[5px] border border-[var(--border)] bg-[var(--overlay)] p-0 text-right text-[var(--overlay-foreground)] shadow-xl">
@@ -72,13 +72,13 @@ export function AdminShell({ user, showGoldPrice, goldPrice, goldFetchedAt, noti
               <Popover>
                 <Popover.Trigger aria-label="نمایش اعلان‌ها" className="relative grid h-10 w-10 cursor-pointer place-items-center rounded-full border border-[var(--border)] bg-[var(--surface-secondary)] text-[var(--foreground)] outline-none transition hover:bg-[var(--surface-tertiary)] focus-visible:ring-2 focus-visible:ring-[var(--focus)]">
                   <Bell size={18} />
-                  {notificationCount > 0 && <span className="absolute -left-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full bg-[var(--danger)] px-1 text-[10px] font-black text-[var(--danger-foreground)]">{notificationCount.toLocaleString("fa-IR")}</span>}
+                  {notificationCount > 0 && <span className="absolute -left-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full bg-[var(--danger)] px-1 text-[10px] font-bold text-[var(--danger-foreground)]">{notificationCount.toLocaleString("fa-IR")}</span>}
                 </Popover.Trigger>
                 <Popover.Content dir="rtl" placement="bottom right" className="w-[min(90vw,320px)] rounded-[5px] border border-[var(--border)] bg-[var(--overlay)] p-0 text-right text-[var(--overlay-foreground)] shadow-xl">
                   <Popover.Dialog dir="rtl" className="p-0 text-right">
                     <div className="p-4">
                       <div className="mb-4 flex items-center justify-between gap-3 border-b border-[var(--border)] pb-3">
-                        <Popover.Heading className="m-0 text-sm font-black">اعلان‌ها</Popover.Heading>
+                        <Popover.Heading className="m-0 text-sm font-bold">اعلان‌ها</Popover.Heading>
                         <Chip size="sm" variant="soft"><Chip.Label>{notificationCount.toLocaleString("fa-IR")} مورد</Chip.Label></Chip>
                       </div>
                       {notificationCount > 0 ? (
@@ -102,10 +102,10 @@ export function AdminShell({ user, showGoldPrice, goldPrice, goldFetchedAt, noti
             </div>
 
             {showGoldPrice && <div className="flex min-w-0 items-center gap-3">
-              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[3px] bg-[var(--warning)]/15 text-[var(--warning)]"><span className="text-base font-black">۱۸</span></span>
+              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[3px] bg-[var(--warning)]/15 text-[var(--warning)]"><span className="text-base font-bold">۱۸</span></span>
               <div className="min-w-0">
                 <span className="block text-[10px] font-bold text-[var(--muted)]">نرخ هر گرم طلای ۱۸ عیار</span>
-                <strong className="block truncate text-sm font-black text-[var(--foreground)] sm:text-base">{goldPrice ? formatMoney(goldPrice) : "نرخ فعلاً در دسترس نیست"}</strong>
+                <strong className="block truncate text-sm font-bold text-[var(--foreground)] sm:text-base">{goldPrice ? formatMoney(goldPrice) : "نرخ فعلاً در دسترس نیست"}</strong>
                 {goldFetchedAt && <span className="hidden text-[9px] text-[var(--muted)] sm:block">آخرین بروزرسانی: {formatDateTime(goldFetchedAt)}</span>}
               </div>
             </div>}

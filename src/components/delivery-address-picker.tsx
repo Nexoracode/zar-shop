@@ -72,7 +72,7 @@ export function DeliveryAddressPicker({ initialAddresses, user, authenticated = 
       <Modal.Container placement="center" size="lg">
         <Modal.Dialog aria-label="انتخاب نشانی تحویل" dir="rtl" className="mx-3 max-h-[calc(100dvh-24px)] max-w-[560px] overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface)] shadow-2xl">
           <Modal.Header className="flex-row items-center border-b border-[var(--border)] px-5 py-3">
-            <Modal.Heading className="truncate text-base font-black text-[var(--foreground)]">
+            <Modal.Heading className="truncate text-base font-bold text-[var(--foreground)]">
               {editing ? addressFormStep === 3 ? "تأیید اطلاعات آدرس" : editing === "new" ? "افزودن آدرس جدید" : "ویرایش آدرس" : "انتخاب آدرس تحویل"}
             </Modal.Heading>
             <Modal.CloseTrigger aria-label="بستن" className="mr-auto grid size-8 place-items-center rounded-lg text-[var(--muted)] transition hover:bg-[var(--surface-secondary)] hover:text-[var(--foreground)]">
@@ -85,12 +85,12 @@ export function DeliveryAddressPicker({ initialAddresses, user, authenticated = 
               <AddressForm initial={editing === "new" ? null : editing} user={user} onSaved={replace} onCancel={() => { if (mode === "create") setOpen(false); else setEditing(null); }} onStepChange={setAddressFormStep} />
             ) : (
               <div className="grid gap-3">
-                <h3 className="mb-1 mt-0 text-sm font-black text-[var(--foreground)]">آدرس‌ها</h3>
+                <h3 className="mb-1 mt-0 text-sm font-bold text-[var(--foreground)]">آدرس‌ها</h3>
                 {addresses.map((address) => (
                   <article key={address.id} className={`overflow-hidden rounded-[14px] border bg-[var(--surface)] transition ${address.isDefault ? "border-[var(--brand-primary)]" : "border-[var(--border)] hover:border-[var(--brand-primary)]/50"}`}>
                     <Button type="button" variant="ghost" fullWidth onPress={() => void select(address)} isPending={busy === address.id} className="h-auto min-h-0 justify-start bg-transparent px-4 py-3.5 text-right hover:bg-transparent data-[hovered=true]:bg-transparent">
                       <span className="block min-w-0 flex-1">
-                        <span className="flex items-center gap-2 text-[var(--brand-primary)]"><MapPin size={19} className="shrink-0" /><strong className="truncate text-sm font-black">{address.title}</strong></span>
+                        <span className="flex items-center gap-2 text-[var(--brand-primary)]"><MapPin size={19} className="shrink-0" /><strong className="truncate text-sm font-bold">{address.title}</strong></span>
                         <span className="mt-2 block truncate text-xs leading-6 text-[var(--muted)]">{address.addressLine}، پلاک {address.plaque}{address.unit ? `، واحد ${address.unit}` : ""}</span>
                       </span>
                     </Button>
@@ -100,7 +100,7 @@ export function DeliveryAddressPicker({ initialAddresses, user, authenticated = 
                   <div className="grid min-h-56 place-items-center rounded-2xl border border-dashed border-[var(--border)] bg-[var(--surface)] px-6 text-center shadow-sm">
                     <div>
                       <span className="mx-auto grid size-14 place-items-center rounded-2xl bg-[var(--brand-primary)]/8 text-[var(--brand-primary)]"><MapPin size={26} /></span>
-                      <strong className="mt-4 block text-sm font-black text-[var(--foreground)]">هنوز آدرسی ثبت نکرده‌اید</strong>
+                      <strong className="mt-4 block text-sm font-bold text-[var(--foreground)]">هنوز آدرسی ثبت نکرده‌اید</strong>
                       <p className="mb-0 mt-1 text-xs leading-6 text-[var(--muted)]">آدرس جدید پس از ثبت به‌صورت خودکار انتخاب می‌شود.</p>
                     </div>
                   </div>

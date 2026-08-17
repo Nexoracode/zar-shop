@@ -48,7 +48,7 @@ export default async function AdminProducts({ searchParams }: Context) {
       <AdminPageHeader eyebrow="مدیریت کاتالوگ" title="محصولات" description="محصولات، موجودی، قیمت‌گذاری و وضعیت انتشار را از یک‌جا مدیریت کنید." action={<AdminPrimaryLink href="/admin/products/new"><Plus size={17} />محصول جدید</AdminPrimaryLink>} />
 
       <div className="mb-5 grid grid-cols-3 gap-3">
-        {[{ label: "همه محصولات", value: total }, { label: "منتشرشده", value: active }, { label: "پیش‌نویس", value: drafts }].map((item) => <Card key={item.label} variant="secondary" className="rounded-2xl border border-slate-200/80 bg-white p-3.5 sm:p-4"><strong className="block text-xl font-black text-[#172b4d]">{item.value.toLocaleString("fa-IR")}</strong><span className="text-[11px] text-slate-500 sm:text-xs">{item.label}</span></Card>)}
+        {[{ label: "همه محصولات", value: total }, { label: "منتشرشده", value: active }, { label: "پیش‌نویس", value: drafts }].map((item) => <Card key={item.label} variant="secondary" className="rounded-2xl border border-slate-200/80 bg-white p-3.5 sm:p-4"><strong className="block text-xl font-bold text-[#172b4d]">{item.value.toLocaleString("fa-IR")}</strong><span className="text-[11px] text-slate-500 sm:text-xs">{item.label}</span></Card>)}
       </div>
 
       <AdminPanel>

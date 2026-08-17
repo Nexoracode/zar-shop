@@ -3,9 +3,41 @@
 
 @font-face {
   font-family: "Vazir";
+  src: url("/fonts/Vazir-Thin.ttf") format("truetype");
+  font-style: normal;
+  font-weight: 100;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Vazir";
+  src: url("/fonts/Vazir-Light.ttf") format("truetype");
+  font-style: normal;
+  font-weight: 300;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Vazir";
   src: url("/fonts/Vazir.ttf") format("truetype");
   font-style: normal;
-  font-weight: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Vazir";
+  src: url("/fonts/Vazir-Medium.ttf") format("truetype");
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Vazir";
+  src: url("/fonts/Vazir-Bold.ttf") format("truetype");
+  font-style: normal;
+  font-weight: 700;
   font-display: swap;
 }
 
@@ -233,7 +265,7 @@ img {
 .rich-text-content h6 {
   margin: 1.2rem 0 0.55rem;
   color: #17233b;
-  font-weight: 900;
+  font-weight: 700;
   line-height: 1.45;
 }
 
@@ -320,7 +352,7 @@ img {
 .rich-text-content th {
   background: #f8f7f4;
   color: #17233b;
-  font-weight: 900;
+  font-weight: 700;
 }
 
 .rich-text-editor-content .ProseMirror {

@@ -78,7 +78,7 @@ export function AdminReviewManager(props: Props) {
       <div className="border-b border-slate-100 p-5">
         <div className="flex items-start gap-3">
           <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-[var(--accent)]/10 text-[var(--accent)]"><ShieldCheck size={19} /></span>
-          <div className="min-w-0 flex-1"><h2 className="m-0 text-sm font-black text-slate-800">مدیریت دیدگاه</h2><p className="mb-0 mt-1 text-xs leading-5 text-[var(--muted)]">وضعیت انتشار و پاسخ رسمی فروشگاه را مدیریت کنید.</p></div>
+          <div className="min-w-0 flex-1"><h2 className="m-0 text-sm font-bold text-slate-800">مدیریت دیدگاه</h2><p className="mb-0 mt-1 text-xs leading-5 text-[var(--muted)]">وضعیت انتشار و پاسخ رسمی فروشگاه را مدیریت کنید.</p></div>
         </div>
         <div className="mt-4 flex items-center justify-between rounded-xl bg-slate-50 px-3 py-2.5"><span className="text-xs text-slate-400">وضعیت فعلی</span><span className={`rounded-full px-2.5 py-1 text-[10px] font-bold ${statusClass[props.status]}`}>{statusLabel[props.status]}</span></div>
       </div>
