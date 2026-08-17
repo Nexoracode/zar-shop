@@ -43,6 +43,7 @@ export function StorefrontCartLink({ initialCount, className = "", iconSize = 21
   const [summary, setSummary] = useState<CartSummary | null>(null);
   const [loading, setLoading] = useState(false);
   const [pendingItemId, setPendingItemId] = useState<string | null>(null);
+  const [pendingItemAction, setPendingItemAction] = useState<"increase" | "decrease" | null>(null);
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const triggerAreaRef = useRef<HTMLDivElement | null>(null);
   const contentRef = useRef<HTMLDivElement | null>(null);
@@ -149,8 +150,9 @@ export function StorefrontCartLink({ initialCount, className = "", iconSize = 21
     setIsOpen(false);
   }
 
-  async function mutate(item: CartSummaryItem, nextQuantity?: number) {
+  async function mutate(item: CartSummaryItem, nextQuantity: number | undefined, action: "increase" | "decrease") {
     setPendingItemId(item.id);
+    setPendingItemAction(action);
     try {
       const response = await fetch(nextQuantity === undefined ? `/api/cart?itemId=${encodeURIComponent(item.id)}` : "/api/cart", {
         method: nextQuantity === undefined ? "DELETE" : "PATCH",
@@ -170,6 +172,7 @@ export function StorefrontCartLink({ initialCount, className = "", iconSize = 21
       toast.danger("سبد خرید به‌روزرسانی نشد", { description: error instanceof Error ? error.message : "خطای ناشناخته" });
     } finally {
       setPendingItemId(null);
+      setPendingItemAction(null);
     }
   }
 
@@ -219,9 +222,9 @@ export function StorefrontCartLink({ initialCount, className = "", iconSize = 21
                       <Link href={`/products/${item.slug}`} onClick={closePopover} className="line-clamp-2 text-xs font-bold leading-6 text-[var(--foreground)]">{item.name}</Link>
                       <div className="mt-3 flex items-end justify-between gap-3">
                         <div className="inline-flex h-10 shrink-0 items-center rounded-full border border-[var(--border)] bg-[var(--surface)]">
-                          <Button type="button" isIconOnly variant="ghost" size="sm" isDisabled={pending || item.quantity >= item.maxQuantity} aria-label={`افزایش تعداد ${item.name}`} onPress={() => void mutate(item, item.quantity + 1)} className="size-9 min-h-9 min-w-9 rounded-full text-[var(--brand-primary)]"><Plus size={16} /></Button>
-                          <span className="grid min-w-7 place-items-center text-xs font-bold text-[var(--brand-primary)]">{pending ? <Spinner size="sm" /> : item.quantity.toLocaleString("fa-IR")}</span>
-                          <Button type="button" isIconOnly variant="ghost" size="sm" isDisabled={pending} aria-label={item.quantity === 1 ? `حذف ${item.name}` : `کاهش تعداد ${item.name}`} onPress={() => void mutate(item, item.quantity === 1 ? undefined : item.quantity - 1)} className="size-9 min-h-9 min-w-9 rounded-full text-[var(--brand-primary)]">{item.quantity === 1 ? <Trash2 size={15} /> : <Minus size={16} />}</Button>
+                          <Button type="button" isIconOnly variant="ghost" size="sm" isPending={pending && pendingItemAction === "increase"} isDisabled={pending || item.quantity >= item.maxQuantity} aria-label={`افزایش تعداد ${item.name}`} onPress={() => void mutate(item, item.quantity + 1, "increase")} className="size-9 min-h-9 min-w-9 rounded-full text-[var(--brand-primary)]"><Plus size={16} /></Button>
+                          <span className="grid min-w-7 place-items-center text-xs font-bold text-[var(--brand-primary)]">{item.quantity.toLocaleString("fa-IR")}</span>
+                          <Button type="button" isIconOnly variant="ghost" size="sm" isPending={pending && pendingItemAction === "decrease"} isDisabled={pending} aria-label={item.quantity === 1 ? `حذف ${item.name}` : `کاهش تعداد ${item.name}`} onPress={() => void mutate(item, item.quantity === 1 ? undefined : item.quantity - 1, "decrease")} className="size-9 min-h-9 min-w-9 rounded-full text-[var(--brand-primary)]">{item.quantity === 1 ? <Trash2 size={15} /> : <Minus size={16} />}</Button>
                         </div>
                         <div className="text-left">
                           {item.originalUnitPrice !== null && item.originalUnitPrice > item.unitPrice && <div className="mb-1 flex items-center justify-end gap-2"><span className="rounded-full bg-[var(--danger)] px-2 py-0.5 text-[10px] font-bold text-white">{item.discountPercent?.toLocaleString("fa-IR")}٪</span><span className="text-[10px] text-[var(--muted)] line-through">{formatMoney(item.originalUnitPrice * item.quantity, summary.currency)}</span></div>}

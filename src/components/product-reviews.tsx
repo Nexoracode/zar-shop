@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Alert, Button, Chip, Input, Label, Modal, Spinner, TextArea, toast } from "@heroui/react";
+import { Alert, Button, Chip, Input, Label, Modal, TextArea, toast } from "@heroui/react";
 import { ListFilter, MessageCircleReply, MoreVertical, Star, ThumbsDown, ThumbsUp } from "lucide-react";
 import type { StorefrontReview, StorefrontReviewData } from "@/modules/reviews/service";
 
@@ -43,7 +43,7 @@ export function ProductReviews({ productId, initialData, isAuthenticated }: Prop
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [busyReviewId, setBusyReviewId] = useState<string | null>(null);
+  const [busyVote, setBusyVote] = useState<string | null>(null);
   const [reporting, setReporting] = useState<StorefrontReview | null>(null);
   const [reportReason, setReportReason] = useState<(typeof reportReasons)[number]["value"]>("SPAM");
   const [reportDetails, setReportDetails] = useState("");
@@ -85,7 +85,7 @@ export function ProductReviews({ productId, initialData, isAuthenticated }: Prop
   async function vote(review: StorefrontReview, requested: -1 | 1) {
     if (!isAuthenticated) { toast.danger("برای رأی دادن وارد حساب کاربری شوید."); return; }
     const value = review.votes.current === requested ? 0 : requested;
-    setBusyReviewId(review.id);
+    setBusyVote(`${review.id}:${requested}`);
     try {
       const response = await fetch(`/api/reviews/${review.id}/vote`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ value }) });
       const payload = await response.json().catch(() => null) as (StorefrontReview["votes"] & { message?: string }) | null;
@@ -94,7 +94,7 @@ export function ProductReviews({ productId, initialData, isAuthenticated }: Prop
       const votes: StorefrontReview["votes"] = { likes: payload.likes, dislikes: payload.dislikes, current: payload.current };
       setData((current) => ({ ...current, reviews: updateReview(current.reviews, review.id, (item) => ({ ...item, votes })) }));
     } catch (error) { toast.danger(error instanceof Error ? error.message : "ثبت رأی انجام نشد."); }
-    finally { setBusyReviewId(null); }
+    finally { setBusyVote(null); }
   }
 
   async function submitReport() {
@@ -140,7 +140,7 @@ export function ProductReviews({ productId, initialData, isAuthenticated }: Prop
         { id: "newest", label: "جدیدترین" },
         { id: "buyers", label: "دیدگاه خریداران" },
       ] as const).map((option) => <Button key={option.id} type="button" size="sm" variant="ghost" onPress={() => setSort(option.id)} className={`relative min-h-9 rounded-none px-2 text-xs after:absolute after:inset-x-2 after:bottom-0 after:h-px after:bg-[var(--brand-primary)] ${sort === option.id ? "font-bold text-[var(--brand-primary)] after:scale-x-100" : "text-slate-500 after:scale-x-0"}`}>{option.label}</Button>)}<span className="mr-auto text-[11px] text-slate-400">{visibleReviews.length.toLocaleString("fa-IR")} دیدگاه</span></div>}
-      {!data.reviews.length ? <div className="rounded-xl border border-dashed border-slate-200 px-5 py-12 text-center text-sm text-slate-500">هنوز دیدگاهی برای این محصول ثبت نشده است.</div> : !visibleReviews.length ? <p className="py-12 text-center text-xs text-slate-400">دیدگاهی مطابق این فیلتر وجود ندارد.</p> : <div className="divide-y divide-slate-200 border-b border-slate-200">{visibleReviews.map((review) => <ReviewCard key={review.id} review={review} authenticated={isAuthenticated} busyReviewId={busyReviewId} expandedReviewIds={expandedReviewIds} onToggleExpanded={toggleExpandedReview} onReply={openComposer} onVote={vote} onReport={setReporting} />)}</div>}
+      {!data.reviews.length ? <div className="rounded-xl border border-dashed border-slate-200 px-5 py-12 text-center text-sm text-slate-500">هنوز دیدگاهی برای این محصول ثبت نشده است.</div> : !visibleReviews.length ? <p className="py-12 text-center text-xs text-slate-400">دیدگاهی مطابق این فیلتر وجود ندارد.</p> : <div className="divide-y divide-slate-200 border-b border-slate-200">{visibleReviews.map((review) => <ReviewCard key={review.id} review={review} authenticated={isAuthenticated} busyVote={busyVote} expandedReviewIds={expandedReviewIds} onToggleExpanded={toggleExpandedReview} onReply={openComposer} onVote={vote} onReport={setReporting} />)}</div>}
     </div>
 
     <Modal.Backdrop isOpen={composeOpen} onOpenChange={setComposeOpen}>
@@ -165,10 +165,10 @@ export function ProductReviews({ productId, initialData, isAuthenticated }: Prop
   </div>;
 }
 
-function ReviewCard({ review, authenticated, busyReviewId, expandedReviewIds, onToggleExpanded, onReply, onVote, onReport }: {
+function ReviewCard({ review, authenticated, busyVote, expandedReviewIds, onToggleExpanded, onReply, onVote, onReport }: {
   review: StorefrontReview;
   authenticated: boolean;
-  busyReviewId: string | null;
+  busyVote: string | null;
   expandedReviewIds: Set<string>;
   onToggleExpanded: (id: string) => void;
   onReply: (review: StorefrontReview) => void;
@@ -176,7 +176,7 @@ function ReviewCard({ review, authenticated, busyReviewId, expandedReviewIds, on
   onReport: (review: StorefrontReview) => void;
 }) {
   const pending = review.status === "PENDING";
-  const busy = busyReviewId === review.id;
+  const busy = busyVote?.startsWith(`${review.id}:`) ?? false;
   const expanded = expandedReviewIds.has(review.id);
   const longBody = review.body.length > 280;
   const displayedBody = longBody && !expanded ? `${review.body.slice(0, 280).trimEnd()}…` : review.body;
@@ -185,8 +185,8 @@ function ReviewCard({ review, authenticated, busyReviewId, expandedReviewIds, on
     <div className="mt-3 text-sm leading-8 text-slate-700">{review.title && <strong className="mb-1 block font-bold text-slate-800">{review.title}</strong>}<p className="mb-0 whitespace-pre-wrap break-words">{displayedBody}</p>{longBody && <Button type="button" size="sm" variant="ghost" onPress={() => onToggleExpanded(review.id)} className="mt-1 min-h-8 px-0 text-xs font-bold text-[var(--brand-primary)]">{expanded ? "بستن" : "ادامه"} ‹</Button>}</div>
     {pending ? <p className="mb-0 mt-3 text-[11px] leading-6 text-slate-400">این دیدگاه فقط برای شما قابل مشاهده است؛ در حال بررسی مدیریت است و پس از تأیید برای همه نمایش داده می‌شود.</p> : <div className="mt-5 flex flex-wrap items-center gap-2">
       {!review.parentId && <Button type="button" variant="ghost" size="sm" onPress={() => onReply(review)} className="min-h-8 gap-1 text-[11px] text-slate-500"><MessageCircleReply size={14} />پاسخ</Button>}
-      <div className="mr-auto flex items-center gap-1"><Button type="button" variant="ghost" size="sm" isDisabled={busy || review.isOwn} onPress={() => onVote(review, 1)} className={`min-h-8 gap-1 text-[11px] ${review.votes.current === 1 ? "text-[var(--brand-primary)]" : "text-slate-500"}`}>{busy ? <Spinner size="sm" /> : <ThumbsUp size={16} />}{review.votes.likes.toLocaleString("fa-IR")}</Button><span className="text-slate-300">·</span><Button type="button" variant="ghost" size="sm" isDisabled={busy || review.isOwn} onPress={() => onVote(review, -1)} className={`min-h-8 gap-1 text-[11px] ${review.votes.current === -1 ? "text-rose-600" : "text-slate-500"}`}><ThumbsDown size={16} />{review.votes.dislikes.toLocaleString("fa-IR")}</Button></div>
+      <div className="mr-auto flex items-center gap-1"><Button type="button" variant="ghost" size="sm" isPending={busyVote === `${review.id}:1`} isDisabled={busy || review.isOwn} onPress={() => onVote(review, 1)} className={`min-h-8 gap-1 text-[11px] ${review.votes.current === 1 ? "text-[var(--brand-primary)]" : "text-slate-500"}`}><ThumbsUp size={16} />{review.votes.likes.toLocaleString("fa-IR")}</Button><span className="text-slate-300">·</span><Button type="button" variant="ghost" size="sm" isPending={busyVote === `${review.id}:-1`} isDisabled={busy || review.isOwn} onPress={() => onVote(review, -1)} className={`min-h-8 gap-1 text-[11px] ${review.votes.current === -1 ? "text-rose-600" : "text-slate-500"}`}><ThumbsDown size={16} />{review.votes.dislikes.toLocaleString("fa-IR")}</Button></div>
     </div>}
-    {review.replies.length > 0 && <div className="relative mr-4 mt-4 border-r-2 border-slate-200 pr-6">{review.replies.map((reply) => <div key={reply.id} className="relative before:absolute before:-right-6 before:top-8 before:w-5 before:border-t-2 before:border-slate-200"><ReviewCard review={reply} authenticated={authenticated} busyReviewId={busyReviewId} expandedReviewIds={expandedReviewIds} onToggleExpanded={onToggleExpanded} onReply={onReply} onVote={onVote} onReport={onReport} /></div>)}</div>}
+    {review.replies.length > 0 && <div className="relative mr-4 mt-4 border-r-2 border-slate-200 pr-6">{review.replies.map((reply) => <div key={reply.id} className="relative before:absolute before:-right-6 before:top-8 before:w-5 before:border-t-2 before:border-slate-200"><ReviewCard review={reply} authenticated={authenticated} busyVote={busyVote} expandedReviewIds={expandedReviewIds} onToggleExpanded={onToggleExpanded} onReply={onReply} onVote={onVote} onReport={onReport} /></div>)}</div>}
   </article>;
 }

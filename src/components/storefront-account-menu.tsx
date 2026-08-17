@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button, Popover } from "@heroui/react";
 import { ChevronDown, ChevronLeft, Clock3, Heart, LogOut, MapPin, MessageCircle, ShoppingBag, Sparkles, UserRound } from "lucide-react";
@@ -8,7 +9,20 @@ import { ChevronDown, ChevronLeft, Clock3, Heart, LogOut, MapPin, MessageCircle,
 type AccountUser = { firstName: string | null; lastName: string | null; email: string; phone: string | null; isGuest: boolean };
 
 export function StorefrontAccountMenu({ user, className = "" }: { user: AccountUser | null; className?: string }) {
+  const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
+
+  async function logout() {
+    setLoggingOut(true);
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+      router.push("/login");
+      router.refresh();
+    } finally {
+      setLoggingOut(false);
+    }
+  }
 
   if (!user || user.isGuest) {
     return <Link href={user ? "/cart" : "/login"} aria-label={user ? "ادامه خرید مهمان" : "ورود به حساب کاربری"} className={`grid size-10 place-items-center rounded-lg transition hover:bg-[var(--brand-primary)]/8 ${className}`}><UserRound size={21} strokeWidth={1.7} /></Link>;
@@ -36,7 +50,7 @@ export function StorefrontAccountMenu({ user, className = "" }: { user: AccountU
           <nav aria-label="دسترسی‌های حساب کاربری" className="px-4">
             {items.map(({ href, label, icon: Icon }) => <Link key={href} href={href} onClick={() => setIsOpen(false)} className="flex min-h-12 items-center gap-3 border-b border-[var(--border)] px-1 text-sm font-bold text-slate-700 transition last:border-b-0 hover:text-[var(--brand-primary)]"><Icon size={20} strokeWidth={1.7} className="text-slate-600" /><span className="flex-1">{label}</span></Link>)}
           </nav>
-          <form action="/api/auth/logout" method="post" className="border-t border-[var(--border)] p-2"><Button type="submit" variant="ghost" fullWidth className="min-h-11 justify-start gap-3 px-3 text-sm font-bold text-slate-700"><LogOut size={20} strokeWidth={1.7} />خروج از حساب کاربری</Button></form>
+          <div className="border-t border-[var(--border)] p-2"><Button type="button" variant="ghost" fullWidth isPending={loggingOut} onPress={() => void logout()} className="min-h-11 justify-start gap-3 px-3 text-sm font-bold text-slate-700"><LogOut size={20} strokeWidth={1.7} />خروج از حساب کاربری</Button></div>
         </Popover.Dialog>
       </Popover.Content>
     </Popover>

@@ -472,6 +472,41 @@ img {
   background: rgb(100 116 139 / 45%);
 }
 
+@keyframes zar-button-pending-spin {
+  to {
+    transform: rotate(1turn);
+  }
+}
+
+[data-slot="button"][data-pending]:not(:has([data-slot="spinner"]))::before {
+  width: 1em;
+  height: 1em;
+  flex: 0 0 auto;
+  border: 2px solid color-mix(in srgb, currentColor 28%, transparent);
+  border-top-color: currentColor;
+  border-radius: 999px;
+  animation: zar-button-pending-spin 700ms linear infinite;
+  content: "";
+}
+
+.button--icon-only[data-pending]:not(:has([data-slot="spinner"])) {
+  position: relative;
+}
+
+.button--icon-only[data-pending]:not(:has([data-slot="spinner"]))::before {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+}
+
+.button--icon-only[data-pending]:not(:has([data-slot="spinner"])) > * {
+  opacity: 0;
+}
+
+[data-slot="button"][data-pending] {
+  cursor: wait;
+}
+
 @media print {
   @page {
     size: A4 portrait;

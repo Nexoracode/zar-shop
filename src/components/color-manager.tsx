@@ -18,6 +18,7 @@ export function ColorManager({ initialColors }: { initialColors: ColorItem[] }) 
   const [editing, setEditing] = useState<ColorItem | null>(null);
   const [pendingDelete, setPendingDelete] = useState<ColorItem | null>(null);
   const [loading, setLoading] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [draftColor, setDraftColor] = useState(() => parseColor("#C9A56A"));
 
   function startEditing(color: ColorItem) {
@@ -46,12 +47,17 @@ export function ColorManager({ initialColors }: { initialColors: ColorItem[] }) 
   }
 
   async function remove(color: ColorItem) {
-    const response = await fetch(`/api/colors/${color.id}`, { method: "DELETE" });
-    if (!response.ok) return toast.danger("حذف رنگ انجام نشد");
-    setColors((current) => current.filter((item) => item.id !== color.id));
-    if (editing?.id === color.id) stopEditing();
-    setPendingDelete(null);
-    toast.success("رنگ حذف شد");
+    setDeleting(true);
+    try {
+      const response = await fetch(`/api/colors/${color.id}`, { method: "DELETE" });
+      if (!response.ok) return toast.danger("حذف رنگ انجام نشد");
+      setColors((current) => current.filter((item) => item.id !== color.id));
+      if (editing?.id === color.id) stopEditing();
+      setPendingDelete(null);
+      toast.success("رنگ حذف شد");
+    } finally {
+      setDeleting(false);
+    }
   }
 
   const cellClass = "border-t border-slate-100 px-3 py-2.5 text-xs";
@@ -81,7 +87,7 @@ export function ColorManager({ initialColors }: { initialColors: ColorItem[] }) 
       </> : <div className="px-4 py-8 text-center text-xs text-slate-500">هنوز رنگی ثبت نشده است.</div>}
     </Card>
     <Modal.Backdrop isOpen={Boolean(pendingDelete)} onOpenChange={(open) => { if (!open) setPendingDelete(null); }} variant="blur">
-      <Modal.Container placement="center"><Modal.Dialog aria-label="تأیید حذف رنگ" className="mx-4 max-w-md bg-white"><Modal.Header className="flex-row items-center justify-between border-b border-slate-100 p-5"><Modal.Heading className="text-base font-bold">حذف رنگ</Modal.Heading><Modal.CloseTrigger aria-label="بستن" className="grid h-9 w-9 place-items-center rounded-lg text-slate-500 hover:bg-slate-100"><X size={18} /></Modal.CloseTrigger></Modal.Header><Modal.Body className="p-5 text-sm leading-7 text-slate-600">رنگ «{pendingDelete?.name}» حذف شود؟</Modal.Body><Modal.Footer className="flex gap-2 border-t border-slate-100 p-4"><Button variant="danger" onPress={() => pendingDelete && void remove(pendingDelete)} className="font-bold">حذف رنگ</Button><Button variant="secondary" onPress={() => setPendingDelete(null)}>انصراف</Button></Modal.Footer></Modal.Dialog></Modal.Container>
+      <Modal.Container placement="center"><Modal.Dialog aria-label="تأیید حذف رنگ" className="mx-4 max-w-md bg-white"><Modal.Header className="flex-row items-center justify-between border-b border-slate-100 p-5"><Modal.Heading className="text-base font-bold">حذف رنگ</Modal.Heading><Modal.CloseTrigger aria-label="بستن" className="grid h-9 w-9 place-items-center rounded-lg text-slate-500 hover:bg-slate-100"><X size={18} /></Modal.CloseTrigger></Modal.Header><Modal.Body className="p-5 text-sm leading-7 text-slate-600">رنگ «{pendingDelete?.name}» حذف شود؟</Modal.Body><Modal.Footer className="flex gap-2 border-t border-slate-100 p-4"><Button variant="danger" isPending={deleting} onPress={() => pendingDelete && void remove(pendingDelete)} className="font-bold">حذف رنگ</Button><Button variant="secondary" isDisabled={deleting} onPress={() => setPendingDelete(null)}>انصراف</Button></Modal.Footer></Modal.Dialog></Modal.Container>
     </Modal.Backdrop>
   </div>;
 }

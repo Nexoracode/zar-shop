@@ -82,6 +82,7 @@ export function AdminPromotions({ initialItems = [], initialEditing = null, mode
   const [deleting, setDeleting] = useState<PromotionItem | null>(null);
   const [deleteError, setDeleteError] = useState("");
   const [deletingBusy, setDeletingBusy] = useState(false);
+  const [togglingId, setTogglingId] = useState<string | null>(null);
   const [formVersion, setFormVersion] = useState(0);
   const selected = typeInfo(selectedType);
 
@@ -157,6 +158,7 @@ export function AdminPromotions({ initialItems = [], initialEditing = null, mode
   }
 
   async function togglePromotion(item: PromotionItem) {
+    setTogglingId(item.id);
     try {
       const response = await fetch(`/api/admin/promotions/${item.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payloadFromItem(item, !item.isActive)) });
       const data = await response.json().catch(() => null);
@@ -165,6 +167,8 @@ export function AdminPromotions({ initialItems = [], initialEditing = null, mode
       toast.success(item.isActive ? "پروموشن غیرفعال شد." : "پروموشن فعال شد.");
     } catch (reason) {
       toast.danger("تغییر وضعیت انجام نشد", { description: reason instanceof Error ? reason.message : "خطای ناشناخته" });
+    } finally {
+      setTogglingId(null);
     }
   }
 
@@ -212,7 +216,7 @@ export function AdminPromotions({ initialItems = [], initialEditing = null, mode
       {mode === "list" ?
       <Card variant="secondary" className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-sm"><Card.Content className="p-4 sm:p-5">
         <div className="mb-4 flex items-center justify-between gap-3"><div><h2 className="m-0 text-base font-bold">پروموشن‌های ثبت‌شده</h2><p className="mb-0 mt-1 text-xs text-[var(--muted)]">وضعیت، مصرف و بازه هر کمپین را مدیریت کنید.</p></div><Chip size="sm" variant="soft"><Chip.Label>{items.length.toLocaleString("fa-IR")} مورد</Chip.Label></Chip></div>
-        {items.length ? <div className="grid gap-2">{items.map((item) => <PromotionRow key={item.id} item={item} onEdit={() => editPromotion(item)} onToggle={() => void togglePromotion(item)} onDelete={() => { setDeleteError(""); setDeleting(item); }} />)}</div> : <div className="rounded-xl border-2 border-dashed border-[var(--border)] bg-[var(--surface-secondary)] px-5 py-10 text-center"><strong className="block text-sm">هنوز پروموشنی ثبت نشده است</strong><span className="mt-1 block text-xs text-[var(--muted)]">برای ساخت اولین کمپین از دکمه «پروموشن جدید» استفاده کنید.</span></div>}
+        {items.length ? <div className="grid gap-2">{items.map((item) => <PromotionRow key={item.id} item={item} toggling={togglingId === item.id} onEdit={() => editPromotion(item)} onToggle={() => void togglePromotion(item)} onDelete={() => { setDeleteError(""); setDeleting(item); }} />)}</div> : <div className="rounded-xl border-2 border-dashed border-[var(--border)] bg-[var(--surface-secondary)] px-5 py-10 text-center"><strong className="block text-sm">هنوز پروموشنی ثبت نشده است</strong><span className="mt-1 block text-xs text-[var(--muted)]">برای ساخت اولین کمپین از دکمه «پروموشن جدید» استفاده کنید.</span></div>}
       </Card.Content></Card>
       : null}
 
@@ -229,7 +233,7 @@ function PromotionFields({ type, editing }: { type: PromotionType; editing: Prom
   return <div className="grid gap-4 rounded-xl border border-emerald-100 bg-emerald-50/35 p-4 md:grid-cols-2 xl:grid-cols-4"><HeroSelectField name="discountType" label="نوع تخفیف" defaultValue={editing?.discountType ?? "PERCENT"} includeEmptyOption={false} options={[{ value: "PERCENT", label: "درصدی" }, { value: "FIXED", label: "مبلغ ثابت" }]} /><label className={adminLabelClass}>مقدار تخفیف<HeroNumberInput name="discountValue" defaultValue={editing?.discountValue} required min="1" fullWidth variant="secondary" className={adminFieldClass} /></label><label className={adminLabelClass}>حداقل مبلغ سفارش<HeroNumberInput name="minOrderAmount" defaultValue={editing?.minOrderAmount} min="0" isPrice fullWidth variant="secondary" className={adminFieldClass} placeholder="بدون محدودیت" /></label><label className={adminLabelClass}>سقف تخفیف<HeroNumberInput name="maxDiscountAmount" defaultValue={editing?.maxDiscountAmount} min="0" isPrice fullWidth variant="secondary" className={adminFieldClass} placeholder="بدون سقف" /></label>{commonLimits}</div>;
 }
 
-function PromotionRow({ item, onEdit, onToggle, onDelete }: { item: PromotionItem; onEdit: () => void; onToggle: () => void; onDelete: () => void }) {
+function PromotionRow({ item, toggling, onEdit, onToggle, onDelete }: { item: PromotionItem; toggling: boolean; onEdit: () => void; onToggle: () => void; onDelete: () => void }) {
   const info = typeInfo(item.type);
-  return <article className="flex flex-col gap-3 rounded-xl border border-[var(--border)] bg-[var(--surface-secondary)] p-3 sm:flex-row sm:items-center"><span className={`grid h-9 w-9 shrink-0 place-items-center rounded-lg ${info.color}`}>{info.icon}</span><div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><strong className="text-xs">{item.title}</strong><Chip size="sm" variant="soft" className={item.isActive ? "text-emerald-700" : "text-slate-500"}><Chip.Label>{item.isActive ? "فعال" : "غیرفعال"}</Chip.Label></Chip>{item.code ? <code dir="ltr" className="rounded-md bg-white px-2 py-1 text-[10px] font-bold text-violet-700">{item.code}</code> : null}</div><div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-[10px] text-[var(--muted)]"><span>{info.title}</span><span>{item.startsAt} تا {item.endsAt}</span><span>{item.usageCount.toLocaleString("fa-IR")} استفاده</span>{item.rewardCount ? <span>{item.rewardCount.toLocaleString("fa-IR")} پاداش صادرشده</span> : null}</div></div><div className="flex shrink-0 items-center gap-1"><Button type="button" isIconOnly size="sm" variant="ghost" aria-label={item.isActive ? `غیرفعال‌کردن ${item.title}` : `فعال‌کردن ${item.title}`} onPress={onToggle} className={item.isActive ? "text-emerald-600" : "text-slate-400"}>{item.isActive ? <Eye size={15} /> : <EyeOff size={15} />}</Button><Button type="button" isIconOnly size="sm" variant="ghost" aria-label={`ویرایش ${item.title}`} onPress={onEdit}><Pencil size={14} /></Button><Button type="button" isIconOnly size="sm" variant="danger-soft" aria-label={`حذف ${item.title}`} onPress={onDelete}><Trash2 size={14} /></Button></div></article>;
+  return <article className="flex flex-col gap-3 rounded-xl border border-[var(--border)] bg-[var(--surface-secondary)] p-3 sm:flex-row sm:items-center"><span className={`grid h-9 w-9 shrink-0 place-items-center rounded-lg ${info.color}`}>{info.icon}</span><div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><strong className="text-xs">{item.title}</strong><Chip size="sm" variant="soft" className={item.isActive ? "text-emerald-700" : "text-slate-500"}><Chip.Label>{item.isActive ? "فعال" : "غیرفعال"}</Chip.Label></Chip>{item.code ? <code dir="ltr" className="rounded-md bg-white px-2 py-1 text-[10px] font-bold text-violet-700">{item.code}</code> : null}</div><div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-[10px] text-[var(--muted)]"><span>{info.title}</span><span>{item.startsAt} تا {item.endsAt}</span><span>{item.usageCount.toLocaleString("fa-IR")} استفاده</span>{item.rewardCount ? <span>{item.rewardCount.toLocaleString("fa-IR")} پاداش صادرشده</span> : null}</div></div><div className="flex shrink-0 items-center gap-1"><Button type="button" isIconOnly size="sm" variant="ghost" isPending={toggling} aria-label={item.isActive ? `غیرفعال‌کردن ${item.title}` : `فعال‌کردن ${item.title}`} onPress={onToggle} className={item.isActive ? "text-emerald-600" : "text-slate-400"}>{item.isActive ? <Eye size={15} /> : <EyeOff size={15} />}</Button><Button type="button" isIconOnly size="sm" variant="ghost" isDisabled={toggling} aria-label={`ویرایش ${item.title}`} onPress={onEdit}><Pencil size={14} /></Button><Button type="button" isIconOnly size="sm" variant="danger-soft" isDisabled={toggling} aria-label={`حذف ${item.title}`} onPress={onDelete}><Trash2 size={14} /></Button></div></article>;
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useSyncExternalStore, type ReactNode } from "react";
+import { useEffect, useState, useSyncExternalStore, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { Button, Chip, Popover } from "@heroui/react";
 import { Bell, LogOut, Moon, ShoppingBag, Sun, UserRound } from "lucide-react";
@@ -24,6 +24,7 @@ type Props = {
 
 export function AdminShell({ user, showGoldPrice, goldPrice, goldFetchedAt, notificationCount, sidebar, children }: Props) {
   const router = useRouter();
+  const [loggingOut, setLoggingOut] = useState(false);
   const theme = useSyncExternalStore(subscribeToAdminTheme, getResolvedAdminTheme, () => "light");
   const fullName = `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim() || "مدیر فروشگاه";
 
@@ -38,9 +39,14 @@ export function AdminShell({ user, showGoldPrice, goldPrice, goldFetchedAt, noti
   }, []);
 
   async function logout() {
-    await fetch("/api/auth/logout", { method: "POST" });
-    router.push("/login");
-    router.refresh();
+    setLoggingOut(true);
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+      router.push("/login");
+      router.refresh();
+    } finally {
+      setLoggingOut(false);
+    }
   }
 
   return (
@@ -63,7 +69,7 @@ export function AdminShell({ user, showGoldPrice, goldPrice, goldFetchedAt, noti
                         <div className="min-w-0"><strong className="block truncate text-sm">{fullName}</strong><span dir="ltr" className="mt-0.5 block truncate text-right text-[11px] text-[var(--muted)]">{user.email}</span></div>
                       </div>
                       <div className="flex items-center justify-between gap-3 py-4"><span className="text-[11px] text-[var(--muted)]">سطح دسترسی</span><Chip size="sm" variant="soft"><Chip.Label>{userRoleLabels[user.role]}</Chip.Label></Chip></div>
-                      <Button type="button" variant="danger-soft" fullWidth onPress={() => void logout()} className="justify-start gap-2 rounded-[5px]"><LogOut size={15} />خروج از حساب</Button>
+                      <Button type="button" variant="danger-soft" fullWidth isPending={loggingOut} onPress={() => void logout()} className="justify-start gap-2 rounded-[5px]"><LogOut size={15} />خروج از حساب</Button>
                     </div>
                   </Popover.Dialog>
                 </Popover.Content>

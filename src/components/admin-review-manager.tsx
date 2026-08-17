@@ -20,14 +20,15 @@ async function message(response: Response) {
 
 export function AdminReviewManager(props: Props) {
   const router = useRouter();
-  const [busy, setBusy] = useState(false);
+  const [busyAction, setBusyAction] = useState<string | null>(null);
+  const busy = busyAction !== null;
   const [note, setNote] = useState(props.mode === "review" ? props.initialNote ?? "" : "");
   const [reply, setReply] = useState("");
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [error, setError] = useState("");
 
-  async function request(url: string, init: RequestInit) {
-    setBusy(true);
+  async function request(url: string, init: RequestInit, action: string) {
+    setBusyAction(action);
     setError("");
     try {
       const response = await fetch(url, init);
@@ -42,7 +43,7 @@ export function AdminReviewManager(props: Props) {
       toast.danger(text);
       return false;
     } finally {
-      setBusy(false);
+      setBusyAction(null);
     }
   }
 
@@ -52,22 +53,22 @@ export function AdminReviewManager(props: Props) {
     }
     return (
       <div className="mt-4 flex flex-wrap gap-2 border-t border-slate-100 pt-4">
-        <Button type="button" size="sm" variant="secondary" isDisabled={busy} onPress={() => void request(`/api/admin/review-reports/${props.report.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status: "RESOLVED" }) })} className="min-h-9 gap-1.5 bg-emerald-50 text-xs font-bold text-emerald-700"><ShieldCheck size={14} />تأیید رسیدگی</Button>
-        <Button type="button" size="sm" variant="secondary" isDisabled={busy} onPress={() => void request(`/api/admin/review-reports/${props.report.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status: "DISMISSED" }) })} className="min-h-9 gap-1.5 text-xs font-bold"><X size={14} />رد گزارش</Button>
+        <Button type="button" size="sm" variant="secondary" isPending={busyAction === "resolve-report"} isDisabled={busy} onPress={() => void request(`/api/admin/review-reports/${props.report.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status: "RESOLVED" }) }, "resolve-report")} className="min-h-9 gap-1.5 bg-emerald-50 text-xs font-bold text-emerald-700"><ShieldCheck size={14} />تأیید رسیدگی</Button>
+        <Button type="button" size="sm" variant="secondary" isPending={busyAction === "dismiss-report"} isDisabled={busy} onPress={() => void request(`/api/admin/review-reports/${props.report.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status: "DISMISSED" }) }, "dismiss-report")} className="min-h-9 gap-1.5 text-xs font-bold"><X size={14} />رد گزارش</Button>
       </div>
     );
   }
 
   async function moderate(status: "APPROVED" | "REJECTED") {
-    await request(`/api/admin/reviews/${props.reviewId}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status, note }) });
+    await request(`/api/admin/reviews/${props.reviewId}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status, note }) }, `moderate-${status}`);
   }
 
   async function submitReply() {
-    if (await request(`/api/admin/reviews/${props.reviewId}/reply`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ body: reply }) })) setReply("");
+    if (await request(`/api/admin/reviews/${props.reviewId}/reply`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ body: reply }) }, "reply")) setReply("");
   }
 
   async function remove() {
-    if (await request(`/api/admin/reviews/${props.reviewId}`, { method: "DELETE" })) {
+    if (await request(`/api/admin/reviews/${props.reviewId}`, { method: "DELETE" }, "delete")) {
       setDeleteOpen(false);
       router.push("/admin/reviews");
     }
@@ -92,16 +93,16 @@ export function AdminReviewManager(props: Props) {
         </div>
 
         <div className="mt-4 grid grid-cols-2 gap-2">
-          <Button type="button" variant="primary" isPending={busy} isDisabled={busy || props.status === "APPROVED"} onPress={() => void moderate("APPROVED")} className="min-h-10 gap-1.5 bg-emerald-600 text-xs font-bold text-white"><Check size={15} />تأیید انتشار</Button>
-          <Button type="button" variant="danger-soft" isDisabled={busy || props.status === "REJECTED"} onPress={() => void moderate("REJECTED")} className="min-h-10 gap-1.5 text-xs font-bold"><X size={15} />رد دیدگاه</Button>
+          <Button type="button" variant="primary" isPending={busyAction === "moderate-APPROVED"} isDisabled={busy || props.status === "APPROVED"} onPress={() => void moderate("APPROVED")} className="min-h-10 gap-1.5 bg-emerald-600 text-xs font-bold text-white"><Check size={15} />تأیید انتشار</Button>
+          <Button type="button" variant="danger-soft" isPending={busyAction === "moderate-REJECTED"} isDisabled={busy || props.status === "REJECTED"} onPress={() => void moderate("REJECTED")} className="min-h-10 gap-1.5 text-xs font-bold"><X size={15} />رد دیدگاه</Button>
         </div>
 
-        {props.canReply && <div className="mt-6 border-t border-slate-100 pt-5"><div className="mb-3 flex items-center gap-2"><MessageCircleReply size={16} className="text-[var(--accent)]" /><strong className="text-xs text-slate-700">پاسخ رسمی فروشگاه</strong></div><div className="grid gap-1.5"><Label className="sr-only">متن پاسخ رسمی</Label><TextArea value={reply} onChange={(event) => setReply(event.target.value)} minLength={3} maxLength={3000} rows={6} variant="secondary" placeholder="پاسخ مدیریت به دیدگاه کاربر" className="min-h-36" /></div><Button type="button" variant="primary" isPending={busy} isDisabled={busy || reply.trim().length < 3} onPress={() => void submitReply()} className="mt-3 min-h-10 w-full gap-2 text-xs font-bold"><Save size={15} />ثبت پاسخ مدیریت</Button></div>}
+        {props.canReply && <div className="mt-6 border-t border-slate-100 pt-5"><div className="mb-3 flex items-center gap-2"><MessageCircleReply size={16} className="text-[var(--accent)]" /><strong className="text-xs text-slate-700">پاسخ رسمی فروشگاه</strong></div><div className="grid gap-1.5"><Label className="sr-only">متن پاسخ رسمی</Label><TextArea value={reply} onChange={(event) => setReply(event.target.value)} minLength={3} maxLength={3000} rows={6} variant="secondary" placeholder="پاسخ مدیریت به دیدگاه کاربر" className="min-h-36" /></div><Button type="button" variant="primary" isPending={busyAction === "reply"} isDisabled={busy || reply.trim().length < 3} onPress={() => void submitReply()} className="mt-3 min-h-10 w-full gap-2 text-xs font-bold"><Save size={15} />ثبت پاسخ مدیریت</Button></div>}
 
         <div className="mt-6 border-t border-rose-100 pt-5"><p className="mb-3 text-[11px] leading-5 text-slate-400">حذف دیدگاه، پاسخ‌ها، رأی‌ها و گزارش‌های مرتبط قابل بازگشت نیست.</p><Button type="button" variant="danger-soft" isDisabled={busy} onPress={() => setDeleteOpen(true)} className="min-h-10 w-full gap-2 text-xs font-bold"><Trash2 size={15} />حذف کامل دیدگاه</Button></div>
       </div>
 
-      <DeleteConfirmDialog open={deleteOpen} title="حذف دیدگاه" itemName={props.title} description="دیدگاه، تمام پاسخ‌ها، رأی‌ها و گزارش‌های آن برای همیشه حذف می‌شوند." error={error} loading={busy} onClose={() => setDeleteOpen(false)} onConfirm={() => void remove()} />
+      <DeleteConfirmDialog open={deleteOpen} title="حذف دیدگاه" itemName={props.title} description="دیدگاه، تمام پاسخ‌ها، رأی‌ها و گزارش‌های آن برای همیشه حذف می‌شوند." error={error} loading={busyAction === "delete"} onClose={() => setDeleteOpen(false)} onConfirm={() => void remove()} />
     </Card>
   );
 }
