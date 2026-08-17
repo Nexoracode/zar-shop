@@ -31,6 +31,11 @@ test("accepts Zarinpal already-verified code as idempotent success", async () =>
   } finally { globalThis.fetch = originalFetch; }
 });
 
+test("reuses the existing sandbox payment authority without creating a new request", () => {
+  const provider = new ZarinpalPaymentProvider({ merchantId: "00000000-0000-4000-8000-000000000000", sandbox: true });
+  assert.equal(provider.redirectUrl("A000000000000000000000000000000001", "https://shop.test/api/payment/callback"), "https://sandbox.zarinpal.com/pg/StartPay/A000000000000000000000000000000001");
+});
+
 test("rejects unsuccessful Zarinpal responses", async () => {
   const originalFetch = globalThis.fetch;
   globalThis.fetch = (async () => new Response(JSON.stringify({ data: { code: -9 }, errors: { code: -9, message: "validation error" } }), { status: 200 })) as typeof fetch;

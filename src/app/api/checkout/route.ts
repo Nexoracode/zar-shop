@@ -179,6 +179,7 @@ export async function POST(request: Request) {
         const paymentStartedAt = new Date();
         await transaction.payment.update({ where: { id: payment.id }, data: { authority: paymentRequest.authority, status: "PENDING" } });
         if (orderSettings.orderExpirationStart === "PAYMENT_STARTED_AT") await transaction.order.update({ where: { id: order.id }, data: { expiresAt: orderExpiresAt(orderSettings, paymentStartedAt) } });
+        await transaction.cartItem.deleteMany({ where: { cartId: cart.id } });
       });
       try { await sendAutomatedSms("orderCreated", address.phone, { orderNumber: order.orderNumber }); } catch (smsError) { console.error("[sms] Order-created notification failed.", smsError); }
       return NextResponse.json({ redirectUrl: paymentRequest.redirectUrl });

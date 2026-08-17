@@ -7,6 +7,7 @@ export type PaymentResult = { authority: string; redirectUrl: string };
 
 export interface PaymentProvider {
   request(input: PaymentRequest): Promise<PaymentResult>;
+  redirectUrl(authority: string, callbackUrl: string): string;
   verify(authority: string, amount: number): Promise<{ referenceId: string }>;
 }
 
@@ -80,7 +81,12 @@ export class ZarinpalPaymentProvider implements PaymentProvider {
       const code = !Array.isArray(result.errors) ? result.errors?.code : undefined;
       throw new PaymentProviderError(`Zarinpal request rejected${code === undefined ? "" : ` (${code})`}`, "request", code);
     }
-    return { authority: result.data.authority, redirectUrl: `${this.paymentBase}/${encodeURIComponent(result.data.authority)}` };
+    return { authority: result.data.authority, redirectUrl: this.redirectUrl(result.data.authority, input.callbackUrl) };
+  }
+
+  redirectUrl(authority: string, callbackUrl: string) {
+    void callbackUrl;
+    return `${this.paymentBase}/${encodeURIComponent(authority)}`;
   }
 
   async verify(authority: string, amount: number): Promise<{ referenceId: string }> {
@@ -99,6 +105,7 @@ class MockPaymentProvider implements PaymentProvider {
     const authority = randomUUID();
     return { authority, redirectUrl: `${input.callbackUrl}?authority=${authority}&status=OK&mock=1` };
   }
+  redirectUrl(authority: string, callbackUrl: string) { return `${callbackUrl}?authority=${encodeURIComponent(authority)}&status=OK&mock=1`; }
   async verify() { return { referenceId: `MOCK-${Date.now()}` }; }
 }
 

@@ -98,7 +98,6 @@ export async function finalizeVerifiedPayment(
     userId: payment.order.userId,
     merchandiseAmount: Number(payment.order.subtotal) - Number(payment.order.productDiscount),
   });
-  await transaction.cartItem.deleteMany({ where: { cart: { userId: payment.order.userId } } });
   if (inventoryWarning) {
     await transaction.auditLog.create({
       data: {

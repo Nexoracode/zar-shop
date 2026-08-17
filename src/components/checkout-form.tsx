@@ -8,6 +8,7 @@ import type { CommerceSettings } from "@/modules/settings/commerce-settings";
 import type { StorefrontPaymentMethod } from "@/modules/payments/storefront-methods";
 import { ADDRESS_UPDATED_EVENT, DeliveryAddressPicker } from "@/components/delivery-address-picker";
 import type { StorefrontAddress } from "@/components/address-form";
+import { notifyCartUpdated } from "@/components/storefront-cart-link";
 
 type Quote = { subtotal: number; productDiscount: number; merchandiseAmount: number; promotionDiscount: number; shipping: number; shippingDiscount: number; total: number; applications: Array<{ title: string; code: string | null; discountAmount: number; shippingDiscount: number }> };
 
@@ -61,6 +62,7 @@ export function CheckoutForm({ settings, paymentMethods, currency, itemCount, in
     const response = await fetch("/api/checkout", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
     const data = await response.json().catch(() => null);
     if (!response.ok) { setError(data?.message ?? "ثبت سفارش ناموفق بود."); setLoading(false); return; }
+    notifyCartUpdated(0);
     toast.success("سفارش با موفقیت ثبت شد", { description: "در حال انتقال امن به درگاه پرداخت هستید.", timeout: 4000 });
     window.setTimeout(() => window.location.assign(data.redirectUrl), 400);
   }
