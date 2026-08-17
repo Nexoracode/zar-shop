@@ -7,14 +7,13 @@ import { getGoldPriceForDisplay } from "@/modules/gold/gold-price.service";
 import { calculateProductPrice } from "@/modules/products/pricing";
 import { calculateDiscountedPrice } from "@/modules/products/discount";
 import { getSelectedOptionPrice, getSelectedOptionWeight } from "@/modules/products/options";
-import { baseShippingFee, getCommerceSettings } from "@/modules/settings/commerce-settings";
+import { baseShippingFee, defaultDeliveryMethod, getCommerceSettings } from "@/modules/settings/commerce-settings";
 import { getGeneralStoreSettings, isStorefrontAvailable } from "@/modules/settings/general-settings";
 import { PromotionValidationError, resolveCheckoutPromotions } from "@/modules/promotions/service";
 
 const schema = z.object({
   couponCode: z.string().trim().max(64).default(""),
   addressId: z.string().cuid(),
-  deliveryMethod: z.enum(["INSURED_SHIPPING", "STORE_PICKUP"]),
 });
 
 export async function POST(request: Request) {
@@ -48,7 +47,7 @@ export async function POST(request: Request) {
     const subtotal = prices.reduce((sum, item) => sum + item.original * item.quantity, 0);
     const merchandiseAmount = prices.reduce((sum, item) => sum + item.final * item.quantity, 0);
     const productDiscount = subtotal - merchandiseAmount;
-    const shippingFee = baseShippingFee(commerceSettings, merchandiseAmount, input.deliveryMethod);
+    const shippingFee = baseShippingFee(commerceSettings, merchandiseAmount, defaultDeliveryMethod(commerceSettings));
     const promotions = await resolveCheckoutPromotions(db, { userId: user.id, couponCode: input.couponCode, merchandiseAmount, shippingFee, city: address.cityRef?.name ?? address.city });
     const shipping = Math.max(0, shippingFee - promotions.shippingDiscount);
     return NextResponse.json({

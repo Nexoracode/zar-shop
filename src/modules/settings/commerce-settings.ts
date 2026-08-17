@@ -44,6 +44,10 @@ export async function getCommerceSettings(): Promise<CommerceSettings> {
   return commerceSettingsSchema.parse(settings);
 }
 
+export function defaultDeliveryMethod(settings: CommerceSettings): "INSURED_SHIPPING" | "STORE_PICKUP" {
+  return settings.insuredShippingEnabled ? "INSURED_SHIPPING" : "STORE_PICKUP";
+}
+
 export function baseShippingFee(settings: CommerceSettings, merchandiseAmount: number, deliveryMethod: "INSURED_SHIPPING" | "STORE_PICKUP") {
   if (deliveryMethod === "STORE_PICKUP") return 0;
   if (settings.freeShippingThreshold !== null && merchandiseAmount >= settings.freeShippingThreshold) return 0;
