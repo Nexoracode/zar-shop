@@ -13,6 +13,8 @@ import { calculateDiscountedPrice } from "@/modules/products/discount";
 import { getGeneralStoreSettings } from "@/modules/settings/general-settings";
 import { getCommerceSettings } from "@/modules/settings/commerce-settings";
 import { getOrderSettings } from "@/modules/settings/order-settings";
+import { expirePendingOrders } from "@/modules/orders/expiration";
+import { PendingOrderCartNotice } from "@/components/pending-order-cart-notice";
 
 type CartItemRow = Prisma.CartItemGetPayload<{ include: { product: { include: { options: true; media: { include: { media: true } } } } } }>;
 
@@ -20,12 +22,14 @@ export const dynamic = "force-dynamic";
 
 export default async function CartPage() {
   const user = await getCurrentUser();
-  const [cart, gold, settings, commerceSettings, orderSettings] = await Promise.all([
+  if (user) await expirePendingOrders();
+  const [cart, gold, settings, commerceSettings, orderSettings, pendingOrder] = await Promise.all([
     user ? db.cart.findUnique({ where: { userId: user.id }, include: { items: { orderBy: { id: "asc" }, include: { product: { include: { options: true, media: { where: { isCover: true }, include: { media: true }, take: 1 } } } } } } }) : Promise.resolve(null),
     getGoldPriceForDisplay(),
     getGeneralStoreSettings(),
     getCommerceSettings(),
     getOrderSettings(),
+    user ? db.order.findFirst({ where: { userId: user.id, status: "PENDING_PAYMENT", expirationHandledAt: null, payments: { none: { status: { in: ["SUCCESS", "REFUNDED"] } } } }, select: { id: true, orderNumber: true, total: true, expiresAt: true }, orderBy: { createdAt: "desc" } }) : Promise.resolve(null),
   ]);
   const items = ((cart?.items ?? []) as CartItemRow[]).filter((item) => item.product.storeIndustry === settings.industry);
   const rate = gold?.pricePerGram18 ?? null;
@@ -56,6 +60,8 @@ export default async function CartPage() {
           </div>
           {hasGoldItems && <ChipRoot variant="soft" className="bg-[var(--surface-secondary)] text-[var(--brand-accent)]"><ChipLabel>نرخ مبنا: {rate === null ? "موقتاً در دسترس نیست" : formatMoney(rate.toString(), settings.currency)}</ChipLabel></ChipRoot>}
         </div>
+
+        {pendingOrder ? <PendingOrderCartNotice orderId={pendingOrder.id} orderNumber={pendingOrder.orderNumber} total={formatMoney(pendingOrder.total.toString(), settings.currency)} expiresAt={pendingOrder.expiresAt?.toISOString() ?? null} warningMinutes={orderSettings.orderWarningMinutes} expirationAction={orderSettings.orderExpirationAction} /> : null}
 
         {!items.length ? (
           <Card variant="secondary" className="grid min-h-[360px] place-items-center rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-8 text-center shadow-sm">

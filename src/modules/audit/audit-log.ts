@@ -43,6 +43,7 @@ const actionLabels: Record<string, string> = {
   MANUAL_SMS_DELETE: "حذف سابقه پیامک",
   ORDER_AUTO_EXPIRED: "انقضای خودکار سفارش",
   ORDER_EXPIRATION_NOTIFICATION: "هشدار انقضای سفارش",
+  ORDER_STATUS_UPDATE: "تغییر وضعیت سفارش",
   PAID_ORDER_INVENTORY_SHORTAGE: "کسری موجودی سفارش پرداخت‌شده",
   ADMIN_LOGIN: "ورود به پنل مدیریت",
   ADMIN_LOGOUT: "خروج از پنل مدیریت",

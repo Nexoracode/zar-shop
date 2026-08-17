@@ -2,16 +2,18 @@ import type { Prisma } from "@generated/prisma/client";
 import { OrderStatus } from "@generated/prisma/enums";
 import Link from "next/link";
 import { Eye } from "lucide-react";
-import { AdminEmptyState, AdminPageHeader, AdminPanel, AdminStatusBadge } from "@/components/admin-ui";
+import { AdminEmptyState, AdminPageHeader, AdminPanel } from "@/components/admin-ui";
 import { db } from "@/lib/db";
 import { formatDate, formatMoney } from "@/lib/format";
-import { orderStatusLabels, orderStatusTones } from "@/modules/admin/labels";
+import { orderStatusLabels } from "@/modules/admin/labels";
 import { AdminListFilters } from "@/components/admin-list-filters";
 import { AdminPagination } from "@/components/admin-pagination";
 import { resolveAdminPagination } from "@/lib/admin-pagination";
 import { parseAdminPaginationRequest } from "@/lib/admin-pagination-server";
 import { requirePermission } from "@/modules/auth/session";
 import { AdminBulkCheckbox, AdminBulkEditor } from "@/components/admin-bulk-editor";
+import { AdminOrderStatusSelect } from "@/components/admin-order-status-select";
+import { getOrderSettings } from "@/modules/settings/order-settings";
 import {
   Table,
   TableBody,
@@ -49,7 +51,7 @@ export default async function OrdersPage({ searchParams }: { searchParams: Searc
       ],
     } : {}),
   };
-  const filteredTotal = await db.order.count({ where });
+  const [filteredTotal, orderSettings] = await Promise.all([db.order.count({ where }), getOrderSettings()]);
   const pagination = resolveAdminPagination(filteredTotal, requestedPage, pageSize);
   const orders = await db.order.findMany({
     where,
@@ -80,7 +82,7 @@ export default async function OrdersPage({ searchParams }: { searchParams: Searc
                   <article key={order.id} className="space-y-4 p-4">
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0"><span className="block text-[11px] text-slate-400">شماره سفارش</span><strong className="block truncate text-sm text-[#17233b]" dir="ltr">{order.orderNumber}</strong></div>
-                      <AdminStatusBadge tone={orderStatusTones[order.status]}>{orderStatusLabels[order.status]}</AdminStatusBadge>
+                      <AdminOrderStatusSelect key={`${order.id}:${order.status}:${order.expiresAt?.toISOString() ?? "none"}`} orderId={order.id} initialStatus={order.status} expiresAt={order.expiresAt?.toISOString() ?? null} warningMinutes={orderSettings.orderWarningMinutes} />
                     </div>
                     <div><strong className="block text-sm text-slate-700">{customerName}</strong><span className="text-xs text-slate-400">{order.user.email}</span></div>
                     <dl className="grid grid-cols-3 gap-2 rounded-xl bg-slate-50 p-3 text-xs">
@@ -104,7 +106,7 @@ export default async function OrdersPage({ searchParams }: { searchParams: Searc
                       <TableCell className={`${cell} w-64 max-w-64`}><div className="min-w-0"><TruncatedTextTooltip text={customerName} className="max-w-52 font-bold text-slate-700" /><TruncatedTextTooltip text={order.user.email} dir="ltr" className="max-w-52 text-right text-xs text-slate-400" /></div></TableCell>
                       <TableCell className={cell}>{order._count.items.toLocaleString("fa-IR")}</TableCell>
                       <TableCell className={cell}><strong className="text-slate-700">{formatMoney(order.total.toString())}</strong></TableCell>
-                      <TableCell className={cell}><AdminStatusBadge tone={orderStatusTones[order.status]}>{orderStatusLabels[order.status]}</AdminStatusBadge></TableCell>
+                      <TableCell className={cell}><AdminOrderStatusSelect key={`${order.id}:${order.status}:${order.expiresAt?.toISOString() ?? "none"}`} orderId={order.id} initialStatus={order.status} expiresAt={order.expiresAt?.toISOString() ?? null} warningMinutes={orderSettings.orderWarningMinutes} /></TableCell>
                       <TableCell className={cell}>{formatDate(order.createdAt)}</TableCell>
                       <TableCell className={cell}><Link href={`/admin/orders/${order.id}`} aria-label={`مشاهده جزئیات سفارش ${order.orderNumber}`} title="مشاهده جزئیات" className="inline-flex h-9 min-h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-[#172b4d] transition hover:border-[#b5904c] hover:text-[#846325]"><Eye size={15} /></Link></TableCell>
                     </TableRow>
