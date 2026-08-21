@@ -99,7 +99,13 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
     : [];
   const purchaseSummary = <div className="grid gap-3">
     <span className="text-xs text-slate-500">{product.storeIndustry === "GOLD" && !product.fixedPrice && rate !== null ? `محاسبه‌شده با نرخ ${formatMoney(rate.toString(), settings.currency)}` : "قیمت فروش محصول"}</span>
-    {product.storeIndustry === "GOLD" && rate !== null && <PriceTooltip />}
+    {product.storeIndustry === "GOLD" && rate !== null && !product.fixedPrice && <PriceTooltip
+      purity={product.purity}
+      profitPercent={Number(product.profitPercent)}
+      taxPercent={Number(product.taxPercent)}
+      makingFeeType={product.makingFeeType}
+      makingFeeValue={Number(product.makingFeeValue)}
+    />}
   </div>;
   const purchaseMeta = <span className={`text-xs font-bold ${product.stock > 0 ? "text-[var(--success)]" : "text-[var(--danger)]"}`}>{product.stock > 0 ? catalogSettings.showProductStock ? `${product.stock.toLocaleString("fa-IR")} عدد موجود در انبار` : "موجود در انبار" : "در حال حاضر ناموجود"}</span>;
   const cartProps = {
