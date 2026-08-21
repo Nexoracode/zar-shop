@@ -157,6 +157,10 @@ export function MediaPickerDialog({ open, scope, multiple = false, allowedTypes,
                     <label className="grid min-w-0 cursor-pointer gap-1 rounded-xl border border-slate-200 bg-white px-3 py-2 transition hover:border-[#c8a867]">
                       <span className="text-xs font-bold text-slate-700">بارگذاری فایل جدید</span>
                       <span className="truncate text-[11px] text-slate-400">{uploadFileName || (allowedTypeKey.includes("DOCUMENT") ? "انتخاب تصویر یا فایل PDF راهنمای سایز" : scope === "CATEGORY" ? "انتخاب یک یا چند تصویر JPG، PNG یا WebP" : scope === "HOMEPAGE" ? "انتخاب تصویر JPG، PNG، WebP یا GIF برای صفحه اصلی" : "انتخاب یک یا چند تصویر یا ویدیوی محصول")}</span>
+                      {/* Native input intentionally: visually hidden (sr-only) and triggered by this
+                          styled label so the multi-file name/count row above can render as the
+                          visible control; HeroUI's Input type="file" always renders its own native
+                          picker chrome and cannot be hidden behind a custom trigger this way. */}
                       <input name="file" type="file" multiple required accept={acceptedFiles} className="sr-only" onChange={(event) => { const files = event.target.files; setUploadFileName(files?.length ? (files.length === 1 ? files[0].name : `${files.length.toLocaleString("fa-IR")} فایل انتخاب شد`) : ""); }} />
                     </label>
                     <Button type="submit" isPending={uploading} variant="primary" className="min-h-10 gap-2 bg-[#b5904c] px-4 text-xs font-bold text-white">{({ isPending }) => <>{isPending ? <Spinner color="current" size="sm" /> : <Upload size={15} />}{isPending ? "در حال بارگذاری" : "بارگذاری"}</>}</Button>
