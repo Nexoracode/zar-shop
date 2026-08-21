@@ -9,15 +9,18 @@ import { getGeneralStoreSettings, isStorefrontAvailable } from "@/modules/settin
 import { getOrderSettings } from "@/modules/settings/order-settings";
 import { getCartProductCount, getCartSummary } from "@/modules/cart/cart-summary";
 
+// The upper bound here only needs to reject pathological input cheaply; the real ceiling
+// is the store's configurable orderSettings.maxOrderItemQuantity (1-100), checked below
+// once it is loaded.
 const inputSchema = z.object({
   productId: z.string().cuid(),
-  quantity: z.coerce.number().int().min(1).max(10).default(1),
+  quantity: z.coerce.number().int().min(1).max(100).default(1),
   selectedOptions: z.record(z.string(), z.string().trim().min(1).max(80)).refine((value) => Object.keys(value).length <= 10).default({}),
 });
 
 const updateSchema = z.object({
   cartItemId: z.string().cuid(),
-  quantity: z.coerce.number().int().min(1),
+  quantity: z.coerce.number().int().min(1).max(100),
 });
 
 export async function GET() {
