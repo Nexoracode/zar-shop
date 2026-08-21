@@ -140,7 +140,7 @@ export function MediaPickerDialog({ open, scope, multiple = false, allowedTypes,
     <>
     <Modal.Backdrop isOpen={open} onOpenChange={(isOpen) => { if (!isOpen && !pendingDelete) onClose(); }} variant="blur">
       <Modal.Container size="lg" placement="center" scroll="inside">
-          <Modal.Dialog aria-label={`انتخاب از گالری ${scopeLabel}`} className="mx-2 max-h-[calc(100dvh-20px)] w-[calc(100%-16px)] max-w-6xl overflow-hidden bg-slate-50 sm:mx-5 sm:max-h-[calc(100dvh-40px)] sm:w-[calc(100%-40px)]">
+          <Modal.Dialog aria-label={`انتخاب از گالری ${scopeLabel}`} dir="rtl" className="mx-2 text-right max-h-[calc(100dvh-20px)] w-[calc(100%-16px)] max-w-6xl overflow-hidden bg-slate-50 sm:mx-5 sm:max-h-[calc(100dvh-40px)] sm:w-[calc(100%-40px)]">
             <Modal.Header className="flex-row items-center justify-between border-b border-slate-200 bg-white px-4 py-4 sm:px-6">
               <div className="flex min-w-0 flex-1 items-center gap-3">
                 <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-[#fbf7ef] text-[#9a7434]"><ImageIcon size={21} /></span>

@@ -36,7 +36,8 @@ export function DeleteConfirmDialog({
       <Modal.Container size="sm" placement="center">
         <Modal.Dialog
           aria-label={title}
-          className="mx-4 w-[calc(100%-2rem)] max-w-md overflow-hidden rounded-3xl border border-rose-100 bg-white shadow-2xl"
+          dir="rtl"
+          className="mx-4 w-[calc(100%-2rem)] max-w-md overflow-hidden rounded-3xl border border-rose-100 bg-white text-right shadow-2xl"
         >
           <Modal.Header className="flex-row items-start justify-between gap-4 border-b border-slate-100 px-5 py-5 sm:px-6">
             <div className="flex min-w-0 items-center gap-3">
