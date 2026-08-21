@@ -10,12 +10,7 @@ export async function GET(request: Request) {
   const url = new URL(request.url);
   const authority = url.searchParams.get("Authority") ?? url.searchParams.get("authority");
   const status = url.searchParams.get("Status") ?? url.searchParams.get("status");
-  if (!authority || status !== "OK") {
-    if (authority) {
-      await db.payment.updateMany({ where: { authority, status: { notIn: ["SUCCESS", "REFUNDED"] } }, data: { status: "CANCELLED" } });
-    }
-    return NextResponse.redirect(`${env.APP_URL}/account?payment=cancelled`);
-  }
+  if (!authority) return NextResponse.redirect(`${env.APP_URL}/account?payment=cancelled`);
 
   const payment = await db.payment.findUnique({ where: { authority }, include: { order: true } });
   if (!payment) return NextResponse.redirect(`${env.APP_URL}/account?payment=missing`);
@@ -25,10 +20,19 @@ export async function GET(request: Request) {
     return NextResponse.redirect(`${env.APP_URL}/account?payment=failed`);
   }
 
+  // `Status` is a client-supplied query string on a redirect the end user's browser makes,
+  // so it must never decide anything financial on its own — a forged Status=NOK for a
+  // transaction the gateway actually captured must not be able to mark it cancelled. The
+  // gateway's own verify() call is the only source of truth for both directions; `status`
+  // is only used below to pick which error path applies once verification itself fails.
   let referenceId: string;
   try {
     referenceId = (await (await getStorefrontPaymentProvider(payment.provider)).verify(authority, Number(payment.amount))).referenceId;
   } catch (error) {
+    if (status !== "OK") {
+      await db.payment.updateMany({ where: { id: payment.id, status: { notIn: ["SUCCESS", "REFUNDED"] } }, data: { status: "CANCELLED" } });
+      return NextResponse.redirect(`${env.APP_URL}/account?payment=cancelled`);
+    }
     console.error("[payment] Zarinpal verification could not be completed.", error);
     await db.payment.updateMany({
       where: { id: payment.id, status: { not: "SUCCESS" } },
