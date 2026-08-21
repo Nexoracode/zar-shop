@@ -16,7 +16,8 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { Card } from "@heroui/react";
-import type { StoreIndustry } from "@generated/prisma/enums";
+import type { StoreIndustry, UserRole } from "@generated/prisma/enums";
+import { canOpenSettingsSection } from "@/modules/auth/permissions";
 
 type SettingsItem = {
   href: string;
@@ -25,8 +26,11 @@ type SettingsItem = {
   icon: LucideIcon;
 };
 
-export function AdminSettingsNavigation({ industry }: { industry: StoreIndustry }) {
-  const groups: Array<{ id: string; title: string; description: string; items: SettingsItem[] }> = [
+// Cards link to a settings section; the section slug is what the permission map keys on.
+const sectionOf = (href: string) => href.replace("/admin/settings/", "").split("/")[0] ?? "";
+
+export function AdminSettingsNavigation({ industry, role }: { industry: StoreIndustry; role: UserRole }) {
+  const allGroups: Array<{ id: string; title: string; description: string; items: SettingsItem[] }> = [
     {
       id: "storefront",
       title: "فروشگاه و ویترین",
@@ -59,6 +63,10 @@ export function AdminSettingsNavigation({ industry }: { industry: StoreIndustry 
       ],
     },
   ];
+
+  const groups = allGroups
+    .map((group) => ({ ...group, items: group.items.filter((item) => canOpenSettingsSection(role, sectionOf(item.href))) }))
+    .filter((group) => group.items.length > 0);
 
   return <div className="grid gap-8" dir="rtl">
     {groups.map((group) => <section key={group.id} aria-labelledby={`settings-${group.id}`} className="grid gap-3">

@@ -2,15 +2,13 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { apiError } from "@/lib/http";
-import { getCurrentUser } from "@/modules/auth/session";
+import { getPermittedActor } from "@/modules/auth/session";
 import { countSmsAudience, manualSmsSchema, sendManualSms } from "@/modules/communications/sms-service";
 import { smsAudienceSchema } from "@/modules/communications/sms-audiences";
 import { auditRequestContext } from "@/modules/audit/request-context";
 
-async function admin() { const actor = await getCurrentUser(); return actor?.role === "ADMIN" ? actor : null; }
-
 export async function GET(request: Request) {
-  if (!await admin()) return NextResponse.json({ message: "دسترسی غیرمجاز است." }, { status: 403 });
+  if (!await getPermittedActor("settings:manage")) return NextResponse.json({ message: "دسترسی غیرمجاز است." }, { status: 403 });
   const value = new URL(request.url).searchParams.get("audience");
   if (value) { const audience = smsAudienceSchema.safeParse(value); if (!audience.success) return NextResponse.json({ message: "فیلتر مخاطب معتبر نیست." }, { status: 422 }); return NextResponse.json({ count: await countSmsAudience(audience.data) }); }
   return NextResponse.json(await db.smsCampaign.findMany({ orderBy: { createdAt: "desc" }, take: 20 }));
@@ -18,7 +16,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const actor = await admin(); if (!actor) return NextResponse.json({ message: "دسترسی غیرمجاز است." }, { status: 403 });
+    const actor = await getPermittedActor("settings:manage"); if (!actor) return NextResponse.json({ message: "دسترسی غیرمجاز است." }, { status: 403 });
     const input = manualSmsSchema.parse(await request.json());
     try {
       const result = await sendManualSms(input, actor.id);
@@ -30,7 +28,7 @@ export async function POST(request: Request) {
 
 export async function DELETE(request: Request) {
   try {
-    const actor = await admin();
+    const actor = await getPermittedActor("settings:manage");
     if (!actor) return NextResponse.json({ message: "دسترسی غیرمجاز است." }, { status: 403 });
     const id = z.string().cuid().parse(new URL(request.url).searchParams.get("id"));
     const campaign = await db.smsCampaign.findFirst({ where: { id, actorId: { not: null } }, select: { id: true, audience: true, recipientCount: true, status: true } });

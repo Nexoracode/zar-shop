@@ -1,22 +1,21 @@
 import { NextResponse } from "next/server";
 import { apiError } from "@/lib/http";
 import { db } from "@/lib/db";
-import { getCurrentUser } from "@/modules/auth/session";
-import { isAdminRole } from "@/modules/auth/permissions";
+import { getPermittedActor } from "@/modules/auth/session";
 import { brandSettingsInputSchema, getBrandSettings } from "@/modules/settings/brand-settings";
 import { STORE_SETTING_ID } from "@/modules/settings/store-settings";
 import { auditRequestContext } from "@/modules/audit/request-context";
 
 export async function GET() {
-  const actor = await getCurrentUser();
-  if (!actor || !isAdminRole(actor.role)) return NextResponse.json({ message: "دسترسی غیرمجاز است." }, { status: 403 });
+  const actor = await getPermittedActor("settings:manage");
+  if (!actor) return NextResponse.json({ message: "دسترسی غیرمجاز است." }, { status: 403 });
   return NextResponse.json(await getBrandSettings());
 }
 
 export async function PATCH(request: Request) {
   try {
-    const actor = await getCurrentUser();
-    if (!actor || !isAdminRole(actor.role)) return NextResponse.json({ message: "دسترسی غیرمجاز است." }, { status: 403 });
+    const actor = await getPermittedActor("settings:manage");
+    if (!actor) return NextResponse.json({ message: "دسترسی غیرمجاز است." }, { status: 403 });
     const input = brandSettingsInputSchema.parse(await request.json());
     const mediaIds = [...new Set([input.mainLogoMediaId, input.darkLogoMediaId, input.faviconMediaId, input.socialImageMediaId].filter((id): id is string => Boolean(id)))];
     if (mediaIds.length) {

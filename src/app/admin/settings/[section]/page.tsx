@@ -11,7 +11,8 @@ import {
   SeoSettings,
 } from "@/components/admin-settings";
 import { AdminPageHeader } from "@/components/admin-ui";
-import { requireAdminUser } from "@/modules/auth/session";
+import { settingsSectionPermission } from "@/modules/auth/permissions";
+import { requirePermission } from "@/modules/auth/session";
 import { getBrandSettings } from "@/modules/settings/brand-settings";
 import { getCatalogSettings } from "@/modules/settings/catalog-settings";
 import { getCommerceSettings } from "@/modules/settings/commerce-settings";
@@ -51,8 +52,10 @@ export async function generateMetadata({ params }: Context): Promise<Metadata> {
 }
 
 export default async function AdminSettingSectionPage({ params }: Context) {
-  await requireAdminUser();
   const { section } = await params;
+  // The section itself decides the permission: catalog/orders/commerce belong to the
+  // matching manager role, everything else is store-wide configuration (ADMIN only).
+  await requirePermission(settingsSectionPermission(section));
   const meta = await getPageMeta(section);
   if (!meta) notFound();
 

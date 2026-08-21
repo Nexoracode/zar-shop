@@ -87,3 +87,12 @@ export async function requirePermission(permission: AdminPermission) {
   if (!hasPermission(user.role, permission)) redirect(adminStartPath(user.role));
   return user;
 }
+
+/**
+ * Route-handler counterpart of `requirePermission`. Returns the actor when it holds the
+ * permission, otherwise `null` so the caller can answer with a 403 instead of redirecting.
+ */
+export async function getPermittedActor(permission: AdminPermission) {
+  const actor = await getCurrentUser();
+  return actor && hasPermission(actor.role, permission) ? actor : null;
+}

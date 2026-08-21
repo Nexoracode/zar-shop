@@ -2,13 +2,13 @@ import type { Metadata } from "next";
 import { Plus } from "lucide-react";
 import { PaymentGatewayManager } from "@/components/payment-gateway-manager";
 import { AdminPageHeader, AdminPrimaryLink } from "@/components/admin-ui";
-import { requireAdminUser } from "@/modules/auth/session";
+import { requirePermission } from "@/modules/auth/session";
 import { getPublicGatewayConfigs } from "@/modules/payments/gateway-config";
 
 export const metadata: Metadata = { title: "درگاه‌های پرداخت" };
 
 export default async function PaymentGatewaysPage() {
-  await requireAdminUser();
+  await requirePermission("settings:manage");
   const configs = await getPublicGatewayConfigs();
 
   return <>

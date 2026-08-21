@@ -1,24 +1,19 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { apiError } from "@/lib/http";
-import { getCurrentUser } from "@/modules/auth/session";
+import { getPermittedActor } from "@/modules/auth/session";
 import { gatewayConfigInputSchema, getPublicGatewayConfigs, encryptGatewayCredential, maskGatewayCredential } from "@/modules/payments/gateway-config";
 import { gatewayProviders } from "@/modules/payments/gateway-providers";
 import { auditRequestContext } from "@/modules/audit/request-context";
 
-async function requireGatewayAdmin() {
-  const actor = await getCurrentUser();
-  return actor?.role === "ADMIN" ? actor : null;
-}
-
 export async function GET() {
-  if (!await requireGatewayAdmin()) return NextResponse.json({ message: "دسترسی غیرمجاز است." }, { status: 403 });
+  if (!await getPermittedActor("settings:manage")) return NextResponse.json({ message: "دسترسی غیرمجاز است." }, { status: 403 });
   return NextResponse.json(await getPublicGatewayConfigs());
 }
 
 export async function POST(request: Request) {
   try {
-    const actor = await requireGatewayAdmin();
+    const actor = await getPermittedActor("settings:manage");
     if (!actor) return NextResponse.json({ message: "دسترسی غیرمجاز است." }, { status: 403 });
     const input = gatewayConfigInputSchema.parse(await request.json());
     const provider = gatewayProviders.find((item) => item.id === input.provider)!;
@@ -36,7 +31,7 @@ export async function POST(request: Request) {
 
 export async function DELETE(request: Request) {
   try {
-    const actor = await requireGatewayAdmin();
+    const actor = await getPermittedActor("settings:manage");
     if (!actor) return NextResponse.json({ message: "دسترسی غیرمجاز است." }, { status: 403 });
     const provider = gatewayConfigInputSchema.shape.provider.parse(new URL(request.url).searchParams.get("provider"));
     const existing = await db.paymentGatewayConfig.findUnique({ where: { provider } });

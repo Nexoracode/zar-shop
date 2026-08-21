@@ -6,7 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { BadgePercent, Boxes, ChartNoAxesCombined, FolderTree, Images, ListChecks, ListTree, LogOut, Menu, MessageSquareText, PackageCheck, Palette, ScrollText, Settings, SlidersHorizontal, Store, Users, X } from "lucide-react";
 import { useState } from "react";
 import type { UserRole } from "@generated/prisma/enums";
-import { hasPermission, type AdminPermission } from "@/modules/auth/permissions";
+import { canOpenAnySettingsSection, hasPermission, type AdminPermission } from "@/modules/auth/permissions";
 
 type NavItem = { href: string; label: string; icon: typeof Boxes; permission?: AdminPermission };
 
@@ -72,7 +72,11 @@ export function AdminSidebar({ user }: Props) {
 
   const visibleGroups = navGroups.map((group) => ({
     ...group,
-    items: group.items.filter((item) => !item.permission || hasPermission(user.role, item.permission)),
+    // The settings hub has no single permission: it is visible when the role can open
+    // at least one section inside it.
+    items: group.items.filter((item) => item.href === "/admin/settings"
+      ? canOpenAnySettingsSection(user.role)
+      : !item.permission || hasPermission(user.role, item.permission)),
   })).filter((group) => group.items.length > 0);
 
   const navigation = (

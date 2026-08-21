@@ -1,21 +1,19 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { apiError } from "@/lib/http";
-import { getCurrentUser } from "@/modules/auth/session";
+import { getPermittedActor } from "@/modules/auth/session";
 import { activeProviderInputSchema, encryptSmsCredentials, getPublicSmsProviderConfigs, maskSmsCredential } from "@/modules/communications/sms-config";
 import { smsProviderInfo, smsProviderInputSchema, smsProviderSchema } from "@/modules/communications/sms-providers";
 import { auditRequestContext } from "@/modules/audit/request-context";
 
-async function admin() { const actor = await getCurrentUser(); return actor?.role === "ADMIN" ? actor : null; }
-
 export async function GET() {
-  if (!await admin()) return NextResponse.json({ message: "دسترسی غیرمجاز است." }, { status: 403 });
+  if (!await getPermittedActor("settings:manage")) return NextResponse.json({ message: "دسترسی غیرمجاز است." }, { status: 403 });
   return NextResponse.json(await getPublicSmsProviderConfigs());
 }
 
 export async function POST(request: Request) {
   try {
-    const actor = await admin(); if (!actor) return NextResponse.json({ message: "دسترسی غیرمجاز است." }, { status: 403 });
+    const actor = await getPermittedActor("settings:manage"); if (!actor) return NextResponse.json({ message: "دسترسی غیرمجاز است." }, { status: 403 });
     const input = smsProviderInputSchema.parse(await request.json()); const info = smsProviderInfo(input.provider);
     const credentials = input.provider === "FARAZ_SMS" ? { apiKey: input.apiKey } : { username: input.username, password: input.password };
     const maskSource = input.provider === "FARAZ_SMS" ? input.apiKey : input.username;
@@ -29,7 +27,7 @@ export async function POST(request: Request) {
 
 export async function PATCH(request: Request) {
   try {
-    const actor = await admin(); if (!actor) return NextResponse.json({ message: "دسترسی غیرمجاز است." }, { status: 403 });
+    const actor = await getPermittedActor("settings:manage"); if (!actor) return NextResponse.json({ message: "دسترسی غیرمجاز است." }, { status: 403 });
     const { provider } = activeProviderInputSchema.parse(await request.json());
     if (!smsProviderInfo(provider).sendSupported) return NextResponse.json({ message: "قرارداد API عمومی این ارائه‌دهنده هنوز در پروژه ثبت نشده است." }, { status: 422 });
     const existing = await db.smsProviderConfig.findUnique({ where: { provider } });
@@ -41,7 +39,7 @@ export async function PATCH(request: Request) {
 
 export async function DELETE(request: Request) {
   try {
-    const actor = await admin(); if (!actor) return NextResponse.json({ message: "دسترسی غیرمجاز است." }, { status: 403 });
+    const actor = await getPermittedActor("settings:manage"); if (!actor) return NextResponse.json({ message: "دسترسی غیرمجاز است." }, { status: 403 });
     const provider = smsProviderSchema.parse(new URL(request.url).searchParams.get("provider"));
     const existing = await db.smsProviderConfig.findUnique({ where: { provider } });
     if (!existing) return NextResponse.json({ message: "ارائه‌دهنده پیدا نشد." }, { status: 404 });

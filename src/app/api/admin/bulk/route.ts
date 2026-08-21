@@ -26,7 +26,7 @@ export async function PATCH(request: Request) {
   const { entity, action, ids } = parsed.data;
   const uniqueIds = [...new Set(ids)];
   const adminOnlyEntities = new Set(["paymentGateways", "smsProviders", "smsCampaigns"]);
-  if (adminOnlyEntities.has(entity) && actor.role !== "ADMIN") return NextResponse.json({ message: "این عملیات فقط برای مدیر اصلی مجاز است." }, { status: 403 });
+  if (adminOnlyEntities.has(entity) && !hasPermission(actor.role, "settings:manage")) return NextResponse.json({ message: "این عملیات فقط برای مدیر اصلی مجاز است." }, { status: 403 });
   const permission = entity === "orders" ? "orders:manage" : entity === "users" ? "users:manage" : "catalog:manage";
   if (!adminOnlyEntities.has(entity) && !hasPermission(actor.role, permission)) return NextResponse.json({ message: "برای این عملیات دسترسی کافی ندارید." }, { status: 403 });
 
