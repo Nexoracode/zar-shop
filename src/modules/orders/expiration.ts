@@ -17,6 +17,10 @@ export async function expirePendingOrders(now = new Date()): Promise<ExpirationR
     orderBy: { expiresAt: "asc" },
   });
   result.inspected = candidates.length;
+  // `expirePendingOrders` runs inline on hot paths (checkout, cart, account pages), so the
+  // notifications are collected here and dispatched together instead of one blocking
+  // round-trip per order.
+  const notifications: Array<{ phone: string | null; orderNumber: string }> = [];
 
   for (const order of candidates) {
     const handled = await db.$transaction(async (transaction) => {
@@ -50,10 +54,16 @@ export async function expirePendingOrders(now = new Date()): Promise<ExpirationR
       return true;
     });
     if (!handled) continue;
-    try { await sendAutomatedSms("orderExpired", order.user.phone, { orderNumber: order.orderNumber }); } catch (smsError) { console.error("[sms] Order-expired notification failed.", smsError); }
+    notifications.push({ phone: order.user.phone, orderNumber: order.orderNumber });
     if (settings.orderExpirationAction === "EXPIRE") result.expired += 1;
     else if (settings.orderExpirationAction === "CANCEL") result.cancelled += 1;
     else result.notified += 1;
+  }
+
+  const sent = await Promise.allSettled(notifications
+    .map(({ phone, orderNumber }) => sendAutomatedSms("orderExpired", phone, { orderNumber })));
+  for (const outcome of sent) {
+    if (outcome.status === "rejected") console.error("[sms] Order-expired notification failed.", outcome.reason);
   }
   return result;
 }
