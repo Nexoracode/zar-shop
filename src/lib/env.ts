@@ -1,5 +1,10 @@
 import { z } from "zod";
 
+// AUTH_SECRET keys the session rate-limit HMAC and the at-rest encryption of payment
+// gateway and SMS provider credentials. The literal below only exists so local
+// development works out of the box; production must supply its own value.
+const DEVELOPMENT_AUTH_SECRET = "development-only-secret-change-me-now";
+
 const schema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
   DATABASE_HOST: z.string().default("127.0.0.1"),
@@ -7,7 +12,7 @@ const schema = z.object({
   DATABASE_USER: z.string().default("root"),
   DATABASE_PASSWORD: z.string().default(""),
   DATABASE_NAME: z.string().default("store_db"),
-  AUTH_SECRET: z.string().min(32).default("development-only-secret-change-me-now"),
+  AUTH_SECRET: z.string().min(32).default(DEVELOPMENT_AUTH_SECRET),
   APP_URL: z.url().default("http://localhost:3000"),
   GOLD_PRICE_PROVIDER: z.enum(["mock", "tgju", "http"]).default("tgju"),
   GOLD_PRICE_ENDPOINT: z.string().default(""),
@@ -29,6 +34,9 @@ const schema = z.object({
   CRON_SECRET: z.preprocess((value) => value === "" ? undefined : value, z.string().min(32).optional()),
 }).superRefine((values, context) => {
   if (values.PAYMENT_PROVIDER === "zarinpal" && !values.ZARINPAL_MERCHANT_ID) context.addIssue({ code: "custom", path: ["ZARINPAL_MERCHANT_ID"], message: "Merchant ID is required for Zarinpal" });
+  if (values.NODE_ENV === "production" && values.AUTH_SECRET === DEVELOPMENT_AUTH_SECRET) {
+    context.addIssue({ code: "custom", path: ["AUTH_SECRET"], message: "AUTH_SECRET must be set to a private value in production" });
+  }
 });
 
 export const env = schema.parse(process.env);

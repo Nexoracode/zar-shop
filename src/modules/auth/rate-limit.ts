@@ -7,6 +7,10 @@ type RateLimitState = { attempts: number; windowStartedAt: Date; blockedUntil: D
 
 export const loginRateLimitPolicy: RateLimitPolicy = { maxAttempts: 5, windowMs: 15 * 60_000, blockMs: 15 * 60_000 };
 export const registrationRateLimitPolicy: RateLimitPolicy = { maxAttempts: 3, windowMs: 60 * 60_000, blockMs: 60 * 60_000 };
+// Creating a guest session writes a User row and runs a bcrypt hash, so an unauthenticated
+// caller must not be able to trigger it without bound. The allowance stays generous enough
+// for shared IPs (offices, mobile carriers) doing genuine guest checkout.
+export const guestSessionRateLimitPolicy: RateLimitPolicy = { maxAttempts: 20, windowMs: 60 * 60_000, blockMs: 30 * 60_000 };
 
 function requestIp(request: Request) {
   return request.headers.get("cf-connecting-ip")
@@ -69,6 +73,14 @@ export async function consumeRegistrationAttempt(request: Request) {
   const blocked = await isBlocked(keyHash);
   if (blocked) return blocked;
   await recordAttempt(keyHash, registrationRateLimitPolicy);
+  return null;
+}
+
+export async function consumeGuestSessionAttempt(request: Request) {
+  const keyHash = key("guest-session-ip", requestIp(request));
+  const blocked = await isBlocked(keyHash);
+  if (blocked) return blocked;
+  await recordAttempt(keyHash, guestSessionRateLimitPolicy);
   return null;
 }
 

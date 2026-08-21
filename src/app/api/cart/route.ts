@@ -3,6 +3,7 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { apiError } from "@/lib/http";
 import { createGuestSessionUser, getCurrentUser } from "@/modules/auth/session";
+import { consumeGuestSessionAttempt, rateLimitResponse } from "@/modules/auth/rate-limit";
 import { isOptionSnapshotValid, resolveOptionSelection } from "@/modules/products/options";
 import { getGeneralStoreSettings, isStorefrontAvailable } from "@/modules/settings/general-settings";
 import { getOrderSettings } from "@/modules/settings/order-settings";
@@ -40,6 +41,10 @@ export async function POST(request: Request) {
     if (!product || product.stock < input.quantity) return NextResponse.json({ message: "محصول موجود نیست یا موجودی کافی ندارد." }, { status: 409 });
     const selection = resolveOptionSelection(product.options, input.selectedOptions, input.quantity, product.stock);
     if (!selection.ok) return NextResponse.json({ message: `لطفاً یک مقدار معتبر برای «${selection.optionName}» انتخاب کنید.` }, { status: 422 });
+    if (!currentUser) {
+      const blockedUntil = await consumeGuestSessionAttempt(request);
+      if (blockedUntil) return rateLimitResponse(blockedUntil);
+    }
     const user = currentUser ?? await createGuestSessionUser();
     const cart = await db.cart.upsert({ where: { userId: user.id }, update: {}, create: { userId: user.id } });
     const existing = await db.cartItem.findUnique({ where: { cartId_productId_selectionKey: { cartId: cart.id, productId: product.id, selectionKey: selection.selectionKey } } });
