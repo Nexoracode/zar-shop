@@ -52,7 +52,7 @@ export default async function CheckoutPage() {
     const itemCount = await db.orderItem.aggregate({ where: { orderId: pendingOrder.id }, _sum: { quantity: true } }).then((result) => result._sum.quantity ?? 0);
     return (
       <>
-      <StandaloneTopBar backHref="/cart" />
+      <StandaloneTopBar backHref="/cart" backLabel="بازگشت به سبد خرید" />
       <main className="bg-[var(--background)] px-4 py-8 sm:px-6 sm:py-12">
         <div className="mx-auto w-full max-w-[1280px]">
           {steps}
@@ -89,7 +89,7 @@ export default async function CheckoutPage() {
   const needsGoldRate = items.some((item) => item.product.storeIndustry === "GOLD" && item.product.fixedPrice === null);
   const rate = gold?.pricePerGram18 ?? null;
 
-  if (needsGoldRate && rate === null) return <><StandaloneTopBar backHref="/cart" /><main className="px-4 py-12 sm:px-6"><div className="mx-auto max-w-3xl"><AlertRoot status="warning"><AlertDescription>نرخ لحظه‌ای طلا موقتاً در دسترس نیست. سفارش شما ثبت نشده و سبد خرید محفوظ است.</AlertDescription></AlertRoot></div></main></>;
+  if (needsGoldRate && rate === null) return <><StandaloneTopBar backHref="/cart" backLabel="بازگشت به سبد خرید" /><main className="px-4 py-12 sm:px-6"><div className="mx-auto max-w-3xl"><AlertRoot status="warning"><AlertDescription>نرخ لحظه‌ای طلا موقتاً در دسترس نیست. سفارش شما ثبت نشده و سبد خرید محفوظ است.</AlertDescription></AlertRoot></div></main></>;
 
   const prices = items.map((item) => {
     const product = item.product;
@@ -111,7 +111,7 @@ export default async function CheckoutPage() {
 
   return (
     <>
-    <StandaloneTopBar backHref="/cart" />
+    <StandaloneTopBar backHref="/cart" backLabel="بازگشت به سبد خرید" />
     <main className="bg-[var(--background)] px-4 py-8 sm:px-6 sm:py-12">
       <div className="mx-auto w-full max-w-[1280px]">
         {steps}

@@ -7,7 +7,7 @@ import { getGeneralStoreSettings } from "@/modules/settings/general-settings";
 // A minimal top bar for standalone pages (checkout, auth) that render without the full
 // storefront header/footer: just a centered logo and a back link, so the page isn't
 // left with zero navigation.
-export async function StandaloneTopBar({ backHref, backLabel = "بازگشت به صفحه قبل" }: { backHref: string; backLabel?: string }) {
+export async function StandaloneTopBar({ backHref, backLabel = "بازگشت" }: { backHref: string; backLabel?: string }) {
   const [brand, settings] = await Promise.all([getBrandSettings(), getGeneralStoreSettings()]);
   const logo = brand.mainLogoMedia
     ? <span className="relative block h-10 w-28"><Image src={brand.mainLogoMedia.url} alt={brand.mainLogoMedia.alt ?? settings.storeName} fill sizes="112px" className="object-contain" /></span>
@@ -17,7 +17,7 @@ export async function StandaloneTopBar({ backHref, backLabel = "بازگشت ب�
     <div className="w-full border-b border-[var(--border)] bg-[var(--surface)]">
       <div className="relative mx-auto flex min-h-16 max-w-[1280px] items-center px-4 sm:px-6">
         <Link href="/" className="mx-auto shrink-0" aria-label={`${settings.storeName}، صفحه اصلی`}>{logo}</Link>
-        <Link href={backHref} className="absolute left-4 inline-flex items-center gap-2 text-sm font-bold text-[var(--muted)] transition hover:text-[var(--brand-primary)] sm:left-6"><ChevronRight size={17} />{backLabel}</Link>
+        <Link href={backHref} className="absolute right-4 inline-flex items-center gap-2 text-sm font-bold text-[var(--muted)] transition hover:text-[var(--brand-primary)] sm:right-6"><ChevronRight size={17} />{backLabel}</Link>
       </div>
     </div>
   );
