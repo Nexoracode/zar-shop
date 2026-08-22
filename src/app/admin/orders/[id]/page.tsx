@@ -109,7 +109,7 @@ export default async function OrderDetailsPage({ params }: { params: PageParams 
       <div className="grid items-stretch gap-5 lg:grid-cols-2 xl:grid-cols-12">
         <div className="contents">
           <AdminPanel className="order-2 lg:col-span-2 xl:col-span-8">
-            <div className="flex items-center gap-2 border-b border-slate-100 px-5 py-4"><Package size={18} className="text-[#9a7434]" /><h2 className="m-0 text-base font-bold text-[#17233b]">محصولات سفارش</h2></div>
+            <div className="flex items-center gap-2 border-b border-slate-100 px-5 py-4"><Package size={18} className="text-[var(--warning)]" /><h2 className="m-0 text-base font-bold text-[#17233b]">محصولات سفارش</h2></div>
             <div className="divide-y divide-slate-100">
               {order.items.map((item) => {
                 const image = item.product?.media[0]?.media;
@@ -119,7 +119,7 @@ export default async function OrderDetailsPage({ params }: { params: PageParams 
                       {image?.type === "IMAGE" ? <Image src={image.url} alt={image.alt ?? item.name} fill sizes="72px" className="object-cover" /> : <Package className="absolute inset-0 m-auto text-slate-300" size={28} />}
                     </div>
                     <div className="min-w-0">
-                      {item.product ? <Link href={`/products/${item.product.slug}`} className="font-bold text-[#17233b] transition hover:text-[#9a7434]">{item.name}</Link> : <strong className="text-[#17233b]">{item.name}</strong>}
+                      {item.product ? <Link href={`/products/${item.product.slug}`} className="font-bold text-[#17233b] transition hover:text-[var(--warning)]">{item.name}</Link> : <strong className="text-[#17233b]">{item.name}</strong>}
                       <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-500">
                         <span>کد: <b dir="ltr">{item.sku}</b></span>
                         {optionEntries(item.selectedOptions).map(([name, value]) => <span key={name}>{name}: <b>{value}</b></span>)}
@@ -135,7 +135,7 @@ export default async function OrderDetailsPage({ params }: { params: PageParams 
           </AdminPanel>
 
           <AdminPanel className={`order-3 lg:col-span-2 ${order.invoice ? "xl:col-span-8" : "xl:col-span-12"}`}>
-            <div className="flex items-center gap-2 border-b border-slate-100 px-5 py-4"><CreditCard size={18} className="text-[#9a7434]" /><h2 className="m-0 text-base font-bold text-[#17233b]">سوابق پرداخت</h2></div>
+            <div className="flex items-center gap-2 border-b border-slate-100 px-5 py-4"><CreditCard size={18} className="text-[var(--warning)]" /><h2 className="m-0 text-base font-bold text-[#17233b]">سوابق پرداخت</h2></div>
             {order.payments.length ? (
               <div className="grid gap-3 p-4 sm:p-5">
                 {order.payments.map((payment, index) => (
@@ -163,21 +163,21 @@ export default async function OrderDetailsPage({ params }: { params: PageParams 
 
         <aside className="contents">
           <AdminPanel className="order-1 p-5 xl:col-span-5">
-            <h2 className="mb-4 mt-0 flex items-center gap-2 text-base font-bold text-[#17233b]"><UserRound size={18} className="text-[#9a7434]" /> اطلاعات خریدار</h2>
+            <h2 className="mb-4 mt-0 flex items-center gap-2 text-base font-bold text-[#17233b]"><UserRound size={18} className="text-[var(--warning)]" /> اطلاعات خریدار</h2>
             <dl className="grid gap-2"><InfoItem label="نام و نام خانوادگی" value={customerName} /><InfoItem label="ایمیل" value={order.user.email} ltr /><InfoItem label="شماره موبایل" value={order.user.phone} ltr /><InfoItem label="کد ملی" value={order.user.nationalId} ltr /></dl>
           </AdminPanel>
 
           <AdminPanel className="order-1 p-5 xl:col-span-7">
-            <h2 className="mb-4 mt-0 flex items-center gap-2 text-base font-bold text-[#17233b]"><MapPin size={18} className="text-[#9a7434]" /> آدرس ارسال</h2>
+            <h2 className="mb-4 mt-0 flex items-center gap-2 text-base font-bold text-[#17233b]"><MapPin size={18} className="text-[var(--warning)]" /> آدرس ارسال</h2>
             {address ? <dl className="grid gap-2"><InfoItem label="تحویل‌گیرنده" value={address.recipient} /><InfoItem label="شماره تماس" value={address.phone} ltr /><InfoItem label="استان و شهر" value={[address.province, address.city].filter(Boolean).join("، ")} /><InfoItem label="کد پستی" value={address.postalCode} ltr /><InfoItem label="نشانی" value={address.addressLine} /></dl> : <p className="m-0 text-sm text-slate-400">آدرس ارسال ثبت نشده است.</p>}
           </AdminPanel>
 
           <AdminPanel className="order-2 p-5 xl:col-span-4">
             <h2 className="mb-4 mt-0 text-base font-bold text-[#17233b]">خلاصه مبالغ</h2>
-            <dl className="space-y-3 text-sm"><div className="flex justify-between gap-3 text-slate-500"><dt>جمع کالاها</dt><dd>{formatMoney(order.subtotal.toString())}</dd></div>{Number(order.productDiscount) > 0 && <div className="flex justify-between gap-3 text-slate-500"><dt>تخفیف محصولات</dt><dd>{formatMoney(order.productDiscount.toString())}</dd></div>}{Number(order.promotionDiscount) > 0 && <div className="flex justify-between gap-3 text-violet-600"><dt>تخفیف پروموشن</dt><dd>{formatMoney(order.promotionDiscount.toString())}</dd></div>}{Number(order.shippingDiscount) > 0 && <div className="flex justify-between gap-3 text-sky-600"><dt>تخفیف ارسال</dt><dd>{formatMoney(order.shippingDiscount.toString())}</dd></div>}<div className="flex justify-between gap-3 text-slate-500"><dt>هزینه ارسال</dt><dd>{formatMoney(order.shipping.toString())}</dd></div><div className="flex justify-between gap-3 text-slate-500"><dt>مالیات</dt><dd>{formatMoney(order.tax.toString())}</dd></div><div className="flex justify-between gap-3 border-t border-slate-100 pt-3 font-bold text-[#17233b]"><dt>مبلغ نهایی</dt><dd>{formatMoney(order.total.toString())}</dd></div>{order.promotionRedemptions.map((redemption) => <div key={redemption.id} className="rounded-lg bg-violet-50 px-3 py-2 text-xs text-violet-700"><dt className="font-bold">{redemption.promotion.title}</dt><dd className="mt-1">{redemption.promotion.code ? `کد: ${redemption.promotion.code}` : "اعمال خودکار"}</dd></div>)}<div className="flex justify-between gap-3 rounded-xl bg-[#f8f1e4] px-3 py-2 text-xs font-bold text-[#846325]"><dt>نرخ طلای ثبت‌شده</dt><dd>{formatMoney(order.goldPriceSnapshot.toString())}</dd></div></dl>
+            <dl className="space-y-3 text-sm"><div className="flex justify-between gap-3 text-slate-500"><dt>جمع کالاها</dt><dd>{formatMoney(order.subtotal.toString())}</dd></div>{Number(order.productDiscount) > 0 && <div className="flex justify-between gap-3 text-slate-500"><dt>تخفیف محصولات</dt><dd>{formatMoney(order.productDiscount.toString())}</dd></div>}{Number(order.promotionDiscount) > 0 && <div className="flex justify-between gap-3 text-violet-600"><dt>تخفیف پروموشن</dt><dd>{formatMoney(order.promotionDiscount.toString())}</dd></div>}{Number(order.shippingDiscount) > 0 && <div className="flex justify-between gap-3 text-sky-600"><dt>تخفیف ارسال</dt><dd>{formatMoney(order.shippingDiscount.toString())}</dd></div>}<div className="flex justify-between gap-3 text-slate-500"><dt>هزینه ارسال</dt><dd>{formatMoney(order.shipping.toString())}</dd></div><div className="flex justify-between gap-3 text-slate-500"><dt>مالیات</dt><dd>{formatMoney(order.tax.toString())}</dd></div><div className="flex justify-between gap-3 border-t border-slate-100 pt-3 font-bold text-[#17233b]"><dt>مبلغ نهایی</dt><dd>{formatMoney(order.total.toString())}</dd></div>{order.promotionRedemptions.map((redemption) => <div key={redemption.id} className="rounded-lg bg-violet-50 px-3 py-2 text-xs text-violet-700"><dt className="font-bold">{redemption.promotion.title}</dt><dd className="mt-1">{redemption.promotion.code ? `کد: ${redemption.promotion.code}` : "اعمال خودکار"}</dd></div>)}<div className="flex justify-between gap-3 rounded-xl bg-[var(--warning)]/15 px-3 py-2 text-xs font-bold text-[var(--warning)]"><dt>نرخ طلای ثبت‌شده</dt><dd>{formatMoney(order.goldPriceSnapshot.toString())}</dd></div></dl>
           </AdminPanel>
 
-          {order.invoice && <AdminPanel className="order-3 flex h-full flex-col p-5 xl:col-span-4"><h2 className="mb-3 mt-0 flex items-center gap-2 text-base font-bold text-[#17233b]"><FileText size={18} className="text-[#9a7434]" /> فاکتور رسمی</h2><p className="mb-5 mt-0 text-xs text-slate-500">شماره {order.invoice.invoiceNumber} · صادرشده در {formatDateTime(order.invoice.issuedAt)}</p><Link href={`/invoices/${order.id}?source=admin`} className="mt-auto inline-flex min-h-10 w-full items-center justify-center rounded-xl bg-[#172b4d] px-4 text-sm font-bold text-white transition hover:bg-[#203b66]">مشاهده فاکتور</Link></AdminPanel>}
+          {order.invoice && <AdminPanel className="order-3 flex h-full flex-col p-5 xl:col-span-4"><h2 className="mb-3 mt-0 flex items-center gap-2 text-base font-bold text-[#17233b]"><FileText size={18} className="text-[var(--warning)]" /> فاکتور رسمی</h2><p className="mb-5 mt-0 text-xs text-slate-500">شماره {order.invoice.invoiceNumber} · صادرشده در {formatDateTime(order.invoice.issuedAt)}</p><Link href={`/invoices/${order.id}?source=admin`} className="mt-auto inline-flex min-h-10 w-full items-center justify-center rounded-xl bg-[var(--accent)] px-4 text-sm font-bold text-[var(--accent-foreground)] transition hover:bg-[var(--accent-hover)]">مشاهده فاکتور</Link></AdminPanel>}
 
           {order.notes && <AdminPanel className="order-4 p-5 lg:col-span-2 xl:col-span-12"><h2 className="mb-2 mt-0 text-base font-bold text-[#17233b]">یادداشت سفارش</h2><p className="m-0 whitespace-pre-wrap text-sm leading-7 text-slate-600">{order.notes}</p></AdminPanel>}
         </aside>

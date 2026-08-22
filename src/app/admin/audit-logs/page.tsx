@@ -74,7 +74,7 @@ export default async function AuditLogsPage({ searchParams }: { searchParams: Se
 }
 
 function DetailLink({ id, label }: { id: string; label: string }) {
-  return <Link href={`/admin/audit-logs/${id}`} aria-label={`مشاهده جزئیات ${label}`} title="مشاهده جزئیات" className="inline-flex h-9 min-h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-[#172b4d] transition hover:border-[#b5904c] hover:text-[#846325]"><Eye size={15} /></Link>;
+  return <Link href={`/admin/audit-logs/${id}`} aria-label={`مشاهده جزئیات ${label}`} title="مشاهده جزئیات" className="inline-flex h-9 min-h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-[var(--accent)] transition hover:border-[var(--warning)] hover:text-[var(--warning)]"><Eye size={15} /></Link>;
 }
 
 function AuditMobileCard({ log }: { log: AuditRow }) {

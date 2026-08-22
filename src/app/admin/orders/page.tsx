@@ -90,7 +90,7 @@ export default async function OrdersPage({ searchParams }: { searchParams: Searc
                       <div><dt className="text-slate-400">تعداد اقلام</dt><dd className="mt-1 font-bold text-slate-700">{order._count.items.toLocaleString("fa-IR")}</dd></div>
                       <div><dt className="text-slate-400">تاریخ</dt><dd className="mt-1 font-bold text-slate-700">{formatDate(order.createdAt)}</dd></div>
                     </dl>
-                    <Link href={`/admin/orders/${order.id}`} className="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold text-[#172b4d] transition hover:border-[#b5904c] hover:text-[#846325]"><Eye size={16} />مشاهده جزئیات</Link>
+                    <Link href={`/admin/orders/${order.id}`} className="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold text-[var(--accent)] transition hover:border-[var(--warning)] hover:text-[var(--warning)]"><Eye size={16} />مشاهده جزئیات</Link>
                   </article>
                 );
               })}
@@ -108,7 +108,7 @@ export default async function OrdersPage({ searchParams }: { searchParams: Searc
                       <TableCell className={cell}><strong className="text-slate-700">{formatMoney(order.total.toString())}</strong></TableCell>
                       <TableCell className={cell}><AdminOrderStatusSelect key={`${order.id}:${order.status}:${order.expiresAt?.toISOString() ?? "none"}`} orderId={order.id} initialStatus={order.status} expiresAt={order.expiresAt?.toISOString() ?? null} warningMinutes={orderSettings.orderWarningMinutes} /></TableCell>
                       <TableCell className={cell}>{formatDate(order.createdAt)}</TableCell>
-                      <TableCell className={cell}><Link href={`/admin/orders/${order.id}`} aria-label={`مشاهده جزئیات سفارش ${order.orderNumber}`} title="مشاهده جزئیات" className="inline-flex h-9 min-h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-[#172b4d] transition hover:border-[#b5904c] hover:text-[#846325]"><Eye size={15} /></Link></TableCell>
+                      <TableCell className={cell}><Link href={`/admin/orders/${order.id}`} aria-label={`مشاهده جزئیات سفارش ${order.orderNumber}`} title="مشاهده جزئیات" className="inline-flex h-9 min-h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-[var(--accent)] transition hover:border-[var(--warning)] hover:text-[var(--warning)]"><Eye size={15} /></Link></TableCell>
                     </TableRow>
                   );
                 })}</TableBody></TableContent></TableScrollContainer></Table></AdminBulkEditor>

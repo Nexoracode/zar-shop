@@ -99,7 +99,7 @@ export function CategoryForm({ categories, category }: { categories: CategoryOpt
         <Card variant="secondary" className="rounded-2xl border border-slate-200/80 bg-white shadow-sm">
           <Card.Content className="p-4 sm:p-6">
             <div className="mb-5 flex items-start gap-3 border-b border-slate-100 pb-4">
-              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[#fbf7ef] text-[#9a7434]"><FolderTree size={20} /></span>
+              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[var(--warning)]/10 text-[var(--warning)]"><FolderTree size={20} /></span>
               <div className="min-w-0"><h2 className="m-0 text-base font-bold text-slate-800">اطلاعات دسته‌بندی</h2><p className="m-0 text-xs text-slate-400">نام، نشانی و ساختار سلسله‌مراتبی دسته را مشخص کنید.</p></div><div className="mr-auto"><AdminSectionHelp title="اطلاعات دسته‌بندی" summary="دسته والد جایگاه این دسته را در منو، مگامنو و مسیر پیمایش محصولات تعیین می‌کند." blocks={[{ title: "ساختار دسته", items: ["برای دسته سطح اول، والد را خالی بگذارید.", "برای زیر‌دسته، نزدیک‌ترین والد مرتبط را انتخاب کنید.", "نشانی انگلیسی باید یکتا، کوتاه و شامل حروف کوچک، عدد یا خط تیره باشد."] }, { title: "اثر جابه‌جایی", tone: "important", description: "تغییر والد، مسیر دسته و محل نمایش آن در مگامنو را تغییر می‌دهد. پیش از جابه‌جایی دسته دارای محصول، مسیرهای فروشگاه را بررسی کنید." }, { title: "ویژگی‌های وابسته", description: "ویژگی‌های محصولات برای هر دسته جدا تعریف می‌شوند؛ پس از ساخت دسته می‌توانید از صفحه ویژگی‌های دسته‌بندی ساختار مشخصات آن را بسازید." }]} /></div>
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
@@ -117,7 +117,7 @@ export function CategoryForm({ categories, category }: { categories: CategoryOpt
         <Card variant="secondary" className="rounded-2xl border border-slate-200/80 bg-white shadow-sm">
           <Card.Content className="p-4 sm:p-6">
             <div className="mb-5 flex items-start gap-3 border-b border-slate-100 pb-4">
-              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[#fbf7ef] text-[#9a7434]"><ImageIcon size={20} /></span>
+              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[var(--warning)]/10 text-[var(--warning)]"><ImageIcon size={20} /></span>
               <div><h2 className="m-0 text-base font-bold text-slate-800">تصویر شاخص</h2><p className="m-0 text-xs text-slate-400">این تصویر در صفحه اصلی و فهرست دسته‌ها نمایش داده می‌شود.</p></div>
             </div>
             {selectedImage[0] ? (
@@ -126,11 +126,11 @@ export function CategoryForm({ categories, category }: { categories: CategoryOpt
                 <Button type="button" size="sm" isIconOnly variant="danger-soft" aria-label="حذف تصویر شاخص دسته‌بندی" onPress={() => setSelectedImage([])} className="absolute left-3 top-3 h-9 min-h-9 w-9 min-w-9 bg-white/95 shadow"><Trash2 size={15} /></Button>
               </div>
             ) : (
-              <Button type="button" variant="secondary" onPress={() => setPickerOpen(true)} className="flex min-h-44 w-full flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50 p-6 text-center text-sm font-bold text-slate-500 transition hover:border-[#b5904c] hover:bg-[#fffcf7]">
-                <span><ImageIcon className="mx-auto mb-3 text-[#b5904c]" size={30} />تصویر شاخصی انتخاب نشده است.<small className="mt-1 block font-normal text-slate-400">برای انتخاب، گالری دسته‌بندی را باز کنید.</small></span>
+              <Button type="button" variant="secondary" onPress={() => setPickerOpen(true)} className="flex min-h-44 w-full flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50 p-6 text-center text-sm font-bold text-slate-500 transition hover:border-[var(--warning)] hover:bg-[var(--warning)]/5">
+                <span><ImageIcon className="mx-auto mb-3 text-[var(--warning)]" size={30} />تصویر شاخصی انتخاب نشده است.<small className="mt-1 block font-normal text-slate-400">برای انتخاب، گالری دسته‌بندی را باز کنید.</small></span>
               </Button>
             )}
-            <Button type="button" variant="secondary" onPress={() => setPickerOpen(true)} className="mt-3 min-h-11 w-full border border-[#d9c394] bg-[#fffaf0] text-sm font-bold text-[#785b27]">انتخاب از گالری</Button>
+            <Button type="button" variant="secondary" onPress={() => setPickerOpen(true)} className="mt-3 min-h-11 w-full border border-[var(--warning)]/40 bg-[var(--warning)]/10 text-sm font-bold text-[var(--warning)]">انتخاب از گالری</Button>
           </Card.Content>
         </Card>
       </div>
@@ -138,7 +138,7 @@ export function CategoryForm({ categories, category }: { categories: CategoryOpt
       <aside className="grid content-start gap-4 xl:sticky xl:top-6">
         <Card variant="secondary" className="rounded-2xl border border-slate-200/80 bg-white shadow-sm">
           <Card.Content className="p-5">
-            <div className="mb-4 flex items-center gap-2"><Sparkles size={18} className="text-[#9a7434]" /><h2 className="m-0 text-base font-bold text-slate-800">انتشار</h2></div>
+            <div className="mb-4 flex items-center gap-2"><Sparkles size={18} className="text-[var(--warning)]" /><h2 className="m-0 text-base font-bold text-slate-800">انتشار</h2></div>
             <div className="grid gap-3">
               <AdminCheckbox isSelected={isActive} onChange={setIsActive} description="دسته در فروشگاه و منوها قابل مشاهده باشد.">دسته فعال باشد</AdminCheckbox>
               <AdminCheckbox isSelected={featured} onChange={setFeatured} icon={<Sparkles size={17} />} description="این دسته در بخش دسته‌بندی‌های منتخب صفحه اصلی نمایش داده شود.">نمایش در صفحه اصلی</AdminCheckbox>

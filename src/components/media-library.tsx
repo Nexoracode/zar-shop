@@ -131,7 +131,7 @@ export function MediaLibrary() {
             return (
               <Card key={item.id} variant="secondary" className="min-w-0 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
                 <div className="relative aspect-square bg-[#f5f3ee]">
-                  {item.type === "IMAGE" ? <Image src={item.url} alt={item.title} fill unoptimized={item.mimeType === "image/gif"} sizes="(max-width:640px) 50vw, 25vw" className="object-cover" /> : item.type === "VIDEO" ? <video src={item.url} controls className="h-full w-full bg-black object-cover" /> : <a href={item.url} target="_blank" rel="noreferrer" className="grid h-full place-items-center text-slate-500"><span className="grid justify-items-center gap-2 text-xs font-bold"><FileText size={38} className="text-[#9a7434]" />فایل PDF</span></a>}
+                  {item.type === "IMAGE" ? <Image src={item.url} alt={item.title} fill unoptimized={item.mimeType === "image/gif"} sizes="(max-width:640px) 50vw, 25vw" className="object-cover" /> : item.type === "VIDEO" ? <video src={item.url} controls className="h-full w-full bg-black object-cover" /> : <a href={item.url} target="_blank" rel="noreferrer" className="grid h-full place-items-center text-slate-500"><span className="grid justify-items-center gap-2 text-xs font-bold"><FileText size={38} className="text-[var(--warning)]" />فایل PDF</span></a>}
                 </div>
                 <div className="grid gap-2 p-3">
                   <strong className="truncate text-xs">{item.title}</strong>
