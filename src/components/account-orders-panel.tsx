@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { Button, Input } from "@heroui/react";
-import { Check, ChevronLeft, FileText, PackageCheck, RotateCcw, Search, ShoppingBag, X } from "lucide-react";
+import { Check, ChevronLeft, CreditCard, FileText, PackageCheck, RotateCcw, Search, ShoppingBag, X } from "lucide-react";
 import { OrderExpiryCountdown } from "@/components/order-expiry-countdown";
 
 type OrderStatus = "PENDING_PAYMENT" | "EXPIRED" | "PAID" | "PROCESSING" | "SHIPPED" | "DELIVERED" | "CANCELLED" | "REFUNDED";
@@ -71,7 +71,14 @@ export function AccountOrdersPanel({ orders, showCountdown, warningMinutes }: { 
             <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-2 text-xs text-[var(--muted)]"><span>{order.date}</span><span className="text-slate-300">•</span><span>کد سفارش <b className="text-[var(--foreground)]" dir="ltr">{order.orderNumber}</b></span><span className="text-slate-300">•</span><span>مبلغ <b className="text-[var(--foreground)]">{order.total}</b></span>{showCountdown && order.status === "PENDING_PAYMENT" && order.expiresAt ? <OrderExpiryCountdown expiresAt={order.expiresAt} warningMinutes={warningMinutes} /> : null}</div>
           </Link>
           <div className="flex min-h-24 items-center gap-3 border-t border-[var(--border)] px-4 py-3 sm:px-5">{order.images.length ? order.images.map((image) => <span key={image.id} className="relative size-16 shrink-0 overflow-hidden rounded-lg bg-white"><Image src={image.url} alt={image.alt} fill sizes="64px" className="object-contain p-1" /></span>) : <span className="grid size-16 place-items-center rounded-lg bg-[var(--surface-secondary)] text-slate-300"><ShoppingBag size={25} /></span>}<span className="mr-auto text-xs text-[var(--muted)]">{order.itemCount.toLocaleString("fa-IR")} کالا</span></div>
-          {order.hasInvoice ? <div className="border-t border-[var(--border)] px-4 py-3 sm:px-5"><Link href={`/invoices/${order.id}`} className="inline-flex min-h-9 items-center gap-2 text-xs font-bold text-[var(--brand-primary)]"><FileText size={17} />مشاهده فاکتور</Link></div> : null}
+          {order.hasInvoice ? (
+            <div className="border-t border-[var(--border)] px-4 py-3 sm:px-5"><Link href={`/invoices/${order.id}`} className="inline-flex min-h-9 items-center gap-2 text-xs font-bold text-[var(--brand-primary)]"><FileText size={17} />مشاهده فاکتور</Link></div>
+          ) : order.status === "PENDING_PAYMENT" ? (
+            // Resuming payment always goes through /checkout, which looks up the customer's
+            // own most-recent pending order server-side (see app/checkout/page.tsx) — the
+            // same entry point already used by PendingOrderCartNotice on the cart page.
+            <div className="border-t border-[var(--border)] px-4 py-3 sm:px-5"><Link href="/checkout" className="inline-flex min-h-9 items-center gap-2 rounded-lg bg-[var(--brand-primary)] px-4 text-xs font-bold text-[var(--brand-primary-foreground)] transition hover:brightness-105"><CreditCard size={17} />پرداخت</Link></div>
+          ) : null}
         </article>;
       })}
     </div>
