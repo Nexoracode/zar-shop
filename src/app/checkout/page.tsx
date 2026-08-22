@@ -1,9 +1,9 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ChevronRight, CreditCard, MapPin, ShoppingCart } from "lucide-react";
+import { CreditCard, MapPin, ShoppingCart } from "lucide-react";
 import { AlertDescription, AlertRoot } from "@/components/hero";
 import { CheckoutForm } from "@/components/checkout-form";
 import { ResumeOrderCheckout } from "@/components/resume-order-checkout";
+import { StandaloneTopBar } from "@/components/standalone-top-bar";
 import { requireUser } from "@/modules/auth/session";
 import { db } from "@/lib/db";
 import { getGoldPriceForDisplay } from "@/modules/gold/gold-price.service";
@@ -51,9 +51,10 @@ export default async function CheckoutPage() {
     };
     const itemCount = await db.orderItem.aggregate({ where: { orderId: pendingOrder.id }, _sum: { quantity: true } }).then((result) => result._sum.quantity ?? 0);
     return (
+      <>
+      <StandaloneTopBar backHref="/cart" />
       <main className="bg-[var(--background)] px-4 py-8 sm:px-6 sm:py-12">
         <div className="mx-auto w-full max-w-[1280px]">
-          <Link href="/cart" className="mb-5 inline-flex items-center gap-2 text-sm font-bold text-[var(--muted)] transition hover:text-[var(--brand-primary)]"><ChevronRight size={17} />بازگشت به سبد خرید</Link>
           {steps}
           <div className="mb-6"><h1 className="m-0 text-xl font-bold sm:text-2xl">تکمیل سفارش</h1><p className="mb-0 mt-2 text-sm text-[var(--muted)]">سفارش <b dir="ltr">{pendingOrder.orderNumber}</b> قبلاً ثبت شده؛ فقط پرداخت آن باقی مانده است.</p></div>
           <ResumeOrderCheckout
@@ -70,6 +71,7 @@ export default async function CheckoutPage() {
           />
         </div>
       </main>
+      </>
     );
   }
 
@@ -87,7 +89,7 @@ export default async function CheckoutPage() {
   const needsGoldRate = items.some((item) => item.product.storeIndustry === "GOLD" && item.product.fixedPrice === null);
   const rate = gold?.pricePerGram18 ?? null;
 
-  if (needsGoldRate && rate === null) return <main className="px-4 py-12 sm:px-6"><div className="mx-auto max-w-3xl"><AlertRoot status="warning"><AlertDescription>نرخ لحظه‌ای طلا موقتاً در دسترس نیست. سفارش شما ثبت نشده و سبد خرید محفوظ است.</AlertDescription></AlertRoot><Link href="/cart" className="mt-5 inline-flex items-center gap-2 text-sm font-bold text-[var(--brand-primary)]"><ChevronRight size={17} />بازگشت به سبد خرید</Link></div></main>;
+  if (needsGoldRate && rate === null) return <><StandaloneTopBar backHref="/cart" /><main className="px-4 py-12 sm:px-6"><div className="mx-auto max-w-3xl"><AlertRoot status="warning"><AlertDescription>نرخ لحظه‌ای طلا موقتاً در دسترس نیست. سفارش شما ثبت نشده و سبد خرید محفوظ است.</AlertDescription></AlertRoot></div></main></>;
 
   const prices = items.map((item) => {
     const product = item.product;
@@ -108,13 +110,15 @@ export default async function CheckoutPage() {
   const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
 
   return (
+    <>
+    <StandaloneTopBar backHref="/cart" />
     <main className="bg-[var(--background)] px-4 py-8 sm:px-6 sm:py-12">
       <div className="mx-auto w-full max-w-[1280px]">
-        <Link href="/cart" className="mb-5 inline-flex items-center gap-2 text-sm font-bold text-[var(--muted)] transition hover:text-[var(--brand-primary)]"><ChevronRight size={17} />بازگشت به سبد خرید</Link>
         {steps}
         <div className="mb-6"><h1 className="m-0 text-xl font-bold sm:text-2xl">تکمیل سفارش</h1><p className="mb-0 mt-2 text-sm text-[var(--muted)]">نشانی، تخفیف و روش پرداخت را بررسی کنید.</p></div>
         <CheckoutForm settings={commerceSettings} paymentMethods={paymentMethods} currency={settings.currency} itemCount={itemCount} initialQuote={initialQuote} initialAddresses={addresses.map(serializeAddress)} user={{ firstName: user.firstName, lastName: user.lastName, phone: user.phone }} />
       </div>
     </main>
+    </>
   );
 }
