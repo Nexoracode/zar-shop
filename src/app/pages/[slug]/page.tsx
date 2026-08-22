@@ -4,7 +4,6 @@ import { FileQuestion, FileText } from "lucide-react";
 import { StorefrontFaqAccordion } from "@/components/storefront-faq-accordion";
 import { ContactForm } from "@/components/contact-form";
 import { getContentSettings, contentPageBySlug } from "@/modules/settings/content-settings";
-import { getGeneralStoreSettings } from "@/modules/settings/general-settings";
 import { sanitizeProductDescription } from "@/modules/products/rich-text";
 
 type Context = { params: Promise<{ slug: string }> };
@@ -13,11 +12,13 @@ export const dynamic = "force-dynamic";
 
 export async function generateMetadata({ params }: Context): Promise<Metadata> {
   const { slug } = await params;
-  const [content, store] = await Promise.all([getContentSettings(), getGeneralStoreSettings()]);
-  if (slug === "faq") return { title: `سوالات متداول | ${store.storeName}` };
+  const content = await getContentSettings();
+  // The root layout already applies a "%s | storeName" title template, so returning a
+  // plain title here (instead of appending the store name again) avoids it showing twice.
+  if (slug === "faq") return { title: "سوالات متداول" };
   const page = contentPageBySlug(content, slug);
   if (!page?.published) return {};
-  return { title: `${page.title} | ${store.storeName}` };
+  return { title: page.title };
 }
 
 export default async function ContentPage({ params }: Context) {
