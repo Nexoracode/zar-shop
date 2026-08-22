@@ -11,6 +11,13 @@ export const registrationRateLimitPolicy: RateLimitPolicy = { maxAttempts: 3, wi
 // caller must not be able to trigger it without bound. The allowance stays generous enough
 // for shared IPs (offices, mobile carriers) doing genuine guest checkout.
 export const guestSessionRateLimitPolicy: RateLimitPolicy = { maxAttempts: 20, windowMs: 60 * 60_000, blockMs: 30 * 60_000 };
+// A password-reset code costs an SMS credit, so requesting one is throttled tightly, per
+// account (protects the victim regardless of how many IPs an attacker rotates through) as
+// well as per IP. Verifying a submitted code gets its own, more lenient budget — otherwise
+// a couple of typos while typing the code would burn through the same allowance and block
+// the legitimate user from ever requesting a fresh one.
+export const passwordResetRequestRateLimitPolicy: RateLimitPolicy = { maxAttempts: 3, windowMs: 15 * 60_000, blockMs: 15 * 60_000 };
+export const passwordResetVerifyRateLimitPolicy: RateLimitPolicy = { maxAttempts: 8, windowMs: 15 * 60_000, blockMs: 15 * 60_000 };
 
 function requestIp(request: Request) {
   return request.headers.get("cf-connecting-ip")
@@ -82,6 +89,39 @@ export async function consumeGuestSessionAttempt(request: Request) {
   if (blocked) return blocked;
   await recordAttempt(keyHash, guestSessionRateLimitPolicy);
   return null;
+}
+
+export async function consumePasswordResetRequestAttempt(request: Request, email: string) {
+  const keys = [key("password-reset-account", email), key("password-reset-ip", requestIp(request))];
+  const blocks = await Promise.all(keys.map((item) => isBlocked(item)));
+  const blocked = blocks.find((value): value is Date => Boolean(value));
+  if (blocked) return blocked;
+  await Promise.all(keys.map((item) => recordAttempt(item, passwordResetRequestRateLimitPolicy)));
+  return null;
+}
+
+export async function consumePasswordResetVerifyAttempt(request: Request, email: string) {
+  const keys = [key("password-reset-verify-account", email), key("password-reset-verify-ip", requestIp(request))];
+  const blocks = await Promise.all(keys.map((item) => isBlocked(item)));
+  const blocked = blocks.find((value): value is Date => Boolean(value));
+  if (blocked) return blocked;
+  await Promise.all(keys.map((item) => recordAttempt(item, passwordResetVerifyRateLimitPolicy)));
+  return null;
+}
+
+export async function clearPasswordResetAttempts(request: Request, email: string) {
+  await db.authRateLimit.deleteMany({
+    where: {
+      keyHash: {
+        in: [
+          key("password-reset-account", email),
+          key("password-reset-ip", requestIp(request)),
+          key("password-reset-verify-account", email),
+          key("password-reset-verify-ip", requestIp(request)),
+        ],
+      },
+    },
+  });
 }
 
 export function rateLimitResponse(blockedUntil: Date) {

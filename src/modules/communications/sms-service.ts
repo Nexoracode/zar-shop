@@ -53,6 +53,21 @@ export async function sendAutomatedSms(event: "orderCreated" | "paymentSuccess" 
   catch (error) { await db.smsCampaign.update({ where: { id: campaign.id }, data: { status: "FAILED", failedCount: 1, errorMessage: error instanceof Error ? error.message : "خطای ناشناخته" } }); return false; }
 }
 
+// Unlike sendAutomatedSms, this ignores the per-event marketing/notification toggles: a
+// password-reset code is a security-critical transactional message that must go out
+// whenever the SMS channel itself is on, not gated behind an "order shipped" style switch.
+export async function sendPasswordResetCode(phone: string | null | undefined, code: string) {
+  if (!phone) return false;
+  const settings = await getCommunicationSettings();
+  if (!settings.smsEnabled) return false;
+  const recipient = normalizeIranPhone(phone); if (!recipient) return false;
+  const provider = await db.smsProviderConfig.findFirst({ where: { isActive: true, provider: "FARAZ_SMS" } }); if (!provider) return false;
+  const message = `کد بازیابی رمز عبور شما: ${code}\nاین کد تا ۱۰ دقیقه دیگر معتبر است.`;
+  const campaign = await db.smsCampaign.create({ data: { provider: provider.provider, audience: "SYSTEM_PASSWORD_RESET", message, recipientCount: 1, status: "SENDING" } });
+  try { const result = await sendWithFaraz(provider, [recipient], message); await db.smsCampaign.update({ where: { id: campaign.id }, data: { status: "SENT", successfulCount: 1, providerData: result ?? undefined } }); return true; }
+  catch (error) { await db.smsCampaign.update({ where: { id: campaign.id }, data: { status: "FAILED", failedCount: 1, errorMessage: error instanceof Error ? error.message : "خطای ناشناخته" } }); return false; }
+}
+
 export async function sendManualSms(input: z.infer<typeof manualSmsSchema>, actorId: string) {
   const provider = await db.smsProviderConfig.findFirst({ where: { isActive: true, provider: "FARAZ_SMS" } });
   if (!provider) throw new Error("ابتدا فراز اس‌ام‌اس را پیکربندی و فعال کنید.");

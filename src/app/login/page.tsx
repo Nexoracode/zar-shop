@@ -9,7 +9,10 @@ export default function LoginPage() {
         <h1 className="mt-0 mb-[6px]">خوش آمدید</h1>
         <p className="text-[#747982] mt-0 mb-[25px]">برای مشاهده سفارش‌ها و ادامه خرید وارد شوید.</p>
         <AuthForm mode="login" />
-        <p className="mt-[18px] mb-0 text-sm">
+        <p className="mt-[14px] mb-0 text-sm">
+          <Link href="/forgot-password" className="text-[var(--brand-accent)] hover:underline">فراموشی رمز عبور؟</Link>
+        </p>
+        <p className="mt-[10px] mb-0 text-sm">
           حساب ندارید؟{" "}
           <Link href="/register" className="text-[var(--brand-accent)] hover:underline">ثبت‌نام کنید</Link>
         </p>

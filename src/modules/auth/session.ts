@@ -51,6 +51,12 @@ export async function destroySession() {
   store.delete(SESSION_COOKIE);
 }
 
+// A password reset or change is a signal the account may have been compromised, so every
+// other active session (any device, any browser) is revoked along with it.
+export async function destroyAllUserSessions(userId: string) {
+  await db.session.deleteMany({ where: { userId } });
+}
+
 export async function getCurrentUser() {
   const token = (await cookies()).get(SESSION_COOKIE)?.value;
   if (!token) return null;
