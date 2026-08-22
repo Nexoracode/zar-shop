@@ -9,6 +9,7 @@ import { getStorefrontCatalog } from "@/modules/products/storefront-catalog";
 import { storefrontCatalogQuerySchema } from "@/modules/products/storefront-catalog-contract";
 import { getGeneralStoreSettings } from "@/modules/settings/general-settings";
 import type { Metadata } from "next";
+import { env } from "@/lib/env";
 
 type ProductSearchParams = {
   q?: string;
@@ -44,9 +45,15 @@ type ProductHrefState = {
 
 export const dynamic = "force-dynamic";
 
-export async function generateMetadata(): Promise<Metadata> {
-  const settings = await getGeneralStoreSettings();
-  return { title: settings.industry === "GOLD" ? "محصولات طلا" : "محصولات" };
+export async function generateMetadata({ searchParams }: { searchParams: Promise<ProductSearchParams> }): Promise<Metadata> {
+  const [settings, params] = await Promise.all([getGeneralStoreSettings(), searchParams]);
+  const title = settings.industry === "GOLD" ? "محصولات طلا" : "محصولات";
+  const description = settings.industry === "GOLD"
+    ? "جدیدترین زیورآلات طلا با قیمت لحظه‌ای و فاکتور رسمی."
+    : "کالاهای فروشگاه با قیمت به‌روز و ارسال قابل پیگیری.";
+  const category = typeof params.category === "string" ? params.category : undefined;
+  const canonicalUrl = `${env.APP_URL}/products${category ? `?category=${encodeURIComponent(category)}` : ""}`;
+  return { title, description, alternates: { canonical: canonicalUrl } };
 }
 
 export default async function ProductsPage({ searchParams }: { searchParams: Promise<ProductSearchParams> }) {
@@ -121,6 +128,10 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
 
   return <main className="bg-white px-4 py-7 sm:px-6 lg:py-10">
     <div className="mx-auto w-full max-w-[1600px]">
+      <nav className="mb-5 flex flex-wrap items-center gap-2 text-xs text-slate-500" aria-label="مسیر صفحه">
+        <Link href="/" className="transition hover:text-slate-900">خانه</Link><span>/</span>
+        {selectedCategory ? <><Link href="/products" className="transition hover:text-slate-900">محصولات</Link><span>/</span><span className="font-bold text-slate-800">{selectedCategory.name}</span></> : <span className="font-bold text-slate-800">محصولات</span>}
+      </nav>
       <div className="grid items-start gap-6 lg:grid-cols-[270px_minmax(0,1fr)]">
         <aside className="sticky top-[var(--storefront-sticky-offset,112px)] hidden lg:block" aria-label="فیلتر محصولات">{filters}</aside>
         <section className="min-w-0" aria-label="نتایج محصولات">

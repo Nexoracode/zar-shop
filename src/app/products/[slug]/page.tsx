@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { cache } from "react";
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { CheckCircle2, PackageCheck, ShieldCheck, Star, Truck } from "lucide-react";
 import { AddToCart, ProductPurchaseProvider } from "@/components/add-to-cart";
@@ -23,14 +25,41 @@ import { getGeneralStoreSettings } from "@/modules/settings/general-settings";
 import { getCurrentUser } from "@/modules/auth/session";
 import { getStorefrontProductReviews } from "@/modules/reviews/service";
 import { ProductActivityTracker } from "@/components/product-activity-tracker";
+import { env } from "@/lib/env";
 
 export const dynamic = "force-dynamic";
+
+const getProductForPage = cache(async (slug: string, industry: "GOLD" | "GENERAL") =>
+  db.product.findFirst({ where: { slug, status: "ACTIVE", storeIndustry: industry }, include: { category: true, media: { include: { media: true }, orderBy: { position: "asc" } }, options: { orderBy: { position: "asc" } }, optionGuide: true } }));
+
+function plainProductDescription(product: { name: string; description: string | null }, storeName: string) {
+  return product.description
+    ? product.description.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim().slice(0, 180)
+    : `${product.name} با تضمین اصالت و ارسال قابل پیگیری از ${storeName}.`;
+}
+
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const { slug } = await params;
+  const settings = await getGeneralStoreSettings();
+  const product = await getProductForPage(slug, settings.industry);
+  if (!product) return {};
+  const cover = product.media[0]?.media;
+  const description = plainProductDescription(product, settings.storeName);
+  const canonicalUrl = `${env.APP_URL}/products/${product.slug}`;
+  return {
+    title: product.name,
+    description,
+    alternates: { canonical: canonicalUrl },
+    openGraph: { title: product.name, description, type: "website", url: canonicalUrl, images: cover ? [{ url: cover.url, alt: cover.alt ?? product.name }] : undefined },
+    twitter: { card: "summary_large_image", title: product.name, description, images: cover ? [cover.url] : undefined },
+  };
+}
 
 export default async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const settings = await getGeneralStoreSettings();
   const [product, gold, catalogSettings, currentUser] = await Promise.all([
-    db.product.findFirst({ where: { slug, status: "ACTIVE", storeIndustry: settings.industry }, include: { category: true, media: { include: { media: true }, orderBy: { position: "asc" } }, options: { orderBy: { position: "asc" } }, optionGuide: true } }),
+    getProductForPage(slug, settings.industry),
     settings.industry === "GOLD" ? getGoldPriceForDisplay() : Promise.resolve(null),
     getCatalogSettings(),
     getCurrentUser(),
@@ -123,7 +152,29 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
     discountLabel: discounted?.isActive ? product.discountType === "PERCENT" ? `${Number(product.discountValue).toLocaleString("fa-IR")}٪` : "تخفیف" : null,
   };
 
-  return <ProductPurchaseProvider initialSelectedOptions={initialSelectedOptions}><ProductActivityTracker productId={product.id} enabled={Boolean(currentUser && !currentUser.isGuest)} /><main className="bg-white px-4 pb-16 pt-5 antialiased sm:px-6 lg:pb-24">
+  const productJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: product.name,
+    sku: product.sku,
+    description: plainProductDescription(product, settings.storeName),
+    ...(galleryMedia.length ? { image: galleryMedia.map((item) => item.url) } : {}),
+    ...(product.category ? { category: product.category.name } : {}),
+    ...(total !== null ? {
+      offers: {
+        "@type": "Offer",
+        url: `${env.APP_URL}/products/${product.slug}`,
+        priceCurrency: "IRR",
+        price: total,
+        availability: product.stock > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
+      },
+    } : {}),
+    ...(reviewData.summary.count > 0 ? {
+      aggregateRating: { "@type": "AggregateRating", ratingValue: reviewData.summary.average, reviewCount: reviewData.summary.count },
+    } : {}),
+  };
+
+  return <ProductPurchaseProvider initialSelectedOptions={initialSelectedOptions}><ProductActivityTracker productId={product.id} enabled={Boolean(currentUser && !currentUser.isGuest)} /><script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(productJsonLd) }} /><main className="bg-white px-4 pb-16 pt-5 antialiased sm:px-6 lg:pb-24">
     <div className="mx-auto w-full max-w-[1440px]">
       <nav className="mb-6 flex flex-wrap items-center gap-2 text-xs text-slate-500" aria-label="مسیر محصول">
         <Link href="/" className="transition hover:text-slate-900">خانه</Link><span>/</span><Link href="/products" className="transition hover:text-slate-900">محصولات</Link>{product.category && <><span>/</span><Link href={`/products?category=${encodeURIComponent(product.category.slug)}`} className="transition hover:text-slate-900">{product.category.name}</Link></>}
