@@ -26,7 +26,7 @@ test("legacy category value metadata is removed while parsing definitions", () =
     name: "مشخصات فنی",
     attributes: [{ id: "attribute_memory", name: "حافظه", allowsMultiple: false, suggestedValues: ["۱۲۸ گیگابایت", "۲۵۶ گیگابایت"] }],
   }]);
-  assert.deepEqual(result[0].attributes[0], { id: "attribute_memory", name: "حافظه", important: false });
+  assert.deepEqual(result[0].attributes[0], { id: "attribute_memory", name: "حافظه", important: false, filterable: true });
 });
 
 test("all category attributes accept multiple product values", () => {
@@ -60,4 +60,22 @@ test("important category attributes are exposed to the storefront", () => {
     attributes: [{ id: "attribute_ram", name: "RAM", important: true }],
   }], [{ attributeId: "attribute_ram", values: ["12 GB"] }]);
   assert.equal(groups[0].attributes[0].important, true);
+});
+
+test("category attributes default to filterable", () => {
+  const parsed = categoryAttributeSchema.parse([{
+    id: "group_general",
+    name: "General specifications",
+    attributes: [{ id: "attribute_ram", name: "RAM" }],
+  }]);
+  assert.equal(parsed[0].attributes[0].filterable, true);
+});
+
+test("explicit filterable: false is preserved", () => {
+  const parsed = categoryAttributeSchema.parse([{
+    id: "group_general",
+    name: "General specifications",
+    attributes: [{ id: "attribute_ram", name: "RAM", filterable: false }],
+  }]);
+  assert.equal(parsed[0].attributes[0].filterable, false);
 });

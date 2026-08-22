@@ -6,6 +6,10 @@ export const categoryAttributeDefinitionSchema = z.object({
   id: stableIdSchema,
   name: z.string().trim().min(2).max(100),
   important: z.boolean().default(false),
+  // Defaults to true so existing category attribute data (saved before this field existed)
+  // keeps behaving exactly as before — every attribute stays a storefront filter until an
+  // admin deliberately opts one out, instead of the filter sidebar going blank on upgrade.
+  filterable: z.boolean().default(true),
 });
 
 export const categoryAttributeGroupSchema = z.object({

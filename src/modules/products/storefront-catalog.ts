@@ -137,7 +137,7 @@ export async function getStorefrontCatalog(query: StorefrontCatalogQuery, catego
   const colorCounts = new Map<string, number>();
   for (const product of products) for (const colorId of productColorIds(product)) colorCounts.set(colorId, (colorCounts.get(colorId) ?? 0) + 1);
 
-  const attributeDefinitions = new Map(facetCategories.flatMap((category) => parseCategoryAttributeSchema(category.attributeSchema).flatMap((group) => group.attributes.map((attribute) => [attribute.id, attribute.name] as const))));
+  const attributeDefinitions = new Map(facetCategories.flatMap((category) => parseCategoryAttributeSchema(category.attributeSchema).flatMap((group) => group.attributes.filter((attribute) => attribute.filterable).map((attribute) => [attribute.id, attribute.name] as const))));
   const brandAttributeIds = new Set([...attributeDefinitions].flatMap(([id, name]) => ["برند", "brand"].includes(name.trim().toLocaleLowerCase("fa-IR")) ? [id] : []));
   const brandCounts = new Map<string, number>();
   for (const product of products) for (const value of productBrandValues(product, brandAttributeIds)) brandCounts.set(value, (brandCounts.get(value) ?? 0) + 1);

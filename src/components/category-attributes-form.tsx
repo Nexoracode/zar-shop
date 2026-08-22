@@ -24,6 +24,7 @@ export function CategoryAttributesForm({ categoryId, initialGroups }: { category
   const [newGroupName, setNewGroupName] = useState("");
   const [newAttributeName, setNewAttributeName] = useState("");
   const [newAttributeImportant, setNewAttributeImportant] = useState(false);
+  const [newAttributeFilterable, setNewAttributeFilterable] = useState(true);
   const [saving, setSaving] = useState(false);
   const [sortOpen, setSortOpen] = useState(false);
   const [sortMode, setSortMode] = useState<SortMode | null>(null);
@@ -53,7 +54,7 @@ export function CategoryAttributesForm({ categoryId, initialGroups }: { category
         return;
       }
       const attributeId = stableId("attribute");
-      setGroups((current) => current.map((group) => group.id === selectedGroup.id ? { ...group, attributes: [...group.attributes, { id: attributeId, name, important: newAttributeImportant }] } : group));
+      setGroups((current) => current.map((group) => group.id === selectedGroup.id ? { ...group, attributes: [...group.attributes, { id: attributeId, name, important: newAttributeImportant, filterable: newAttributeFilterable }] } : group));
       setSelectedAttributeId(attributeId);
       setNewAttributeName("");
     } else {
@@ -69,7 +70,7 @@ export function CategoryAttributesForm({ categoryId, initialGroups }: { category
       }
       const groupId = stableId("group");
       const attributeId = stableId("attribute");
-      setGroups((current) => [...current, { id: groupId, name: groupName, attributes: [{ id: attributeId, name: attributeName, important: newAttributeImportant }] }]);
+      setGroups((current) => [...current, { id: groupId, name: groupName, attributes: [{ id: attributeId, name: attributeName, important: newAttributeImportant, filterable: newAttributeFilterable }] }]);
       setSelectedGroupId(groupId);
       setSelectedAttributeId(attributeId);
       setNewGroupName("");
@@ -83,6 +84,14 @@ export function CategoryAttributesForm({ categoryId, initialGroups }: { category
       return;
     }
     setGroups((current) => current.map((group) => group.id === selectedGroup.id ? { ...group, attributes: group.attributes.map((attribute) => attribute.id === selectedAttribute.id ? { ...attribute, important } : attribute) } : group));
+  }
+
+  function setFilterable(filterable: boolean) {
+    if (!selectedGroup || !selectedAttribute) {
+      setNewAttributeFilterable(filterable);
+      return;
+    }
+    setGroups((current) => current.map((group) => group.id === selectedGroup.id ? { ...group, attributes: group.attributes.map((attribute) => attribute.id === selectedAttribute.id ? { ...attribute, filterable } : attribute) } : group));
   }
 
   function removeAttribute(groupId: string, attributeId: string) {
@@ -199,6 +208,7 @@ export function CategoryAttributesForm({ categoryId, initialGroups }: { category
 
   const attributeOptions = selectedGroup?.attributes ?? [];
   const important = selectedAttribute?.important ?? newAttributeImportant;
+  const filterable = selectedAttribute?.filterable ?? newAttributeFilterable;
 
   return <><form onSubmit={submit} className="admin-sticky-save-form grid gap-4">
     <Card variant="secondary" className="rounded-xl border border-slate-200 bg-white shadow-sm"><Card.Content className="p-4 sm:p-5">
@@ -212,6 +222,7 @@ export function CategoryAttributesForm({ categoryId, initialGroups }: { category
           <HeroSelectField name="attributeDefinition" label="ویژگی" value={selectedAttributeId} includeEmptyOption={false} options={[...attributeOptions.map((attribute) => ({ value: attribute.id, label: attribute.name })), { value: newItemKey, label: "+ ثبت ویژگی جدید" }]} onValueChange={setSelectedAttributeId} />
           {selectedAttributeId === newItemKey && <label className={adminLabelClass}>نام ویژگی جدید<Input value={newAttributeName} onChange={(event) => setNewAttributeName(event.target.value)} placeholder="مثلاً رم یا مناسب برای" fullWidth variant="secondary" className={adminFieldClass} /></label>}
           <AdminCheckbox isSelected={important} onChange={setImportant} description="در خلاصه ویژگی‌های بالای صفحه جزئیات محصول نمایش داده شود">ویژگی مهم</AdminCheckbox>
+          <AdminCheckbox isSelected={filterable} onChange={setFilterable} description="این ویژگی در نوار فیلتر فروشگاه به مشتریان نمایش داده شود">قابل فیلتر</AdminCheckbox>
           {selectedAttributeId === newItemKey && <Button type="button" variant="primary" onPress={addDefinition} className="min-h-11 gap-2 font-bold sm:justify-self-start"><Plus size={15} />ثبت ویژگی</Button>}
       </div>
     </Card.Content></Card>
