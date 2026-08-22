@@ -4,7 +4,7 @@ import { PrismaClient } from "../../generated/prisma/client";
 import type { StoreIndustry } from "../../generated/prisma/enums";
 import { generalStoreSeed } from "./general.seed";
 import { goldStoreSeed } from "./gold.seed";
-import type { DevelopmentStoreSeed } from "./types";
+import type { DevelopmentHomepageMediaSeed, DevelopmentStoreSeed } from "./types";
 
 const localDatabaseHosts = new Set(["127.0.0.1", "localhost", "::1"]);
 
@@ -72,24 +72,50 @@ function emptyLicenses() {
   return ["SALES", "ONLINE", "ENAMAD"].map((id) => ({ id, mediaId: null, href: null }));
 }
 
-function generalHomepageSettings(menuItems: Array<{ id: string; label: string; href: string }>) {
+// Resolves the seed's media *keys* (stable, human-readable labels that only exist within
+// the seed data) into the real MediaAsset ids created for this run — those ids are only
+// known once the rows are actually inserted, so this can't be computed ahead of time.
+type ResolvedHomepageMedia = {
+  heroContentMode: "WITH_CONTENT" | "IMAGE_ONLY";
+  heroDesktopMediaId: string | null;
+  heroSlides: Array<{ id: string; href: string; desktopMediaId: string | null; mobileMediaId: string | null }>;
+  tileGroups: Array<{ id: string; layout: string; tiles: Array<{ id: string; href: string; mediaId: string | null }> }>;
+  promoBannerEnabled: boolean;
+  promoDesktopMediaId: string | null;
+  promoMobileMediaId: string | null;
+};
+
+function resolveHomepageMedia(homepage: DevelopmentHomepageMediaSeed | undefined, resolveMediaId: (key: string | undefined) => string | null): ResolvedHomepageMedia {
+  return {
+    heroContentMode: homepage?.heroContentMode ?? "WITH_CONTENT",
+    heroDesktopMediaId: resolveMediaId(homepage?.heroDesktopKey),
+    heroSlides: (homepage?.heroSlides ?? []).map((slide) => ({ id: slide.id, href: slide.href, desktopMediaId: resolveMediaId(slide.desktopKey), mobileMediaId: resolveMediaId(slide.mobileKey) })),
+    tileGroups: (homepage?.tileGroups ?? []).map((group) => ({ id: group.id, layout: group.layout, tiles: group.tiles.map((tile) => ({ id: tile.id, href: tile.href, mediaId: resolveMediaId(tile.key) })) })),
+    promoBannerEnabled: homepage?.promoBannerEnabled ?? false,
+    promoDesktopMediaId: resolveMediaId(homepage?.promoDesktopKey),
+    promoMobileMediaId: resolveMediaId(homepage?.promoMobileKey),
+  };
+}
+
+function generalHomepageSettings(menuItems: Array<{ id: string; label: string; href: string }>, resolvedMedia: ResolvedHomepageMedia) {
   return {
     sections: homepageSections(),
     menuItems,
+    tileGroups: resolvedMedia.tileGroups,
     treasureCards: emptyTreasureCards(),
     licenses: emptyLicenses(),
-    heroSlides: [],
-    heroContentMode: "WITH_CONTENT",
+    heroSlides: resolvedMedia.heroSlides,
+    heroContentMode: resolvedMedia.heroContentMode,
     heroTitle: "خرید ساده، انتخاب مطمئن",
     heroDescription: "محصولات موردنیازتان را با قیمت شفاف، موجودی به‌روز و ارسال قابل پیگیری انتخاب کنید.",
     heroButtonLabel: "مشاهده محصولات",
     heroButtonHref: "/products",
-    heroDesktopMediaId: null,
+    heroDesktopMediaId: resolvedMedia.heroDesktopMediaId,
     heroMobileMediaId: null,
-    promoBannerEnabled: false,
+    promoBannerEnabled: resolvedMedia.promoBannerEnabled,
     promoBannerHref: null,
-    promoDesktopMediaId: null,
-    promoMobileMediaId: null,
+    promoDesktopMediaId: resolvedMedia.promoDesktopMediaId,
+    promoMobileMediaId: resolvedMedia.promoMobileMediaId,
   };
 }
 
@@ -106,13 +132,29 @@ async function createStore(db: PrismaClient, seed: DevelopmentStoreSeed) {
     },
   });
 
+  // Media rows are created first so category/product/homepage slots below can reference the
+  // real ids that only exist once these rows are actually inserted.
+  const mediaIds = new Map<string, string>();
+  for (const item of seed.media ?? []) {
+    const created = await db.mediaAsset.create({
+      data: { type: item.type, scope: item.scope, url: item.url, storageKey: item.storageKey, title: item.title ?? null, mimeType: item.mimeType, sizeBytes: item.sizeBytes },
+    });
+    mediaIds.set(item.key, created.id);
+  }
+  function resolveMediaId(key: string | undefined): string | null {
+    if (!key) return null;
+    const id = mediaIds.get(key);
+    if (!id) throw new Error(`Seed media key not found: ${key}`);
+    return id;
+  }
+
   const categoryIds = new Map<string, string>();
   const rootMenuItems: Array<{ id: string; label: string; href: string }> = [];
   for (const [index, category] of seed.categories.entries()) {
     const parentId = category.parentSlug ? categoryIds.get(category.parentSlug) : undefined;
     if (category.parentSlug && !parentId) throw new Error(`Seed parent category not found: ${category.parentSlug}`);
     const created = await db.category.create({
-      data: { name: category.name, slug: category.slug, description: category.description, parentId, attributeSchema: category.attributeSchema ?? [], featured: !parentId, isActive: true, sortOrder: (index + 1) * 10 },
+      data: { name: category.name, slug: category.slug, description: category.description, parentId, imageId: resolveMediaId(category.imageKey), attributeSchema: category.attributeSchema ?? [], featured: !parentId, isActive: true, sortOrder: (index + 1) * 10 },
     });
     categoryIds.set(category.slug, created.id);
     if (!parentId) rootMenuItems.push({ id: `category-${created.id}`, label: created.name, href: `/products?category=${created.slug}` });
@@ -122,7 +164,7 @@ async function createStore(db: PrismaClient, seed: DevelopmentStoreSeed) {
     const categoryId = categoryIds.get(product.categorySlug);
     if (!categoryId) throw new Error(`Seed category not found: ${product.categorySlug}`);
     const hasDiscount = Boolean(product.discountPercent);
-    await db.product.create({
+    const created = await db.product.create({
       data: {
         sku: product.sku,
         name: product.name,
@@ -148,8 +190,15 @@ async function createStore(db: PrismaClient, seed: DevelopmentStoreSeed) {
         attributes: product.attributes ?? [],
       },
     });
+    if (product.media?.length) {
+      await db.productMedia.createMany({
+        data: product.media.map((item, position) => ({ productId: created.id, mediaId: resolveMediaId(item.key)!, position, isCover: item.isCover ?? false })),
+      });
+    }
   }
 
+  const brandLogoId = resolveMediaId(seed.brandLogoKey);
+  const resolvedHomepageMedia = resolveHomepageMedia(seed.homepage, resolveMediaId);
   await db.storeSetting.create({
     data: {
       id: "main",
@@ -162,7 +211,7 @@ async function createStore(db: PrismaClient, seed: DevelopmentStoreSeed) {
       homepageTreasureCards: emptyTreasureCards(),
       homepageLicenses: emptyLicenses(),
       homepageHeroSlides: [],
-      generalHomepageSettings: seed.industry === "GENERAL" ? generalHomepageSettings(rootMenuItems) : undefined,
+      generalHomepageSettings: seed.industry === "GENERAL" ? generalHomepageSettings(rootMenuItems, resolvedHomepageMedia) : undefined,
       heroContentMode: "WITH_CONTENT",
       heroTitle: seed.industry === "GOLD" ? "درخشش ماندگار، انتخابی مطمئن" : "خرید ساده، انتخاب مطمئن",
       heroDescription: seed.industry === "GOLD" ? "جدیدترین زیورآلات طلا با قیمت لحظه‌ای و تضمین اصالت" : "محصولات کاربردی با قیمت شفاف و موجودی به‌روز",
@@ -174,6 +223,10 @@ async function createStore(db: PrismaClient, seed: DevelopmentStoreSeed) {
       brandDangerColor: "#B8423A",
       liveGoldPrice: seed.industry === "GOLD",
       orderNumberPrefix: seed.industry === "GOLD" ? "ZG" : "GS",
+      mainLogoMediaId: brandLogoId,
+      darkLogoMediaId: brandLogoId,
+      faviconMediaId: brandLogoId,
+      socialImageMediaId: brandLogoId,
     },
   });
 
