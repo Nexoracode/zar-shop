@@ -77,7 +77,10 @@ export function AccountOrdersPanel({ orders, showCountdown, warningMinutes }: { 
             // Resuming payment always goes through /checkout, which looks up the customer's
             // own most-recent pending order server-side (see app/checkout/page.tsx) — the
             // same entry point already used by PendingOrderCartNotice on the cart page.
-            <div className="border-t border-[var(--border)] px-4 py-3 sm:px-5"><Link href="/checkout" className="inline-flex min-h-9 items-center gap-2 rounded-lg bg-[var(--brand-primary)] px-4 text-xs font-bold text-[var(--brand-primary-foreground)] transition hover:brightness-105"><CreditCard size={17} />پرداخت</Link></div>
+            <div className="flex items-center gap-3 border-t border-[var(--border)] px-4 py-3 sm:px-5">
+              {showCountdown && order.expiresAt ? <OrderExpiryCountdown variant="sentence" expiresAt={order.expiresAt} warningMinutes={warningMinutes} /> : null}
+              <Link href="/checkout" className="mr-auto inline-flex min-h-9 shrink-0 items-center gap-2 rounded-lg bg-[var(--brand-primary)] px-4 text-xs font-bold text-[var(--brand-primary-foreground)] transition hover:brightness-105"><CreditCard size={17} />پرداخت</Link>
+            </div>
           ) : null}
         </article>;
       })}

@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { Chip } from "@heroui/react";
+import { TriangleAlert } from "lucide-react";
 
 const noopSubscribe = () => () => undefined;
 
@@ -13,7 +14,13 @@ function remainingLabel(milliseconds: number) {
   return `مهلت پرداخت: ${minutes.toLocaleString("fa-IR")}:${seconds.toLocaleString("fa-IR", { minimumIntegerDigits: 2 })}`;
 }
 
-export function OrderExpiryCountdown({ expiresAt, warningMinutes, className = "", onExpired }: { expiresAt: string; warningMinutes: number; className?: string; onExpired?: () => void }) {
+function remainingSentence(milliseconds: number) {
+  if (milliseconds <= 0) return "مهلت پرداخت این سفارش به پایان رسیده است.";
+  const minutesLeft = Math.max(1, Math.ceil(milliseconds / 60_000));
+  return `سفارش در صورت عدم پرداخت تا ${minutesLeft.toLocaleString("fa-IR")} دقیقه دیگر لغو خواهد شد.`;
+}
+
+export function OrderExpiryCountdown({ expiresAt, warningMinutes, className = "", onExpired, variant = "chip" }: { expiresAt: string; warningMinutes: number; className?: string; onExpired?: () => void; variant?: "chip" | "sentence" }) {
   const [remaining, setRemaining] = useState(() => new Date(expiresAt).getTime() - Date.now());
   // `remaining` is computed from Date.now() at both server-render and client-hydration
   // time, so the two disagree by however long that gap takes; gating the rendered text
@@ -34,5 +41,6 @@ export function OrderExpiryCountdown({ expiresAt, warningMinutes, className = ""
     onExpired?.();
   }, [onExpired, remaining]);
   const urgent = hydrated && remaining <= warningMinutes * 60_000;
+  if (variant === "sentence") return <span className={`inline-flex items-center gap-1.5 text-xs font-bold text-amber-700 ${className}`}><TriangleAlert size={15} className="shrink-0 text-amber-600" />{hydrated ? remainingSentence(remaining) : " "}</span>;
   return <Chip size="sm" variant="soft" className={`${className} ${urgent ? "text-[var(--danger)]" : "text-[var(--brand-accent)]"}`}><Chip.Label>{hydrated ? remainingLabel(remaining) : " "}</Chip.Label></Chip>;
 }
