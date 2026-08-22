@@ -1,22 +1,31 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useState, type FormEvent, type ReactNode } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { ChevronLeft } from "lucide-react";
 import { Alert, Button, Input, Spinner, toast } from "@heroui/react";
 import { AdminCheckbox } from "@/components/admin-checkbox";
 import { OtpCodeInput } from "@/components/otp-code-input";
 import { OtpResendCountdown } from "@/components/otp-resend-countdown";
+import { PasswordInput } from "@/components/password-input";
 
 type Step = "phone" | "password" | "login-otp" | "register-otp" | "register-complete";
 type OtpPurpose = "LOGIN" | "REGISTER";
 
-const fieldClass = "w-full border border-[#e7e6e2] rounded-sm bg-white px-[13px] py-3 outline-none focus:border-[var(--brand-accent)] focus:ring-2 focus:ring-[var(--brand-accent)]/20";
+const fieldClass = "w-full min-h-12 rounded-lg border border-[#e0dfda] bg-white px-[14px] text-sm outline-none transition focus:border-[var(--brand-primary)] focus:ring-2 focus:ring-[var(--brand-primary)]/15";
 const labelClass = "text-[#4b5160] text-[0.84rem] font-bold";
-const submitClass = "min-h-[46px] px-6 py-[9px] inline-flex items-center justify-center bg-[var(--brand-primary)] text-[var(--brand-primary-foreground)] border border-[var(--brand-primary)] rounded-sm transition-all hover:-translate-y-[2px] hover:brightness-110 hover:shadow-[0_8px_20px_rgba(20,35,61,0.12)] disabled:opacity-60 disabled:cursor-not-allowed";
-const linkButtonClass = "text-[var(--brand-accent)] hover:underline";
+const submitClass = "min-h-12 px-6 inline-flex items-center justify-center gap-2 rounded-lg bg-[var(--brand-primary)] text-[var(--brand-primary-foreground)] border border-[var(--brand-primary)] transition hover:brightness-110 disabled:opacity-60 disabled:cursor-not-allowed";
+const secondaryActionClass = "min-h-11 gap-1 rounded-lg text-[13px] font-bold text-[var(--brand-accent)] hover:bg-[var(--brand-accent)]/8";
+const switchLinkClass = "min-h-9 min-w-0 gap-0.5 rounded-lg px-2 text-[13px] font-bold text-[var(--brand-accent)] hover:bg-[var(--brand-accent)]/8";
 
-function maskPhone(phone: string) {
-  return phone.length === 11 ? `${phone.slice(0, 4)}***${phone.slice(7)}` : phone;
+function StepHeader({ title, subtitle }: { title: string; subtitle?: ReactNode }) {
+  return (
+    <div className="grid gap-1.5">
+      <h2 className="m-0 text-[17px] font-bold text-[#1f1f1f]">{title}</h2>
+      {subtitle && <p className="m-0 text-[13px] leading-6 text-[#848484]">{subtitle}</p>}
+    </div>
+  );
 }
 
 async function postJson(url: string, body: unknown) {
@@ -35,7 +44,8 @@ function reportFailure(setError: (value: string) => void, status: number, messag
 
 // Single Digikala-style flow used by both /login and /register: the entered phone number
 // determines the branch server-side (existing account -> password/OTP login, new number ->
-// OTP-verified registration), so there is no separate "mode" prop.
+// OTP-verified registration), so there is no separate "mode" prop. Each step renders its own
+// heading, mirroring how digikala's SSO screen replaces its title as the flow progresses.
 export function AuthFlow() {
   const router = useRouter();
   const [step, setStep] = useState<Step>("phone");
@@ -151,7 +161,8 @@ export function AuthFlow() {
 
   if (step === "phone") {
     return (
-      <form className="grid gap-4" onSubmit={submitPhone}>
+      <form className="grid gap-5" onSubmit={submitPhone}>
+        <StepHeader title="ورود یا ثبت‌نام" subtitle="لطفاً شماره موبایل خود را وارد کنید" />
         <div className="grid gap-[7px]">
           <label htmlFor="phone" className={labelClass}>شماره موبایل</label>
           <Input id="phone" name="phone" inputMode="tel" dir="ltr" placeholder="09123456789" required fullWidth variant="secondary" className={fieldClass} autoFocus />
@@ -166,19 +177,21 @@ export function AuthFlow() {
 
   if (step === "password") {
     return (
-      <form className="grid gap-4" onSubmit={submitPassword}>
-        <p className="m-0 text-sm text-[#4b5160]">ورود با شماره <strong dir="ltr">{phone}</strong> — <button type="button" onClick={backToPhone} className={linkButtonClass}>تغییر شماره</button></p>
+      <form className="grid gap-5" onSubmit={submitPassword}>
+        <StepHeader title="رمز عبور را وارد کنید" subtitle={<>ورود با شماره <strong dir="ltr">{phone}</strong></>} />
+        <Button type="button" variant="ghost" onPress={backToPhone} className={`${switchLinkClass} justify-self-start`}><ChevronLeft size={15} />تغییر شماره موبایل</Button>
         <div className="grid gap-[7px]">
           <label htmlFor="password" className={labelClass}>رمز عبور</label>
-          <Input id="password" name="password" type="password" dir="ltr" required fullWidth variant="secondary" className={fieldClass} autoFocus />
+          <PasswordInput id="password" name="password" required fullWidth variant="secondary" className={fieldClass} autoFocus />
         </div>
         {error && <Alert status="danger"><Alert.Description>{error}</Alert.Description></Alert>}
         <Button type="submit" variant="primary" fullWidth className={submitClass} isPending={loading}>
           {({ isPending }) => <>{isPending && <Spinner color="current" size="sm" />}{isPending ? "در حال بررسی..." : "ورود"}</>}
         </Button>
-        <Button type="button" variant="ghost" fullWidth isPending={altLoading} isDisabled={loading} onPress={requestLoginOtp} className="min-h-10 text-xs font-bold text-[var(--brand-accent)]">
-          {({ isPending }) => <>{isPending && <Spinner color="current" size="sm" />}{isPending ? "در حال ارسال..." : "ورود با کد یکبار مصرف"}</>}
+        <Button type="button" variant="ghost" fullWidth isPending={altLoading} isDisabled={loading} onPress={requestLoginOtp} className={secondaryActionClass}>
+          {({ isPending }) => <>{isPending && <Spinner color="current" size="sm" />}{isPending ? "در حال ارسال..." : <><ChevronLeft size={15} />ورود با کد یکبار مصرف</>}</>}
         </Button>
+        <Link href="/forgot-password" className={`${secondaryActionClass} flex items-center justify-center`}><ChevronLeft size={15} />فراموشی رمز عبور</Link>
       </form>
     );
   }
@@ -187,22 +200,23 @@ export function AuthFlow() {
     const purpose: OtpPurpose = step === "login-otp" ? "LOGIN" : "REGISTER";
     const submit = step === "login-otp" ? submitLoginOtp : submitRegisterOtp;
     return (
-      <form className="grid gap-4" onSubmit={submit}>
-        <p className="m-0 text-sm leading-7 text-[#4b5160]">کد ۶ رقمی پیامک‌شده به شماره <strong dir="ltr">{maskPhone(phone)}</strong> را وارد کنید.</p>
+      <form className="grid gap-5" onSubmit={submit}>
+        <StepHeader title="کد تایید را وارد کنید" subtitle={<>کد تایید برای شماره <strong dir="ltr">{phone}</strong> پیامک شد</>} />
+        {step === "login-otp" && <Button type="button" variant="ghost" onPress={() => setStep("password")} className={`${switchLinkClass} justify-self-start`}><ChevronLeft size={15} />ورود با رمز عبور</Button>}
         <OtpCodeInput value={otp} onChange={setOtp} isDisabled={loading} />
         {error && <Alert status="danger"><Alert.Description>{error}</Alert.Description></Alert>}
         <Button type="submit" variant="primary" fullWidth className={submitClass} isPending={loading} isDisabled={otp.length !== 6}>
           {({ isPending }) => <>{isPending && <Spinner color="current" size="sm" />}{isPending ? "در حال بررسی..." : "تأیید کد"}</>}
         </Button>
         <OtpResendCountdown key={resendKey} onResend={() => resendOtp(purpose)} isResending={altLoading} />
-        <button type="button" onClick={backToPhone} className={`text-center text-xs font-bold ${linkButtonClass}`}>تغییر شماره موبایل</button>
+        <Button type="button" variant="ghost" onPress={backToPhone} className={`${switchLinkClass} justify-self-center`}>تغییر شماره موبایل</Button>
       </form>
     );
   }
 
   return (
-    <form className="grid gap-4" onSubmit={submitRegisterComplete}>
-      <p className="m-0 text-sm text-[#4b5160]">شماره <strong dir="ltr">{phone}</strong> تأیید شد؛ برای تکمیل ثبت‌نام رمز عبور بسازید.</p>
+    <form className="grid gap-5" onSubmit={submitRegisterComplete}>
+      <StepHeader title="تعیین رمز عبور" subtitle={<>شماره <strong dir="ltr">{phone}</strong> تأیید شد؛ برای تکمیل ثبت‌نام رمز عبور بسازید</>} />
       <div className="grid grid-cols-1 gap-[14px] sm:grid-cols-2">
         <div className="grid gap-[7px]">
           <label htmlFor="firstName" className={labelClass}>نام</label>
@@ -213,11 +227,11 @@ export function AuthFlow() {
           <Input id="lastName" name="lastName" minLength={2} fullWidth variant="secondary" className={fieldClass} />
         </div>
       </div>
-      <AdminCheckbox isSelected={smsMarketingConsent} onChange={setSmsMarketingConsent} description="برای تخفیف‌ها و خبرهای فروشگاه؛ هر زمان قابل لغو است">مایلم پیامک‌های اطلاع‌رسانی فروشگاه را دریافت کنم</AdminCheckbox>
       <div className="grid gap-[7px]">
         <label htmlFor="password" className={labelClass}>رمز عبور</label>
-        <Input id="password" name="password" type="password" dir="ltr" minLength={8} required fullWidth variant="secondary" className={fieldClass} />
+        <PasswordInput id="password" name="password" minLength={8} required fullWidth variant="secondary" className={fieldClass} />
       </div>
+      <AdminCheckbox isSelected={smsMarketingConsent} onChange={setSmsMarketingConsent} description="برای تخفیف‌ها و خبرهای فروشگاه؛ هر زمان قابل لغو است">مایلم پیامک‌های اطلاع‌رسانی فروشگاه را دریافت کنم</AdminCheckbox>
       {error && <Alert status="danger"><Alert.Description>{error}</Alert.Description></Alert>}
       <Button type="submit" variant="primary" fullWidth className={submitClass} isPending={loading}>
         {({ isPending }) => <>{isPending && <Spinner color="current" size="sm" />}{isPending ? "در حال ساخت حساب..." : "ساخت حساب"}</>}

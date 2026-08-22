@@ -5,6 +5,13 @@ import { Button, Spinner } from "@heroui/react";
 
 const RESEND_SECONDS = 60;
 
+function formatClock(totalSeconds: number) {
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  const clock = `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+  return clock.replace(/[0-9]/g, (digit) => "۰۱۲۳۴۵۶۷۸۹"[Number(digit)]);
+}
+
 export function OtpResendCountdown({ onResend, isResending = false }: { onResend: () => void; isResending?: boolean }) {
   const [remaining, setRemaining] = useState(RESEND_SECONDS);
 
@@ -15,11 +22,11 @@ export function OtpResendCountdown({ onResend, isResending = false }: { onResend
   }, [remaining]);
 
   if (remaining > 0) {
-    return <p className="m-0 text-center text-xs text-[#9a9fa8]">ارسال دوباره کد تا {remaining.toLocaleString("fa-IR")} ثانیه دیگر</p>;
+    return <p className="m-0 text-center text-xs text-[#9a9fa8]" dir="ltr">{formatClock(remaining)} <span dir="rtl">مانده تا دریافت مجدد کد</span></p>;
   }
 
   return (
-    <Button type="button" variant="ghost" fullWidth isPending={isResending} onPress={onResend} className="min-h-10 text-xs font-bold text-[var(--brand-accent)]">
+    <Button type="button" variant="ghost" fullWidth isPending={isResending} onPress={onResend} className="min-h-10 rounded-lg text-xs font-bold text-[var(--brand-accent)]">
       {({ isPending }) => <>{isPending && <Spinner color="current" size="sm" />}{isPending ? "در حال ارسال..." : "ارسال دوباره کد"}</>}
     </Button>
   );

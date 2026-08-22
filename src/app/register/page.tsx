@@ -1,19 +1,22 @@
 import Link from "next/link";
 import { Card } from "@/components/hero";
 import { AuthFlow } from "@/components/auth-flow";
+import { StandaloneTopBar } from "@/components/standalone-top-bar";
 
 export default function RegisterPage() {
   return (
-    <main className="grid min-h-dvh place-items-center bg-[#f5f5f3] px-4 py-12 sm:py-[60px]">
-      <Card variant="secondary" className="w-full max-w-[470px] rounded-2xl border border-[#e7e6e2] bg-white p-6 shadow-[0_22px_70px_rgba(29,49,85,0.08)] sm:p-[38px]">
-        <h1 className="mt-0 mb-[6px]">ساخت حساب زر</h1>
-        <p className="text-[#747982] mt-0 mb-[25px]">شماره موبایل خود را وارد کنید؛ اگر حساب دارید وارد می‌شوید، در غیر این صورت ثبت‌نام می‌کنید.</p>
-        <AuthFlow />
-        <p className="mt-[18px] mb-0 text-sm">
-          قبلاً ثبت‌نام کرده‌اید؟{" "}
-          <Link href="/login" className="text-[var(--brand-accent)] hover:underline">وارد شوید</Link>
-        </p>
-      </Card>
-    </main>
+    <>
+      <StandaloneTopBar backHref="/" backLabel="بازگشت به فروشگاه" />
+      <main className="grid min-h-[calc(100dvh-4rem)] place-items-center bg-[#f7f7f5] px-4 py-10 sm:py-14">
+        <div className="w-full max-w-[420px]">
+          <Card variant="secondary" className="rounded-2xl border border-[#e7e6e2] bg-white p-6 shadow-[0_22px_70px_rgba(29,49,85,0.06)] sm:p-8">
+            <AuthFlow />
+          </Card>
+          <p className="mb-0 mt-4 text-center text-xs leading-6 text-[#9a9fa8]">
+            ورود شما به معنای پذیرش <Link href="/pages/terms" className="text-[var(--brand-accent)] hover:underline">شرایط استفاده</Link> و <Link href="/pages/privacy" className="text-[var(--brand-accent)] hover:underline">حریم خصوصی</Link> است.
+          </p>
+        </div>
+      </main>
+    </>
   );
 }

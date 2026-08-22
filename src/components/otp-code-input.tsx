@@ -5,7 +5,7 @@ import { InputOTP, REGEXP_ONLY_DIGITS } from "@heroui/react";
 const OTP_LENGTH = 6;
 
 const slotClass =
-  "grid h-12 w-11 place-items-center rounded-sm border border-[#e7e6e2] bg-white text-lg font-bold outline-none data-[active=true]:border-[var(--brand-accent)] data-[active=true]:ring-2 data-[active=true]:ring-[var(--brand-accent)]/20";
+  "grid h-12 w-11 place-items-center rounded-lg border border-[#e0dfda] bg-white text-lg font-bold outline-none transition data-[active=true]:border-[var(--brand-primary)] data-[active=true]:ring-2 data-[active=true]:ring-[var(--brand-primary)]/15 data-[filled=true]:border-[#c7c6c1]";
 
 export function OtpCodeInput({
   value,
