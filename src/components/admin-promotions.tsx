@@ -11,7 +11,11 @@ import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
 import { HeroDateRangeField } from "@/components/hero-date-range-field";
 import { HeroNumberInput } from "@/components/hero-number-input";
 import { HeroSelectField } from "@/components/hero-select-field";
-import { adminFieldClass, adminLabelClass } from "@/components/admin-ui";
+import { AdminEmptyState, adminFieldClass, adminLabelClass } from "@/components/admin-ui";
+import { AdminListFilters } from "@/components/admin-list-filters";
+import { AdminBulkCheckbox, AdminBulkEditor } from "@/components/admin-bulk-editor";
+import { AdminPagination } from "@/components/admin-pagination";
+import { Table, TableBody, TableCell, TableColumn, TableContent, TableHeader, TableRow } from "@/components/hero";
 
 type PromotionType = "COUPON" | "FREE_SHIPPING" | "NEXT_PURCHASE" | "FIRST_PURCHASE";
 type DiscountType = "PERCENT" | "FIXED";
@@ -65,13 +69,19 @@ function apiMessage(payload: unknown, fallback: string) {
   return data.message ?? fallback;
 }
 
+type PromotionsPagination = { page: number; pageSize: number; totalItems: number; totalPages: number };
+
 type AdminPromotionsProps = {
   initialItems?: PromotionItem[];
   initialEditing?: PromotionItem | null;
   mode: "list" | "form";
+  query?: string;
+  status?: "active" | "inactive";
+  type?: PromotionType;
+  pagination?: PromotionsPagination;
 };
 
-export function AdminPromotions({ initialItems = [], initialEditing = null, mode }: AdminPromotionsProps) {
+export function AdminPromotions({ initialItems = [], initialEditing = null, mode, query = "", status, type, pagination }: AdminPromotionsProps) {
   const router = useRouter();
   const [selectedType, setSelectedType] = useState<PromotionType>(initialEditing?.type ?? "COUPON");
   const [dateRange, setDateRange] = useState<{ start: string; end: string } | null>(initialEditing ? { start: initialEditing.startsAt, end: initialEditing.endsAt } : null);
@@ -213,12 +223,50 @@ export function AdminPromotions({ initialItems = [], initialEditing = null, mode
       </form>
       </> : null}
 
-      {mode === "list" ?
+      {mode === "list" ? <>
       <Card variant="secondary" className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-sm"><Card.Content className="p-4 sm:p-5">
-        <div className="mb-4 flex items-center justify-between gap-3"><div><h2 className="m-0 text-base font-bold">پروموشن‌های ثبت‌شده</h2><p className="mb-0 mt-1 text-xs text-[var(--muted)]">وضعیت، مصرف و بازه هر کمپین را مدیریت کنید.</p></div><Chip size="sm" variant="soft"><Chip.Label>{items.length.toLocaleString("fa-IR")} مورد</Chip.Label></Chip></div>
-        {items.length ? <div className="grid gap-2">{items.map((item) => <PromotionRow key={item.id} item={item} toggling={togglingId === item.id} onEdit={() => editPromotion(item)} onToggle={() => void togglePromotion(item)} onDelete={() => { setDeleteError(""); setDeleting(item); }} />)}</div> : <div className="rounded-xl border-2 border-dashed border-[var(--border)] bg-[var(--surface-secondary)] px-5 py-10 text-center"><strong className="block text-sm">هنوز پروموشنی ثبت نشده است</strong><span className="mt-1 block text-xs text-[var(--muted)]">برای ساخت اولین کمپین از دکمه «پروموشن جدید» استفاده کنید.</span></div>}
+        <AdminListFilters
+          path="/admin/promotions"
+          query={query}
+          queryLabel="جستجوی پروموشن"
+          queryPlaceholder="عنوان یا کد تخفیف"
+          filters={[
+            { name: "status", label: "وضعیت", value: status ?? "", options: [{ value: "", label: "همه وضعیت‌ها" }, { value: "active", label: "فعال" }, { value: "inactive", label: "غیرفعال" }] },
+            { name: "type", label: "نوع پروموشن", value: type ?? "", options: [{ value: "", label: "همه انواع" }, ...promotionTypes.map((item) => ({ value: item.id, label: item.title }))] },
+          ]}
+        />
       </Card.Content></Card>
-      : null}
+      <Card variant="secondary" className="overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-sm">
+        {items.length ? <>
+          <div className="grid gap-2 p-4 md:hidden">{items.map((item) => <PromotionRow key={item.id} item={item} toggling={togglingId === item.id} onEdit={() => editPromotion(item)} onToggle={() => void togglePromotion(item)} onDelete={() => { setDeleteError(""); setDeleting(item); }} />)}</div>
+          <AdminBulkEditor entity="promotions" entityLabel="پروموشن" ids={items.map((item) => item.id)} actions={[{ value: "active:on", label: "فعال‌کردن پروموشن‌ها" }, { value: "active:off", label: "غیرفعال‌کردن پروموشن‌ها" }]} onCompleted={({ action, ids }) => { const nextActive = action === "active:on"; setItems((current) => current.map((item) => ids.includes(item.id) ? { ...item, isActive: nextActive } : item)); }}>
+            <Table><TableContent aria-label="فهرست پروموشن‌ها" className="w-full table-fixed">
+              <TableHeader>
+                <TableColumn id="select" className="w-[6%] bg-slate-50/70 px-3 py-4 text-center"><span className="sr-only">انتخاب</span></TableColumn>
+                <TableColumn id="title" isRowHeader className="w-[30%] bg-slate-50/70 px-4 py-4 text-right text-xs font-bold text-slate-500">عنوان و نوع</TableColumn>
+                <TableColumn id="period" className="w-[22%] bg-slate-50/70 px-4 py-4 text-right text-xs font-bold text-slate-500">بازه اعتبار</TableColumn>
+                <TableColumn id="usage" className="w-[17%] bg-slate-50/70 px-4 py-4 text-right text-xs font-bold text-slate-500">مصرف</TableColumn>
+                <TableColumn id="status" className="w-[13%] bg-slate-50/70 px-4 py-4 text-right text-xs font-bold text-slate-500">وضعیت</TableColumn>
+                <TableColumn id="action" className="w-[12%] bg-slate-50/70 px-4 py-4 text-center text-xs font-bold text-slate-500"><span className="sr-only">عملیات</span></TableColumn>
+              </TableHeader>
+              <TableBody>{items.map((item) => {
+                const info = typeInfo(item.type);
+                const cell = "border-b border-slate-100 px-4 py-4 align-middle text-sm text-slate-600";
+                return <TableRow id={item.id} key={item.id} className="transition hover:bg-slate-50/60">
+                  <TableCell className={`${cell} text-center`}><AdminBulkCheckbox id={item.id} label={`انتخاب پروموشن ${item.title}`} /></TableCell>
+                  <TableCell className={cell}><div className="flex min-w-0 items-center gap-2"><span className={`grid size-8 shrink-0 place-items-center rounded-lg ${info.color}`}>{info.icon}</span><div className="min-w-0"><strong className="block truncate text-slate-800">{item.title}</strong><span className="block text-[11px] text-[var(--muted)]">{info.title}{item.code ? <code dir="ltr" className="mr-1.5 rounded-md bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold text-violet-700">{item.code}</code> : null}</span></div></div></TableCell>
+                  <TableCell className={`${cell} text-xs`}>{item.startsAt} تا {item.endsAt}</TableCell>
+                  <TableCell className={`${cell} text-xs`}>{item.usageCount.toLocaleString("fa-IR")} استفاده{item.rewardCount ? <span className="block text-[10px] text-[var(--muted)]">{item.rewardCount.toLocaleString("fa-IR")} پاداش صادرشده</span> : null}</TableCell>
+                  <TableCell className={cell}><Chip size="sm" variant="soft" className={item.isActive ? "text-emerald-700" : "text-slate-500"}><Chip.Label>{item.isActive ? "فعال" : "غیرفعال"}</Chip.Label></Chip></TableCell>
+                  <TableCell className={cell}><div className="flex items-center justify-center gap-1"><Button type="button" isIconOnly size="sm" variant="ghost" isPending={togglingId === item.id} aria-label={item.isActive ? `غیرفعال‌کردن ${item.title}` : `فعال‌کردن ${item.title}`} onPress={() => void togglePromotion(item)} className={item.isActive ? "text-emerald-600" : "text-slate-400"}>{item.isActive ? <Eye size={15} /> : <EyeOff size={15} />}</Button><Button type="button" isIconOnly size="sm" variant="ghost" isDisabled={togglingId === item.id} aria-label={`ویرایش ${item.title}`} onPress={() => editPromotion(item)}><Pencil size={14} /></Button><Button type="button" isIconOnly size="sm" variant="danger-soft" isDisabled={togglingId === item.id} aria-label={`حذف ${item.title}`} onPress={() => { setDeleteError(""); setDeleting(item); }}><Trash2 size={14} /></Button></div></TableCell>
+                </TableRow>;
+              })}</TableBody>
+            </TableContent></Table>
+          </AdminBulkEditor>
+          {pagination ? <AdminPagination {...pagination} /> : null}
+        </> : <AdminEmptyState title="پروموشنی ثبت نشده" description="برای ساخت اولین کمپین از دکمه «پروموشن جدید» استفاده کنید." />}
+      </Card>
+      </> : null}
 
       {mode === "list" ? <DeleteConfirmDialog open={Boolean(deleting)} title="حذف پروموشن" itemName={deleting?.title} description="اگر این پروموشن سابقه استفاده یا پاداش داشته باشد حذف نمی‌شود و باید آن را غیرفعال کنید." error={deleteError} loading={deletingBusy} onClose={() => { setDeleting(null); setDeleteError(""); }} onConfirm={() => void confirmDelete()} /> : null}
     </div>

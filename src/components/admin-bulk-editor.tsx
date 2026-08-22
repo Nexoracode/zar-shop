@@ -25,7 +25,7 @@ function useBulkSelection() {
   return context;
 }
 
-export function AdminBulkEditor({ entity, entityLabel, ids, actions, children, desktopClassName = "hidden md:block", onCompleted }: { entity: "products" | "categories" | "orders" | "users" | "reviews" | "colors" | "paymentGateways" | "smsProviders" | "smsCampaigns"; entityLabel: string; ids: string[]; actions: AdminBulkAction[]; children: ReactNode; desktopClassName?: string; onCompleted?: (result: { action: string; ids: string[] }) => void }) {
+export function AdminBulkEditor({ entity, entityLabel, ids, actions, children, desktopClassName = "hidden md:block", onCompleted }: { entity: "products" | "categories" | "orders" | "users" | "reviews" | "colors" | "promotions" | "paymentGateways" | "smsProviders" | "smsCampaigns"; entityLabel: string; ids: string[]; actions: AdminBulkAction[]; children: ReactNode; desktopClassName?: string; onCompleted?: (result: { action: string; ids: string[] }) => void }) {
   const router = useRouter();
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [action, setAction] = useState("");

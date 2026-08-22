@@ -8,7 +8,7 @@ import { auditRequestContext } from "@/modules/audit/request-context";
 import { releaseInventory } from "@/modules/orders/inventory";
 
 const bodySchema = z.object({
-  entity: z.enum(["products", "categories", "orders", "users", "reviews", "colors", "paymentGateways", "smsProviders", "smsCampaigns"]),
+  entity: z.enum(["products", "categories", "orders", "users", "reviews", "colors", "promotions", "paymentGateways", "smsProviders", "smsCampaigns"]),
   action: z.string().min(1).max(191),
   ids: z.array(z.string().min(1)).min(1).max(100),
 });
@@ -27,7 +27,7 @@ export async function PATCH(request: Request) {
   const uniqueIds = [...new Set(ids)];
   const adminOnlyEntities = new Set(["paymentGateways", "smsProviders", "smsCampaigns"]);
   if (adminOnlyEntities.has(entity) && !hasPermission(actor.role, "settings:manage")) return NextResponse.json({ message: "این عملیات فقط برای مدیر اصلی مجاز است." }, { status: 403 });
-  const permission = entity === "orders" ? "orders:manage" : entity === "users" ? "users:manage" : "catalog:manage";
+  const permission = entity === "orders" || entity === "promotions" ? "orders:manage" : entity === "users" ? "users:manage" : "catalog:manage";
   if (!adminOnlyEntities.has(entity) && !hasPermission(actor.role, permission)) return NextResponse.json({ message: "برای این عملیات دسترسی کافی ندارید." }, { status: 403 });
 
   let updated = 0;
@@ -90,6 +90,9 @@ export async function PATCH(request: Request) {
   } else if (entity === "colors") {
     if (action !== "active:on" && action !== "active:off") return NextResponse.json({ message: "عملیات رنگ معتبر نیست." }, { status: 422 });
     updated = (await db.color.updateMany({ where: { id: { in: uniqueIds } }, data: { isActive: action === "active:on" } })).count;
+  } else if (entity === "promotions") {
+    if (action !== "active:on" && action !== "active:off") return NextResponse.json({ message: "عملیات پروموشن معتبر نیست." }, { status: 422 });
+    updated = (await db.promotion.updateMany({ where: { id: { in: uniqueIds } }, data: { isActive: action === "active:on" } })).count;
   } else if (entity === "paymentGateways") {
     if (action !== "delete") return NextResponse.json({ message: "عملیات درگاه پرداخت معتبر نیست." }, { status: 422 });
     updated = (await db.paymentGatewayConfig.deleteMany({ where: { id: { in: uniqueIds } } })).count;
