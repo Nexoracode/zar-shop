@@ -22,7 +22,15 @@ function maskPhone(phone: string) {
 async function postJson(url: string, body: unknown) {
   const response = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
   const result = await response.json().catch(() => null);
-  return { ok: response.ok, result: result as { message?: string; exists?: boolean } | null };
+  return { ok: response.ok, status: response.status, result: result as { message?: string; exists?: boolean } | null };
+}
+
+// SMS delivery failures (503, see OtpSendFailedError) are transient infrastructure noise, not
+// something wrong with what the user typed — a toast fits that better than pinning the message
+// to the form with an inline Alert.
+function reportFailure(setError: (value: string) => void, status: number, message: string | undefined, fallback: string) {
+  if (status === 503) { toast.danger(message ?? fallback); return; }
+  setError(message ?? fallback);
 }
 
 // Single Digikala-style flow used by both /login and /register: the entered phone number
@@ -57,9 +65,9 @@ export function AuthFlow() {
     setLoading(true);
     setError("");
     const submittedPhone = String(new FormData(event.currentTarget).get("phone") ?? "").trim();
-    const { ok, result } = await postJson("/api/auth/phone/check", { phone: submittedPhone });
+    const { ok, status, result } = await postJson("/api/auth/phone/check", { phone: submittedPhone });
     setLoading(false);
-    if (!ok) { setError(result?.message ?? "بررسی شماره موبایل انجام نشد."); return; }
+    if (!ok) { reportFailure(setError, status, result?.message, "بررسی شماره موبایل انجام نشد."); return; }
     setPhone(submittedPhone);
     if (result?.exists) { setStep("password"); return; }
     goToOtpStep("register-otp");
@@ -81,18 +89,18 @@ export function AuthFlow() {
   async function requestLoginOtp() {
     setAltLoading(true);
     setError("");
-    const { ok, result } = await postJson("/api/auth/otp/request", { phone, purpose: "LOGIN" });
+    const { ok, status, result } = await postJson("/api/auth/otp/request", { phone, purpose: "LOGIN" });
     setAltLoading(false);
-    if (!ok) { setError(result?.message ?? "ارسال کد یکبار مصرف انجام نشد."); return; }
+    if (!ok) { reportFailure(setError, status, result?.message, "ارسال کد یکبار مصرف انجام نشد."); return; }
     goToOtpStep("login-otp");
   }
 
   async function resendOtp(purpose: OtpPurpose) {
     setAltLoading(true);
     setError("");
-    const { ok, result } = await postJson("/api/auth/otp/request", { phone, purpose });
+    const { ok, status, result } = await postJson("/api/auth/otp/request", { phone, purpose });
     setAltLoading(false);
-    if (!ok) { setError(result?.message ?? "ارسال دوباره کد انجام نشد."); return; }
+    if (!ok) { reportFailure(setError, status, result?.message, "ارسال دوباره کد انجام نشد."); return; }
     setOtp("");
     setResendKey((value) => value + 1);
     toast.success("کد جدید ارسال شد");
