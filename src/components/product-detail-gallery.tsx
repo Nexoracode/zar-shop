@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { Button, Modal, ProgressBar, toast } from "@heroui/react";
 import { Bell, ChartNoAxesCombined, ChevronLeft, ChevronRight, Ellipsis, Heart, ImageIcon, Info, List, Play, Scale, Share2, X } from "lucide-react";
 
@@ -24,6 +24,8 @@ type ProductDetailGalleryProps = {
   authenticated?: boolean;
   initialFavorite?: boolean;
 };
+
+const noopSubscribe = () => () => undefined;
 
 function formatCountdown(endAt: string | null | undefined, now: number) {
   if (!endAt) return null;
@@ -74,10 +76,15 @@ export function ProductDetailGallery({ productId, media, productName, productCod
   const [favorite, setFavorite] = useState(initialFavorite);
   const [priceAlert, setPriceAlert] = useState(false);
   const [now, setNow] = useState(() => Date.now());
+  // `now` is computed at both server-render and client-hydration time, so it differs by
+  // however long that gap takes; gating the countdown behind `hydrated` (false during SSR
+  // and the client's first hydration pass, true right after) keeps the rendered text
+  // identical between the two instead of racing a real timestamp against itself.
+  const hydrated = useSyncExternalStore(noopSubscribe, () => true, () => false);
   const selectedIndex = Math.max(0, media.findIndex((item) => item.id === selectedId));
   const selected = media[selectedIndex] ?? media[0];
   const previewMedia = useMemo(() => media.slice(0, 5), [media]);
-  const countdown = formatCountdown(discountEndsAt, now);
+  const countdown = hydrated ? formatCountdown(discountEndsAt, now) : null;
   const normalizedSoldPercent = Math.min(100, Math.max(0, soldPercent));
   const showSoldProgress = normalizedSoldPercent > 50;
 
