@@ -1,7 +1,7 @@
 type ProductAuditSource = Record<string, unknown> & {
   category?: { id: string; name: string } | null;
   media?: Array<{ position: number; isCover: boolean; media: { id: string; title: string | null; storageKey: string } }>;
-  options?: Array<{ id: string; name: string; values: unknown; position: number }>;
+  options?: Array<{ id: string; name: string; type: string; values: unknown; position: number }>;
   optionGuide?: { id: string; title: string | null; storageKey: string } | null;
 };
 
@@ -15,7 +15,7 @@ const productFieldLabels: Record<string, string> = {
   fixedPrice: "قیمت ثابت", discountType: "نوع تخفیف", discountValue: "مقدار تخفیف", discountStartsAt: "شروع تخفیف",
   discountEndsAt: "پایان تخفیف", stock: "موجودی", preparationDays: "زمان آماده‌سازی", featured: "محصول ویژه",
   attributes: "ویژگی‌ها", media: "گالری رسانه", options: "تنوع‌ها", id: "شناسه", title: "عنوان", storageKey: "کلید فایل",
-  position: "جایگاه", isCover: "تصویر اصلی", values: "مقادیر", value: "مقدار", colorId: "شناسه رنگ", isActive: "فعال",
+  position: "جایگاه", isCover: "تصویر اصلی", values: "مقادیر", value: "مقدار", colorId: "شناسه رنگ", isActive: "فعال", type: "نوع تنوع",
   price: "قیمت", productId: "شناسه محصول",
 };
 
@@ -48,7 +48,7 @@ export function productAuditSnapshot(product: ProductAuditSource) {
       position: item.position,
       isCover: item.isCover,
     })) ?? [],
-    options: product.options?.map((item) => ({ id: item.id, name: item.name, values: item.values, position: item.position })) ?? [],
+    options: product.options?.map((item) => ({ id: item.id, name: item.name, type: item.type, values: item.values, position: item.position })) ?? [],
   };
   return Object.fromEntries(productFields.map((field) => [field, normalize(snapshotSource[field])])) as Record<string, unknown>;
 }

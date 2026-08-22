@@ -24,7 +24,7 @@ export async function PATCH(request: Request, context: Context) {
       include: {
         category: { select: { id: true, name: true } },
         media: { select: { position: true, isCover: true, media: { select: { id: true, title: true, storageKey: true } } }, orderBy: { position: "asc" } },
-        options: { select: { id: true, name: true, values: true, position: true }, orderBy: { position: "asc" } },
+        options: { select: { id: true, name: true, type: true, values: true, position: true }, orderBy: { position: "asc" } },
         optionGuide: { select: { id: true, title: true, storageKey: true } },
       },
     });
@@ -78,7 +78,7 @@ export async function PATCH(request: Request, context: Context) {
         if (mediaIds.length) await tx.productMedia.createMany({ data: mediaIds.map((mediaId, position) => ({ productId: id, mediaId, position, isCover: position === 0 })) });
       }
       if (options) {
-        const existingOptions = await tx.productOption.findMany({ where: { productId: id }, select: { name: true, values: true } });
+        const existingOptions = await tx.productOption.findMany({ where: { productId: id }, select: { name: true, type: true, values: true } });
         const orderItems = await tx.orderItem.findMany({ where: { productId: id }, select: { selectedOptions: true } });
         const usedSelectionKeys = new Set(orderItems.flatMap((item) => optionEntries(item.selectedOptions).map(([name, value]) => optionSelectionKey(name, value))));
         const safeOptions = mergeOptionsPreservingHistory(existingOptions, options, usedSelectionKeys);

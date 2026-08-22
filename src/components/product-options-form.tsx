@@ -14,15 +14,21 @@ import { productSchema } from "@/modules/products/schemas";
 import { parseOptionValueShortcut } from "@/modules/products/option-shortcuts";
 
 type OptionValue = { value: string; colorId: string | null; isActive: boolean; stock: number | null; weightGrams: string | null; price: string | null; persisted?: boolean; used?: boolean };
-type DraftOption = { key: string; name: string; values: OptionValue[]; valueInput: string; persisted: boolean };
+type OptionType = "SELECT" | "COLOR";
+type DraftOption = { key: string; name: string; type: OptionType; values: OptionValue[]; valueInput: string; persisted: boolean };
 type ColorChoice = { id: string; name: string; hex: string };
+
+const optionTypeChoices: Array<{ value: OptionType; label: string }> = [
+  { value: "SELECT", label: "انتخابی (دکمه)" },
+  { value: "COLOR", label: "رنگ" },
+];
 
 export function ProductOptionsForm({ productId, productStock, storeIndustry, colors, initialOptions, showBackLink = true }: {
   productId: string;
   productStock: number;
   storeIndustry: "GOLD" | "GENERAL";
   colors: ColorChoice[];
-  initialOptions: Array<{ name: string; values: OptionValue[] }>;
+  initialOptions: Array<{ name: string; type: OptionType; values: OptionValue[] }>;
   showBackLink?: boolean;
 }) {
   const [options, setOptions] = useState<DraftOption[]>(() => initialOptions.map((option, index) => ({ key: `existing-${index}`, ...option, values: option.values.map((item) => ({ ...item, persisted: true })), valueInput: "", persisted: true })));
@@ -33,8 +39,14 @@ export function ProductOptionsForm({ productId, productStock, storeIndustry, col
     setOptions((current) => current.map((option) => option.key === key ? { ...option, ...update } : option));
   }
 
+  // Changing the type on a draft group clears its values — a color-linked value and a plain
+  // select value aren't interchangeable, so there's nothing safe to carry over.
+  function setOptionType(key: string, type: OptionType) {
+    updateOption(key, { type, values: [], valueInput: "" });
+  }
+
   function addOptionGroup() {
-    setOptions((current) => current.length >= 10 ? current : [...current, { key: `option-${crypto.randomUUID()}`, name: "", values: [], valueInput: "", persisted: false }]);
+    setOptions((current) => current.length >= 10 ? current : [...current, { key: `option-${crypto.randomUUID()}`, name: "", type: "SELECT", values: [], valueInput: "", persisted: false }]);
   }
 
   function addOptionValue(key: string) {
@@ -85,10 +97,10 @@ export function ProductOptionsForm({ productId, productStock, storeIndustry, col
       return;
     }
     const submittedOptions = options.map((option) => {
-      const pendingValues = option.name.includes("رنگ") ? [] : parseOptionValueShortcut(option.valueInput).values;
+      const pendingValues = option.type === "COLOR" ? [] : parseOptionValueShortcut(option.valueInput).values;
       const existingValues = new Set(option.values.map((item) => item.value));
       const values = [...option.values, ...pendingValues.filter((item) => !existingValues.has(item.value)).map((item) => ({ ...item, weightGrams: storeIndustry === "GOLD" ? item.weightGrams : null, price: null, colorId: null, isActive: true, stock: productStock }))];
-      return { name: option.name, values: values.map((item) => ({ value: item.value, colorId: item.colorId, isActive: item.isActive, stock: item.stock, weightGrams: item.weightGrams, price: item.price })) };
+      return { name: option.name, type: option.type, values: values.map((item) => ({ value: item.value, colorId: item.colorId, isActive: item.isActive, stock: item.stock, weightGrams: item.weightGrams, price: item.price })) };
     });
     const validation = productSchema.shape.options.safeParse(submittedOptions);
     if (!validation.success) {
@@ -126,9 +138,11 @@ export function ProductOptionsForm({ productId, productStock, storeIndustry, col
               {option.values.some((item) => item.used) ? <Button type="button" size="sm" isIconOnly variant="ghost" aria-label={`${option.values.some((item) => item.isActive) ? "غیرفعال‌سازی" : "فعال‌سازی"} گروه ${option.name}`} onPress={() => updateOption(option.key, { values: option.values.map((item) => ({ ...item, isActive: !option.values.some((value) => value.isActive) })) })} className={`mb-1 h-9 min-h-9 w-9 min-w-9 ${option.values.some((item) => item.isActive) ? "text-emerald-600" : "text-slate-400"}`}>{option.values.some((item) => item.isActive) ? <Eye size={16} /> : <EyeOff size={16} />}</Button> : <Button type="button" size="sm" isIconOnly variant="danger-soft" onPress={() => setOptions((current) => current.filter((item) => item.key !== option.key))} className="mb-1 h-9 min-h-9 w-9 min-w-9" aria-label={`حذف گروه ${option.name || (index + 1).toLocaleString("fa-IR")}`}><Trash2 size={15} /></Button>}
             </div>
 
-            {option.name.includes("رنگ") ? <div className={adminLabelClass}>انتخاب رنگ<HeroSelectField name={`color-${option.key}`} ariaLabel="انتخاب رنگ" value="" placeholder={colors.length ? "یک رنگ را انتخاب کنید" : "رنگی ثبت نشده"} disabled={!colors.length} options={colors.filter((color) => !option.values.some((item) => item.colorId === color.id)).map((color) => ({ value: color.id, label: `${color.name} (${color.hex})` }))} onValueChange={(colorId) => addOptionColor(option.key, colorId)} /></div> : <label className={adminLabelClass}>مقدار قابل انتخاب<span className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto]"><Input value={option.valueInput} onChange={(event) => updateOption(option.key, { valueInput: event.target.value })} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); addOptionValue(option.key); } }} fullWidth variant="secondary" placeholder={storeIndustry === "GOLD" ? "۱۲,۱۳,۱۴ یا ۱۲:۲/۴۰۰" : "کوچک،متوسط،بزرگ"} className={adminFieldClass} /><Button type="button" variant="secondary" onPress={() => addOptionValue(option.key)} className="min-h-11 shrink-0 gap-1 px-4"><Plus size={14} />افزودن</Button></span><span className="text-[10px] font-normal text-slate-400">{storeIndustry === "GOLD" ? "چند مقدار را با کاما جدا کنید؛ بعد از دونقطه وزن را بنویسید." : "چند مقدار را با کاما از هم جدا کنید."}</span></label>}
+            <div className={`${adminLabelClass} mb-3`}>نوع تنوع<HeroSelectField name={`type-${option.key}`} ariaLabel="نوع تنوع" value={option.type} disabled={option.persisted} includeEmptyOption={false} options={optionTypeChoices} onValueChange={(type) => setOptionType(option.key, type as OptionType)} /></div>
 
-            {option.name.includes("رنگ") && !colors.length && <p className="mt-2 text-xs text-amber-700">ابتدا از <Link href="/admin/colors" className="font-bold underline">صفحه رنگ‌ها</Link> رنگ موردنظر را ثبت کنید.</p>}
+            {option.type === "COLOR" ? <div className={adminLabelClass}>انتخاب رنگ<HeroSelectField name={`color-${option.key}`} ariaLabel="انتخاب رنگ" value="" placeholder={colors.length ? "یک رنگ را انتخاب کنید" : "رنگی ثبت نشده"} disabled={!colors.length} options={colors.filter((color) => !option.values.some((item) => item.colorId === color.id)).map((color) => ({ value: color.id, label: `${color.name} (${color.hex})` }))} onValueChange={(colorId) => addOptionColor(option.key, colorId)} /></div> : <label className={adminLabelClass}>مقدار قابل انتخاب<span className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto]"><Input value={option.valueInput} onChange={(event) => updateOption(option.key, { valueInput: event.target.value })} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); addOptionValue(option.key); } }} fullWidth variant="secondary" placeholder={storeIndustry === "GOLD" ? "۱۲,۱۳,۱۴ یا ۱۲:۲/۴۰۰" : "کوچک،متوسط،بزرگ"} className={adminFieldClass} /><Button type="button" variant="secondary" onPress={() => addOptionValue(option.key)} className="min-h-11 shrink-0 gap-1 px-4"><Plus size={14} />افزودن</Button></span><span className="text-[10px] font-normal text-slate-400">{storeIndustry === "GOLD" ? "چند مقدار را با کاما جدا کنید؛ بعد از دونقطه وزن را بنویسید." : "چند مقدار را با کاما از هم جدا کنید."}</span></label>}
+
+            {option.type === "COLOR" && !colors.length && <p className="mt-2 text-xs text-amber-700">ابتدا از <Link href="/admin/colors" className="font-bold underline">صفحه رنگ‌ها</Link> رنگ موردنظر را ثبت کنید.</p>}
             {option.values.length ? <div className="admin-content-scroll mt-4 grid gap-1.5 overflow-x-auto pb-1">
               <div className="grid min-w-[600px] grid-cols-[minmax(150px,1fr)_110px_minmax(220px,1.15fr)_38px] gap-2 px-3 text-[10px] font-bold text-slate-400"><span>مقدار</span><span>موجودی</span><span>{storeIndustry === "GOLD" ? "وزن (گرم)" : "قیمت (ریال)"}</span><span className="sr-only">وضعیت</span></div>
               {option.values.map((item) => {

@@ -19,6 +19,7 @@ export async function getProductOptionManagement(productId: string) {
     colors,
     initialOptions: product.options.map((option) => ({
       name: option.name,
+      type: option.type,
       values: parseOptionValues(option.values).map((item) => ({
         ...item,
         stock: item.stock ?? product.stock,

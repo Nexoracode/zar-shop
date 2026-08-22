@@ -27,6 +27,7 @@ type OptionManagementData = {
   colors: Array<{ id: string; name: string; hex: string }>;
   initialOptions: Array<{
     name: string;
+    type: "SELECT" | "COLOR";
     values: Array<{
       value: string;
       colorId: string | null;

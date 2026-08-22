@@ -113,7 +113,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   const cartOptions = optionValues.map(({ option, values }) => ({
     id: option.id,
     name: option.name,
-    kind: values.some((item) => item.colorId) ? "COLOR" as const : "SELECT" as const,
+    kind: option.type,
     values: values.map((item) => {
       const pricing = pricingForVariant(item.weightGrams, item.price);
       return { value: item.value, stock: item.stock ?? product.stock, weightGrams: item.weightGrams, ...pricing, color: item.colorId ? colorsById.get(item.colorId) ?? null : null };

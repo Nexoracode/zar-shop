@@ -28,7 +28,7 @@ export async function GET() {
   const colorsById = new Map(colors.map((color) => [color.id, color]));
   return NextResponse.json(products.map((product) => ({ ...product, options: product.options.map((option) => {
     const values = parseOptionValues(option.values);
-    return { ...option, kind: values.some((value) => value.colorId) ? "COLOR" : "SELECT", values: values.map((value) => ({ ...value, color: value.colorId ? colorsById.get(value.colorId) ?? null : null })) };
+    return { ...option, kind: option.type, values: values.map((value) => ({ ...value, color: value.colorId ? colorsById.get(value.colorId) ?? null : null })) };
   }) })));
 }
 

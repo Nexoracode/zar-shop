@@ -96,13 +96,13 @@ export function getSelectedOptionPrice(options: ProductOptionLike[], snapshot: u
 }
 
 export function mergeOptionsPreservingHistory(
-  existing: Array<{ name: string; values: unknown }>,
-  incoming: Array<{ name: string; values: ProductOptionValue[] }>,
+  existing: Array<{ name: string; type: "SELECT" | "COLOR"; values: unknown }>,
+  incoming: Array<{ name: string; type: "SELECT" | "COLOR"; values: ProductOptionValue[] }>,
   usedSelectionKeys: Set<string> = new Set(),
 ) {
-  const existingByName = new Map(existing.map((option) => [option.name, parseOptionValues(option.values)]));
+  const existingByName = new Map(existing.map((option) => [option.name, { type: option.type, values: parseOptionValues(option.values) }]));
   const merged = incoming.map((option) => {
-    const previous = existingByName.get(option.name) ?? [];
+    const previous = existingByName.get(option.name)?.values ?? [];
     const incomingValues = new Set(option.values.map((item) => item.value));
     existingByName.delete(option.name);
     return {
@@ -110,9 +110,9 @@ export function mergeOptionsPreservingHistory(
       values: [...option.values, ...previous.filter((item) => !incomingValues.has(item.value) && usedSelectionKeys.has(optionSelectionKey(option.name, item.value))).map((item) => ({ ...item, isActive: false }))],
     };
   });
-  for (const [name, values] of existingByName) {
+  for (const [name, { type, values }] of existingByName) {
     const usedValues = values.filter((item) => usedSelectionKeys.has(optionSelectionKey(name, item.value)));
-    if (usedValues.length) merged.push({ name, values: usedValues.map((item) => ({ ...item, isActive: false })) });
+    if (usedValues.length) merged.push({ name, type, values: usedValues.map((item) => ({ ...item, isActive: false })) });
   }
   return merged;
 }
