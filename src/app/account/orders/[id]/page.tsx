@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import type { Prisma } from "@generated/prisma/client";
 import { ArrowRight, FileCheck2, FileText, ImageIcon, ShieldCheck, Truck } from "lucide-react";
 import { AccountPaymentHistory, type AccountPaymentHistoryItem } from "@/components/account-payment-history";
+import { OrderCancelButton } from "@/components/order-cancel-button";
 import { OrderItemReviewAction } from "@/components/order-item-review-action";
 import { db } from "@/lib/db";
 import { formatDate, formatMoney } from "@/lib/format";
@@ -91,7 +92,10 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
     <header className="flex min-h-20 items-center gap-3 border-b border-[var(--border)] px-4 sm:px-6">
       <Link href="/account/orders" aria-label="بازگشت به سفارش‌ها" className="grid size-10 shrink-0 place-items-center rounded-lg text-slate-700 transition hover:bg-[var(--surface-secondary)]"><ArrowRight size={22} /></Link>
       <h1 className="m-0 text-lg font-bold sm:text-xl">جزئیات سفارش</h1>
-      {order.invoice ? <Link href={`/invoices/${order.id}`} className="mr-auto inline-flex min-h-10 items-center gap-2 text-xs font-bold text-[var(--brand-primary)]"><FileText size={17} />مشاهده فاکتور</Link> : null}
+      <div className="mr-auto flex items-center gap-3">
+        {order.status === "PENDING_PAYMENT" ? <OrderCancelButton orderId={order.id} orderNumber={order.orderNumber} /> : null}
+        {order.invoice ? <Link href={`/invoices/${order.id}`} className="inline-flex min-h-10 items-center gap-2 text-xs font-bold text-[var(--brand-primary)]"><FileText size={17} />مشاهده فاکتور</Link> : null}
+      </div>
     </header>
 
     <section className="grid gap-4 border-b border-[var(--border)] px-4 py-5 text-sm sm:px-6">
@@ -108,7 +112,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
       <div className="rounded-xl border border-[var(--border)] p-4 sm:p-5">
         <div className="flex flex-wrap items-center gap-3 text-xs"><strong>مرسوله ۱ از ۱</strong><span className="text-slate-300">•</span><span className="inline-flex items-center gap-2 font-bold text-[var(--danger)]"><Truck size={17} />{order.deliveryMethod === "STORE_PICKUP" ? "تحویل حضوری" : "ارسال بیمه‌شده"}</span></div>
         <div className="mt-5"><strong className={`block text-sm ${delivery.className.split(" ")[1]}`}>{delivery.label}</strong><span className="mt-3 block h-1.5 overflow-hidden rounded-full bg-slate-100"><span className={`block h-full rounded-full ${delivery.className.split(" ")[0]}`} style={{ width: `${delivery.progress}%` }} /></span></div>
-        <div className="mt-5 flex flex-wrap gap-x-4 gap-y-2 text-xs"><span><span className="text-[var(--muted)]">هزینه ارسال:</span> <b>{formatMoney(order.shipping.toString(), settings.currency)}</b></span><span className="text-slate-300">•</span><span><span className="text-[var(--muted)]">مبلغ مرسوله:</span> <b>{formatMoney(order.total.toString(), settings.currency)}</b></span><span className="sm:mr-auto"><span className="text-[var(--muted)]">کد پیگیری مرسوله:</span> <b>{order.status === "SHIPPED" || order.status === "DELIVERED" ? "در انتظار ثبت فروشگاه" : "پس از ارسال نمایش داده می‌شود"}</b></span></div>
+        <div className="mt-5 flex flex-wrap gap-x-4 gap-y-2 text-xs"><span><span className="text-[var(--muted)]">هزینه ارسال:</span> <b>{formatMoney(order.shipping.toString(), settings.currency)}</b></span><span className="text-slate-300">•</span><span><span className="text-[var(--muted)]">مبلغ مرسوله:</span> <b>{formatMoney(order.total.toString(), settings.currency)}</b></span><span className="sm:mr-auto"><span className="text-[var(--muted)]">کد پیگیری مرسوله:</span> <b dir={order.trackingNumber ? "ltr" : undefined}>{order.trackingNumber ?? (order.status === "SHIPPED" || order.status === "DELIVERED" ? "در انتظار ثبت فروشگاه" : "پس از ارسال نمایش داده می‌شود")}</b></span></div>
 
         <div className="mt-5 divide-y divide-[var(--border)] border-t border-[var(--border)]">{order.items.map((item) => {
           const media = item.product?.media[0]?.media;

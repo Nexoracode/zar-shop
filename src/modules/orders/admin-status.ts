@@ -2,6 +2,7 @@ import type { Prisma } from "@generated/prisma/client";
 import type { OrderStatus } from "@generated/prisma/enums";
 import { db } from "@/lib/db";
 import type { auditRequestContext } from "@/modules/audit/request-context";
+import { sendAutomatedSms } from "@/modules/communications/sms-service";
 import { InventoryUnavailableError, releaseInventory, reserveInventory } from "@/modules/orders/inventory";
 import { getOrderSettings, orderExpiresAt, type OrderSettings } from "@/modules/settings/order-settings";
 
@@ -38,13 +39,13 @@ export async function updateOrderStatusByAdmin(input: {
 }) {
   const settings = await getOrderSettings();
   try {
-    return await db.$transaction(async (transaction) => {
+    const result = await db.$transaction(async (transaction) => {
       const order = await transaction.order.findUnique({
         where: { id: input.orderId },
-        include: { items: true, payments: { select: { status: true } } },
+        include: { items: true, payments: { select: { status: true } }, user: { select: { phone: true } } },
       });
       if (!order) throw new AdminOrderStatusError("سفارش پیدا نشد.", 404);
-      if (order.status === input.status) return { status: order.status, expiresAt: order.expiresAt, inventoryAction: "NONE" as const };
+      if (order.status === input.status) return { status: order.status, expiresAt: order.expiresAt, inventoryAction: "NONE" as const, orderNumber: order.orderNumber, customerPhone: order.user.phone, changed: false };
 
       const shouldHoldInventory = orderStatusHoldsInventory(input.status);
       let inventoryReserved = order.inventoryReserved;
@@ -97,8 +98,12 @@ export async function updateOrderStatusByAdmin(input: {
           } as Prisma.InputJsonObject,
         },
       });
-      return { ...updated, inventoryAction };
+      return { ...updated, inventoryAction, orderNumber: order.orderNumber, customerPhone: order.user.phone, changed: true };
     });
+    if (result.changed && input.status === "SHIPPED") {
+      try { await sendAutomatedSms("orderShipped", result.customerPhone, { orderNumber: result.orderNumber }); } catch (error) { console.error("[sms] Order-shipped notification failed.", error); }
+    }
+    return { status: result.status, expiresAt: result.expiresAt, inventoryAction: result.inventoryAction };
   } catch (error) {
     if (error instanceof InventoryUnavailableError) throw new AdminOrderStatusError("برای فعال‌کردن دوباره سفارش، موجودی یک یا چند قلم کافی نیست.", 409);
     throw error;

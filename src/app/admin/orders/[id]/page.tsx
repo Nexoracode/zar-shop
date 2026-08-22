@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import type { Prisma } from "@generated/prisma/client";
 import { CalendarDays, CreditCard, FileText, MapPin, Package, Truck, UserRound } from "lucide-react";
 import { AdminPageHeader, AdminPanel, AdminStatusBadge } from "@/components/admin-ui";
+import { AdminOrderTrackingField } from "@/components/admin-order-tracking-field";
 import { db } from "@/lib/db";
 import { formatDateTime, formatMoney } from "@/lib/format";
 import {
@@ -105,6 +106,8 @@ export default async function OrderDetailsPage({ params }: { params: PageParams 
         <AdminPanel className="p-4"><span className="mb-2 flex items-center gap-2 text-xs text-slate-400"><Truck size={16} /> روش تحویل</span><strong className="text-sm text-[#17233b]">{order.deliveryMethod === "STORE_PICKUP" ? "تحویل حضوری" : "ارسال بیمه‌شده"}</strong></AdminPanel>
         <AdminPanel className="p-4"><span className="mb-2 flex items-center gap-2 text-xs text-slate-400"><CalendarDays size={16} /> آماده‌سازی تخمینی</span><strong className="text-sm text-[#17233b]">{order.estimatedReadyAt ? formatDateTime(order.estimatedReadyAt) : `${order.preparationDaysSnapshot.toLocaleString("fa-IR")} روز`}</strong></AdminPanel>
       </section>
+
+      {order.deliveryMethod === "INSURED_SHIPPING" && <div className="mb-5"><AdminOrderTrackingField orderId={order.id} initialTrackingNumber={order.trackingNumber} /></div>}
 
       <div className="grid items-stretch gap-5 lg:grid-cols-2 xl:grid-cols-12">
         <div className="contents">

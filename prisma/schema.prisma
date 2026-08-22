@@ -762,6 +762,7 @@ model Order {
   expiredAt                DateTime?
   expirationHandledAt      DateTime?
   deliveryMethod           DeliveryMethod        @default(INSURED_SHIPPING)
+  trackingNumber           String?               @db.VarChar(100)
   preparationDaysSnapshot  Int                   @default(2)
   estimatedReadyAt         DateTime?
   inventoryReserved        Boolean               @default(false)
