@@ -166,7 +166,7 @@ export function RichTextEditor({ value, onChange }: Props) {
 
 function Tool({ editor: _editor, label, icon, active, disabled, run }: { editor: Editor; label: string; icon: React.ReactNode; active?: boolean; disabled?: boolean; run: () => void }) {
   void _editor;
-  return <Button type="button" size="sm" isIconOnly variant={active ? "primary" : "ghost"} isDisabled={disabled} onPress={run} aria-label={label} className={`h-9 min-h-9 w-9 min-w-9 rounded-lg ${active ? "bg-[#172b4d] text-white" : "text-slate-600 hover:bg-white"}`}>{icon}</Button>;
+  return <Button type="button" size="sm" isIconOnly variant={active ? "primary" : "ghost"} isDisabled={disabled} onPress={run} aria-label={label} className={`h-9 min-h-9 w-9 min-w-9 rounded-lg ${active ? "bg-[var(--accent)] text-[var(--accent-foreground)]" : "text-slate-600 hover:bg-white"}`}>{icon}</Button>;
 }
 
 function Divider() { return <span className="mx-1 h-6 w-px bg-slate-200" aria-hidden="true" />; }

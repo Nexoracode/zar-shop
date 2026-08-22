@@ -70,7 +70,7 @@ export function AdminBulkEditor({ entity, entityLabel, ids, actions, children, d
         <div className="flex flex-wrap items-end gap-3 border-b border-slate-100 bg-white px-4 py-3">
           <div className="ml-auto flex min-h-10 items-center gap-4 text-xs font-bold text-slate-600">
             <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2"><AdminBulkSelectAll /><span>انتخاب همه</span></div>
-            <span className="flex items-center gap-2">{loading ? <Loader2 size={17} className="animate-spin text-[#9a7434]" /> : <CheckSquare size={17} className="text-[#9a7434]" />}{loading ? "در حال اعمال تغییر..." : selected.size ? `${selected.size.toLocaleString("fa-IR")} ${entityLabel} انتخاب شده` : `برای ویرایش سریع، ${entityLabel} را انتخاب کنید`}</span>
+            <span className="flex items-center gap-2">{loading ? <Loader2 size={17} className="animate-spin text-[var(--warning)]" /> : <CheckSquare size={17} className="text-[var(--warning)]" />}{loading ? "در حال اعمال تغییر..." : selected.size ? `${selected.size.toLocaleString("fa-IR")} ${entityLabel} انتخاب شده` : `برای ویرایش سریع، ${entityLabel} را انتخاب کنید`}</span>
           </div>
           <HeroSelectField name={`${entity}-bulk-action`} label="ویرایش سریع" value={action} disabled={!selected.size || loading} onValueChange={(value) => { setAction(value); if (!value) return; const selectedAction = actions.find((item) => item.value === value); if (selectedAction?.confirmation) setPendingAction(selectedAction); else void apply(value); }} options={[{ value: "", label: "انتخاب عملیات؛ اعمال خودکار" }, ...actions]} className="w-72" />
           <AdminTableRefreshButton className="mb-0.5" />

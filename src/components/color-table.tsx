@@ -29,7 +29,7 @@ export function ColorTable({ colors }: { colors: ColorItem[] }) {
             <div className="mt-4 flex items-center gap-2">
               <span className="text-xs text-slate-400">ترتیب {color.sortOrder.toLocaleString("fa-IR")}</span>
               <div className="mr-auto flex gap-1">
-                <Link href={`/admin/colors/${color.id}/edit`} aria-label={`ویرایش ${color.name}`} className="grid h-9 w-9 place-items-center rounded-lg border border-slate-200 text-[var(--brand-primary)]"><Pencil size={14} /></Link>
+                <Link href={`/admin/colors/${color.id}/edit`} aria-label={`ویرایش ${color.name}`} className="grid h-9 w-9 place-items-center rounded-lg border border-slate-200 text-[var(--accent)]"><Pencil size={14} /></Link>
                 <ColorDeleteButton id={color.id} name={color.name} iconOnly />
               </div>
             </div>
@@ -55,7 +55,7 @@ export function ColorTable({ colors }: { colors: ColorItem[] }) {
                 <TableCell className={cellClass}><AdminStatusBadge tone={color.isActive ? "success" : "neutral"}>{color.isActive ? "فعال" : "غیرفعال"}</AdminStatusBadge></TableCell>
                 <TableCell className={cellClass}>
                   <div className="flex items-center gap-1">
-                    <Link href={`/admin/colors/${color.id}/edit`} aria-label={`ویرایش ${color.name}`} title="ویرایش رنگ" className="inline-flex h-8 min-h-8 w-8 min-w-8 items-center justify-center rounded-lg border border-slate-200 text-[var(--brand-primary)] transition hover:border-[var(--brand-accent)] hover:text-[var(--brand-accent)]"><Pencil size={14} /></Link>
+                    <Link href={`/admin/colors/${color.id}/edit`} aria-label={`ویرایش ${color.name}`} title="ویرایش رنگ" className="inline-flex h-8 min-h-8 w-8 min-w-8 items-center justify-center rounded-lg border border-slate-200 text-[var(--accent)] transition hover:border-[var(--warning)] hover:text-[var(--warning)]"><Pencil size={14} /></Link>
                     <ColorDeleteButton id={color.id} name={color.name} iconOnly />
                   </div>
                 </TableCell>

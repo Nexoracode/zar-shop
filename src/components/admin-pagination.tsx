@@ -46,7 +46,7 @@ export function AdminPagination({ page, pageSize, totalItems, totalPages }: Prop
       <div className="flex items-center justify-between gap-1 sm:justify-end">
         <Button type="button" isIconOnly variant="secondary" aria-label="صفحه قبل" isDisabled={page <= 1 || isPending} onPress={() => update("page", page - 1)} className="h-9 min-h-9 w-9 min-w-9 border border-slate-200"><ChevronRight size={16} /></Button>
         {pages.map((item, index) => item === "ellipsis" ? <span key={`ellipsis-${index}`} className="grid h-9 w-8 place-items-center text-slate-400">…</span> : (
-          <Button key={item} type="button" isIconOnly variant={item === page ? "primary" : "ghost"} aria-label={`صفحه ${item.toLocaleString("fa-IR")}`} onPress={() => update("page", item)} className={`h-9 min-h-9 w-9 min-w-9 text-xs font-bold ${item === page ? "bg-[#172b4d] text-white" : "text-slate-600"}`}>{item.toLocaleString("fa-IR")}</Button>
+          <Button key={item} type="button" isIconOnly variant={item === page ? "primary" : "ghost"} aria-label={`صفحه ${item.toLocaleString("fa-IR")}`} onPress={() => update("page", item)} className={`h-9 min-h-9 w-9 min-w-9 text-xs font-bold ${item === page ? "bg-[var(--accent)] text-[var(--accent-foreground)]" : "text-slate-600"}`}>{item.toLocaleString("fa-IR")}</Button>
         ))}
         <Button type="button" isIconOnly variant="secondary" aria-label="صفحه بعد" isDisabled={page >= totalPages || isPending} onPress={() => update("page", page + 1)} className="h-9 min-h-9 w-9 min-w-9 border border-slate-200"><ChevronLeft size={16} /></Button>
       </div>
