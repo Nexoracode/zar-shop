@@ -96,6 +96,11 @@ export function StorefrontCatalogFilters({ facets, categoryScoped, selectedBrand
   const selectedColorSet = new Set(selectedColors);
   const selectedAttributeSet = new Set(selectedAttributes);
   const priceBounds = facets.priceRange ?? { min: 0, max: 1 };
+  // A single matching product (or several tied at the same price) leaves min === max, i.e.
+  // zero range for the slider to divide by — HeroUI's Slider computes thumb position as
+  // (value - min) / (max - min), which is a 0/0 NaN in that case. There's also nothing
+  // meaningful to filter by range when every product is the same price, so just hide it.
+  const hasPriceRange = facets.priceRange !== null && facets.priceRange.min !== facets.priceRange.max;
   const resolvedMinPrice = Math.min(Math.max(minPrice ?? priceBounds.min, priceBounds.min), priceBounds.max);
   const resolvedMaxPrice = Math.max(Math.min(maxPrice ?? priceBounds.max, priceBounds.max), priceBounds.min);
   const [priceValues, setPriceValues] = useState<[number, number]>([resolvedMinPrice, resolvedMaxPrice]);
@@ -138,8 +143,8 @@ export function StorefrontCatalogFilters({ facets, categoryScoped, selectedBrand
       {activeCount > 0 && <Link href={resetHref} scroll={false} className="text-[11px] font-bold text-[var(--brand-primary)]">حذف فیلترها</Link>}
     </div>
 
-    <Accordion dir="rtl" variant="surface" hideSeparator allowsMultipleExpanded defaultExpandedKeys={facets.priceRange ? ["catalog-price"] : []} className="w-full bg-transparent p-0 text-right" aria-label="فیلترهای محصولات">
-      {facets.priceRange && <Accordion.Item id="catalog-price" className="mb-2 rounded-xl border border-slate-200/80 bg-white px-3">
+    <Accordion dir="rtl" variant="surface" hideSeparator allowsMultipleExpanded defaultExpandedKeys={hasPriceRange ? ["catalog-price"] : []} className="w-full bg-transparent p-0 text-right" aria-label="فیلترهای محصولات">
+      {hasPriceRange && <Accordion.Item id="catalog-price" className="mb-2 rounded-xl border border-slate-200/80 bg-white px-3">
         <Accordion.Heading><Accordion.Trigger className="relative flex w-full items-center border-b border-slate-100 bg-transparent py-[6px] pl-7 text-xs font-bold text-slate-800 hover:bg-transparent data-[hovered=true]:bg-transparent"><FilterAccordionTitle>محدوده قیمت</FilterAccordionTitle></Accordion.Trigger></Accordion.Heading>
         <Accordion.Panel><Accordion.Body className="pb-5 pt-1">
           <div className="overflow-hidden rounded-xl border border-slate-200 bg-slate-50/70 px-3">
