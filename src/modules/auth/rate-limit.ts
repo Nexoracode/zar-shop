@@ -18,6 +18,9 @@ export const guestSessionRateLimitPolicy: RateLimitPolicy = { maxAttempts: 20, w
 // the legitimate user from ever requesting a fresh one.
 export const passwordResetRequestRateLimitPolicy: RateLimitPolicy = { maxAttempts: 3, windowMs: 15 * 60_000, blockMs: 15 * 60_000 };
 export const passwordResetVerifyRateLimitPolicy: RateLimitPolicy = { maxAttempts: 8, windowMs: 15 * 60_000, blockMs: 15 * 60_000 };
+// The public contact form has no session to key off of, so it is throttled per IP only —
+// generous enough for a genuine visitor to retry a typo, tight enough to stop spam floods.
+export const contactMessageRateLimitPolicy: RateLimitPolicy = { maxAttempts: 5, windowMs: 60 * 60_000, blockMs: 60 * 60_000 };
 
 function requestIp(request: Request) {
   return request.headers.get("cf-connecting-ip")
@@ -88,6 +91,14 @@ export async function consumeGuestSessionAttempt(request: Request) {
   const blocked = await isBlocked(keyHash);
   if (blocked) return blocked;
   await recordAttempt(keyHash, guestSessionRateLimitPolicy);
+  return null;
+}
+
+export async function consumeContactMessageAttempt(request: Request) {
+  const keyHash = key("contact-message-ip", requestIp(request));
+  const blocked = await isBlocked(keyHash);
+  if (blocked) return blocked;
+  await recordAttempt(keyHash, contactMessageRateLimitPolicy);
   return null;
 }
 

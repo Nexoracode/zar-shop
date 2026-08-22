@@ -848,3 +848,17 @@ model AuditLog {
   @@index([actorId, createdAt])
   @@index([entityType, entityId])
 }
+
+model ContactMessage {
+  id         String    @id @default(cuid())
+  name       String    @db.VarChar(150)
+  email      String    @db.VarChar(191)
+  phone      String?   @db.VarChar(20)
+  subject    String    @db.VarChar(191)
+  message    String    @db.Text
+  isResolved Boolean   @default(false)
+  createdAt  DateTime  @default(now())
+  resolvedAt DateTime?
+
+  @@index([isResolved, createdAt])
+}

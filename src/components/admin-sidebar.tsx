@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { Button } from "@heroui/react";
 import { usePathname, useRouter } from "next/navigation";
-import { BadgePercent, Boxes, ChartNoAxesCombined, FolderTree, Images, ListChecks, ListTree, LogOut, Menu, MessageSquareText, PackageCheck, Palette, ScrollText, Settings, SlidersHorizontal, Store, Users, X } from "lucide-react";
+import { BadgePercent, Boxes, ChartNoAxesCombined, FolderTree, Images, ListChecks, ListTree, LogOut, Mail, Menu, MessageSquareText, PackageCheck, Palette, ScrollText, Settings, SlidersHorizontal, Store, Users, X } from "lucide-react";
 import { useState } from "react";
 import type { UserRole } from "@generated/prisma/enums";
 import { canOpenAnySettingsSection, hasPermission, type AdminPermission } from "@/modules/auth/permissions";
@@ -39,6 +39,7 @@ const navGroups: Array<{ title: string; items: NavItem[] }> = [
       { href: "/admin/promotions", label: "پروموشن‌ها", icon: BadgePercent, permission: "orders:manage" },
       { href: "/admin/users", label: "کاربران", icon: Users, permission: "users:manage" },
       { href: "/admin/reviews", label: "دیدگاه‌ها و امتیازها", icon: MessageSquareText, permission: "catalog:manage" },
+      { href: "/admin/contact-messages", label: "پیام‌های تماس", icon: Mail, permission: "orders:manage" },
     ],
   },
   {
