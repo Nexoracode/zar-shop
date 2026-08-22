@@ -47,31 +47,34 @@ export function isOptionSnapshotValid(options: ProductOptionLike[], snapshot: un
   });
 }
 
-export function decrementSelectedOptionStocks(options: ProductOptionLike[], snapshot: unknown, quantity: number, fallbackStock: number) {
+/**
+ * Selects the option rows that need their `values` JSON touched for a given selection
+ * snapshot, i.e. only the rows whose option name was actually chosen for this order line.
+ * Rows unrelated to the selection are left out so callers never write (or version-bump)
+ * an option row that didn't change.
+ */
+export function selectedOptionRows(options: ProductOptionLike[], snapshot: unknown) {
   const selected = Object.fromEntries(optionEntries(snapshot));
-  return options.map((option) => ({
-    id: option.id,
-    values: parseOptionValues(option.values).map((item) => item.value === selected[option.name]
-      ? { ...item, stock: Math.max(0, (item.stock ?? fallbackStock) - quantity) }
-      : item),
-  }));
+  return options
+    .filter((option) => option.name in selected)
+    .map((option) => ({ id: option.id, targetValue: selected[option.name] }));
 }
 
-export function decrementSelectedOptionStocksStrict(options: ProductOptionLike[], snapshot: unknown, quantity: number, fallbackStock: number) {
-  if (!isOptionSnapshotValid(options, snapshot, quantity, fallbackStock)) {
+export function decrementOptionValueStock(option: ProductOptionLike, targetValue: string, quantity: number, fallbackStock: number) {
+  const values = parseOptionValues(option.values);
+  const target = values.find((item) => item.value === targetValue);
+  if (!target || !target.isActive || (target.stock ?? fallbackStock) < quantity) {
     throw new Error("Selected product option is unavailable");
   }
-  return decrementSelectedOptionStocks(options, snapshot, quantity, fallbackStock);
+  return values.map((item) => item.value === targetValue
+    ? { ...item, stock: Math.max(0, (item.stock ?? fallbackStock) - quantity) }
+    : item);
 }
 
-export function incrementSelectedOptionStocks(options: ProductOptionLike[], snapshot: unknown, quantity: number) {
-  const selected = Object.fromEntries(optionEntries(snapshot));
-  return options.map((option) => ({
-    id: option.id,
-    values: parseOptionValues(option.values).map((item) => item.value === selected[option.name] && item.stock !== null
-      ? { ...item, stock: item.stock + quantity }
-      : item),
-  }));
+export function incrementOptionValueStock(option: ProductOptionLike, targetValue: string, quantity: number) {
+  return parseOptionValues(option.values).map((item) => item.value === targetValue && item.stock !== null
+    ? { ...item, stock: item.stock + quantity }
+    : item);
 }
 
 export function getSelectedOptionWeight(options: ProductOptionLike[], snapshot: unknown, fallbackWeight: number | string | { toString(): string }) {
