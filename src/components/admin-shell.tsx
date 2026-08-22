@@ -10,7 +10,7 @@ import { userRoleLabels } from "@/modules/admin/labels";
 import type { UserRole } from "@generated/prisma/enums";
 import { getResolvedAdminTheme, setAdminThemePreference, subscribeToAdminTheme } from "@/lib/admin-theme";
 
-type AdminUser = { firstName: string | null; lastName: string | null; email: string; role: UserRole };
+type AdminUser = { firstName: string | null; lastName: string | null; email: string | null; role: UserRole };
 
 type Props = {
   user: AdminUser;
@@ -66,7 +66,7 @@ export function AdminShell({ user, showGoldPrice, goldPrice, goldFetchedAt, noti
                     <div className="p-4">
                       <div className="flex items-center gap-3 border-b border-[var(--border)] pb-4">
                         <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-[var(--accent)]/10 text-[var(--accent)]"><UserRound size={20} /></span>
-                        <div className="min-w-0"><strong className="block truncate text-sm">{fullName}</strong><span dir="ltr" className="mt-0.5 block truncate text-right text-[11px] text-[var(--muted)]">{user.email}</span></div>
+                        <div className="min-w-0"><strong className="block truncate text-sm">{fullName}</strong><span dir="ltr" className="mt-0.5 block truncate text-right text-[11px] text-[var(--muted)]">{user.email ?? "—"}</span></div>
                       </div>
                       <div className="flex items-center justify-between gap-3 py-4"><span className="text-[11px] text-[var(--muted)]">سطح دسترسی</span><Chip size="sm" variant="soft"><Chip.Label>{userRoleLabels[user.role]}</Chip.Label></Chip></div>
                       <Button type="button" variant="danger-soft" fullWidth isPending={loggingOut} onPress={() => void logout()} className="justify-start gap-2 rounded-[5px]"><LogOut size={15} />خروج از حساب</Button>

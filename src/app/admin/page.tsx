@@ -48,7 +48,7 @@ export default async function AdminPage() {
       where: { status: { in: ["PAID", "PROCESSING", "SHIPPED", "DELIVERED"] } },
     }),
     db.order.findMany({
-      include: { user: { select: { firstName: true, lastName: true, email: true } }, _count: { select: { items: true } } },
+      include: { user: { select: { firstName: true, lastName: true, email: true, phone: true } }, _count: { select: { items: true } } },
       orderBy: { createdAt: "desc" },
       take: 6,
     }),
@@ -133,7 +133,7 @@ export default async function AdminPage() {
           {recentOrders.length ? (
             <>
               <AdminBulkEditor entity="orders" entityLabel="سفارش" ids={recentOrders.map((order) => order.id)} actions={[{ value: "status:PROCESSING", label: "شروع آماده‌سازی سفارش‌های پرداخت‌شده" }, { value: "status:SHIPPED", label: "ثبت ارسال سفارش‌های در حال آماده‌سازی" }, { value: "status:DELIVERED", label: "ثبت تحویل سفارش‌های ارسال‌شده" }, { value: "status:CANCELLED", label: "لغو سفارش‌های پرداخت‌نشده" }]}><Table><TableScrollContainer><TableContent aria-label="آخرین سفارش‌ها" className="w-full min-w-[680px]"><TableHeader><TableColumn id="select" className="w-12 bg-slate-50/70 px-3 py-3 text-center"><span className="sr-only">انتخاب</span></TableColumn>{["شماره سفارش", "مشتری", "اقلام", "مبلغ", "وضعیت", "تاریخ"].map((title, index) => <TableColumn id={title} key={title} isRowHeader={index === 0} className="bg-slate-50/70 px-4 py-3 text-right text-[0.7rem] font-bold text-slate-500">{title}</TableColumn>)}</TableHeader><TableBody>{recentOrders.map((order) => {
-                    const customerName = [order.user.firstName, order.user.lastName].filter(Boolean).join(" ") || order.user.email;
+                    const customerName = [order.user.firstName, order.user.lastName].filter(Boolean).join(" ") || order.user.email || order.user.phone || "کاربر بدون نام";
                     return <TableRow id={order.id} key={order.id} className="transition hover:bg-slate-50/60">
                       <TableCell className="w-12 px-3 py-3 text-center"><AdminBulkCheckbox id={order.id} label={`انتخاب سفارش ${order.orderNumber}`} /></TableCell>
                       <TableCell className="px-4 py-3 text-xs font-bold text-slate-700">{order.orderNumber}</TableCell>
@@ -146,7 +146,7 @@ export default async function AdminPage() {
                   })}</TableBody></TableContent></TableScrollContainer></Table></AdminBulkEditor>
               <div className="divide-y divide-slate-100 md:hidden">
                 {recentOrders.map((order) => {
-                  const customerName = [order.user.firstName, order.user.lastName].filter(Boolean).join(" ") || order.user.email;
+                  const customerName = [order.user.firstName, order.user.lastName].filter(Boolean).join(" ") || order.user.email || order.user.phone || "کاربر بدون نام";
                   return <article key={order.id} className="grid gap-3 p-4">
                     <div className="flex items-start justify-between gap-3"><div className="min-w-0"><strong className="block text-xs text-slate-700" dir="ltr">{order.orderNumber}</strong><span className="block truncate text-xs text-slate-400">{customerName}</span></div><AdminStatusBadge tone={orderStatusTones[order.status]}>{orderStatusLabels[order.status]}</AdminStatusBadge></div>
                     <div className="flex items-center justify-between gap-3 text-xs"><span className="font-bold text-slate-700">{formatMoney(order.total.toString())}</span><span className="text-slate-400">{order._count.items.toLocaleString("fa-IR")} قلم · {formatDate(order.createdAt)}</span></div>

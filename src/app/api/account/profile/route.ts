@@ -13,7 +13,7 @@ export async function PATCH(request: Request) {
     const duplicate = await db.user.findFirst({
       where: {
         id: { not: user.id },
-        OR: [{ email: input.email }, { phone: input.phone }, ...(input.nationalId ? [{ nationalId: input.nationalId }] : [])],
+        OR: [...(input.email ? [{ email: input.email }] : []), { phone: input.phone }, ...(input.nationalId ? [{ nationalId: input.nationalId }] : [])],
       },
       select: { id: true },
     });

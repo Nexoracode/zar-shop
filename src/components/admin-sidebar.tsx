@@ -51,7 +51,7 @@ const navGroups: Array<{ title: string; items: NavItem[] }> = [
   },
 ];
 
-type Props = { user: { firstName: string | null; lastName: string | null; email: string; role: UserRole } };
+type Props = { user: { firstName: string | null; lastName: string | null; email: string | null; role: UserRole } };
 
 export function AdminSidebar({ user }: Props) {
   const pathname = usePathname();

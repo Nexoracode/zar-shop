@@ -6,7 +6,7 @@ import { useState } from "react";
 import { Button, Popover } from "@heroui/react";
 import { ChevronDown, ChevronLeft, Clock3, Heart, LogOut, MapPin, MessageCircle, ShoppingBag, Sparkles, UserRound } from "lucide-react";
 
-type AccountUser = { firstName: string | null; lastName: string | null; email: string; phone: string | null; isGuest: boolean };
+type AccountUser = { firstName: string | null; lastName: string | null; email: string | null; phone: string | null; isGuest: boolean };
 
 export function StorefrontAccountMenu({ user, className = "" }: { user: AccountUser | null; className?: string }) {
   const router = useRouter();
@@ -28,7 +28,7 @@ export function StorefrontAccountMenu({ user, className = "" }: { user: AccountU
     return <Link href={user ? "/cart" : "/login"} aria-label={user ? "ادامه خرید مهمان" : "ورود به حساب کاربری"} className={`grid size-10 place-items-center rounded-lg transition hover:bg-[var(--brand-primary)]/8 ${className}`}><UserRound size={21} strokeWidth={1.7} /></Link>;
   }
 
-  const name = `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim() || user.email;
+  const name = `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim() || user.phone || user.email || "کاربر زرشاپ";
   const items = [
     { href: "/account/orders", label: "سفارش‌ها", icon: ShoppingBag },
     { href: "/account/addresses", label: "آدرس‌ها", icon: MapPin },

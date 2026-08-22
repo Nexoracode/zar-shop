@@ -31,11 +31,9 @@ export async function createSession(userId: string) {
 }
 
 export async function createGuestSessionUser() {
-  const marker = randomBytes(18).toString("hex");
   const passwordHash = await hashPassword(randomBytes(48).toString("base64url"), 12);
   const user = await db.user.create({
     data: {
-      email: `guest-${marker}@guest.local`,
       passwordHash,
       isGuest: true,
     },

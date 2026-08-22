@@ -3,18 +3,25 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { apiError } from "@/lib/http";
 import { createSession, getCurrentUser } from "@/modules/auth/session";
-import { registerSchema } from "@/modules/auth/schemas";
+import { registerCompleteSchema } from "@/modules/auth/schemas";
 import { consumeRegistrationAttempt, rateLimitResponse } from "@/modules/auth/rate-limit";
+import { hasVerifiedRegistrationOtp, invalidateVerifiedRegistrationOtp } from "@/modules/auth/phone-otp";
 import { mergeGuestCartIntoUser } from "@/modules/cart/guest-cart-merge";
 import { getOrderSettings } from "@/modules/settings/order-settings";
 
+// Final step of the phone-first registration flow: the phone must already have a
+// consumed REGISTER-purpose OTP (see /api/auth/otp/verify) proving it was actually
+// verified — this route never trusts the client's say-so alone.
 export async function POST(request: Request) {
   try {
     const [blockedUntil, previousUser] = await Promise.all([consumeRegistrationAttempt(request), getCurrentUser()]);
     if (blockedUntil) return rateLimitResponse(blockedUntil);
-    const input = registerSchema.parse(await request.json());
-    const exists = await db.user.findFirst({ where: { OR: [{ email: input.email }, { phone: input.phone }] } });
-    if (exists) return NextResponse.json({ message: "ایمیل یا شماره موبایل قبلاً ثبت شده است." }, { status: 409 });
+    const input = registerCompleteSchema.parse(await request.json());
+    if (!await hasVerifiedRegistrationOtp(input.phone)) {
+      return NextResponse.json({ message: "شماره موبایل تأیید نشده است؛ ابتدا کد پیامکی را تأیید کنید." }, { status: 401 });
+    }
+    const exists = await db.user.findUnique({ where: { phone: input.phone }, select: { id: true } });
+    if (exists) return NextResponse.json({ message: "این شماره موبایل قبلاً ثبت شده است." }, { status: 409 });
     const { password, ...profile } = input;
     const passwordHash = await hash(password, 12);
     // A guest cart is created lazily on first add-to-cart; completing registration must
@@ -30,7 +37,8 @@ export async function POST(request: Request) {
       }
       return created;
     });
+    await invalidateVerifiedRegistrationOtp(input.phone);
     await createSession(user.id);
-    return NextResponse.json({ user: { id: user.id, email: user.email } }, { status: 201 });
+    return NextResponse.json({ user: { id: user.id, phone: user.phone } }, { status: 201 });
   } catch (error) { return apiError(error); }
 }

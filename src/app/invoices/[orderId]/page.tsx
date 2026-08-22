@@ -88,7 +88,7 @@ export default async function InvoicePage({ params, searchParams }: { params: Pr
             <InvoiceInfo label="نام خریدار" value={buyerName} />
             <InvoiceInfo label="کد ملی" value={text(buyer, "nationalId", order.user.nationalId ?? "—")} ltr />
             <InvoiceInfo label="شماره تماس" value={buyerPhone} ltr />
-            <InvoiceInfo label="ایمیل" value={text(buyer, "email", order.user.isGuest ? "—" : order.user.email)} ltr />
+            <InvoiceInfo label="ایمیل" value={text(buyer, "email", order.user.isGuest ? "—" : (order.user.email ?? "—"))} ltr />
             <InvoiceInfo label="کد پستی" value={text(address, "postalCode")} ltr />
             <div className="col-span-2 sm:col-span-3"><InvoiceInfo label="نشانی خریدار" value={fullAddress} /></div>
           </dl>

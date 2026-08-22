@@ -131,7 +131,7 @@ enum AddressRecipientType {
 
 model User {
   id                    String                @id @default(cuid())
-  email                 String                @unique @db.VarChar(191)
+  email                 String?               @unique @db.VarChar(191)
   phone                 String?               @unique @db.VarChar(20)
   passwordHash          String                @db.VarChar(191)
   firstName             String?               @db.VarChar(100)
@@ -149,7 +149,6 @@ model User {
   orders                Order[]
   cart                  Cart?
   sessions              Session[]
-  passwordResetCodes    PasswordResetCode[]
   auditLogs             AuditLog[]            @relation("AuditActor")
   promotionRedemptions  PromotionRedemption[]
   promotionRewards      PromotionReward[]
@@ -174,17 +173,26 @@ model Session {
   @@index([expiresAt])
 }
 
-model PasswordResetCode {
-  id         String    @id @default(cuid())
-  userId     String
-  codeHash   String    @db.Char(64)
-  expiresAt  DateTime
-  attempts   Int       @default(0)
-  consumedAt DateTime?
-  createdAt  DateTime  @default(now())
-  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+enum PhoneOtpPurpose {
+  REGISTER
+  LOGIN
+  RESET_PASSWORD
+}
 
-  @@index([userId])
+// Keyed by phone rather than userId: a REGISTER-purpose code is issued before any User row
+// exists, so there is nothing to attach a foreign key to yet. LOGIN/RESET_PASSWORD codes are
+// looked up the same way for consistency.
+model PhoneOtpCode {
+  id         String          @id @default(cuid())
+  phone      String          @db.VarChar(20)
+  purpose    PhoneOtpPurpose
+  codeHash   String          @db.Char(64)
+  expiresAt  DateTime
+  attempts   Int             @default(0)
+  consumedAt DateTime?
+  createdAt  DateTime        @default(now())
+
+  @@index([phone, purpose])
   @@index([expiresAt])
 }
 

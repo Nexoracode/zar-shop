@@ -41,7 +41,7 @@ export async function startPendingOrderPayment(input: { orderId: string; userId:
       callbackUrl,
       description: `پرداخت سفارش ${order.orderNumber}`,
       mobile: order.user.phone ?? address?.phone,
-      email: order.user.isGuest ? undefined : order.user.email,
+      email: order.user.isGuest ? undefined : (order.user.email ?? undefined),
     });
     await db.$transaction(async (transaction) => {
       await transaction.payment.update({ where: { id: payment.id }, data: { authority: request.authority, status: "PENDING" } });

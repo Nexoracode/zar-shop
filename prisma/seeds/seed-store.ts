@@ -121,9 +121,11 @@ function generalHomepageSettings(menuItems: Array<{ id: string; label: string; h
 
 async function createStore(db: PrismaClient, seed: DevelopmentStoreSeed) {
   const adminEmail = process.env.ADMIN_EMAIL ?? "admin@example.com";
+  const adminPhone = process.env.ADMIN_PHONE ?? "09120000000";
   await db.user.create({
     data: {
       email: adminEmail,
+      phone: adminPhone,
       firstName: "مدیر",
       lastName: "فروشگاه",
       role: "ADMIN",

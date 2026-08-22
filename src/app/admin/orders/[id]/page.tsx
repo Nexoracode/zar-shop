@@ -167,7 +167,7 @@ export default async function OrderDetailsPage({ params }: { params: PageParams 
         <aside className="contents">
           <AdminPanel className="order-1 p-5 xl:col-span-5">
             <h2 className="mb-4 mt-0 flex items-center gap-2 text-base font-bold text-[#17233b]"><UserRound size={18} className="text-[var(--warning)]" /> اطلاعات خریدار</h2>
-            <dl className="grid gap-2"><InfoItem label="نام و نام خانوادگی" value={customerName} /><InfoItem label="ایمیل" value={order.user.email} ltr /><InfoItem label="شماره موبایل" value={order.user.phone} ltr /><InfoItem label="کد ملی" value={order.user.nationalId} ltr /></dl>
+            <dl className="grid gap-2"><InfoItem label="نام و نام خانوادگی" value={customerName} /><InfoItem label="ایمیل" value={order.user.email ?? "—"} ltr /><InfoItem label="شماره موبایل" value={order.user.phone} ltr /><InfoItem label="کد ملی" value={order.user.nationalId} ltr /></dl>
           </AdminPanel>
 
           <AdminPanel className="order-1 p-5 xl:col-span-7">

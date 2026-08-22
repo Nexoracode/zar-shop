@@ -30,3 +30,10 @@ test("accepts another recipient without a national id", () => {
   const result = addressInputSchema.safeParse({ ...address, recipientType: "OTHER" });
   assert.equal(result.success, true);
 });
+
+test("treats a missing or empty email as null, since it is optional for phone-first accounts", () => {
+  const withoutEmail = profileInputSchema.parse({ firstName: "علی", lastName: "رضایی", phone: "09121234567", nationalId: "1234567890" });
+  const withEmptyEmail = profileInputSchema.parse({ firstName: "علی", lastName: "رضایی", phone: "09121234567", email: "", nationalId: "1234567890" });
+  assert.equal(withoutEmail.email, null);
+  assert.equal(withEmptyEmail.email, null);
+});

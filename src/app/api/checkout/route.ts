@@ -173,7 +173,7 @@ export async function POST(request: Request) {
         callbackUrl: `${env.APP_URL}/api/payment/callback`,
         description: `پرداخت سفارش ${order.orderNumber}`,
         mobile: user.phone ?? address.phone,
-        email: user.isGuest ? undefined : user.email,
+        email: user.isGuest ? undefined : (user.email ?? undefined),
       });
       await db.$transaction(async (transaction) => {
         const paymentStartedAt = new Date();

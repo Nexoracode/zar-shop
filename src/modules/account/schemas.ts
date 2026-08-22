@@ -8,7 +8,7 @@ export const profileInputSchema = z.object({
   firstName: z.string().trim().min(2).max(100),
   lastName: z.string().trim().min(2).max(100),
   phone: z.string().transform((value) => normalizeNumericValue(value, false)).pipe(z.string().regex(/^09\d{9}$/)),
-  email: z.email().transform((value) => value.trim().toLowerCase()),
+  email: z.union([z.email(), z.literal("")]).optional().transform((value) => (value ? value.trim().toLowerCase() : null)),
   nationalId: z.union([digits(10), z.literal("")]).transform((value) => value || null),
 });
 

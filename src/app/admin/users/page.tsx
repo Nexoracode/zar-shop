@@ -78,7 +78,7 @@ export default async function UsersPage({ searchParams }: { searchParams: Search
                 return (
                   <article key={user.id} className="space-y-4 p-4">
                     <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0"><strong className="block truncate text-sm text-[#17233b]">{fullName}</strong><span className="block truncate text-xs text-slate-400">{user.email}</span></div>
+                      <div className="min-w-0"><strong className="block truncate text-sm text-[#17233b]">{fullName}</strong><span className="block truncate text-xs text-slate-400">{user.email ?? "ایمیل ثبت نشده"}</span></div>
                       <AdminStatusBadge tone={userStatusTones[user.status]}>{userStatusLabels[user.status]}</AdminStatusBadge>
                     </div>
                     <div className="grid gap-2"><UserRoleSelect userId={user.id} value={user.role} roles={user.role === "ADMIN" && actor.role !== "ADMIN" ? ["ADMIN"] : assignableRoles} disabled={user.id === actor.id || (user.role === "ADMIN" && actor.role !== "ADMIN")} /><span className="text-xs text-slate-500" dir="ltr">{user.phone ?? "شماره ثبت نشده"}</span></div>
@@ -97,7 +97,7 @@ export default async function UsersPage({ searchParams }: { searchParams: Search
                     <TableRow id={user.id} key={user.id} className="transition hover:bg-slate-50/60">
                       <TableCell className={`${cell} w-12 text-center`}><AdminBulkCheckbox id={user.id} label={`انتخاب کاربر ${fullName}`} disabled={user.id === actor.id || user.role === "ADMIN"} /></TableCell>
                       <TableCell className={`${cell} w-16 font-bold text-slate-400`}>{(pagination.skip + index + 1).toLocaleString("fa-IR")}</TableCell>
-                      <TableCell className={`${cell} w-64 max-w-64`}><div className="min-w-0"><TruncatedTextTooltip text={fullName} className="max-w-52 font-bold text-slate-700" /><TruncatedTextTooltip text={user.email} dir="ltr" className="max-w-52 text-right text-xs text-slate-400" /></div></TableCell>
+                      <TableCell className={`${cell} w-64 max-w-64`}><div className="min-w-0"><TruncatedTextTooltip text={fullName} className="max-w-52 font-bold text-slate-700" /><TruncatedTextTooltip text={user.email ?? "ایمیل ثبت نشده"} dir="ltr" className="max-w-52 text-right text-xs text-slate-400" /></div></TableCell>
                       <TableCell className={cell}><span dir="ltr">{user.phone ?? "—"}</span></TableCell>
                       <TableCell className={cell}><UserRoleSelect userId={user.id} value={user.role} roles={user.role === "ADMIN" && actor.role !== "ADMIN" ? ["ADMIN"] : assignableRoles} disabled={user.id === actor.id || (user.role === "ADMIN" && actor.role !== "ADMIN")} /></TableCell>
                       <TableCell className={cell}>{user._count.orders.toLocaleString("fa-IR")}</TableCell>
