@@ -204,6 +204,13 @@ export function StorefrontCartLink({ initialCount, className = "", iconSize = 21
         />
         <Popover.Content
           ref={contentRef}
+          // Non-modal: react-aria's default modal Popover renders a full-viewport invisible
+          // underlay while open, which swallows the very first click anywhere on the page
+          // (including back on the trigger icon) just to dismiss itself. That breaks the
+          // trigger's own <Link href="/cart"> — the click that should navigate gets consumed
+          // closing the popover instead. This preview is hover-driven and this icon is a real
+          // navigation link, so the rest of the page must stay clickable while it is open.
+          isNonModal
           placement="bottom left"
           offset={8}
           dir="rtl"
