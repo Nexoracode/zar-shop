@@ -30,8 +30,13 @@ export async function PATCH(request: Request, context: Context) {
   const target = await db.user.findUnique({ where: { id }, select: { id: true, role: true } });
   if (!target) return NextResponse.json({ message: "کاربر پیدا نشد." }, { status: 404 });
 
-  if (actor.role !== "ADMIN" && (target.role === "ADMIN" || parsed.data.role === "ADMIN")) {
-    return NextResponse.json({ message: "فقط مدیر کل می‌تواند نقش مدیر کل را تغییر دهد." }, { status: 403 });
+  // A non-ADMIN actor only reaches here via `users:manage` (held by USER_MANAGER), which is
+  // scoped to user accounts, not to the other domain-manager roles. It may only move a user
+  // between CUSTOMER and USER_MANAGER — granting/revoking CATALOG_MANAGER, ORDER_MANAGER, or
+  // ADMIN stays ADMIN-only, otherwise a USER_MANAGER could mint access outside its own domain.
+  const nonAdminAssignableRoles = new Set(["CUSTOMER", "USER_MANAGER"]);
+  if (actor.role !== "ADMIN" && (!nonAdminAssignableRoles.has(target.role) || !nonAdminAssignableRoles.has(parsed.data.role))) {
+    return NextResponse.json({ message: "فقط مدیر کل می‌تواند این نقش را اختصاص دهد." }, { status: 403 });
   }
 
   if (target.role === "ADMIN" && parsed.data.role !== "ADMIN") {
