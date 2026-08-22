@@ -38,6 +38,38 @@ function orderByFor(sort: StorefrontProductSort): Prisma.ProductOrderByWithRelat
   return [{ createdAt: "desc" }];
 }
 
+type SelectedProduct = Prisma.ProductGetPayload<{ select: typeof productSelect }>;
+
+function serializeProductCard(product: SelectedProduct, goldPrice: Prisma.Decimal | null, currency: "IRR" | "IRT") {
+  const calculated = goldPrice === null || product.storeIndustry !== "GOLD" ? null : calculateProductPrice({
+    goldPricePerGram18: goldPrice,
+    weightGrams: product.weightGrams,
+    purity: product.purity,
+    makingFeeType: product.makingFeeType,
+    makingFeeValue: product.makingFeeValue,
+    profitPercent: product.profitPercent,
+    taxPercent: product.taxPercent,
+  });
+  const baseAmount = product.fixedPrice ? Number(product.fixedPrice) : calculated?.total ?? null;
+  const discounted = baseAmount === null ? null : calculateDiscountedPrice(baseAmount, product);
+  const media = product.media[0]?.media;
+
+  return {
+    id: product.id,
+    href: `/products/${product.slug}`,
+    name: product.name,
+    category: product.category?.name ?? (product.storeIndustry === "GOLD" ? "طلا" : "محصول"),
+    industry: product.storeIndustry,
+    weight: Number(product.weightGrams),
+    purity: product.purity,
+    makingFee: product.storeIndustry === "GOLD" ? { type: product.makingFeeType === "FIXED" ? "FIXED" as const : "PERCENT" as const, value: Number(product.makingFeeValue) } : undefined,
+    discountPercent: discounted?.isActive && product.discountType === "PERCENT" ? Number(product.discountValue ?? 0) : undefined,
+    price: discounted ? formatMoney(discounted.finalPrice, currency) : "قیمت موقتاً در دسترس نیست",
+    originalPrice: discounted?.isActive ? formatMoney(discounted.originalPrice, currency) : undefined,
+    image: media?.type === "IMAGE" ? { src: media.url, alt: media.alt ?? product.name } : undefined,
+  };
+}
+
 export async function getStorefrontProductFeed(input: { sort: StorefrontProductSort; page: number; pageSize?: number; categoryId?: string; excludeProductId?: string }): Promise<StorefrontProductFeed> {
   const [settings, catalogSettings] = await Promise.all([getGeneralStoreSettings(), getCatalogSettings()]);
   const where: Prisma.ProductWhereInput = {
@@ -67,34 +99,36 @@ export async function getStorefrontProductFeed(input: { sort: StorefrontProductS
   return {
     sort: input.sort,
     pagination: { page, pageSize, totalItems, totalPages },
-    items: products.map((product) => {
-      const calculated = goldPrice === null || product.storeIndustry !== "GOLD" ? null : calculateProductPrice({
-        goldPricePerGram18: goldPrice,
-        weightGrams: product.weightGrams,
-        purity: product.purity,
-        makingFeeType: product.makingFeeType,
-        makingFeeValue: product.makingFeeValue,
-        profitPercent: product.profitPercent,
-        taxPercent: product.taxPercent,
-      });
-      const baseAmount = product.fixedPrice ? Number(product.fixedPrice) : calculated?.total ?? null;
-      const discounted = baseAmount === null ? null : calculateDiscountedPrice(baseAmount, product);
-      const media = product.media[0]?.media;
-
-      return {
-        id: product.id,
-        href: `/products/${product.slug}`,
-        name: product.name,
-        category: product.category?.name ?? (product.storeIndustry === "GOLD" ? "طلا" : "محصول"),
-        industry: product.storeIndustry,
-        weight: Number(product.weightGrams),
-        purity: product.purity,
-        makingFee: product.storeIndustry === "GOLD" ? { type: product.makingFeeType === "FIXED" ? "FIXED" as const : "PERCENT" as const, value: Number(product.makingFeeValue) } : undefined,
-        discountPercent: discounted?.isActive && product.discountType === "PERCENT" ? Number(product.discountValue ?? 0) : undefined,
-        price: discounted ? formatMoney(discounted.finalPrice, settings.currency) : "قیمت موقتاً در دسترس نیست",
-        originalPrice: discounted?.isActive ? formatMoney(discounted.originalPrice, settings.currency) : undefined,
-        image: media?.type === "IMAGE" ? { src: media.url, alt: media.alt ?? product.name } : undefined,
-      };
-    }),
+    items: products.map((product) => serializeProductCard(product, goldPrice, settings.currency)),
   };
+}
+
+/**
+ * Products a signed-in customer looked at recently, newest visit first. Visits to
+ * inactive/removed products or ones outside the store's current industry are skipped
+ * rather than surfaced as broken cards.
+ */
+export async function getRecentlyViewedProducts(input: { userId: string; excludeProductId?: string; limit?: number }) {
+  const limit = input.limit ?? 10;
+  const [settings, visits] = await Promise.all([
+    getGeneralStoreSettings(),
+    db.productVisit.findMany({
+      where: { userId: input.userId, ...(input.excludeProductId ? { productId: { not: input.excludeProductId } } : {}) },
+      orderBy: { visitedAt: "desc" },
+      take: limit * 2,
+      select: { productId: true },
+    }),
+  ]);
+  const orderedIds = [...new Set(visits.map((visit) => visit.productId))].slice(0, limit);
+  if (!orderedIds.length) return [];
+  const [gold, products] = await Promise.all([
+    settings.industry === "GOLD" ? getGoldPriceForDisplay() : Promise.resolve(null),
+    db.product.findMany({ where: { id: { in: orderedIds }, status: "ACTIVE", storeIndustry: settings.industry }, select: productSelect }),
+  ]);
+  const goldPrice = gold?.pricePerGram18 ?? null;
+  const byId = new Map(products.map((product) => [product.id, product]));
+  return orderedIds.flatMap((id) => {
+    const product = byId.get(id);
+    return product ? [serializeProductCard(product, goldPrice, settings.currency)] : [];
+  });
 }

@@ -18,7 +18,7 @@ import { parseOptionValues } from "@/modules/products/options";
 import { calculateProductPrice } from "@/modules/products/pricing";
 import { sanitizeProductDescription } from "@/modules/products/rich-text";
 import { calculateSoldPercent, completedSaleOrderStatuses } from "@/modules/products/sales";
-import { getStorefrontProductFeed } from "@/modules/products/storefront-feed";
+import { getRecentlyViewedProducts, getStorefrontProductFeed } from "@/modules/products/storefront-feed";
 import { getGoldPriceForDisplay } from "@/modules/gold/gold-price.service";
 import { getCatalogSettings } from "@/modules/settings/catalog-settings";
 import { getGeneralStoreSettings } from "@/modules/settings/general-settings";
@@ -126,6 +126,9 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   const relatedProducts = product.categoryId
     ? (await getStorefrontProductFeed({ sort: "POPULAR", page: 1, pageSize: 8, categoryId: product.categoryId, excludeProductId: product.id })).items
     : [];
+  const recentlyViewed = currentUser && !currentUser.isGuest
+    ? await getRecentlyViewedProducts({ userId: currentUser.id, excludeProductId: product.id, limit: 8 })
+    : [];
   const purchaseSummary = <div className="grid gap-3">
     <span className="text-xs text-slate-500">{product.storeIndustry === "GOLD" && !product.fixedPrice && rate !== null ? `محاسبه‌شده با نرخ ${formatMoney(rate.toString(), settings.currency)}` : "قیمت فروش محصول"}</span>
     {product.storeIndustry === "GOLD" && rate !== null && !product.fixedPrice && <PriceTooltip
@@ -207,6 +210,11 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
       {product.category && relatedProducts.length > 0 && <section className="mt-12 border-t border-slate-200 py-8" aria-labelledby="related-products-title">
         <div className="mb-6 flex items-center justify-between gap-4"><h2 id="related-products-title" className="relative w-fit pb-3 text-lg font-bold text-slate-900 after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 after:rounded-full after:bg-[var(--brand-primary)]">کالاهای مرتبط</h2><Link href={`/products?category=${encodeURIComponent(product.category.slug)}`} className="shrink-0 text-xs font-bold text-[var(--brand-accent)] transition-colors hover:text-[var(--brand-primary)]">مشاهده همه</Link></div>
         <div className="flex snap-x gap-4 overflow-x-auto pb-3">{relatedProducts.map((item, index) => <div key={item.id} className="w-[176px] min-w-[176px] snap-start sm:w-[210px] sm:min-w-[210px]"><ProductCard {...item} storefrontVariant="gallery" imageTone={index} /></div>)}</div>
+      </section>}
+
+      {recentlyViewed.length > 0 && <section className="mt-12 border-t border-slate-200 py-8" aria-labelledby="recently-viewed-title">
+        <div className="mb-6 flex items-center justify-between gap-4"><h2 id="recently-viewed-title" className="relative w-fit pb-3 text-lg font-bold text-slate-900 after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 after:rounded-full after:bg-[var(--brand-primary)]">بازدیدهای اخیر شما</h2><Link href="/account/recent-visits" className="shrink-0 text-xs font-bold text-[var(--brand-accent)] transition-colors hover:text-[var(--brand-primary)]">مشاهده همه</Link></div>
+        <div className="flex snap-x gap-4 overflow-x-auto pb-3">{recentlyViewed.map((item, index) => <div key={item.id} className="w-[176px] min-w-[176px] snap-start sm:w-[210px] sm:min-w-[210px]"><ProductCard {...item} storefrontVariant="gallery" imageTone={index} /></div>)}</div>
       </section>}
 
       <ProductDetailSectionNav />
