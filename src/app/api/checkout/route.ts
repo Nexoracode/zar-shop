@@ -143,7 +143,7 @@ export async function POST(request: Request) {
             create: lines.map(({ item, p, parts, originalUnitPrice, discountAmount, unitPrice, total: lineTotal }: CheckoutLine) => ({
               productId: p.id, sku: p.sku, name: p.name, selectedOptions: optionEntries(item.selectedOptions).length ? Object.fromEntries(optionEntries(item.selectedOptions)) : undefined, quantity: item.quantity,
               storeIndustry: p.storeIndustry,
-              weightGrams: getSelectedOptionWeight(p.options, item.selectedOptions, p.weightGrams), purity: p.purity, makingFee: parts.makingFee,
+              weightGrams: getSelectedOptionWeight(p.options, item.selectedOptions, p.weightGrams), purity: p.purity, rawGold: parts.rawGold, makingFee: parts.makingFee,
               profit: parts.profit, tax: parts.tax, originalUnitPrice, discountAmount, unitPrice, total: lineTotal,
             })),
           },

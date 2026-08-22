@@ -776,6 +776,7 @@ model OrderItem {
   quantity          Int
   weightGrams       Decimal       @db.Decimal(10, 3)
   purity            Int
+  rawGold           Decimal       @default(0) @db.Decimal(18, 0)
   makingFee         Decimal       @db.Decimal(18, 0)
   profit            Decimal       @db.Decimal(18, 0)
   tax               Decimal       @db.Decimal(18, 0)

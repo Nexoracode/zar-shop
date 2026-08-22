@@ -101,14 +101,13 @@ export default async function InvoicePage({ params, searchParams }: { params: Pr
             <thead className="bg-amber-50"><tr>{["ردیف", "شرح و کد کالا", "تعداد", "وزن واحد", "عیار", "ارزش طلا", "اجرت", "سود", "مالیات", "تخفیف", "مبلغ کل"].map((head) => <th key={head} className={`${cell} font-bold text-[#6f5220]`}>{head}</th>)}</tr></thead>
             <tbody>{order.items.map((item, index) => {
               const quantity = item.quantity;
-              const rawGoldUnit = Math.max(0, Number(item.originalUnitPrice) - Number(item.makingFee) - Number(item.profit) - Number(item.tax));
               return <tr key={item.id}>
                 <td className={cell}>{(index + 1).toLocaleString("fa-IR")}</td>
                 <td className={`${cell} text-right font-bold`}>{item.name}<small className="mt-1 block font-normal text-slate-500" dir="ltr">{item.sku}</small>{optionEntries(item.selectedOptions).map(([name, value]) => <small key={name} className="mt-1 block font-normal text-slate-500">{name}: {value}</small>)}</td>
                 <td className={cell}>{quantity.toLocaleString("fa-IR")}</td>
                 <td className={cell}>{Number(item.weightGrams).toLocaleString("fa-IR", { maximumFractionDigits: 3 })} گرم</td>
                 <td className={cell}>{item.purity.toLocaleString("fa-IR")}</td>
-                <td className={cell}>{amount(rawGoldUnit * quantity)}</td>
+                <td className={cell}>{amount(Number(item.rawGold) * quantity)}</td>
                 <td className={cell}>{amount(Number(item.makingFee) * quantity)}</td>
                 <td className={cell}>{amount(Number(item.profit) * quantity)}</td>
                 <td className={cell}>{amount(Number(item.tax) * quantity)}</td>
