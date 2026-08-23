@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Button, Spinner } from "@heroui/react";
+import { Button } from "@heroui/react";
+import { LoadingLabel } from "@/components/loading-label";
 
 const RESEND_SECONDS = 60;
 
@@ -27,7 +28,7 @@ export function OtpResendCountdown({ onResend, isResending = false }: { onResend
 
   return (
     <Button type="button" variant="ghost" fullWidth isPending={isResending} onPress={onResend} className="min-h-10 rounded-lg text-xs font-bold text-[var(--brand-accent)]">
-      {({ isPending }) => <>{isPending && <Spinner color="current" size="sm" />}{isPending ? "در حال ارسال..." : "ارسال دوباره کد"}</>}
+      {({ isPending }) => <LoadingLabel isPending={isPending}>ارسال دوباره کد</LoadingLabel>}
     </Button>
   );
 }

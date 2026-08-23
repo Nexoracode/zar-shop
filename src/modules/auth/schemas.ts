@@ -1,10 +1,14 @@
 import { z } from "zod";
 import { normalizeNumericValue } from "@/lib/persian-numbers";
 
-export const phoneSchema = z.string().trim().transform((value) => normalizeNumericValue(value, false)).pipe(z.string().regex(/^09\d{9}$/));
+export const phoneSchema = z.string().trim().transform((value) => normalizeNumericValue(value, false)).pipe(z.string().regex(/^09\d{9}$/, "شماره موبایل باید به‌صورت 09xxxxxxxxx باشد."));
 
-const otpCodeSchema = z.string().trim().regex(/^\d{6}$/);
-const newPasswordSchema = z.string().min(8).max(72).regex(/[A-Za-z]/).regex(/\d/);
+export const otpCodeSchema = z.string().trim().regex(/^\d{6}$/, "کد تایید باید ۶ رقم باشد.");
+export const newPasswordSchema = z.string()
+  .min(8, "رمز عبور باید حداقل ۸ کاراکتر باشد.")
+  .max(72, "رمز عبور خیلی طولانی است.")
+  .regex(/[A-Za-z]/, "رمز عبور باید شامل حرف انگلیسی باشد.")
+  .regex(/\d/, "رمز عبور باید شامل عدد باشد.");
 
 export const phoneCheckSchema = z.object({ phone: phoneSchema });
 
@@ -17,8 +21,8 @@ export const otpVerifySchema = z.object({ phone: phoneSchema, purpose: z.enum(["
 // account profile.
 export const registerCompleteSchema = z.object({
   phone: phoneSchema,
-  firstName: z.string().trim().min(2).max(100).optional(),
-  lastName: z.string().trim().min(2).max(100).optional(),
+  firstName: z.string().trim().min(2, "نام باید حداقل ۲ حرف باشد.").max(100).optional(),
+  lastName: z.string().trim().min(2, "نام خانوادگی باید حداقل ۲ حرف باشد.").max(100).optional(),
   smsMarketingConsent: z.boolean().default(false),
   password: newPasswordSchema,
 });
