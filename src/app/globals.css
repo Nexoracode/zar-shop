@@ -1,6 +1,5 @@
 @import "tailwindcss";
 @import "@heroui/styles";
-@import url('https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;700&family=Barlow+Condensed:wght@400;600&display=swap');
 
 @font-face {
   font-family: "Vazir";
@@ -189,43 +188,6 @@ html[dir="rtl"] [data-slot="modal-header"]:has([data-slot="modal-close-trigger"]
     --success-foreground: #07130c;
   }
 
-  [data-theme="zar-industry"] {
-    color-scheme: light;
-    --radius: 0px;
-    --background: #f2f2f3;
-    --foreground: #1d1f20;
-    --surface: #ffffff;
-    --surface-foreground: #1d1f20;
-    --surface-secondary: #e9e9ea;
-    --surface-secondary-foreground: #1d1f20;
-    --surface-tertiary: #d9d9da;
-    --surface-tertiary-foreground: #1d1f20;
-    --overlay: #ffffff;
-    --overlay-foreground: #1d1f20;
-    --muted: #5d5d60;
-    --default: #e9e9ea;
-    --default-foreground: #1d1f20;
-    --accent: #416180;
-    --accent-foreground: #ffffff;
-    --accent-hover: #2c455d;
-    --focus: #5980a6;
-    --link: #416180;
-    --border: color-mix(in srgb, #1d1f20 16%, transparent);
-    --separator: color-mix(in srgb, #1d1f20 16%, transparent);
-    --field-background: #e9e9ea;
-    --field-foreground: #1d1f20;
-    --field-placeholder: #7a7a7d;
-    --field-border: color-mix(in srgb, #1d1f20 16%, transparent);
-    --field-border-width: 1px;
-    --field-border-focus: #5980a6;
-    --warning: #7e9cb8;
-    --warning-foreground: #1d1f20;
-    --danger: #b8423a;
-    --danger-foreground: #ffffff;
-    --success: #2f855a;
-    --success-foreground: #ffffff;
-  }
-
   a {
     color: inherit;
     text-decoration: none;
@@ -248,76 +210,6 @@ html[dir="rtl"] [data-slot="modal-header"]:has([data-slot="modal-close-trigger"]
 [data-theme="zar-dark"] .admin-content [class~="text-[#785b27]"],
 [data-theme="zar-dark"] .admin-content [class~="text-[#846325]"],
 [data-theme="zar-dark"] .admin-content [class~="text-[#9a7434]"] { color: var(--warning) !important; }
-
-/* — "Industry" admin template: a square, hairline-bordered second skin for
-   the whole admin panel, selected in تنظیمات ← ظاهر و برند. Reuses the
-   classic theme's CSS variable contract, so shared components need no
-   per-page branching — only the token values and a few structural resets
-   change. — */
-[data-theme="zar-industry"] .admin-shell,
-[data-theme="zar-industry"] .admin-topbar,
-[data-theme="zar-industry"] .admin-panel,
-[data-theme="zar-industry"] h1,
-[data-theme="zar-industry"] h2,
-[data-theme="zar-industry"] h3,
-[data-theme="zar-industry"] h4 {
-  font-family: "Barlow Condensed", "Vazir", Tahoma, Arial, sans-serif;
-}
-
-[data-theme="zar-industry"] .admin-page-eyebrow {
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-}
-
-[data-theme="zar-industry"] .admin-content :is(.rounded-2xl, .rounded-xl, .rounded-lg, .rounded-b-2xl, .rounded-t-2xl),
-[data-theme="zar-industry"] .admin-content [class~="rounded-[24px]"],
-[data-theme="zar-industry"] .admin-content [class~="rounded-[5px]"],
-[data-theme="zar-industry"] .admin-content [class~="rounded-[3px]"],
-[data-theme="zar-industry"] .admin-topbar,
-[data-theme="zar-industry"] .admin-panel,
-[data-theme="zar-industry"] .admin-sidebar {
-  border-radius: 0 !important;
-}
-
-[data-theme="zar-industry"] .admin-content :is(.shadow-sm, .shadow, .shadow-md, .shadow-lg, .shadow-xl, .shadow-2xl),
-[data-theme="zar-industry"] .admin-content [class*="shadow-["],
-[data-theme="zar-industry"] .admin-topbar,
-[data-theme="zar-industry"] .admin-sidebar {
-  box-shadow: none !important;
-  border: 1px solid var(--border);
-}
-
-[data-theme="zar-industry"] .admin-panel {
-  position: relative;
-  overflow: visible !important;
-}
-
-.admin-panel-corner {
-  display: none;
-  position: absolute;
-  width: 11px;
-  height: 11px;
-  pointer-events: none;
-  color: color-mix(in srgb, var(--foreground) 45%, transparent);
-}
-
-[data-theme="zar-industry"] .admin-panel-corner {
-  display: block;
-}
-
-.admin-panel-corner::before,
-.admin-panel-corner::after {
-  content: "";
-  position: absolute;
-  background: currentColor;
-}
-
-.admin-panel-corner::before { top: 0; left: 5px; width: 1px; height: 100%; }
-.admin-panel-corner::after { top: 5px; left: 0; width: 100%; height: 1px; }
-.admin-panel-corner--tl { top: -6px; left: -6px; }
-.admin-panel-corner--tr { top: -6px; right: -6px; }
-.admin-panel-corner--bl { bottom: -6px; left: -6px; }
-.admin-panel-corner--br { bottom: -6px; right: -6px; }
 
 .admin-sticky-save-form > :last-child {
   position: sticky;

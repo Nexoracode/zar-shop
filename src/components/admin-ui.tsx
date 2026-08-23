@@ -24,7 +24,7 @@ export function AdminPageHeader({ eyebrow, title, description, action, backHref,
     <header className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
       <div className="min-w-0">
         {backHref && <Link href={backHref} className="mb-4 inline-flex items-center gap-2 text-sm font-bold text-[var(--muted)] transition hover:text-[var(--foreground)]"><ChevronRight size={17} />{backLabel}</Link>}
-        {eyebrow && <span className="admin-page-eyebrow mb-1 block text-xs font-bold text-[var(--warning)]">{eyebrow}</span>}
+        {eyebrow && <span className="mb-1 block text-xs font-bold text-[var(--warning)]">{eyebrow}</span>}
         <h1 className="m-0 text-2xl font-bold tracking-[-0.02em] text-[var(--foreground)] sm:text-3xl">{title}</h1>
         <p className="mb-0 mt-1 max-w-2xl text-sm text-[var(--muted)]">{description}</p>
       </div>
@@ -38,15 +38,7 @@ export function AdminPrimaryLink({ href, children }: { href: string; children: R
 }
 
 export function AdminPanel({ children, className = "" }: { children: ReactNode; className?: string }) {
-  return (
-    <Card variant="secondary" className={`admin-panel relative overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] text-[var(--foreground)] shadow-sm ${className}`}>
-      <i className="admin-panel-corner admin-panel-corner--tl" aria-hidden="true" />
-      <i className="admin-panel-corner admin-panel-corner--tr" aria-hidden="true" />
-      <i className="admin-panel-corner admin-panel-corner--bl" aria-hidden="true" />
-      <i className="admin-panel-corner admin-panel-corner--br" aria-hidden="true" />
-      {children}
-    </Card>
-  );
+  return <Card variant="secondary" className={`overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] text-[var(--foreground)] shadow-sm ${className}`}>{children}</Card>;
 }
 
 export function AdminEmptyState({ title, description }: { title: string; description: string }) {
