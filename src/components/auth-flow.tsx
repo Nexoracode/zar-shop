@@ -183,16 +183,16 @@ export function AuthFlow() {
           <label htmlFor="password" className={labelClass}>رمز عبور</label>
           <PasswordInput id="password" name="password" required fullWidth variant="secondary" className={fieldClass} autoFocus />
         </div>
+        <div className="grid gap-1 justify-items-start">
+          <Button type="button" variant="ghost" isPending={altLoading} isDisabled={loading} onPress={requestLoginOtp} className={`${secondaryActionClass} px-2`}>
+            {({ isPending }) => <>{isPending && <Spinner color="current" size="sm" />}{isPending ? "در حال ارسال..." : <>ورود با کد یکبار مصرف<ChevronLeft size={15} /></>}</>}
+          </Button>
+          <Link href="/forgot-password" className={`${secondaryActionClass} inline-flex items-center px-2`}>فراموشی رمز عبور<ChevronLeft size={15} /></Link>
+        </div>
         {error && <Alert status="danger"><Alert.Description>{error}</Alert.Description></Alert>}
         <Button type="submit" variant="primary" fullWidth className={submitClass} isPending={loading}>
-          {({ isPending }) => <>{isPending && <Spinner color="current" size="sm" />}{isPending ? "در حال بررسی..." : "ورود"}</>}
+          {({ isPending }) => <>{isPending && <Spinner color="current" size="sm" />}{isPending ? "در حال بررسی..." : "تایید"}</>}
         </Button>
-        <div className="flex flex-wrap items-center gap-4 justify-self-start">
-          <Button type="button" variant="ghost" isPending={altLoading} isDisabled={loading} onPress={requestLoginOtp} className={`${secondaryActionClass} px-2`}>
-            {({ isPending }) => <>{isPending && <Spinner color="current" size="sm" />}{isPending ? "در حال ارسال..." : <><ChevronLeft size={15} />ورود با کد یکبار مصرف</>}</>}
-          </Button>
-          <Link href="/forgot-password" className={`${secondaryActionClass} inline-flex items-center px-2`}><ChevronLeft size={15} />فراموشی رمز عبور</Link>
-        </div>
       </form>
     );
   }
@@ -203,7 +203,7 @@ export function AuthFlow() {
     return (
       <form className="grid gap-5" onSubmit={submit}>
         <StepHeader title="کد تایید را وارد کنید" subtitle={<>کد تایید برای شماره <strong dir="ltr">{phone}</strong> پیامک شد</>} />
-        {step === "login-otp" && <Button type="button" variant="ghost" onPress={() => setStep("password")} className={`${switchLinkClass} justify-self-start`}><ChevronLeft size={15} />ورود با رمز عبور</Button>}
+        {step === "login-otp" && <Button type="button" variant="ghost" onPress={() => setStep("password")} className={`${switchLinkClass} justify-self-start`}>ورود با رمز عبور<ChevronLeft size={15} /></Button>}
         <OtpCodeInput value={otp} onChange={setOtp} isDisabled={loading} />
         {error && <Alert status="danger"><Alert.Description>{error}</Alert.Description></Alert>}
         <Button type="submit" variant="primary" fullWidth className={submitClass} isPending={loading} isDisabled={otp.length !== 6}>
