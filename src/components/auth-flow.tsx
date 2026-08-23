@@ -179,7 +179,6 @@ export function AuthFlow() {
     return (
       <form className="grid gap-5" onSubmit={submitPassword}>
         <StepHeader title="رمز عبور را وارد کنید" subtitle={<>ورود با شماره <strong dir="ltr">{phone}</strong></>} />
-        <Button type="button" variant="ghost" onPress={backToPhone} className={`${switchLinkClass} justify-self-start`}><ChevronLeft size={15} />تغییر شماره موبایل</Button>
         <div className="grid gap-[7px]">
           <label htmlFor="password" className={labelClass}>رمز عبور</label>
           <PasswordInput id="password" name="password" required fullWidth variant="secondary" className={fieldClass} autoFocus />
@@ -188,10 +187,12 @@ export function AuthFlow() {
         <Button type="submit" variant="primary" fullWidth className={submitClass} isPending={loading}>
           {({ isPending }) => <>{isPending && <Spinner color="current" size="sm" />}{isPending ? "در حال بررسی..." : "ورود"}</>}
         </Button>
-        <Button type="button" variant="ghost" fullWidth isPending={altLoading} isDisabled={loading} onPress={requestLoginOtp} className={secondaryActionClass}>
-          {({ isPending }) => <>{isPending && <Spinner color="current" size="sm" />}{isPending ? "در حال ارسال..." : <><ChevronLeft size={15} />ورود با کد یکبار مصرف</>}</>}
-        </Button>
-        <Link href="/forgot-password" className={`${secondaryActionClass} flex items-center justify-center`}><ChevronLeft size={15} />فراموشی رمز عبور</Link>
+        <div className="flex flex-wrap items-center gap-4 justify-self-start">
+          <Button type="button" variant="ghost" isPending={altLoading} isDisabled={loading} onPress={requestLoginOtp} className={`${secondaryActionClass} px-2`}>
+            {({ isPending }) => <>{isPending && <Spinner color="current" size="sm" />}{isPending ? "در حال ارسال..." : <><ChevronLeft size={15} />ورود با کد یکبار مصرف</>}</>}
+          </Button>
+          <Link href="/forgot-password" className={`${secondaryActionClass} inline-flex items-center px-2`}><ChevronLeft size={15} />فراموشی رمز عبور</Link>
+        </div>
       </form>
     );
   }
