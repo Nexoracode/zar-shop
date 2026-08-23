@@ -10,6 +10,7 @@ export const brandSettingsInputSchema = z.object({
   brandAccentColor: hexColor,
   brandBackgroundColor: hexColor,
   brandDangerColor: hexColor,
+  adminTemplate: z.enum(["CLASSIC", "INDUSTRY"]),
   enforceColorContrast: z.boolean(),
   stickyStoreHeader: z.boolean(),
   compactMobileGrid: z.boolean(),
@@ -32,12 +33,14 @@ export type BrandSettings = z.infer<typeof brandSettingsSchema>;
 
 export const brandSettingsDefaults: BrandSettingsInput = {
   brandPrimaryColor: "#1C3155", brandAccentColor: "#B5904C", brandBackgroundColor: "#F7F6F3", brandDangerColor: "#B8423A",
+  adminTemplate: "CLASSIC",
   enforceColorContrast: true, stickyStoreHeader: true, compactMobileGrid: true, liveGoldPrice: true,
   mainLogoMediaId: null, darkLogoMediaId: null, faviconMediaId: null, socialImageMediaId: null,
 };
 
 const select = {
   brandPrimaryColor: true, brandAccentColor: true, brandBackgroundColor: true, brandDangerColor: true,
+  adminTemplate: true,
   enforceColorContrast: true, stickyStoreHeader: true, compactMobileGrid: true, liveGoldPrice: true,
   mainLogoMediaId: true, darkLogoMediaId: true, faviconMediaId: true, socialImageMediaId: true,
   mainLogoMedia: { select: { id: true, title: true, alt: true, url: true, type: true, mimeType: true } },

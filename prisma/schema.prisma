@@ -31,6 +31,11 @@ enum StoreIndustry {
   GENERAL
 }
 
+enum AdminTemplate {
+  CLASSIC
+  INDUSTRY
+}
+
 enum ProductDiscountType {
   PERCENT
   FIXED
@@ -491,6 +496,7 @@ model StoreSetting {
   brandAccentColor              String                @default("#B5904C") @db.VarChar(7)
   brandBackgroundColor          String                @default("#F7F6F3") @db.VarChar(7)
   brandDangerColor              String                @default("#B8423A") @db.VarChar(7)
+  adminTemplate                 AdminTemplate         @default(CLASSIC)
   enforceColorContrast          Boolean               @default(true)
   stickyStoreHeader             Boolean               @default(true)
   compactMobileGrid             Boolean               @default(true)

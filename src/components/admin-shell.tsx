@@ -14,6 +14,7 @@ type AdminUser = { firstName: string | null; lastName: string | null; email: str
 
 type Props = {
   user: AdminUser;
+  adminTemplate: "CLASSIC" | "INDUSTRY";
   showGoldPrice: boolean;
   goldPrice: string | null;
   goldFetchedAt: string | null;
@@ -22,15 +23,16 @@ type Props = {
   children: ReactNode;
 };
 
-export function AdminShell({ user, showGoldPrice, goldPrice, goldFetchedAt, notificationCount, sidebar, children }: Props) {
+export function AdminShell({ user, adminTemplate, showGoldPrice, goldPrice, goldFetchedAt, notificationCount, sidebar, children }: Props) {
   const router = useRouter();
   const [loggingOut, setLoggingOut] = useState(false);
   const theme = useSyncExternalStore(subscribeToAdminTheme, getResolvedAdminTheme, () => "light");
+  const isIndustryTemplate = adminTemplate === "INDUSTRY";
   const fullName = `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim() || "مدیر فروشگاه";
 
   useEffect(() => {
-    document.documentElement.dataset.theme = theme === "dark" ? "zar-dark" : "zar";
-  }, [theme]);
+    document.documentElement.dataset.theme = isIndustryTemplate ? "zar-industry" : theme === "dark" ? "zar-dark" : "zar";
+  }, [theme, isIndustryTemplate]);
 
   useEffect(() => {
     return () => {
@@ -101,9 +103,9 @@ export function AdminShell({ user, showGoldPrice, goldPrice, goldFetchedAt, noti
                 </Popover.Content>
               </Popover>
 
-              <Button type="button" isIconOnly variant="ghost" aria-label={theme === "dark" ? "فعال‌کردن حالت روشن" : "فعال‌کردن حالت تاریک"} onPress={() => setAdminThemePreference(theme === "dark" ? "light" : "dark")} className="h-10 min-h-10 w-10 min-w-10 rounded-full border border-[var(--border)] bg-[var(--surface-secondary)] text-[var(--foreground)]">
+              {!isIndustryTemplate && <Button type="button" isIconOnly variant="ghost" aria-label={theme === "dark" ? "فعال‌کردن حالت روشن" : "فعال‌کردن حالت تاریک"} onPress={() => setAdminThemePreference(theme === "dark" ? "light" : "dark")} className="h-10 min-h-10 w-10 min-w-10 rounded-full border border-[var(--border)] bg-[var(--surface-secondary)] text-[var(--foreground)]">
                 {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
-              </Button>
+              </Button>}
 
             </div>
 
