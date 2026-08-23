@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import type { PhoneOtpPurpose } from "@generated/prisma/enums";
 import { decryptSmsCredentials } from "@/modules/communications/sms-config";
 import { getCommunicationSettings } from "@/modules/communications/communication-settings";
+import { getGeneralStoreSettings } from "@/modules/settings/general-settings";
 import { smsAudienceSchema, type SmsAudience } from "@/modules/communications/sms-audiences";
 
 const smsMessageSchema = z.string().trim().min(3).max(500);
@@ -41,6 +42,26 @@ async function sendWithFaraz(provider: { senderNumber: string; credentialsEncryp
   return result;
 }
 
+// OTP codes go through ippanel's registered-pattern API instead of the free-text webservice
+// endpoint above: carriers in Iran require verification codes to use a pre-approved pattern
+// so they aren't filtered as advertising. The pattern is shared across all three OTP purposes
+// (its wording only has "name" and "ref-id" slots, so purpose-specific copy isn't possible
+// here — that only lives in the SmsCampaign audit record via otpMessages below).
+const OTP_PATTERN_CODE = "0ejt4dkexhr6squ";
+const OTP_PATTERN_SENDER = "+983000505";
+
+async function sendOtpWithFarazPattern(apiKey: string, recipient: string, code: string, name: string) {
+  const response = await fetch("https://api2.ippanel.com/api/v1/sms/pattern/normal/send", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", apikey: apiKey },
+    body: JSON.stringify({ code: OTP_PATTERN_CODE, sender: OTP_PATTERN_SENDER, recipient, variable: { name, "ref-id": code } }),
+    signal: AbortSignal.timeout(15000),
+  });
+  const result = await response.json().catch(() => null);
+  if (!response.ok) throw new Error(`ارسال پیامک با خطای ${response.status.toLocaleString("fa-IR")} مواجه شد.`);
+  return result;
+}
+
 export async function sendAutomatedSms(event: "orderCreated" | "paymentSuccess" | "orderShipped" | "orderExpired" | "lowStockAdmin", phone: string | null | undefined, variables: Record<string, string | number>) {
   if (!phone) return false;
   const settings = await getCommunicationSettings();
@@ -69,9 +90,11 @@ export async function sendPhoneOtpCode(phone: string | null | undefined, code: s
   if (!settings.smsEnabled) return false;
   const recipient = normalizeIranPhone(phone); if (!recipient) return false;
   const provider = await db.smsProviderConfig.findFirst({ where: { isActive: true, provider: "FARAZ_SMS" } }); if (!provider) return false;
+  const credentials = z.object({ apiKey: z.string().min(1) }).parse(decryptSmsCredentials(provider.credentialsEncrypted));
+  const storeName = (await getGeneralStoreSettings()).storeName;
   const message = otpMessages[purpose](code);
   const campaign = await db.smsCampaign.create({ data: { provider: provider.provider, audience: `SYSTEM_PHONE_OTP_${purpose}`, message, recipientCount: 1, status: "SENDING" } });
-  try { const result = await sendWithFaraz(provider, [recipient], message); await db.smsCampaign.update({ where: { id: campaign.id }, data: { status: "SENT", successfulCount: 1, providerData: result ?? undefined } }); return true; }
+  try { const result = await sendOtpWithFarazPattern(credentials.apiKey, recipient, code, storeName); await db.smsCampaign.update({ where: { id: campaign.id }, data: { status: "SENT", successfulCount: 1, providerData: result ?? undefined } }); return true; }
   catch (error) { await db.smsCampaign.update({ where: { id: campaign.id }, data: { status: "FAILED", failedCount: 1, errorMessage: error instanceof Error ? error.message : "خطای ناشناخته" } }); return false; }
 }
 
