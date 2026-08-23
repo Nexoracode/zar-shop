@@ -27,7 +27,7 @@ export function OtpResendCountdown({ onResend, isResending = false }: { onResend
   }
 
   return (
-    <Button type="button" variant="ghost" fullWidth isPending={isResending} onPress={onResend} className="min-h-10 rounded-lg text-xs font-bold text-[var(--brand-accent)]">
+    <Button type="button" variant="ghost" fullWidth isPending={isResending} onPress={onResend} className="min-h-10 rounded-lg !text-xs !font-bold text-[var(--brand-accent)]">
       {({ isPending }) => <LoadingLabel isPending={isPending}>ارسال دوباره کد</LoadingLabel>}
     </Button>
   );

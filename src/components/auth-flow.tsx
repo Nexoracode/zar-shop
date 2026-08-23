@@ -19,9 +19,13 @@ type FieldName = "phone" | "password" | "code" | "firstName" | "lastName";
 const fieldClass = "w-full min-h-12 rounded-lg border border-[#e0dfda] bg-white px-[14px] text-[13px] outline-none transition focus:border-[var(--brand-primary)] focus:ring-2 focus:ring-[var(--brand-primary)]/15";
 const invalidFieldClass = "border-[var(--danger)] focus:border-[var(--danger)] focus:ring-[var(--danger)]/15";
 const labelClass = "text-xs font-normal text-[#848484]";
-const submitClass = "min-h-12 px-6 inline-flex items-center justify-center gap-2 rounded-lg bg-[var(--brand-primary)] text-[var(--brand-primary-foreground)] border border-[var(--brand-primary)] text-sm font-medium transition hover:brightness-110 disabled:opacity-60 disabled:cursor-not-allowed";
-const secondaryActionClass = "min-h-11 gap-1 rounded-lg text-xs font-bold text-[var(--brand-accent)] hover:bg-[var(--brand-accent)]/8";
-const switchLinkClass = "min-h-9 min-w-0 gap-0.5 rounded-lg px-2 text-xs font-bold text-[var(--brand-accent)] hover:bg-[var(--brand-accent)]/8";
+// HeroUI's own Button base CSS sets text-sm/font-medium directly on `.button` (in the
+// "components" layer, imported by @heroui/styles) — a plain `text-xs`/`font-bold` utility
+// class ties with it on specificity and loses the cascade unpredictably, so button typography
+// overrides need `!` to reliably win (same pattern already used in admin-save-button.tsx).
+const submitClass = "min-h-12 px-6 inline-flex items-center justify-center gap-2 rounded-lg bg-[var(--brand-primary)] text-[var(--brand-primary-foreground)] border border-[var(--brand-primary)] !text-sm !font-medium transition hover:brightness-110 disabled:opacity-60 disabled:cursor-not-allowed";
+const secondaryActionClass = "min-h-11 gap-1 rounded-lg !text-xs !font-bold text-[var(--brand-accent)] hover:bg-[var(--brand-accent)]/8";
+const switchLinkClass = "min-h-9 min-w-0 gap-0.5 rounded-lg px-2 !text-xs !font-bold text-[var(--brand-accent)] hover:bg-[var(--brand-accent)]/8";
 
 function StepHeader({ title, subtitle, size = "md" }: { title: string; subtitle?: ReactNode; size?: "lg" | "md" }) {
   return (
