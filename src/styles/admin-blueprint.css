@@ -1,0 +1,493 @@
+/* Blueprint admin template — tokens and component classes imported from the "Industry"
+   design system (claude.ai/design project b44aa23b, `Admin Panel.dc.html`).
+
+   Two rules govern this file:
+   1. Every token is prefixed `--bp-`. The upstream system names its tokens `--color-bg`,
+      `--color-surface`, `--color-text`… and `@theme` in globals.css already maps those exact
+      names onto Tailwind utilities (`bg-surface`, `text-muted`, …). Redefining them here would
+      silently repaint every Tailwind utility inside the admin subtree.
+   2. Everything is scoped under `.bp-root`. The upstream file styles `body`, `h1..h6`, `a`,
+      `::selection` globally; scoping keeps the storefront and the classic admin untouched. */
+
+.bp-root {
+  --bp-bg: #f2f2f3;
+  --bp-surface: #e9e9ea;
+  --bp-text: #1d1f20;
+  --bp-accent: #5980a6;
+  --bp-divider: color-mix(in srgb, #1d1f20 16%, transparent);
+  --bp-hover: color-mix(in srgb, #1d1f20 7%, transparent);
+  --bp-active: color-mix(in srgb, #1d1f20 14%, transparent);
+  --bp-row-line: color-mix(in srgb, #1d1f20 8%, transparent);
+  --bp-row-hover: color-mix(in srgb, #1d1f20 4%, transparent);
+  --bp-muted: color-mix(in srgb, #1d1f20 55%, transparent);
+  --bp-label: color-mix(in srgb, #1d1f20 70%, transparent);
+
+  --bp-neutral-100: #f5f5f8;
+  --bp-neutral-200: #e7e7ea;
+  --bp-neutral-300: #d4d4d7;
+  --bp-neutral-400: #b7b7ba;
+  --bp-neutral-500: #98989b;
+  --bp-neutral-600: #7a7a7d;
+  --bp-neutral-700: #5d5d60;
+  --bp-neutral-800: #424244;
+  --bp-neutral-900: #2b2b2d;
+
+  --bp-accent-100: #eef6ff;
+  --bp-accent-200: #d6ebff;
+  --bp-accent-300: #b5d9fd;
+  --bp-accent-400: #94bce3;
+  --bp-accent-500: #749dc4;
+  --bp-accent-600: #597ea3;
+  --bp-accent-700: #416180;
+  --bp-accent-800: #2c455d;
+  --bp-accent-900: #1d2d3d;
+
+  /* Semantic roles keep their own hues — the design system only owns accent and neutral. */
+  --bp-success: #2f7a52;
+  --bp-success-bg: #e8f4ed;
+  --bp-warning: #8a6212;
+  --bp-warning-bg: #fbf1dc;
+  --bp-danger: #a33a33;
+  --bp-danger-bg: #fbeae9;
+  --bp-info: #416180;
+  --bp-info-bg: #eef6ff;
+
+  --bp-font: "Vazir", Tahoma, Arial, sans-serif;
+
+  --bp-space-1: 3.4px;
+  --bp-space-2: 6.8px;
+  --bp-space-3: 10.2px;
+  --bp-space-4: 13.6px;
+  --bp-space-6: 20.4px;
+  --bp-space-8: 27.2px;
+
+  --bp-shadow-md: 0 3px 10px color-mix(in srgb, #2b2b2d 16%, transparent);
+  --bp-shadow-lg: 0 12px 32px color-mix(in srgb, #2b2b2d 22%, transparent);
+
+  background: var(--bp-bg);
+  color: var(--bp-text);
+  font-family: var(--bp-font);
+  font-size: 15px;
+  line-height: 1.55;
+}
+
+/* Dark set. The upstream system ships light tokens only; these keep the same tonal
+   relationships (hairline dividers, transparent surfaces) on an ink ground, and lift the
+   accent to the 300/400 steps so text and strokes stay legible on it. */
+[data-theme="zar-dark"] .bp-root {
+  --bp-bg: #16181a;
+  --bp-surface: #1d1f20;
+  --bp-text: #f2f2f3;
+  --bp-accent: #94bce3;
+  --bp-divider: color-mix(in srgb, #f2f2f3 18%, transparent);
+  --bp-hover: color-mix(in srgb, #f2f2f3 8%, transparent);
+  --bp-active: color-mix(in srgb, #f2f2f3 15%, transparent);
+  --bp-row-line: color-mix(in srgb, #f2f2f3 9%, transparent);
+  --bp-row-hover: color-mix(in srgb, #f2f2f3 5%, transparent);
+  --bp-muted: color-mix(in srgb, #f2f2f3 58%, transparent);
+  --bp-label: color-mix(in srgb, #f2f2f3 72%, transparent);
+
+  --bp-accent-100: #1d2d3d;
+  --bp-accent-200: #2c455d;
+  --bp-accent-300: #416180;
+  --bp-accent-400: #597ea3;
+  --bp-accent-500: #749dc4;
+  --bp-accent-600: #94bce3;
+  --bp-accent-700: #b5d9fd;
+  --bp-accent-800: #d6ebff;
+  --bp-accent-900: #eef6ff;
+
+  --bp-neutral-100: #2b2b2d;
+  --bp-neutral-200: #424244;
+  --bp-neutral-300: #5d5d60;
+  --bp-neutral-400: #7a7a7d;
+  --bp-neutral-500: #98989b;
+  --bp-neutral-600: #b7b7ba;
+  --bp-neutral-700: #d4d4d7;
+  --bp-neutral-800: #e7e7ea;
+  --bp-neutral-900: #f5f5f8;
+
+  --bp-success: #6fcf97;
+  --bp-success-bg: color-mix(in srgb, #6fcf97 16%, transparent);
+  --bp-warning: #e0b155;
+  --bp-warning-bg: color-mix(in srgb, #e0b155 16%, transparent);
+  --bp-danger: #ef8079;
+  --bp-danger-bg: color-mix(in srgb, #ef8079 16%, transparent);
+  --bp-info: #b5d9fd;
+  --bp-info-bg: color-mix(in srgb, #94bce3 14%, transparent);
+
+  color-scheme: dark;
+}
+
+.bp-root *,
+.bp-root *::before,
+.bp-root *::after { box-sizing: border-box; }
+
+.bp-root :focus { outline: none; }
+.bp-root :focus-visible { outline: 2px solid var(--bp-accent); outline-offset: 2px; }
+.bp-root ::selection { background: color-mix(in srgb, var(--bp-accent) 30%, transparent); }
+.bp-root a { color: inherit; text-decoration: none; }
+.bp-root p { margin: 0 0 var(--bp-space-3); }
+.bp-root img { display: block; max-width: 100%; }
+
+/* Headings: Vazir has no condensed cut, so the upstream Barlow Condensed look is approximated
+   with its weight, tight leading and negative tracking. */
+.bp-root h1,
+.bp-root h2,
+.bp-root h3,
+.bp-root h4,
+.bp-root h5,
+.bp-root h6 {
+  font-family: var(--bp-font);
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.015em;
+  margin: 0 0 var(--bp-space-2);
+}
+.bp-root h1 { font-size: 30px; }
+.bp-root h2 { font-size: 24px; }
+.bp-root h3 { font-size: 20px; }
+.bp-root h4 { font-size: 17px; }
+.bp-root h5 { font-size: 15px; }
+.bp-root h6 { font-size: 13px; letter-spacing: 0.06em; }
+
+.bp-muted { color: var(--bp-muted); }
+.bp-hr { height: 1px; border: 0; margin: var(--bp-space-4) 0; background: var(--bp-divider); }
+
+/* — blueprint frame: every surface is a wireframe object — square, transparent, hairline —
+     with registration marks drawn just outside its corners — */
+.bp-frame {
+  position: relative;
+  border: 1px solid var(--bp-divider);
+  border-radius: 0;
+}
+.bp-corner {
+  position: absolute;
+  width: 11px;
+  height: 11px;
+  color: color-mix(in srgb, var(--bp-text) 55%, transparent);
+  pointer-events: none;
+}
+.bp-corner::before,
+.bp-corner::after { content: ""; position: absolute; background: currentColor; }
+.bp-corner::before { left: 5px; top: 0; width: 1px; height: 100%; }
+.bp-corner::after { top: 5px; left: 0; width: 100%; height: 1px; }
+.bp-corner-tl { top: -6px; left: -6px; }
+.bp-corner-tr { top: -6px; right: -6px; }
+.bp-corner-bl { bottom: -6px; left: -6px; }
+.bp-corner-br { bottom: -6px; right: -6px; }
+
+/* — cards — */
+.bp-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bp-space-2);
+  padding: var(--bp-space-3);
+  border-radius: 0;
+  background: transparent;
+  border: 1px solid var(--bp-divider);
+}
+.bp-kicker {
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  color: var(--bp-accent);
+}
+.bp-card-title { font-weight: 700; font-size: 17px; line-height: 1.3; letter-spacing: -0.015em; }
+.bp-card-body { margin: 0; font-size: 13px; opacity: 0.8; }
+
+/* — buttons — */
+.bp-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  cursor: pointer;
+  text-decoration: none;
+  font-family: var(--bp-font);
+  font-weight: 500;
+  font-size: 14px;
+  line-height: 1.2;
+  color: var(--bp-text);
+  background: transparent;
+  border: 1px solid var(--bp-divider);
+  border-radius: 0;
+  padding: var(--bp-space-2) calc(var(--bp-space-3) * 1.2);
+  min-height: 36px;
+}
+.bp-btn > svg { display: block; flex: none; }
+.bp-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.bp-btn-primary { background: var(--bp-accent); border-color: var(--bp-accent); color: var(--bp-bg); }
+.bp-btn-primary:not(:disabled):hover { background: var(--bp-accent-600); border-color: var(--bp-accent-600); }
+.bp-btn-primary:not(:disabled):active { background: var(--bp-accent-700); border-color: var(--bp-accent-700); }
+.bp-btn-secondary:not(:disabled):hover { background: var(--bp-hover); }
+.bp-btn-secondary:not(:disabled):active { background: var(--bp-active); }
+.bp-btn-ghost { color: var(--bp-accent); border-color: transparent; padding-inline: var(--bp-space-1); }
+.bp-btn-ghost:not(:disabled):hover { background: color-mix(in srgb, var(--bp-accent) 10%, transparent); }
+.bp-btn-ghost:not(:disabled):active { background: color-mix(in srgb, var(--bp-accent) 18%, transparent); }
+.bp-btn-danger { color: var(--bp-danger); border-color: color-mix(in srgb, var(--bp-danger) 45%, transparent); }
+.bp-btn-danger:not(:disabled):hover { background: var(--bp-danger-bg); }
+.bp-btn-icon { width: 36px; min-width: 36px; height: 36px; padding: 0; }
+.bp-btn-sm { min-height: 30px; font-size: 13px; padding: 4px 10px; }
+.bp-btn-block { width: 100%; }
+
+.bp-spinner { animation: bp-spin 0.7s linear infinite; }
+@keyframes bp-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .bp-spinner { animation-duration: 2s; }
+}
+
+/* — forms — */
+.bp-field { display: block; }
+.bp-field > label,
+.bp-label {
+  display: block;
+  font-size: 12px;
+  margin-bottom: 5px;
+  color: var(--bp-label);
+}
+.bp-input {
+  width: 100%;
+  min-height: 36px;
+  padding: 6px 10px;
+  font: inherit;
+  font-size: 14px;
+  font-family: var(--bp-font);
+  color: var(--bp-text);
+  caret-color: var(--bp-accent);
+  background: var(--bp-surface);
+  border: 1px solid var(--bp-divider);
+  border-radius: 0;
+}
+.bp-input::placeholder { color: var(--bp-muted); }
+.bp-input:hover { border-color: color-mix(in srgb, var(--bp-text) 45%, transparent); }
+.bp-input:focus-visible { border-color: var(--bp-accent); outline-offset: 0; }
+.bp-input:disabled { opacity: 0.55; cursor: not-allowed; }
+textarea.bp-input { min-height: 90px; resize: vertical; }
+select.bp-input { appearance: none; padding-inline-end: 28px; }
+.bp-select-wrap { position: relative; }
+.bp-select-wrap > svg {
+  position: absolute;
+  top: 50%;
+  inset-inline-end: 9px;
+  transform: translateY(-50%);
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+.bp-seg {
+  display: inline-flex;
+  overflow: hidden;
+  border: 1px solid var(--bp-divider);
+  border-radius: 0;
+}
+.bp-seg-opt {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 7px 12px;
+  font-size: 13px;
+  cursor: pointer;
+}
+.bp-seg-opt + .bp-seg-opt { border-inline-start: 1px solid var(--bp-divider); }
+.bp-seg-opt input { position: absolute; opacity: 0; width: 0; height: 0; pointer-events: none; }
+.bp-seg-opt:has(input:checked) { background: var(--bp-accent); color: var(--bp-bg); }
+.bp-seg-opt:not(:has(input:checked)):hover { background: var(--bp-hover); }
+.bp-seg-opt:has(input:focus-visible) { outline: 2px solid var(--bp-accent); outline-offset: -2px; }
+
+.bp-switch { position: relative; display: inline-flex; align-items: center; gap: 8px; cursor: pointer; font-size: 13px; }
+.bp-switch input { position: absolute; opacity: 0; width: 0; height: 0; pointer-events: none; }
+.bp-switch-track {
+  position: relative;
+  width: 34px;
+  height: 18px;
+  flex: none;
+  border: 1px solid var(--bp-divider);
+  background: var(--bp-surface);
+  transition: background 0.15s, border-color 0.15s;
+}
+.bp-switch-thumb {
+  position: absolute;
+  top: 1px;
+  inset-inline-start: 1px;
+  width: 14px;
+  height: 14px;
+  background: var(--bp-text);
+  transition: inset-inline-start 0.15s, background 0.15s;
+}
+.bp-switch input:checked + .bp-switch-track { background: var(--bp-accent); border-color: var(--bp-accent); }
+.bp-switch input:checked + .bp-switch-track .bp-switch-thumb { inset-inline-start: 17px; background: var(--bp-bg); }
+.bp-switch input:focus-visible + .bp-switch-track { outline: 2px solid var(--bp-accent); outline-offset: 2px; }
+
+/* — tags — */
+.bp-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  letter-spacing: 0.02em;
+  padding: 3px 10px;
+  border-radius: 0;
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+.bp-tag-neutral { background: var(--bp-neutral-100); color: var(--bp-neutral-800); border-color: var(--bp-divider); }
+.bp-tag-accent { background: var(--bp-accent-100); color: var(--bp-accent-800); border-color: color-mix(in srgb, var(--bp-accent) 35%, transparent); }
+.bp-tag-info { background: var(--bp-info-bg); color: var(--bp-info); border-color: color-mix(in srgb, var(--bp-info) 35%, transparent); }
+.bp-tag-success { background: var(--bp-success-bg); color: var(--bp-success); border-color: color-mix(in srgb, var(--bp-success) 35%, transparent); }
+.bp-tag-warning { background: var(--bp-warning-bg); color: var(--bp-warning); border-color: color-mix(in srgb, var(--bp-warning) 35%, transparent); }
+.bp-tag-danger { background: var(--bp-danger-bg); color: var(--bp-danger); border-color: color-mix(in srgb, var(--bp-danger) 35%, transparent); }
+.bp-tag-gold { background: var(--bp-warning-bg); color: var(--bp-warning); border-color: color-mix(in srgb, var(--bp-warning) 35%, transparent); }
+
+/* — tables — */
+.bp-table { width: 100%; border-collapse: collapse; font-size: 14px; text-align: right; }
+.bp-table th {
+  text-align: right;
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  font-weight: 500;
+  color: color-mix(in srgb, var(--bp-text) 60%, transparent);
+  padding: var(--bp-space-3) var(--bp-space-4);
+  border-bottom: 1px solid var(--bp-divider);
+  white-space: nowrap;
+}
+.bp-table td {
+  padding: var(--bp-space-3) var(--bp-space-4);
+  border-bottom: 1px solid var(--bp-row-line);
+}
+.bp-table tbody tr:last-child td { border-bottom: 0; }
+.bp-table tbody tr:hover { background: var(--bp-row-hover); }
+.bp-table-scroll { width: 100%; overflow-x: auto; }
+
+/* — dialog — */
+.bp-dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 130;
+  display: grid;
+  place-items: center;
+  padding: var(--bp-space-4);
+  background: color-mix(in srgb, #0b0c0d 55%, transparent);
+}
+.bp-dialog {
+  width: min(440px, 100%);
+  display: flex;
+  flex-direction: column;
+  gap: var(--bp-space-3);
+  padding: var(--bp-space-6);
+  border-radius: 0;
+  border: 1px solid var(--bp-divider);
+  background: var(--bp-bg);
+  color: var(--bp-text);
+  box-shadow: var(--bp-shadow-lg);
+  font-family: var(--bp-font);
+}
+.bp-dialog-title { font-weight: 700; font-size: 18px; letter-spacing: -0.015em; }
+.bp-dialog-body { font-size: 14px; opacity: 0.85; margin: 0; }
+.bp-dialog-actions { display: flex; justify-content: flex-end; gap: var(--bp-space-2); margin-top: var(--bp-space-2); }
+
+/* — shell — */
+.bp-scroll { scrollbar-width: thin; scrollbar-color: var(--bp-neutral-400) transparent; }
+.bp-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
+.bp-scroll::-webkit-scrollbar-thumb { background: var(--bp-neutral-400); }
+.bp-scroll::-webkit-scrollbar-track { background: transparent; }
+
+.bp-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 12px;
+  cursor: pointer;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--bp-text);
+  font-family: var(--bp-font);
+  font-weight: 500;
+  font-size: 14px;
+  text-align: right;
+}
+.bp-nav-item:hover { background: var(--bp-hover); }
+.bp-nav-item[data-active="true"] { background: var(--bp-accent-100); color: var(--bp-accent-800); }
+.bp-nav-sub {
+  font-weight: 400;
+  font-size: 13px;
+  padding: 8px 12px;
+  padding-inline-start: 40px;
+}
+
+/* ── Compatibility layer ────────────────────────────────────────────────────────────────────
+   Admin pages that have not been migrated off HeroUI yet still render inside the blueprint
+   shell. Rather than override their utilities one by one, `.bp-root` re-points the classic
+   theme's own CSS variables at the blueprint tokens: HeroUI components, `var(--surface)` call
+   sites and the Tailwind aliases in `@theme` all inherit them, so an unmigrated page picks up
+   the blueprint palette on its own. Only radii and hard-coded slate/white utilities need
+   explicit rules. Everything here is scoped to `.bp-root`, so the classic template and the
+   storefront are untouched. */
+.bp-root {
+  --radius: 0rem;
+  --background: var(--bp-bg);
+  --foreground: var(--bp-text);
+  --surface: var(--bp-bg);
+  --surface-foreground: var(--bp-text);
+  --surface-secondary: var(--bp-surface);
+  --surface-secondary-foreground: var(--bp-text);
+  --surface-tertiary: var(--bp-surface);
+  --surface-tertiary-foreground: var(--bp-text);
+  --overlay: var(--bp-bg);
+  --overlay-foreground: var(--bp-text);
+  --muted: var(--bp-muted);
+  --default: var(--bp-surface);
+  --default-foreground: var(--bp-text);
+  --accent: var(--bp-accent);
+  --accent-foreground: var(--bp-bg);
+  --accent-hover: var(--bp-accent-600);
+  --focus: var(--bp-accent);
+  --link: var(--bp-accent);
+  --border: var(--bp-divider);
+  --separator: var(--bp-divider);
+  --field-background: var(--bp-surface);
+  --field-foreground: var(--bp-text);
+  --field-placeholder: var(--bp-muted);
+  --field-border: var(--bp-divider);
+  --field-border-focus: var(--bp-accent);
+  --warning: var(--bp-warning);
+  --warning-foreground: var(--bp-bg);
+  --danger: var(--bp-danger);
+  --danger-foreground: var(--bp-bg);
+  --success: var(--bp-success);
+  --success-foreground: var(--bp-bg);
+}
+
+/* Square every corner except genuinely circular things (avatars, status dots). */
+.bp-root [class*="rounded-"]:not([class~="rounded-full"]) { border-radius: 0 !important; }
+
+/* Soft drop shadows belong to the classic skin; the blueprint separates with hairlines. */
+.bp-root [class*="shadow-["],
+.bp-root :is(.shadow-sm, .shadow, .shadow-md, .shadow-lg, .shadow-xl, .shadow-2xl) { box-shadow: none !important; }
+
+/* Hard-coded palette utilities that predate the token system. */
+.bp-root .bg-white { background-color: var(--bp-bg) !important; }
+.bp-root :is(.bg-slate-50, .bg-slate-100),
+.bp-root [class~="bg-slate-50/50"],
+.bp-root [class~="bg-slate-50/60"],
+.bp-root [class~="bg-slate-50/70"] { background-color: var(--bp-surface) !important; }
+.bp-root :is(.text-slate-950, .text-slate-900, .text-slate-800, .text-slate-700) { color: var(--bp-text) !important; }
+.bp-root :is(.text-slate-600, .text-slate-500, .text-slate-400) { color: var(--bp-muted) !important; }
+.bp-root :is(.border-slate-100, .border-slate-200, .border-slate-300),
+.bp-root [class~="border-slate-200/80"] { border-color: var(--bp-divider) !important; }
+.bp-root :is(.divide-slate-100, .divide-slate-200) > :not([hidden]) ~ :not([hidden]) { border-color: var(--bp-divider) !important; }
+
+/* Shared field classes from `admin-ui.tsx` (see the note beside their definition). */
+.bp-root .admin-field {
+  border-radius: 0 !important;
+  padding: 6px 10px !important;
+  min-height: 36px;
+  font-size: 14px !important;
+  background: var(--bp-surface) !important;
+  border: 1px solid var(--bp-divider) !important;
+  color: var(--bp-text) !important;
+}
+.bp-root .admin-field:focus { border-color: var(--bp-accent) !important; box-shadow: none !important; }
+.bp-root .admin-field-label { font-weight: 400; font-size: 12px; color: var(--bp-label); }

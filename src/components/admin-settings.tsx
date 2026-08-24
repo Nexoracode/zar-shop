@@ -6,7 +6,7 @@ import { useState, type FormEvent, type ReactNode } from "react";
 import { Alert, Button, Card, Chip, Input, Label, Tabs, TextArea, buttonVariants, toast } from "@heroui/react";
 import {
   Bell, Boxes, CheckCircle2, CircleDollarSign, Clock3, CreditCard, Eye, EyeOff, FileQuestion, FileText,
-  Globe2, GripVertical, Images, LayoutDashboard, Mail, MapPin, Megaphone, PackageCheck, Palette, Plus,
+  Globe2, GripVertical, Images, LayoutDashboard, LayoutTemplate, Mail, MapPin, Megaphone, PackageCheck, Palette, Plus,
   Search, Settings2, ShieldCheck, Smartphone, Sparkles, Store, Trash2, Truck, Upload, Users, ListTree, ChevronLeft,
 } from "lucide-react";
 import { AdminCheckbox } from "@/components/admin-checkbox";
@@ -182,6 +182,7 @@ function HomepageMediaField({ label, hint, media, onSelect, onClear, aspectClass
 export function BrandSettings({ initialSettings, industry }: { initialSettings: BrandSettingsData; industry: "GOLD" | "GENERAL" }) {
   const [saving, setSaving] = useState(false);
   const [colors, setColors] = useState({ primary: initialSettings.brandPrimaryColor, accent: initialSettings.brandAccentColor, background: initialSettings.brandBackgroundColor, danger: initialSettings.brandDangerColor });
+  const [adminTemplate, setAdminTemplate] = useState(initialSettings.adminTemplate);
   const [enforceContrast, setEnforceContrast] = useState(initialSettings.enforceColorContrast);
   const [stickyHeader, setStickyHeader] = useState(initialSettings.stickyStoreHeader);
   const [compactGrid, setCompactGrid] = useState(initialSettings.compactMobileGrid);
@@ -192,7 +193,7 @@ export function BrandSettings({ initialSettings, industry }: { initialSettings: 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault(); setSaving(true);
     try {
-      const response = await fetch("/api/admin/settings/brand", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ brandPrimaryColor: colors.primary, brandAccentColor: colors.accent, brandBackgroundColor: colors.background, brandDangerColor: colors.danger, enforceColorContrast: enforceContrast, stickyStoreHeader: stickyHeader, compactMobileGrid: compactGrid, liveGoldPrice: livePrice, mainLogoMediaId: assets.main?.id ?? null, darkLogoMediaId: assets.dark?.id ?? null, faviconMediaId: assets.favicon?.id ?? null, socialImageMediaId: assets.social?.id ?? null }) });
+      const response = await fetch("/api/admin/settings/brand", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ brandPrimaryColor: colors.primary, brandAccentColor: colors.accent, brandBackgroundColor: colors.background, brandDangerColor: colors.danger, adminTemplate, enforceColorContrast: enforceContrast, stickyStoreHeader: stickyHeader, compactMobileGrid: compactGrid, liveGoldPrice: livePrice, mainLogoMediaId: assets.main?.id ?? null, darkLogoMediaId: assets.dark?.id ?? null, faviconMediaId: assets.favicon?.id ?? null, socialImageMediaId: assets.social?.id ?? null }) });
       const result = await response.json().catch(() => null); if (!response.ok) throw new Error(result?.message ?? "ذخیره ظاهر و برند انجام نشد.");
       toast.success("تنظیمات ظاهر و برند ذخیره شد", { description: "رنگ‌ها، هویت تصویری و قواعد نمایش روی سایت اعمال شدند." });
     } catch (reason) { toast.danger("ذخیره ظاهر و برند انجام نشد", { description: reason instanceof Error ? reason.message : "خطای ناشناخته" }); } finally { setSaving(false); }
@@ -208,6 +209,15 @@ export function BrandSettings({ initialSettings, industry }: { initialSettings: 
     </SettingCard>
     <SettingCard icon={<Smartphone size={19} />} title="قواعد نمایش" description="ظاهر مشترک صفحات محصول و فهرست" className="lg:col-span-2">
       <div className={`grid gap-3 ${industry === "GOLD" ? "md:grid-cols-3" : "md:grid-cols-2"}`}><AdminCheckbox isSelected={stickyHeader} onChange={setStickyHeader} description="هدر هنگام اسکرول در دسترس بماند">هدر چسبان</AdminCheckbox><AdminCheckbox isSelected={compactGrid} onChange={setCompactGrid} description="محصولات در موبایل دو ستونه باشند">گرید فشرده موبایل</AdminCheckbox>{industry === "GOLD" && <AdminCheckbox isSelected={livePrice} onChange={setLivePrice} description="نرخ طلا بدون رفرش بروزرسانی شود">بروزرسانی زنده قیمت</AdminCheckbox>}</div>
+    </SettingCard>
+    <SettingCard icon={<LayoutTemplate size={19} />} title="قالب پنل مدیریت" description="ظاهر کلی پنل مدیریت را انتخاب کنید" className="lg:col-span-2" help={{ summary: "قالب انتخاب‌شده فقط ظاهر پنل مدیریت را تغییر می‌دهد و روی طراحی فروشگاه اثری ندارد.", blocks: [{ title: "کلاسیک", description: "ظاهر پیش‌فرض فعلی پنل مدیریت با گوشه‌های گرد و سایه‌های نرم؛ ساخته‌شده با HeroUI." }, { title: "بلوپرینت", description: "قالب دوم بر پایه دیزاین‌سیستم Industry: گوشه‌های تیز، حاشیه‌های مویی، علائم گوشه و تایپوگرافی متراکم. رنگ آن مستقل از رنگ‌های برند بالا است." }] }}>
+      <Tabs selectedKey={adminTemplate} onSelectionChange={(key) => setAdminTemplate(String(key) as "CLASSIC" | "BLUEPRINT")} className="w-full">
+        <Tabs.List aria-label="انتخاب قالب پنل مدیریت" className="grid w-full grid-cols-2 gap-2 bg-transparent p-0">
+          <Tabs.Tab id="CLASSIC" className="min-h-11 min-w-0 rounded-lg border border-[var(--border)] bg-[var(--surface)] px-4 text-xs font-bold outline-none transition hover:bg-[var(--surface-secondary)] data-[selected]:border-[var(--accent)] data-[selected]:bg-[var(--accent)]/8 data-[selected]:text-[var(--accent)]">کلاسیک (پیش‌فرض)</Tabs.Tab>
+          <Tabs.Tab id="BLUEPRINT" className="min-h-11 min-w-0 rounded-lg border border-[var(--border)] bg-[var(--surface)] px-4 text-xs font-bold outline-none transition hover:bg-[var(--surface-secondary)] data-[selected]:border-[var(--accent)] data-[selected]:bg-[var(--accent)]/8 data-[selected]:text-[var(--accent)]">بلوپرینت (صنعتی)</Tabs.Tab>
+        </Tabs.List>
+      </Tabs>
+      <p className="m-0 text-xs leading-6 text-[var(--muted)]">پس از ذخیره، قالب انتخاب‌شده بلافاصله برای همه مدیران در پنل اعمال می‌شود.</p>
     </SettingCard>
   </SettingsGrid><Card variant="secondary" className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4 shadow-sm"><div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"><div><strong className="block text-sm">ذخیره ظاهر و برند سایت</strong><p className="m-0 mt-1 text-xs text-[var(--muted)]">رنگ‌ها، لوگوها و قواعد نمایش با هم ذخیره می‌شوند.</p></div><AdminSaveButton isSaving={saving} label="ذخیره تنظیمات ظاهر و برند" /></div></Card></form>
     <MediaPickerDialog open={picker !== null} scope="BRAND" allowedTypes={["IMAGE"]} selected={picker && assets[picker] ? [assets[picker]!] : []} onClose={() => setPicker(null)} onConfirm={(items) => { if (picker) setAssets((current) => ({ ...current, [picker]: items[0] ?? null })); }} />

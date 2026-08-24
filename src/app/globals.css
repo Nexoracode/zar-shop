@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "@heroui/styles";
+@import "../styles/admin-blueprint.css";
 
 @font-face {
   font-family: "Vazir";

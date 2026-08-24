@@ -3,53 +3,10 @@
 import Link from "next/link";
 import { Button } from "@heroui/react";
 import { usePathname, useRouter } from "next/navigation";
-import { BadgePercent, Boxes, ChartNoAxesCombined, FolderTree, Images, ListChecks, ListTree, LogOut, Mail, Menu, MessageSquareText, PackageCheck, Palette, ScrollText, Settings, SlidersHorizontal, Store, Users, X } from "lucide-react";
+import { LogOut, Menu, Store, X } from "lucide-react";
 import { useState } from "react";
 import type { UserRole } from "@generated/prisma/enums";
-import { canOpenAnySettingsSection, hasPermission, type AdminPermission } from "@/modules/auth/permissions";
-
-type NavItem = { href: string; label: string; icon: typeof Boxes; permission?: AdminPermission };
-
-const navGroups: Array<{ title: string; items: NavItem[] }> = [
-  {
-    title: "داشبورد",
-    items: [{ href: "/admin", label: "نمای کلی", icon: ChartNoAxesCombined, permission: "dashboard:view" }],
-  },
-  {
-    title: "کاتالوگ و محصولات",
-    items: [
-      { href: "/admin/products", label: "محصولات", icon: Boxes, permission: "catalog:manage" },
-      { href: "/admin/categories", label: "دسته‌بندی‌ها", icon: FolderTree, permission: "catalog:manage" },
-      { href: "/admin/media", label: "گالری رسانه", icon: Images, permission: "catalog:manage" },
-    ],
-  },
-  {
-    title: "تنوع و ویژگی‌ها",
-    items: [
-      { href: "/admin/product-options", label: "تنوع محصولات", icon: ListTree, permission: "catalog:manage" },
-      { href: "/admin/product-attributes", label: "ویژگی‌های محصولات", icon: ListChecks, permission: "catalog:manage" },
-      { href: "/admin/colors", label: "رنگ‌های تنوع", icon: Palette, permission: "catalog:manage" },
-      { href: "/admin/category-attributes", label: "ویژگی‌های دسته‌بندی", icon: SlidersHorizontal, permission: "catalog:manage" },
-    ],
-  },
-  {
-    title: "فروش و مشتریان",
-    items: [
-      { href: "/admin/orders", label: "سفارش‌ها", icon: PackageCheck, permission: "orders:manage" },
-      { href: "/admin/promotions", label: "پروموشن‌ها", icon: BadgePercent, permission: "orders:manage" },
-      { href: "/admin/users", label: "کاربران", icon: Users, permission: "users:manage" },
-      { href: "/admin/reviews", label: "دیدگاه‌ها و امتیازها", icon: MessageSquareText, permission: "catalog:manage" },
-      { href: "/admin/contact-messages", label: "پیام‌های تماس", icon: Mail, permission: "orders:manage" },
-    ],
-  },
-  {
-    title: "تنظیمات سیستم",
-    items: [
-      { href: "/admin/audit-logs", label: "تاریخچه فعالیت‌ها", icon: ScrollText, permission: "audit:view" },
-      { href: "/admin/settings", label: "تنظیمات", icon: Settings },
-    ],
-  },
-];
+import { isAdminNavItemActive, visibleAdminNavGroups } from "@/modules/admin/navigation";
 
 type Props = { user: { firstName: string | null; lastName: string | null; email: string | null; role: UserRole } };
 
@@ -71,14 +28,7 @@ export function AdminSidebar({ user }: Props) {
     }
   }
 
-  const visibleGroups = navGroups.map((group) => ({
-    ...group,
-    // The settings hub has no single permission: it is visible when the role can open
-    // at least one section inside it.
-    items: group.items.filter((item) => item.href === "/admin/settings"
-      ? canOpenAnySettingsSection(user.role)
-      : !item.permission || hasPermission(user.role, item.permission)),
-  })).filter((group) => group.items.length > 0);
+  const visibleGroups = visibleAdminNavGroups(user.role);
 
   const navigation = (
     <nav aria-label="منوی اصلی مدیریت" className="admin-sidebar-scroll grid min-h-0 flex-1 content-start overflow-y-auto pl-1">
@@ -87,7 +37,7 @@ export function AdminSidebar({ user }: Props) {
           <h2 id={`admin-nav-${groupIndex}`} className="mb-1 px-3 text-[10px] font-bold text-[var(--accent-foreground)]/35">{group.title}</h2>
           <div className="grid gap-0.5">
             {group.items.map(({ href, label, icon: Icon }) => {
-              const active = href === "/admin" ? pathname === href : pathname.startsWith(href);
+              const active = isAdminNavItemActive(href, pathname);
               return <Link key={href} href={href} onClick={() => setOpen(false)} className={`flex min-h-9 items-center gap-3 rounded-xl px-3.5 text-sm font-bold transition ${active ? "bg-white/12 text-[var(--accent-foreground)] shadow-sm" : "text-[var(--accent-foreground)]/65 hover:bg-white/8 hover:text-[var(--accent-foreground)]"}`}><Icon size={18} strokeWidth={1.8} /><span>{label}</span>{active && <span className="mr-auto h-1.5 w-1.5 rounded-full bg-[var(--warning)]" />}</Link>;
             })}
           </div>
