@@ -6,6 +6,7 @@ import { Button, Checkbox, Modal, toast } from "@heroui/react";
 import { CheckSquare, Loader2, TriangleAlert } from "lucide-react";
 import { HeroSelectField, type HeroSelectOption } from "@/components/hero-select-field";
 import { AdminTableRefreshButton } from "@/components/admin-table-refresh";
+import { requestErrorMessage, requestJson } from "@/lib/api-request";
 import { useAdminTemplate } from "@/components/admin/template-context";
 import { BpButton } from "@/components/admin/blueprint/ui/button";
 import { BpCheckbox } from "@/components/admin/blueprint/ui/checkbox";
@@ -53,16 +54,14 @@ export function AdminBulkEditor({ entity, entityLabel, ids, actions, children, d
     const selectedIds = [...selected];
     setLoading(true);
     try {
-      const response = await fetch("/api/admin/bulk", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ entity, action: selectedAction, ids: selectedIds }) });
-      const result = await response.json().catch(() => null);
-      if (!response.ok) throw new Error(result?.message ?? "ویرایش گروهی انجام نشد.");
+      const result = await requestJson<{ updated?: number }>("/api/admin/bulk", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ entity, action: selectedAction, ids: selectedIds }) }, { fallbackMessage: "ویرایش گروهی انجام نشد." });
       toast.success("ویرایش گروهی انجام شد", { description: `${Number(result?.updated ?? selected.size).toLocaleString("fa-IR")} ${entityLabel} با موفقیت به‌روزرسانی شد.`, timeout: 4000 });
       setSelected(new Set());
       onCompleted?.({ action: selectedAction, ids: selectedIds });
       router.refresh();
       return true;
     } catch (reason) {
-      toast.danger("ویرایش گروهی انجام نشد", { description: reason instanceof Error ? reason.message : "ارتباط با سرور برقرار نشد.", timeout: 5000 });
+      toast.danger("ویرایش گروهی انجام نشد", { description: requestErrorMessage(reason, "ارتباط با سرور برقرار نشد."), timeout: 5000 });
       return false;
     } finally {
       setAction("");

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Ban, CircleCheck } from "lucide-react";
 import { toast } from "@heroui/react";
 import type { ProductStatus } from "@generated/prisma/enums";
+import { requestErrorMessage, requestJson } from "@/lib/api-request";
 import { BpButton } from "./ui/button";
 
 /** Row-level publish/unpublish switch from the mockup's action group. */
@@ -17,17 +18,15 @@ export function ProductPublishToggle({ id, name, status }: { id: string; name: s
   async function toggle() {
     setPending(true);
     try {
-      const response = await fetch(`/api/admin/products/${id}/status`, {
+      await requestJson(`/api/admin/products/${id}/status`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: published ? "DRAFT" : "ACTIVE" }),
-      });
-      const result = await response.json().catch(() => null);
-      if (!response.ok) throw new Error(result?.message ?? "تغییر وضعیت انجام نشد.");
+      }, { fallbackMessage: "تغییر وضعیت انجام نشد." });
       toast.success(published ? "محصول از انتشار خارج شد" : "محصول منتشر شد", { description: name });
       router.refresh();
     } catch (reason) {
-      toast.danger("تغییر وضعیت انجام نشد", { description: reason instanceof Error ? reason.message : "ارتباط با سرور برقرار نشد." });
+      toast.danger("تغییر وضعیت انجام نشد", { description: requestErrorMessage(reason, "ارتباط با سرور برقرار نشد.") });
     } finally {
       setPending(false);
     }
