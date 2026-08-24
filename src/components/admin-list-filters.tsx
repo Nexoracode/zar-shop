@@ -89,14 +89,14 @@ function DebouncedSearch({ template, initialValue, label, placeholder, onSearch 
   if (template === "BLUEPRINT") {
     return (
       <div className="relative w-full sm:max-w-[340px]">
-        <Search className="pointer-events-none absolute right-2.5 top-1/2 z-10 -translate-y-1/2 text-[var(--bp-muted)]" size={15} />
+        <Search className="pointer-events-none absolute start-2.5 top-1/2 z-10 -translate-y-1/2 text-[var(--bp-muted)]" size={15} />
         <input
           type="search"
           value={value}
           onChange={(event) => setValue(event.target.value)}
           aria-label={label}
           placeholder={placeholder}
-          className="bp-input pl-9 pr-8"
+          className="bp-input bp-input-search"
         />
         {value ? (
           <BpButton
@@ -105,7 +105,7 @@ function DebouncedSearch({ template, initialValue, label, placeholder, onSearch 
             variant="ghost"
             aria-label="پاک‌کردن جستجو"
             onClick={clearSearch}
-            className="absolute left-1 top-1/2 z-20 h-7 min-h-7 w-7 min-w-7 -translate-y-1/2"
+            className="absolute end-1 top-1/2 z-20 h-7 min-h-7 w-7 min-w-7 -translate-y-1/2"
           >
             <X size={14} />
           </BpButton>

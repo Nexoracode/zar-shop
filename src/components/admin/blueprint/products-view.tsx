@@ -5,7 +5,6 @@ import { productStatusLabels, productStatusTones } from "@/modules/admin/labels"
 import { AdminListFilters } from "@/components/admin-list-filters";
 import { AdminPagination } from "@/components/admin-pagination";
 import { AdminBulkCheckbox, AdminBulkEditor } from "@/components/admin-bulk-editor";
-import { formatMoney } from "@/lib/format";
 import { isProductDiscountActive } from "@/modules/products/discount";
 import type { AdminProductsListData, ProductRow } from "@/components/admin/products-list-data";
 import { ProductPublishToggle } from "./product-publish-toggle";
@@ -17,9 +16,14 @@ function Panel({ children, className = "" }: { children: React.ReactNode; classN
   return <section className={`bp-frame relative ${className}`}><BpCorners />{children}</section>;
 }
 
+/*
+ * The unit lives in the column header, so the cells carry bare numbers. `formatMoney` is not
+ * used here because it appends its own unit — and its default is ریال, which is what the rest
+ * of the panel reports, so the header says ریال too.
+ */
 function priceLabel(product: ProductRow) {
-  if (product.storeIndustry === "GOLD") return `${Number(product.weightGrams).toLocaleString("fa-IR", { maximumFractionDigits: 3 })} گرم`;
-  return product.fixedPrice ? formatMoney(product.fixedPrice.toString()) : "بدون قیمت";
+  if (product.storeIndustry === "GOLD") return Number(product.weightGrams).toLocaleString("fa-IR", { maximumFractionDigits: 3 });
+  return product.fixedPrice ? Number(product.fixedPrice).toLocaleString("fa-IR", { maximumFractionDigits: 0 }) : "بدون قیمت";
 }
 
 /** Row action group: four ghost icon buttons, 15px strokes, 4px apart — as in the mockup. */
@@ -99,7 +103,7 @@ export function BlueprintProductsView({ products, categories, filters, paginatio
                     <BpTag tone={productStatusTones[product.status]} size="md" withDot>{productStatusLabels[product.status]}</BpTag>
                   </div>
                   <div className="flex items-center justify-between gap-3 text-[13px]">
-                    <span>{priceLabel(product)}</span>
+                    <span>{priceLabel(product)} {storeIndustry === "GOLD" ? "گرم" : "ریال"}</span>
                     <span className={product.stock <= lowStockThreshold ? "font-bold text-[var(--bp-danger)]" : "bp-muted"}>موجودی: {product.stock.toLocaleString("fa-IR")}</span>
                   </div>
                   <RowActions product={product} />
@@ -115,7 +119,7 @@ export function BlueprintProductsView({ products, categories, filters, paginatio
                     <BpTh className="w-10">#</BpTh>
                     <BpTh>محصول</BpTh>
                     <BpTh>دسته‌بندی</BpTh>
-                    <BpTh>{storeIndustry === "GOLD" ? "وزن (گرم)" : "قیمت (تومان)"}</BpTh>
+                    <BpTh>{storeIndustry === "GOLD" ? "وزن (گرم)" : "قیمت (ریال)"}</BpTh>
                     <BpTh>موجودی</BpTh>
                     <BpTh>وضعیت</BpTh>
                     <BpTh><span className="sr-only">عملیات</span></BpTh>

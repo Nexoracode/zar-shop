@@ -130,7 +130,9 @@
 .bp-root :focus { outline: none; }
 .bp-root :focus-visible { outline: 2px solid var(--bp-accent); outline-offset: 2px; }
 .bp-root ::selection { background: color-mix(in srgb, var(--bp-accent) 30%, transparent); }
-.bp-root a { color: inherit; text-decoration: none; }
+/* Anchors reset to the inherited colour — except the ones styled as buttons, which would
+   otherwise outrank `.bp-btn*` on specificity and lose their own foreground. */
+.bp-root a:not(.bp-btn) { color: inherit; text-decoration: none; }
 .bp-root p { margin: 0 0 var(--bp-space-3); }
 .bp-root img { display: block; max-width: 100%; }
 
@@ -268,6 +270,10 @@
 .bp-input:disabled { opacity: 0.55; cursor: not-allowed; }
 textarea.bp-input { min-height: 90px; resize: vertical; }
 select.bp-input { appearance: none; padding-inline-end: 28px; }
+/* Room for the leading search glyph and the trailing clear button. Tailwind padding
+   utilities cannot do this: `.bp-input` is unlayered and always wins over them. */
+.bp-input-search { padding-inline-start: 34px; padding-inline-end: 36px; }
+
 .bp-select-wrap { position: relative; }
 .bp-select-wrap > svg {
   position: absolute;
