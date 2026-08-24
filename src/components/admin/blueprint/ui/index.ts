@@ -1,5 +1,6 @@
 export { BpButton, BpLinkButton, BpSpinner, type BpButtonVariant } from "./button";
 export { BpCard, BpCardTitle, BpCorners, BpKicker } from "./card";
+export { BpCheckbox } from "./checkbox";
 export { BpDialog } from "./dialog";
 export { BpInput, BpTextarea } from "./input";
 export { BpPagination } from "./pagination";

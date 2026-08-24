@@ -296,6 +296,23 @@ select.bp-input { appearance: none; padding-inline-end: 28px; }
 .bp-seg-opt:not(:has(input:checked)):hover { background: var(--bp-hover); }
 .bp-seg-opt:has(input:focus-visible) { outline: 2px solid var(--bp-accent); outline-offset: -2px; }
 
+.bp-check { position: relative; display: inline-flex; align-items: center; gap: 8px; cursor: pointer; font-size: 13px; }
+.bp-check input { position: absolute; opacity: 0; width: 0; height: 0; pointer-events: none; }
+.bp-check-box {
+  display: grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  flex: none;
+  border: 1px solid var(--bp-divider);
+  background: var(--bp-surface);
+  color: var(--bp-bg);
+}
+.bp-check:hover .bp-check-box { border-color: var(--bp-accent); }
+.bp-check input:checked + .bp-check-box,
+.bp-check input:indeterminate + .bp-check-box { background: var(--bp-accent); border-color: var(--bp-accent); }
+.bp-check input:focus-visible + .bp-check-box { outline: 2px solid var(--bp-accent); outline-offset: 2px; }
+
 .bp-switch { position: relative; display: inline-flex; align-items: center; gap: 8px; cursor: pointer; font-size: 13px; }
 .bp-switch input { position: absolute; opacity: 0; width: 0; height: 0; pointer-events: none; }
 .bp-switch-track {
