@@ -10,4 +10,5 @@ export type AdminProductsListData = {
   filters: { query: string; status: string; category: string; featured: string };
   pagination: { page: number; pageSize: number; totalItems: number; totalPages: number; skip: number };
   lowStockThreshold: number;
+  storeIndustry: "GOLD" | "GENERAL";
 };

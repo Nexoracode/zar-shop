@@ -5,6 +5,7 @@ import { parseAdminPaginationRequest } from "@/lib/admin-pagination-server";
 import { requirePermission } from "@/modules/auth/session";
 import { getCatalogSettings } from "@/modules/settings/catalog-settings";
 import { getBrandSettings } from "@/modules/settings/brand-settings";
+import { getStoreIndustry } from "@/modules/settings/store-settings";
 import { BlueprintProductsView } from "@/components/admin/blueprint/products-view";
 import { ClassicProductsView } from "@/components/admin/classic/products-view";
 import type { AdminProductsListData } from "@/components/admin/products-list-data";
@@ -13,7 +14,7 @@ type Context = { searchParams: Promise<{ q?: string; status?: string; category?:
 
 export default async function AdminProducts({ searchParams }: Context) {
   await requirePermission("catalog:manage");
-  const [catalogSettings, brandSettings] = await Promise.all([getCatalogSettings(), getBrandSettings()]);
+  const [catalogSettings, brandSettings, storeIndustry] = await Promise.all([getCatalogSettings(), getBrandSettings(), getStoreIndustry()]);
   const params = await searchParams;
   const query = params.q?.trim() ?? "";
   const status = (["DRAFT", "ACTIVE", "ARCHIVED"] as const).includes(params.status as ProductStatus) ? params.status as ProductStatus : undefined;
@@ -42,6 +43,7 @@ export default async function AdminProducts({ searchParams }: Context) {
     filters: { query, status: status ?? "", category: params.category ?? "", featured: featured ?? "" },
     pagination,
     lowStockThreshold: catalogSettings.catalogLowStockThreshold,
+    storeIndustry,
   };
 
   return brandSettings.adminTemplate === "BLUEPRINT"

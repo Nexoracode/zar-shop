@@ -343,12 +343,15 @@ select.bp-input { appearance: none; padding-inline-end: 28px; }
   align-items: center;
   gap: 6px;
   font-size: 11.5px;
+  line-height: 1.2;
   letter-spacing: 0.02em;
   padding: 3px 10px;
   border-radius: 0;
   border: 1px solid transparent;
   white-space: nowrap;
 }
+/* The status pill inside a data table sits one step up from the default chip. */
+.bp-tag-md { font-size: 12.5px; padding: 4px 10px; }
 .bp-tag-neutral { background: var(--bp-neutral-100); color: var(--bp-neutral-800); border-color: var(--bp-divider); }
 .bp-tag-accent { background: var(--bp-accent-100); color: var(--bp-accent-800); border-color: color-mix(in srgb, var(--bp-accent) 35%, transparent); }
 .bp-tag-info { background: var(--bp-info-bg); color: var(--bp-info); border-color: color-mix(in srgb, var(--bp-info) 35%, transparent); }
@@ -357,24 +360,29 @@ select.bp-input { appearance: none; padding-inline-end: 28px; }
 .bp-tag-danger { background: var(--bp-danger-bg); color: var(--bp-danger); border-color: color-mix(in srgb, var(--bp-danger) 35%, transparent); }
 .bp-tag-gold { background: var(--bp-warning-bg); color: var(--bp-warning); border-color: color-mix(in srgb, var(--bp-warning) 35%, transparent); }
 
-/* — tables — */
+/* — tables — matches the upstream `.table` spec exactly: 14px body, 11px tracked-out
+     header, one --bp-space-2 of padding all round, hairline row rules — */
 .bp-table { width: 100%; border-collapse: collapse; font-size: 14px; text-align: right; }
 .bp-table th {
   text-align: right;
   font-size: 11px;
-  letter-spacing: 0.05em;
-  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 400;
   color: color-mix(in srgb, var(--bp-text) 60%, transparent);
-  padding: var(--bp-space-3) var(--bp-space-4);
+  padding: var(--bp-space-2);
   border-bottom: 1px solid var(--bp-divider);
   white-space: nowrap;
 }
 .bp-table td {
-  padding: var(--bp-space-3) var(--bp-space-4);
+  padding: var(--bp-space-2);
   border-bottom: 1px solid var(--bp-row-line);
 }
-.bp-table tbody tr:last-child td { border-bottom: 0; }
 .bp-table tbody tr:hover { background: var(--bp-row-hover); }
+/* The card supplies the outer frame, so the first and last cells get an inset that lines the
+   table up with the card's own 18px gutters. */
+.bp-table th:first-child, .bp-table td:first-child { padding-inline-start: var(--bp-space-6); }
+.bp-table th:last-child, .bp-table td:last-child { padding-inline-end: var(--bp-space-6); }
 .bp-table-scroll { width: 100%; overflow-x: auto; }
 
 /* — dialog — */

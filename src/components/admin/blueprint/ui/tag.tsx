@@ -14,9 +14,9 @@ const toneClass: Record<BpTagTone, string> = {
   accent: "bp-tag-accent",
 };
 
-export function BpTag({ children, tone = "neutral", withDot = false, className = "" }: { children: ReactNode; tone?: BpTagTone; withDot?: boolean; className?: string }) {
+export function BpTag({ children, tone = "neutral", size = "sm", withDot = false, className = "" }: { children: ReactNode; tone?: BpTagTone; size?: "sm" | "md"; withDot?: boolean; className?: string }) {
   return (
-    <span className={`bp-tag ${toneClass[tone]} ${className}`.trim()}>
+    <span className={`bp-tag ${toneClass[tone]} ${size === "md" ? "bp-tag-md" : ""} ${className}`.replace(/\s+/g, " ").trim()}>
       {withDot && <i aria-hidden className="block h-[5px] w-[5px] flex-none rounded-full bg-current" />}
       {children}
     </span>
