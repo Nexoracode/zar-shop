@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Copy, LayoutGrid, Percent, Plus, SlidersVertical, SquarePen, Star } from "lucide-react";
+import { Layers, LayoutGrid, Plus, SlidersVertical, SquarePen, Star, TicketPercent } from "lucide-react";
 import { AdminEmptyState, AdminPageHeader, AdminPrimaryLink } from "@/components/admin-ui";
 import { productStatusLabels, productStatusTones } from "@/modules/admin/labels";
 import { AdminListFilters } from "@/components/admin-list-filters";
@@ -9,7 +9,7 @@ import { formatMoney } from "@/lib/format";
 import { isProductDiscountActive } from "@/modules/products/discount";
 import type { AdminProductsListData, ProductRow } from "@/components/admin/products-list-data";
 import { ProductPublishToggle } from "./product-publish-toggle";
-import { BpCorners, BpKicker } from "./ui/card";
+import { BpCorners } from "./ui/card";
 import { BpTable, BpTd, BpTh } from "./ui/table";
 import { BpTag } from "./ui/tag";
 
@@ -46,13 +46,13 @@ function ProductName({ product }: { product: ProductRow }) {
     <div className="flex items-baseline gap-[7px]">
       <span className="truncate" title={product.name}>{product.name}</span>
       {product.featured && <Star size={14} strokeWidth={2} className="shrink-0 translate-y-0.5 fill-[var(--bp-accent)] text-[var(--bp-accent)]" aria-label="محصول ویژه" />}
-      {isProductDiscountActive(product) && <Percent size={14} strokeWidth={2} className="shrink-0 translate-y-0.5 text-[var(--bp-danger)]" aria-label="تخفیف فعال" />}
-      {product._count.options > 0 && <Copy size={14} strokeWidth={2} className="shrink-0 translate-y-0.5 text-[var(--bp-accent)]" aria-label={`${product._count.options.toLocaleString("fa-IR")} گروه تنوع`} />}
+      {isProductDiscountActive(product) && <TicketPercent size={15} strokeWidth={1.7} className="shrink-0 translate-y-0.5 text-[var(--bp-danger)]" aria-label="تخفیف فعال" />}
+      {product._count.options > 0 && <Layers size={15} strokeWidth={1.7} className="shrink-0 translate-y-0.5 text-[var(--bp-accent)]" aria-label={`${product._count.options.toLocaleString("fa-IR")} گروه تنوع`} />}
     </div>
   );
 }
 
-export function BlueprintProductsView({ products, categories, counts, filters, pagination, lowStockThreshold, storeIndustry }: AdminProductsListData) {
+export function BlueprintProductsView({ products, categories, filters, pagination, lowStockThreshold, storeIndustry }: AdminProductsListData) {
   const bulkActions = [
     { value: "featured:on", label: "افزودن به محصولات ویژه" },
     { value: "featured:off", label: "حذف از محصولات ویژه" },
@@ -66,20 +66,10 @@ export function BlueprintProductsView({ products, categories, counts, filters, p
   return (
     <div className="flex flex-col gap-6">
       <AdminPageHeader
-        eyebrow="مدیریت کاتالوگ"
         title="محصولات"
         description="محصولات، موجودی، قیمت‌گذاری و وضعیت انتشار را از یک‌جا مدیریت کنید."
         action={<AdminPrimaryLink href="/admin/products/new"><Plus size={16} />محصول جدید</AdminPrimaryLink>}
       />
-
-      <div className="grid grid-cols-3 gap-4">
-        {[{ label: "همه محصولات", value: counts.total }, { label: "منتشرشده", value: counts.active }, { label: "پیش‌نویس", value: counts.drafts }].map((item) => (
-          <Panel key={item.label} className="p-[18px]">
-            <BpKicker>{item.label}</BpKicker>
-            <strong className="mt-1 block text-[26px] font-bold tracking-[-0.02em]">{item.value.toLocaleString("fa-IR")}</strong>
-          </Panel>
-        ))}
-      </div>
 
       <Panel className="p-4">
         <AdminListFilters

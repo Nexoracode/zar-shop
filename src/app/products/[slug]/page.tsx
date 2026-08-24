@@ -25,12 +25,16 @@ import { getGeneralStoreSettings } from "@/modules/settings/general-settings";
 import { getCurrentUser } from "@/modules/auth/session";
 import { getStorefrontProductReviews } from "@/modules/reviews/service";
 import { ProductActivityTracker } from "@/components/product-activity-tracker";
+import { ProductUnavailable } from "@/components/product-unavailable";
 import { env } from "@/lib/env";
 
 export const dynamic = "force-dynamic";
 
+// The status filter is deliberately absent: the page needs to tell an unpublished product
+// apart from a slug that never existed, so that the first case can explain itself instead of
+// falling through to a bare 404.
 const getProductForPage = cache(async (slug: string, industry: "GOLD" | "GENERAL") =>
-  db.product.findFirst({ where: { slug, status: "ACTIVE", storeIndustry: industry }, include: { category: true, media: { include: { media: true }, orderBy: { position: "asc" } }, options: { orderBy: { position: "asc" } }, optionGuide: true } }));
+  db.product.findFirst({ where: { slug, storeIndustry: industry }, include: { category: true, media: { include: { media: true }, orderBy: { position: "asc" } }, options: { orderBy: { position: "asc" } }, optionGuide: true } }));
 
 function plainProductDescription(product: { name: string; description: string | null }, storeName: string) {
   return product.description
@@ -43,6 +47,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const settings = await getGeneralStoreSettings();
   const product = await getProductForPage(slug, settings.industry);
   if (!product) return {};
+  if (product.status !== "ACTIVE") return { title: "محصول در دسترس نیست", robots: { index: false, follow: true } };
   const cover = product.media[0]?.media;
   const description = plainProductDescription(product, settings.storeName);
   const canonicalUrl = `${env.APP_URL}/products/${product.slug}`;
@@ -65,6 +70,11 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
     getCurrentUser(),
   ]);
   if (!product) notFound();
+  // `/products?category=` 404s on a category that is not active, so only link to a live one.
+  if (product.status !== "ACTIVE") {
+    const category = product.category?.isActive ? product.category : null;
+    return <ProductUnavailable name={product.name} categorySlug={category?.slug ?? null} categoryName={category?.name ?? null} />;
+  }
 
   const optionValues = product.options
     .map((option) => ({ option, values: parseOptionValues(option.values).filter((item) => item.isActive) }))

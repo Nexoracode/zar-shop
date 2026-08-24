@@ -14,6 +14,9 @@
   --bp-surface: #e9e9ea;
   --bp-text: #1d1f20;
   --bp-accent: #5980a6;
+  /* Filled controls keep a dark accent in both themes so their white label stays legible;
+     --bp-accent itself lightens on dark backgrounds for text and strokes. */
+  --bp-accent-solid: #5980a6;
   --bp-divider: color-mix(in srgb, #1d1f20 16%, transparent);
   --bp-hover: color-mix(in srgb, #1d1f20 7%, transparent);
   --bp-active: color-mix(in srgb, #1d1f20 14%, transparent);
@@ -79,6 +82,7 @@
   --bp-surface: #1d1f20;
   --bp-text: #f2f2f3;
   --bp-accent: #94bce3;
+  --bp-accent-solid: #416180;
   --bp-divider: color-mix(in srgb, #f2f2f3 18%, transparent);
   --bp-hover: color-mix(in srgb, #f2f2f3 8%, transparent);
   --bp-active: color-mix(in srgb, #f2f2f3 15%, transparent);
@@ -216,9 +220,9 @@
 }
 .bp-btn > svg { display: block; flex: none; }
 .bp-btn:disabled { opacity: 0.45; cursor: not-allowed; }
-.bp-btn-primary { background: var(--bp-accent); border-color: var(--bp-accent); color: var(--bp-bg); }
-.bp-btn-primary:not(:disabled):hover { background: var(--bp-accent-600); border-color: var(--bp-accent-600); }
-.bp-btn-primary:not(:disabled):active { background: var(--bp-accent-700); border-color: var(--bp-accent-700); }
+.bp-btn-primary { background: var(--bp-accent-solid); border-color: var(--bp-accent-solid); color: #ffffff; }
+.bp-btn-primary:not(:disabled):hover { background: #416180; border-color: #416180; }
+.bp-btn-primary:not(:disabled):active { background: #2c455d; border-color: #2c455d; }
 .bp-btn-secondary:not(:disabled):hover { background: var(--bp-hover); }
 .bp-btn-secondary:not(:disabled):active { background: var(--bp-active); }
 .bp-btn-ghost { color: var(--bp-accent); border-color: transparent; padding-inline: var(--bp-space-1); }

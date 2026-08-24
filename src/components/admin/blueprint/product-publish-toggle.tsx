@@ -7,11 +7,7 @@ import { toast } from "@heroui/react";
 import type { ProductStatus } from "@generated/prisma/enums";
 import { BpButton } from "./ui/button";
 
-/**
- * Row-level publish/unpublish switch from the mockup's action group. It reuses the existing
- * `/api/admin/bulk` endpoint with a single id rather than adding a new route, so the same
- * permission check and audit trail apply.
- */
+/** Row-level publish/unpublish switch from the mockup's action group. */
 export function ProductPublishToggle({ id, name, status }: { id: string; name: string; status: ProductStatus }) {
   const router = useRouter();
   const [pending, setPending] = useState(false);
@@ -21,10 +17,10 @@ export function ProductPublishToggle({ id, name, status }: { id: string; name: s
   async function toggle() {
     setPending(true);
     try {
-      const response = await fetch("/api/admin/bulk", {
+      const response = await fetch(`/api/admin/products/${id}/status`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ entity: "products", action: published ? "status:DRAFT" : "status:ACTIVE", ids: [id] }),
+        body: JSON.stringify({ status: published ? "DRAFT" : "ACTIVE" }),
       });
       const result = await response.json().catch(() => null);
       if (!response.ok) throw new Error(result?.message ?? "تغییر وضعیت انجام نشد.");
