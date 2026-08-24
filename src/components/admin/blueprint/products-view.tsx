@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Layers, LayoutGrid, Plus, SlidersVertical, SquarePen, Star, TicketPercent } from "lucide-react";
+import { Layers, LayoutGrid, Plus, SlidersVertical, SquarePen, Star, Tag } from "lucide-react";
 import { AdminEmptyState, AdminPageHeader, AdminPrimaryLink } from "@/components/admin-ui";
 import { productStatusLabels, productStatusTones } from "@/modules/admin/labels";
 import { AdminListFilters } from "@/components/admin-list-filters";
@@ -50,8 +50,8 @@ function ProductName({ product }: { product: ProductRow }) {
     <div className="flex items-baseline gap-[7px]">
       <span className="truncate" title={product.name}>{product.name}</span>
       {product.featured && <Star size={14} strokeWidth={2} className="shrink-0 translate-y-0.5 fill-[var(--bp-accent)] text-[var(--bp-accent)]" aria-label="محصول ویژه" />}
-      {isProductDiscountActive(product) && <TicketPercent size={15} strokeWidth={1.7} className="shrink-0 translate-y-0.5 text-[var(--bp-danger)]" aria-label="تخفیف فعال" />}
-      {product._count.options > 0 && <Layers size={15} strokeWidth={1.7} className="shrink-0 translate-y-0.5 text-[var(--bp-accent)]" aria-label={`${product._count.options.toLocaleString("fa-IR")} گروه تنوع`} />}
+      {isProductDiscountActive(product) && <Tag size={14} strokeWidth={1.9} className="shrink-0 translate-y-0.5 text-[var(--bp-danger)]" aria-label="تخفیف فعال" />}
+      {product._count.options > 0 && <Layers size={14} strokeWidth={1.9} className="shrink-0 translate-y-0.5 text-[var(--bp-accent)]" aria-label={`${product._count.options.toLocaleString("fa-IR")} گروه تنوع`} />}
     </div>
   );
 }
