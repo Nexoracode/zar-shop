@@ -438,6 +438,7 @@ select.bp-input:focus-visible { border-color: var(--bp-accent); outline: none; }
 }
 .bp-dialog {
   width: min(440px, 100%);
+  max-height: calc(100dvh - 2 * var(--bp-space-4));
   display: flex;
   flex-direction: column;
   gap: var(--bp-space-3);
@@ -448,6 +449,17 @@ select.bp-input:focus-visible { border-color: var(--bp-accent); outline: none; }
   color: var(--bp-text);
   box-shadow: var(--bp-shadow-lg);
   font-family: var(--bp-font);
+}
+.bp-dialog-sm { width: min(440px, 100%); }
+.bp-dialog-md { width: min(620px, 100%); }
+.bp-dialog-lg { width: min(880px, 100%); }
+/* Only the body scrolls, so the title and the actions stay reachable in a long dialog. */
+.bp-dialog-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bp-space-3);
+  min-height: 0;
+  overflow-y: auto;
 }
 .bp-dialog-title { font-weight: 700; font-size: 18px; letter-spacing: -0.015em; }
 .bp-dialog-body { font-size: 14px; opacity: 0.85; margin: 0; }

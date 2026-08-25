@@ -1,13 +1,15 @@
 "use client";
 
 import { useState, type DragEvent, type FormEvent } from "react";
-import { Button, Card, Input, Modal, toast } from "@heroui/react";
-import { Boxes, GripVertical, ListOrdered, ListPlus, Minus, Plus, Tags, Trash2, X } from "lucide-react";
+import { Button, Card, Input, toast } from "@heroui/react";
+import { Boxes, GripVertical, ListOrdered, ListPlus, Minus, Plus, Tags, Trash2 } from "lucide-react";
 import { AdminCheckbox } from "@/components/admin-checkbox";
 import { AdminSaveButton } from "@/components/admin-save-button";
 import { AdminSectionHelp } from "@/components/admin-section-help";
 import { adminFieldClass, adminLabelClass } from "@/components/admin-ui";
 import { HeroSelectField } from "@/components/hero-select-field";
+import { AdminDialog, AdminDialogButton } from "@/components/admin/admin-dialog";
+import { AdminSelectField } from "@/components/admin/admin-form-fields";
 import { categoryAttributeSchema, type CategoryAttributeGroup } from "@/modules/products/attributes";
 
 const newItemKey = "__new__";
@@ -243,33 +245,36 @@ export function CategoryAttributesForm({ categoryId, initialGroups }: { category
     <Card variant="secondary" className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm"><div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div><strong className="block text-sm text-slate-800">ذخیره ساختار ویژگی‌ها</strong><p className="mt-1 text-xs text-slate-400">ویژگی‌های استفاده‌شده در محصولات بدون حذف مقدار آن‌ها قابل حذف نیستند.</p></div><AdminSaveButton isSaving={saving} label="ذخیره ویژگی‌ها" /></div></Card>
   </form>
 
-  <Modal.Backdrop isOpen={sortOpen} onOpenChange={(open) => { setSortOpen(open); if (!open) setDraggedId(null); }} variant="blur">
-    <Modal.Container size="lg" placement="center" scroll="inside">
-      <Modal.Dialog aria-label="مرتب‌سازی گروه‌ها و ویژگی‌ها" dir="rtl" className="mx-3 max-h-[calc(100dvh-32px)] overflow-hidden bg-white text-slate-900">
-        <Modal.Header className="flex-row items-center justify-between border-b border-slate-200 p-5"><div><Modal.Heading className="text-base font-bold">مرتب‌سازی ویژگی‌های دسته</Modal.Heading><p className="mb-0 mt-1 text-xs text-slate-500">{sortMode ? "آیتم‌ها را بگیرید و در جایگاه دلخواه رها کنید." : "مشخص کنید کدام بخش مرتب شود."}</p></div><Modal.CloseTrigger aria-label="بستن" className="grid size-9 place-items-center rounded-lg text-slate-500 transition hover:bg-slate-100"><X size={18} /></Modal.CloseTrigger></Modal.Header>
-        <Modal.Body className="grid gap-4 p-5">
-          {!sortMode ? <div className="grid gap-3 sm:grid-cols-2">
-            <Button type="button" variant="secondary" onPress={() => chooseSortMode("groups")} className="h-auto min-h-24 items-start justify-start rounded-xl border border-slate-200 bg-slate-50 p-4 text-right"><span><strong className="block text-sm text-slate-800">ترتیب گروه‌ها</strong><small className="mt-2 block font-normal leading-5 text-slate-500">جای گروه‌هایی مثل مشخصات کلی و مشخصات فنی را تغییر دهید.</small></span></Button>
-            <Button type="button" variant="secondary" onPress={() => chooseSortMode("attributes")} className="h-auto min-h-24 items-start justify-start rounded-xl border border-slate-200 bg-slate-50 p-4 text-right"><span><strong className="block text-sm text-slate-800">ترتیب ویژگی‌های یک گروه</strong><small className="mt-2 block font-normal leading-5 text-slate-500">یک گروه را انتخاب کنید و ویژگی‌های داخل آن را مرتب کنید.</small></span></Button>
-          </div> : <>
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-              {sortMode === "attributes" ? <div className="min-w-0 flex-1"><HeroSelectField name="sortAttributeGroup" label="گروه ویژگی" value={sortGroupId} includeEmptyOption={false} options={groups.map((group) => ({ value: group.id, label: group.name }))} onValueChange={selectSortGroup} /></div> : <div><strong className="block text-sm text-slate-800">ترتیب گروه‌ها</strong><span className="mt-1 block text-xs text-slate-500">ترتیب نمایش گروه‌ها در مشخصات محصول</span></div>}
-              <Button type="button" size="sm" variant="ghost" onPress={() => { setSortMode(null); setDraftOrder([]); setDraggedId(null); }} className="shrink-0 text-xs text-slate-500">تغییر نوع مرتب‌سازی</Button>
-            </div>
-            <div className="grid gap-2">{draftOrder.map((id, index) => {
-              const item = sortMode === "groups" ? groups.find((group) => group.id === id) : groups.find((group) => group.id === sortGroupId)?.attributes.find((attribute) => attribute.id === id);
-              if (!item) return null;
-              return <div key={id} draggable tabIndex={0} onKeyDown={(event) => { if (event.key === "ArrowUp") { event.preventDefault(); moveDraftItemByOffset(id, -1); } else if (event.key === "ArrowDown") { event.preventDefault(); moveDraftItemByOffset(id, 1); } }} onDragStart={(event: DragEvent<HTMLDivElement>) => { event.dataTransfer.effectAllowed = "move"; event.dataTransfer.setData("text/plain", id); setDraggedId(id); }} onDragOver={(event) => { event.preventDefault(); event.dataTransfer.dropEffect = "move"; const bounds = event.currentTarget.getBoundingClientRect(); moveDraftItem(id, event.clientY > bounds.top + bounds.height / 2); }} onDrop={(event) => { event.preventDefault(); setDraggedId(null); }} onDragEnd={() => setDraggedId(null)} className={`flex cursor-grab items-center gap-3 rounded-xl border p-3 outline-none transition focus:border-violet-400 active:cursor-grabbing ${draggedId === id ? "border-violet-400 bg-violet-50 opacity-60" : "border-slate-200 bg-slate-50"}`}>
-                <GripVertical size={18} className="shrink-0 text-slate-400" />
-                <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-white text-xs font-bold text-slate-500">{(index + 1).toLocaleString("fa-IR")}</span>
-                <strong className="min-w-0 flex-1 truncate text-sm text-slate-700">{item.name}</strong>
-              </div>;
-            })}</div>
-          </>}
-        </Modal.Body>
-        {sortMode && <Modal.Footer className="flex-row justify-start gap-2 border-t border-slate-200 p-4"><Button type="button" variant="primary" onPress={applySortOrder}>اعمال ترتیب</Button><Button type="button" variant="secondary" onPress={() => setSortOpen(false)}>انصراف</Button></Modal.Footer>}
-      </Modal.Dialog>
-    </Modal.Container>
-  </Modal.Backdrop>
+  <AdminDialog
+    open={sortOpen}
+    ariaLabel="مرتب‌سازی گروه‌ها و ویژگی‌ها"
+    title="مرتب‌سازی ویژگی‌های دسته"
+    description={sortMode ? "آیتم‌ها را بگیرید و در جایگاه دلخواه رها کنید." : "مشخص کنید کدام بخش مرتب شود."}
+    size="lg"
+    onClose={() => { setSortOpen(false); setDraggedId(null); }}
+    actions={sortMode ? <>
+      <AdminDialogButton variant="primary" onPress={applySortOrder}>اعمال ترتیب</AdminDialogButton>
+      <AdminDialogButton variant="secondary" onPress={() => setSortOpen(false)}>انصراف</AdminDialogButton>
+    </> : undefined}
+  >
+    {!sortMode ? <div className="grid gap-3 sm:grid-cols-2">
+      <button type="button" onClick={() => chooseSortMode("groups")} className="border border-[var(--border)] bg-[var(--surface-secondary)] p-4 text-right transition hover:border-[var(--accent)]"><strong className="block text-sm">ترتیب گروه‌ها</strong><small className="mt-2 block font-normal leading-5 text-[var(--muted)]">جای گروه‌هایی مثل مشخصات کلی و مشخصات فنی را تغییر دهید.</small></button>
+      <button type="button" onClick={() => chooseSortMode("attributes")} className="border border-[var(--border)] bg-[var(--surface-secondary)] p-4 text-right transition hover:border-[var(--accent)]"><strong className="block text-sm">ترتیب ویژگی‌های یک گروه</strong><small className="mt-2 block font-normal leading-5 text-[var(--muted)]">یک گروه را انتخاب کنید و ویژگی‌های داخل آن را مرتب کنید.</small></button>
+    </div> : <>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        {sortMode === "attributes" ? <div className="min-w-0 flex-1"><AdminSelectField name="sortAttributeGroup" label="گروه ویژگی" value={sortGroupId} options={groups.map((group) => ({ value: group.id, label: group.name }))} onValueChange={selectSortGroup} /></div> : <div><strong className="block text-sm">ترتیب گروه‌ها</strong><span className="mt-1 block text-xs text-[var(--muted)]">ترتیب نمایش گروه‌ها در مشخصات محصول</span></div>}
+        <AdminDialogButton variant="secondary" onPress={() => { setSortMode(null); setDraftOrder([]); setDraggedId(null); }}>تغییر نوع مرتب‌سازی</AdminDialogButton>
+      </div>
+      <div className="grid gap-2">{draftOrder.map((id, index) => {
+        const item = sortMode === "groups" ? groups.find((group) => group.id === id) : groups.find((group) => group.id === sortGroupId)?.attributes.find((attribute) => attribute.id === id);
+        if (!item) return null;
+        return <div key={id} draggable tabIndex={0} onKeyDown={(event) => { if (event.key === "ArrowUp") { event.preventDefault(); moveDraftItemByOffset(id, -1); } else if (event.key === "ArrowDown") { event.preventDefault(); moveDraftItemByOffset(id, 1); } }} onDragStart={(event: DragEvent<HTMLDivElement>) => { event.dataTransfer.effectAllowed = "move"; event.dataTransfer.setData("text/plain", id); setDraggedId(id); }} onDragOver={(event) => { event.preventDefault(); event.dataTransfer.dropEffect = "move"; const bounds = event.currentTarget.getBoundingClientRect(); moveDraftItem(id, event.clientY > bounds.top + bounds.height / 2); }} onDrop={(event) => { event.preventDefault(); setDraggedId(null); }} onDragEnd={() => setDraggedId(null)} className={`flex cursor-grab items-center gap-3 border p-3 outline-none transition focus:border-[var(--accent)] active:cursor-grabbing ${draggedId === id ? "border-[var(--accent)] bg-[var(--accent)]/5 opacity-60" : "border-[var(--border)] bg-[var(--surface-secondary)]"}`}>
+          <GripVertical size={18} className="shrink-0 text-[var(--muted)]" />
+          <span className="grid size-8 shrink-0 place-items-center bg-[var(--surface)] text-xs font-bold text-[var(--muted)]">{(index + 1).toLocaleString("fa-IR")}</span>
+          <strong className="min-w-0 flex-1 truncate text-sm">{item.name}</strong>
+        </div>;
+      })}</div>
+    </>}
+  </AdminDialog>
   </>;
 }

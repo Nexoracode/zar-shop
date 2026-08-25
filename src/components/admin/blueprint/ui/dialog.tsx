@@ -8,7 +8,9 @@ import { createPortal } from "react-dom";
  * own content boundary instead of inheriting it from the page root, and re-declares `.bp-root`
  * so the blueprint tokens resolve outside the shell subtree.
  */
-export function BpDialog({ open, title, description, onClose, children, actions, labelledBy }: {
+export type BpDialogSize = "sm" | "md" | "lg";
+
+export function BpDialog({ open, title, description, onClose, children, actions, labelledBy, size = "sm" }: {
   open: boolean;
   title?: ReactNode;
   description?: ReactNode;
@@ -16,6 +18,8 @@ export function BpDialog({ open, title, description, onClose, children, actions,
   children?: ReactNode;
   actions?: ReactNode;
   labelledBy?: string;
+  /** How wide the panel gets. Tall content scrolls inside the body, never the whole panel. */
+  size?: BpDialogSize;
 }) {
   const panelRef = useRef<HTMLDivElement>(null);
 
@@ -37,10 +41,10 @@ export function BpDialog({ open, title, description, onClose, children, actions,
       dir="rtl"
       onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}
     >
-      <div ref={panelRef} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby={labelledBy} className="bp-dialog bp-frame" dir="rtl">
+      <div ref={panelRef} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby={labelledBy} className={`bp-dialog bp-dialog-${size} bp-frame`} dir="rtl">
         {title && <div className="bp-dialog-title" id={labelledBy}>{title}</div>}
         {description && <p className="bp-dialog-body">{description}</p>}
-        {children}
+        {children && <div className="bp-dialog-content">{children}</div>}
         {actions && <div className="bp-dialog-actions">{actions}</div>}
       </div>
     </div>,

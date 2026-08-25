@@ -10,19 +10,20 @@ import { TextStyleKit } from "@tiptap/extension-text-style";
 import Subscript from "@tiptap/extension-subscript";
 import Superscript from "@tiptap/extension-superscript";
 import { TableKit } from "@tiptap/extension-table";
-import { Button, Input, Modal, Spinner, toast } from "@heroui/react";
+import { Button, toast } from "@heroui/react";
 import {
   AlignCenter, AlignJustify, AlignLeft, AlignRight, Bold, Braces, ChevronDown, Code2, Columns3, Eraser, Heading1, Heading2, Heading3, Highlighter,
   ImagePlus, Italic, Link2, List, ListOrdered, Minus, Palette, Pilcrow, Quote, Redo2, Rows3, Strikethrough,
-  SubscriptIcon, SuperscriptIcon, Table2, Trash2, Underline, Undo2, Unlink, UploadCloud, X,
+  SubscriptIcon, SuperscriptIcon, Table2, Trash2, Underline, Undo2, Unlink,
 } from "lucide-react";
 import { HeroSelectField } from "@/components/hero-select-field";
 import { useAdminTemplate } from "@/components/admin/template-context";
 import { BpSelect } from "@/components/admin/blueprint/ui/select";
 import { BpButton } from "@/components/admin/blueprint/ui/button";
 import { BpColorPicker } from "@/components/admin/blueprint/ui/color-picker";
+import { AdminDialog, AdminDialogButton } from "@/components/admin/admin-dialog";
+import { AdminTextField } from "@/components/admin/admin-form-fields";
 import { HeroColorField } from "@/components/hero-color-field";
-import { adminFieldClass, adminLabelClass } from "@/components/admin-ui";
 
 type Props = { value?: string; onChange: (html: string) => void };
 
@@ -36,10 +37,12 @@ function initialContent(value?: string) {
 export function RichTextEditor({ value, onChange }: Props) {
   const [linkOpen, setLinkOpen] = useState(false);
   const [linkUrl, setLinkUrl] = useState("");
+  const [linkError, setLinkError] = useState("");
   const [imageOpen, setImageOpen] = useState(false);
   const [showAllTools, setShowAllTools] = useState(false);
   const [imageUrl, setImageUrl] = useState("");
   const [imageAlt, setImageAlt] = useState("");
+  const [imageError, setImageError] = useState("");
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
 
@@ -68,24 +71,25 @@ export function RichTextEditor({ value, onChange }: Props) {
 
   function openLinkDialog() {
     setLinkUrl(editor?.getAttributes("link").href ?? "");
+    setLinkError("");
     setLinkOpen(true);
   }
 
   function applyLink() {
     const url = linkUrl.trim();
-    if (!/^https?:\/\//i.test(url) && !/^mailto:/i.test(url) && !/^tel:/i.test(url)) return toast.warning("لینک معتبر وارد کنید", { description: "نشانی باید با http://، https://، mailto: یا tel: شروع شود." });
+    if (!/^https?:\/\//i.test(url) && !/^mailto:/i.test(url) && !/^tel:/i.test(url)) return setLinkError("نشانی باید با http://، https://، mailto: یا tel: شروع شود.");
     editor?.chain().focus().extendMarkRange("link").setLink({ href: url, target: "_blank" }).run();
     setLinkOpen(false);
   }
 
   function insertImage(url: string, alt = "") {
-    if (!/^https?:\/\//i.test(url)) return toast.warning("نشانی تصویر معتبر نیست", { description: "لینک تصویر باید با http:// یا https:// شروع شود." });
+    if (!/^https?:\/\//i.test(url)) return setImageError("لینک تصویر باید با http:// یا https:// شروع شود.");
     editor?.chain().focus().setImage({ src: url, alt }).run();
-    setImageOpen(false); setImageUrl(""); setImageAlt(""); setImageFile(null);
+    setImageOpen(false); setImageUrl(""); setImageAlt(""); setImageFile(null); setImageError("");
   }
 
   async function uploadImage() {
-    if (!imageFile) return toast.warning("ابتدا یک تصویر انتخاب کنید");
+    if (!imageFile) return setImageError("ابتدا یک تصویر انتخاب کنید.");
     setUploading(true);
     const file = imageFile;
     const alt = imageAlt.trim();
@@ -177,9 +181,30 @@ export function RichTextEditor({ value, onChange }: Props) {
     <EditorContent editor={editor} className="rich-text-editor-content min-h-80 bg-white" />
     <div className="flex items-center justify-between border-t border-slate-100 bg-slate-50 px-4 py-2 text-[11px] text-slate-400"><span>برای تغییر اندازه تصویر، آن را انتخاب کنید و دستگیره‌ها را بکشید.</span><span>{textLength.toLocaleString("fa-IR")} نویسه</span></div>
 
-    <Modal.Backdrop isOpen={linkOpen} onOpenChange={setLinkOpen} variant="blur"><Modal.Container placement="center"><Modal.Dialog aria-label="افزودن لینک" dir="rtl" className="mx-4 max-w-lg bg-white text-right"><Modal.Header className="flex-row items-center justify-between border-b border-slate-100 p-5"><Modal.Heading className="text-base font-bold">افزودن لینک</Modal.Heading><Modal.CloseTrigger aria-label="بستن" className="grid h-9 w-9 place-items-center rounded-lg text-slate-500 hover:bg-slate-100"><X size={18} /></Modal.CloseTrigger></Modal.Header><Modal.Body className="p-5"><label className={adminLabelClass}>نشانی لینک<Input value={linkUrl} onChange={(event) => setLinkUrl(event.target.value)} dir="ltr" placeholder="https://example.com" fullWidth variant="secondary" className={adminFieldClass} /></label></Modal.Body><Modal.Footer className="flex gap-2 border-t border-slate-100 p-4"><Button type="button" variant="primary" onPress={applyLink}>ثبت لینک</Button><Button type="button" variant="secondary" onPress={() => setLinkOpen(false)}>انصراف</Button></Modal.Footer></Modal.Dialog></Modal.Container></Modal.Backdrop>
+    <LinkDialog
+      open={linkOpen}
+      url={linkUrl}
+      error={linkError}
+      onUrlChange={(next) => { setLinkUrl(next); setLinkError(""); }}
+      onClose={() => setLinkOpen(false)}
+      onApply={applyLink}
+    />
 
-    <Modal.Backdrop isOpen={imageOpen} onOpenChange={setImageOpen} variant="blur"><Modal.Container placement="center"><Modal.Dialog aria-label="افزودن تصویر به توضیحات" dir="rtl" className="mx-4 max-w-xl bg-white text-right"><Modal.Header className="flex-row items-center justify-between border-b border-slate-100 p-5"><Modal.Heading className="text-base font-bold">افزودن تصویر</Modal.Heading><Modal.CloseTrigger aria-label="بستن" className="grid h-9 w-9 place-items-center rounded-lg text-slate-500 hover:bg-slate-100"><X size={18} /></Modal.CloseTrigger></Modal.Header><Modal.Body className="grid gap-5 p-5"><label className={adminLabelClass}>انتخاب از سیستم<Input type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => setImageFile(event.target.files?.[0] ?? null)} fullWidth variant="secondary" className={adminFieldClass} /></label><label className={adminLabelClass}>متن جایگزین تصویر<Input value={imageAlt} onChange={(event) => setImageAlt(event.target.value)} fullWidth variant="secondary" className={adminFieldClass} placeholder="توضیح کوتاه تصویر" /></label><div className="flex items-end gap-2"><label className={`${adminLabelClass} flex-1`}>یا لینک مستقیم تصویر<Input value={imageUrl} onChange={(event) => setImageUrl(event.target.value)} dir="ltr" fullWidth variant="secondary" className={adminFieldClass} placeholder="https://example.com/image.jpg" /></label><Button type="button" variant="secondary" onPress={() => insertImage(imageUrl.trim(), imageAlt.trim())} className="min-h-11">افزودن لینک</Button></div></Modal.Body><Modal.Footer className="flex gap-2 border-t border-slate-100 p-4"><Button type="button" variant="primary" isDisabled={!imageFile} isPending={uploading} onPress={() => void uploadImage()} className="gap-2">{({ isPending }) => <>{isPending ? <Spinner color="current" size="sm" /> : <UploadCloud size={16} />}{isPending ? "در حال بارگذاری..." : "بارگذاری و افزودن"}</>}</Button><Button type="button" variant="secondary" onPress={() => setImageOpen(false)}>انصراف</Button></Modal.Footer></Modal.Dialog></Modal.Container></Modal.Backdrop>
+    <ImageDialog
+      open={imageOpen}
+      alt={imageAlt}
+      url={imageUrl}
+      error={imageError}
+      uploading={uploading}
+      hasFile={Boolean(imageFile)}
+      onFileChange={(file) => { setImageFile(file); setImageError(""); }}
+      onAltChange={setImageAlt}
+      onUrlChange={(next) => { setImageUrl(next); setImageError(""); }}
+      onInsertUrl={() => insertImage(imageUrl.trim(), imageAlt.trim())}
+      onUpload={() => void uploadImage()}
+      onClose={() => setImageOpen(false)}
+    />
+
   </div>;
 }
 
@@ -234,4 +259,57 @@ function ColorTool(props: { label: string; clearLabel: string; icon: React.React
   const template = useAdminTemplate();
   if (template === "BLUEPRINT") return <BpColorPicker {...props} />;
   return <HeroColorField {...props} />;
+}
+
+/*
+ * The editor's two dialogs. Both go through the shared admin dialog, so they follow whichever
+ * design system the surrounding template uses, and both keep their validation message under the
+ * field it belongs to rather than in a toast — a toast leaves the reader looking at an
+ * unchanged form.
+ */
+function LinkDialog({ open, url, error, onUrlChange, onClose, onApply }: {
+  open: boolean; url: string; error: string; onUrlChange: (value: string) => void; onClose: () => void; onApply: () => void;
+}) {
+  return (
+    <AdminDialog
+      open={open}
+      ariaLabel="افزودن لینک"
+      title="افزودن لینک"
+      onClose={onClose}
+      actions={<>
+        <AdminDialogButton variant="primary" onPress={onApply}>ثبت لینک</AdminDialogButton>
+        <AdminDialogButton variant="secondary" onPress={onClose}>انصراف</AdminDialogButton>
+      </>}
+    >
+      <AdminTextField label="نشانی لینک" value={url} dir="ltr" placeholder="https://example.com" error={error || undefined} onChange={(event) => onUrlChange(event.target.value)} />
+    </AdminDialog>
+  );
+}
+
+function ImageDialog({ open, alt, url, error, uploading, hasFile, onFileChange, onAltChange, onUrlChange, onInsertUrl, onUpload, onClose }: {
+  open: boolean; alt: string; url: string; error: string; uploading: boolean; hasFile: boolean;
+  onFileChange: (file: File | null) => void; onAltChange: (value: string) => void; onUrlChange: (value: string) => void;
+  onInsertUrl: () => void; onUpload: () => void; onClose: () => void;
+}) {
+  return (
+    <AdminDialog
+      open={open}
+      ariaLabel="افزودن تصویر به توضیحات"
+      title="افزودن تصویر"
+      size="md"
+      isBusy={uploading}
+      onClose={onClose}
+      actions={<>
+        <AdminDialogButton variant="primary" isDisabled={!hasFile} isPending={uploading} onPress={onUpload}>{uploading ? "در حال بارگذاری..." : "بارگذاری و افزودن"}</AdminDialogButton>
+        <AdminDialogButton variant="secondary" isDisabled={uploading} onPress={onClose}>انصراف</AdminDialogButton>
+      </>}
+    >
+      <AdminTextField label="انتخاب از سیستم" type="file" accept="image/jpeg,image/png,image/webp" error={error || undefined} onChange={(event) => onFileChange(event.target.files?.[0] ?? null)} />
+      <AdminTextField label="متن جایگزین تصویر" value={alt} placeholder="توضیح کوتاه تصویر" hint="برای سئو و دسترس‌پذیری لازم است." onChange={(event) => onAltChange(event.target.value)} />
+      <div className="flex items-start gap-2">
+        <AdminTextField label="یا لینک مستقیم تصویر" value={url} dir="ltr" placeholder="https://example.com/image.jpg" wrapperClassName="flex-1" onChange={(event) => onUrlChange(event.target.value)} />
+        <AdminDialogButton variant="secondary" className="mt-7" onPress={onInsertUrl}>افزودن لینک</AdminDialogButton>
+      </div>
+    </AdminDialog>
+  );
 }

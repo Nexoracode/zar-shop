@@ -3,7 +3,7 @@ export { BpCard, BpCardTitle, BpCorners, BpKicker } from "./card";
 export { BpCheckbox } from "./checkbox";
 export { BpColorPicker, type BpColorPickerProps } from "./color-picker";
 export { BpCombobox, type BpComboboxOption } from "./combobox";
-export { BpDialog } from "./dialog";
+export { BpDialog, type BpDialogSize } from "./dialog";
 export { BpFieldMessage } from "./field-message";
 export { BpInput, BpTextarea } from "./input";
 export { BpPagination } from "./pagination";

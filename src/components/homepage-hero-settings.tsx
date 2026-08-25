@@ -2,8 +2,9 @@
 
 import Image from "next/image";
 import { useState, type DragEvent, type FormEvent, type ReactNode } from "react";
-import { Alert, Button, Card, Input, Label, Modal, TextArea, toast } from "@heroui/react";
-import { GripVertical, Images, ListOrdered, Plus, Sparkles, Trash2, Upload, X } from "lucide-react";
+import { Alert, Button, Card, Input, Label, TextArea, toast } from "@heroui/react";
+import { GripVertical, Images, ListOrdered, Plus, Sparkles, Trash2, Upload } from "lucide-react";
+import { AdminDialog, AdminDialogButton } from "@/components/admin/admin-dialog";
 import { AdminSaveButton } from "@/components/admin-save-button";
 import { adminFieldClass, adminLabelClass } from "@/components/admin-ui";
 import { AdminSectionHelp } from "@/components/admin-section-help";
@@ -157,24 +158,29 @@ export function HomepageHeroSettings({ initialSettings }: { initialSettings: Hom
       <Card variant="secondary" className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4 shadow-sm"><div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"><div><strong className="block text-sm">ذخیره تنظیمات هیرو</strong><p className="m-0 mt-1 text-xs text-[var(--muted)]">محتوا، ترتیب تصاویر و لینک‌های اختصاصی با هم ذخیره می‌شوند.</p></div><AdminSaveButton isSaving={saving} label="ذخیره تنظیمات هیرو" /></div></Card>
     </form>
     <MediaPickerDialog open={pickerTarget !== null} scope="HOMEPAGE" allowedTypes={["IMAGE"]} selected={selectedMedia ? [selectedMedia] : []} onClose={() => setPickerTarget(null)} onConfirm={(items) => { const media = items[0] ?? null; if (!pickerTarget) return; const id = pickerTarget.slice(pickerTarget.indexOf(":") + 1); setSlides((current) => current.map((slide) => slide.id === id ? pickerTarget.startsWith("desktop:") ? { ...slide, desktopMedia: media } : { ...slide, mobileMedia: media } : slide)); }} />
-    <Modal.Backdrop isOpen={orderOpen} onOpenChange={(open) => { setOrderOpen(open); if (!open) setDraggedSlideId(null); }} variant="blur">
-      <Modal.Container size="lg" placement="center" scroll="inside">
-        <Modal.Dialog aria-label="ویرایش ترتیب اسلایدهای هیرو" dir="rtl" className="mx-3 max-h-[calc(100dvh-32px)] overflow-hidden bg-[var(--surface)] text-[var(--foreground)]">
-          <Modal.Header className="flex-row items-center justify-between border-b border-[var(--border)] p-5"><div><Modal.Heading className="text-base font-bold">ترتیب اسلایدها</Modal.Heading><p className="mb-0 mt-1 text-xs text-[var(--muted)]">هر اسلاید را بگیرید و در جایگاه موردنظر رها کنید.</p></div><Modal.CloseTrigger aria-label="بستن" className="grid size-9 place-items-center rounded-lg text-[var(--muted)] transition hover:bg-[var(--surface-secondary)]"><X size={18} /></Modal.CloseTrigger></Modal.Header>
-          <Modal.Body className="grid gap-2 p-5">{draftOrder.map((id, index) => {
-            const slide = slides.find((item) => item.id === id);
-            if (!slide) return null;
-            return <div key={id} draggable onDragStart={(event: DragEvent<HTMLDivElement>) => { event.dataTransfer.effectAllowed = "move"; event.dataTransfer.setData("text/plain", id); setDraggedSlideId(id); }} onDragOver={(event) => { event.preventDefault(); event.dataTransfer.dropEffect = "move"; const bounds = event.currentTarget.getBoundingClientRect(); moveDraftSlide(id, event.clientY > bounds.top + bounds.height / 2); }} onDrop={(event) => { event.preventDefault(); setDraggedSlideId(null); }} onDragEnd={() => setDraggedSlideId(null)} className={`flex cursor-grab items-center gap-3 rounded-xl border p-3 transition active:cursor-grabbing ${draggedSlideId === id ? "border-[var(--accent)] bg-[var(--accent)]/5 opacity-55" : "border-[var(--border)] bg-[var(--surface-secondary)]"}`}>
-              <GripVertical size={18} className="shrink-0 text-[var(--muted)]" />
-              <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-[var(--surface)] text-xs font-bold text-[var(--muted)]">{(index + 1).toLocaleString("fa-IR")}</span>
-              <span className="relative h-14 w-24 shrink-0 overflow-hidden rounded-lg bg-[var(--surface)]">{slide.desktopMedia ? <Image src={slide.desktopMedia.url} alt={slide.desktopMedia.title} fill sizes="96px" className="object-cover" /> : <span className="grid h-full place-items-center text-[var(--muted)]"><Images size={18} /></span>}</span>
-              <span className="min-w-0 flex-1"><strong className="block text-sm">اسلاید {(index + 1).toLocaleString("fa-IR")}</strong><small className="mt-1 block truncate text-[10px] text-[var(--muted)]" dir="ltr">{slide.href}</small></span>
-            </div>;
-          })}</Modal.Body>
-          <Modal.Footer className="flex-row justify-start gap-2 border-t border-[var(--border)] p-4"><Button type="button" variant="primary" onPress={applyOrder}>اعمال ترتیب</Button><Button type="button" variant="secondary" onPress={() => setOrderOpen(false)}>انصراف</Button></Modal.Footer>
-        </Modal.Dialog>
-      </Modal.Container>
-    </Modal.Backdrop>
+    <AdminDialog
+      open={orderOpen}
+      ariaLabel="ویرایش ترتیب اسلایدهای هیرو"
+      title="ترتیب اسلایدها"
+      description="هر اسلاید را بگیرید و در جایگاه موردنظر رها کنید."
+      size="lg"
+      onClose={() => { setOrderOpen(false); setDraggedSlideId(null); }}
+      actions={<>
+        <AdminDialogButton variant="primary" onPress={applyOrder}>اعمال ترتیب</AdminDialogButton>
+        <AdminDialogButton variant="secondary" onPress={() => setOrderOpen(false)}>انصراف</AdminDialogButton>
+      </>}
+    >
+      {draftOrder.map((id, index) => {
+        const slide = slides.find((item) => item.id === id);
+        if (!slide) return null;
+        return <div key={id} draggable onDragStart={(event: DragEvent<HTMLDivElement>) => { event.dataTransfer.effectAllowed = "move"; event.dataTransfer.setData("text/plain", id); setDraggedSlideId(id); }} onDragOver={(event) => { event.preventDefault(); event.dataTransfer.dropEffect = "move"; const bounds = event.currentTarget.getBoundingClientRect(); moveDraftSlide(id, event.clientY > bounds.top + bounds.height / 2); }} onDrop={(event) => { event.preventDefault(); setDraggedSlideId(null); }} onDragEnd={() => setDraggedSlideId(null)} className={`flex cursor-grab items-center gap-3 border p-3 transition active:cursor-grabbing ${draggedSlideId === id ? "border-[var(--accent)] bg-[var(--accent)]/5 opacity-55" : "border-[var(--border)] bg-[var(--surface-secondary)]"}`}>
+          <GripVertical size={18} className="shrink-0 text-[var(--muted)]" />
+          <span className="grid size-8 shrink-0 place-items-center bg-[var(--surface)] text-xs font-bold text-[var(--muted)]">{(index + 1).toLocaleString("fa-IR")}</span>
+          <span className="relative h-14 w-24 shrink-0 overflow-hidden bg-[var(--surface)]">{slide.desktopMedia ? <Image src={slide.desktopMedia.url} alt={slide.desktopMedia.title} fill sizes="96px" className="object-cover" /> : <span className="grid h-full place-items-center text-[var(--muted)]"><Images size={18} /></span>}</span>
+          <span className="min-w-0 flex-1"><strong className="block text-sm">اسلاید {(index + 1).toLocaleString("fa-IR")}</strong><small className="mt-1 block truncate text-[10px] text-[var(--muted)]" dir="ltr">{slide.href}</small></span>
+        </div>;
+      })}
+    </AdminDialog>
   </>;
 }
 
