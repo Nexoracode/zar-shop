@@ -10,7 +10,7 @@ import { TextStyleKit } from "@tiptap/extension-text-style";
 import Subscript from "@tiptap/extension-subscript";
 import Superscript from "@tiptap/extension-superscript";
 import { TableKit } from "@tiptap/extension-table";
-import { Button, ColorArea, ColorField, ColorPicker, ColorSlider, ColorSwatch, Input, Label, Modal, Spinner, parseColor, toast } from "@heroui/react";
+import { Button, Input, Modal, Spinner, toast } from "@heroui/react";
 import {
   AlignCenter, AlignJustify, AlignLeft, AlignRight, Bold, Braces, ChevronDown, Code2, Columns3, Eraser, Heading1, Heading2, Heading3, Highlighter,
   ImagePlus, Italic, Link2, List, ListOrdered, Minus, Palette, Pilcrow, Quote, Redo2, Rows3, Strikethrough,
@@ -20,6 +20,8 @@ import { HeroSelectField } from "@/components/hero-select-field";
 import { useAdminTemplate } from "@/components/admin/template-context";
 import { BpSelect } from "@/components/admin/blueprint/ui/select";
 import { BpButton } from "@/components/admin/blueprint/ui/button";
+import { BpColorPicker } from "@/components/admin/blueprint/ui/color-picker";
+import { HeroColorField } from "@/components/hero-color-field";
 import { adminFieldClass, adminLabelClass } from "@/components/admin-ui";
 
 type Props = { value?: string; onChange: (html: string) => void };
@@ -40,8 +42,6 @@ export function RichTextEditor({ value, onChange }: Props) {
   const [imageAlt, setImageAlt] = useState("");
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
-  const [textColor, setTextColor] = useState(() => parseColor("#17233B"));
-  const [highlightColor, setHighlightColor] = useState(() => parseColor("#FFF1A8"));
 
   const editor = useEditor({
     immediatelyRender: false,
@@ -154,8 +154,8 @@ export function RichTextEditor({ value, onChange }: Props) {
           <Tool editor={editor} label="کد" icon={<Code2 size={15} />} active={editor.isActive("code")} run={() => editor.chain().focus().toggleCode().run()} />
           <Tool editor={editor} label="زیرنویس" icon={<SubscriptIcon size={15} />} active={editor.isActive("subscript")} run={() => editor.chain().focus().toggleSubscript().run()} />
           <Tool editor={editor} label="بالانویس" icon={<SuperscriptIcon size={15} />} active={editor.isActive("superscript")} run={() => editor.chain().focus().toggleSuperscript().run()} />
-          <ColorTool label="رنگ متن" icon={<Palette size={15} />} color={textColor} onChange={(color) => { setTextColor(color); editor.chain().focus().setColor(color.toString("hex")).run(); }} />
-          <ColorTool label="رنگ زمینه متن" icon={<Highlighter size={15} />} color={highlightColor} onChange={(color) => { setHighlightColor(color); editor.chain().focus().setHighlight({ color: color.toString("hex") }).run(); }} />
+          <ColorTool label="رنگ متن" clearLabel="حذف رنگ متن" icon={<Palette size={15} />} value={(editor.getAttributes("textStyle").color as string | undefined) ?? null} fallback="#17233B" onChange={(hex) => editor.chain().focus().setColor(hex).run()} onClear={() => editor.chain().focus().unsetColor().run()} />
+          <ColorTool label="رنگ زمینه متن" clearLabel="حذف رنگ زمینه" icon={<Highlighter size={15} />} value={(editor.getAttributes("highlight").color as string | undefined) ?? null} fallback="#FFF1A8" onChange={(hex) => editor.chain().focus().setHighlight({ color: hex }).run()} onClear={() => editor.chain().focus().unsetHighlight().run()} />
         </div>
         <div className="flex flex-wrap items-center gap-1">
           <Tool editor={editor} label="راست‌چین" icon={<AlignRight size={15} />} active={editor.isActive({ textAlign: "right" })} run={() => editor.chain().focus().setTextAlign("right").run()} />
@@ -224,6 +224,14 @@ function MoreToolsToggle({ expanded, onToggle }: { expanded: boolean; onToggle: 
 
 function Divider() { return <span className="mx-1 h-6 w-px bg-slate-200" aria-hidden="true" />; }
 
-function ColorTool({ label, icon, color, onChange }: { label: string; icon: React.ReactNode; color: ReturnType<typeof parseColor>; onChange: (color: ReturnType<typeof parseColor>) => void }) {
-  return <ColorPicker value={color} onChange={onChange}><ColorPicker.Trigger className="relative grid h-9 w-9 place-items-center rounded-lg text-slate-600 hover:bg-white" aria-label={label}>{icon}<ColorSwatch color={color} size="sm" className="absolute bottom-0.5 right-1 h-2 w-5 rounded-sm" /></ColorPicker.Trigger><ColorPicker.Popover className="z-[210] w-72 rounded-2xl border border-slate-200 bg-white p-4 shadow-xl"><div className="grid gap-4"><ColorArea colorSpace="hsb" xChannel="saturation" yChannel="brightness" className="h-44 w-full rounded-xl"><ColorArea.Thumb /></ColorArea><ColorSlider colorSpace="hsb" channel="hue"><ColorSlider.Track className="h-7 rounded-full"><ColorSlider.Thumb /></ColorSlider.Track></ColorSlider><ColorField><Label className="text-xs font-bold text-slate-600">کد رنگ</Label><ColorField.Group variant="secondary" fullWidth><ColorField.Input /></ColorField.Group></ColorField></div></ColorPicker.Popover></ColorPicker>;
+/**
+ * A toolbar colour control. It reads the colour off the selection rather than holding one of
+ * its own, so the swatch always tells the truth and "no colour" stays distinguishable from
+ * "black" — which is what makes removing a colour possible. Renders with whichever design
+ * system the surrounding admin template uses.
+ */
+function ColorTool(props: { label: string; clearLabel: string; icon: React.ReactNode; value: string | null; fallback: string; onChange: (hex: string) => void; onClear: () => void }) {
+  const template = useAdminTemplate();
+  if (template === "BLUEPRINT") return <BpColorPicker {...props} />;
+  return <HeroColorField {...props} />;
 }
