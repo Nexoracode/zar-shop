@@ -266,17 +266,28 @@
 }
 .bp-input::placeholder { color: var(--bp-muted); }
 .bp-input:hover { border-color: color-mix(in srgb, var(--bp-text) 45%, transparent); }
-.bp-input:focus-visible { border-color: var(--bp-accent); outline-offset: 0; }
+/* Focus is the same hairline the field already has, just in the accent colour — no ring, no
+   growth, nothing that shifts the box. The global 2px focus outline is cancelled here. */
+.bp-input:focus,
+.bp-input:focus-visible { border-color: var(--bp-accent); outline: none; }
 .bp-input:disabled { opacity: 0.55; cursor: not-allowed; }
 textarea.bp-input { min-height: 90px; resize: vertical; }
-select.bp-input { appearance: none; padding-inline-end: 28px; }
+
+/* Dropdowns carry no border at rest — the surface and the chevron are enough to read as a
+   control. They take the hairline only while focused, so the field is still findable. */
+select.bp-input { appearance: none; padding-inline-end: 28px; border-color: transparent; }
+select.bp-input:hover { border-color: var(--bp-divider); }
+select.bp-input:focus,
+select.bp-input:focus-visible { border-color: var(--bp-accent); outline: none; }
 /* Room for the leading search glyph and the trailing clear button. Tailwind padding
    utilities cannot do this: `.bp-input` is unlayered and always wins over them. */
 .bp-input-search { padding-inline-start: 34px; padding-inline-end: 36px; }
 
-/* A field in error carries a red edge, and keeps it while focused. */
-.bp-input[aria-invalid="true"] { border-color: var(--bp-danger); }
-.bp-input[aria-invalid="true"]:focus-visible { border-color: var(--bp-danger); outline-color: var(--bp-danger); }
+/* An invalid field keeps its red hairline, focused or not — including dropdowns, which are
+   otherwise borderless. */
+.bp-input[aria-invalid="true"],
+.bp-input[aria-invalid="true"]:focus,
+.bp-input[aria-invalid="true"]:focus-visible { border-color: var(--bp-danger); outline: none; }
 
 /* One line is reserved under every form field so that an error appearing or clearing never
    changes the field's height — the form must not jump. The hint and the error share this one
