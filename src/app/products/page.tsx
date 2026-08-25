@@ -2,6 +2,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowDownUp } from "lucide-react";
 import { ProductCard } from "@/components/product-card";
+import { DiscountExpiryRefresh } from "@/components/discount-expiry-refresh";
+import { earliestDiscountExpiry } from "@/modules/products/discount";
 import { StorefrontCatalogFilters } from "@/components/storefront-catalog-filters";
 import { db } from "@/lib/db";
 import { collectCategoryAndDescendantIds } from "@/modules/categories/category-tree";
@@ -144,6 +146,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
 
           <div className="mt-5 grid grid-cols-2 border-r border-t border-slate-200 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
             {catalog.items.map((product) => <ProductCard key={product.id} {...product} storefrontVariant="catalog" />)}
+            <DiscountExpiryRefresh at={earliestDiscountExpiry(catalog.items)} />
             {!catalog.items.length && <div className="col-span-full grid min-h-72 place-items-center border-b border-l border-slate-200 px-4 text-center text-sm text-slate-500">محصولی مطابق فیلترهای انتخاب‌شده پیدا نشد.</div>}
           </div>
 

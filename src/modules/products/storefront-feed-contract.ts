@@ -20,6 +20,8 @@ export type StorefrontProductCardItem = {
   discountPercent?: number;
   price: string;
   originalPrice?: string;
+  /** When this card's discount stops applying, so a page can refresh itself at that moment. */
+  discountEndsAt?: string | null;
   image?: { src: string; alt: string };
   stock?: number;
   rating?: number;

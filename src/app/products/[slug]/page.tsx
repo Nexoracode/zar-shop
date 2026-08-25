@@ -26,6 +26,8 @@ import { getCurrentUser } from "@/modules/auth/session";
 import { getStorefrontProductReviews } from "@/modules/reviews/service";
 import { ProductActivityTracker } from "@/components/product-activity-tracker";
 import { ProductUnavailable } from "@/components/product-unavailable";
+import { DiscountExpiryRefresh } from "@/components/discount-expiry-refresh";
+import { earliestDiscountExpiry } from "@/modules/products/discount";
 import { env } from "@/lib/env";
 
 export const dynamic = "force-dynamic";
@@ -217,6 +219,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
         <span className="flex items-center gap-2"><ShieldCheck size={22} className="text-slate-500" />ضمانت اصالت کالا</span><span className="flex items-center gap-2"><Truck size={22} className="text-slate-500" />ارسال قابل پیگیری</span><span className="flex items-center gap-2"><PackageCheck size={22} className="text-slate-500" />بسته‌بندی مطمئن</span><span className="flex items-center gap-2"><CheckCircle2 size={22} className="text-slate-500" />پرداخت امن</span>
       </div>
 
+      <DiscountExpiryRefresh at={earliestDiscountExpiry([...relatedProducts, ...recentlyViewed])} />
       {product.category && relatedProducts.length > 0 && <section className="mt-12 border-t border-slate-200 py-8" aria-labelledby="related-products-title">
         <div className="mb-6 flex items-center justify-between gap-4"><h2 id="related-products-title" className="relative w-fit pb-3 text-lg font-bold text-slate-900 after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 after:rounded-full after:bg-[var(--brand-primary)]">کالاهای مرتبط</h2><Link href={`/products?category=${encodeURIComponent(product.category.slug)}`} className="shrink-0 text-xs font-bold text-[var(--brand-accent)] transition-colors hover:text-[var(--brand-primary)]">مشاهده همه</Link></div>
         <div className="flex snap-x gap-4 overflow-x-auto pb-3">{relatedProducts.map((item, index) => <div key={item.id} className="w-[176px] min-w-[176px] snap-start sm:w-[210px] sm:min-w-[210px]"><ProductCard {...item} storefrontVariant="gallery" imageTone={index} /></div>)}</div>

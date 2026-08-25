@@ -66,6 +66,8 @@ function serializeProductCard(product: SelectedProduct, goldPrice: Prisma.Decima
     discountPercent: discounted?.isActive && product.discountType === "PERCENT" ? Number(product.discountValue ?? 0) : undefined,
     price: discounted ? formatMoney(discounted.finalPrice, currency) : "قیمت موقتاً در دسترس نیست",
     originalPrice: discounted?.isActive ? formatMoney(discounted.originalPrice, currency) : undefined,
+    // Carried so the page can schedule a refresh for the moment this card's price changes.
+    discountEndsAt: discounted?.isActive && product.discountEndsAt ? product.discountEndsAt.toISOString() : null,
     image: media?.type === "IMAGE" ? { src: media.url, alt: media.alt ?? product.name } : undefined,
   };
 }

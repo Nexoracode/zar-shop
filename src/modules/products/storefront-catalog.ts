@@ -189,6 +189,8 @@ export async function getStorefrontCatalog(query: StorefrontCatalogQuery, catego
         discountPercent: originalPriceRials !== undefined && finalPriceRials !== null ? Math.round((originalPriceRials - finalPriceRials) / originalPriceRials * 100) : undefined,
         price: finalPriceRials === null ? "قیمت موقتاً در دسترس نیست" : formatMoney(finalPriceRials, settings.currency),
         originalPrice: originalPriceRials === undefined ? undefined : formatMoney(originalPriceRials, settings.currency),
+        // Carried so the page can schedule a refresh for the moment this card's price changes.
+        discountEndsAt: originalPriceRials !== undefined && product.discountEndsAt ? product.discountEndsAt.toISOString() : null,
         image: media?.type === "IMAGE" ? { src: media.url, alt: media.alt ?? product.name } : undefined,
         stock: product.stock,
         rating: mockRating(product.id),

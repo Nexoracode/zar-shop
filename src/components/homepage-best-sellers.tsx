@@ -2,6 +2,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { ChevronLeft, ShoppingBag } from "lucide-react";
 import type { StorefrontProductCardItem } from "@/modules/products/storefront-feed-contract";
+import { DiscountExpiryRefresh } from "@/components/discount-expiry-refresh";
+import { earliestDiscountExpiry } from "@/modules/products/discount";
 
 const itemsPerColumn = 3;
 
@@ -29,5 +31,5 @@ export function HomepageBestSellers({ products }: { products: StorefrontProductC
         })}
       </div>)}
     </div>
-  </section>;
+  <DiscountExpiryRefresh at={earliestDiscountExpiry(rankedProducts)} /></section>;
 }
