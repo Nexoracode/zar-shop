@@ -14,8 +14,8 @@ import { TableDeleteShortcut } from "@/components/rich-text-table-delete";
 import { Button, toast } from "@heroui/react";
 import {
   AlignCenter, AlignJustify, AlignLeft, AlignRight, Bold, Braces, ChevronDown, Code2, Columns3, Eraser, Heading1, Heading2, Heading3, Highlighter,
-  ImagePlus, Italic, Link2, List, ListOrdered, Minus, Palette, Pilcrow, Quote, Redo2, Rows3, Strikethrough,
-  SubscriptIcon, SuperscriptIcon, Table2, Trash2, Underline, Undo2, Unlink,
+  Grid2x2X, ImagePlus, Italic, Link2, List, ListOrdered, Minus, Palette, Pilcrow, Plus, Quote, Redo2, Rows3, Strikethrough,
+  SubscriptIcon, SuperscriptIcon, Table2, Underline, Undo2, Unlink, type LucideIcon,
 } from "lucide-react";
 import { HeroSelectField } from "@/components/hero-select-field";
 import { useAdminTemplate } from "@/components/admin/template-context";
@@ -223,7 +223,13 @@ export function RichTextEditor({ value, onChange }: Props) {
           <Tool editor={editor} label="خط جداکننده" icon={<Minus size={15} />} run={() => editor.chain().focus().setHorizontalRule().run()} />
           <Divider />
           <Tool editor={editor} label="افزودن جدول" icon={<Table2 size={15} />} run={() => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()} />
-          {marks.inTable && <><Tool editor={editor} label="افزودن ردیف" icon={<Rows3 size={15} />} run={() => editor.chain().focus().addRowAfter().run()} /><Tool editor={editor} label="افزودن ستون" icon={<Columns3 size={15} />} run={() => editor.chain().focus().addColumnAfter().run()} /><Tool editor={editor} label="حذف ردیف" icon={<Trash2 size={15} />} run={() => editor.chain().focus().deleteRow().run()} /><Tool editor={editor} label="حذف ستون" icon={<Trash2 size={15} />} run={() => editor.chain().focus().deleteColumn().run()} /><Tool editor={editor} label="حذف جدول" icon={<Trash2 size={15} />} run={() => editor.chain().focus().deleteTable().run()} /></>}
+          {marks.inTable && <>
+            <Tool editor={editor} label="افزودن ردیف" icon={<TableOpIcon shape={Rows3} badge="add" />} run={() => editor.chain().focus().addRowAfter().run()} />
+            <Tool editor={editor} label="افزودن ستون" icon={<TableOpIcon shape={Columns3} badge="add" />} run={() => editor.chain().focus().addColumnAfter().run()} />
+            <Tool editor={editor} label="حذف ردیف" icon={<TableOpIcon shape={Rows3} badge="remove" />} run={() => editor.chain().focus().deleteRow().run()} />
+            <Tool editor={editor} label="حذف ستون" icon={<TableOpIcon shape={Columns3} badge="remove" />} run={() => editor.chain().focus().deleteColumn().run()} />
+            <Tool editor={editor} label="حذف جدول" icon={<Grid2x2X size={15} className="text-[var(--danger)]" />} run={() => editor.chain().focus().deleteTable().run()} />
+          </>}
           <Divider />
           <Tool editor={editor} label="پاک‌کردن قالب‌بندی" icon={<Eraser size={15} />} run={() => editor.chain().focus().unsetAllMarks().clearNodes().run()} />
         </div>
@@ -261,7 +267,11 @@ export function RichTextEditor({ value, onChange }: Props) {
 
 function Tool({ editor: _editor, label, icon, active, disabled, run }: { editor: Editor; label: string; icon: React.ReactNode; active?: boolean; disabled?: boolean; run: () => void }) {
   void _editor;
-  return <Button type="button" size="sm" isIconOnly variant={active ? "primary" : "ghost"} isDisabled={disabled} onPress={run} aria-label={label} className={`h-9 min-h-9 w-9 min-w-9 rounded-lg ${active ? "bg-[var(--accent)] text-[var(--accent-foreground)]" : "text-slate-600 hover:bg-white"}`}>{icon}</Button>;
+  // The tooltip goes on a wrapper: HeroUI's Button does not forward `title`, and an icon-only
+  // toolbar needs something to name its buttons on hover.
+  return <span title={label} className="inline-flex">
+    <Button type="button" size="sm" isIconOnly variant={active ? "primary" : "ghost"} isDisabled={disabled} onPress={run} aria-label={label} className={`h-9 min-h-9 w-9 min-w-9 rounded-lg ${active ? "bg-[var(--accent)] text-[var(--accent-foreground)]" : "text-slate-600 hover:bg-white"}`}>{icon}</Button>
+  </span>;
 }
 
 /**
@@ -296,6 +306,20 @@ function MoreToolsToggle({ expanded, onToggle }: { expanded: boolean; onToggle: 
     return <BpButton size="sm" variant="ghost" aria-expanded={expanded} onClick={onToggle} className="ms-auto gap-1.5">{label}<ChevronDown size={14} className={expanded ? "rotate-180 transition-transform" : "transition-transform"} /></BpButton>;
   }
   return <Button type="button" size="sm" variant="ghost" aria-expanded={expanded} onPress={onToggle} className="ms-auto h-9 min-h-9 gap-1.5 rounded-lg px-3 text-xs text-slate-600 hover:bg-white">{label}<ChevronDown size={14} className={expanded ? "rotate-180 transition-transform" : "transition-transform"} /></Button>;
+}
+
+/**
+ * A table operation's icon: the shape it acts on — rows or columns — with a badge saying which
+ * way. Three identical bins told the reader nothing about what each one removed.
+ */
+function TableOpIcon({ shape: Shape, badge }: { shape: LucideIcon; badge: "add" | "remove" }) {
+  const Badge = badge === "add" ? Plus : Minus;
+  return (
+    <span className="relative inline-flex" aria-hidden="true">
+      <Shape size={15} />
+      <Badge size={9} strokeWidth={4} className={`absolute -bottom-0.5 -left-1 rounded-full bg-[var(--surface)] ${badge === "add" ? "text-[var(--success)]" : "text-[var(--danger)]"}`} />
+    </span>
+  );
 }
 
 function Divider() { return <span className="mx-1 h-6 w-px bg-slate-200" aria-hidden="true" />; }
