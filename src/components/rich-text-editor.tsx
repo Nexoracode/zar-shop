@@ -199,25 +199,32 @@ export function RichTextEditor({ value, onChange }: Props) {
         The row that is always out: what writing a product description actually needs. Everything
         else — typography, colour, alignment, tables, code — sits behind the toggle so the common
         case is not buried in forty icons.
+
+        Two columns rather than one wrapping row, so the toggle keeps its own lane on the left
+        and the tools wrap underneath it instead of shoving it onto a line of its own. With the
+        sidebar expanded — the narrowest the editor ever gets — the icons settle into two rows
+        and the toggle stays where it was.
       */}
-      <div className="flex flex-wrap items-center gap-1">
-        <Tool editor={editor} label="پاراگراف" icon={<Pilcrow size={15} />} active={marks.paragraph} run={() => editor.chain().focus().setParagraph().run()} />
-        <Tool editor={editor} label="عنوان ۲" icon={<Heading2 size={15} />} active={marks.h2} run={() => editor.chain().focus().toggleHeading({ level: 2 }).run()} />
-        <Tool editor={editor} label="عنوان ۳" icon={<Heading3 size={15} />} active={marks.h3} run={() => editor.chain().focus().toggleHeading({ level: 3 }).run()} />
-        <Divider />
-        <Tool editor={editor} label="ضخیم" icon={<Bold size={15} />} active={marks.bold} run={() => editor.chain().focus().toggleBold().run()} />
-        <Tool editor={editor} label="کج" icon={<Italic size={15} />} active={marks.italic} run={() => editor.chain().focus().toggleItalic().run()} />
-        <Tool editor={editor} label="زیرخط" icon={<Underline size={15} />} active={marks.underline} run={() => editor.chain().focus().toggleUnderline().run()} />
-        <Divider />
-        <Tool editor={editor} label="فهرست نشانه‌دار" icon={<List size={15} />} active={marks.bulletList} run={() => editor.chain().focus().toggleBulletList().run()} />
-        <Tool editor={editor} label="فهرست شماره‌دار" icon={<ListOrdered size={15} />} active={marks.orderedList} run={() => editor.chain().focus().toggleOrderedList().run()} />
-        <Divider />
-        <Tool editor={editor} label="افزودن لینک" icon={<Link2 size={15} />} active={marks.link} run={openLinkDialog} />
-        <Tool editor={editor} label="حذف لینک" icon={<Unlink size={15} />} disabled={!marks.link} run={() => editor.chain().focus().unsetLink().run()} />
-        <Tool editor={editor} label="افزودن تصویر" icon={<ImagePlus size={15} />} run={() => setImageOpen(true)} />
-        <Divider />
-        <Tool editor={editor} label="واگرد" icon={<Undo2 size={15} />} disabled={!marks.canUndo} run={() => editor.chain().focus().undo().run()} />
-        <Tool editor={editor} label="بازانجام" icon={<Redo2 size={15} />} disabled={!marks.canRedo} run={() => editor.chain().focus().redo().run()} />
+      <div className="flex items-start gap-2">
+        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1">
+          <Tool editor={editor} label="پاراگراف" icon={<Pilcrow size={15} />} active={marks.paragraph} run={() => editor.chain().focus().setParagraph().run()} />
+          <Tool editor={editor} label="عنوان ۲" icon={<Heading2 size={15} />} active={marks.h2} run={() => editor.chain().focus().toggleHeading({ level: 2 }).run()} />
+          <Tool editor={editor} label="عنوان ۳" icon={<Heading3 size={15} />} active={marks.h3} run={() => editor.chain().focus().toggleHeading({ level: 3 }).run()} />
+          <Divider />
+          <Tool editor={editor} label="ضخیم" icon={<Bold size={15} />} active={marks.bold} run={() => editor.chain().focus().toggleBold().run()} />
+          <Tool editor={editor} label="کج" icon={<Italic size={15} />} active={marks.italic} run={() => editor.chain().focus().toggleItalic().run()} />
+          <Tool editor={editor} label="زیرخط" icon={<Underline size={15} />} active={marks.underline} run={() => editor.chain().focus().toggleUnderline().run()} />
+          <Divider />
+          <Tool editor={editor} label="فهرست نشانه‌دار" icon={<List size={15} />} active={marks.bulletList} run={() => editor.chain().focus().toggleBulletList().run()} />
+          <Tool editor={editor} label="فهرست شماره‌دار" icon={<ListOrdered size={15} />} active={marks.orderedList} run={() => editor.chain().focus().toggleOrderedList().run()} />
+          <Divider />
+          <Tool editor={editor} label="افزودن لینک" icon={<Link2 size={15} />} active={marks.link} run={openLinkDialog} />
+          <Tool editor={editor} label="حذف لینک" icon={<Unlink size={15} />} disabled={!marks.link} run={() => editor.chain().focus().unsetLink().run()} />
+          <Tool editor={editor} label="افزودن تصویر" icon={<ImagePlus size={15} />} run={() => setImageOpen(true)} />
+          <Divider />
+          <Tool editor={editor} label="واگرد" icon={<Undo2 size={15} />} disabled={!marks.canUndo} run={() => editor.chain().focus().undo().run()} />
+          <Tool editor={editor} label="بازانجام" icon={<Redo2 size={15} />} disabled={!marks.canRedo} run={() => editor.chain().focus().redo().run()} />
+        </div>
         <MoreToolsToggle expanded={showAllTools} onToggle={() => setShowAllTools((current) => !current)} />
       </div>
 
@@ -326,9 +333,9 @@ function MoreToolsToggle({ expanded, onToggle }: { expanded: boolean; onToggle: 
   const template = useAdminTemplate();
   const label = expanded ? "ابزارهای کمتر" : "ابزارهای بیشتر";
   if (template === "BLUEPRINT") {
-    return <BpButton size="sm" variant="ghost" aria-expanded={expanded} onClick={onToggle} className="ms-auto gap-1.5">{label}<ChevronDown size={14} className={expanded ? "rotate-180 transition-transform" : "transition-transform"} /></BpButton>;
+    return <BpButton size="sm" variant="ghost" aria-expanded={expanded} onClick={onToggle} className="shrink-0 gap-1.5">{label}<ChevronDown size={14} className={expanded ? "rotate-180 transition-transform" : "transition-transform"} /></BpButton>;
   }
-  return <Button type="button" size="sm" variant="ghost" aria-expanded={expanded} onPress={onToggle} className="ms-auto h-9 min-h-9 gap-1.5 rounded-lg px-3 text-xs text-slate-600 hover:bg-white">{label}<ChevronDown size={14} className={expanded ? "rotate-180 transition-transform" : "transition-transform"} /></Button>;
+  return <Button type="button" size="sm" variant="ghost" aria-expanded={expanded} onPress={onToggle} className="h-9 min-h-9 shrink-0 gap-1.5 rounded-lg px-3 text-xs text-slate-600 hover:bg-white">{label}<ChevronDown size={14} className={expanded ? "rotate-180 transition-transform" : "transition-transform"} /></Button>;
 }
 
 /**
