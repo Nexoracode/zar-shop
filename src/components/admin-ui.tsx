@@ -35,7 +35,7 @@ export function AdminPageHeader({ eyebrow, title, description, action, backHref,
   const template = useAdminTemplate();
   if (template === "BLUEPRINT") {
     return (
-      <header className="mb-6 flex flex-col gap-4 border-b border-[var(--bp-divider)] pb-5 sm:flex-row sm:items-end sm:justify-between">
+      <header className="mb-6 flex flex-col gap-4 border-b border-[var(--bp-divider)] pb-5 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0">
           {backHref && <Link href={backHref} className="bp-muted mb-3 inline-flex items-center gap-1.5 text-[13px] hover:text-[var(--bp-text)]"><ChevronRight size={16} />{backLabel}</Link>}
           {eyebrow && <div className="bp-kicker mb-1">{eyebrow}</div>}
