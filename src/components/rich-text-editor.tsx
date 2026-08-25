@@ -196,14 +196,13 @@ export function RichTextEditor({ value, onChange }: Props) {
   return <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
     <div className="sticky top-0 z-20 grid gap-2 border-b border-slate-200 bg-slate-50/95 p-2.5 backdrop-blur">
       {/*
-        The row that is always out: what writing a product description actually needs. Everything
-        else — typography, colour, alignment, tables, code — sits behind the toggle so the common
-        case is not buried in forty icons.
+        What is always out is what writing a product description actually needs. Everything else
+        — typography, colour, alignment, tables, code — sits behind the toggle so the common case
+        is not buried in forty icons.
 
-        Two columns rather than one wrapping row, so the toggle keeps its own lane on the left
-        and the tools wrap underneath it instead of shoving it onto a line of its own. With the
-        sidebar expanded — the narrowest the editor ever gets — the icons settle into two rows
-        and the toggle stays where it was.
+        One wrapping container holds both sets, so expanding continues from the last visible tool
+        and fills the width rather than opening rows of its own. The toggle sits in a second
+        column so it keeps its place no matter how the icons rewrap.
       */}
       <div className="flex items-start gap-2">
         <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1">
@@ -224,46 +223,43 @@ export function RichTextEditor({ value, onChange }: Props) {
           <Divider />
           <Tool editor={editor} label="واگرد" icon={<Undo2 size={15} />} disabled={!marks.canUndo} run={() => editor.chain().focus().undo().run()} />
           <Tool editor={editor} label="بازانجام" icon={<Redo2 size={15} />} disabled={!marks.canRedo} run={() => editor.chain().focus().redo().run()} />
+          {showAllTools && <>
+            <Divider />
+            <Tool editor={editor} label="عنوان ۱" icon={<Heading1 size={15} />} active={marks.h1} run={() => editor.chain().focus().toggleHeading({ level: 1 }).run()} />
+            <ToolSelect name="rich-font-size" label="اندازه متن" placeholder="اندازه" options={[12, 14, 16, 18, 20, 24, 30, 36].map((size) => ({ value: `${size}px`, label: `${size.toLocaleString("fa-IR")} پیکسل` }))} onPick={(size) => editor.chain().focus().setFontSize(size).run()} />
+            <ToolSelect name="rich-font-family" label="قلم متن" placeholder="قلم" options={[{ value: "Vazir", label: "وزیر" }, { value: "Tahoma", label: "تاهوما" }, { value: "Arial", label: "Arial" }, { value: "Georgia", label: "Georgia" }]} onPick={(font) => editor.chain().focus().setFontFamily(font).run()} />
+            <ToolSelect name="rich-line-height" label="فاصله خطوط" placeholder="فاصله خط" options={["1.5", "1.8", "2", "2.3"].map((height) => ({ value: height, label: height }))} onPick={(height) => editor.chain().focus().setLineHeight(height).run()} />
+            <Divider />
+            <Tool editor={editor} label="خط‌خورده" icon={<Strikethrough size={15} />} active={marks.strike} run={() => editor.chain().focus().toggleStrike().run()} />
+            <Tool editor={editor} label="کد" icon={<Code2 size={15} />} active={marks.code} run={() => editor.chain().focus().toggleCode().run()} />
+            <Tool editor={editor} label="زیرنویس" icon={<SubscriptIcon size={15} />} active={marks.subscript} run={() => editor.chain().focus().toggleSubscript().run()} />
+            <Tool editor={editor} label="بالانویس" icon={<SuperscriptIcon size={15} />} active={marks.superscript} run={() => editor.chain().focus().toggleSuperscript().run()} />
+            <ColorTool label="رنگ متن" clearLabel="حذف رنگ متن" icon={<Palette size={15} />} value={marks.textColor} fallback="#17233B" onChange={(hex) => editor.chain().focus().setColor(hex).run()} onClear={() => editor.chain().focus().unsetColor().run()} />
+            <ColorTool label="رنگ زمینه متن" clearLabel="حذف رنگ زمینه" icon={<Highlighter size={15} />} value={marks.highlightColor} fallback="#FFF1A8" onChange={(hex) => editor.chain().focus().setHighlight({ color: hex }).run()} onClear={() => editor.chain().focus().unsetHighlight().run()} />
+            <Divider />
+            <Tool editor={editor} label="راست‌چین" icon={<AlignRight size={15} />} active={marks.alignRight} run={() => editor.chain().focus().setTextAlign("right").run()} />
+            <Tool editor={editor} label="وسط‌چین" icon={<AlignCenter size={15} />} active={marks.alignCenter} run={() => editor.chain().focus().setTextAlign("center").run()} />
+            <Tool editor={editor} label="چپ‌چین" icon={<AlignLeft size={15} />} active={marks.alignLeft} run={() => editor.chain().focus().setTextAlign("left").run()} />
+            <Tool editor={editor} label="تراز دوطرفه" icon={<AlignJustify size={15} />} active={marks.alignJustify} run={() => editor.chain().focus().setTextAlign("justify").run()} />
+            <Divider />
+            <Tool editor={editor} label="نقل‌قول" icon={<Quote size={15} />} active={marks.blockquote} run={() => editor.chain().focus().toggleBlockquote().run()} />
+            <Tool editor={editor} label="بلوک کد" icon={<Braces size={15} />} active={marks.codeBlock} run={() => editor.chain().focus().toggleCodeBlock().run()} />
+            <Tool editor={editor} label="خط جداکننده" icon={<Minus size={15} />} run={() => editor.chain().focus().setHorizontalRule().run()} />
+            <Divider />
+            <Tool editor={editor} label="افزودن جدول" icon={<Table2 size={15} />} run={() => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()} />
+            {marks.inTable && <>
+              <Tool editor={editor} label="افزودن ردیف" icon={<TableOpIcon shape={Rows3} badge="add" />} run={() => editor.chain().focus().addRowAfter().run()} />
+              <Tool editor={editor} label="افزودن ستون" icon={<TableOpIcon shape={Columns3} badge="add" />} run={() => editor.chain().focus().addColumnAfter().run()} />
+              <Tool editor={editor} label="حذف ردیف" icon={<TableOpIcon shape={Rows3} badge="remove" />} run={() => editor.chain().focus().deleteRow().run()} />
+              <Tool editor={editor} label="حذف ستون" icon={<TableOpIcon shape={Columns3} badge="remove" />} run={() => editor.chain().focus().deleteColumn().run()} />
+              <Tool editor={editor} label="حذف جدول" icon={<Grid2x2X size={15} className="text-[var(--danger)]" />} run={() => editor.chain().focus().deleteTable().run()} />
+            </>}
+            <Divider />
+            <Tool editor={editor} label="پاک‌کردن قالب‌بندی" icon={<Eraser size={15} />} run={() => editor.chain().focus().unsetAllMarks().clearNodes().run()} />
+          </>}
         </div>
         <MoreToolsToggle expanded={showAllTools} onToggle={() => setShowAllTools((current) => !current)} />
       </div>
-
-      {showAllTools && <>
-        <div className="flex flex-wrap items-center gap-1">
-          <Tool editor={editor} label="عنوان ۱" icon={<Heading1 size={15} />} active={marks.h1} run={() => editor.chain().focus().toggleHeading({ level: 1 }).run()} />
-          <ToolSelect name="rich-font-size" label="اندازه متن" placeholder="اندازه" options={[12, 14, 16, 18, 20, 24, 30, 36].map((size) => ({ value: `${size}px`, label: `${size.toLocaleString("fa-IR")} پیکسل` }))} onPick={(size) => editor.chain().focus().setFontSize(size).run()} />
-          <ToolSelect name="rich-font-family" label="قلم متن" placeholder="قلم" options={[{ value: "Vazir", label: "وزیر" }, { value: "Tahoma", label: "تاهوما" }, { value: "Arial", label: "Arial" }, { value: "Georgia", label: "Georgia" }]} onPick={(font) => editor.chain().focus().setFontFamily(font).run()} />
-          <ToolSelect name="rich-line-height" label="فاصله خطوط" placeholder="فاصله خط" options={["1.5", "1.8", "2", "2.3"].map((height) => ({ value: height, label: height }))} onPick={(height) => editor.chain().focus().setLineHeight(height).run()} />
-          <Divider />
-          <Tool editor={editor} label="خط‌خورده" icon={<Strikethrough size={15} />} active={marks.strike} run={() => editor.chain().focus().toggleStrike().run()} />
-          <Tool editor={editor} label="کد" icon={<Code2 size={15} />} active={marks.code} run={() => editor.chain().focus().toggleCode().run()} />
-          <Tool editor={editor} label="زیرنویس" icon={<SubscriptIcon size={15} />} active={marks.subscript} run={() => editor.chain().focus().toggleSubscript().run()} />
-          <Tool editor={editor} label="بالانویس" icon={<SuperscriptIcon size={15} />} active={marks.superscript} run={() => editor.chain().focus().toggleSuperscript().run()} />
-          <ColorTool label="رنگ متن" clearLabel="حذف رنگ متن" icon={<Palette size={15} />} value={marks.textColor} fallback="#17233B" onChange={(hex) => editor.chain().focus().setColor(hex).run()} onClear={() => editor.chain().focus().unsetColor().run()} />
-          <ColorTool label="رنگ زمینه متن" clearLabel="حذف رنگ زمینه" icon={<Highlighter size={15} />} value={marks.highlightColor} fallback="#FFF1A8" onChange={(hex) => editor.chain().focus().setHighlight({ color: hex }).run()} onClear={() => editor.chain().focus().unsetHighlight().run()} />
-        </div>
-        <div className="flex flex-wrap items-center gap-1">
-          <Tool editor={editor} label="راست‌چین" icon={<AlignRight size={15} />} active={marks.alignRight} run={() => editor.chain().focus().setTextAlign("right").run()} />
-          <Tool editor={editor} label="وسط‌چین" icon={<AlignCenter size={15} />} active={marks.alignCenter} run={() => editor.chain().focus().setTextAlign("center").run()} />
-          <Tool editor={editor} label="چپ‌چین" icon={<AlignLeft size={15} />} active={marks.alignLeft} run={() => editor.chain().focus().setTextAlign("left").run()} />
-          <Tool editor={editor} label="تراز دوطرفه" icon={<AlignJustify size={15} />} active={marks.alignJustify} run={() => editor.chain().focus().setTextAlign("justify").run()} />
-          <Divider />
-          <Tool editor={editor} label="نقل‌قول" icon={<Quote size={15} />} active={marks.blockquote} run={() => editor.chain().focus().toggleBlockquote().run()} />
-          <Tool editor={editor} label="بلوک کد" icon={<Braces size={15} />} active={marks.codeBlock} run={() => editor.chain().focus().toggleCodeBlock().run()} />
-          <Tool editor={editor} label="خط جداکننده" icon={<Minus size={15} />} run={() => editor.chain().focus().setHorizontalRule().run()} />
-          <Divider />
-          <Tool editor={editor} label="افزودن جدول" icon={<Table2 size={15} />} run={() => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()} />
-          {marks.inTable && <>
-            <Tool editor={editor} label="افزودن ردیف" icon={<TableOpIcon shape={Rows3} badge="add" />} run={() => editor.chain().focus().addRowAfter().run()} />
-            <Tool editor={editor} label="افزودن ستون" icon={<TableOpIcon shape={Columns3} badge="add" />} run={() => editor.chain().focus().addColumnAfter().run()} />
-            <Tool editor={editor} label="حذف ردیف" icon={<TableOpIcon shape={Rows3} badge="remove" />} run={() => editor.chain().focus().deleteRow().run()} />
-            <Tool editor={editor} label="حذف ستون" icon={<TableOpIcon shape={Columns3} badge="remove" />} run={() => editor.chain().focus().deleteColumn().run()} />
-            <Tool editor={editor} label="حذف جدول" icon={<Grid2x2X size={15} className="text-[var(--danger)]" />} run={() => editor.chain().focus().deleteTable().run()} />
-          </>}
-          <Divider />
-          <Tool editor={editor} label="پاک‌کردن قالب‌بندی" icon={<Eraser size={15} />} run={() => editor.chain().focus().unsetAllMarks().clearNodes().run()} />
-        </div>
-      </>}
     </div>
     <EditorContent editor={editor} className="rich-text-editor-content min-h-80 bg-white" />
     <div className="flex items-center justify-between border-t border-slate-100 bg-slate-50 px-4 py-2 text-[11px] text-slate-400"><span>برای تغییر اندازه تصویر، آن را انتخاب کنید و دستگیره‌ها را بکشید.</span><span>{marks.characters.toLocaleString("fa-IR")} نویسه</span></div>
