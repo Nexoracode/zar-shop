@@ -132,13 +132,18 @@ export function BlueprintProductForm({ storeIndustry, categories = [], product }
     if (!validation.success) {
       // One message per field, straight from the schema that the server uses too.
       const found: FieldErrors = {};
+      const unattached: string[] = [];
       for (const issue of validation.error.issues) {
         const field = String(issue.path[0] ?? "");
-        if (field && !found[field]) found[field] = issue.message;
+        if (!field) { unattached.push(issue.message); continue; }
+        if (!found[field]) found[field] = issue.message;
       }
       setErrors(found);
+      // A rule that belongs to the form as a whole has no field to sit under, so it is announced
+      // instead of being dropped silently.
+      if (unattached.length) toast.danger("اطلاعات محصول کامل نیست", { description: unattached[0] });
       const first = Object.keys(found)[0];
-      formRef.current?.querySelector<HTMLElement>(`[name="${first}"]`)?.focus();
+      if (first) formRef.current?.querySelector<HTMLElement>(`[name="${first}"]`)?.focus();
       return;
     }
     setLoading(true);

@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { productAttributesSchema } from "@/modules/products/attributes";
 
-const dateOnlySchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/).refine((value) => {
+const dateOnlySchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "تاریخ واردشده معتبر نیست.").refine((value) => {
   const [year, month, day] = value.split("-").map(Number);
   const date = new Date(Date.UTC(year, month - 1, day));
   return date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day;
@@ -10,12 +10,13 @@ const dateOnlySchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/).refine((value) =>
 /** A full instant, for callers that pick a time of day as well as a date. */
 const dateTimeSchema = z.string().datetime({ offset: true }).or(z.string().datetime());
 
+
 /*
  * Discount bounds accept either form. A bare date still means the whole Tehran day, which is what
  * the classic admin form sends and what existing rows hold; an instant is stored as given, so the
  * Blueprint form's date-and-time picker is not silently rounded to midnight.
  */
-const discountBoundarySchema = z.union([dateOnlySchema, dateTimeSchema]);
+const discountBoundarySchema = z.union([dateOnlySchema, dateTimeSchema], "تاریخ و ساعت واردشده معتبر نیست.");
 
 export function isDateOnly(value: string) {
   return /^\d{4}-\d{2}-\d{2}$/.test(value);
@@ -38,30 +39,37 @@ const productOptionSchema = z.object({
   }
 });
 
+/*
+ * Every rule carries its own Persian message. Without one, zod falls back to English text such as
+ * "Invalid input", which then surfaces verbatim under the field in the admin form.
+ */
 export const productSchema = z.object({
-  sku: z.string().trim().min(2).max(80),
-  name: z.string().trim().min(2).max(191),
-  slug: z.string().trim().min(2).max(191).regex(/^[a-z0-9-]+$/),
-  description: z.string().max(200000).optional(),
-  categoryId: z.string().cuid().nullable().optional(),
+  sku: z.string().trim().min(2, "کد کالا باید حداقل ۲ نویسه باشد.").max(80, "کد کالا نباید بیشتر از ۸۰ نویسه باشد."),
+  name: z.string().trim().min(2, "نام محصول باید حداقل ۲ نویسه باشد.").max(191, "نام محصول نباید بیشتر از ۱۹۱ نویسه باشد."),
+  slug: z.string().trim()
+    .min(2, "نشانی انگلیسی باید حداقل ۲ نویسه باشد.")
+    .max(191, "نشانی انگلیسی نباید بیشتر از ۱۹۱ نویسه باشد.")
+    .regex(/^[a-z0-9-]+$/, "نشانی انگلیسی فقط می‌تواند شامل حروف کوچک انگلیسی، رقم و خط تیره باشد."),
+  description: z.string().max(200000, "توضیحات محصول بیش از حد مجاز است.").optional(),
+  categoryId: z.string().cuid("دسته‌بندی انتخاب‌شده معتبر نیست.").nullable().optional(),
   storeIndustry: z.enum(["GOLD", "GENERAL"]).default("GOLD"),
-  purity: z.coerce.number().int().min(1).max(999).default(750),
-  weightGrams: z.coerce.number().nonnegative().max(100000),
+  purity: z.coerce.number("عیار را وارد کنید.").int("عیار باید عدد صحیح باشد.").min(1, "عیار باید بین ۱ تا ۹۹۹ باشد.").max(999, "عیار باید بین ۱ تا ۹۹۹ باشد.").default(750),
+  weightGrams: z.coerce.number("وزن را وارد کنید.").nonnegative("وزن نمی‌تواند منفی باشد.").max(100000, "وزن واردشده بیش از حد مجاز است."),
   makingFeeType: z.enum(["PERCENT", "FIXED"]).default("PERCENT"),
-  makingFeeValue: z.coerce.number().nonnegative(),
-  profitPercent: z.coerce.number().min(0).max(100),
-  taxPercent: z.coerce.number().min(0).max(100),
-  fixedPrice: z.coerce.number().positive().max(999999999999999999).nullable().default(null),
-  discountType: z.enum(["PERCENT", "FIXED"]).nullable().default(null),
-  discountValue: z.coerce.number().positive().max(999999999999999999).nullable().default(null),
+  makingFeeValue: z.coerce.number("مقدار اجرت را وارد کنید.").nonnegative("اجرت نمی‌تواند منفی باشد."),
+  profitPercent: z.coerce.number("درصد سود را وارد کنید.").min(0, "درصد سود نمی‌تواند منفی باشد.").max(100, "درصد سود نمی‌تواند بیشتر از ۱۰۰ باشد."),
+  taxPercent: z.coerce.number("درصد مالیات را وارد کنید.").min(0, "درصد مالیات نمی‌تواند منفی باشد.").max(100, "درصد مالیات نمی‌تواند بیشتر از ۱۰۰ باشد."),
+  fixedPrice: z.coerce.number("قیمت فروش را وارد کنید.").positive("قیمت فروش باید بیشتر از صفر باشد.").max(999999999999999999, "قیمت واردشده بیش از حد مجاز است.").nullable().default(null),
+  discountType: z.enum(["PERCENT", "FIXED"], "نوع تخفیف را انتخاب کنید.").nullable().default(null),
+  discountValue: z.coerce.number("مقدار تخفیف را وارد کنید.").positive("مقدار تخفیف باید بیشتر از صفر باشد.").max(999999999999999999, "مقدار تخفیف بیش از حد مجاز است.").nullable().default(null),
   discountStartsAt: discountBoundarySchema.nullable().default(null),
   discountEndsAt: discountBoundarySchema.nullable().default(null),
-  stock: z.coerce.number().int().nonnegative(),
-  preparationDays: z.coerce.number().int().min(0).max(90).default(2),
+  stock: z.coerce.number("موجودی انبار را وارد کنید.").int("موجودی باید عدد صحیح باشد.").nonnegative("موجودی نمی‌تواند منفی باشد."),
+  preparationDays: z.coerce.number("زمان آماده‌سازی را وارد کنید.").int("زمان آماده‌سازی باید عدد صحیح باشد.").min(0, "زمان آماده‌سازی نمی‌تواند منفی باشد.").max(90, "زمان آماده‌سازی نمی‌تواند بیشتر از ۹۰ روز باشد.").default(2),
   status: z.enum(["DRAFT", "ACTIVE", "ARCHIVED"]).default("DRAFT"),
   featured: z.boolean().default(false),
-  mediaIds: z.array(z.string().cuid()).max(20).refine((ids) => new Set(ids).size === ids.length, "رسانه تکراری مجاز نیست.").default([]),
-  options: z.array(productOptionSchema).max(10).refine((options) => new Set(options.map((option) => option.name)).size === options.length, "عنوان تنوع تکراری مجاز نیست.").superRefine((options, context) => {
+  mediaIds: z.array(z.string().cuid("رسانه انتخاب‌شده معتبر نیست.")).max(20, "حداکثر ۲۰ رسانه برای هر محصول مجاز است.").refine((ids) => new Set(ids).size === ids.length, "رسانه تکراری مجاز نیست.").default([]),
+  options: z.array(productOptionSchema).max(10, "حداکثر ۱۰ گروه تنوع برای هر محصول مجاز است.").refine((options) => new Set(options.map((option) => option.name)).size === options.length, "عنوان تنوع تکراری مجاز نیست.").superRefine((options, context) => {
     if (options.filter((option) => option.values.some((item) => item.weightGrams !== null)).length > 1) {
       context.addIssue({ code: "custom", message: "وزن فقط در یک گروه تنوع، مانند سایز، قابل تعریف است." });
     }
