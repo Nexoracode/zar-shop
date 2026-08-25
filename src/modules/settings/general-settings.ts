@@ -4,20 +4,32 @@ import type { UserRole } from "@generated/prisma/enums";
 import { adminRoles } from "@/modules/auth/permissions";
 import { STORE_SETTING_ID } from "@/modules/settings/store-settings";
 
+/** See `authFieldLimits`: one number per field, shared by the form control and the schema. */
+export const generalSettingsFieldLimits = {
+  storeName: 120,
+  tagline: 191,
+  shortDescription: 500,
+  supportPhone: 30,
+  supportEmail: 191,
+  storeAddress: 1000,
+  legalIdentifier: 80,
+  supportHours: 191,
+} as const;
+
 const optionalText = (max: number) => z.union([z.null(), z.string().trim().max(max)]).transform((value) => value || null);
 
 export const generalStoreSettingsSchema = z.object({
   industry: z.enum(["GOLD", "GENERAL"]),
-  storeName: z.string().trim().min(2).max(120),
-  tagline: z.string().trim().min(2).max(191),
-  shortDescription: z.string().trim().min(10).max(500),
+  storeName: z.string().trim().min(2).max(generalSettingsFieldLimits.storeName),
+  tagline: z.string().trim().min(2).max(generalSettingsFieldLimits.tagline),
+  shortDescription: z.string().trim().min(10).max(generalSettingsFieldLimits.shortDescription),
   currency: z.enum(["IRR", "IRT"]),
   timezone: z.literal("Asia/Tehran"),
-  supportPhone: optionalText(30),
-  supportEmail: z.union([z.null(), z.literal(""), z.email().max(191)]).transform((value) => value || null),
-  storeAddress: optionalText(1000),
-  legalIdentifier: optionalText(80),
-  supportHours: optionalText(191),
+  supportPhone: optionalText(generalSettingsFieldLimits.supportPhone),
+  supportEmail: z.union([z.null(), z.literal(""), z.email().max(generalSettingsFieldLimits.supportEmail)]).transform((value) => value || null),
+  storeAddress: optionalText(generalSettingsFieldLimits.storeAddress),
+  legalIdentifier: optionalText(generalSettingsFieldLimits.legalIdentifier),
+  supportHours: optionalText(generalSettingsFieldLimits.supportHours),
   isStoreActive: z.boolean(),
   guestCheckout: z.boolean(),
   maintenanceMode: z.boolean(),

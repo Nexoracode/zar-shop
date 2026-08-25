@@ -11,6 +11,7 @@ import { adminFieldClass } from "@/components/admin-ui";
 import type { MediaChoice } from "@/components/media-library";
 import { MediaPickerDialog } from "@/components/media-picker-dialog";
 import type { HomepageSettings } from "@/modules/settings/homepage-settings";
+import { homepageFieldLimits } from "@/modules/settings/homepage-settings";
 
 type PromoPickerTarget = "desktop" | "mobile";
 
@@ -62,7 +63,7 @@ export function HomepagePromoSettings({ initialSettings }: { initialSettings: Ho
         </Card.Header>
         <Card.Content className="grid gap-4 p-4">
           <AdminCheckbox isSelected={enabled} onChange={setEnabled} icon={<Megaphone size={17} />} description="در حالت غیرفعال یا بدون تصویر، فضایی بالای سایت اشغال نمی‌شود">نمایش پروموبنر</AdminCheckbox>
-          <div className="grid gap-1.5"><Label className="text-xs font-bold text-[var(--muted)]">لینک مقصد اختیاری</Label><Input value={href} onChange={(event) => setHref(event.target.value)} dir="ltr" placeholder="/products یا https://example.com" variant="secondary" className={adminFieldClass} /></div>
+          <div className="grid gap-1.5"><Label className="text-xs font-bold text-[var(--muted)]">لینک مقصد اختیاری</Label><Input value={href} maxLength={homepageFieldLimits.href} onChange={(event) => setHref(event.target.value)} dir="ltr" placeholder="/products یا https://example.com" variant="secondary" className={adminFieldClass} /></div>
           <div className="grid gap-3 md:grid-cols-2">
             <PromoMediaField label="بنر دسکتاپ" hint="پیشنهاد: ۱۹۲۰×۱۲۰؛ تصویر ثابت یا GIF" media={desktopMedia} onSelect={() => setPickerTarget("desktop")} onClear={() => setDesktopMedia(null)} />
             <PromoMediaField label="بنر موبایل" hint="پیشنهاد: ۹۰۰×۱۸۰؛ تصویر ثابت یا GIF" media={mobileMedia} onSelect={() => setPickerTarget("mobile")} onClear={() => setMobileMedia(null)} />

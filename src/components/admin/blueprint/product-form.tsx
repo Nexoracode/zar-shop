@@ -21,6 +21,7 @@ import { BpSeg } from "./ui/seg";
 import { BpSelect } from "./ui/select";
 import { BpSwitch } from "./ui/switch";
 import { BpFieldMessage } from "./ui/field-message";
+import { productFieldLimits } from "@/modules/products/schemas";
 
 export type EditableProduct = {
   id: string; sku: string; name: string; slug: string; description: string; categoryId: string; purity: number; weightGrams: number;
@@ -210,9 +211,9 @@ export function BlueprintProductForm({ storeIndustry, categories = [], product }
 
         <Panel title="اطلاعات پایه">
           <div className="grid gap-3 sm:grid-cols-2">
-            <BpInput name="name" label="نام محصول" required value={name} error={errors.name} placeholder="مثلاً انگشتر مینیمال طلا" onChange={(event) => { setName(event.target.value); clearError("name"); }} />
-            <BpInput name="sku" label="کد کالا (SKU)" required dir="ltr" value={sku} error={errors.sku} placeholder="PRD-10245" onChange={(event) => { setSku(event.target.value); clearError("sku"); }} />
-            <BpInput name="slug" label="نشانی انگلیسی (Slug)" required dir="ltr" value={slug} error={errors.slug} hint="فقط حروف کوچک انگلیسی، رقم و خط تیره" placeholder="minimal-gold-ring" onChange={(event) => { setSlug(event.target.value); clearError("slug"); }} />
+            <BpInput name="name" label="نام محصول" required maxLength={productFieldLimits.name} value={name} error={errors.name} placeholder="مثلاً انگشتر مینیمال طلا" onChange={(event) => { setName(event.target.value); clearError("name"); }} />
+            <BpInput name="sku" label="کد کالا (SKU)" required dir="ltr" maxLength={productFieldLimits.sku} value={sku} error={errors.sku} placeholder="PRD-10245" onChange={(event) => { setSku(event.target.value); clearError("sku"); }} />
+            <BpInput name="slug" label="نشانی انگلیسی (Slug)" required dir="ltr" maxLength={productFieldLimits.slug} value={slug} error={errors.slug} hint="فقط حروف کوچک انگلیسی، رقم و خط تیره" placeholder="minimal-gold-ring" onChange={(event) => { setSlug(event.target.value); clearError("slug"); }} />
             <BpCombobox
               name="categoryId"
               label="دسته‌بندی"

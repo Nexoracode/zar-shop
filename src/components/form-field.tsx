@@ -26,7 +26,7 @@ type FieldShellProps = {
   className?: string;
 };
 
-export function FormField({ id, label, hint, error, reserveMessage = true, required, className = "", children }: FieldShellProps & { id: string; children: ReactNode }) {
+export function FormField({ id, label, hint, error, reserveMessage = true, required, counter, className = "", children }: FieldShellProps & { id: string; counter?: ReactNode; children: ReactNode }) {
   const messageId = `${id}-message`;
   return (
     <div className={className}>
@@ -37,13 +37,26 @@ export function FormField({ id, label, hint, error, reserveMessage = true, requi
         </label>
       )}
       {children}
-      {(reserveMessage || error || hint) && (
-        <span id={messageId} className={`field-message ${error ? "field-message-error" : "field-message-hint"}`}>
-          {error ?? hint ?? ""}
+      {(reserveMessage || error || hint || counter) && (
+        <span className="flex items-start justify-between gap-2">
+          <span id={messageId} className={`field-message ${error ? "field-message-error" : "field-message-hint"}`}>
+            {error ?? hint ?? ""}
+          </span>
+          {counter}
         </span>
       )}
     </div>
   );
+}
+
+/**
+ * How many characters are left, for controls with a generous limit where hitting the ceiling
+ * unannounced would be a surprise. Only shown once the reader is close enough for it to matter.
+ */
+export function CharacterCounter({ value, maxLength }: { value: string; maxLength: number }) {
+  const remaining = maxLength - value.length;
+  if (remaining > Math.min(50, Math.floor(maxLength / 4))) return null;
+  return <span aria-live="polite" className={`field-message shrink-0 ${remaining <= 0 ? "field-message-error" : "field-message-hint"}`}>{remaining.toLocaleString("fa-IR")} نویسه باقی مانده</span>;
 }
 
 /** Props a control passes to its input so the message and the error state stay wired up. */
@@ -83,8 +96,11 @@ type TextAreaFieldProps = FieldShellProps
 export function TextAreaField({ label, hint, error, reserveMessage, required, wrapperClassName = "", controlClassName = "", id, ...rest }: TextAreaFieldProps) {
   const generated = useId();
   const fieldId = id ?? generated;
+  const counter = typeof rest.value === "string" && typeof rest.maxLength === "number"
+    ? <CharacterCounter value={rest.value} maxLength={rest.maxLength} />
+    : undefined;
   return (
-    <FormField id={fieldId} label={label} hint={hint} error={error} reserveMessage={reserveMessage} required={required} className={wrapperClassName}>
+    <FormField id={fieldId} label={label} hint={hint} error={error} reserveMessage={reserveMessage} required={required} counter={counter} className={wrapperClassName}>
       <TextArea
         {...fieldControlProps(fieldId, error, hint)}
         required={required}

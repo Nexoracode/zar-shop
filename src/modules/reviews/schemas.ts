@@ -1,5 +1,8 @@
 import { z } from "zod";
 
+/** See `authFieldLimits`: one number per field, shared by the form control and the schema. */
+export const reviewFieldLimits = { title: 120, body: 3000, reportDetails: 500, moderationNote: 500 } as const;
+
 const trimmedOptionalText = (maximum: number) => z.preprocess(
   (value) => typeof value === "string" && value.trim() === "" ? undefined : value,
   z.string().trim().max(maximum).optional(),
@@ -8,8 +11,8 @@ const trimmedOptionalText = (maximum: number) => z.preprocess(
 export const createProductReviewSchema = z.object({
   parentId: trimmedOptionalText(191),
   rating: z.coerce.number().int().min(1).max(5).optional(),
-  title: trimmedOptionalText(120),
-  body: z.string().trim().min(3).max(3000),
+  title: trimmedOptionalText(reviewFieldLimits.title),
+  body: z.string().trim().min(3).max(reviewFieldLimits.body),
 }).superRefine((input, context) => {
   if (!input.parentId && input.rating === undefined) context.addIssue({ code: "custom", path: ["rating"], message: "امتیاز دیدگاه را انتخاب کنید." });
   if (!input.parentId && !input.title) context.addIssue({ code: "custom", path: ["title"], message: "عنوان دیدگاه را وارد کنید." });
@@ -21,15 +24,15 @@ export const productReviewVoteSchema = z.object({ value: z.union([z.literal(-1),
 export const productReviewReportReasons = ["SPAM", "ABUSE", "MISINFORMATION", "IRRELEVANT", "OTHER"] as const;
 export const productReviewReportSchema = z.object({
   reason: z.enum(productReviewReportReasons),
-  details: trimmedOptionalText(500),
+  details: trimmedOptionalText(reviewFieldLimits.reportDetails),
 });
 
 export const adminReviewModerationSchema = z.object({
   status: z.enum(["APPROVED", "REJECTED"]),
-  note: trimmedOptionalText(500),
+  note: trimmedOptionalText(reviewFieldLimits.moderationNote),
 });
 
-export const adminReviewReplySchema = z.object({ body: z.string().trim().min(3).max(3000) });
+export const adminReviewReplySchema = z.object({ body: z.string().trim().min(3).max(reviewFieldLimits.body) });
 export const adminReviewReportSchema = z.object({ status: z.enum(["RESOLVED", "DISMISSED"]) });
 
 export type CreateProductReviewInput = z.infer<typeof createProductReviewSchema>;

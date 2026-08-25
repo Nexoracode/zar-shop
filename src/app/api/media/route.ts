@@ -11,6 +11,7 @@ import { mediaFileSlug } from "@/modules/media/filename";
 import { mediaUsageSelect } from "@/modules/media/usage";
 import { auditRequestContext } from "@/modules/audit/request-context";
 import { normalizeSearchText } from "@/lib/text-search";
+import { mediaFieldLimits } from "@/modules/media/limits";
 
 const MAX_SIZE = 25 * 1024 * 1024;
 const MAX_TOTAL_SIZE = 100 * 1024 * 1024;
@@ -47,9 +48,9 @@ function searchVariants(term: string) {
 }
 
 const uploadMetaSchema = z.array(z.object({
-  title: z.string().trim().max(191, "عنوان رسانه نباید بیشتر از ۱۹۱ نویسه باشد.").optional(),
-  alt: z.string().trim().max(191, "متن جایگزین نباید بیشتر از ۱۹۱ نویسه باشد.").optional(),
-  caption: z.string().trim().max(300, "کپشن نباید بیشتر از ۳۰۰ نویسه باشد.").optional(),
+  title: z.string().trim().max(mediaFieldLimits.title, "عنوان رسانه نباید بیشتر از ۱۹۱ نویسه باشد.").optional(),
+  alt: z.string().trim().max(mediaFieldLimits.alt, "متن جایگزین نباید بیشتر از ۱۹۱ نویسه باشد.").optional(),
+  caption: z.string().trim().max(mediaFieldLimits.caption, "کپشن نباید بیشتر از ۳۰۰ نویسه باشد.").optional(),
   width: z.coerce.number().int().positive().max(30000).optional(),
   height: z.coerce.number().int().positive().max(30000).optional(),
 })).max(MAX_FILES);

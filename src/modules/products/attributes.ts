@@ -1,10 +1,13 @@
 import { z } from "zod";
 
+/** See `authFieldLimits`: one number per field, shared by the form control and the schema. */
+export const attributeFieldLimits = { groupName: 100, attributeName: 100, value: 2000 } as const;
+
 const stableIdSchema = z.string().trim().min(8).max(80).regex(/^[a-zA-Z0-9_-]+$/);
 
 export const categoryAttributeDefinitionSchema = z.object({
   id: stableIdSchema,
-  name: z.string().trim().min(2).max(100),
+  name: z.string().trim().min(2).max(attributeFieldLimits.attributeName),
   important: z.boolean().default(false),
   // Defaults to true so existing category attribute data (saved before this field existed)
   // keeps behaving exactly as before — every attribute stays a storefront filter until an
@@ -14,7 +17,7 @@ export const categoryAttributeDefinitionSchema = z.object({
 
 export const categoryAttributeGroupSchema = z.object({
   id: stableIdSchema,
-  name: z.string().trim().min(2).max(100),
+  name: z.string().trim().min(2).max(attributeFieldLimits.groupName),
   attributes: z.array(categoryAttributeDefinitionSchema).min(1).max(30).refine(
     (attributes) => new Set(attributes.map((attribute) => attribute.id)).size === attributes.length,
     "شناسه ویژگی‌ها نباید تکراری باشد.",
@@ -40,7 +43,7 @@ export const categoryAttributeSchema = z.array(categoryAttributeGroupSchema).max
 
 export const productAttributeValueSchema = z.object({
   attributeId: stableIdSchema,
-  values: z.array(z.string().trim().min(1).max(2000)).min(1).max(20).refine(
+  values: z.array(z.string().trim().min(1).max(attributeFieldLimits.value)).min(1).max(20).refine(
     (values) => new Set(values).size === values.length,
     "مقدار تکراری برای یک ویژگی مجاز نیست.",
   ),

@@ -22,9 +22,12 @@ export const smsProviders = [
   },
 ] as const;
 
+/** See `authFieldLimits`: one number per field, shared by the form control and the schema. */
+export const smsProviderFieldLimits = { apiKey: 500, username: 191, password: 500, senderNumber: 20 } as const;
+
 export const smsProviderInputSchema = z.discriminatedUnion("provider", [
-  z.object({ provider: z.literal("FARAZ_SMS"), apiKey: z.string().trim().min(20).max(500), senderNumber: z.string().trim().regex(/^\+?\d{3,20}$/) }),
-  z.object({ provider: z.literal("IRAN_SMS"), username: z.string().trim().min(2).max(191), password: z.string().min(4).max(500), senderNumber: z.string().trim().regex(/^\+?\d{3,20}$/) }),
+  z.object({ provider: z.literal("FARAZ_SMS"), apiKey: z.string().trim().min(20).max(smsProviderFieldLimits.apiKey), senderNumber: z.string().trim().regex(/^\+?\d{3,20}$/) }),
+  z.object({ provider: z.literal("IRAN_SMS"), username: z.string().trim().min(2).max(smsProviderFieldLimits.username), password: z.string().min(4).max(smsProviderFieldLimits.password), senderNumber: z.string().trim().regex(/^\+?\d{3,20}$/) }),
 ]);
 
 export function smsProviderInfo(provider: SmsProviderId) {

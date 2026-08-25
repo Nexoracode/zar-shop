@@ -8,6 +8,7 @@ import { OtpCodeInput } from "@/components/otp-code-input";
 import { OtpResendCountdown } from "@/components/otp-resend-countdown";
 import { PasswordInput } from "@/components/password-input";
 import { newPasswordSchema, phoneSchema } from "@/modules/auth/schemas";
+import { authFieldLimits } from "@/modules/auth/schemas";
 
 type FieldName = "phone" | "code" | "password" | "confirmPassword";
 
@@ -108,7 +109,7 @@ export function ForgotPasswordForm() {
         <StepHeader title="بازیابی رمز عبور" subtitle="شماره موبایل حساب خود را وارد کنید تا کد بازیابی برایتان پیامک شود" />
         <label className="grid gap-[7px]" htmlFor="phone">
           <span className={labelClass}>شماره موبایل</span>
-          <Input id="phone" name="phone" inputMode="tel" dir="ltr" placeholder="09123456789" onChange={() => clearFieldError("phone")} aria-invalid={Boolean(fieldErrors.phone)} fullWidth variant="secondary" className={`${fieldClass} ${fieldErrors.phone ? invalidFieldClass : ""}`} autoFocus />
+          <Input id="phone" name="phone" inputMode="tel" dir="ltr" maxLength={authFieldLimits.phone} placeholder="09123456789" onChange={() => clearFieldError("phone")} aria-invalid={Boolean(fieldErrors.phone)} fullWidth variant="secondary" className={`${fieldClass} ${fieldErrors.phone ? invalidFieldClass : ""}`} autoFocus />
           {fieldError("phone")}
         </label>
         {error && <Alert status="danger"><Alert.Description>{error}</Alert.Description></Alert>}
@@ -128,12 +129,12 @@ export function ForgotPasswordForm() {
       </div>
       <label className="grid gap-[7px]" htmlFor="password">
         <span className={labelClass}>رمز عبور جدید</span>
-        <PasswordInput id="password" name="password" onChange={() => clearFieldError("password")} aria-invalid={Boolean(fieldErrors.password)} fullWidth variant="secondary" className={`${fieldClass} ${fieldErrors.password ? invalidFieldClass : ""}`} />
+        <PasswordInput id="password" name="password" maxLength={authFieldLimits.password} onChange={() => clearFieldError("password")} aria-invalid={Boolean(fieldErrors.password)} fullWidth variant="secondary" className={`${fieldClass} ${fieldErrors.password ? invalidFieldClass : ""}`} />
         {fieldError("password")}
       </label>
       <label className="grid gap-[7px]" htmlFor="confirmPassword">
         <span className={labelClass}>تکرار رمز عبور جدید</span>
-        <PasswordInput id="confirmPassword" name="confirmPassword" onChange={() => clearFieldError("confirmPassword")} aria-invalid={Boolean(fieldErrors.confirmPassword)} fullWidth variant="secondary" className={`${fieldClass} ${fieldErrors.confirmPassword ? invalidFieldClass : ""}`} />
+        <PasswordInput id="confirmPassword" name="confirmPassword" maxLength={authFieldLimits.password} onChange={() => clearFieldError("confirmPassword")} aria-invalid={Boolean(fieldErrors.confirmPassword)} fullWidth variant="secondary" className={`${fieldClass} ${fieldErrors.confirmPassword ? invalidFieldClass : ""}`} />
         {fieldError("confirmPassword")}
       </label>
       {error && <Alert status="danger"><Alert.Description>{error}</Alert.Description></Alert>}

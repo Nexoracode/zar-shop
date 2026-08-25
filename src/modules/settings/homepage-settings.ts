@@ -34,7 +34,16 @@ const treasureCardsSchema = z.array(treasureCardSchema).length(homepageTreasureC
   }
 });
 
-const safeHrefSchema = z.string().trim().min(1).max(500).refine(
+/** See `authFieldLimits`: one number per field, shared by the form control and the schema. */
+export const homepageFieldLimits = {
+  href: 500,
+  menuLabel: 80,
+  heroTitle: 191,
+  heroDescription: 500,
+  heroButtonLabel: 80,
+} as const;
+
+const safeHrefSchema = z.string().trim().min(1).max(homepageFieldLimits.href).refine(
   (value) => (/^\/(?!\/)/.test(value) || /^https:\/\//i.test(value)),
   "لینک دکمه باید یک مسیر داخلی یا نشانی امن HTTPS باشد.",
 );
@@ -42,7 +51,7 @@ const optionalSafeHrefSchema = z.union([z.null(), z.literal(""), safeHrefSchema]
 
 const homepageMenuItemSchema = z.object({
   id: z.string().trim().min(1).max(80),
-  label: z.string().trim().min(1).max(80),
+  label: z.string().trim().min(1).max(homepageFieldLimits.menuLabel),
   href: safeHrefSchema,
 });
 export type HomepageMenuItem = z.infer<typeof homepageMenuItemSchema>;
@@ -181,9 +190,9 @@ export const homepageLayoutSettingsInputSchema = z.object({
 export const homepageHeroSettingsInputSchema = z.object({
   heroSlides: heroSlidesSchema,
   heroContentMode: z.enum(["WITH_CONTENT", "IMAGE_ONLY"]),
-  heroTitle: z.string().trim().min(2).max(191),
-  heroDescription: z.string().trim().min(10).max(500),
-  heroButtonLabel: z.string().trim().min(2).max(80),
+  heroTitle: z.string().trim().min(2).max(homepageFieldLimits.heroTitle),
+  heroDescription: z.string().trim().min(10).max(homepageFieldLimits.heroDescription),
+  heroButtonLabel: z.string().trim().min(2).max(homepageFieldLimits.heroButtonLabel),
   heroButtonHref: safeHrefSchema,
   heroDesktopMediaId: z.string().trim().min(1).nullable(),
   heroMobileMediaId: z.string().trim().min(1).nullable(),

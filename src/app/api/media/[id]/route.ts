@@ -7,6 +7,7 @@ import { deleteStoredMedia, MediaStorageUnavailableError } from "@/modules/media
 import { hasPermission } from "@/modules/auth/permissions";
 import { mediaUsageCount, mediaUsageSelect } from "@/modules/media/usage";
 import { auditRequestContext } from "@/modules/audit/request-context";
+import { mediaFieldLimits } from "@/modules/media/limits";
 
 type Context = { params: Promise<{ id: string }> };
 
@@ -14,10 +15,10 @@ type Context = { params: Promise<{ id: string }> };
 const optionalText = (max: number, message: string) => z.string().trim().max(max, message).optional();
 
 const updateSchema = z.object({
-  title: optionalText(191, "عنوان رسانه نباید بیشتر از ۱۹۱ نویسه باشد."),
-  alt: optionalText(191, "متن جایگزین نباید بیشتر از ۱۹۱ نویسه باشد."),
-  caption: optionalText(300, "کپشن نباید بیشتر از ۳۰۰ نویسه باشد."),
-  description: optionalText(5000, "توضیحات نباید بیشتر از ۵۰۰۰ نویسه باشد."),
+  title: optionalText(mediaFieldLimits.title, "عنوان رسانه نباید بیشتر از ۱۹۱ نویسه باشد."),
+  alt: optionalText(mediaFieldLimits.alt, "متن جایگزین نباید بیشتر از ۱۹۱ نویسه باشد."),
+  caption: optionalText(mediaFieldLimits.caption, "کپشن نباید بیشتر از ۳۰۰ نویسه باشد."),
+  description: optionalText(mediaFieldLimits.description, "توضیحات نباید بیشتر از ۵۰۰۰ نویسه باشد."),
 }).refine((value) => Object.values(value).some((entry) => entry !== undefined), "چیزی برای ذخیره وجود ندارد.");
 
 export async function PATCH(request: Request, context: Context) {

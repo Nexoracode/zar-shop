@@ -11,6 +11,7 @@ import { HeroSelectField } from "@/components/hero-select-field";
 import { AdminDialog, AdminDialogButton } from "@/components/admin/admin-dialog";
 import { AdminSelectField } from "@/components/admin/admin-form-fields";
 import { categoryAttributeSchema, type CategoryAttributeGroup } from "@/modules/products/attributes";
+import { attributeFieldLimits } from "@/modules/products/attributes";
 
 const newItemKey = "__new__";
 type SortMode = "groups" | "attributes";
@@ -220,9 +221,9 @@ export function CategoryAttributesForm({ categoryId, initialGroups }: { category
       ]} /></div></div>
       <div className="grid content-start gap-3 rounded-xl border border-slate-200 bg-slate-50/60 p-3 sm:p-4">
           <HeroSelectField name="attributeGroup" label="گروه ویژگی" value={selectedGroupId} includeEmptyOption={false} options={[...groups.map((group) => ({ value: group.id, label: group.name })), { value: newItemKey, label: "+ ثبت گروه جدید" }]} onValueChange={selectGroup} />
-          {selectedGroupId === newItemKey && <label className={adminLabelClass}>نام گروه جدید<Input value={newGroupName} onChange={(event) => setNewGroupName(event.target.value)} placeholder="مثلاً مشخصات کلی" fullWidth variant="secondary" className={adminFieldClass} /></label>}
+          {selectedGroupId === newItemKey && <label className={adminLabelClass}>نام گروه جدید<Input value={newGroupName} maxLength={attributeFieldLimits.groupName} onChange={(event) => setNewGroupName(event.target.value)} placeholder="مثلاً مشخصات کلی" fullWidth variant="secondary" className={adminFieldClass} /></label>}
           <HeroSelectField name="attributeDefinition" label="ویژگی" value={selectedAttributeId} includeEmptyOption={false} options={[...attributeOptions.map((attribute) => ({ value: attribute.id, label: attribute.name })), { value: newItemKey, label: "+ ثبت ویژگی جدید" }]} onValueChange={setSelectedAttributeId} />
-          {selectedAttributeId === newItemKey && <label className={adminLabelClass}>نام ویژگی جدید<Input value={newAttributeName} onChange={(event) => setNewAttributeName(event.target.value)} placeholder="مثلاً رم یا مناسب برای" fullWidth variant="secondary" className={adminFieldClass} /></label>}
+          {selectedAttributeId === newItemKey && <label className={adminLabelClass}>نام ویژگی جدید<Input value={newAttributeName} maxLength={attributeFieldLimits.attributeName} onChange={(event) => setNewAttributeName(event.target.value)} placeholder="مثلاً رم یا مناسب برای" fullWidth variant="secondary" className={adminFieldClass} /></label>}
           <AdminCheckbox isSelected={important} onChange={setImportant} description="در خلاصه ویژگی‌های بالای صفحه جزئیات محصول نمایش داده شود">ویژگی مهم</AdminCheckbox>
           <AdminCheckbox isSelected={filterable} onChange={setFilterable} description="این ویژگی در نوار فیلتر فروشگاه به مشتریان نمایش داده شود">قابل فیلتر</AdminCheckbox>
           {selectedAttributeId === newItemKey && <Button type="button" variant="primary" onPress={addDefinition} className="min-h-11 gap-2 font-bold sm:justify-self-start"><Plus size={15} />ثبت ویژگی</Button>}

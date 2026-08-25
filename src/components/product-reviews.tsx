@@ -9,6 +9,7 @@ import { TextAreaField, TextField } from "@/components/form-field";
 import { requestErrorMessage, requestJson } from "@/lib/api-request";
 import { ReviewRatingField } from "@/components/review-rating-field";
 import { firstReviewFormError, hasReviewFormErrors, validateReviewForm, type ReviewFormErrors, type ReviewFormField } from "@/modules/reviews/review-form-validation";
+import { reviewFieldLimits } from "@/modules/reviews/schemas";
 
 type Props = {
   productId: string;
@@ -168,8 +169,8 @@ export function ProductReviews({ productId, initialData, isAuthenticated }: Prop
         <Modal.Header className="pl-10"><Modal.Heading>{replyTo ? `پاسخ به ${replyTo.author.name}` : "ثبت امتیاز و دیدگاه"}</Modal.Heading><Modal.CloseTrigger aria-label="بستن" className="left-4 right-auto" /></Modal.Header>
         <Modal.Body><div ref={composerRef} className="grid gap-3"><p className="text-sm text-slate-500">دیدگاه شما پیش از انتشار توسط مدیریت بررسی می‌شود.</p>{!isAuthenticated ? <Alert status="warning"><Alert.Description>برای ثبت دیدگاه باید وارد حساب کاربری شوید.</Alert.Description></Alert> : <>
           {!replyTo && <ReviewRatingField rating={rating} onChange={(value) => { setRating(value); clearReviewError("rating"); }} error={reviewErrors.rating} />}
-          {!replyTo && <TextField name="title" label="عنوان دیدگاه" required maxLength={120} placeholder="خلاصه تجربه شما" value={title} error={reviewErrors.title} onChange={(event) => { setTitle(event.target.value); clearReviewError("title"); }} />}
-          <TextAreaField name="body" label={`متن ${replyTo ? "پاسخ" : "دیدگاه"}`} required rows={6} maxLength={3000} hint="حداقل ۳ نویسه" placeholder="تجربه خود را با جزئیات بنویسید" value={body} error={reviewErrors.body} onChange={(event) => { setBody(event.target.value); clearReviewError("body"); }} />
+          {!replyTo && <TextField name="title" label="عنوان دیدگاه" required maxLength={reviewFieldLimits.title} placeholder="خلاصه تجربه شما" value={title} error={reviewErrors.title} onChange={(event) => { setTitle(event.target.value); clearReviewError("title"); }} />}
+          <TextAreaField name="body" label={`متن ${replyTo ? "پاسخ" : "دیدگاه"}`} required rows={6} maxLength={reviewFieldLimits.body} hint="حداقل ۳ نویسه" placeholder="تجربه خود را با جزئیات بنویسید" value={body} error={reviewErrors.body} onChange={(event) => { setBody(event.target.value); clearReviewError("body"); }} />
         </>}</div></Modal.Body>
         <Modal.Footer><Button type="button" variant="secondary" onPress={() => setComposeOpen(false)}>انصراف</Button>{isAuthenticated ? <Button type="button" variant="primary" isPending={submitting} onPress={() => void submitReview()}>ثبت دیدگاه</Button> : <Button type="button" variant="primary" onPress={() => router.push("/login")}>ورود به حساب کاربری</Button>}</Modal.Footer>
       </Modal.Dialog></Modal.Container>
@@ -178,7 +179,7 @@ export function ProductReviews({ productId, initialData, isAuthenticated }: Prop
     <Modal.Backdrop isOpen={Boolean(reporting)} onOpenChange={(open) => { if (!open) setReporting(null); }} isDismissable={false}>
       <Modal.Container size="sm" placement="center" scroll="inside"><Modal.Dialog aria-label="گزارش دیدگاه" dir="rtl">
         <Modal.Header className="pl-10"><Modal.Heading>گزارش دیدگاه</Modal.Heading><Modal.CloseTrigger aria-label="بستن" className="left-4 right-auto" /></Modal.Header>
-        <Modal.Body><div className="grid gap-4"><div className="flex flex-wrap gap-2">{reportReasons.map((reason) => <Button key={reason.value} type="button" variant={reportReason === reason.value ? "primary" : "secondary"} onPress={() => setReportReason(reason.value)}>{reason.label}</Button>)}</div><TextAreaField name="reportDetails" label="توضیحات تکمیلی" hint="اختیاری — حداکثر ۵۰۰ نویسه" value={reportDetails} onChange={(event) => setReportDetails(event.target.value)} maxLength={500} rows={4} placeholder="اگر توضیحی دارید بنویسید" /></div></Modal.Body>
+        <Modal.Body><div className="grid gap-4"><div className="flex flex-wrap gap-2">{reportReasons.map((reason) => <Button key={reason.value} type="button" variant={reportReason === reason.value ? "primary" : "secondary"} onPress={() => setReportReason(reason.value)}>{reason.label}</Button>)}</div><TextAreaField name="reportDetails" label="توضیحات تکمیلی" hint="اختیاری — حداکثر ۵۰۰ نویسه" value={reportDetails} onChange={(event) => setReportDetails(event.target.value)} maxLength={reviewFieldLimits.reportDetails} rows={4} placeholder="اگر توضیحی دارید بنویسید" /></div></Modal.Body>
         <Modal.Footer><Button type="button" variant="secondary" onPress={() => setReporting(null)}>انصراف</Button><Button type="button" variant="danger" isPending={reportBusy} onPress={() => void submitReport()}>ثبت گزارش</Button></Modal.Footer>
       </Modal.Dialog></Modal.Container>
     </Modal.Backdrop>

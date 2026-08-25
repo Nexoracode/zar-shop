@@ -16,6 +16,7 @@ import { AdminCheckbox } from "@/components/admin-checkbox";
 import { AdminSectionHelp } from "@/components/admin-section-help";
 import { apiErrorMessage, validationErrorMessage } from "@/lib/form-errors";
 import { categorySchema } from "@/modules/categories/schemas";
+import { categoryFieldLimits } from "@/modules/categories/schemas";
 
 type CategoryOption = { id: string; name: string; parentName: string | null };
 type EditableCategory = {
@@ -103,10 +104,10 @@ export function CategoryForm({ categories, category }: { categories: CategoryOpt
               <div className="min-w-0"><h2 className="m-0 text-base font-bold text-slate-800">اطلاعات دسته‌بندی</h2><p className="m-0 text-xs text-slate-400">نام، نشانی و ساختار سلسله‌مراتبی دسته را مشخص کنید.</p></div><div className="mr-auto"><AdminSectionHelp title="اطلاعات دسته‌بندی" summary="دسته والد جایگاه این دسته را در منو، مگامنو و مسیر پیمایش محصولات تعیین می‌کند." blocks={[{ title: "ساختار دسته", items: ["برای دسته سطح اول، والد را خالی بگذارید.", "برای زیر‌دسته، نزدیک‌ترین والد مرتبط را انتخاب کنید.", "نشانی انگلیسی باید یکتا، کوتاه و شامل حروف کوچک، عدد یا خط تیره باشد."] }, { title: "اثر جابه‌جایی", tone: "important", description: "تغییر والد، مسیر دسته و محل نمایش آن در مگامنو را تغییر می‌دهد. پیش از جابه‌جایی دسته دارای محصول، مسیرهای فروشگاه را بررسی کنید." }, { title: "ویژگی‌های وابسته", description: "ویژگی‌های محصولات برای هر دسته جدا تعریف می‌شوند؛ پس از ساخت دسته می‌توانید از صفحه ویژگی‌های دسته‌بندی ساختار مشخصات آن را بسازید." }]} /></div>
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
-              <label className={adminLabelClass}>نام دسته<Input required minLength={2} value={name} onChange={(event) => setName(event.target.value)} fullWidth variant="secondary" className={adminFieldClass} /></label>
-              <label className={adminLabelClass}>نشانی انگلیسی<Input required dir="ltr" pattern="[a-z0-9]+(?:-[a-z0-9]+)*" value={slug} onChange={(event) => setSlug(event.target.value)} fullWidth variant="secondary" className={adminFieldClass} placeholder="women-rings" /></label>
+              <label className={adminLabelClass}>نام دسته<Input required minLength={2} maxLength={categoryFieldLimits.name} value={name} onChange={(event) => setName(event.target.value)} fullWidth variant="secondary" className={adminFieldClass} /></label>
+              <label className={adminLabelClass}>نشانی انگلیسی<Input required dir="ltr" pattern="[a-z0-9]+(?:-[a-z0-9]+)*" maxLength={categoryFieldLimits.slug} value={slug} onChange={(event) => setSlug(event.target.value)} fullWidth variant="secondary" className={adminFieldClass} placeholder="women-rings" /></label>
             </div>
-            <label className={`${adminLabelClass} mt-4`}>توضیحات<TextArea rows={5} value={description} onChange={(event) => setDescription(event.target.value)} fullWidth variant="secondary" className={adminFieldClass} /></label>
+            <label className={`${adminLabelClass} mt-4`}>توضیحات<TextArea rows={5} maxLength={categoryFieldLimits.description} value={description} onChange={(event) => setDescription(event.target.value)} fullWidth variant="secondary" className={adminFieldClass} /></label>
             <div className="mt-4 grid gap-4 sm:grid-cols-2">
               <HeroSelectField name="parentId" label="دسته والد" value={parentId} onValueChange={setParentId} options={[{ value: "", label: "بدون والد (دسته اصلی)" }, ...categories.filter((item) => item.id !== category?.id).map((item) => ({ value: item.id, label: `${item.parentName ? `${item.parentName} ← ` : ""}${item.name}` }))]} />
               <label className={adminLabelClass}>ترتیب نمایش<HeroNumberInput value={sortOrder} onValueChange={setSortOrder} fullWidth variant="secondary" className={adminFieldClass} /></label>

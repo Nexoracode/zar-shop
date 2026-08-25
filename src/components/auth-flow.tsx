@@ -11,6 +11,7 @@ import { OtpCodeInput } from "@/components/otp-code-input";
 import { OtpResendCountdown } from "@/components/otp-resend-countdown";
 import { PasswordInput } from "@/components/password-input";
 import { newPasswordSchema, phoneSchema } from "@/modules/auth/schemas";
+import { authFieldLimits } from "@/modules/auth/schemas";
 
 type Step = "phone" | "password" | "login-otp" | "register-otp" | "register-complete";
 type OtpPurpose = "LOGIN" | "REGISTER";
@@ -205,7 +206,7 @@ export function AuthFlow() {
         <StepHeader title="ورود یا ثبت‌نام" subtitle="لطفاً شماره موبایل خود را وارد کنید" size="lg" />
         <label className="grid gap-[7px]" htmlFor="phone">
           <span className={labelClass}>شماره موبایل</span>
-          <Input id="phone" name="phone" inputMode="tel" dir="ltr" placeholder="09123456789" onChange={() => clearFieldError("phone")} aria-invalid={Boolean(fieldErrors.phone)} fullWidth variant="secondary" className={`${fieldClass} ${fieldErrors.phone ? invalidFieldClass : ""}`} autoFocus />
+          <Input id="phone" name="phone" inputMode="tel" dir="ltr" maxLength={authFieldLimits.phone} placeholder="09123456789" onChange={() => clearFieldError("phone")} aria-invalid={Boolean(fieldErrors.phone)} fullWidth variant="secondary" className={`${fieldClass} ${fieldErrors.phone ? invalidFieldClass : ""}`} autoFocus />
           {fieldError("phone")}
         </label>
         {error && <Alert status="danger"><Alert.Description>{error}</Alert.Description></Alert>}
@@ -222,7 +223,7 @@ export function AuthFlow() {
         <StepHeader title="رمز عبور را وارد کنید" subtitle={<>ورود با شماره <strong dir="ltr">{phone}</strong></>} />
         <label className="grid gap-[7px]" htmlFor="password">
           <span className={labelClass}>رمز عبور</span>
-          <PasswordInput id="password" name="password" onChange={() => clearFieldError("password")} aria-invalid={Boolean(fieldErrors.password)} fullWidth variant="secondary" className={`${fieldClass} ${fieldErrors.password ? invalidFieldClass : ""}`} autoFocus />
+          <PasswordInput id="password" name="password" maxLength={authFieldLimits.password} onChange={() => clearFieldError("password")} aria-invalid={Boolean(fieldErrors.password)} fullWidth variant="secondary" className={`${fieldClass} ${fieldErrors.password ? invalidFieldClass : ""}`} autoFocus />
           {fieldError("password")}
         </label>
         <div className="grid gap-1 justify-items-start">
@@ -266,18 +267,18 @@ export function AuthFlow() {
       <div className="grid grid-cols-1 gap-[14px] sm:grid-cols-2">
         <label className="grid gap-[7px]" htmlFor="firstName">
           <span className={labelClass}>نام</span>
-          <Input id="firstName" name="firstName" onChange={() => clearFieldError("firstName")} aria-invalid={Boolean(fieldErrors.firstName)} fullWidth variant="secondary" className={`${fieldClass} ${fieldErrors.firstName ? invalidFieldClass : ""}`} />
+          <Input id="firstName" name="firstName" maxLength={authFieldLimits.firstName} onChange={() => clearFieldError("firstName")} aria-invalid={Boolean(fieldErrors.firstName)} fullWidth variant="secondary" className={`${fieldClass} ${fieldErrors.firstName ? invalidFieldClass : ""}`} />
           {fieldError("firstName")}
         </label>
         <label className="grid gap-[7px]" htmlFor="lastName">
           <span className={labelClass}>نام خانوادگی</span>
-          <Input id="lastName" name="lastName" onChange={() => clearFieldError("lastName")} aria-invalid={Boolean(fieldErrors.lastName)} fullWidth variant="secondary" className={`${fieldClass} ${fieldErrors.lastName ? invalidFieldClass : ""}`} />
+          <Input id="lastName" name="lastName" maxLength={authFieldLimits.lastName} onChange={() => clearFieldError("lastName")} aria-invalid={Boolean(fieldErrors.lastName)} fullWidth variant="secondary" className={`${fieldClass} ${fieldErrors.lastName ? invalidFieldClass : ""}`} />
           {fieldError("lastName")}
         </label>
       </div>
       <label className="grid gap-[7px]" htmlFor="password">
         <span className={labelClass}>رمز عبور</span>
-        <PasswordInput id="password" name="password" onChange={() => clearFieldError("password")} aria-invalid={Boolean(fieldErrors.password)} fullWidth variant="secondary" className={`${fieldClass} ${fieldErrors.password ? invalidFieldClass : ""}`} />
+        <PasswordInput id="password" name="password" maxLength={authFieldLimits.password} onChange={() => clearFieldError("password")} aria-invalid={Boolean(fieldErrors.password)} fullWidth variant="secondary" className={`${fieldClass} ${fieldErrors.password ? invalidFieldClass : ""}`} />
         {fieldError("password")}
       </label>
       <AdminCheckbox isSelected={smsMarketingConsent} onChange={setSmsMarketingConsent} description="برای تخفیف‌ها و خبرهای فروشگاه؛ هر زمان قابل لغو است">مایلم پیامک‌های اطلاع‌رسانی فروشگاه را دریافت کنم</AdminCheckbox>

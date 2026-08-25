@@ -41,6 +41,9 @@ export function BpTextarea({ label, hint, error, reserveMessage = true, classNam
   const generated = useId();
   const inputId = id ?? generated;
   const messageId = `${inputId}-message`;
+  const remaining = typeof rest.value === "string" && typeof rest.maxLength === "number" ? rest.maxLength - rest.value.length : null;
+  // Only once the reader is close enough for it to matter; a counter at 5000 left is noise.
+  const showCounter = remaining !== null && typeof rest.maxLength === "number" && remaining <= Math.min(50, Math.floor(rest.maxLength / 4));
   return (
     <div className={`bp-field ${wrapperClassName}`.trim()}>
       {label && <label htmlFor={inputId}>{label}</label>}
@@ -51,7 +54,10 @@ export function BpTextarea({ label, hint, error, reserveMessage = true, classNam
         className={`bp-input ${className}`.trim()}
         {...rest}
       />
-      <BpFieldMessage id={messageId} error={error} hint={hint} reserve={reserveMessage} />
+      <span className="flex items-start justify-between gap-2">
+        <BpFieldMessage id={messageId} error={error} hint={hint} reserve={reserveMessage} />
+        {showCounter && <span aria-live="polite" className={`bp-field-message shrink-0 ${remaining <= 0 ? "bp-field-message-error" : "bp-field-message-hint"}`}>{remaining.toLocaleString("fa-IR")} نویسه باقی مانده</span>}
+      </span>
     </div>
   );
 }

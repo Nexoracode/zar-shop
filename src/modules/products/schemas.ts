@@ -22,11 +22,14 @@ export function isDateOnly(value: string) {
   return /^\d{4}-\d{2}-\d{2}$/.test(value);
 }
 
+/** See `authFieldLimits`: one number per field, shared by the form control and the schema. */
+export const productFieldLimits = { sku: 80, name: 191, slug: 191, description: 200000, optionName: 80, optionValue: 80 } as const;
+
 const productOptionSchema = z.object({
-  name: z.string().trim().min(1).max(80),
+  name: z.string().trim().min(1).max(productFieldLimits.optionName),
   type: z.enum(["SELECT", "COLOR"]).default("SELECT"),
   values: z.array(z.object({
-    value: z.string().trim().min(1).max(80),
+    value: z.string().trim().min(1).max(productFieldLimits.optionValue),
     colorId: z.string().cuid().nullable().default(null),
     isActive: z.boolean().default(true),
     stock: z.coerce.number().int().nonnegative().nullable().default(null),
@@ -44,13 +47,13 @@ const productOptionSchema = z.object({
  * "Invalid input", which then surfaces verbatim under the field in the admin form.
  */
 export const productSchema = z.object({
-  sku: z.string().trim().min(2, "کد کالا باید حداقل ۲ نویسه باشد.").max(80, "کد کالا نباید بیشتر از ۸۰ نویسه باشد."),
-  name: z.string().trim().min(2, "نام محصول باید حداقل ۲ نویسه باشد.").max(191, "نام محصول نباید بیشتر از ۱۹۱ نویسه باشد."),
+  sku: z.string().trim().min(2, "کد کالا باید حداقل ۲ نویسه باشد.").max(productFieldLimits.sku, "کد کالا نباید بیشتر از ۸۰ نویسه باشد."),
+  name: z.string().trim().min(2, "نام محصول باید حداقل ۲ نویسه باشد.").max(productFieldLimits.name, "نام محصول نباید بیشتر از ۱۹۱ نویسه باشد."),
   slug: z.string().trim()
     .min(2, "نشانی انگلیسی باید حداقل ۲ نویسه باشد.")
-    .max(191, "نشانی انگلیسی نباید بیشتر از ۱۹۱ نویسه باشد.")
+    .max(productFieldLimits.slug, "نشانی انگلیسی نباید بیشتر از ۱۹۱ نویسه باشد.")
     .regex(/^[a-z0-9-]+$/, "نشانی انگلیسی فقط می‌تواند شامل حروف کوچک انگلیسی، رقم و خط تیره باشد."),
-  description: z.string().max(200000, "توضیحات محصول بیش از حد مجاز است.").optional(),
+  description: z.string().max(productFieldLimits.description, "توضیحات محصول بیش از حد مجاز است.").optional(),
   categoryId: z.string("دسته‌بندی محصول را انتخاب کنید.").min(1, "دسته‌بندی محصول را انتخاب کنید.").cuid("دسته‌بندی انتخاب‌شده معتبر نیست."),
   storeIndustry: z.enum(["GOLD", "GENERAL"]).default("GOLD"),
   purity: z.coerce.number("عیار را وارد کنید.").int("عیار باید عدد صحیح باشد.").min(1, "عیار باید بین ۱ تا ۹۹۹ باشد.").max(999, "عیار باید بین ۱ تا ۹۹۹ باشد.").default(750),

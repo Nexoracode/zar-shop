@@ -19,6 +19,7 @@ import { RichTextEditor } from "@/components/rich-text-editor";
 import { HeroDateRangeField } from "@/components/hero-date-range-field";
 import { HeroNumberInput } from "@/components/hero-number-input";
 import type { CategoryAttributeGroup, ProductAttributeValue } from "@/modules/products/attributes";
+import { productFieldLimits } from "@/modules/products/schemas";
 
 type EditableProduct = {
   id: string; sku: string; name: string; slug: string; description: string; categoryId: string; purity: number; weightGrams: number;
@@ -167,8 +168,8 @@ export function ProductForm({ storeIndustry, categories = [], product }: Props) 
         </FormSection>
 
         <FormSection icon={<Info size={18} />} title="اطلاعات پایه" description="مشخصات اصلی که در صفحه محصول نمایش داده می‌شود.">
-          <div className="grid gap-4 sm:grid-cols-2"><Field label="نام محصول"><Input name="name" required fullWidth variant="secondary" defaultValue={product?.name} className={adminFieldClass} /></Field><Field label="کد کالا"><Input name="sku" dir="ltr" required fullWidth variant="secondary" defaultValue={product?.sku} className={inputClass} /></Field></div>
-          <div className="mt-4 grid gap-4 sm:grid-cols-2"><Field label="نشانی انگلیسی"><Input name="slug" dir="ltr" pattern="[a-z0-9-]+" required fullWidth variant="secondary" defaultValue={product?.slug} placeholder="minimal-gold-ring" className={inputClass} /></Field><HeroSelectField name="categoryId" label="دسته‌بندی" value={categoryId} onValueChange={changeCategory} options={[...categories.map((category) => ({ value: category.id, label: `${category.parentName ? `${category.parentName} ← ` : ""}${category.name}` }))]} /></div>
+          <div className="grid gap-4 sm:grid-cols-2"><Field label="نام محصول"><Input name="name" required maxLength={productFieldLimits.name} fullWidth variant="secondary" defaultValue={product?.name} className={adminFieldClass} /></Field><Field label="کد کالا"><Input name="sku" dir="ltr" required maxLength={productFieldLimits.sku} fullWidth variant="secondary" defaultValue={product?.sku} className={inputClass} /></Field></div>
+          <div className="mt-4 grid gap-4 sm:grid-cols-2"><Field label="نشانی انگلیسی"><Input name="slug" dir="ltr" pattern="[a-z0-9-]+" required maxLength={productFieldLimits.slug} fullWidth variant="secondary" defaultValue={product?.slug} placeholder="minimal-gold-ring" className={inputClass} /></Field><HeroSelectField name="categoryId" label="دسته‌بندی" value={categoryId} onValueChange={changeCategory} options={[...categories.map((category) => ({ value: category.id, label: `${category.parentName ? `${category.parentName} ← ` : ""}${category.name}` }))]} /></div>
           <div className={`${adminLabelClass} mt-4`}>توضیحات محصول<RichTextEditor value={product?.description} onChange={setDescription} /></div>
         </FormSection>
 

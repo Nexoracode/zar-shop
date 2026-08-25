@@ -9,8 +9,11 @@ export const communicationTemplatesSchema = z.object({
   lowStockAdmin: z.string().trim().max(500).default("موجودی محصول {productName} به {stock} رسید."),
 });
 
+/** See `authFieldLimits`: one number per field, shared by the form control and the schema. */
+export const communicationFieldLimits = { adminPhone: 20, template: 500 } as const;
+
 export const communicationSettingsSchema = z.object({
-  smsEnabled: z.boolean(), inAppEnabled: z.boolean(), adminPhone: z.string().trim().max(20).nullable(),
+  smsEnabled: z.boolean(), inAppEnabled: z.boolean(), adminPhone: z.string().trim().max(communicationFieldLimits.adminPhone).nullable(),
   orderCreatedSms: z.boolean(), paymentSuccessSms: z.boolean(), orderShippedSms: z.boolean(), orderExpiredSms: z.boolean(), lowStockAdminSms: z.boolean(),
   templates: communicationTemplatesSchema,
 });

@@ -5,6 +5,7 @@ import { useState } from "react";
 import { Alert, Button, Card, Label, TextArea, toast } from "@heroui/react";
 import { Check, MessageCircleReply, Save, ShieldCheck, Trash2, X } from "lucide-react";
 import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
+import { reviewFieldLimits } from "@/modules/reviews/schemas";
 
 type Props =
   | { mode: "review"; reviewId: string; status: "PENDING" | "APPROVED" | "REJECTED"; title: string; initialNote?: string; canReply: boolean }
@@ -88,7 +89,7 @@ export function AdminReviewManager(props: Props) {
         {error && <Alert status="danger" className="mb-4"><Alert.Description>{error}</Alert.Description></Alert>}
         <div className="grid gap-1.5">
           <Label className="text-xs font-bold text-slate-600">یادداشت مدیریت</Label>
-          <TextArea value={note} onChange={(event) => setNote(event.target.value)} maxLength={500} rows={4} variant="secondary" placeholder="دلیل تأیید یا رد را برای سابقه بررسی بنویسید" className="min-h-28" />
+          <TextArea value={note} onChange={(event) => setNote(event.target.value)} maxLength={reviewFieldLimits.moderationNote} rows={4} variant="secondary" placeholder="دلیل تأیید یا رد را برای سابقه بررسی بنویسید" className="min-h-28" />
           <span className="text-left text-[10px] text-slate-400" dir="ltr">{note.length.toLocaleString("fa-IR")} / ۵۰۰</span>
         </div>
 
@@ -97,7 +98,7 @@ export function AdminReviewManager(props: Props) {
           <Button type="button" variant="danger-soft" isPending={busyAction === "moderate-REJECTED"} isDisabled={busy || props.status === "REJECTED"} onPress={() => void moderate("REJECTED")} className="min-h-10 gap-1.5 text-xs font-bold"><X size={15} />رد دیدگاه</Button>
         </div>
 
-        {props.canReply && <div className="mt-6 border-t border-slate-100 pt-5"><div className="mb-3 flex items-center gap-2"><MessageCircleReply size={16} className="text-[var(--accent)]" /><strong className="text-xs text-slate-700">پاسخ رسمی فروشگاه</strong></div><div className="grid gap-1.5"><Label className="sr-only">متن پاسخ رسمی</Label><TextArea value={reply} onChange={(event) => setReply(event.target.value)} minLength={3} maxLength={3000} rows={6} variant="secondary" placeholder="پاسخ مدیریت به دیدگاه کاربر" className="min-h-36" /></div><Button type="button" variant="primary" isPending={busyAction === "reply"} isDisabled={busy || reply.trim().length < 3} onPress={() => void submitReply()} className="mt-3 min-h-10 w-full gap-2 text-xs font-bold"><Save size={15} />ثبت پاسخ مدیریت</Button></div>}
+        {props.canReply && <div className="mt-6 border-t border-slate-100 pt-5"><div className="mb-3 flex items-center gap-2"><MessageCircleReply size={16} className="text-[var(--accent)]" /><strong className="text-xs text-slate-700">پاسخ رسمی فروشگاه</strong></div><div className="grid gap-1.5"><Label className="sr-only">متن پاسخ رسمی</Label><TextArea value={reply} onChange={(event) => setReply(event.target.value)} minLength={3} maxLength={reviewFieldLimits.body} rows={6} variant="secondary" placeholder="پاسخ مدیریت به دیدگاه کاربر" className="min-h-36" /></div><Button type="button" variant="primary" isPending={busyAction === "reply"} isDisabled={busy || reply.trim().length < 3} onPress={() => void submitReply()} className="mt-3 min-h-10 w-full gap-2 text-xs font-bold"><Save size={15} />ثبت پاسخ مدیریت</Button></div>}
 
         <div className="mt-6 border-t border-rose-100 pt-5"><p className="mb-3 text-[11px] leading-5 text-slate-400">حذف دیدگاه، پاسخ‌ها، رأی‌ها و گزارش‌های مرتبط قابل بازگشت نیست.</p><Button type="button" variant="danger-soft" isDisabled={busy} onPress={() => setDeleteOpen(true)} className="min-h-10 w-full gap-2 text-xs font-bold"><Trash2 size={15} />حذف کامل دیدگاه</Button></div>
       </div>

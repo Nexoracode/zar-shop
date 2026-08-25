@@ -4,6 +4,7 @@ import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { Alert, Button, Input, Modal, toast } from "@heroui/react";
 import { KeyRound, X } from "lucide-react";
+import { authFieldLimits } from "@/modules/auth/schemas";
 
 export function ChangePasswordForm() {
   const router = useRouter();
@@ -53,9 +54,9 @@ export function ChangePasswordForm() {
             </Modal.Header>
             <Modal.Body className="p-5">
               <form onSubmit={submit} className="grid gap-4">
-                <label className="grid gap-2 text-xs font-bold">رمز عبور فعلی<Input name="currentPassword" type="password" dir="ltr" required className={fieldClass} /></label>
-                <label className="grid gap-2 text-xs font-bold">رمز عبور جدید<Input name="newPassword" type="password" dir="ltr" minLength={8} required className={fieldClass} /></label>
-                <label className="grid gap-2 text-xs font-bold">تکرار رمز عبور جدید<Input name="confirmPassword" type="password" dir="ltr" minLength={8} required className={fieldClass} /></label>
+                <label className="grid gap-2 text-xs font-bold">رمز عبور فعلی<Input name="currentPassword" type="password" dir="ltr" required maxLength={authFieldLimits.password} className={fieldClass} /></label>
+                <label className="grid gap-2 text-xs font-bold">رمز عبور جدید<Input name="newPassword" type="password" dir="ltr" minLength={8} maxLength={authFieldLimits.password} required className={fieldClass} /></label>
+                <label className="grid gap-2 text-xs font-bold">تکرار رمز عبور جدید<Input name="confirmPassword" type="password" dir="ltr" minLength={8} maxLength={authFieldLimits.password} required className={fieldClass} /></label>
                 {error && <Alert status="danger"><Alert.Description>{error}</Alert.Description></Alert>}
                 <div className="flex justify-end gap-2 border-t border-[var(--border)] pt-4">
                   <Button type="submit" variant="primary" isPending={saving}>ذخیره رمز عبور جدید</Button>

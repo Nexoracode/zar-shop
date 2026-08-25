@@ -3,8 +3,11 @@ import { z } from "zod";
 const nullableMoney = z.coerce.number().nonnegative().max(999999999999999999).nullable().default(null);
 const nullablePositiveInt = z.coerce.number().int().positive().max(1_000_000).nullable().default(null);
 
+/** See `authFieldLimits`: one number per field, shared by the form control and the schema. */
+export const promotionFieldLimits = { title: 191, code: 64 } as const;
+
 export const promotionSchema = z.object({
-  title: z.string().trim().min(3).max(191),
+  title: z.string().trim().min(3).max(promotionFieldLimits.title),
   type: z.enum(["COUPON", "FREE_SHIPPING", "NEXT_PURCHASE", "FIRST_PURCHASE"]),
   code: z.string().trim().toUpperCase().regex(/^[A-Z0-9_-]{3,64}$/).nullable().default(null),
   discountType: z.enum(["PERCENT", "FIXED"]).nullable().default(null),

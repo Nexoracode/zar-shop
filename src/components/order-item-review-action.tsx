@@ -7,6 +7,7 @@ import { TextAreaField, TextField } from "@/components/form-field";
 import { ReviewRatingField } from "@/components/review-rating-field";
 import { requestErrorMessage, requestJson } from "@/lib/api-request";
 import { firstReviewFormError, hasReviewFormErrors, validateReviewForm, type ReviewFormErrors, type ReviewFormField } from "@/modules/reviews/review-form-validation";
+import { reviewFieldLimits } from "@/modules/reviews/schemas";
 
 type Props = {
   productId: string;
@@ -83,7 +84,7 @@ export function OrderItemReviewAction({ productId, productName }: Props) {
               name="title"
               label="عنوان دیدگاه"
               required
-              maxLength={120}
+              maxLength={reviewFieldLimits.title}
               placeholder="خلاصه تجربه شما"
               value={title}
               error={errors.title}
@@ -94,7 +95,7 @@ export function OrderItemReviewAction({ productId, productName }: Props) {
               label="متن دیدگاه"
               required
               rows={6}
-              maxLength={3000}
+              maxLength={reviewFieldLimits.body}
               placeholder="تجربه خود را با جزئیات بنویسید"
               hint="حداقل ۳ نویسه"
               value={body}

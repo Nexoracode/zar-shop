@@ -9,6 +9,7 @@ import { AdminCheckbox } from "@/components/admin-checkbox";
 import { HeroNumberInput } from "@/components/hero-number-input";
 import { apiErrorMessage, validationErrorMessage } from "@/lib/form-errors";
 import { colorSchema } from "@/modules/colors/schemas";
+import { colorFieldLimits } from "@/modules/colors/schemas";
 
 type EditableColor = { id: string; name: string; hex: string; isActive: boolean; sortOrder: number };
 
@@ -61,7 +62,7 @@ export function ColorForm({ color }: { color?: EditableColor }) {
       <Card.Content className="p-5">
         <form onSubmit={submit} className="grid gap-4">
           <label className={adminLabelClass}>نام رنگ
-            <Input value={name} onChange={(event) => setName(event.target.value)} required minLength={2} fullWidth variant="secondary" className={adminFieldClass} placeholder="مثلاً رزگلد" />
+            <Input maxLength={colorFieldLimits.name} value={name} onChange={(event) => setName(event.target.value)} required minLength={2} fullWidth variant="secondary" className={adminFieldClass} placeholder="مثلاً رزگلد" />
           </label>
           <div className={adminLabelClass}>کد و طیف رنگ
             <ColorPicker value={draftColor} onChange={setDraftColor}>

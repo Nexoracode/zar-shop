@@ -1,8 +1,10 @@
 "use client";
 
 import { InputOTP, REGEXP_ONLY_DIGITS } from "@heroui/react";
+import { authFieldLimits } from "@/modules/auth/schemas";
 
-const OTP_LENGTH = 6;
+// Read from the schema the server validates with, so the two cannot drift apart.
+const OTP_LENGTH = authFieldLimits.otpCode;
 
 const slotClass =
   "grid h-12 w-11 place-items-center rounded-lg border border-[#e0dfda] bg-white text-lg font-bold outline-none transition data-[active=true]:border-[var(--brand-primary)] data-[active=true]:ring-2 data-[active=true]:ring-[var(--brand-primary)]/15 data-[filled=true]:border-[#c7c6c1]";

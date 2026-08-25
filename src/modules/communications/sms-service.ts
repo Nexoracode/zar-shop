@@ -6,7 +6,10 @@ import { getCommunicationSettings } from "@/modules/communications/communication
 import { getGeneralStoreSettings } from "@/modules/settings/general-settings";
 import { smsAudienceSchema, type SmsAudience } from "@/modules/communications/sms-audiences";
 
-const smsMessageSchema = z.string().trim().min(3).max(500);
+/** See `authFieldLimits`: one number per field, shared by the form control and the schema. */
+export const smsFieldLimits = { message: 500, phone: 11 } as const;
+
+const smsMessageSchema = z.string().trim().min(3).max(smsFieldLimits.message);
 export const iranMobileSchema = z.string().trim().transform((value) => value.replace(/[۰-۹]/g, (digit) => String("۰۱۲۳۴۵۶۷۸۹".indexOf(digit))).replace(/[٠-٩]/g, (digit) => String("٠١٢٣٤٥٦٧٨٩".indexOf(digit)))).pipe(z.string().regex(/^09\d{9}$/));
 export const manualSmsSchema = z.discriminatedUnion("mode", [
   z.object({ mode: z.literal("AUDIENCE"), audience: smsAudienceSchema, message: smsMessageSchema }),

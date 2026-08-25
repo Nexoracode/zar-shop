@@ -5,8 +5,9 @@ import { apiError } from "@/lib/http";
 import { auditRequestContext } from "@/modules/audit/request-context";
 import { hasPermission } from "@/modules/auth/permissions";
 import { getCurrentUser } from "@/modules/auth/session";
+import { trackingNumberMaxLength } from "@/modules/orders/tracking";
 
-const bodySchema = z.object({ trackingNumber: z.string().trim().max(100).nullable() });
+const bodySchema = z.object({ trackingNumber: z.string().trim().max(trackingNumberMaxLength).nullable() });
 type Context = { params: Promise<{ id: string }> };
 
 export async function PATCH(request: Request, context: Context) {

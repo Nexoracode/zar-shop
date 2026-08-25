@@ -4,9 +4,12 @@ import { db } from "@/lib/db";
 import { env } from "@/lib/env";
 import { gatewayProviderSchema, type GatewayProviderId } from "@/modules/payments/gateway-providers";
 
+/** See `authFieldLimits`: one number per field, shared by the form control and the schema. */
+export const gatewayFieldLimits = { credential: 500 } as const;
+
 export const gatewayConfigInputSchema = z.object({
   provider: gatewayProviderSchema,
-  credential: z.string().trim().min(4).max(500),
+  credential: z.string().trim().min(4).max(gatewayFieldLimits.credential),
   isSandbox: z.boolean().default(false),
 });
 

@@ -6,6 +6,7 @@ import { Send } from "lucide-react";
 import { TextAreaField, TextField } from "@/components/form-field";
 import { requestErrorMessage, requestJson } from "@/lib/api-request";
 import { normalizeNumericValue } from "@/lib/persian-numbers";
+import { contactFieldLimits } from "@/modules/contact/schemas";
 
 type Field = "name" | "email" | "phone" | "subject" | "message";
 type Values = Record<Field, string>;
@@ -81,12 +82,12 @@ export function ContactForm() {
   return (
     <form ref={formRef} onSubmit={submit} noValidate className="grid gap-2">
       <div className="grid gap-2 sm:grid-cols-2">
-        <TextField name="name" label="نام و نام خانوادگی" required maxLength={150} value={values.name} error={errors.name} onChange={(event) => set("name", event.target.value)} />
-        <TextField name="email" label="ایمیل" type="email" dir="ltr" required maxLength={150} value={values.email} error={errors.email} onChange={(event) => set("email", event.target.value)} />
-        <TextField name="phone" label="شماره تماس" dir="ltr" inputMode="tel" maxLength={15} value={values.phone} error={errors.phone} hint="اختیاری — فقط رقم، بین ۸ تا ۱۵ رقم" onChange={(event) => set("phone", event.target.value)} />
-        <TextField name="subject" label="موضوع" required maxLength={191} value={values.subject} error={errors.subject} onChange={(event) => set("subject", event.target.value)} />
+        <TextField name="name" label="نام و نام خانوادگی" required maxLength={contactFieldLimits.name} value={values.name} error={errors.name} onChange={(event) => set("name", event.target.value)} />
+        <TextField name="email" label="ایمیل" type="email" dir="ltr" required maxLength={contactFieldLimits.email} value={values.email} error={errors.email} onChange={(event) => set("email", event.target.value)} />
+        <TextField name="phone" label="شماره تماس" dir="ltr" inputMode="tel" maxLength={contactFieldLimits.phone} value={values.phone} error={errors.phone} hint="اختیاری — فقط رقم، بین ۸ تا ۱۵ رقم" onChange={(event) => set("phone", event.target.value)} />
+        <TextField name="subject" label="موضوع" required maxLength={contactFieldLimits.subject} value={values.subject} error={errors.subject} onChange={(event) => set("subject", event.target.value)} />
       </div>
-      <TextAreaField name="message" label="متن پیام" required rows={5} maxLength={3000} value={values.message} error={errors.message} hint="حداقل ۱۰ نویسه" onChange={(event) => set("message", event.target.value)} />
+      <TextAreaField name="message" label="متن پیام" required rows={5} maxLength={contactFieldLimits.message} value={values.message} error={errors.message} hint="حداقل ۱۰ نویسه" onChange={(event) => set("message", event.target.value)} />
       <Button type="submit" variant="primary" isPending={loading} className="min-h-11 justify-self-start gap-2 bg-[var(--brand-primary)] px-6 text-sm font-bold text-[var(--brand-primary-foreground)]">
         {({ isPending }) => <>{isPending ? <Spinner color="current" size="sm" /> : <Send size={16} />}{isPending ? "در حال ارسال..." : "ارسال پیام"}</>}
       </Button>

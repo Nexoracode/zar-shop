@@ -11,6 +11,7 @@ import { AdminSaveButton } from "@/components/admin-save-button";
 import { useAdminTemplate } from "@/components/admin/template-context";
 import { requestErrorMessage, requestJson } from "@/lib/api-request";
 import { formatDate } from "@/lib/format";
+import { mediaFieldLimits } from "@/modules/media/limits";
 
 export type MediaDetails = {
   id: string;
@@ -145,16 +146,16 @@ export function MediaDetailsPanel({ media, onSaved, className = "" }: { media: M
 
       <div className="grid gap-2">
         {blueprint ? <>
-          <BpInput label="عنوان" value={fields.title} error={errors.title} maxLength={191} onChange={(event) => set("title", event.target.value)} />
-          <BpInput label="متن جایگزین (alt)" value={fields.alt} error={errors.alt} hint={altHint} maxLength={191} onChange={(event) => set("alt", event.target.value)} />
-          <BpInput label="کپشن" value={fields.caption} error={errors.caption} maxLength={300} onChange={(event) => set("caption", event.target.value)} />
-          <BpTextarea label="توضیحات" rows={4} value={fields.description} error={errors.description} maxLength={5000} onChange={(event) => set("description", event.target.value)} />
+          <BpInput label="عنوان" maxLength={mediaFieldLimits.title} value={fields.title} error={errors.title} onChange={(event) => set("title", event.target.value)} />
+          <BpInput label="متن جایگزین (alt)" maxLength={mediaFieldLimits.alt} value={fields.alt} error={errors.alt} hint={altHint} onChange={(event) => set("alt", event.target.value)} />
+          <BpInput label="کپشن" maxLength={mediaFieldLimits.caption} value={fields.caption} error={errors.caption} onChange={(event) => set("caption", event.target.value)} />
+          <BpTextarea label="توضیحات" rows={4} maxLength={mediaFieldLimits.description} value={fields.description} error={errors.description} onChange={(event) => set("description", event.target.value)} />
           <BpButton variant="primary" fullWidth isPending={saving} onClick={() => void save()}>ذخیره اطلاعات</BpButton>
         </> : <>
-          <TextField label="عنوان" value={fields.title} error={errors.title} maxLength={191} onChange={(event) => set("title", event.target.value)} />
-          <TextField label="متن جایگزین (alt)" value={fields.alt} error={errors.alt} hint={altHint} maxLength={191} onChange={(event) => set("alt", event.target.value)} />
-          <TextField label="کپشن" value={fields.caption} error={errors.caption} maxLength={300} onChange={(event) => set("caption", event.target.value)} />
-          <TextAreaField label="توضیحات" rows={4} value={fields.description} error={errors.description} maxLength={5000} onChange={(event) => set("description", event.target.value)} />
+          <TextField label="عنوان" maxLength={mediaFieldLimits.title} value={fields.title} error={errors.title} onChange={(event) => set("title", event.target.value)} />
+          <TextField label="متن جایگزین (alt)" maxLength={mediaFieldLimits.alt} value={fields.alt} error={errors.alt} hint={altHint} onChange={(event) => set("alt", event.target.value)} />
+          <TextField label="کپشن" maxLength={mediaFieldLimits.caption} value={fields.caption} error={errors.caption} onChange={(event) => set("caption", event.target.value)} />
+          <TextAreaField label="توضیحات" rows={4} maxLength={mediaFieldLimits.description} value={fields.description} error={errors.description} onChange={(event) => set("description", event.target.value)} />
           {/* HeroUI buttons take `onPress`, and this one is not inside a form. */}
           <AdminSaveButton type="button" isSaving={saving} label="ذخیره اطلاعات" fullWidth onPress={() => void save()} />
         </>}

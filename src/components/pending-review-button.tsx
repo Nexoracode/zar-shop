@@ -8,6 +8,7 @@ import { TextAreaField, TextField } from "@/components/form-field";
 import { ReviewRatingField } from "@/components/review-rating-field";
 import { requestErrorMessage, requestJson } from "@/lib/api-request";
 import { firstReviewFormError, hasReviewFormErrors, validateReviewForm, type ReviewFormErrors, type ReviewFormField } from "@/modules/reviews/review-form-validation";
+import { reviewFieldLimits } from "@/modules/reviews/schemas";
 
 export function PendingReviewButton({ productId, productName }: { productId: string; productName: string }) {
   const router = useRouter();
@@ -72,8 +73,8 @@ export function PendingReviewButton({ productId, productName }: { productId: str
           <Modal.Body className="p-5">
             <div ref={bodyRef} className="grid gap-3">
               <ReviewRatingField rating={rating} onChange={(value) => { setRating(value); clearError("rating"); }} error={errors.rating} />
-              <TextField name="title" label="عنوان دیدگاه" required maxLength={120} placeholder="خلاصه تجربه شما" value={title} error={errors.title} onChange={(event) => { setTitle(event.target.value); clearError("title"); }} />
-              <TextAreaField name="body" label="متن دیدگاه" required rows={5} maxLength={3000} hint="حداقل ۳ نویسه" placeholder="تجربه خود را با جزئیات بنویسید" value={body} error={errors.body} onChange={(event) => { setBody(event.target.value); clearError("body"); }} />
+              <TextField name="title" label="عنوان دیدگاه" required maxLength={reviewFieldLimits.title} placeholder="خلاصه تجربه شما" value={title} error={errors.title} onChange={(event) => { setTitle(event.target.value); clearError("title"); }} />
+              <TextAreaField name="body" label="متن دیدگاه" required rows={5} maxLength={reviewFieldLimits.body} hint="حداقل ۳ نویسه" placeholder="تجربه خود را با جزئیات بنویسید" value={body} error={errors.body} onChange={(event) => { setBody(event.target.value); clearError("body"); }} />
               <Button type="button" variant="primary" isPending={busy} onPress={() => void submit()}>ثبت دیدگاه</Button>
             </div>
           </Modal.Body>
