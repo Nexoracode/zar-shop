@@ -1,22 +1,18 @@
 "use client";
 
-import { useState } from "react";
-import { Alert, Button, Input, Label, Modal, TextArea, toast } from "@heroui/react";
+import { useRef, useState } from "react";
+import { Button, Modal, toast } from "@heroui/react";
 import { MessageCircle, Star } from "lucide-react";
+import { TextAreaField, TextField } from "@/components/form-field";
+import { requestErrorMessage, requestJson } from "@/lib/api-request";
+import { reviewFormHasProblems, validateReviewForm, type ReviewFormField } from "@/modules/reviews/review-form-validation";
 
 type Props = {
   productId: string;
   productName: string;
 };
 
-const reviewInputClass = "min-h-12 w-full rounded-md border border-slate-300 bg-transparent px-3 py-3 shadow-none hover:bg-transparent focus:border-[var(--brand-primary)] focus:bg-transparent data-[focused=true]:bg-transparent data-[hovered=true]:bg-transparent";
-const reviewTextAreaClass = "min-h-40 w-full rounded-md border border-slate-300 bg-transparent px-3 py-3 shadow-none hover:bg-transparent focus:border-[var(--brand-primary)] focus:bg-transparent data-[focused=true]:bg-transparent data-[hovered=true]:bg-transparent";
 const scores = [1, 2, 3, 4, 5] as const;
-
-async function responseMessage(response: Response) {
-  const payload = await response.json().catch(() => null) as { message?: string } | null;
-  return payload?.message ?? "ثبت دیدگاه با خطا روبه‌رو شد.";
-}
 
 function RatingSelector({ rating, onChange, compact = false, showLabel = true }: { rating: number; onChange: (rating: number) => void; compact?: boolean; showLabel?: boolean }) {
   return <div className="flex items-start gap-3" dir="rtl">
@@ -41,37 +37,47 @@ function RatingSelector({ rating, onChange, compact = false, showLabel = true }:
 }
 
 export function OrderItemReviewAction({ productId, productName }: Props) {
+  const bodyRef = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
   const [rating, setRating] = useState(0);
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
+  const [errors, setErrors] = useState<Partial<Record<ReviewFormField, string>>>({});
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState("");
 
   function openComposer() {
-    setError("");
+    setErrors({});
     setOpen(true);
   }
 
+  function clearError(field: ReviewFormField) {
+    setErrors((current) => (current[field] ? { ...current, [field]: undefined } : current));
+  }
+
   async function submitReview() {
+    const result = validateReviewForm({ rating, title, body, isReply: false });
+    if (reviewFormHasProblems(result)) {
+      setErrors(result.fieldErrors);
+      // The rating is a star row, not a field, so it is reported as a toast.
+      if (result.ratingMessage) toast.danger("امتیاز انتخاب نشده است", { description: result.ratingMessage });
+      const first = (["title", "body"] as const).find((field) => result.fieldErrors[field]);
+      if (first) bodyRef.current?.querySelector<HTMLElement>(`[name="${first}"]`)?.focus();
+      return;
+    }
     setSubmitting(true);
-    setError("");
     try {
-      const response = await fetch(`/api/products/${productId}/reviews`, {
+      const payload = await requestJson<{ message?: string }>(`/api/products/${productId}/reviews`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ rating, title, body }),
-      });
-      const message = await responseMessage(response);
-      if (!response.ok) throw new Error(message);
+        body: JSON.stringify({ rating, title: title.trim(), body: body.trim() }),
+      }, { fallbackMessage: "ثبت دیدگاه انجام نشد." });
       setOpen(false);
       setTitle("");
       setBody("");
-      toast.success(message);
+      setErrors({});
+      toast.success(payload?.message ?? "دیدگاه شما ثبت شد");
     } catch (caught) {
-      const message = caught instanceof Error ? caught.message : "ثبت دیدگاه انجام نشد.";
-      setError(message);
-      toast.danger(message);
+      toast.danger("ثبت دیدگاه انجام نشد", { description: requestErrorMessage(caught, "ثبت دیدگاه انجام نشد.") });
     } finally {
       setSubmitting(false);
     }
@@ -89,14 +95,37 @@ export function OrderItemReviewAction({ productId, productName }: Props) {
       <Modal.Container size="md" placement="center" scroll="inside">
         <Modal.Dialog aria-label={`ثبت دیدگاه برای ${productName}`} dir="rtl">
           <Modal.Header className="pl-10"><Modal.Heading>ثبت امتیاز و دیدگاه</Modal.Heading><Modal.CloseTrigger aria-label="بستن" className="left-4 right-auto" /></Modal.Header>
-          <Modal.Body><div className="grid gap-5">
+          <Modal.Body><div ref={bodyRef} className="grid gap-4">
             <p className="m-0 text-sm text-[var(--muted)]">دیدگاه شما برای «{productName}» پس از بررسی مدیریت منتشر می‌شود.</p>
             <RatingSelector rating={rating} onChange={setRating} />
-            <Label className="grid gap-2 text-xs font-bold text-[var(--foreground)]">عنوان دیدگاه<Input value={title} onChange={(event) => setTitle(event.target.value)} maxLength={120} placeholder="خلاصه تجربه شما" variant="primary" className={reviewInputClass} /></Label>
-            <Label className="grid gap-2 text-xs font-bold text-[var(--foreground)]">متن دیدگاه<TextArea value={body} onChange={(event) => setBody(event.target.value)} minLength={3} maxLength={3000} rows={6} placeholder="تجربه خود را با جزئیات بنویسید" variant="primary" className={reviewTextAreaClass} /></Label>
-            {error ? <Alert status="danger"><Alert.Description>{error}</Alert.Description></Alert> : null}
+            <TextField
+              name="title"
+              label="عنوان دیدگاه"
+              required
+              maxLength={120}
+              placeholder="خلاصه تجربه شما"
+              value={title}
+              error={errors.title}
+              onChange={(event) => { setTitle(event.target.value); clearError("title"); }}
+            />
+            <TextAreaField
+              name="body"
+              label="متن دیدگاه"
+              required
+              rows={6}
+              maxLength={3000}
+              placeholder="تجربه خود را با جزئیات بنویسید"
+              hint="حداقل ۳ نویسه"
+              value={body}
+              error={errors.body}
+              onChange={(event) => { setBody(event.target.value); clearError("body"); }}
+            />
           </div></Modal.Body>
-          <Modal.Footer><Button type="button" variant="secondary" isDisabled={submitting} onPress={() => setOpen(false)}>انصراف</Button><Button type="button" variant="primary" isPending={submitting} isDisabled={submitting || rating === 0 || !title.trim() || body.trim().length < 3} onPress={() => void submitReview()}>ثبت دیدگاه</Button></Modal.Footer>
+          <Modal.Footer>
+            <Button type="button" variant="secondary" isDisabled={submitting} onPress={() => setOpen(false)}>انصراف</Button>
+            {/* Enabled regardless of validity: pressing it is how the reader finds out what is missing. */}
+            <Button type="button" variant="primary" isPending={submitting} onPress={() => void submitReview()}>ثبت دیدگاه</Button>
+          </Modal.Footer>
         </Modal.Dialog>
       </Modal.Container>
     </Modal.Backdrop>

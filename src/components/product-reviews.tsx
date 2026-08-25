@@ -1,10 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Alert, Button, Chip, Input, Label, Modal, TextArea, toast } from "@heroui/react";
+import { Alert, Button, Chip, Modal, toast } from "@heroui/react";
 import { ListFilter, MessageCircleReply, MoreVertical, Star, ThumbsDown, ThumbsUp } from "lucide-react";
 import type { StorefrontReview, StorefrontReviewData } from "@/modules/reviews/service";
+import { TextAreaField, TextField } from "@/components/form-field";
+import { requestErrorMessage, requestJson } from "@/lib/api-request";
+import { reviewFormHasProblems, validateReviewForm, type ReviewFormField } from "@/modules/reviews/review-form-validation";
 
 type Props = {
   productId: string;
@@ -22,8 +25,6 @@ const reportReasons = [
   { value: "OTHER", label: "سایر موارد" },
 ] as const;
 
-const reviewInputClass = "min-h-12 w-full rounded-md border border-slate-300 bg-transparent px-3 py-3 shadow-none hover:bg-transparent focus:border-[var(--brand-primary)] focus:bg-transparent data-[focused=true]:bg-transparent data-[hovered=true]:bg-transparent";
-const reviewTextAreaClass = "min-h-40 w-full rounded-md border border-slate-300 bg-transparent px-3 py-3 shadow-none hover:bg-transparent focus:border-[var(--brand-primary)] focus:bg-transparent data-[focused=true]:bg-transparent data-[hovered=true]:bg-transparent";
 
 async function responseMessage(response: Response) {
   const payload = await response.json().catch(() => null) as { message?: string } | null;
@@ -36,12 +37,14 @@ function updateReview(items: StorefrontReview[], id: string, update: (review: St
 
 export function ProductReviews({ productId, initialData, isAuthenticated }: Props) {
   const router = useRouter();
+  const composerRef = useRef<HTMLDivElement>(null);
   const [data, setData] = useState(initialData);
   const [composeOpen, setComposeOpen] = useState(false);
   const [replyTo, setReplyTo] = useState<StorefrontReview | null>(null);
   const [rating, setRating] = useState(0);
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
+  const [reviewErrors, setReviewErrors] = useState<Partial<Record<ReviewFormField, string>>>({});
   const [submitting, setSubmitting] = useState(false);
   const [busyVote, setBusyVote] = useState<string | null>(null);
   const [reporting, setReporting] = useState<StorefrontReview | null>(null);
@@ -64,21 +67,33 @@ export function ProductReviews({ productId, initialData, isAuthenticated }: Prop
     setComposeOpen(true);
   }
 
+  function clearReviewError(field: ReviewFormField) {
+    setReviewErrors((current) => (current[field] ? { ...current, [field]: undefined } : current));
+  }
+
   async function submitReview() {
     if (!isAuthenticated) return;
+    const result = validateReviewForm({ rating, title, body, isReply: Boolean(replyTo) });
+    if (reviewFormHasProblems(result)) {
+      setReviewErrors(result.fieldErrors);
+      // The rating is a star row, not a field, so it is reported as a toast.
+      if (result.ratingMessage) toast.danger("امتیاز انتخاب نشده است", { description: result.ratingMessage });
+      const first = (["title", "body"] as const).find((field) => result.fieldErrors[field]);
+      if (first) composerRef.current?.querySelector<HTMLElement>(`[name="${first}"]`)?.focus();
+      return;
+    }
     setSubmitting(true);
     try {
-      const response = await fetch(`/api/products/${productId}/reviews`, {
+      const payload = await requestJson<{ message?: string }>(`/api/products/${productId}/reviews`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(replyTo ? { parentId: replyTo.id, body } : { rating, title, body }),
-      });
-      const message = await responseMessage(response);
-      if (!response.ok) throw new Error(message);
+        body: JSON.stringify(replyTo ? { parentId: replyTo.id, body: body.trim() } : { rating, title: title.trim(), body: body.trim() }),
+      }, { fallbackMessage: "ثبت دیدگاه انجام نشد." });
       await refreshReviews();
       setComposeOpen(false);
-      toast.success(message);
-    } catch (error) { toast.danger(error instanceof Error ? error.message : "ثبت دیدگاه انجام نشد."); }
+      setReviewErrors({});
+      toast.success(payload?.message ?? "دیدگاه شما ثبت شد");
+    } catch (error) { toast.danger("ثبت دیدگاه انجام نشد", { description: requestErrorMessage(error, "ثبت دیدگاه انجام نشد.") }); }
     finally { setSubmitting(false); }
   }
 
@@ -146,19 +161,19 @@ export function ProductReviews({ productId, initialData, isAuthenticated }: Prop
     <Modal.Backdrop isOpen={composeOpen} onOpenChange={setComposeOpen}>
       <Modal.Container size="md" placement="center" scroll="inside"><Modal.Dialog aria-label={replyTo ? "ثبت پاسخ دیدگاه" : "ثبت امتیاز و دیدگاه"} dir="rtl">
         <Modal.Header className="pl-10"><Modal.Heading>{replyTo ? `پاسخ به ${replyTo.author.name}` : "ثبت امتیاز و دیدگاه"}</Modal.Heading><Modal.CloseTrigger aria-label="بستن" className="left-4 right-auto" /></Modal.Header>
-        <Modal.Body><div className="grid gap-5"><p className="text-sm text-slate-500">دیدگاه شما پیش از انتشار توسط مدیریت بررسی می‌شود.</p>{!isAuthenticated ? <Alert status="warning"><Alert.Description>برای ثبت دیدگاه باید وارد حساب کاربری شوید.</Alert.Description></Alert> : <>
-          {!replyTo && <div><span className="mb-2 block text-xs font-bold text-slate-700">امتیاز شما</span><div className="flex gap-1" dir="ltr">{[1, 2, 3, 4, 5].map((star) => <Button key={star} type="button" isIconOnly variant="ghost" aria-label={`${star} ستاره`} onPress={() => setRating(star)} className="size-12 min-w-12 text-amber-400"><Star className="!size-8" fill={star <= rating ? "currentColor" : "none"} /></Button>)}</div></div>}
-          {!replyTo && <Label className="grid gap-2 text-xs font-bold text-slate-700">عنوان دیدگاه<Input value={title} onChange={(event) => setTitle(event.target.value)} maxLength={120} placeholder="خلاصه تجربه شما" variant="primary" className={reviewInputClass} /></Label>}
-          <Label className="grid gap-2 text-xs font-bold text-slate-700">متن {replyTo ? "پاسخ" : "دیدگاه"}<TextArea value={body} onChange={(event) => setBody(event.target.value)} minLength={3} maxLength={3000} rows={6} placeholder="تجربه خود را با جزئیات بنویسید" variant="primary" className={reviewTextAreaClass} /></Label>
+        <Modal.Body><div ref={composerRef} className="grid gap-4"><p className="text-sm text-slate-500">دیدگاه شما پیش از انتشار توسط مدیریت بررسی می‌شود.</p>{!isAuthenticated ? <Alert status="warning"><Alert.Description>برای ثبت دیدگاه باید وارد حساب کاربری شوید.</Alert.Description></Alert> : <>
+          {!replyTo && <div><span className="mb-2 block text-xs font-bold text-slate-700">امتیاز شما</span><div className="flex gap-1" role="radiogroup" aria-label="امتیاز شما" dir="ltr">{[1, 2, 3, 4, 5].map((star) => <Button key={star} type="button" isIconOnly variant="ghost" aria-label={`${star} ستاره`} aria-pressed={rating === star} onPress={() => setRating(star)} className="size-12 min-w-12 text-amber-400"><Star className="!size-8" fill={star <= rating ? "currentColor" : "none"} /></Button>)}</div></div>}
+          {!replyTo && <TextField name="title" label="عنوان دیدگاه" required maxLength={120} placeholder="خلاصه تجربه شما" value={title} error={reviewErrors.title} onChange={(event) => { setTitle(event.target.value); clearReviewError("title"); }} />}
+          <TextAreaField name="body" label={`متن ${replyTo ? "پاسخ" : "دیدگاه"}`} required rows={6} maxLength={3000} hint="حداقل ۳ نویسه" placeholder="تجربه خود را با جزئیات بنویسید" value={body} error={reviewErrors.body} onChange={(event) => { setBody(event.target.value); clearReviewError("body"); }} />
         </>}</div></Modal.Body>
-        <Modal.Footer><Button type="button" variant="secondary" onPress={() => setComposeOpen(false)}>انصراف</Button>{isAuthenticated ? <Button type="button" variant="primary" isPending={submitting} isDisabled={submitting || body.trim().length < 3 || (!replyTo && (!title.trim() || rating === 0))} onPress={() => void submitReview()}>ثبت دیدگاه</Button> : <Button type="button" variant="primary" onPress={() => router.push("/login")}>ورود به حساب کاربری</Button>}</Modal.Footer>
+        <Modal.Footer><Button type="button" variant="secondary" onPress={() => setComposeOpen(false)}>انصراف</Button>{isAuthenticated ? <Button type="button" variant="primary" isPending={submitting} onPress={() => void submitReview()}>ثبت دیدگاه</Button> : <Button type="button" variant="primary" onPress={() => router.push("/login")}>ورود به حساب کاربری</Button>}</Modal.Footer>
       </Modal.Dialog></Modal.Container>
     </Modal.Backdrop>
 
     <Modal.Backdrop isOpen={Boolean(reporting)} onOpenChange={(open) => { if (!open) setReporting(null); }}>
       <Modal.Container size="sm" placement="center" scroll="inside"><Modal.Dialog aria-label="گزارش دیدگاه" dir="rtl">
         <Modal.Header className="pl-10"><Modal.Heading>گزارش دیدگاه</Modal.Heading><Modal.CloseTrigger aria-label="بستن" className="left-4 right-auto" /></Modal.Header>
-        <Modal.Body><div className="grid gap-4"><div className="flex flex-wrap gap-2">{reportReasons.map((reason) => <Button key={reason.value} type="button" variant={reportReason === reason.value ? "primary" : "secondary"} onPress={() => setReportReason(reason.value)}>{reason.label}</Button>)}</div><TextArea value={reportDetails} onChange={(event) => setReportDetails(event.target.value)} maxLength={500} rows={4} placeholder="توضیحات تکمیلی (اختیاری)" variant="primary" className={reviewTextAreaClass} /></div></Modal.Body>
+        <Modal.Body><div className="grid gap-4"><div className="flex flex-wrap gap-2">{reportReasons.map((reason) => <Button key={reason.value} type="button" variant={reportReason === reason.value ? "primary" : "secondary"} onPress={() => setReportReason(reason.value)}>{reason.label}</Button>)}</div><TextAreaField name="reportDetails" label="توضیحات تکمیلی" hint="اختیاری — حداکثر ۵۰۰ نویسه" value={reportDetails} onChange={(event) => setReportDetails(event.target.value)} maxLength={500} rows={4} placeholder="اگر توضیحی دارید بنویسید" /></div></Modal.Body>
         <Modal.Footer><Button type="button" variant="secondary" onPress={() => setReporting(null)}>انصراف</Button><Button type="button" variant="danger" isPending={reportBusy} onPress={() => void submitReport()}>ثبت گزارش</Button></Modal.Footer>
       </Modal.Dialog></Modal.Container>
     </Modal.Backdrop>
