@@ -36,12 +36,17 @@ type Props = { storeIndustry: "GOLD" | "GENERAL"; categories?: ProductCategoryOp
 /** Errors are keyed by the schema's own field names, so a zod issue maps straight onto a field. */
 type FieldErrors = Record<string, string>;
 
-function Panel({ title, description, children, className = "" }: { title: string; description?: string; children: React.ReactNode; className?: string }) {
+function Panel({ title, description, action, children, className = "" }: { title: string; description?: string; action?: React.ReactNode; children: React.ReactNode; className?: string }) {
   return (
     <section className={`bp-frame relative p-[18px] ${className}`.trim()}>
       <BpCorners />
-      <BpKicker>{title}</BpKicker>
-      {description && <p className="bp-muted mb-0 mt-1 text-[12px] leading-6">{description}</p>}
+      <div className="flex items-start justify-between gap-4">
+        <div className="min-w-0">
+          <BpKicker>{title}</BpKicker>
+          {description && <p className="bp-muted mb-0 mt-1 text-[12px] leading-6">{description}</p>}
+        </div>
+        {action && <div className="shrink-0">{action}</div>}
+      </div>
       <div className="mt-3">{children}</div>
     </section>
   );
@@ -169,26 +174,11 @@ export function BlueprintProductForm({ storeIndustry, categories = [], product }
   return <>
     <form ref={formRef} noValidate onSubmit={(event) => { event.preventDefault(); void submit("list"); }} className="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
       <div className="grid gap-5">
-        <Panel title="اطلاعات پایه">
-          <div className="grid gap-3 sm:grid-cols-2">
-            <BpInput name="name" label="نام محصول" required value={name} error={errors.name} placeholder="مثلاً انگشتر مینیمال طلا" onChange={(event) => { setName(event.target.value); clearError("name"); }} />
-            <BpInput name="sku" label="کد کالا (SKU)" required dir="ltr" value={sku} error={errors.sku} placeholder="PRD-10245" onChange={(event) => { setSku(event.target.value); clearError("sku"); }} />
-            <BpInput name="slug" label="نشانی انگلیسی (Slug)" required dir="ltr" value={slug} error={errors.slug} hint="فقط حروف کوچک انگلیسی، رقم و خط تیره" placeholder="minimal-gold-ring" onChange={(event) => { setSlug(event.target.value); clearError("slug"); }} />
-            <BpCombobox
-              name="categoryId"
-              label="دسته‌بندی"
-              required
-              value={categoryId}
-              error={errors.categoryId}
-              placeholder="نام دسته را بنویسید یا انتخاب کنید"
-              emptyLabel="دسته‌بندی با این نام پیدا نشد"
-              onChange={(next) => { setCategoryId(next); clearError("categoryId"); }}
-              options={categories.map((category) => ({ value: category.id, label: `${category.parentName ? `${category.parentName} ← ` : ""}${category.name}` }))}
-            />
-          </div>
-        </Panel>
-
-        <Panel title="گالری محصول" description="اولین رسانه به‌عنوان تصویر شاخص استفاده می‌شود. برای تغییر ترتیب، کارت را بکشید و رها کنید.">
+        <Panel
+          title="گالری محصول"
+          description="اولین رسانه به‌عنوان تصویر شاخص استفاده می‌شود. برای تغییر ترتیب، کارت را بکشید و رها کنید."
+          action={<BpButton size="sm" className="gap-2" onClick={() => setPickerOpen(true)}><Images size={15} />انتخاب از گالری</BpButton>}
+        >
           {selectedMedia.length ? (
             <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
               {selectedMedia.map((media, index) => (
@@ -216,7 +206,25 @@ export function BlueprintProductForm({ storeIndustry, categories = [], product }
             </button>
           )}
           <BpFieldMessage id="media-message" error={errors.mediaIds} reserve={Boolean(errors.mediaIds)} />
-          <BpButton size="sm" className="mt-2.5 gap-2" onClick={() => setPickerOpen(true)}><Images size={15} />انتخاب از گالری</BpButton>
+        </Panel>
+
+        <Panel title="اطلاعات پایه">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <BpInput name="name" label="نام محصول" required value={name} error={errors.name} placeholder="مثلاً انگشتر مینیمال طلا" onChange={(event) => { setName(event.target.value); clearError("name"); }} />
+            <BpInput name="sku" label="کد کالا (SKU)" required dir="ltr" value={sku} error={errors.sku} placeholder="PRD-10245" onChange={(event) => { setSku(event.target.value); clearError("sku"); }} />
+            <BpInput name="slug" label="نشانی انگلیسی (Slug)" required dir="ltr" value={slug} error={errors.slug} hint="فقط حروف کوچک انگلیسی، رقم و خط تیره" placeholder="minimal-gold-ring" onChange={(event) => { setSlug(event.target.value); clearError("slug"); }} />
+            <BpCombobox
+              name="categoryId"
+              label="دسته‌بندی"
+              required
+              value={categoryId}
+              error={errors.categoryId}
+              placeholder="نام دسته را بنویسید یا انتخاب کنید"
+              emptyLabel="دسته‌بندی با این نام پیدا نشد"
+              onChange={(next) => { setCategoryId(next); clearError("categoryId"); }}
+              options={categories.map((category) => ({ value: category.id, label: `${category.parentName ? `${category.parentName} ← ` : ""}${category.name}` }))}
+            />
+          </div>
         </Panel>
 
         <Panel title="توضیحات محصول">

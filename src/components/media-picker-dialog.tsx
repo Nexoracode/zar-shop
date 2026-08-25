@@ -73,6 +73,8 @@ export function MediaPickerDialog({ open, scope, multiple = false, allowedTypes,
         setQuery("");
         setTab("library");
         setUploadQueue([]);
+        // Without this the details pane reopens on whatever was inspected last time.
+        setDetailsId(null);
         void load(controller.signal);
       }
     });
