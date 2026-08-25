@@ -159,7 +159,12 @@ export function ProductReviews({ productId, initialData, isAuthenticated }: Prop
       {!data.reviews.length ? <div className="rounded-xl border border-dashed border-slate-200 px-5 py-12 text-center text-sm text-slate-500">هنوز دیدگاهی برای این محصول ثبت نشده است.</div> : !visibleReviews.length ? <p className="py-12 text-center text-xs text-slate-400">دیدگاهی مطابق این فیلتر وجود ندارد.</p> : <div className="divide-y divide-slate-200 border-b border-slate-200">{visibleReviews.map((review) => <ReviewCard key={review.id} review={review} authenticated={isAuthenticated} busyVote={busyVote} expandedReviewIds={expandedReviewIds} onToggleExpanded={toggleExpandedReview} onReply={openComposer} onVote={vote} onReport={setReporting} />)}</div>}
     </div>
 
-    <Modal.Backdrop isOpen={composeOpen} onOpenChange={setComposeOpen}>
+    {/* isDismissable={false}: a toast renders in a portal outside the dialog, and the modal
+          counts that as an interaction outside and dismisses itself — which threw away a
+          half-written review the moment the rating toast appeared. Escape and the close and
+          cancel buttons still work; only backdrop-click-to-dismiss is given up, which also
+          stops an accidental click from discarding what was typed. */}
+      <Modal.Backdrop isOpen={composeOpen} onOpenChange={setComposeOpen} isDismissable={false}>
       <Modal.Container size="md" placement="center" scroll="inside"><Modal.Dialog aria-label={replyTo ? "ثبت پاسخ دیدگاه" : "ثبت امتیاز و دیدگاه"} dir="rtl">
         <Modal.Header className="pl-10"><Modal.Heading>{replyTo ? `پاسخ به ${replyTo.author.name}` : "ثبت امتیاز و دیدگاه"}</Modal.Heading><Modal.CloseTrigger aria-label="بستن" className="left-4 right-auto" /></Modal.Header>
         <Modal.Body><div ref={composerRef} className="grid gap-4"><p className="text-sm text-slate-500">دیدگاه شما پیش از انتشار توسط مدیریت بررسی می‌شود.</p>{!isAuthenticated ? <Alert status="warning"><Alert.Description>برای ثبت دیدگاه باید وارد حساب کاربری شوید.</Alert.Description></Alert> : <>
@@ -171,7 +176,7 @@ export function ProductReviews({ productId, initialData, isAuthenticated }: Prop
       </Modal.Dialog></Modal.Container>
     </Modal.Backdrop>
 
-    <Modal.Backdrop isOpen={Boolean(reporting)} onOpenChange={(open) => { if (!open) setReporting(null); }}>
+    <Modal.Backdrop isOpen={Boolean(reporting)} onOpenChange={(open) => { if (!open) setReporting(null); }} isDismissable={false}>
       <Modal.Container size="sm" placement="center" scroll="inside"><Modal.Dialog aria-label="گزارش دیدگاه" dir="rtl">
         <Modal.Header className="pl-10"><Modal.Heading>گزارش دیدگاه</Modal.Heading><Modal.CloseTrigger aria-label="بستن" className="left-4 right-auto" /></Modal.Header>
         <Modal.Body><div className="grid gap-4"><div className="flex flex-wrap gap-2">{reportReasons.map((reason) => <Button key={reason.value} type="button" variant={reportReason === reason.value ? "primary" : "secondary"} onPress={() => setReportReason(reason.value)}>{reason.label}</Button>)}</div><TextAreaField name="reportDetails" label="توضیحات تکمیلی" hint="اختیاری — حداکثر ۵۰۰ نویسه" value={reportDetails} onChange={(event) => setReportDetails(event.target.value)} maxLength={500} rows={4} placeholder="اگر توضیحی دارید بنویسید" /></div></Modal.Body>

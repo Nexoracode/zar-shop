@@ -63,7 +63,7 @@ export function PendingReviewButton({ productId, productName }: { productId: str
 
   return <>
     <Button type="button" variant="primary" fullWidth onPress={openComposer} className="gap-2"><Star size={17} />ثبت امتیاز و دیدگاه</Button>
-    <Modal.Backdrop isOpen={open} onOpenChange={(nextOpen) => { if (!busy) setOpen(nextOpen); }} variant="blur">
+    <Modal.Backdrop isOpen={open} onOpenChange={(nextOpen) => { if (!busy) setOpen(nextOpen); }} variant="blur" isDismissable={false}>
       <Modal.Container placement="center" size="lg">
         <Modal.Dialog aria-label={`ثبت دیدگاه برای ${productName}`} dir="rtl" className="mx-3 bg-[var(--surface)]">
           <Modal.Header className="flex-row items-center justify-between border-b border-[var(--border)] p-5">

@@ -91,7 +91,7 @@ export function OrderItemReviewAction({ productId, productName }: Props) {
       </Button>
     </div>
 
-    <Modal.Backdrop isOpen={open} onOpenChange={(nextOpen) => { if (!submitting) setOpen(nextOpen); }}>
+    <Modal.Backdrop isOpen={open} onOpenChange={(nextOpen) => { if (!submitting) setOpen(nextOpen); }} isDismissable={false}>
       <Modal.Container size="md" placement="center" scroll="inside">
         <Modal.Dialog aria-label={`ثبت دیدگاه برای ${productName}`} dir="rtl">
           <Modal.Header className="pl-10"><Modal.Heading>ثبت امتیاز و دیدگاه</Modal.Heading><Modal.CloseTrigger aria-label="بستن" className="left-4 right-auto" /></Modal.Header>
