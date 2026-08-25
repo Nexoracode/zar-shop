@@ -28,6 +28,38 @@ import { HeroColorField } from "@/components/hero-color-field";
 
 type Props = { value?: string; onChange: (html: string) => void };
 
+/** Everything the toolbar draws from, read off the editor in one pass. */
+function toolbarState(editor: Editor) {
+  return {
+    paragraph: editor.isActive("paragraph"),
+    h1: editor.isActive("heading", { level: 1 }),
+    h2: editor.isActive("heading", { level: 2 }),
+    h3: editor.isActive("heading", { level: 3 }),
+    bold: editor.isActive("bold"),
+    italic: editor.isActive("italic"),
+    underline: editor.isActive("underline"),
+    strike: editor.isActive("strike"),
+    code: editor.isActive("code"),
+    subscript: editor.isActive("subscript"),
+    superscript: editor.isActive("superscript"),
+    bulletList: editor.isActive("bulletList"),
+    orderedList: editor.isActive("orderedList"),
+    blockquote: editor.isActive("blockquote"),
+    codeBlock: editor.isActive("codeBlock"),
+    link: editor.isActive("link"),
+    alignRight: editor.isActive({ textAlign: "right" }),
+    alignCenter: editor.isActive({ textAlign: "center" }),
+    alignLeft: editor.isActive({ textAlign: "left" }),
+    alignJustify: editor.isActive({ textAlign: "justify" }),
+    inTable: editor.isActive("table"),
+    canUndo: editor.can().undo(),
+    canRedo: editor.can().redo(),
+    textColor: (editor.getAttributes("textStyle").color as string | undefined) ?? null,
+    highlightColor: (editor.getAttributes("highlight").color as string | undefined) ?? null,
+    characters: editor.getText().length,
+  };
+}
+
 function initialContent(value?: string) {
   const trimmed = value?.trim() ?? "";
   if (!trimmed) return "<p></p>";
@@ -75,39 +107,20 @@ export function RichTextEditor({ value, onChange }: Props) {
    * happened to re-render — which is why the table's own buttons never appeared once the caret
    * was inside one. This subscribes to exactly the slice the toolbar draws from.
    */
-  const marks = useEditorState({
+  const liveState = useEditorState({
     editor,
-    selector: ({ editor: current }) => current && ({
-      paragraph: current.isActive("paragraph"),
-      h1: current.isActive("heading", { level: 1 }),
-      h2: current.isActive("heading", { level: 2 }),
-      h3: current.isActive("heading", { level: 3 }),
-      bold: current.isActive("bold"),
-      italic: current.isActive("italic"),
-      underline: current.isActive("underline"),
-      strike: current.isActive("strike"),
-      code: current.isActive("code"),
-      subscript: current.isActive("subscript"),
-      superscript: current.isActive("superscript"),
-      bulletList: current.isActive("bulletList"),
-      orderedList: current.isActive("orderedList"),
-      blockquote: current.isActive("blockquote"),
-      codeBlock: current.isActive("codeBlock"),
-      link: current.isActive("link"),
-      alignRight: current.isActive({ textAlign: "right" }),
-      alignCenter: current.isActive({ textAlign: "center" }),
-      alignLeft: current.isActive({ textAlign: "left" }),
-      alignJustify: current.isActive({ textAlign: "justify" }),
-      inTable: current.isActive("table"),
-      canUndo: current.can().undo(),
-      canRedo: current.can().redo(),
-      textColor: (current.getAttributes("textStyle").color as string | undefined) ?? null,
-      highlightColor: (current.getAttributes("highlight").color as string | undefined) ?? null,
-      characters: current.getText().length,
-    }),
+    selector: ({ editor: current }) => current && toolbarState(current),
   });
 
-  if (!editor || !marks) return <div className="min-h-96 animate-pulse rounded-2xl border border-slate-200 bg-slate-50" />;
+  if (!editor) return <div className="min-h-96 animate-pulse rounded-2xl border border-slate-200 bg-slate-50" />;
+
+  /*
+   * `useEditorState` caches the snapshot it was constructed with, and it is constructed on the
+   * first render — when `immediatelyRender: false` means there is no editor yet. It only starts
+   * reporting once a transaction fires, so until then this reads the editor directly. Gating the
+   * render on it instead would deadlock: no editor rendered, no transaction, no state, forever.
+   */
+  const marks = liveState ?? toolbarState(editor);
 
   function openLinkDialog() {
     setLinkUrl(editor?.getAttributes("link").href ?? "");
