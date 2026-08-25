@@ -17,6 +17,8 @@ import {
   SubscriptIcon, SuperscriptIcon, Table2, Trash2, Underline, Undo2, Unlink, UploadCloud, X,
 } from "lucide-react";
 import { HeroSelectField } from "@/components/hero-select-field";
+import { useAdminTemplate } from "@/components/admin/template-context";
+import { BpSelect } from "@/components/admin/blueprint/ui/select";
 import { adminFieldClass, adminLabelClass } from "@/components/admin-ui";
 
 type Props = { value?: string; onChange: (html: string) => void };
@@ -118,9 +120,9 @@ export function RichTextEditor({ value, onChange }: Props) {
         <Tool editor={editor} label="عنوان ۱" icon={<Heading1 size={15} />} active={editor.isActive("heading", { level: 1 })} run={() => editor.chain().focus().toggleHeading({ level: 1 }).run()} />
         <Tool editor={editor} label="عنوان ۲" icon={<Heading2 size={15} />} active={editor.isActive("heading", { level: 2 })} run={() => editor.chain().focus().toggleHeading({ level: 2 }).run()} />
         <Tool editor={editor} label="عنوان ۳" icon={<Heading3 size={15} />} active={editor.isActive("heading", { level: 3 })} run={() => editor.chain().focus().toggleHeading({ level: 3 }).run()} />
-        <HeroSelectField name="rich-font-size" ariaLabel="اندازه متن" value="" placeholder="اندازه" includeEmptyOption options={[12, 14, 16, 18, 20, 24, 30, 36].map((size) => ({ value: `${size}px`, label: `${size.toLocaleString("fa-IR")} پیکسل` }))} onValueChange={(size) => { if (size) editor.chain().focus().setFontSize(size).run(); }} className="w-28" />
-        <HeroSelectField name="rich-font-family" ariaLabel="قلم متن" value="" placeholder="قلم" includeEmptyOption options={[{ value: "Vazir", label: "وزیر" }, { value: "Tahoma", label: "تاهوما" }, { value: "Arial", label: "Arial" }, { value: "Georgia", label: "Georgia" }]} onValueChange={(font) => { if (font) editor.chain().focus().setFontFamily(font).run(); }} className="w-28" />
-        <HeroSelectField name="rich-line-height" ariaLabel="فاصله خطوط" value="" placeholder="فاصله خط" includeEmptyOption options={["1.5", "1.8", "2", "2.3"].map((height) => ({ value: height, label: height }))} onValueChange={(height) => { if (height) editor.chain().focus().setLineHeight(height).run(); }} className="w-28" />
+        <ToolSelect name="rich-font-size" label="اندازه متن" placeholder="اندازه" options={[12, 14, 16, 18, 20, 24, 30, 36].map((size) => ({ value: `${size}px`, label: `${size.toLocaleString("fa-IR")} پیکسل` }))} onPick={(size) => editor.chain().focus().setFontSize(size).run()} />
+        <ToolSelect name="rich-font-family" label="قلم متن" placeholder="قلم" options={[{ value: "Vazir", label: "وزیر" }, { value: "Tahoma", label: "تاهوما" }, { value: "Arial", label: "Arial" }, { value: "Georgia", label: "Georgia" }]} onPick={(font) => editor.chain().focus().setFontFamily(font).run()} />
+        <ToolSelect name="rich-line-height" label="فاصله خطوط" placeholder="فاصله خط" options={["1.5", "1.8", "2", "2.3"].map((height) => ({ value: height, label: height }))} onPick={(height) => editor.chain().focus().setLineHeight(height).run()} />
         <Divider />
         <Tool editor={editor} label="ضخیم" icon={<Bold size={15} />} active={editor.isActive("bold")} run={() => editor.chain().focus().toggleBold().run()} />
         <Tool editor={editor} label="کج" icon={<Italic size={15} />} active={editor.isActive("italic")} run={() => editor.chain().focus().toggleItalic().run()} />
@@ -167,6 +169,30 @@ export function RichTextEditor({ value, onChange }: Props) {
 function Tool({ editor: _editor, label, icon, active, disabled, run }: { editor: Editor; label: string; icon: React.ReactNode; active?: boolean; disabled?: boolean; run: () => void }) {
   void _editor;
   return <Button type="button" size="sm" isIconOnly variant={active ? "primary" : "ghost"} isDisabled={disabled} onPress={run} aria-label={label} className={`h-9 min-h-9 w-9 min-w-9 rounded-lg ${active ? "bg-[var(--accent)] text-[var(--accent-foreground)]" : "text-slate-600 hover:bg-white"}`}>{icon}</Button>;
+}
+
+/**
+ * A toolbar dropdown. It holds no value of its own — picking an option applies it to the
+ * selection and the control returns to its placeholder — and it renders with whichever design
+ * system the surrounding admin template uses.
+ */
+function ToolSelect({ name, label, placeholder, options, onPick }: { name: string; label: string; placeholder: string; options: Array<{ value: string; label: string }>; onPick: (value: string) => void }) {
+  const template = useAdminTemplate();
+  if (template === "BLUEPRINT") {
+    return (
+      <BpSelect
+        name={name}
+        aria-label={label}
+        value=""
+        placeholder={placeholder}
+        reserveMessage={false}
+        options={options}
+        onChange={(event) => { if (event.target.value) onPick(event.target.value); }}
+        className="w-28"
+      />
+    );
+  }
+  return <HeroSelectField name={name} ariaLabel={label} value="" placeholder={placeholder} includeEmptyOption options={options} onValueChange={(value) => { if (value) onPick(value); }} className="w-28" />;
 }
 
 function Divider() { return <span className="mx-1 h-6 w-px bg-slate-200" aria-hidden="true" />; }
