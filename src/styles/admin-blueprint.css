@@ -453,6 +453,54 @@ select.bp-input:focus-visible { border-color: var(--bp-accent); outline: none; }
 .bp-dialog-body { font-size: 14px; opacity: 0.85; margin: 0; }
 .bp-dialog-actions { display: flex; justify-content: flex-end; gap: var(--bp-space-2); margin-top: var(--bp-space-2); }
 
+/* — tabs: a squared strip that sits on the panel edge, so the active tab reads as continuous
+     with the content below it — */
+.bp-tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid var(--bp-divider);
+}
+.bp-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 16px;
+  cursor: pointer;
+  font-family: var(--bp-font);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--bp-muted);
+  background: transparent;
+  border: 1px solid transparent;
+  border-bottom: 0;
+  border-radius: 0;
+  margin-bottom: -1px;
+}
+.bp-tab:hover { background: var(--bp-hover); color: var(--bp-text); }
+.bp-tab[aria-selected="true"] {
+  color: var(--bp-text);
+  background: var(--bp-bg);
+  border-color: var(--bp-divider);
+  /* Covers the strip's own rule, which is what makes the tab look joined to the panel. */
+  box-shadow: 0 1px 0 0 var(--bp-bg);
+}
+.bp-tab:focus-visible { outline: 2px solid var(--bp-accent); outline-offset: -2px; }
+
+/* — progress — */
+.bp-progress {
+  height: 6px;
+  width: 100%;
+  border: 1px solid var(--bp-divider);
+  background: var(--bp-surface);
+}
+.bp-progress-fill {
+  height: 100%;
+  background: var(--bp-accent);
+  transition: width 0.15s linear;
+}
+.bp-progress-fill[data-state="error"] { background: var(--bp-danger); }
+.bp-progress-fill[data-state="done"] { background: var(--bp-success); }
+
 /* — shell — */
 .bp-scroll { scrollbar-width: thin; scrollbar-color: var(--bp-neutral-400) transparent; }
 .bp-scroll::-webkit-scrollbar { width: 6px; height: 6px; }

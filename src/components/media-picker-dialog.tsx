@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { Alert, Button, Card, Input, Modal, Spinner, toast } from "@heroui/react";
 import { Check, FileText, Film, ImageIcon, RefreshCw, Search, Trash2, TriangleAlert, Upload, X } from "lucide-react";
 import type { MediaChoice, MediaScope } from "@/components/media-library";
@@ -12,6 +12,7 @@ import { BpDialog } from "@/components/admin/blueprint/ui/dialog";
 import { MediaDetailsPanel, type MediaDetails } from "@/components/admin/media-details-panel";
 import { mediaUsageCount, type MediaUsageCounts } from "@/modules/media/usage";
 import { readImageDimensions } from "@/modules/media/image-dimensions";
+import { uploadMediaFile } from "@/modules/media/upload-file";
 
 type PickerItem = MediaChoice & {
   caption?: string | null;
@@ -22,6 +23,7 @@ type PickerItem = MediaChoice & {
   createdAt?: string;
   _count: MediaUsageCounts;
 };
+type UploadEntry = { name: string; status: "pending" | "uploading" | "done" | "error"; percent: number; error?: string };
 type Props = { open: boolean; scope: MediaScope; multiple?: boolean; allowedTypes?: MediaChoice["type"][]; selected: MediaChoice[]; onClose: () => void; onConfirm: (items: MediaChoice[]) => void };
 
 export function MediaPickerDialog({ open, scope, multiple = false, allowedTypes, selected, onClose, onConfirm }: Props) {
@@ -35,6 +37,9 @@ export function MediaPickerDialog({ open, scope, multiple = false, allowedTypes,
   const [error, setError] = useState("");
   const [uploadFileName, setUploadFileName] = useState("");
   const [detailsId, setDetailsId] = useState<string | null>(null);
+  const [tab, setTab] = useState<"library" | "upload">("library");
+  const [uploadQueue, setUploadQueue] = useState<UploadEntry[]>([]);
+  const uploadInputRef = useRef<HTMLInputElement>(null);
   const template = useAdminTemplate();
 
   const scopeLabel = scope === "CATEGORY" ? "دسته‌بندی" : scope === "HOMEPAGE" ? "صفحه اصلی" : scope === "BRAND" ? "هویت بصری" : "محصول";
@@ -66,7 +71,8 @@ export function MediaPickerDialog({ open, scope, multiple = false, allowedTypes,
       if (!controller.signal.aborted) {
         setDraft(selected);
         setQuery("");
-        setUploadFileName("");
+        setTab("library");
+        setUploadQueue([]);
         void load(controller.signal);
       }
     });
@@ -88,44 +94,54 @@ export function MediaPickerDialog({ open, scope, multiple = false, allowedTypes,
     setDraft((current) => current.some((chosen) => chosen.id === item.id) ? current.filter((chosen) => chosen.id !== item.id) : [...current, item]);
   }
 
-  async function upload(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  /*
+   * Files go up one at a time rather than as a single multi-file request. That is what lets the
+   * panel say which image is on the wire and how far it has got, and it keeps one rejected file
+   * from taking the rest of the batch down with it.
+   */
+  async function startUpload(files: FileList | null) {
+    if (!files?.length) return;
+    const chosen = Array.from(files);
     setUploading(true);
     setError("");
-    const form = event.currentTarget;
-    const data = new FormData(form);
-    data.set("scope", scope);
+    setTab("upload");
+    setUploadQueue(chosen.map((file) => ({ name: file.name, status: "pending", percent: 0 })));
 
-    const uploadPromise = (async () => {
-      // Dimensions are read in the browser; see `image-dimensions.ts` for why.
-      const chosen = data.getAll("file").filter((entry): entry is File => entry instanceof File);
-      data.set("meta", JSON.stringify(await Promise.all(chosen.map((file) => readImageDimensions(file)))));
-      const response = await fetch("/api/media", { method: "POST", body: data });
-      const result = await response.json().catch(() => null);
-      if (!response.ok) throw new Error(result?.message ?? "بارگذاری فایل ناموفق بود.");
-      const uploadedItems = Array.isArray(result?.items) ? result.items as MediaChoice[] : [];
-      form.reset();
-      setUploadFileName("");
-      await load();
-      if (uploadedItems.length) {
-        setDraft((current) => multiple ? [...current, ...uploadedItems.filter((item) => !current.some((chosen) => chosen.id === item.id))] : [uploadedItems[0]]);
+    const succeeded: MediaChoice[] = [];
+    for (const [index, file] of chosen.entries()) {
+      setUploadQueue((current) => current.map((entry, position) => position === index ? { ...entry, status: "uploading" } : entry));
+      try {
+        const dimensions = await readImageDimensions(file);
+        const created = await uploadMediaFile(file, scope, dimensions, (progress) => {
+          setUploadQueue((current) => current.map((entry, position) => position === index ? { ...entry, percent: progress.percent } : entry));
+        });
+        succeeded.push(created);
+        setUploadQueue((current) => current.map((entry, position) => position === index ? { ...entry, status: "done", percent: 100 } : entry));
+      } catch (reason) {
+        const message = reason instanceof Error ? reason.message : "بارگذاری فایل انجام نشد.";
+        setUploadQueue((current) => current.map((entry, position) => position === index ? { ...entry, status: "error", error: message } : entry));
       }
-      return uploadedItems;
-    })();
-
-    toast.promise(uploadPromise, {
-      loading: "رسانه در حال بارگذاری است...",
-      success: (uploadedItems) => `${uploadedItems.length.toLocaleString("fa-IR")} رسانه بارگذاری و انتخاب شد`,
-      error: (reason) => reason.message || "بارگذاری فایل ناموفق بود",
-    });
-
-    try {
-      await uploadPromise;
-    } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "بارگذاری فایل ناموفق بود.");
-    } finally {
-      setUploading(false);
     }
+
+    if (uploadInputRef.current) uploadInputRef.current.value = "";
+    await load();
+    if (succeeded.length) {
+      setDraft((current) => multiple ? [...current, ...succeeded.filter((item) => !current.some((chosenItem) => chosenItem.id === item.id))] : [succeeded[0]]);
+      setDetailsId(succeeded[0].id);
+      toast.success(`${succeeded.length.toLocaleString("fa-IR")} فایل بارگذاری شد`, { description: "برای سئو، متن جایگزین هر تصویر را از تب کتابخانه کامل کنید." });
+    }
+    const failed = chosen.length - succeeded.length;
+    if (failed) setError(`${failed.toLocaleString("fa-IR")} فایل بارگذاری نشد؛ جزئیات هر مورد در فهرست بالا آمده است.`);
+    setUploading(false);
+  }
+
+  /** The classic dialog still submits a form; it hands the same files to the queue above. */
+  async function uploadFromForm(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const input = event.currentTarget.querySelector<HTMLInputElement>('input[type="file"]');
+    await startUpload(input?.files ?? null);
+    setUploadFileName("");
+    event.currentTarget.reset();
   }
 
   async function remove(item: PickerItem) {
@@ -168,6 +184,7 @@ export function MediaPickerDialog({ open, scope, multiple = false, allowedTypes,
       : "یک تصویر را به‌عنوان تصویر شاخص انتخاب کنید.";
 
   const detailsItem = items.find((item) => item.id === detailsId) ?? null;
+  const doneCount = uploadQueue.filter((entry) => entry.status === "done").length;
 
   function applySaved(updated: MediaDetails) {
     const edited = { title: updated.title, alt: updated.alt, caption: updated.caption, description: updated.description };
@@ -190,34 +207,67 @@ export function MediaPickerDialog({ open, scope, multiple = false, allowedTypes,
           <BpButton isIconOnly aria-label="بستن گالری" onClick={onClose}><X size={17} /></BpButton>
         </header>
 
-        <div className="border-b border-[var(--bp-divider)] px-4 py-3 sm:px-6" onMouseDown={(event) => event.stopPropagation()}>
-          <div className="grid gap-3 lg:grid-cols-[minmax(0,1.2fr)_minmax(260px,0.8fr)]">
-            <form onSubmit={upload} className="grid gap-2.5 border border-dashed border-[var(--bp-divider)] p-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
-              <label className="grid min-w-0 cursor-pointer gap-1 border border-[var(--bp-divider)] bg-[var(--bp-surface)] px-3 py-2">
-                <span className="text-[12px] font-bold">بارگذاری فایل جدید</span>
-                <span className="bp-muted truncate text-[11px]">{uploadFileName || "برای انتخاب فایل کلیک کنید"}</span>
-                <input name="file" type="file" multiple required accept={acceptedFiles} className="sr-only" onChange={(event) => { const files = event.target.files; setUploadFileName(files?.length ? (files.length === 1 ? files[0].name : `${files.length.toLocaleString("fa-IR")} فایل انتخاب شد`) : ""); }} />
-              </label>
-              <BpButton type="submit" variant="primary" isPending={uploading} className="gap-2">{!uploading && <Upload size={15} />}بارگذاری</BpButton>
-            </form>
-            <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
-              <div className="relative">
-                <Search className="pointer-events-none absolute start-2.5 top-1/2 z-10 -translate-y-1/2 text-[var(--bp-muted)]" size={15} />
-                <input value={query} onChange={(event) => setQuery(event.target.value)} aria-label="جستجوی عنوان فایل" placeholder="جستجوی عنوان فایل..." className="bp-input bp-input-search" />
-              </div>
-              <BpButton isIconOnly aria-label="به‌روزرسانی گالری" isPending={loading} onClick={() => void load()}>{!loading && <RefreshCw size={15} />}</BpButton>
-            </div>
+        <div className="border-b border-[var(--bp-divider)] px-4 sm:px-6" onMouseDown={(event) => event.stopPropagation()}>
+          <div className="bp-tabs" role="tablist" aria-label="بخش‌های گالری">
+            <button type="button" role="tab" id="media-tab-library" aria-selected={tab === "library"} aria-controls="media-panel-library" className="bp-tab" onClick={() => setTab("library")}>
+              <ImageIcon size={15} />کتابخانه رسانه
+              <span className="bp-muted text-[11px]">({visibleItems.length.toLocaleString("fa-IR")})</span>
+            </button>
+            <button type="button" role="tab" id="media-tab-upload" aria-selected={tab === "upload"} aria-controls="media-panel-upload" className="bp-tab" onClick={() => setTab("upload")}>
+              <Upload size={15} />بارگذاری چندرسانه‌ای
+              {uploadQueue.length > 0 && <span className="bp-muted text-[11px]">({doneCount.toLocaleString("fa-IR")}/{uploadQueue.length.toLocaleString("fa-IR")})</span>}
+            </button>
           </div>
-          {error && <p className="mt-2 text-[12px] text-[var(--bp-danger)]">{error}</p>}
         </div>
 
-        <div className="bp-scroll min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-6" onMouseDown={(event) => event.stopPropagation()}>
+        {tab === "upload" ? (
+          <div id="media-panel-upload" role="tabpanel" aria-labelledby="media-tab-upload" className="bp-scroll min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-6" onMouseDown={(event) => event.stopPropagation()}>
+            <label className="grid cursor-pointer justify-items-center gap-2 border border-dashed border-[var(--bp-divider)] p-8 text-center hover:bg-[var(--bp-hover)]">
+              <Upload size={26} className="text-[var(--bp-accent)]" />
+              <strong className="text-[13px]">فایل‌ها را انتخاب کنید</strong>
+              <span className="bp-muted text-[12px]">می‌توانید چند فایل را با هم انتخاب کنید؛ هر کدام جداگانه بارگذاری می‌شود و پیشرفتش را می‌بینید.</span>
+              <input ref={uploadInputRef} type="file" multiple required accept={acceptedFiles} className="sr-only" disabled={uploading} onChange={(event) => void startUpload(event.target.files)} />
+            </label>
+
+            {uploadQueue.length > 0 && (
+              <div className="mt-4 grid gap-2">
+                <div className="flex items-center justify-between gap-3 text-[12px]">
+                  <span className="bp-muted">{doneCount.toLocaleString("fa-IR")} از {uploadQueue.length.toLocaleString("fa-IR")} فایل بارگذاری شد</span>
+                  {!uploading && <BpButton size="sm" variant="ghost" onClick={() => setUploadQueue([])}>پاک کردن فهرست</BpButton>}
+                </div>
+                {uploadQueue.map((entry, index) => (
+                  <div key={`${entry.name}-${index}`} className="grid gap-1.5 border border-[var(--bp-divider)] p-3">
+                    <div className="flex items-center justify-between gap-3 text-[12px]">
+                      <span className="min-w-0 flex-1 truncate">{entry.name}</span>
+                      <span className={entry.status === "error" ? "text-[var(--bp-danger)]" : "bp-muted"}>
+                        {entry.status === "done" ? "انجام شد" : entry.status === "error" ? entry.error : entry.status === "uploading" ? `${entry.percent.toLocaleString("fa-IR")}٪` : "در صف"}
+                      </span>
+                    </div>
+                    <div className="bp-progress">
+                      <div
+                        className="bp-progress-fill"
+                        data-state={entry.status === "done" ? "done" : entry.status === "error" ? "error" : undefined}
+                        style={{ width: `${entry.status === "done" ? 100 : entry.status === "error" ? 100 : entry.percent}%` }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        ) : (
+        <div id="media-panel-library" role="tabpanel" aria-labelledby="media-tab-library" className="bp-scroll min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-6" onMouseDown={(event) => event.stopPropagation()}>
+          <div className="mb-3 flex flex-wrap items-center gap-2">
+            <div className="relative min-w-0 flex-1 sm:max-w-[340px]">
+              <Search className="pointer-events-none absolute start-2.5 top-1/2 z-10 -translate-y-1/2 text-[var(--bp-muted)]" size={15} />
+              <input value={query} onChange={(event) => setQuery(event.target.value)} aria-label="جستجوی عنوان فایل" placeholder="جستجوی عنوان فایل..." className="bp-input bp-input-search" />
+            </div>
+            <BpButton isIconOnly aria-label="به‌روزرسانی گالری" isPending={loading} onClick={() => void load()}>{!loading && <RefreshCw size={15} />}</BpButton>
+            {draft.length > 0 && <span className="bp-tag bp-tag-accent ms-auto">{draft.length.toLocaleString("fa-IR")} انتخاب</span>}
+          </div>
+          {error && <p className="mb-3 text-[12px] text-[var(--bp-danger)]">{error}</p>}
           <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_300px]">
           <div>
-          <div className="mb-3 flex items-center justify-between gap-3 text-[12px]">
-            <span className="bp-muted">{loading ? "در حال دریافت رسانه‌ها..." : `${visibleItems.length.toLocaleString("fa-IR")} رسانه`}</span>
-            {draft.length > 0 && <span className="bp-tag bp-tag-accent">{draft.length.toLocaleString("fa-IR")} انتخاب</span>}
-          </div>
           {loading ? (
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6">{Array.from({ length: 12 }, (_, index) => <div key={index} className="aspect-[4/5] animate-pulse bg-[var(--bp-surface)]" />)}</div>
           ) : visibleItems.length ? (
@@ -273,6 +323,7 @@ export function MediaPickerDialog({ open, scope, multiple = false, allowedTypes,
               </aside>}
           </div>
         </div>
+        )}
 
         <footer className="flex flex-col-reverse gap-2 border-t border-[var(--bp-divider)] px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-6" onMouseDown={(event) => event.stopPropagation()}>
           <span className="bp-muted hidden text-[12px] sm:block">{draft.length ? `${draft.length.toLocaleString("fa-IR")} رسانه برای ثبت انتخاب شده است.` : "هنوز رسانه‌ای انتخاب نشده است."}</span>
@@ -312,7 +363,7 @@ export function MediaPickerDialog({ open, scope, multiple = false, allowedTypes,
             <Modal.Body className="min-h-[440px] p-0">
               <div className="sticky top-0 z-20 border-b border-slate-200 bg-white/95 p-3 backdrop-blur sm:p-4">
                 <div className="grid gap-3 lg:grid-cols-[minmax(0,1.2fr)_minmax(260px,0.8fr)]">
-                  <form onSubmit={upload} className="grid gap-3 rounded-2xl border border-dashed border-[#d8c59f] bg-[#fffcf6] p-3 sm:grid-cols-[auto_minmax(0,1fr)_auto] sm:items-center">
+                  <form onSubmit={uploadFromForm} className="grid gap-3 rounded-2xl border border-dashed border-[#d8c59f] bg-[#fffcf6] p-3 sm:grid-cols-[auto_minmax(0,1fr)_auto] sm:items-center">
                     <span className="hidden h-10 w-10 place-items-center rounded-xl bg-[var(--warning)]/15 text-[var(--warning)] sm:grid"><Upload size={19} /></span>
                     <label className="grid min-w-0 cursor-pointer gap-1 rounded-xl border border-slate-200 bg-white px-3 py-2 transition hover:border-[#c8a867]">
                       <span className="text-xs font-bold text-slate-700">بارگذاری فایل جدید</span>
