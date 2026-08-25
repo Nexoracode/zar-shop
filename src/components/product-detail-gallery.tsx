@@ -88,11 +88,37 @@ export function ProductDetailGallery({ productId, media, productName, productCod
   const normalizedSoldPercent = Math.min(100, Math.max(0, soldPercent));
   const showSoldProgress = normalizedSoldPercent > 50;
 
+  /*
+   * The price, the badge and the countdown are all rendered on the server, so a reader sitting on
+   * the page keeps seeing the discounted price after the window closes. When the clock reaches the
+   * end, `router.refresh()` re-runs the server components and the page settles on the real price
+   * without a full reload.
+   *
+   * A hidden tab throttles `setInterval` to roughly once a minute, so the same check runs again
+   * as soon as the tab is looked at, rather than waiting for the next throttled tick.
+   */
   useEffect(() => {
     if (!hasDiscount || !discountEndsAt) return;
-    const timer = window.setInterval(() => setNow(Date.now()), 1000);
-    return () => window.clearInterval(timer);
-  }, [discountEndsAt, hasDiscount]);
+    const endsAt = new Date(discountEndsAt).getTime();
+    if (Number.isNaN(endsAt)) return;
+    let refreshed = false;
+
+    function check() {
+      const current = Date.now();
+      setNow(current);
+      if (current < endsAt || refreshed) return;
+      refreshed = true;
+      router.refresh();
+    }
+
+    const timer = window.setInterval(check, 1000);
+    function onVisible() { if (document.visibilityState === "visible") check(); }
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      window.clearInterval(timer);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, [discountEndsAt, hasDiscount, router]);
 
   function selectAt(index: number) {
     if (!media.length) return;
