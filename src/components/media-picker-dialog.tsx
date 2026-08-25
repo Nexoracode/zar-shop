@@ -3,14 +3,25 @@
 import Image from "next/image";
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
 import { Alert, Button, Card, Input, Modal, Spinner, toast } from "@heroui/react";
-import { Check, FileText, Film, ImageIcon, RefreshCw, Search, Trash2, Upload, X } from "lucide-react";
+import { Check, FileText, Film, ImageIcon, RefreshCw, Search, Trash2, TriangleAlert, Upload, X } from "lucide-react";
 import type { MediaChoice, MediaScope } from "@/components/media-library";
 import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
 import { useAdminTemplate } from "@/components/admin/template-context";
 import { BpButton } from "@/components/admin/blueprint/ui/button";
 import { BpDialog } from "@/components/admin/blueprint/ui/dialog";
+import { MediaDetailsPanel, type MediaDetails } from "@/components/admin/media-details-panel";
+import { mediaUsageCount, type MediaUsageCounts } from "@/modules/media/usage";
+import { readImageDimensions } from "@/modules/media/image-dimensions";
 
-type PickerItem = MediaChoice & { _count: { products: number; optionGuideProducts: number; categories: number; homepageHeroDesktop: number; homepageHeroMobile: number; homepagePromoDesktop: number; homepagePromoMobile: number; brandMainLogo: number; brandDarkLogo: number; brandFavicon: number; brandSocialImage: number } };
+type PickerItem = MediaChoice & {
+  caption?: string | null;
+  description?: string | null;
+  width?: number | null;
+  height?: number | null;
+  sizeBytes?: number;
+  createdAt?: string;
+  _count: MediaUsageCounts;
+};
 type Props = { open: boolean; scope: MediaScope; multiple?: boolean; allowedTypes?: MediaChoice["type"][]; selected: MediaChoice[]; onClose: () => void; onConfirm: (items: MediaChoice[]) => void };
 
 export function MediaPickerDialog({ open, scope, multiple = false, allowedTypes, selected, onClose, onConfirm }: Props) {
@@ -23,6 +34,7 @@ export function MediaPickerDialog({ open, scope, multiple = false, allowedTypes,
   const [query, setQuery] = useState("");
   const [error, setError] = useState("");
   const [uploadFileName, setUploadFileName] = useState("");
+  const [detailsId, setDetailsId] = useState<string | null>(null);
   const template = useAdminTemplate();
 
   const scopeLabel = scope === "CATEGORY" ? "دسته‌بندی" : scope === "HOMEPAGE" ? "صفحه اصلی" : scope === "BRAND" ? "هویت بصری" : "محصول";
@@ -35,7 +47,7 @@ export function MediaPickerDialog({ open, scope, multiple = false, allowedTypes,
     setLoading(true);
     setError("");
     try {
-      const response = await fetch(`/api/media?scope=${scope}&limit=200`, { cache: "no-store", signal });
+      const response = await fetch(`/api/media?scope=${scope}&pageSize=100`, { cache: "no-store", signal });
       const result = await response.json().catch(() => null);
       if (!response.ok) throw new Error(result?.message ?? "دریافت گالری ناموفق بود.");
       setItems(result.items.map((item: PickerItem) => ({ ...item, title: item.title || "رسانه بدون عنوان" })));
@@ -85,6 +97,9 @@ export function MediaPickerDialog({ open, scope, multiple = false, allowedTypes,
     data.set("scope", scope);
 
     const uploadPromise = (async () => {
+      // Dimensions are read in the browser; see `image-dimensions.ts` for why.
+      const chosen = data.getAll("file").filter((entry): entry is File => entry instanceof File);
+      data.set("meta", JSON.stringify(await Promise.all(chosen.map((file) => readImageDimensions(file)))));
       const response = await fetch("/api/media", { method: "POST", body: data });
       const result = await response.json().catch(() => null);
       if (!response.ok) throw new Error(result?.message ?? "بارگذاری فایل ناموفق بود.");
@@ -114,8 +129,7 @@ export function MediaPickerDialog({ open, scope, multiple = false, allowedTypes,
   }
 
   async function remove(item: PickerItem) {
-    const usage = item._count.products + item._count.optionGuideProducts + item._count.categories + item._count.homepageHeroDesktop + item._count.homepageHeroMobile + item._count.homepagePromoDesktop + item._count.homepagePromoMobile + item._count.brandMainLogo + item._count.brandDarkLogo + item._count.brandFavicon + item._count.brandSocialImage;
-    if (usage) {
+    if (mediaUsageCount(item._count)) {
       setError("این رسانه در حال استفاده است؛ ابتدا آن را از محصول یا دسته‌بندی مربوط جدا کنید.");
       return;
     }
@@ -153,8 +167,10 @@ export function MediaPickerDialog({ open, scope, multiple = false, allowedTypes,
       ? "یک تصویر یا فایل PDF را به‌عنوان راهنمای سایز انتخاب کنید."
       : "یک تصویر را به‌عنوان تصویر شاخص انتخاب کنید.";
 
-  function usageOf(item: PickerItem) {
-    return item._count.products + item._count.optionGuideProducts + item._count.categories + item._count.homepageHeroDesktop + item._count.homepageHeroMobile + item._count.homepagePromoDesktop + item._count.homepagePromoMobile + item._count.brandMainLogo + item._count.brandDarkLogo + item._count.brandFavicon + item._count.brandSocialImage;
+  const detailsItem = items.find((item) => item.id === detailsId) ?? null;
+
+  function applySaved(updated: MediaDetails) {
+    setItems((current) => current.map((item) => item.id === updated.id ? { ...item, ...updated } : item));
   }
 
   if (template === "BLUEPRINT") {
@@ -195,6 +211,8 @@ export function MediaPickerDialog({ open, scope, multiple = false, allowedTypes,
         </div>
 
         <div className="bp-scroll min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-6" onMouseDown={(event) => event.stopPropagation()}>
+          <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_300px]">
+          <div>
           <div className="mb-3 flex items-center justify-between gap-3 text-[12px]">
             <span className="bp-muted">{loading ? "در حال دریافت رسانه‌ها..." : `${visibleItems.length.toLocaleString("fa-IR")} رسانه`}</span>
             {draft.length > 0 && <span className="bp-tag bp-tag-accent">{draft.length.toLocaleString("fa-IR")} انتخاب</span>}
@@ -206,7 +224,7 @@ export function MediaPickerDialog({ open, scope, multiple = false, allowedTypes,
               {visibleItems.map((item) => {
                 const chosenIndex = draft.findIndex((chosen) => chosen.id === item.id);
                 const chosen = chosenIndex >= 0;
-                const usage = usageOf(item);
+                const usage = mediaUsageCount(item._count);
                 return (
                   <div key={item.id} className={`flex min-w-0 flex-col border ${chosen ? "border-[var(--bp-accent)]" : "border-[var(--bp-divider)]"}`}>
                     <button type="button" onClick={() => toggle(item)} aria-pressed={chosen} aria-label={`انتخاب ${item.title}`} className="relative block w-full cursor-pointer border-0 bg-transparent p-0 text-start">
@@ -217,15 +235,19 @@ export function MediaPickerDialog({ open, scope, multiple = false, allowedTypes,
                             ? <><video src={item.url} muted className="h-full w-full bg-black object-cover" /><span className="absolute left-1.5 top-1.5 grid h-6 w-6 place-items-center bg-[var(--bp-bg)] text-[var(--bp-text)]"><Film size={13} /></span></>
                             : <span className="grid h-full place-items-center text-[var(--bp-accent)]"><span className="grid justify-items-center gap-1 text-[11px]"><FileText size={32} />فایل PDF</span></span>}
                         {chosen && <span className="absolute right-1.5 top-1.5 grid h-6 min-w-6 place-items-center bg-[var(--bp-accent)] px-1.5 text-[11px] font-bold text-[var(--bp-bg)]">{multiple ? (chosenIndex + 1).toLocaleString("fa-IR") : <Check size={13} />}</span>}
+                        {item.type === "IMAGE" && !item.alt && <span title="متن جایگزین ندارد" className="absolute left-1.5 bottom-1.5 grid h-5 w-5 place-items-center bg-[var(--bp-warning)] text-[var(--bp-bg)]"><TriangleAlert size={11} /></span>}
                       </span>
                       <span className="flex w-full items-center gap-2 px-2.5 py-2">
                         <span className="min-w-0 flex-1 truncate text-[12px]">{item.title}</span>
                         {usage > 0 && <small className="bp-muted shrink-0 text-[10px]">{usage.toLocaleString("fa-IR")} استفاده</small>}
                       </span>
                     </button>
-                    <BpButton size="sm" variant="ghost" fullWidth disabled={deletingId === item.id || usage > 0} onClick={() => setPendingDelete(item)} className="gap-1.5 border-t border-[var(--bp-divider)] text-[11px] text-[var(--bp-danger)]">
-                      <Trash2 size={12} />{usage > 0 ? "در حال استفاده" : deletingId === item.id ? "در حال حذف..." : "حذف از گالری"}
-                    </BpButton>
+                    <div className="grid grid-cols-2 border-t border-[var(--bp-divider)]">
+                      <BpButton size="sm" variant="ghost" onClick={() => setDetailsId(item.id)} className="gap-1.5 text-[11px]">جزئیات</BpButton>
+                      <BpButton size="sm" variant="ghost" disabled={deletingId === item.id || usage > 0} onClick={() => setPendingDelete(item)} className="gap-1.5 border-s border-[var(--bp-divider)] text-[11px] text-[var(--bp-danger)]">
+                        <Trash2 size={12} />{usage > 0 ? "در استفاده" : deletingId === item.id ? "..." : "حذف"}
+                      </BpButton>
+                    </div>
                   </div>
                 );
               })}
@@ -239,6 +261,16 @@ export function MediaPickerDialog({ open, scope, multiple = false, allowedTypes,
               </div>
             </div>
           )}
+          </div>
+          {detailsItem
+            ? <MediaDetailsPanel media={{ ...detailsItem, usageCount: mediaUsageCount(detailsItem._count) }} onSaved={applySaved} className="bp-frame relative p-4 lg:sticky lg:top-0" />
+            : <aside className="hidden place-items-center border border-dashed border-[var(--bp-divider)] p-6 text-center lg:grid">
+                <div>
+                  <strong className="block text-[13px]">ویرایش اطلاعات رسانه</strong>
+                  <span className="bp-muted mt-1 block text-[12px]">روی «جزئیات» یک رسانه بزنید تا متن جایگزین و عنوانش را همین‌جا اصلاح کنید.</span>
+                </div>
+              </aside>}
+          </div>
         </div>
 
         <footer className="flex flex-col-reverse gap-2 border-t border-[var(--bp-divider)] px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-6" onMouseDown={(event) => event.stopPropagation()}>

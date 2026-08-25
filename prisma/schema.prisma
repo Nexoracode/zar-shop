@@ -620,6 +620,8 @@ model MediaAsset {
   storageKey           String         @unique @db.VarChar(191)
   title                String?        @db.VarChar(191)
   alt                  String?        @db.VarChar(191)
+  caption              String?        @db.VarChar(300)
+  description          String?        @db.Text
   mimeType             String         @db.VarChar(100)
   sizeBytes            Int
   width                Int?
@@ -639,6 +641,7 @@ model MediaAsset {
   brandSocialImage     StoreSetting[] @relation("BrandSocialImage")
 
   @@index([scope, createdAt])
+  @@index([scope, type, createdAt])
 }
 
 model ProductOption {

@@ -6,7 +6,7 @@ export default async function MediaPage() {
   await requirePermission("catalog:manage");
   return (
     <>
-      <AdminPageHeader eyebrow="مدیریت فایل‌ها" title="گالری رسانه" description="تصاویر دسته‌بندی‌ها و تصاویر یا ویدیوهای محصولات را در فضای اختصاصی مدیریت کنید." />
+      <AdminPageHeader eyebrow="مدیریت فایل‌ها" title="گالری رسانه" description="بارگذاری، جستجو و ویرایش متن جایگزین و اطلاعات سئوی فایل‌های فروشگاه." />
       <MediaLibrary />
     </>
   );
