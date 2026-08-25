@@ -82,6 +82,7 @@ export function BlueprintProductsView({ products, categories, filters, paginatio
       {/* Redraws the rows the moment any discount opens or closes, so the flags cannot go stale. */}
       <DiscountExpiryRefresh at={nextDiscountBoundaryAt} />
       <AdminPageHeader
+        flush
         title="محصولات"
         description="محصولات، موجودی، قیمت‌گذاری و وضعیت انتشار را از یک‌جا مدیریت کنید."
         action={<AdminPrimaryLink href="/admin/products/new"><Plus size={16} />محصول جدید</AdminPrimaryLink>}
