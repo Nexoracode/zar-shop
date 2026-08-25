@@ -235,7 +235,17 @@ export function BlueprintProductForm({ storeIndustry, categories = [], product }
         {/* The mockup used free-form name/value rows here. This project reads attributes from the
             product's category and edits them on their own page, so the form shows completion
             state and links there instead. */}
-        <Panel title="ویژگی‌های محصول" description="ویژگی‌ها از دسته‌بندی محصول خوانده می‌شوند و در صفحه اختصاصی تکمیل می‌شوند.">
+        <Panel
+          title="ویژگی‌های محصول"
+          description="ویژگی‌ها از دسته‌بندی محصول خوانده می‌شوند و در صفحه اختصاصی تکمیل می‌شوند."
+          action={categoryId && attributeDefinitions.length > 0
+            ? product
+              ? categoryChanged
+                ? <span className="bp-tag bp-tag-warning">ابتدا تغییر دسته را ذخیره کنید</span>
+                : <Link href={`/admin/products/${product.id}/attributes`} className="bp-btn bp-btn-secondary bp-btn-sm">مدیریت ویژگی‌ها</Link>
+              : <BpButton size="sm" isPending={loading} onClick={() => void submit("attributes")}>ثبت و مدیریت ویژگی‌ها</BpButton>
+            : undefined}
+        >
           {!categoryId ? (
             <p className="bp-muted m-0 border border-dashed border-[var(--bp-divider)] p-4 text-center text-[12px]">برای مشاهده ویژگی‌ها ابتدا دسته‌بندی محصول را انتخاب کنید.</p>
           ) : attributeDefinitions.length === 0 ? (
@@ -245,22 +255,13 @@ export function BlueprintProductForm({ storeIndustry, categories = [], product }
               <Link href={`/admin/categories/${categoryId}/attributes`} className="bp-btn bp-btn-secondary bp-btn-sm mt-3">تعریف ویژگی‌های این دسته</Link>
             </div>
           ) : (
-            <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
-              <div className="grid grid-cols-3 gap-2.5">
-                {[{ label: "تعریف‌شده", value: attributeDefinitions.length }, { label: "تکمیل‌شده", value: completedAttributeCount }, { label: "مهم", value: importantAttributeCount }].map((item) => (
-                  <div key={item.label} className="border border-[var(--bp-divider)] px-3 py-2">
-                    <strong className="block text-[17px] font-bold">{item.value.toLocaleString("fa-IR")}</strong>
-                    <span className="bp-muted text-[10px]">{item.label}</span>
-                  </div>
-                ))}
-              </div>
-              <div className="flex justify-end">
-                {product
-                  ? categoryChanged
-                    ? <span className="bp-tag bp-tag-warning">ابتدا تغییر دسته را ذخیره کنید</span>
-                    : <Link href={`/admin/products/${product.id}/attributes`} className="bp-btn bp-btn-secondary bp-btn-sm">مدیریت ویژگی‌ها</Link>
-                  : <BpButton size="sm" isPending={loading} onClick={() => void submit("attributes")}>ثبت و مدیریت ویژگی‌ها</BpButton>}
-              </div>
+            <div className="grid grid-cols-3 gap-2.5">
+              {[{ label: "تعریف‌شده", value: attributeDefinitions.length }, { label: "تکمیل‌شده", value: completedAttributeCount }, { label: "مهم", value: importantAttributeCount }].map((item) => (
+                <div key={item.label} className="border border-[var(--bp-divider)] px-3 py-2">
+                  <strong className="block text-[17px] font-bold">{item.value.toLocaleString("fa-IR")}</strong>
+                  <span className="bp-muted text-[10px]">{item.label}</span>
+                </div>
+              ))}
             </div>
           )}
         </Panel>
