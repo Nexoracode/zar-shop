@@ -7,7 +7,8 @@ import { ListFilter, MessageCircleReply, MoreVertical, Star, ThumbsDown, ThumbsU
 import type { StorefrontReview, StorefrontReviewData } from "@/modules/reviews/service";
 import { TextAreaField, TextField } from "@/components/form-field";
 import { requestErrorMessage, requestJson } from "@/lib/api-request";
-import { reviewFormHasProblems, validateReviewForm, type ReviewFormField } from "@/modules/reviews/review-form-validation";
+import { ReviewRatingField } from "@/components/review-rating-field";
+import { firstReviewFormError, hasReviewFormErrors, validateReviewForm, type ReviewFormErrors, type ReviewFormField } from "@/modules/reviews/review-form-validation";
 
 type Props = {
   productId: string;
@@ -44,7 +45,7 @@ export function ProductReviews({ productId, initialData, isAuthenticated }: Prop
   const [rating, setRating] = useState(0);
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
-  const [reviewErrors, setReviewErrors] = useState<Partial<Record<ReviewFormField, string>>>({});
+  const [reviewErrors, setReviewErrors] = useState<ReviewFormErrors>({});
   const [submitting, setSubmitting] = useState(false);
   const [busyVote, setBusyVote] = useState<string | null>(null);
   const [reporting, setReporting] = useState<StorefrontReview | null>(null);
@@ -74,13 +75,11 @@ export function ProductReviews({ productId, initialData, isAuthenticated }: Prop
 
   async function submitReview() {
     if (!isAuthenticated) return;
-    const result = validateReviewForm({ rating, title, body, isReply: Boolean(replyTo) });
-    if (reviewFormHasProblems(result)) {
-      setReviewErrors(result.fieldErrors);
-      // The rating is a star row, not a field, so it is reported as a toast.
-      if (result.ratingMessage) toast.danger("امتیاز انتخاب نشده است", { description: result.ratingMessage });
-      const first = (["title", "body"] as const).find((field) => result.fieldErrors[field]);
-      if (first) composerRef.current?.querySelector<HTMLElement>(`[name="${first}"]`)?.focus();
+    const found = validateReviewForm({ rating, title, body, isReply: Boolean(replyTo) });
+    if (hasReviewFormErrors(found)) {
+      setReviewErrors(found);
+      const first = firstReviewFormError(found);
+      if (first) composerRef.current?.querySelector<HTMLElement>(first === "rating" ? "[data-rating-star='1']" : `[name="${first}"]`)?.focus();
       return;
     }
     setSubmitting(true);
@@ -167,8 +166,8 @@ export function ProductReviews({ productId, initialData, isAuthenticated }: Prop
       <Modal.Backdrop isOpen={composeOpen} onOpenChange={setComposeOpen} isDismissable={false}>
       <Modal.Container size="md" placement="center" scroll="inside"><Modal.Dialog aria-label={replyTo ? "ثبت پاسخ دیدگاه" : "ثبت امتیاز و دیدگاه"} dir="rtl">
         <Modal.Header className="pl-10"><Modal.Heading>{replyTo ? `پاسخ به ${replyTo.author.name}` : "ثبت امتیاز و دیدگاه"}</Modal.Heading><Modal.CloseTrigger aria-label="بستن" className="left-4 right-auto" /></Modal.Header>
-        <Modal.Body><div ref={composerRef} className="grid gap-4"><p className="text-sm text-slate-500">دیدگاه شما پیش از انتشار توسط مدیریت بررسی می‌شود.</p>{!isAuthenticated ? <Alert status="warning"><Alert.Description>برای ثبت دیدگاه باید وارد حساب کاربری شوید.</Alert.Description></Alert> : <>
-          {!replyTo && <div><span className="mb-2 block text-xs font-bold text-slate-700">امتیاز شما</span><div className="flex gap-1" role="radiogroup" aria-label="امتیاز شما" dir="ltr">{[1, 2, 3, 4, 5].map((star) => <Button key={star} type="button" isIconOnly variant="ghost" aria-label={`${star} ستاره`} aria-pressed={rating === star} onPress={() => setRating(star)} className="size-12 min-w-12 text-amber-400"><Star className="!size-8" fill={star <= rating ? "currentColor" : "none"} /></Button>)}</div></div>}
+        <Modal.Body><div ref={composerRef} className="grid gap-3"><p className="text-sm text-slate-500">دیدگاه شما پیش از انتشار توسط مدیریت بررسی می‌شود.</p>{!isAuthenticated ? <Alert status="warning"><Alert.Description>برای ثبت دیدگاه باید وارد حساب کاربری شوید.</Alert.Description></Alert> : <>
+          {!replyTo && <ReviewRatingField rating={rating} onChange={(value) => { setRating(value); clearReviewError("rating"); }} error={reviewErrors.rating} />}
           {!replyTo && <TextField name="title" label="عنوان دیدگاه" required maxLength={120} placeholder="خلاصه تجربه شما" value={title} error={reviewErrors.title} onChange={(event) => { setTitle(event.target.value); clearReviewError("title"); }} />}
           <TextAreaField name="body" label={`متن ${replyTo ? "پاسخ" : "دیدگاه"}`} required rows={6} maxLength={3000} hint="حداقل ۳ نویسه" placeholder="تجربه خود را با جزئیات بنویسید" value={body} error={reviewErrors.body} onChange={(event) => { setBody(event.target.value); clearReviewError("body"); }} />
         </>}</div></Modal.Body>

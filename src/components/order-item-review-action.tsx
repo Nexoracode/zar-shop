@@ -2,39 +2,16 @@
 
 import { useRef, useState } from "react";
 import { Button, Modal, toast } from "@heroui/react";
-import { MessageCircle, Star } from "lucide-react";
+import { MessageCircle } from "lucide-react";
 import { TextAreaField, TextField } from "@/components/form-field";
+import { ReviewRatingField } from "@/components/review-rating-field";
 import { requestErrorMessage, requestJson } from "@/lib/api-request";
-import { reviewFormHasProblems, validateReviewForm, type ReviewFormField } from "@/modules/reviews/review-form-validation";
+import { firstReviewFormError, hasReviewFormErrors, validateReviewForm, type ReviewFormErrors, type ReviewFormField } from "@/modules/reviews/review-form-validation";
 
 type Props = {
   productId: string;
   productName: string;
 };
-
-const scores = [1, 2, 3, 4, 5] as const;
-
-function RatingSelector({ rating, onChange, compact = false, showLabel = true }: { rating: number; onChange: (rating: number) => void; compact?: boolean; showLabel?: boolean }) {
-  return <div className="flex items-start gap-3" dir="rtl">
-    {showLabel ? <strong className={`${compact ? "pt-2" : "pt-3"} shrink-0 text-xs text-[var(--foreground)]`}>امتیاز دهید</strong> : null}
-    <div className="flex items-start gap-1" role="radiogroup" aria-label="امتیاز محصول">
-      {scores.map((score) => <div key={score} className="grid justify-items-center gap-0.5">
-        <Button
-          type="button"
-          isIconOnly
-          variant="ghost"
-          aria-label={`${score.toLocaleString("fa-IR")} ستاره`}
-          aria-pressed={rating === score}
-          onPress={() => onChange(score)}
-          className={`${compact ? "size-9 min-h-9 min-w-9" : "size-11 min-h-11 min-w-11"} text-amber-400`}
-        >
-          <Star className={compact ? "!size-6" : "!size-7"} fill={score <= rating ? "currentColor" : "none"} />
-        </Button>
-        <span className="text-[10px] leading-none text-[var(--muted)]">{score.toLocaleString("fa-IR")}</span>
-      </div>)}
-    </div>
-  </div>;
-}
 
 export function OrderItemReviewAction({ productId, productName }: Props) {
   const bodyRef = useRef<HTMLDivElement>(null);
@@ -42,7 +19,7 @@ export function OrderItemReviewAction({ productId, productName }: Props) {
   const [rating, setRating] = useState(0);
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
-  const [errors, setErrors] = useState<Partial<Record<ReviewFormField, string>>>({});
+  const [errors, setErrors] = useState<ReviewFormErrors>({});
   const [submitting, setSubmitting] = useState(false);
 
   function openComposer() {
@@ -54,14 +31,18 @@ export function OrderItemReviewAction({ productId, productName }: Props) {
     setErrors((current) => (current[field] ? { ...current, [field]: undefined } : current));
   }
 
+  function focusFirstError(found: ReviewFormErrors) {
+    const first = firstReviewFormError(found);
+    if (!first) return;
+    const selector = first === "rating" ? "[data-rating-star='1']" : `[name="${first}"]`;
+    bodyRef.current?.querySelector<HTMLElement>(selector)?.focus();
+  }
+
   async function submitReview() {
-    const result = validateReviewForm({ rating, title, body, isReply: false });
-    if (reviewFormHasProblems(result)) {
-      setErrors(result.fieldErrors);
-      // The rating is a star row, not a field, so it is reported as a toast.
-      if (result.ratingMessage) toast.danger("امتیاز انتخاب نشده است", { description: result.ratingMessage });
-      const first = (["title", "body"] as const).find((field) => result.fieldErrors[field]);
-      if (first) bodyRef.current?.querySelector<HTMLElement>(`[name="${first}"]`)?.focus();
+    const found = validateReviewForm({ rating, title, body, isReply: false });
+    if (hasReviewFormErrors(found)) {
+      setErrors(found);
+      focusFirstError(found);
       return;
     }
     setSubmitting(true);
@@ -85,7 +66,7 @@ export function OrderItemReviewAction({ productId, productName }: Props) {
 
   return <>
     <div className="flex flex-wrap items-end justify-between gap-4">
-      <RatingSelector rating={rating} onChange={setRating} compact showLabel={false} />
+      <ReviewRatingField rating={rating} onChange={setRating} size="sm" showLabel={false} />
       <Button type="button" variant="secondary" onPress={openComposer} className="min-h-10 min-w-36 gap-2 border border-[var(--brand-primary)] text-xs font-bold text-[var(--brand-primary)]">
         <MessageCircle size={18} />ثبت دیدگاه
       </Button>
@@ -95,9 +76,9 @@ export function OrderItemReviewAction({ productId, productName }: Props) {
       <Modal.Container size="md" placement="center" scroll="inside">
         <Modal.Dialog aria-label={`ثبت دیدگاه برای ${productName}`} dir="rtl">
           <Modal.Header className="pl-10"><Modal.Heading>ثبت امتیاز و دیدگاه</Modal.Heading><Modal.CloseTrigger aria-label="بستن" className="left-4 right-auto" /></Modal.Header>
-          <Modal.Body><div ref={bodyRef} className="grid gap-4">
+          <Modal.Body><div ref={bodyRef} className="grid gap-3">
             <p className="m-0 text-sm text-[var(--muted)]">دیدگاه شما برای «{productName}» پس از بررسی مدیریت منتشر می‌شود.</p>
-            <RatingSelector rating={rating} onChange={setRating} />
+            <ReviewRatingField rating={rating} onChange={(value) => { setRating(value); clearError("rating"); }} error={errors.rating} />
             <TextField
               name="title"
               label="عنوان دیدگاه"

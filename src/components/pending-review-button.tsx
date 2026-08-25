@@ -5,10 +5,9 @@ import { useRouter } from "next/navigation";
 import { Button, Modal, toast } from "@heroui/react";
 import { Star, X } from "lucide-react";
 import { TextAreaField, TextField } from "@/components/form-field";
+import { ReviewRatingField } from "@/components/review-rating-field";
 import { requestErrorMessage, requestJson } from "@/lib/api-request";
-import { reviewFormHasProblems, validateReviewForm, type ReviewFormField } from "@/modules/reviews/review-form-validation";
-
-const scores = [1, 2, 3, 4, 5] as const;
+import { firstReviewFormError, hasReviewFormErrors, validateReviewForm, type ReviewFormErrors, type ReviewFormField } from "@/modules/reviews/review-form-validation";
 
 export function PendingReviewButton({ productId, productName }: { productId: string; productName: string }) {
   const router = useRouter();
@@ -19,7 +18,7 @@ export function PendingReviewButton({ productId, productName }: { productId: str
   const [rating, setRating] = useState(0);
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
-  const [errors, setErrors] = useState<Partial<Record<ReviewFormField, string>>>({});
+  const [errors, setErrors] = useState<ReviewFormErrors>({});
   const [busy, setBusy] = useState(false);
 
   function clearError(field: ReviewFormField) {
@@ -35,13 +34,11 @@ export function PendingReviewButton({ productId, productName }: { productId: str
   }
 
   async function submit() {
-    const result = validateReviewForm({ rating, title, body, isReply: false });
-    if (reviewFormHasProblems(result)) {
-      setErrors(result.fieldErrors);
-      // The rating is a star row, not a field, so it is reported as a toast.
-      if (result.ratingMessage) toast.danger("امتیاز انتخاب نشده است", { description: result.ratingMessage });
-      const first = (["title", "body"] as const).find((field) => result.fieldErrors[field]);
-      if (first) bodyRef.current?.querySelector<HTMLElement>(`[name="${first}"]`)?.focus();
+    const found = validateReviewForm({ rating, title, body, isReply: false });
+    if (hasReviewFormErrors(found)) {
+      setErrors(found);
+      const first = firstReviewFormError(found);
+      if (first) bodyRef.current?.querySelector<HTMLElement>(first === "rating" ? "[data-rating-star='1']" : `[name="${first}"]`)?.focus();
       return;
     }
     setBusy(true);
@@ -73,17 +70,8 @@ export function PendingReviewButton({ productId, productName }: { productId: str
           {/* No <form> and no native `required`: validation is ours, so the browser never raises
               its own bubble inside a modal that manages its own focus. */}
           <Modal.Body className="p-5">
-            <div ref={bodyRef} className="grid gap-4">
-              <div>
-                <span className="mb-2 block text-xs font-bold">امتیاز شما</span>
-                <div className="flex gap-1" role="radiogroup" aria-label="امتیاز شما" dir="ltr">
-                  {scores.map((value) => (
-                    <Button key={value} type="button" isIconOnly variant="ghost" aria-label={`${value} ستاره`} aria-pressed={rating === value} onPress={() => setRating(value)} className="text-amber-400">
-                      <Star size={26} className={value <= rating ? "fill-current" : ""} />
-                    </Button>
-                  ))}
-                </div>
-              </div>
+            <div ref={bodyRef} className="grid gap-3">
+              <ReviewRatingField rating={rating} onChange={(value) => { setRating(value); clearError("rating"); }} error={errors.rating} />
               <TextField name="title" label="عنوان دیدگاه" required maxLength={120} placeholder="خلاصه تجربه شما" value={title} error={errors.title} onChange={(event) => { setTitle(event.target.value); clearError("title"); }} />
               <TextAreaField name="body" label="متن دیدگاه" required rows={5} maxLength={3000} hint="حداقل ۳ نویسه" placeholder="تجربه خود را با جزئیات بنویسید" value={body} error={errors.body} onChange={(event) => { setBody(event.target.value); clearError("body"); }} />
               <Button type="button" variant="primary" isPending={busy} onPress={() => void submit()}>ثبت دیدگاه</Button>

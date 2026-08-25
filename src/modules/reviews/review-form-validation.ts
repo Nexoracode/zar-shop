@@ -1,4 +1,4 @@
-export type ReviewFormField = "title" | "body";
+export type ReviewFormField = "rating" | "title" | "body";
 
 export type ReviewFormValues = {
   rating: number;
@@ -8,39 +8,37 @@ export type ReviewFormValues = {
   isReply: boolean;
 };
 
-export type ReviewFormResult = {
-  /**
-   * The rating is a row of star buttons rather than a text field, so a missing rating is
-   * reported as a toast instead of a message under a control.
-   */
-  ratingMessage: string | null;
-  fieldErrors: Partial<Record<ReviewFormField, string>>;
-};
+export type ReviewFormErrors = Partial<Record<ReviewFormField, string>>;
+
+/** Fields in the order they appear in the composer, so focus lands on the first one in error. */
+export const reviewFormFieldOrder: ReviewFormField[] = ["rating", "title", "body"];
 
 /**
  * Mirrors `createProductReviewSchema` on the server. Client-side only — the server schema still
  * decides whether a review is accepted.
  */
-export function validateReviewForm({ rating, title, body, isReply }: ReviewFormValues): ReviewFormResult {
-  const fieldErrors: Partial<Record<ReviewFormField, string>> = {};
+export function validateReviewForm({ rating, title, body, isReply }: ReviewFormValues): ReviewFormErrors {
+  const errors: ReviewFormErrors = {};
   const trimmedBody = body.trim();
 
-  if (!trimmedBody) fieldErrors.body = "متن دیدگاه را بنویسید.";
-  else if (trimmedBody.length < 3) fieldErrors.body = "متن دیدگاه باید حداقل ۳ نویسه باشد.";
-  else if (trimmedBody.length > 3000) fieldErrors.body = "متن دیدگاه نباید بیشتر از ۳۰۰۰ نویسه باشد.";
+  if (!trimmedBody) errors.body = "متن دیدگاه را بنویسید.";
+  else if (trimmedBody.length < 3) errors.body = "متن دیدگاه باید حداقل ۳ نویسه باشد.";
+  else if (trimmedBody.length > 3000) errors.body = "متن دیدگاه نباید بیشتر از ۳۰۰۰ نویسه باشد.";
 
   if (!isReply) {
+    if (rating === 0) errors.rating = "امتیاز خود را انتخاب کنید.";
     const trimmedTitle = title.trim();
-    if (!trimmedTitle) fieldErrors.title = "عنوان دیدگاه را وارد کنید.";
-    else if (trimmedTitle.length > 120) fieldErrors.title = "عنوان دیدگاه نباید بیشتر از ۱۲۰ نویسه باشد.";
+    if (!trimmedTitle) errors.title = "عنوان دیدگاه را وارد کنید.";
+    else if (trimmedTitle.length > 120) errors.title = "عنوان دیدگاه نباید بیشتر از ۱۲۰ نویسه باشد.";
   }
 
-  return {
-    ratingMessage: !isReply && rating === 0 ? "برای ثبت دیدگاه ابتدا امتیاز خود را انتخاب کنید." : null,
-    fieldErrors,
-  };
+  return errors;
 }
 
-export function reviewFormHasProblems(result: ReviewFormResult) {
-  return Boolean(result.ratingMessage) || Object.keys(result.fieldErrors).length > 0;
+export function hasReviewFormErrors(errors: ReviewFormErrors) {
+  return Object.values(errors).some(Boolean);
+}
+
+export function firstReviewFormError(errors: ReviewFormErrors) {
+  return reviewFormFieldOrder.find((field) => errors[field]) ?? null;
 }
