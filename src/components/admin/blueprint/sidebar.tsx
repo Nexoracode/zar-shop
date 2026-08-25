@@ -3,17 +3,15 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCallback, useMemo, useState, useSyncExternalStore } from "react";
-import { ChevronDown, ChevronsLeftRight, LogOut, Store, X } from "lucide-react";
+import { ChevronDown, X } from "lucide-react";
 import type { UserRole } from "@generated/prisma/enums";
 import { isAdminNavItemActive, visibleAdminNavGroups } from "@/modules/admin/navigation";
-import { getSidebarCollapsed, setSidebarCollapsed, subscribeToSidebarCollapsed } from "@/lib/admin-sidebar-state";
+import { getSidebarCollapsed, subscribeToSidebarCollapsed } from "@/lib/admin-sidebar-state";
 import { BpButton } from "./ui/button";
 
 type Props = {
   role: UserRole;
   fullName: string;
-  isLoggingOut: boolean;
-  onLogout: () => void;
   /** Mobile drawer control — the shell owns the open state so the topbar can toggle it. */
   mobileOpen: boolean;
   onCloseMobile: () => void;
@@ -21,18 +19,22 @@ type Props = {
   initialCollapsed: boolean;
 };
 
-export function BlueprintSidebar({ role, fullName, isLoggingOut, onLogout, mobileOpen, onCloseMobile, initialCollapsed }: Props) {
+export function BlueprintSidebar({ role, fullName, mobileOpen, onCloseMobile, initialCollapsed }: Props) {
   const pathname = usePathname();
   const groups = useMemo(() => visibleAdminNavGroups(role), [role]);
-  // Only groups the user has clicked live in state; the rest fall back to "open when they hold
-  // the current route", so a deep link never lands on a collapsed menu.
-  const [toggledGroups, setToggledGroups] = useState<Record<string, boolean>>({});
+  /*
+   * One accordion at a time: opening a group closes whichever was open. `undefined` means the
+   * reader has not chosen yet, so the group holding the current route opens on its own and a
+   * deep link never lands on a collapsed menu.
+   */
+  const [openGroup, setOpenGroup] = useState<string | null | undefined>(undefined);
   const serverSnapshot = useCallback(() => initialCollapsed, [initialCollapsed]);
   const isCollapsed = useSyncExternalStore(subscribeToSidebarCollapsed, getSidebarCollapsed, serverSnapshot);
   const showLabels = !isCollapsed;
 
   function isGroupOpen(group: (typeof groups)[number]) {
-    return toggledGroups[group.title] ?? group.items.some((item) => isAdminNavItemActive(item.href, pathname));
+    if (openGroup === undefined) return group.items.some((item) => isAdminNavItemActive(item.href, pathname));
+    return openGroup === group.title;
   }
 
   const nav = (
@@ -61,7 +63,7 @@ export function BlueprintSidebar({ role, fullName, isLoggingOut, onLogout, mobil
               data-active={isCollapsed && groupActive}
               aria-expanded={expanded}
               title={isCollapsed ? group.title : undefined}
-              onClick={() => setToggledGroups((current) => ({ ...current, [group.title]: !isGroupOpen(group) }))}
+              onClick={() => setOpenGroup(isGroupOpen(group) ? null : group.title)}
             >
               <GroupIcon size={18} strokeWidth={1.5} className="flex-none" />
               {showLabels && <>
@@ -97,26 +99,6 @@ export function BlueprintSidebar({ role, fullName, isLoggingOut, onLogout, mobil
     </div>
   );
 
-  const collapseToggle = (
-    <button type="button" onClick={() => setSidebarCollapsed(!isCollapsed)} className="bp-nav-item border-[var(--bp-divider)]" aria-label={isCollapsed ? "باز کردن منو" : "جمع کردن منو"}>
-      <ChevronsLeftRight size={16} strokeWidth={1.5} className="flex-none" />
-      {showLabels && <span className="text-[13px]">جمع کردن</span>}
-    </button>
-  );
-
-  const footer = (
-    <div className="mt-auto flex flex-col gap-1 pt-4">
-      <Link href="/" className="bp-nav-item" title={isCollapsed ? "مشاهده فروشگاه" : undefined}>
-        <Store size={16} strokeWidth={1.5} className="flex-none" />
-        {showLabels && <span>مشاهده فروشگاه</span>}
-      </Link>
-      <BpButton variant="ghost" isPending={isLoggingOut} onClick={onLogout} className="justify-start gap-2.5 px-3 text-[13px] text-[var(--bp-danger)]" aria-label="خروج از حساب">
-        {!isLoggingOut && <LogOut size={16} strokeWidth={1.5} />}
-        {showLabels && <span>خروج از حساب</span>}
-      </BpButton>
-    </div>
-  );
-
   return (
     <>
       {/* Desktop rail */}
@@ -126,10 +108,6 @@ export function BlueprintSidebar({ role, fullName, isLoggingOut, onLogout, mobil
       >
         {brand}
         {nav}
-        <div className="mt-auto flex flex-col gap-1">
-          {collapseToggle}
-          {footer}
-        </div>
       </aside>
 
       {/* Mobile drawer */}
@@ -141,7 +119,6 @@ export function BlueprintSidebar({ role, fullName, isLoggingOut, onLogout, mobil
               <BpButton isIconOnly aria-label="بستن منوی مدیریت" onClick={onCloseMobile}><X size={17} /></BpButton>
             </div>
             {nav}
-            {footer}
           </aside>
         </div>
       )}

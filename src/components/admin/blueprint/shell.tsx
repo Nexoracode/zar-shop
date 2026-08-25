@@ -3,11 +3,12 @@
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import { Bell, LogOut, Menu, Moon, Sun, UserRound } from "lucide-react";
+import { Bell, Globe, LogOut, Menu, Moon, PanelRightClose, PanelRightOpen, Sun, UserRound } from "lucide-react";
 import type { UserRole } from "@generated/prisma/enums";
 import { formatDateTime, formatMoney } from "@/lib/format";
 import { userRoleLabels } from "@/modules/admin/labels";
 import { getResolvedAdminTheme, setAdminThemePreference, subscribeToAdminTheme } from "@/lib/admin-theme";
+import { getSidebarCollapsed, setSidebarCollapsed, subscribeToSidebarCollapsed } from "@/lib/admin-sidebar-state";
 import { AdminTemplateProvider } from "@/components/admin/template-context";
 import { BlueprintSidebar } from "./sidebar";
 import { BpButton } from "./ui/button";
@@ -35,6 +36,9 @@ export function BlueprintShell({ user, showGoldPrice, goldPrice, goldFetchedAt, 
   const userRef = useRef<HTMLButtonElement>(null);
   const closeMenu = useCallback(() => setOpenMenu(null), []);
   const theme = useSyncExternalStore(subscribeToAdminTheme, getResolvedAdminTheme, () => "light");
+  // The rail's own state, read here because its toggle now lives in this header.
+  const railServerSnapshot = useCallback(() => sidebarCollapsed, [sidebarCollapsed]);
+  const railCollapsed = useSyncExternalStore(subscribeToSidebarCollapsed, getSidebarCollapsed, railServerSnapshot);
   const fullName = `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim() || "مدیر فروشگاه";
 
   useEffect(() => {
@@ -59,8 +63,6 @@ export function BlueprintShell({ user, showGoldPrice, goldPrice, goldFetchedAt, 
       <BlueprintSidebar
         role={user.role}
         fullName={fullName}
-        isLoggingOut={loggingOut}
-        onLogout={() => void logout()}
         mobileOpen={mobileOpen}
         onCloseMobile={() => setMobileOpen(false)}
         initialCollapsed={sidebarCollapsed}
@@ -68,8 +70,21 @@ export function BlueprintShell({ user, showGoldPrice, goldPrice, goldFetchedAt, 
 
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="sticky top-0 z-40 flex flex-wrap items-center justify-between gap-4 border-b border-[var(--bp-divider)] bg-[var(--bp-bg)] px-4 py-3 sm:px-7">
-          {/* First child, so in RTL this cluster sits on the right: admin, then bell, then theme. */}
+          {/* First child, so in RTL this cluster sits on the right: rail toggle, admin, bell, theme. */}
           <div className="flex items-center gap-4">
+            {/* Desktop only: on mobile the rail is a drawer with its own trigger. */}
+            <div className="hidden lg:block">
+              <BpButton
+                isIconOnly
+                aria-label={railCollapsed ? "باز کردن منوی کناری" : "جمع کردن منوی کناری"}
+                aria-expanded={!railCollapsed}
+                title={railCollapsed ? "باز کردن منوی کناری" : "جمع کردن منوی کناری"}
+                onClick={() => setSidebarCollapsed(!railCollapsed)}
+              >
+                {railCollapsed ? <PanelRightOpen size={17} /> : <PanelRightClose size={17} />}
+              </BpButton>
+            </div>
+
             <button
               ref={userRef}
               type="button"
@@ -105,6 +120,10 @@ export function BlueprintShell({ user, showGoldPrice, goldPrice, goldFetchedAt, 
           </div>
 
           <div className="flex items-center gap-4">
+            <Link href="/" aria-label="مشاهده فروشگاه" title="مشاهده فروشگاه" className="bp-btn bp-btn-secondary bp-btn-icon">
+              <Globe size={17} />
+            </Link>
+
             {showGoldPrice && (
               <div className="flex min-w-0 items-center gap-2.5">
                 <span className="flex h-9 w-9 flex-none items-center justify-center border border-[var(--bp-divider)] text-sm font-bold text-[var(--bp-accent-700)]">۱۸</span>
