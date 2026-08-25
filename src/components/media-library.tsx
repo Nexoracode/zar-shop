@@ -71,12 +71,15 @@ export function MediaLibrary() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    const timer = window.setTimeout(() => setDebouncedQuery(query.trim()), 350);
+    const timer = window.setTimeout(() => { setDebouncedQuery(query.trim()); setPage(1); }, 350);
     return () => window.clearTimeout(timer);
   }, [query]);
 
-  // Any change to what is being looked for starts again from the first page.
-  useEffect(() => { setPage(1); }, [scope, typeFilter, missingAltOnly, debouncedQuery]);
+  /** Any change to what is being looked for starts again from the first page. */
+  function changeFilter(apply: () => void) {
+    apply();
+    setPage(1);
+  }
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -95,7 +98,7 @@ export function MediaLibrary() {
     }
   }, [scope, page, typeFilter, missingAltOnly, debouncedQuery]);
 
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => { queueMicrotask(() => void load()); }, [load]);
 
   const selected = listing.items.find((item) => item.id === selectedId) ?? null;
 
@@ -144,9 +147,10 @@ export function MediaLibrary() {
   }
 
   function applySaved(updated: MediaDetails) {
+    const edited = { title: updated.title, alt: updated.alt, caption: updated.caption, description: updated.description };
     setListing((current) => ({
       ...current,
-      items: current.items.map((item) => item.id === updated.id ? { ...item, ...updated } : item),
+      items: current.items.map((item) => item.id === updated.id ? { ...item, ...edited } : item),
     }));
   }
 
@@ -156,8 +160,8 @@ export function MediaLibrary() {
         {scopes.map((item) => {
           const active = scope === item.value;
           return blueprint
-            ? <BpButton key={item.value} size="sm" variant={active ? "primary" : "secondary"} onClick={() => setScope(item.value)}>{item.label}</BpButton>
-            : <Button key={item.value} type="button" size="sm" variant={active ? "primary" : "secondary"} onPress={() => setScope(item.value)} className="min-h-9 rounded-lg px-4 text-xs">{item.label}</Button>;
+            ? <BpButton key={item.value} size="sm" variant={active ? "primary" : "secondary"} onClick={() => changeFilter(() => setScope(item.value))}>{item.label}</BpButton>
+            : <Button key={item.value} type="button" size="sm" variant={active ? "primary" : "secondary"} onPress={() => changeFilter(() => setScope(item.value))} className="min-h-9 rounded-lg px-4 text-xs">{item.label}</Button>;
         })}
       </div>
       <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto_auto]">
@@ -168,11 +172,11 @@ export function MediaLibrary() {
             : <Input value={query} onChange={(event) => setQuery(event.target.value)} aria-label="جستجوی رسانه" fullWidth variant="secondary" placeholder="جستجو در عنوان و متن جایگزین..." className={`${adminFieldClass} px-10`} />}
         </div>
         {blueprint
-          ? <BpSelect aria-label="نوع فایل" value={typeFilter} reserveMessage={false} options={typeFilters} onChange={(event) => setTypeFilter(event.target.value)} className="sm:w-40" />
-          : <select aria-label="نوع فایل" value={typeFilter} onChange={(event) => setTypeFilter(event.target.value)} className={`${adminFieldClass} sm:w-40`}>{typeFilters.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</select>}
+          ? <BpSelect aria-label="نوع فایل" value={typeFilter} reserveMessage={false} options={typeFilters} onChange={(event) => changeFilter(() => setTypeFilter(event.target.value))} className="sm:w-40" />
+          : <select aria-label="نوع فایل" value={typeFilter} onChange={(event) => changeFilter(() => setTypeFilter(event.target.value))} className={`${adminFieldClass} sm:w-40`}>{typeFilters.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</select>}
         {blueprint
-          ? <BpButton size="sm" variant={missingAltOnly ? "primary" : "secondary"} onClick={() => setMissingAltOnly((current) => !current)} className="gap-2"><TriangleAlert size={14} />فقط بدون alt</BpButton>
-          : <Button type="button" size="sm" variant={missingAltOnly ? "primary" : "secondary"} onPress={() => setMissingAltOnly((current) => !current)} className="min-h-10 gap-2 rounded-lg px-4 text-xs"><TriangleAlert size={14} />فقط بدون alt</Button>}
+          ? <BpButton size="sm" variant={missingAltOnly ? "primary" : "secondary"} onClick={() => changeFilter(() => setMissingAltOnly((current) => !current))} className="gap-2"><TriangleAlert size={14} />فقط بدون alt</BpButton>
+          : <Button type="button" size="sm" variant={missingAltOnly ? "primary" : "secondary"} onPress={() => changeFilter(() => setMissingAltOnly((current) => !current))} className="min-h-10 gap-2 rounded-lg px-4 text-xs"><TriangleAlert size={14} />فقط بدون alt</Button>}
       </div>
       <label className={`grid cursor-pointer gap-1 ${blueprint ? "border border-dashed border-[var(--bp-divider)] p-3" : "rounded-xl border border-dashed border-[var(--border)] bg-[var(--surface-secondary)] p-3"}`}>
         <span className="flex items-center gap-2 text-xs font-bold"><UploadCloud size={16} />{uploading ? "در حال بارگذاری..." : "بارگذاری فایل جدید"}</span>
@@ -235,7 +239,7 @@ export function MediaLibrary() {
         {pager}
       </div>
       {selected
-        ? <MediaDetailsPanel media={{ ...selected, usageCount: mediaUsageCount(selected._count) }} onSaved={applySaved} className={blueprint ? "border border-[var(--bp-divider)] p-4 lg:sticky lg:top-24" : "rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 lg:sticky lg:top-24"} />
+        ? <MediaDetailsPanel key={selected.id} media={{ ...selected, usageCount: mediaUsageCount(selected._count) }} onSaved={applySaved} className={blueprint ? "border border-[var(--bp-divider)] p-4 lg:sticky lg:top-24" : "rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 lg:sticky lg:top-24"} />
         : <aside className={`grid place-items-center p-8 text-center ${blueprint ? "border border-dashed border-[var(--bp-divider)]" : "rounded-2xl border border-dashed border-[var(--border)]"}`}>
             <div>
               <ImageIcon className={`mx-auto mb-2 ${blueprint ? "text-[var(--bp-muted)]" : "text-[var(--muted)]"}`} size={30} />

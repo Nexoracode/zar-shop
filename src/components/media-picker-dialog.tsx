@@ -170,7 +170,8 @@ export function MediaPickerDialog({ open, scope, multiple = false, allowedTypes,
   const detailsItem = items.find((item) => item.id === detailsId) ?? null;
 
   function applySaved(updated: MediaDetails) {
-    setItems((current) => current.map((item) => item.id === updated.id ? { ...item, ...updated } : item));
+    const edited = { title: updated.title, alt: updated.alt, caption: updated.caption, description: updated.description };
+    setItems((current) => current.map((item) => item.id === updated.id ? { ...item, ...edited } : item));
   }
 
   if (template === "BLUEPRINT") {
@@ -263,7 +264,7 @@ export function MediaPickerDialog({ open, scope, multiple = false, allowedTypes,
           )}
           </div>
           {detailsItem
-            ? <MediaDetailsPanel media={{ ...detailsItem, usageCount: mediaUsageCount(detailsItem._count) }} onSaved={applySaved} className="bp-frame relative p-4 lg:sticky lg:top-0" />
+            ? <MediaDetailsPanel key={detailsItem.id} media={{ ...detailsItem, usageCount: mediaUsageCount(detailsItem._count) }} onSaved={applySaved} className="bp-frame relative p-4 lg:sticky lg:top-0" />
             : <aside className="hidden place-items-center border border-dashed border-[var(--bp-divider)] p-6 text-center lg:grid">
                 <div>
                   <strong className="block text-[13px]">ویرایش اطلاعات رسانه</strong>

@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { toast } from "@heroui/react";
 import { FileText, Film, TriangleAlert } from "lucide-react";
 import { TextAreaField, TextField } from "@/components/form-field";
@@ -45,21 +45,18 @@ function formatSize(bytes?: number) {
  */
 export function MediaDetailsPanel({ media, onSaved, className = "" }: { media: MediaDetails; onSaved: (updated: MediaDetails) => void; className?: string }) {
   const template = useAdminTemplate();
-  const [fields, setFields] = useState<Fields>({ title: "", alt: "", caption: "", description: "" });
+  /*
+   * State is seeded from the asset once. Callers mount this with `key={media.id}`, so choosing a
+   * different asset remounts the panel rather than syncing props into state through an effect.
+   */
+  const [fields, setFields] = useState<Fields>({
+    title: media.title ?? "",
+    alt: media.alt ?? "",
+    caption: media.caption ?? "",
+    description: media.description ?? "",
+  });
   const [errors, setErrors] = useState<Partial<Record<keyof Fields, string>>>({});
   const [saving, setSaving] = useState(false);
-
-  // Reloading whenever the selection changes is the point: the panel always shows the asset the
-  // reader just clicked, not the one they were editing before.
-  useEffect(() => {
-    setFields({
-      title: media.title ?? "",
-      alt: media.alt ?? "",
-      caption: media.caption ?? "",
-      description: media.description ?? "",
-    });
-    setErrors({});
-  }, [media]);
 
   function set(field: keyof Fields, value: string) {
     setFields((current) => ({ ...current, [field]: value }));

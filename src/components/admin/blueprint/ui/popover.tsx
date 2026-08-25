@@ -36,9 +36,9 @@ export function BpPopover({ open, anchorRef, onClose, label, width = 300, childr
     setPlacement({ top, left });
   }, [anchorRef, width]);
 
-  const awaitingMeasure = placement === null;
-  useLayoutEffect(() => { if (open) reposition(); }, [open, reposition, awaitingMeasure]);
-  useEffect(() => { if (!open) setPlacement(null); }, [open]);
+  // The panel is mounted as soon as it opens but stays invisible until measured, so this single
+  // layout pass reads a real height instead of guessing and then correcting.
+  useLayoutEffect(() => { if (open) reposition(); }, [open, reposition]);
 
   useEffect(() => {
     if (!open) return;
@@ -60,7 +60,7 @@ export function BpPopover({ open, anchorRef, onClose, label, width = 300, childr
     };
   }, [open, onClose, reposition, anchorRef]);
 
-  if (!open || !placement || typeof document === "undefined") return null;
+  if (!open || typeof document === "undefined") return null;
 
   return createPortal(
     <div
@@ -70,7 +70,7 @@ export function BpPopover({ open, anchorRef, onClose, label, width = 300, childr
       aria-label={label}
       // `position` is set inline: `.bp-frame` declares `position: relative` from an unlayered
       // stylesheet, which outranks Tailwind's layered `fixed` utility.
-      style={{ position: "fixed", top: placement.top, left: placement.left, width: Math.min(width, typeof window === "undefined" ? width : window.innerWidth - 16), zIndex: 140 }}
+      style={{ position: "fixed", top: placement?.top ?? 0, left: placement?.left ?? 0, visibility: placement ? undefined : "hidden", width: Math.min(width, typeof window === "undefined" ? width : window.innerWidth - 16), zIndex: 140 }}
       className="bp-root bp-frame bg-[var(--bp-bg)] p-4 shadow-[var(--bp-shadow-lg)]"
     >
       {children}
