@@ -7,6 +7,20 @@ const dateOnlySchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/).refine((value) =>
   return date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day;
 }, "تاریخ واردشده معتبر نیست.");
 
+/** A full instant, for callers that pick a time of day as well as a date. */
+const dateTimeSchema = z.string().datetime({ offset: true }).or(z.string().datetime());
+
+/*
+ * Discount bounds accept either form. A bare date still means the whole Tehran day, which is what
+ * the classic admin form sends and what existing rows hold; an instant is stored as given, so the
+ * Blueprint form's date-and-time picker is not silently rounded to midnight.
+ */
+const discountBoundarySchema = z.union([dateOnlySchema, dateTimeSchema]);
+
+export function isDateOnly(value: string) {
+  return /^\d{4}-\d{2}-\d{2}$/.test(value);
+}
+
 const productOptionSchema = z.object({
   name: z.string().trim().min(1).max(80),
   type: z.enum(["SELECT", "COLOR"]).default("SELECT"),
@@ -40,8 +54,8 @@ export const productSchema = z.object({
   fixedPrice: z.coerce.number().positive().max(999999999999999999).nullable().default(null),
   discountType: z.enum(["PERCENT", "FIXED"]).nullable().default(null),
   discountValue: z.coerce.number().positive().max(999999999999999999).nullable().default(null),
-  discountStartsAt: dateOnlySchema.nullable().default(null),
-  discountEndsAt: dateOnlySchema.nullable().default(null),
+  discountStartsAt: discountBoundarySchema.nullable().default(null),
+  discountEndsAt: discountBoundarySchema.nullable().default(null),
   stock: z.coerce.number().int().nonnegative(),
   preparationDays: z.coerce.number().int().min(0).max(90).default(2),
   status: z.enum(["DRAFT", "ACTIVE", "ARCHIVED"]).default("DRAFT"),

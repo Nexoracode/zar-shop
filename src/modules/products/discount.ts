@@ -25,12 +25,21 @@ export function calculateDiscountedPrice(price: number, product: ProductDiscount
   return { originalPrice: price, discountAmount, finalPrice: price - discountAmount, isActive: discountAmount > 0 };
 }
 
+const dateOnlyPattern = /^\d{4}-\d{2}-\d{2}$/;
+
+/*
+ * A bare `YYYY-MM-DD` means the whole Tehran day, so a window given as dates covers midnight to
+ * midnight. A full instant is already precise and is kept exactly as sent — that is what lets a
+ * date-and-time picker choose, say, 09:30 without it being rounded away.
+ */
 export function tehranDateStart(value: string | null | undefined) {
-  return value ? new Date(`${value}T00:00:00.000+03:30`) : null;
+  if (!value) return null;
+  return dateOnlyPattern.test(value) ? new Date(`${value}T00:00:00.000+03:30`) : new Date(value);
 }
 
 export function tehranDateEnd(value: string | null | undefined) {
-  return value ? new Date(`${value}T23:59:59.999+03:30`) : null;
+  if (!value) return null;
+  return dateOnlyPattern.test(value) ? new Date(`${value}T23:59:59.999+03:30`) : new Date(value);
 }
 
 export function formatTehranDateInput(value: Date | null | undefined) {

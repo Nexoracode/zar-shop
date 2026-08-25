@@ -27,3 +27,8 @@ test("converts Tehran day boundaries to UTC", () => {
   assert.equal(tehranDateStart("2026-07-29")?.toISOString(), "2026-07-28T20:30:00.000Z");
   assert.equal(tehranDateEnd("2026-07-29")?.toISOString(), "2026-07-29T20:29:59.999Z");
 });
+
+test("keeps a full instant untouched, so a picked time of day survives", () => {
+  assert.equal(tehranDateStart("2026-07-29T09:30:00.000Z")?.toISOString(), "2026-07-29T09:30:00.000Z");
+  assert.equal(tehranDateEnd("2026-07-30T18:45:00.000Z")?.toISOString(), "2026-07-30T18:45:00.000Z");
+});

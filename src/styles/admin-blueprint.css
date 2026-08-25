@@ -287,7 +287,10 @@ select.bp-input:focus-visible { border-color: var(--bp-accent); outline: none; }
    otherwise borderless. */
 .bp-input[aria-invalid="true"],
 .bp-input[aria-invalid="true"]:focus,
-.bp-input[aria-invalid="true"]:focus-visible { border-color: var(--bp-danger); outline: none; }
+.bp-input[aria-invalid="true"]:focus-visible,
+.bp-input[data-invalid="true"],
+.bp-input[data-invalid="true"]:focus,
+.bp-input[data-invalid="true"]:focus-visible { border-color: var(--bp-danger); outline: none; }
 
 /* One line is reserved under every form field so that an error appearing or clearing never
    changes the field's height — the form must not jump. The hint and the error share this one
