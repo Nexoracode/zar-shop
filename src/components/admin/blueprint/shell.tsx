@@ -22,10 +22,11 @@ type Props = {
   goldPrice: string | null;
   goldFetchedAt: string | null;
   notificationCount: number;
+  sidebarCollapsed: boolean;
   children: ReactNode;
 };
 
-export function BlueprintShell({ user, showGoldPrice, goldPrice, goldFetchedAt, notificationCount, children }: Props) {
+export function BlueprintShell({ user, showGoldPrice, goldPrice, goldFetchedAt, notificationCount, sidebarCollapsed, children }: Props) {
   const router = useRouter();
   const [loggingOut, setLoggingOut] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -62,6 +63,7 @@ export function BlueprintShell({ user, showGoldPrice, goldPrice, goldFetchedAt, 
         onLogout={() => void logout()}
         mobileOpen={mobileOpen}
         onCloseMobile={() => setMobileOpen(false)}
+        initialCollapsed={sidebarCollapsed}
       />
 
       <div className="flex min-w-0 flex-1 flex-col">

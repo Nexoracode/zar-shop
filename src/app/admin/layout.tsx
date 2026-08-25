@@ -1,6 +1,8 @@
+import { cookies } from "next/headers";
 import { AdminSidebar } from "@/components/admin-sidebar";
 import { AdminShell } from "@/components/admin-shell";
 import { BlueprintShell } from "@/components/admin/blueprint/shell";
+import { sidebarCollapsedCookie } from "@/lib/admin-sidebar-state";
 import { db } from "@/lib/db";
 import { requireAdminUser } from "@/modules/auth/session";
 import { getGoldPriceForDisplay } from "@/modules/gold/gold-price.service";
@@ -26,7 +28,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     notificationCount,
   };
   if (brandSettings.adminTemplate === "BLUEPRINT") {
-    return <BlueprintShell {...shellProps}>{children}</BlueprintShell>;
+    // Read here rather than in the rail: the server has to know the width to paint it right.
+    const sidebarCollapsed = (await cookies()).get(sidebarCollapsedCookie)?.value === "1";
+    return <BlueprintShell {...shellProps} sidebarCollapsed={sidebarCollapsed}>{children}</BlueprintShell>;
   }
   return (
     <AdminShell {...shellProps} sidebar={<AdminSidebar user={adminUser} />}>

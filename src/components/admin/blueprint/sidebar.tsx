@@ -2,11 +2,11 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useMemo, useState, useSyncExternalStore } from "react";
+import { useCallback, useMemo, useState, useSyncExternalStore } from "react";
 import { ChevronDown, ChevronsLeftRight, LogOut, Store, X } from "lucide-react";
 import type { UserRole } from "@generated/prisma/enums";
 import { isAdminNavItemActive, visibleAdminNavGroups } from "@/modules/admin/navigation";
-import { getSidebarCollapsed, getSidebarCollapsedServerSnapshot, setSidebarCollapsed, subscribeToSidebarCollapsed } from "@/lib/admin-sidebar-state";
+import { getSidebarCollapsed, setSidebarCollapsed, subscribeToSidebarCollapsed } from "@/lib/admin-sidebar-state";
 import { BpButton } from "./ui/button";
 
 type Props = {
@@ -17,15 +17,18 @@ type Props = {
   /** Mobile drawer control — the shell owns the open state so the topbar can toggle it. */
   mobileOpen: boolean;
   onCloseMobile: () => void;
+  /** Read from the cookie on the server, so the first paint already has the right width. */
+  initialCollapsed: boolean;
 };
 
-export function BlueprintSidebar({ role, fullName, isLoggingOut, onLogout, mobileOpen, onCloseMobile }: Props) {
+export function BlueprintSidebar({ role, fullName, isLoggingOut, onLogout, mobileOpen, onCloseMobile, initialCollapsed }: Props) {
   const pathname = usePathname();
   const groups = useMemo(() => visibleAdminNavGroups(role), [role]);
   // Only groups the user has clicked live in state; the rest fall back to "open when they hold
   // the current route", so a deep link never lands on a collapsed menu.
   const [toggledGroups, setToggledGroups] = useState<Record<string, boolean>>({});
-  const isCollapsed = useSyncExternalStore(subscribeToSidebarCollapsed, getSidebarCollapsed, getSidebarCollapsedServerSnapshot);
+  const serverSnapshot = useCallback(() => initialCollapsed, [initialCollapsed]);
+  const isCollapsed = useSyncExternalStore(subscribeToSidebarCollapsed, getSidebarCollapsed, serverSnapshot);
   const showLabels = !isCollapsed;
 
   function isGroupOpen(group: (typeof groups)[number]) {
