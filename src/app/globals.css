@@ -212,6 +212,50 @@ html[dir="rtl"] [data-slot="modal-header"]:has([data-slot="modal-close-trigger"]
 [data-theme="zar-dark"] .admin-content [class~="text-[#846325]"],
 [data-theme="zar-dark"] .admin-content [class~="text-[#9a7434]"] { color: var(--warning) !important; }
 
+/* ── Shared form fields ─────────────────────────────────────────────────────────────────────
+   The one field surface for the storefront, the account area and the classic admin template.
+   The Blueprint admin has its own equivalent scoped under `.bp-root`; the two differ only in
+   looks and must keep the same behaviour — red edge on error, and a message line that is always
+   reserved so a form never jumps when an error appears. */
+.field-label {
+  display: block;
+  margin-bottom: 0.375rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--foreground);
+}
+.field-control {
+  width: 100%;
+  border-radius: 0.75rem;
+  border: 1px solid var(--field-border);
+  background: var(--field-background);
+  color: var(--field-foreground);
+  padding: 0.75rem 0.875rem;
+  font-size: 0.875rem;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.field-control::placeholder { color: var(--field-placeholder); }
+.field-control:focus { border-color: var(--field-border-focus); box-shadow: 0 0 0 4px color-mix(in srgb, var(--focus) 10%, transparent); }
+.field-control[aria-invalid="true"] { border-color: var(--danger); }
+.field-control[aria-invalid="true"]:focus { border-color: var(--danger); box-shadow: 0 0 0 4px color-mix(in srgb, var(--danger) 12%, transparent); }
+.field-control:disabled { opacity: 0.6; cursor: not-allowed; }
+
+/* One reserved line: the error takes it while present, the hint sits there otherwise. */
+.field-message {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: 0.6875rem;
+  line-height: 1.125rem;
+  min-height: 1.125rem;
+}
+.field-message-error { color: var(--danger); }
+.field-message-hint { color: var(--muted); }
+
+/* A shared form rendered inside the Blueprint shell adopts that template's flat surface. */
+.bp-root .field-control { border-radius: 0; background: var(--bp-surface); border-color: var(--bp-divider); }
+.bp-root .field-control[aria-invalid="true"] { border-color: var(--bp-danger); }
+
 .admin-sticky-save-form > :last-child {
   position: sticky;
   bottom: max(0.75rem, env(safe-area-inset-bottom));
