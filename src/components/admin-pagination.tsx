@@ -51,6 +51,7 @@ export function AdminPagination({ page, pageSize, totalItems, totalPages }: Prop
             value={String(pageSize)}
             options={adminPageSizes.map((size) => ({ value: String(size), label: `${size.toLocaleString("fa-IR")} ردیف` }))}
             onChange={(event) => update("pageSize", Number(event.target.value))}
+            reserveMessage={false}
             className="min-h-[30px] w-28 py-1"
           />
         </div>

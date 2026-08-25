@@ -274,6 +274,23 @@ select.bp-input { appearance: none; padding-inline-end: 28px; }
    utilities cannot do this: `.bp-input` is unlayered and always wins over them. */
 .bp-input-search { padding-inline-start: 34px; padding-inline-end: 36px; }
 
+/* A field in error carries a red edge, and keeps it while focused. */
+.bp-input[aria-invalid="true"] { border-color: var(--bp-danger); }
+.bp-input[aria-invalid="true"]:focus-visible { border-color: var(--bp-danger); outline-color: var(--bp-danger); }
+
+/* One line is reserved under every form field so that an error appearing or clearing never
+   changes the field's height — the form must not jump. The hint and the error share this one
+   slot: the error takes it over while present, otherwise the hint sits there. */
+.bp-field-message {
+  display: block;
+  margin-top: 4px;
+  font-size: 11px;
+  line-height: 18px;
+  min-height: 18px;
+}
+.bp-field-message-error { color: var(--bp-danger); }
+.bp-field-message-hint { color: var(--bp-muted); }
+
 .bp-select-wrap { position: relative; }
 .bp-select-wrap > svg {
   position: absolute;

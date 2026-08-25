@@ -29,6 +29,7 @@ export function BpPagination({ page, totalPages, pageSize, onPageChange, onPageS
             value={String(pageSize)}
             onChange={(event) => onPageSizeChange(Number(event.target.value))}
             options={pageSizes.map((size) => ({ value: String(size), label: size.toLocaleString("fa-IR") }))}
+            reserveMessage={false}
             className="min-h-[30px] w-auto py-1"
           />
         </div>

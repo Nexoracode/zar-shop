@@ -2,6 +2,7 @@
 
 import { ChevronDown } from "lucide-react";
 import { useId, type ReactNode, type SelectHTMLAttributes } from "react";
+import { BpFieldMessage, describedBy } from "./field-message";
 
 export type BpSelectOption = { value: string; label: string; disabled?: boolean };
 
@@ -9,27 +10,35 @@ type BpSelectProps = Omit<SelectHTMLAttributes<HTMLSelectElement>, "className" |
   label?: ReactNode;
   hint?: ReactNode;
   error?: ReactNode;
+  /** Keep the message line even when empty. Off only for controls outside a form. */
+  reserveMessage?: boolean;
   options: BpSelectOption[];
   placeholder?: string;
   className?: string;
   wrapperClassName?: string;
 };
 
-export function BpSelect({ label, hint, error, options, placeholder, className = "", wrapperClassName = "", id, ...rest }: BpSelectProps) {
+export function BpSelect({ label, hint, error, reserveMessage = true, options, placeholder, className = "", wrapperClassName = "", id, ...rest }: BpSelectProps) {
   const generated = useId();
   const selectId = id ?? generated;
+  const messageId = `${selectId}-message`;
   return (
     <div className={`bp-field ${wrapperClassName}`.trim()}>
       {label && <label htmlFor={selectId}>{label}</label>}
       <div className="bp-select-wrap">
-        <select id={selectId} aria-invalid={error ? true : undefined} className={`bp-input ${className}`.trim()} {...rest}>
+        <select
+          id={selectId}
+          aria-invalid={error ? true : undefined}
+          aria-describedby={describedBy(messageId, error, hint)}
+          className={`bp-input ${className}`.trim()}
+          {...rest}
+        >
           {placeholder && <option value="">{placeholder}</option>}
           {options.map((option) => <option key={option.value} value={option.value} disabled={option.disabled}>{option.label}</option>)}
         </select>
         <ChevronDown size={15} aria-hidden />
       </div>
-      {hint && !error && <span className="bp-muted mt-1 block text-[11px] leading-5">{hint}</span>}
-      {error && <span className="mt-1 block text-[11px] leading-5 text-[var(--bp-danger)]">{error}</span>}
+      <BpFieldMessage id={messageId} error={error} hint={hint} reserve={reserveMessage} />
     </div>
   );
 }

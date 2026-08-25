@@ -53,6 +53,7 @@ export function AdminListFilters({ path, query, queryLabel, queryPlaceholder, fi
               value={filter.value}
               options={filter.options}
               onChange={(event) => update(filter.name, event.target.value)}
+              reserveMessage={false}
               wrapperClassName="w-full sm:w-auto"
               className="w-full sm:w-48"
             />

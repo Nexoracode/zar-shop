@@ -2,6 +2,7 @@ export { BpButton, BpLinkButton, BpSpinner, type BpButtonVariant } from "./butto
 export { BpCard, BpCardTitle, BpCorners, BpKicker } from "./card";
 export { BpCheckbox } from "./checkbox";
 export { BpDialog } from "./dialog";
+export { BpFieldMessage } from "./field-message";
 export { BpInput, BpTextarea } from "./input";
 export { BpPagination } from "./pagination";
 export { BpSeg, type BpSegOption } from "./seg";

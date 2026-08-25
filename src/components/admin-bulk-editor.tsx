@@ -84,6 +84,7 @@ export function AdminBulkEditor({ entity, entityLabel, ids, actions, children, d
               disabled={!selected.size || loading}
               onChange={(event) => { const value = event.target.value; setAction(value); if (!value) return; const selectedAction = actions.find((item) => item.value === value); if (selectedAction?.confirmation) setPendingAction(selectedAction); else void apply(value); }}
               options={[{ value: "", label: "انتخاب عملیات؛ اعمال خودکار" }, ...actions]}
+              reserveMessage={false}
               className="w-72"
             />
             <AdminTableRefreshButton />
