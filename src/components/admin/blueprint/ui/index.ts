@@ -5,6 +5,7 @@ export { BpDialog } from "./dialog";
 export { BpFieldMessage } from "./field-message";
 export { BpInput, BpTextarea } from "./input";
 export { BpPagination } from "./pagination";
+export { BpPopover } from "./popover";
 export { BpSeg, type BpSegOption } from "./seg";
 export { BpSelect, type BpSelectOption } from "./select";
 export { BpSwitch } from "./switch";

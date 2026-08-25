@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import type { ButtonHTMLAttributes, ReactNode } from "react";
+import type { ButtonHTMLAttributes, ReactNode, Ref } from "react";
 import { BpCorners } from "./card";
 
 export type BpButtonVariant = "primary" | "secondary" | "ghost" | "danger";
@@ -45,6 +45,8 @@ export function BpSpinner({ size = 15 }: { size?: number }) {
 type BpButtonProps = BpButtonStyleProps
   & Omit<ButtonHTMLAttributes<HTMLButtonElement>, "className">
   & {
+    /** React 19 passes refs as a plain prop; the header anchors its popovers to one. */
+    ref?: Ref<HTMLButtonElement>;
     /**
      * Marks an in-flight async action. The button stays disabled and shows a spinner for the
      * whole wait, so no admin action can be disabled without visible loading feedback.

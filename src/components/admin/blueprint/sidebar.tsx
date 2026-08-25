@@ -132,7 +132,7 @@ export function BlueprintSidebar({ role, fullName, isLoggingOut, onLogout, mobil
       {/* Mobile drawer */}
       {mobileOpen && (
         <div className="fixed inset-0 z-[120] bg-[color-mix(in_srgb,#0b0c0d_55%,transparent)] lg:hidden" onMouseDown={(event) => { if (event.target === event.currentTarget) onCloseMobile(); }}>
-          <aside className="bp-scroll ms-auto flex h-full w-[min(84vw,300px)] flex-col gap-4 overflow-y-auto border-s border-[var(--bp-divider)] bg-[var(--bp-bg)] p-4">
+          <aside className="bp-scroll me-auto flex h-full w-[min(84vw,300px)] flex-col gap-4 overflow-y-auto border-e border-[var(--bp-divider)] bg-[var(--bp-bg)] p-4">
             <div className="flex items-center justify-between gap-3">
               <strong className="text-sm">منوی مدیریت</strong>
               <BpButton isIconOnly aria-label="بستن منوی مدیریت" onClick={onCloseMobile}><X size={17} /></BpButton>
