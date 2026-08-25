@@ -64,6 +64,7 @@ export function ProductReviews({ productId, initialData, isAuthenticated }: Prop
     setRating(0);
     setTitle("");
     setBody("");
+    setReviewErrors({});
     setComposeOpen(true);
   }
 

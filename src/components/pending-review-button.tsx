@@ -1,20 +1,96 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Alert, Button, Input, Modal, TextArea, toast } from "@heroui/react";
+import { Button, Modal, toast } from "@heroui/react";
 import { Star, X } from "lucide-react";
+import { TextAreaField, TextField } from "@/components/form-field";
+import { requestErrorMessage, requestJson } from "@/lib/api-request";
+import { reviewFormHasProblems, validateReviewForm, type ReviewFormField } from "@/modules/reviews/review-form-validation";
+
+const scores = [1, 2, 3, 4, 5] as const;
 
 export function PendingReviewButton({ productId, productName }: { productId: string; productName: string }) {
-  const [open, setOpen] = useState(false); const [rating, setRating] = useState(5); const [busy, setBusy] = useState(false); const [error, setError] = useState("");
   const router = useRouter();
-  async function submit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault(); setBusy(true); setError("");
-    const form = new FormData(event.currentTarget);
-    const response = await fetch(`/api/products/${productId}/reviews`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ rating, title: form.get("title"), body: form.get("body") }) });
-    const result = await response.json().catch(() => null); setBusy(false);
-    if (!response.ok) { setError(result?.message ?? "ثبت دیدگاه انجام نشد."); return; }
-    setOpen(false); toast.success("دیدگاه شما ثبت شد", { description: "پس از بررسی مدیریت نمایش داده می‌شود." }); router.refresh();
+  const bodyRef = useRef<HTMLDivElement>(null);
+  const [open, setOpen] = useState(false);
+  // Starts unrated. It used to default to 5, which both hid the "you have not rated yet" case
+  // and silently filed a five-star review for anyone who ignored the stars.
+  const [rating, setRating] = useState(0);
+  const [title, setTitle] = useState("");
+  const [body, setBody] = useState("");
+  const [errors, setErrors] = useState<Partial<Record<ReviewFormField, string>>>({});
+  const [busy, setBusy] = useState(false);
+
+  function clearError(field: ReviewFormField) {
+    setErrors((current) => (current[field] ? { ...current, [field]: undefined } : current));
   }
-  return <><Button type="button" variant="primary" fullWidth onPress={() => setOpen(true)} className="gap-2"><Star size={17} />ثبت امتیاز و دیدگاه</Button><Modal.Backdrop isOpen={open} onOpenChange={setOpen} variant="blur"><Modal.Container placement="center" size="lg"><Modal.Dialog aria-label={`ثبت دیدگاه برای ${productName}`} dir="rtl" className="mx-3 bg-[var(--surface)]"><Modal.Header className="flex-row items-center justify-between border-b border-[var(--border)] p-5"><Modal.Heading className="text-base font-bold">دیدگاه درباره {productName}</Modal.Heading><Modal.CloseTrigger aria-label="بستن" className="grid size-9 place-items-center rounded-lg"><X size={18} /></Modal.CloseTrigger></Modal.Header><Modal.Body className="p-5"><form onSubmit={submit} className="grid gap-4"><div><span className="mb-2 block text-xs font-bold">امتیاز شما</span><div className="flex gap-1" dir="ltr">{[1,2,3,4,5].map((value) => <Button key={value} type="button" isIconOnly variant="ghost" aria-label={`${value} ستاره`} onPress={() => setRating(value)} className="text-amber-400"><Star size={26} className={value <= rating ? "fill-current" : ""} /></Button>)}</div></div><label className="grid gap-2 text-xs font-bold">عنوان دیدگاه<Input name="title" required minLength={3} maxLength={120} variant="secondary" /></label><label className="grid gap-2 text-xs font-bold">متن دیدگاه<TextArea name="body" required minLength={10} maxLength={3000} rows={5} variant="secondary" /></label>{error && <Alert status="danger"><Alert.Description>{error}</Alert.Description></Alert>}<Button type="submit" variant="primary" isPending={busy}>ثبت دیدگاه</Button></form></Modal.Body></Modal.Dialog></Modal.Container></Modal.Backdrop></>;
+
+  function openComposer() {
+    setRating(0);
+    setTitle("");
+    setBody("");
+    setErrors({});
+    setOpen(true);
+  }
+
+  async function submit() {
+    const result = validateReviewForm({ rating, title, body, isReply: false });
+    if (reviewFormHasProblems(result)) {
+      setErrors(result.fieldErrors);
+      // The rating is a star row, not a field, so it is reported as a toast.
+      if (result.ratingMessage) toast.danger("امتیاز انتخاب نشده است", { description: result.ratingMessage });
+      const first = (["title", "body"] as const).find((field) => result.fieldErrors[field]);
+      if (first) bodyRef.current?.querySelector<HTMLElement>(`[name="${first}"]`)?.focus();
+      return;
+    }
+    setBusy(true);
+    try {
+      await requestJson(`/api/products/${productId}/reviews`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ rating, title: title.trim(), body: body.trim() }),
+      }, { fallbackMessage: "ثبت دیدگاه انجام نشد." });
+      setOpen(false);
+      toast.success("دیدگاه شما ثبت شد", { description: "پس از بررسی مدیریت نمایش داده می‌شود." });
+      router.refresh();
+    } catch (reason) {
+      toast.danger("ثبت دیدگاه انجام نشد", { description: requestErrorMessage(reason, "ثبت دیدگاه انجام نشد.") });
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return <>
+    <Button type="button" variant="primary" fullWidth onPress={openComposer} className="gap-2"><Star size={17} />ثبت امتیاز و دیدگاه</Button>
+    <Modal.Backdrop isOpen={open} onOpenChange={(nextOpen) => { if (!busy) setOpen(nextOpen); }} variant="blur">
+      <Modal.Container placement="center" size="lg">
+        <Modal.Dialog aria-label={`ثبت دیدگاه برای ${productName}`} dir="rtl" className="mx-3 bg-[var(--surface)]">
+          <Modal.Header className="flex-row items-center justify-between border-b border-[var(--border)] p-5">
+            <Modal.Heading className="text-base font-bold">دیدگاه درباره {productName}</Modal.Heading>
+            <Modal.CloseTrigger aria-label="بستن" className="grid size-9 place-items-center rounded-lg"><X size={18} /></Modal.CloseTrigger>
+          </Modal.Header>
+          {/* No <form> and no native `required`: validation is ours, so the browser never raises
+              its own bubble inside a modal that manages its own focus. */}
+          <Modal.Body className="p-5">
+            <div ref={bodyRef} className="grid gap-4">
+              <div>
+                <span className="mb-2 block text-xs font-bold">امتیاز شما</span>
+                <div className="flex gap-1" role="radiogroup" aria-label="امتیاز شما" dir="ltr">
+                  {scores.map((value) => (
+                    <Button key={value} type="button" isIconOnly variant="ghost" aria-label={`${value} ستاره`} aria-pressed={rating === value} onPress={() => setRating(value)} className="text-amber-400">
+                      <Star size={26} className={value <= rating ? "fill-current" : ""} />
+                    </Button>
+                  ))}
+                </div>
+              </div>
+              <TextField name="title" label="عنوان دیدگاه" required maxLength={120} placeholder="خلاصه تجربه شما" value={title} error={errors.title} onChange={(event) => { setTitle(event.target.value); clearError("title"); }} />
+              <TextAreaField name="body" label="متن دیدگاه" required rows={5} maxLength={3000} hint="حداقل ۳ نویسه" placeholder="تجربه خود را با جزئیات بنویسید" value={body} error={errors.body} onChange={(event) => { setBody(event.target.value); clearError("body"); }} />
+              <Button type="button" variant="primary" isPending={busy} onPress={() => void submit()}>ثبت دیدگاه</Button>
+            </div>
+          </Modal.Body>
+        </Modal.Dialog>
+      </Modal.Container>
+    </Modal.Backdrop>
+  </>;
 }
