@@ -424,7 +424,28 @@ select.bp-input:focus-visible { border-color: var(--bp-accent); outline: none; }
    table up with the card's own 18px gutters. */
 .bp-table th:first-child, .bp-table td:first-child { padding-inline-start: var(--bp-space-6); }
 .bp-table th:last-child, .bp-table td:last-child { padding-inline-end: var(--bp-space-6); }
+/*
+ * The header follows the page down. It parks under the app header, whose measured height
+ * arrives as `--admin-sticky-top`.
+ *
+ * `border-collapse: collapse` drops borders on sticky cells, so the rule underneath the header
+ * is drawn as an inset shadow instead — that one survives.
+ */
+.bp-table thead th {
+  position: sticky;
+  top: var(--admin-sticky-top, 0px);
+  z-index: 2;
+  background: var(--bp-bg);
+  border-bottom: 0;
+  box-shadow: inset 0 -1px 0 var(--bp-divider);
+}
 .bp-table-scroll { width: 100%; overflow-x: auto; }
+/* A scroll container captures `position: sticky`, so above the widest table's own minimum —
+   where there is nothing left to scroll sideways anyway — it stops being one and the header
+   sticks to the viewport instead of to this box. */
+@media (min-width: 960px) {
+  .bp-table-scroll { overflow: visible; }
+}
 
 /* — dialog — */
 .bp-dialog-backdrop {

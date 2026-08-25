@@ -10,6 +10,7 @@ import { userRoleLabels } from "@/modules/admin/labels";
 import { getResolvedAdminTheme, setAdminThemePreference, subscribeToAdminTheme } from "@/lib/admin-theme";
 import { getSidebarCollapsed, setSidebarCollapsed, subscribeToSidebarCollapsed } from "@/lib/admin-sidebar-state";
 import { AdminTemplateProvider } from "@/components/admin/template-context";
+import { useStickyHeaderOffset } from "@/components/admin/use-sticky-offset";
 import { BlueprintSidebar } from "./sidebar";
 import { BpButton } from "./ui/button";
 import { BpPopover } from "./ui/popover";
@@ -32,6 +33,8 @@ export function BlueprintShell({ user, showGoldPrice, goldPrice, goldFetchedAt, 
   const [loggingOut, setLoggingOut] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [openMenu, setOpenMenu] = useState<"user" | "bell" | null>(null);
+  const shellRef = useRef<HTMLElement>(null);
+  const headerRef = useRef<HTMLElement>(null);
   const bellRef = useRef<HTMLButtonElement>(null);
   const userRef = useRef<HTMLButtonElement>(null);
   const closeMenu = useCallback(() => setOpenMenu(null), []);
@@ -39,6 +42,7 @@ export function BlueprintShell({ user, showGoldPrice, goldPrice, goldFetchedAt, 
   // The rail's own state, read here because its toggle now lives in this header.
   const railServerSnapshot = useCallback(() => sidebarCollapsed, [sidebarCollapsed]);
   const railCollapsed = useSyncExternalStore(subscribeToSidebarCollapsed, getSidebarCollapsed, railServerSnapshot);
+  useStickyHeaderOffset(headerRef, shellRef);
   const fullName = `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim() || "مدیر فروشگاه";
 
   useEffect(() => {
@@ -59,7 +63,7 @@ export function BlueprintShell({ user, showGoldPrice, goldPrice, goldFetchedAt, 
   }
 
   return (
-    <main dir="rtl" className="bp-root flex min-h-dvh">
+    <main ref={shellRef} dir="rtl" className="bp-root flex min-h-dvh">
       <BlueprintSidebar
         role={user.role}
         fullName={fullName}
@@ -69,7 +73,7 @@ export function BlueprintShell({ user, showGoldPrice, goldPrice, goldFetchedAt, 
       />
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-40 flex flex-wrap items-center justify-between gap-4 border-b border-[var(--bp-divider)] bg-[var(--bp-bg)] px-4 py-3 sm:px-7">
+        <header ref={headerRef} className="sticky top-0 z-40 flex flex-wrap items-center justify-between gap-4 border-b border-[var(--bp-divider)] bg-[var(--bp-bg)] px-4 py-3 sm:px-7">
           {/* First child, so in RTL this cluster sits on the right: rail toggle, admin, bell, theme. */}
           <div className="flex items-center gap-4">
             {/* Desktop only: on mobile the rail is a drawer with its own trigger. */}

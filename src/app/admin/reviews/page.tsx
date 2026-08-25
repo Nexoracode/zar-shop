@@ -141,7 +141,7 @@ export default async function AdminReviewsPage({ searchParams }: { searchParams:
                 <TableColumn id="rating" className="w-[10%] bg-slate-50/70 px-4 py-4 text-right text-xs font-bold text-slate-500">امتیاز</TableColumn>
                 <TableColumn id="engagement" className="w-[13%] bg-slate-50/70 px-4 py-4 text-right text-xs font-bold text-slate-500">تعامل</TableColumn>
                 <TableColumn id="status" className="w-[18%] bg-slate-50/70 px-4 py-4 text-right text-xs font-bold text-slate-500">وضعیت</TableColumn>
-                <TableColumn id="action" className="w-[7%] bg-slate-50/70 px-4 py-4 text-center text-xs font-bold text-slate-500"><span className="sr-only">عملیات</span></TableColumn>
+                <TableColumn id="action" className="w-[7%] bg-slate-50/70 px-4 py-4 text-center text-xs font-bold text-slate-500">عملیات</TableColumn>
               </TableHeader><TableBody>{reviews.map((review) => {
                 const name = authorName(review);
                 return <TableRow id={review.id} key={review.id} className="transition hover:bg-slate-50/60">

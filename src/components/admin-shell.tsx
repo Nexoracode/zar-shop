@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState, useSyncExternalStore, type ReactNode } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { Button, Chip, Popover } from "@heroui/react";
 import { Bell, LogOut, Moon, ShoppingBag, Sun, UserRound } from "lucide-react";
@@ -9,6 +9,7 @@ import { formatDateTime, formatMoney } from "@/lib/format";
 import { userRoleLabels } from "@/modules/admin/labels";
 import type { UserRole } from "@generated/prisma/enums";
 import { getResolvedAdminTheme, setAdminThemePreference, subscribeToAdminTheme } from "@/lib/admin-theme";
+import { useStickyHeaderOffset } from "@/components/admin/use-sticky-offset";
 
 type AdminUser = { firstName: string | null; lastName: string | null; email: string | null; role: UserRole };
 
@@ -23,6 +24,10 @@ type Props = {
 };
 
 export function AdminShell({ user, showGoldPrice, goldPrice, goldFetchedAt, notificationCount, sidebar, children }: Props) {
+  const shellRef = useRef<HTMLElement>(null);
+  const topbarRef = useRef<HTMLElement>(null);
+  // The topbar floats 12px below the viewport edge (`top-3`), so the table header clears both.
+  useStickyHeaderOffset(topbarRef, shellRef, 12);
   const router = useRouter();
   const [loggingOut, setLoggingOut] = useState(false);
   const theme = useSyncExternalStore(subscribeToAdminTheme, getResolvedAdminTheme, () => "light");
@@ -50,11 +55,11 @@ export function AdminShell({ user, showGoldPrice, goldPrice, goldFetchedAt, noti
   }
 
   return (
-    <main className="admin-shell min-h-dvh bg-[var(--background)] py-4 text-[var(--foreground)] transition-colors sm:py-5">
+    <main ref={shellRef} className="admin-shell min-h-dvh bg-[var(--background)] py-4 text-[var(--foreground)] transition-colors sm:py-5">
       <div className="mx-auto grid w-full max-w-[1440px] grid-cols-1 items-start gap-4 px-4 sm:px-6 lg:grid-cols-[260px_minmax(0,1fr)] lg:gap-6">
         {sidebar}
         <div className="admin-content min-w-0">
-          <header className="admin-topbar sticky top-3 z-40 mb-6 flex min-h-16 flex-wrap items-center justify-between gap-3 rounded-2xl border border-[var(--border)] bg-[var(--surface)]/95 px-3 py-2.5 shadow-sm backdrop-blur-xl sm:px-4">
+          <header ref={topbarRef} className="admin-topbar sticky top-3 z-40 mb-6 flex min-h-16 flex-wrap items-center justify-between gap-3 rounded-2xl border border-[var(--border)] bg-[var(--surface)]/95 px-3 py-2.5 shadow-sm backdrop-blur-xl sm:px-4">
             <div className="flex items-center gap-1.5 sm:gap-2">
               <Popover>
                 <Popover.Trigger aria-label="نمایش پروفایل مدیر" className="relative grid h-10 w-10 cursor-pointer place-items-center rounded-full border border-[var(--border)] bg-[var(--surface-secondary)] p-0 outline-none transition hover:bg-[var(--surface-tertiary)] focus-visible:ring-2 focus-visible:ring-[var(--focus)]">

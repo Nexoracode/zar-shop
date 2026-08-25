@@ -135,7 +135,7 @@ export function BlueprintProductsView({ products, categories, filters, paginatio
                     <BpTh>{storeIndustry === "GOLD" ? "وزن (گرم)" : "قیمت (ریال)"}</BpTh>
                     <BpTh>موجودی</BpTh>
                     <BpTh>وضعیت</BpTh>
-                    <BpTh><span className="sr-only">عملیات</span></BpTh>
+                    <BpTh className="text-center">عملیات</BpTh>
                   </tr>
                 </thead>
                 <tbody>

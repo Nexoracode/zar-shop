@@ -61,7 +61,7 @@ export default async function AdminContactMessagesPage({ searchParams }: { searc
                   <TableColumn id="sender" className="w-[22%] bg-slate-50/70 px-4 py-4 text-right text-xs font-bold text-slate-500">فرستنده</TableColumn>
                   <TableColumn id="date" className="w-[15%] bg-slate-50/70 px-4 py-4 text-right text-xs font-bold text-slate-500">تاریخ</TableColumn>
                   <TableColumn id="status" className="w-[13%] bg-slate-50/70 px-4 py-4 text-right text-xs font-bold text-slate-500">وضعیت</TableColumn>
-                  <TableColumn id="action" className="w-[15%] bg-slate-50/70 px-4 py-4 text-center text-xs font-bold text-slate-500"><span className="sr-only">عملیات</span></TableColumn>
+                  <TableColumn id="action" className="w-[15%] bg-slate-50/70 px-4 py-4 text-center text-xs font-bold text-slate-500">عملیات</TableColumn>
                 </TableHeader>
                 <TableBody>{messages.map((item) => (
                   <TableRow id={item.id} key={item.id} className="transition hover:bg-slate-50/60">

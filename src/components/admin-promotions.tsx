@@ -248,7 +248,7 @@ export function AdminPromotions({ initialItems = [], initialEditing = null, mode
                 <TableColumn id="period" className="w-[22%] bg-slate-50/70 px-4 py-4 text-right text-xs font-bold text-slate-500">بازه اعتبار</TableColumn>
                 <TableColumn id="usage" className="w-[17%] bg-slate-50/70 px-4 py-4 text-right text-xs font-bold text-slate-500">مصرف</TableColumn>
                 <TableColumn id="status" className="w-[13%] bg-slate-50/70 px-4 py-4 text-right text-xs font-bold text-slate-500">وضعیت</TableColumn>
-                <TableColumn id="action" className="w-[12%] bg-slate-50/70 px-4 py-4 text-center text-xs font-bold text-slate-500"><span className="sr-only">عملیات</span></TableColumn>
+                <TableColumn id="action" className="w-[12%] bg-slate-50/70 px-4 py-4 text-center text-xs font-bold text-slate-500">عملیات</TableColumn>
               </TableHeader>
               <TableBody>{items.map((item) => {
                 const info = typeInfo(item.type);

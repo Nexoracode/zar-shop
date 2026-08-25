@@ -257,6 +257,22 @@ html[dir="rtl"] [data-slot="modal-header"]:has([data-slot="modal-close-trigger"]
 .field-control-auth[aria-invalid="true"]:focus { border-color: var(--danger); box-shadow: 0 0 0 2px color-mix(in srgb, var(--danger) 15%, transparent); }
 .field-label-auth { font-weight: 400; color: #848484; }
 
+/* Admin data tables keep their header in view while the page scrolls, parked under the topbar
+   whose measured height arrives as `--admin-sticky-top`. The header cells carry a translucent
+   tint, so the sticky rule repaints it over an opaque surface — rows would otherwise show
+   through as they pass underneath. */
+.admin-shell table thead th {
+  position: sticky;
+  top: var(--admin-sticky-top, 0px);
+  z-index: 2;
+  background: color-mix(in srgb, var(--surface-secondary) 70%, var(--surface));
+}
+/* A scroll container captures `position: sticky`. Above the point where these tables fit, it
+   stops being one so the header sticks to the viewport instead of to this box. */
+@media (min-width: 960px) {
+  .admin-shell .table__scroll-container { overflow: visible; }
+}
+
 /* One reserved line: the error takes it while present, the hint sits there otherwise. */
 .field-message {
   display: block;
