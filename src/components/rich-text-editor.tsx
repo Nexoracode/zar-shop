@@ -11,7 +11,7 @@ import Subscript from "@tiptap/extension-subscript";
 import Superscript from "@tiptap/extension-superscript";
 import { TableKit } from "@tiptap/extension-table";
 import { TableDeleteShortcut } from "@/components/rich-text-table-delete";
-import { Button, toast } from "@heroui/react";
+import { Button, Spinner, toast } from "@heroui/react";
 import {
   AlignCenter, AlignJustify, AlignLeft, AlignRight, Bold, Braces, ChevronDown, Code2, Columns3, Eraser, Heading1, Heading2, Heading3, Highlighter,
   Grid2x2X, ImagePlus, Italic, Link2, List, ListOrdered, Minus, Palette, Pilcrow, Plus, Quote, Redo2, Rows3, Strikethrough,
@@ -20,13 +20,36 @@ import {
 import { HeroSelectField } from "@/components/hero-select-field";
 import { useAdminTemplate } from "@/components/admin/template-context";
 import { BpSelect } from "@/components/admin/blueprint/ui/select";
-import { BpButton } from "@/components/admin/blueprint/ui/button";
+import { BpButton, BpSpinner } from "@/components/admin/blueprint/ui/button";
 import { BpColorPicker } from "@/components/admin/blueprint/ui/color-picker";
 import { AdminDialog, AdminDialogButton } from "@/components/admin/admin-dialog";
 import { AdminTextField } from "@/components/admin/admin-form-fields";
 import { HeroColorField } from "@/components/hero-color-field";
 
 type Props = { value?: string; onChange: (html: string) => void };
+
+/**
+ * Shown while the editor boots. It carries its own toolbar and body outline so the panel does
+ * not resize when the real editor takes over, and says what is happening — the wait is long
+ * enough that a blank grey box reads as something being broken.
+ */
+function EditorLoading() {
+  const template = useAdminTemplate();
+  const blueprint = template === "BLUEPRINT";
+  return (
+    <div className={blueprint ? "bp-frame relative" : "overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"} role="status" aria-live="polite">
+      <div className={`flex flex-wrap items-center gap-1 border-b p-2.5 ${blueprint ? "border-[var(--bp-divider)] bg-[var(--bp-surface)]" : "border-slate-200 bg-slate-50"}`} aria-hidden="true">
+        {Array.from({ length: 14 }).map((_, index) => (
+          <span key={index} className={`h-9 w-9 animate-pulse rounded-lg ${blueprint ? "bg-[var(--bp-hover)]" : "bg-slate-200"}`} />
+        ))}
+      </div>
+      <div className="grid min-h-80 place-items-center gap-3 p-6 text-center">
+        {blueprint ? <BpSpinner size={22} /> : <Spinner size="lg" />}
+        <span className={`text-[12px] ${blueprint ? "bp-muted" : "text-slate-500"}`}>در حال آماده‌سازی ویرایشگر متن...</span>
+      </div>
+    </div>
+  );
+}
 
 /** Everything the toolbar draws from, read off the editor in one pass. */
 function toolbarState(editor: Editor) {
@@ -112,7 +135,7 @@ export function RichTextEditor({ value, onChange }: Props) {
     selector: ({ editor: current }) => current && toolbarState(current),
   });
 
-  if (!editor) return <div className="min-h-96 animate-pulse rounded-2xl border border-slate-200 bg-slate-50" />;
+  if (!editor) return <EditorLoading />;
 
   /*
    * `useEditorState` caches the snapshot it was constructed with, and it is constructed on the
