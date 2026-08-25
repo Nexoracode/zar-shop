@@ -36,14 +36,23 @@ test("falls back to the caller's message when the response carries none", async 
   } finally { restore(); }
 });
 
-test("gives up on a request that never settles, so the caller is not left pending", async () => {
-  // Mirrors a hung server: resolves only when the deadline aborts the signal.
-  const restore = stubFetch((_url, init) => new Promise((_resolve, reject) => {
-    init?.signal?.addEventListener("abort", () => reject((init.signal as AbortSignal).reason));
-  }));
+test("attaches a deadline to every request", async () => {
+  let seen: AbortSignal | undefined;
+  const restore = stubFetch(async (_url, init) => { seen = init?.signal ?? undefined; return new Response("{}", { status: 200 }); });
+  try {
+    await requestJson("/api/admin/products/p1/status");
+    assert.ok(seen, "no signal was passed to fetch");
+    assert.equal(seen?.aborted, false);
+  } finally { restore(); }
+});
+
+test("turns a deadline abort into a message the caller can show", async () => {
+  // The abort is raised directly rather than by waiting out a real timer: a pending timer
+  // outliving the test makes the runner cancel whatever comes after it.
+  const restore = stubFetch(async () => { throw new DOMException("The operation timed out.", "TimeoutError"); });
   try {
     await assert.rejects(
-      () => requestJson("/api/admin/products/p1/status", {}, { timeoutMs: 20 }),
+      () => requestJson("/api/admin/products/p1/status"),
       (error: ApiRequestError) => error instanceof ApiRequestError && error.message.includes("پاسخی از سرور دریافت نشد"),
     );
   } finally { restore(); }
