@@ -5,7 +5,6 @@ import { db } from "@/lib/db";
 import { AdminPageHeader } from "@/components/admin-ui";
 import { requirePermission } from "@/modules/auth/session";
 import { parseOptionValues } from "@/modules/products/options";
-import { formatTehranDateInput } from "@/modules/products/discount";
 import { parseCategoryAttributeSchema, parseProductAttributes } from "@/modules/products/attributes";
 import { getBrandSettings } from "@/modules/settings/brand-settings";
 
@@ -27,8 +26,7 @@ export default async function EditProductPage({ params }: Context) {
     getBrandSettings(),
   ]);
   if (!product) notFound();
-  const isBlueprint = brandSettings.adminTemplate === "BLUEPRINT";
-  const Form = isBlueprint ? BlueprintProductForm : ProductForm;
+  const Form = brandSettings.adminTemplate === "BLUEPRINT" ? BlueprintProductForm : ProductForm;
 
   return (
     <>
@@ -53,8 +51,9 @@ export default async function EditProductPage({ params }: Context) {
           fixedPrice: product.fixedPrice === null ? null : Number(product.fixedPrice),
           discountType: product.discountType,
           discountValue: product.discountValue === null ? null : Number(product.discountValue),
-          discountStartsAt: isBlueprint ? product.discountStartsAt?.toISOString() ?? null : formatTehranDateInput(product.discountStartsAt),
-          discountEndsAt: isBlueprint ? product.discountEndsAt?.toISOString() ?? null : formatTehranDateInput(product.discountEndsAt),
+          // Both templates now take the discount window as an instant, so the hour survives.
+          discountStartsAt: product.discountStartsAt?.toISOString() ?? null,
+          discountEndsAt: product.discountEndsAt?.toISOString() ?? null,
           stock: product.stock,
           preparationDays: product.preparationDays,
           status: product.status,
