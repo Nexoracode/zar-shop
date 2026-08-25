@@ -6,6 +6,9 @@ import { Alert, Button, Card, Input, Modal, Spinner, toast } from "@heroui/react
 import { Check, FileText, Film, ImageIcon, RefreshCw, Search, Trash2, Upload, X } from "lucide-react";
 import type { MediaChoice, MediaScope } from "@/components/media-library";
 import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
+import { useAdminTemplate } from "@/components/admin/template-context";
+import { BpButton } from "@/components/admin/blueprint/ui/button";
+import { BpDialog } from "@/components/admin/blueprint/ui/dialog";
 
 type PickerItem = MediaChoice & { _count: { products: number; optionGuideProducts: number; categories: number; homepageHeroDesktop: number; homepageHeroMobile: number; homepagePromoDesktop: number; homepagePromoMobile: number; brandMainLogo: number; brandDarkLogo: number; brandFavicon: number; brandSocialImage: number } };
 type Props = { open: boolean; scope: MediaScope; multiple?: boolean; allowedTypes?: MediaChoice["type"][]; selected: MediaChoice[]; onClose: () => void; onConfirm: (items: MediaChoice[]) => void };
@@ -20,6 +23,7 @@ export function MediaPickerDialog({ open, scope, multiple = false, allowedTypes,
   const [query, setQuery] = useState("");
   const [error, setError] = useState("");
   const [uploadFileName, setUploadFileName] = useState("");
+  const template = useAdminTemplate();
 
   const scopeLabel = scope === "CATEGORY" ? "دسته‌بندی" : scope === "HOMEPAGE" ? "صفحه اصلی" : scope === "BRAND" ? "هویت بصری" : "محصول";
   const allowedTypeKey = (allowedTypes ?? (scope === "CATEGORY" ? ["IMAGE"] : ["IMAGE", "VIDEO"])).join(",");
@@ -56,6 +60,13 @@ export function MediaPickerDialog({ open, scope, multiple = false, allowedTypes,
     });
     return () => controller.abort();
   }, [open, selected, load]);
+
+  useEffect(() => {
+    if (!open || template !== "BLUEPRINT") return;
+    function onKeyDown(event: KeyboardEvent) { if (event.key === "Escape" && !pendingDelete) onClose(); }
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [open, template, pendingDelete, onClose]);
 
   function toggle(item: MediaChoice) {
     if (!multiple) {
@@ -134,6 +145,122 @@ export function MediaPickerDialog({ open, scope, multiple = false, allowedTypes,
   function confirm() {
     onConfirm(draft);
     onClose();
+  }
+
+  const headline = multiple
+    ? "چند رسانه انتخاب کنید؛ مورد اول تصویر شاخص خواهد بود."
+    : allowedTypeKey.includes("DOCUMENT")
+      ? "یک تصویر یا فایل PDF را به‌عنوان راهنمای سایز انتخاب کنید."
+      : "یک تصویر را به‌عنوان تصویر شاخص انتخاب کنید.";
+
+  function usageOf(item: PickerItem) {
+    return item._count.products + item._count.optionGuideProducts + item._count.categories + item._count.homepageHeroDesktop + item._count.homepageHeroMobile + item._count.homepagePromoDesktop + item._count.homepagePromoMobile + item._count.brandMainLogo + item._count.brandDarkLogo + item._count.brandFavicon + item._count.brandSocialImage;
+  }
+
+  if (template === "BLUEPRINT") {
+    if (!open) return null;
+    return (
+      <div
+        dir="rtl"
+        className="bp-root fixed inset-0 z-[130] flex flex-col bg-[var(--bp-bg)]"
+        onMouseDown={(event) => { if (event.target === event.currentTarget && !pendingDelete) onClose(); }}
+      >
+        <header className="flex items-center justify-between gap-3 border-b border-[var(--bp-divider)] px-4 py-3 sm:px-6" onMouseDown={(event) => event.stopPropagation()}>
+          <div className="min-w-0">
+            <strong className="block truncate text-[17px] font-bold">گالری {scopeLabel}</strong>
+            <span className="bp-muted block truncate text-[12px]">{headline}</span>
+          </div>
+          <BpButton isIconOnly aria-label="بستن گالری" onClick={onClose}><X size={17} /></BpButton>
+        </header>
+
+        <div className="border-b border-[var(--bp-divider)] px-4 py-3 sm:px-6" onMouseDown={(event) => event.stopPropagation()}>
+          <div className="grid gap-3 lg:grid-cols-[minmax(0,1.2fr)_minmax(260px,0.8fr)]">
+            <form onSubmit={upload} className="grid gap-2.5 border border-dashed border-[var(--bp-divider)] p-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+              <label className="grid min-w-0 cursor-pointer gap-1 border border-[var(--bp-divider)] bg-[var(--bp-surface)] px-3 py-2">
+                <span className="text-[12px] font-bold">بارگذاری فایل جدید</span>
+                <span className="bp-muted truncate text-[11px]">{uploadFileName || "برای انتخاب فایل کلیک کنید"}</span>
+                <input name="file" type="file" multiple required accept={acceptedFiles} className="sr-only" onChange={(event) => { const files = event.target.files; setUploadFileName(files?.length ? (files.length === 1 ? files[0].name : `${files.length.toLocaleString("fa-IR")} فایل انتخاب شد`) : ""); }} />
+              </label>
+              <BpButton type="submit" variant="primary" isPending={uploading} className="gap-2">{!uploading && <Upload size={15} />}بارگذاری</BpButton>
+            </form>
+            <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+              <div className="relative">
+                <Search className="pointer-events-none absolute start-2.5 top-1/2 z-10 -translate-y-1/2 text-[var(--bp-muted)]" size={15} />
+                <input value={query} onChange={(event) => setQuery(event.target.value)} aria-label="جستجوی عنوان فایل" placeholder="جستجوی عنوان فایل..." className="bp-input bp-input-search" />
+              </div>
+              <BpButton isIconOnly aria-label="به‌روزرسانی گالری" isPending={loading} onClick={() => void load()}>{!loading && <RefreshCw size={15} />}</BpButton>
+            </div>
+          </div>
+          {error && <p className="mt-2 text-[12px] text-[var(--bp-danger)]">{error}</p>}
+        </div>
+
+        <div className="bp-scroll min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-6" onMouseDown={(event) => event.stopPropagation()}>
+          <div className="mb-3 flex items-center justify-between gap-3 text-[12px]">
+            <span className="bp-muted">{loading ? "در حال دریافت رسانه‌ها..." : `${visibleItems.length.toLocaleString("fa-IR")} رسانه`}</span>
+            {draft.length > 0 && <span className="bp-tag bp-tag-accent">{draft.length.toLocaleString("fa-IR")} انتخاب</span>}
+          </div>
+          {loading ? (
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6">{Array.from({ length: 12 }, (_, index) => <div key={index} className="aspect-[4/5] animate-pulse bg-[var(--bp-surface)]" />)}</div>
+          ) : visibleItems.length ? (
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6">
+              {visibleItems.map((item) => {
+                const chosenIndex = draft.findIndex((chosen) => chosen.id === item.id);
+                const chosen = chosenIndex >= 0;
+                const usage = usageOf(item);
+                return (
+                  <div key={item.id} className={`flex min-w-0 flex-col border ${chosen ? "border-[var(--bp-accent)]" : "border-[var(--bp-divider)]"}`}>
+                    <button type="button" onClick={() => toggle(item)} aria-pressed={chosen} aria-label={`انتخاب ${item.title}`} className="relative block w-full cursor-pointer border-0 bg-transparent p-0 text-start">
+                      <span className="relative block aspect-square w-full overflow-hidden bg-[var(--bp-surface)]">
+                        {item.type === "IMAGE"
+                          ? <Image src={item.url} alt={item.title} fill unoptimized={item.mimeType === "image/gif"} sizes="(max-width:640px) 50vw, 16vw" className="object-cover" />
+                          : item.type === "VIDEO"
+                            ? <><video src={item.url} muted className="h-full w-full bg-black object-cover" /><span className="absolute left-1.5 top-1.5 grid h-6 w-6 place-items-center bg-[var(--bp-bg)] text-[var(--bp-text)]"><Film size={13} /></span></>
+                            : <span className="grid h-full place-items-center text-[var(--bp-accent)]"><span className="grid justify-items-center gap-1 text-[11px]"><FileText size={32} />فایل PDF</span></span>}
+                        {chosen && <span className="absolute right-1.5 top-1.5 grid h-6 min-w-6 place-items-center bg-[var(--bp-accent)] px-1.5 text-[11px] font-bold text-[var(--bp-bg)]">{multiple ? (chosenIndex + 1).toLocaleString("fa-IR") : <Check size={13} />}</span>}
+                      </span>
+                      <span className="flex w-full items-center gap-2 px-2.5 py-2">
+                        <span className="min-w-0 flex-1 truncate text-[12px]">{item.title}</span>
+                        {usage > 0 && <small className="bp-muted shrink-0 text-[10px]">{usage.toLocaleString("fa-IR")} استفاده</small>}
+                      </span>
+                    </button>
+                    <BpButton size="sm" variant="ghost" fullWidth disabled={deletingId === item.id || usage > 0} onClick={() => setPendingDelete(item)} className="gap-1.5 border-t border-[var(--bp-divider)] text-[11px] text-[var(--bp-danger)]">
+                      <Trash2 size={12} />{usage > 0 ? "در حال استفاده" : deletingId === item.id ? "در حال حذف..." : "حذف از گالری"}
+                    </BpButton>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="grid min-h-64 place-items-center border border-dashed border-[var(--bp-divider)] p-8 text-center">
+              <div>
+                <ImageIcon className="mx-auto mb-2 text-[var(--bp-muted)]" size={34} />
+                <strong className="block text-[13px]">{query ? "رسانه‌ای پیدا نشد" : "گالری این بخش خالی است"}</strong>
+                <p className="bp-muted mt-1 text-[12px]">{query ? "عبارت جستجو را تغییر دهید." : "از بالای همین صفحه اولین فایل را بارگذاری کنید."}</p>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <footer className="flex flex-col-reverse gap-2 border-t border-[var(--bp-divider)] px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-6" onMouseDown={(event) => event.stopPropagation()}>
+          <span className="bp-muted hidden text-[12px] sm:block">{draft.length ? `${draft.length.toLocaleString("fa-IR")} رسانه برای ثبت انتخاب شده است.` : "هنوز رسانه‌ای انتخاب نشده است."}</span>
+          <div className="grid grid-cols-2 gap-2 sm:flex">
+            <BpButton onClick={onClose}>انصراف</BpButton>
+            <BpButton variant="primary" withCorners disabled={!draft.length} onClick={confirm} className="gap-2"><Check size={15} />تأیید انتخاب ({draft.length.toLocaleString("fa-IR")})</BpButton>
+          </div>
+        </footer>
+
+        <BpDialog
+          open={Boolean(pendingDelete)}
+          title="حذف رسانه از گالری"
+          description={`فایل «${pendingDelete?.title ?? ""}» از گالری و فضای FTP حذف می‌شود و امکان بازیابی آن وجود ندارد.`}
+          onClose={() => { if (!deletingId) setPendingDelete(null); }}
+          actions={<>
+            <BpButton disabled={Boolean(deletingId)} onClick={() => setPendingDelete(null)}>انصراف</BpButton>
+            <BpButton variant="danger" isPending={Boolean(deletingId)} onClick={() => { if (pendingDelete) void remove(pendingDelete); }}>حذف فایل</BpButton>
+          </>}
+        />
+      </div>
+    );
   }
 
   return (
