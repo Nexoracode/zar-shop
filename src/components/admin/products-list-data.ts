@@ -11,4 +11,6 @@ export type AdminProductsListData = {
   pagination: { page: number; pageSize: number; totalItems: number; totalPages: number; skip: number };
   lowStockThreshold: number;
   storeIndustry: "GOLD" | "GENERAL";
+  /** Soonest moment a row's discount starts or ends, so the table can redraw itself then. */
+  nextDiscountBoundaryAt: string | null;
 };

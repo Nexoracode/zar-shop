@@ -6,6 +6,8 @@ import { AdminListFilters } from "@/components/admin-list-filters";
 import { AdminPagination } from "@/components/admin-pagination";
 import { AdminBulkCheckbox, AdminBulkEditor } from "@/components/admin-bulk-editor";
 import { isProductDiscountActive } from "@/modules/products/discount";
+import { DiscountExpiryRefresh } from "@/components/discount-expiry-refresh";
+import { formatDateTime } from "@/lib/format";
 import type { AdminProductsListData, ProductRow } from "@/components/admin/products-list-data";
 import { ProductPublishToggle } from "./product-publish-toggle";
 import { BpCorners } from "./ui/card";
@@ -44,19 +46,27 @@ function RowActions({ product }: { product: ProductRow }) {
   );
 }
 
+/** Native `title` rather than a tooltip component — the Blueprint rules keep these controls light. */
+function discountTooltip(product: ProductRow) {
+  if (!product.discountStartsAt || !product.discountEndsAt) return "تخفیف فعال";
+  return `تخفیف فعال
+از ${formatDateTime(product.discountStartsAt)}
+تا ${formatDateTime(product.discountEndsAt)}`;
+}
+
 /** Name cell: the product name with bare inline glyphs for its flags — no chips, no thumbnail. */
 function ProductName({ product }: { product: ProductRow }) {
   return (
     <div className="flex items-baseline gap-[7px]">
       <span className="truncate" title={product.name}>{product.name}</span>
       {product.featured && <Star size={14} strokeWidth={2} className="shrink-0 translate-y-0.5 fill-[var(--bp-accent)] text-[var(--bp-accent)]" aria-label="محصول ویژه" />}
-      {isProductDiscountActive(product) && <Tag size={14} strokeWidth={1.9} className="shrink-0 translate-y-0.5 text-[var(--bp-danger)]" aria-label="تخفیف فعال" />}
+      {isProductDiscountActive(product) && <span title={discountTooltip(product)} className="shrink-0 translate-y-0.5 cursor-help leading-none text-[var(--bp-danger)]"><Tag size={14} strokeWidth={1.9} aria-label={discountTooltip(product)} /></span>}
       {product._count.options > 0 && <Layers size={14} strokeWidth={1.9} className="shrink-0 translate-y-0.5 text-[var(--bp-accent)]" aria-label={`${product._count.options.toLocaleString("fa-IR")} گروه تنوع`} />}
     </div>
   );
 }
 
-export function BlueprintProductsView({ products, categories, filters, pagination, lowStockThreshold, storeIndustry }: AdminProductsListData) {
+export function BlueprintProductsView({ products, categories, filters, pagination, lowStockThreshold, storeIndustry, nextDiscountBoundaryAt }: AdminProductsListData) {
   const bulkActions = [
     { value: "featured:on", label: "افزودن به محصولات ویژه" },
     { value: "featured:off", label: "حذف از محصولات ویژه" },
@@ -69,6 +79,8 @@ export function BlueprintProductsView({ products, categories, filters, paginatio
 
   return (
     <div className="flex flex-col gap-6">
+      {/* Redraws the rows the moment any discount opens or closes, so the flags cannot go stale. */}
+      <DiscountExpiryRefresh at={nextDiscountBoundaryAt} />
       <AdminPageHeader
         title="محصولات"
         description="محصولات، موجودی، قیمت‌گذاری و وضعیت انتشار را از یک‌جا مدیریت کنید."

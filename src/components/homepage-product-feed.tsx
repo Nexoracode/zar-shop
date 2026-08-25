@@ -8,7 +8,7 @@ import { DragScrollRow } from "@/components/drag-scroll-row";
 import { ProductCard } from "@/components/product-card";
 import { ViewAllProductCard } from "@/components/view-all-product-card";
 import { DiscountExpiryRefresh } from "@/components/discount-expiry-refresh";
-import { earliestDiscountExpiry } from "@/modules/products/discount";
+import { earliestDiscountExpiry } from "@/modules/products/discount-window";
 import type { StorefrontProductFeed, StorefrontProductSort } from "@/modules/products/storefront-feed-contract";
 
 const filters: Array<{ id: StorefrontProductSort; label: string; mobile: boolean }> = [

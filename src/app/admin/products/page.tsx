@@ -6,6 +6,7 @@ import { requirePermission } from "@/modules/auth/session";
 import { getCatalogSettings } from "@/modules/settings/catalog-settings";
 import { getBrandSettings } from "@/modules/settings/brand-settings";
 import { getStoreIndustry } from "@/modules/settings/store-settings";
+import { nextDiscountBoundary } from "@/modules/products/discount-window";
 import { BlueprintProductsView } from "@/components/admin/blueprint/products-view";
 import { ClassicProductsView } from "@/components/admin/classic/products-view";
 import type { AdminProductsListData } from "@/components/admin/products-list-data";
@@ -48,6 +49,7 @@ export default async function AdminProducts({ searchParams }: Context) {
     pagination,
     lowStockThreshold: catalogSettings.catalogLowStockThreshold,
     storeIndustry,
+    nextDiscountBoundaryAt: nextDiscountBoundary(products),
   };
 
   return brandSettings.adminTemplate === "BLUEPRINT"

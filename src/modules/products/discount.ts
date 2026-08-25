@@ -54,16 +54,3 @@ export function formatTehranDateInput(value: Date | null | undefined) {
   return `${part("year")}-${part("month")}-${part("day")}`;
 }
 import { Prisma } from "@generated/prisma/client";
-
-/**
- * The soonest moment at which something on the page stops being discounted, or null when nothing
- * on it is. Pages hand this to `DiscountExpiryRefresh` so the rendered prices cannot go stale.
- */
-export function earliestDiscountExpiry(items: Array<{ discountEndsAt?: string | null }>, now = Date.now()) {
-  const upcoming = items
-    .map((item) => item.discountEndsAt)
-    .filter((value): value is string => Boolean(value))
-    .map((value) => new Date(value).getTime())
-    .filter((time) => Number.isFinite(time) && time > now);
-  return upcoming.length ? new Date(Math.min(...upcoming)).toISOString() : null;
-}

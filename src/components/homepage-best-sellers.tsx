@@ -3,7 +3,7 @@ import Link from "next/link";
 import { ChevronLeft, ShoppingBag } from "lucide-react";
 import type { StorefrontProductCardItem } from "@/modules/products/storefront-feed-contract";
 import { DiscountExpiryRefresh } from "@/components/discount-expiry-refresh";
-import { earliestDiscountExpiry } from "@/modules/products/discount";
+import { earliestDiscountExpiry } from "@/modules/products/discount-window";
 
 const itemsPerColumn = 3;
 

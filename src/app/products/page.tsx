@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { ArrowDownUp } from "lucide-react";
 import { ProductCard } from "@/components/product-card";
 import { DiscountExpiryRefresh } from "@/components/discount-expiry-refresh";
-import { earliestDiscountExpiry } from "@/modules/products/discount";
+import { earliestDiscountExpiry } from "@/modules/products/discount-window";
 import { StorefrontCatalogFilters } from "@/components/storefront-catalog-filters";
 import { db } from "@/lib/db";
 import { collectCategoryAndDescendantIds } from "@/modules/categories/category-tree";

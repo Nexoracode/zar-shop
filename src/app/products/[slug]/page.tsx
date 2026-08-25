@@ -27,7 +27,7 @@ import { getStorefrontProductReviews } from "@/modules/reviews/service";
 import { ProductActivityTracker } from "@/components/product-activity-tracker";
 import { ProductUnavailable } from "@/components/product-unavailable";
 import { DiscountExpiryRefresh } from "@/components/discount-expiry-refresh";
-import { earliestDiscountExpiry } from "@/modules/products/discount";
+import { earliestDiscountExpiry } from "@/modules/products/discount-window";
 import { env } from "@/lib/env";
 
 export const dynamic = "force-dynamic";

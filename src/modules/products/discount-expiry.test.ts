@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { earliestDiscountExpiry } from "./discount";
+import { earliestDiscountExpiry, nextDiscountBoundary } from "./discount-window";
 
 const now = Date.parse("2026-08-25T12:00:00.000Z");
 const at = (iso: string) => ({ discountEndsAt: iso });
@@ -26,4 +26,19 @@ test("returns null when every window has already closed", () => {
 
 test("skips values that are not real dates", () => {
   assert.equal(earliestDiscountExpiry([at("not-a-date"), at("2026-08-25T15:00:00.000Z")], now), "2026-08-25T15:00:00.000Z");
+});
+
+test("nextDiscountBoundary also stops at a window that has not opened yet", () => {
+  const rows = [{ discountStartsAt: "2026-08-25T20:00:00.000Z", discountEndsAt: "2026-08-26T20:00:00.000Z" }];
+  assert.equal(nextDiscountBoundary(rows, now), "2026-08-25T20:00:00.000Z");
+});
+
+test("nextDiscountBoundary skips boundaries already behind us", () => {
+  const rows = [{ discountStartsAt: "2026-08-25T09:00:00.000Z", discountEndsAt: "2026-08-25T17:00:00.000Z" }];
+  assert.equal(nextDiscountBoundary(rows, now), "2026-08-25T17:00:00.000Z");
+});
+
+test("nextDiscountBoundary accepts Date values as the admin rows carry them", () => {
+  const rows = [{ discountStartsAt: new Date("2026-08-25T13:00:00.000Z"), discountEndsAt: new Date("2026-08-25T19:00:00.000Z") }];
+  assert.equal(nextDiscountBoundary(rows, now), "2026-08-25T13:00:00.000Z");
 });
