@@ -14,6 +14,7 @@ import { completeProductSchema } from "@/modules/products/schemas";
 import type { CategoryAttributeGroup, ProductAttributeValue } from "@/modules/products/attributes";
 import { BpButton } from "./ui/button";
 import { BpCorners, BpKicker } from "./ui/card";
+import { BpCombobox } from "./ui/combobox";
 import { BpDateTimeField } from "./ui/date-time-field";
 import { BpInput } from "./ui/input";
 import { BpSeg } from "./ui/seg";
@@ -109,7 +110,7 @@ export function BlueprintProductForm({ storeIndustry, categories = [], product }
 
   function buildBody() {
     return {
-      sku, name, slug, description, categoryId: categoryId || null, storeIndustry,
+      sku, name, slug, description, categoryId, storeIndustry,
       purity: storeIndustry === "GOLD" ? Number(purity) : 750,
       weightGrams: storeIndustry === "GOLD" ? Number(weightGrams) : 0,
       makingFeeType: storeIndustry === "GOLD" ? makingFeeType : "PERCENT",
@@ -173,13 +174,16 @@ export function BlueprintProductForm({ storeIndustry, categories = [], product }
             <BpInput name="name" label="نام محصول" required value={name} error={errors.name} placeholder="مثلاً انگشتر مینیمال طلا" onChange={(event) => { setName(event.target.value); clearError("name"); }} />
             <BpInput name="sku" label="کد کالا (SKU)" required dir="ltr" value={sku} error={errors.sku} placeholder="PRD-10245" onChange={(event) => { setSku(event.target.value); clearError("sku"); }} />
             <BpInput name="slug" label="نشانی انگلیسی (Slug)" required dir="ltr" value={slug} error={errors.slug} hint="فقط حروف کوچک انگلیسی، رقم و خط تیره" placeholder="minimal-gold-ring" onChange={(event) => { setSlug(event.target.value); clearError("slug"); }} />
-            <BpSelect
+            <BpCombobox
               name="categoryId"
               label="دسته‌بندی"
+              required
               value={categoryId}
               error={errors.categoryId}
-              onChange={(event) => { setCategoryId(event.target.value); clearError("categoryId"); }}
-              options={[{ value: "", label: "بدون دسته‌بندی" }, ...categories.map((category) => ({ value: category.id, label: `${category.parentName ? `${category.parentName} ← ` : ""}${category.name}` }))]}
+              placeholder="نام دسته را بنویسید یا انتخاب کنید"
+              emptyLabel="دسته‌بندی با این نام پیدا نشد"
+              onChange={(next) => { setCategoryId(next); clearError("categoryId"); }}
+              options={categories.map((category) => ({ value: category.id, label: `${category.parentName ? `${category.parentName} ← ` : ""}${category.name}` }))}
             />
           </div>
         </Panel>

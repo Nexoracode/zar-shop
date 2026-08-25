@@ -102,7 +102,7 @@ export function ProductForm({ storeIndustry, categories = [], product }: Props) 
     const form = new FormData(event.currentTarget);
     const afterSave = form.get("afterSave") === "attributes" ? "attributes" : "options";
     const body = {
-      sku: form.get("sku"), name: form.get("name"), slug: form.get("slug"), description, categoryId: categoryId || null,
+      sku: form.get("sku"), name: form.get("name"), slug: form.get("slug"), description, categoryId,
       storeIndustry, purity: storeIndustry === "GOLD" ? Number(form.get("purity")) : 750, weightGrams: storeIndustry === "GOLD" ? Number(form.get("weightGrams")) : 0,
       makingFeeType: storeIndustry === "GOLD" ? form.get("makingFeeType") : "PERCENT", makingFeeValue: storeIndustry === "GOLD" ? Number(form.get("makingFeeValue")) : 0,
       profitPercent: storeIndustry === "GOLD" ? Number(form.get("profitPercent")) : 0, taxPercent: storeIndustry === "GOLD" ? Number(form.get("taxPercent")) : 0,
@@ -168,7 +168,7 @@ export function ProductForm({ storeIndustry, categories = [], product }: Props) 
 
         <FormSection icon={<Info size={18} />} title="اطلاعات پایه" description="مشخصات اصلی که در صفحه محصول نمایش داده می‌شود.">
           <div className="grid gap-4 sm:grid-cols-2"><Field label="نام محصول"><Input name="name" required fullWidth variant="secondary" defaultValue={product?.name} className={adminFieldClass} /></Field><Field label="کد کالا"><Input name="sku" dir="ltr" required fullWidth variant="secondary" defaultValue={product?.sku} className={inputClass} /></Field></div>
-          <div className="mt-4 grid gap-4 sm:grid-cols-2"><Field label="نشانی انگلیسی"><Input name="slug" dir="ltr" pattern="[a-z0-9-]+" required fullWidth variant="secondary" defaultValue={product?.slug} placeholder="minimal-gold-ring" className={inputClass} /></Field><HeroSelectField name="categoryId" label="دسته‌بندی" value={categoryId} onValueChange={changeCategory} options={[{ value: "", label: "بدون دسته‌بندی" }, ...categories.map((category) => ({ value: category.id, label: `${category.parentName ? `${category.parentName} ← ` : ""}${category.name}` }))]} /></div>
+          <div className="mt-4 grid gap-4 sm:grid-cols-2"><Field label="نشانی انگلیسی"><Input name="slug" dir="ltr" pattern="[a-z0-9-]+" required fullWidth variant="secondary" defaultValue={product?.slug} placeholder="minimal-gold-ring" className={inputClass} /></Field><HeroSelectField name="categoryId" label="دسته‌بندی" value={categoryId} onValueChange={changeCategory} options={[...categories.map((category) => ({ value: category.id, label: `${category.parentName ? `${category.parentName} ← ` : ""}${category.name}` }))]} /></div>
           <div className={`${adminLabelClass} mt-4`}>توضیحات محصول<RichTextEditor value={product?.description} onChange={setDescription} /></div>
         </FormSection>
 

@@ -1,6 +1,7 @@
 export { BpButton, BpLinkButton, BpSpinner, type BpButtonVariant } from "./button";
 export { BpCard, BpCardTitle, BpCorners, BpKicker } from "./card";
 export { BpCheckbox } from "./checkbox";
+export { BpCombobox, type BpComboboxOption } from "./combobox";
 export { BpDialog } from "./dialog";
 export { BpFieldMessage } from "./field-message";
 export { BpInput, BpTextarea } from "./input";

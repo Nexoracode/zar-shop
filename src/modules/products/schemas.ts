@@ -51,7 +51,7 @@ export const productSchema = z.object({
     .max(191, "نشانی انگلیسی نباید بیشتر از ۱۹۱ نویسه باشد.")
     .regex(/^[a-z0-9-]+$/, "نشانی انگلیسی فقط می‌تواند شامل حروف کوچک انگلیسی، رقم و خط تیره باشد."),
   description: z.string().max(200000, "توضیحات محصول بیش از حد مجاز است.").optional(),
-  categoryId: z.string().cuid("دسته‌بندی انتخاب‌شده معتبر نیست.").nullable().optional(),
+  categoryId: z.string("دسته‌بندی محصول را انتخاب کنید.").min(1, "دسته‌بندی محصول را انتخاب کنید.").cuid("دسته‌بندی انتخاب‌شده معتبر نیست."),
   storeIndustry: z.enum(["GOLD", "GENERAL"]).default("GOLD"),
   purity: z.coerce.number("عیار را وارد کنید.").int("عیار باید عدد صحیح باشد.").min(1, "عیار باید بین ۱ تا ۹۹۹ باشد.").max(999, "عیار باید بین ۱ تا ۹۹۹ باشد.").default(750),
   weightGrams: z.coerce.number("وزن را وارد کنید.").nonnegative("وزن نمی‌تواند منفی باشد.").max(100000, "وزن واردشده بیش از حد مجاز است."),
