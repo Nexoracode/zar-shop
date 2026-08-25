@@ -285,10 +285,22 @@ export function BlueprintProductForm({ storeIndustry, categories = [], product }
           </Panel>
         )}
 
-        <Panel title="تخفیف محصول">
+        <Panel title="موجودی و آماده‌سازی">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <BpInput name="stock" label="تعداد موجودی در انبار" required type="number" min="0" dir="ltr" value={stock} error={errors.stock} onChange={(event) => { setStock(event.target.value); clearError("stock"); }} />
+            <BpInput name="preparationDays" label="زمان آماده‌سازی (روز)" required type="number" min="0" max="90" dir="ltr" value={preparationDays} error={errors.preparationDays} onChange={(event) => { setPreparationDays(event.target.value); clearError("preparationDays"); }} />
+          </div>
+        </Panel>
+
+        <Panel title={storeIndustry === "GENERAL" ? "قیمت و تخفیف" : "تخفیف محصول"}>
+          {storeIndustry === "GENERAL" && (
+            <div className="mb-3 border-b border-[var(--bp-divider)] pb-3 sm:max-w-xs">
+              <BpInput name="fixedPrice" label="قیمت فروش (ریال)" required type="number" min="1" dir="ltr" value={fixedPrice} error={errors.fixedPrice} placeholder="۱۵۰۰۰۰۰" onChange={(event) => { setFixedPrice(event.target.value); clearError("fixedPrice"); }} />
+            </div>
+          )}
           <div className="flex items-center justify-between gap-3">
             <span className="bp-muted text-[12px]">فقط در بازه انتخاب‌شده به‌صورت خودکار اعمال می‌شود.</span>
-            <BpSwitch isSelected={discountEnabled} onChange={setDiscountEnabled}>فعال باشد</BpSwitch>
+            <BpSwitch isSelected={discountEnabled} onChange={setDiscountEnabled}>تخفیف داشته باشد</BpSwitch>
           </div>
           {discountEnabled && (
             <div className="mt-3 grid gap-3 sm:grid-cols-2">
@@ -330,13 +342,6 @@ export function BlueprintProductForm({ storeIndustry, categories = [], product }
           </div>
         </Panel>
 
-        <Panel title="موجودی و قیمت‌گذاری">
-          <div className="grid gap-3">
-            <BpInput name="stock" label="تعداد موجودی در انبار" required type="number" min="0" dir="ltr" value={stock} error={errors.stock} onChange={(event) => { setStock(event.target.value); clearError("stock"); }} />
-            <BpInput name="preparationDays" label="زمان آماده‌سازی (روز)" required type="number" min="0" max="90" dir="ltr" value={preparationDays} error={errors.preparationDays} onChange={(event) => { setPreparationDays(event.target.value); clearError("preparationDays"); }} />
-            {storeIndustry === "GENERAL" && <BpInput name="fixedPrice" label="قیمت فروش (ریال)" required type="number" min="1" dir="ltr" value={fixedPrice} error={errors.fixedPrice} placeholder="۱۵۰۰۰۰۰" onChange={(event) => { setFixedPrice(event.target.value); clearError("fixedPrice"); }} />}
-          </div>
-        </Panel>
       </aside>
     </form>
 
