@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { Alert, Button, Input, Spinner, TextArea } from "@heroui/react";
+import { Alert, Button } from "@heroui/react";
 import { Check, ChevronLeft } from "lucide-react";
 import { HeroSelectField } from "@/components/hero-select-field";
+import { TextAreaField, TextField } from "@/components/form-field";
 import { addressFieldLimits } from "@/modules/account/schemas";
 import { validateAddressForm, validateAddressRecipient, type AddressFormErrors, type AddressFormField, type AddressRecipientErrors, type AddressRecipientField } from "@/modules/account/address-form-validation";
 
@@ -108,31 +109,51 @@ export function AddressForm({ initial, user, onSaved, onCancel, onStepChange }: 
     setRecipientErrors((current) => current[field] ? { ...current, [field]: undefined } : current);
   }
 
-  const fieldClass = "min-h-11 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm shadow-none focus:border-[var(--brand-primary)] focus:ring-2 focus:ring-[var(--brand-primary)]/15";
-  const inputFieldClass = `${fieldClass} h-11 max-h-11`;
-  const labelClass = "grid content-start gap-1.5 text-xs font-medium text-slate-600";
-  const selectClass = "min-h-11 rounded-lg border-slate-300";
-  const invalidFieldClass = "border-[var(--danger)] focus:border-[var(--danger)] focus:ring-[var(--danger)]/15";
-  const fieldError = (field: AddressFormField) => <span role={fieldErrors[field] ? "alert" : undefined} aria-hidden={fieldErrors[field] ? undefined : true} className={`block min-h-4 text-[11px] font-normal ${fieldErrors[field] ? "text-[var(--danger)]" : "invisible"}`}>{fieldErrors[field] ?? "بدون خطا"}</span>;
-  const recipientError = (field: AddressRecipientField) => <span role={recipientErrors[field] ? "alert" : undefined} aria-hidden={recipientErrors[field] ? undefined : true} className={`block min-h-4 text-[11px] font-normal ${recipientErrors[field] ? "text-[var(--danger)]" : "invisible"}`}>{recipientErrors[field] ?? "بدون خطا"}</span>;
   const primaryButtonStyle = { "--button-bg": "var(--brand-primary)", "--button-bg-hover": "color-mix(in srgb, var(--brand-primary) 90%, black)", "--button-bg-pressed": "color-mix(in srgb, var(--brand-primary) 82%, black)", "--button-fg": "var(--brand-primary-foreground)" } as React.CSSProperties;
 
   return <form ref={formRef} onSubmit={submit} noValidate className="grid min-h-0" dir="rtl">
     <div className="grid gap-4 px-5 py-3 sm:px-6">
       <section className={step === 2 ? "grid gap-3" : "hidden"} aria-hidden={step !== 2}>
-        <div className="grid items-start gap-3 sm:grid-cols-2"><HeroSelectField name="provinceIdField" label="استان" searchable value={provinceId} onValueChange={(value) => { setProvinceId(value); setCityId(""); setCities([]); setLocationsLoading(Boolean(value)); clearFieldError("provinceId"); }} required disabled={locationsLoading && !provinces.length} error={fieldErrors.provinceId} reserveErrorSpace options={provinces.map((item) => ({ value: item.id, label: item.name }))} controlClassName={selectClass} /><HeroSelectField name="cityIdField" label="شهر" searchable value={cityId} onValueChange={(value) => { setCityId(value); clearFieldError("cityId"); }} required disabled={!provinceId || locationsLoading} error={fieldErrors.cityId} reserveErrorSpace options={cities.map((item) => ({ value: item.id, label: item.name }))} controlClassName={selectClass} /></div>
-        <label className={labelClass}><span>آدرس<span className="mr-0.5 text-[var(--danger)]">*</span></span><TextArea name="addressLine" defaultValue={initial?.addressLine ?? ""} onChange={() => clearFieldError("addressLine")} aria-invalid={Boolean(fieldErrors.addressLine)} minLength={10} maxLength={addressFieldLimits.addressLine} rows={1} fullWidth variant="secondary" className={`${fieldClass} ${fieldErrors.addressLine ? invalidFieldClass : ""}`} placeholder="مثال: خیابان، کوچه و جزئیات آدرس" />{fieldErrors.addressLine ? <span role="alert" className="-mt-1.5 text-[11px] font-normal leading-5 text-[var(--danger)]">{fieldErrors.addressLine}</span> : <span className="-mt-1.5 text-[11px] font-normal leading-5 text-slate-400">در صورت تغییر این بخش و ناهماهنگی آن با موقعیت مکانی، ممکن است ارسال سفارش با مشکل مواجه شود.</span>}</label>
-        <div className="grid grid-cols-2 items-start gap-3"><label className={labelClass}><span>پلاک<span className="mr-0.5 text-[var(--danger)]">*</span></span><Input name="plaque" defaultValue={initial?.plaque ?? ""} onChange={() => clearFieldError("plaque")} aria-invalid={Boolean(fieldErrors.plaque)} maxLength={addressFieldLimits.plaque} fullWidth variant="secondary" className={`${inputFieldClass} ${fieldErrors.plaque ? invalidFieldClass : ""}`} />{fieldError("plaque")}</label><label className={labelClass}>واحد<Input name="unit" defaultValue={initial?.unit ?? ""} maxLength={addressFieldLimits.unit} fullWidth variant="secondary" className={inputFieldClass} /><span aria-hidden="true" className="block min-h-4" /></label></div>
-        <label className={labelClass}><span>کدپستی<span className="mr-0.5 text-[var(--danger)]">*</span></span><Input name="postalCode" defaultValue={initial?.postalCode ?? ""} onChange={() => clearFieldError("postalCode")} aria-invalid={Boolean(fieldErrors.postalCode)} dir="ltr" inputMode="numeric" minLength={addressFieldLimits.postalCode} maxLength={addressFieldLimits.postalCode} fullWidth variant="secondary" className={`${inputFieldClass} ${fieldErrors.postalCode ? invalidFieldClass : ""}`} placeholder="باید ۱۰ رقمی باشد" />{fieldError("postalCode")}</label>
+        <div className="grid items-start gap-3 sm:grid-cols-2">
+          <HeroSelectField name="provinceIdField" label="استان" searchable value={provinceId} onValueChange={(value) => { setProvinceId(value); setCityId(""); setCities([]); setLocationsLoading(Boolean(value)); clearFieldError("provinceId"); }} required loading={locationsLoading && !provinces.length} error={fieldErrors.provinceId} reserveErrorSpace options={provinces.map((item) => ({ value: item.id, label: item.name }))} />
+          <HeroSelectField name="cityIdField" label="شهر" searchable value={cityId} onValueChange={(value) => { setCityId(value); clearFieldError("cityId"); }} required disabled={!provinceId} loading={Boolean(provinceId) && locationsLoading} error={fieldErrors.cityId} reserveErrorSpace options={cities.map((item) => ({ value: item.id, label: item.name }))} />
+        </div>
+        <TextAreaField
+          name="addressLine" label="آدرس" required rows={2}
+          defaultValue={initial?.addressLine ?? ""}
+          minLength={10} maxLength={addressFieldLimits.addressLine}
+          placeholder="مثال: خیابان، کوچه و جزئیات آدرس"
+          error={fieldErrors.addressLine}
+          hint="در صورت تغییر این بخش و ناهماهنگی آن با موقعیت مکانی، ممکن است ارسال سفارش با مشکل مواجه شود."
+          onChange={() => clearFieldError("addressLine")}
+        />
+        <div className="grid grid-cols-2 items-start gap-3">
+          <TextField name="plaque" label="پلاک" required defaultValue={initial?.plaque ?? ""} maxLength={addressFieldLimits.plaque} error={fieldErrors.plaque} onChange={() => clearFieldError("plaque")} />
+          <TextField name="unit" label="واحد" defaultValue={initial?.unit ?? ""} maxLength={addressFieldLimits.unit} />
+        </div>
+        <TextField
+          name="postalCode" label="کدپستی" required dir="ltr" inputMode="numeric"
+          defaultValue={initial?.postalCode ?? ""}
+          minLength={addressFieldLimits.postalCode} maxLength={addressFieldLimits.postalCode}
+          placeholder="باید ۱۰ رقمی باشد"
+          error={fieldErrors.postalCode}
+          onChange={() => clearFieldError("postalCode")}
+        />
       </section>
 
       <section className={step === 3 ? "grid gap-5" : "hidden"} aria-hidden={step !== 3}>
-        <label className={labelClass}><span>نام آدرس<span className="mr-0.5 text-[var(--danger)]">*</span></span><Input name="title" defaultValue={initial?.title ?? ""} onChange={() => clearFieldError("title")} aria-invalid={Boolean(fieldErrors.title)} maxLength={addressFieldLimits.title} fullWidth variant="secondary" className={`${inputFieldClass} ${fieldErrors.title ? invalidFieldClass : ""}`} placeholder="مثال: خانه، محل کار و ..." />{fieldError("title")}</label>
+        <TextField name="title" label="نام آدرس" required defaultValue={initial?.title ?? ""} maxLength={addressFieldLimits.title} placeholder="مثال: خانه، محل کار و ..." error={fieldErrors.title} onChange={() => clearFieldError("title")} />
         <div><p className="mb-3 mt-0 text-xs font-medium text-slate-700">سفارش‌های این آدرس را چه کسی تحویل می‌گیرد؟</p><div className="grid grid-cols-2 gap-3"><Button type="button" variant="ghost" aria-pressed={recipientType === "SELF"} onPress={() => { setRecipientType("SELF"); setRecipientErrors({}); }} className="min-h-11 justify-start gap-3 bg-transparent px-0 text-xs font-normal hover:bg-transparent data-[hovered=true]:bg-transparent"><span className={`grid size-5 place-items-center rounded-full border-2 ${recipientType === "SELF" ? "border-[var(--brand-primary)]" : "border-slate-400"}`}>{recipientType === "SELF" && <span className="size-2.5 rounded-full bg-[var(--brand-primary)]" />}</span>تحویل به خودم</Button><Button type="button" variant="ghost" aria-pressed={recipientType === "OTHER"} onPress={() => { setRecipientType("OTHER"); setRecipientErrors({}); }} className="min-h-11 justify-start gap-3 bg-transparent px-0 text-xs font-normal hover:bg-transparent data-[hovered=true]:bg-transparent"><span className={`grid size-5 place-items-center rounded-full border-2 ${recipientType === "OTHER" ? "border-[var(--brand-primary)]" : "border-slate-400"}`}>{recipientType === "OTHER" && <span className="size-2.5 rounded-full bg-[var(--brand-primary)]" />}</span>تحویل به شخص دیگر</Button></div></div>
-        {recipientType === "SELF" ? <div className="rounded-lg bg-[var(--surface-secondary)] px-4 py-3 text-xs leading-6 text-[var(--muted)]">گیرنده: <b className="text-[var(--foreground)]">{selfName || "اطلاعات پروفایل ناقص"}</b>{user.phone && <span className="mr-2" dir="ltr">{user.phone}</span>}{(recipientErrors.recipient || recipientErrors.phone) && <span role="alert" className="mt-1 block text-[var(--danger)]">{recipientErrors.recipient ?? recipientErrors.phone}</span>}</div> : <div className="grid items-start gap-4 sm:grid-cols-2"><label className={labelClass}><span>نام و نام خانوادگی<span className="mr-0.5 text-[var(--danger)]">*</span></span><Input name="recipient" defaultValue={initial?.recipientType === "OTHER" ? initial.recipient : ""} onChange={() => clearRecipientError("recipient")} aria-invalid={Boolean(recipientErrors.recipient)} maxLength={addressFieldLimits.recipient} fullWidth variant="secondary" className={`${inputFieldClass} ${recipientErrors.recipient ? invalidFieldClass : ""}`} />{recipientError("recipient")}</label><label className={labelClass}><span>شماره همراه<span className="mr-0.5 text-[var(--danger)]">*</span></span><Input name="phone" defaultValue={initial?.recipientType === "OTHER" ? initial.phone : ""} onChange={() => clearRecipientError("phone")} aria-invalid={Boolean(recipientErrors.phone)} dir="ltr" inputMode="tel" maxLength={addressFieldLimits.phone} fullWidth variant="secondary" className={`${inputFieldClass} ${recipientErrors.phone ? invalidFieldClass : ""}`} />{recipientError("phone")}</label></div>}
+        {recipientType === "SELF" ? (
+          <div className="rounded-lg bg-[var(--surface-secondary)] px-4 py-3 text-xs leading-6 text-[var(--muted)]">گیرنده: <b className="text-[var(--foreground)]">{selfName || "اطلاعات پروفایل ناقص"}</b>{user.phone && <span className="mr-2" dir="ltr">{user.phone}</span>}{(recipientErrors.recipient || recipientErrors.phone) && <span role="alert" className="mt-1 block text-[var(--danger)]">{recipientErrors.recipient ?? recipientErrors.phone}</span>}</div>
+        ) : (
+          <div className="grid items-start gap-4 sm:grid-cols-2">
+            <TextField name="recipient" label="نام و نام خانوادگی" required defaultValue={initial?.recipientType === "OTHER" ? initial.recipient : ""} maxLength={addressFieldLimits.recipient} error={recipientErrors.recipient} onChange={() => clearRecipientError("recipient")} />
+            <TextField name="phone" label="شماره همراه" required dir="ltr" inputMode="tel" defaultValue={initial?.recipientType === "OTHER" ? initial.phone : ""} maxLength={addressFieldLimits.phone} error={recipientErrors.phone} onChange={() => clearRecipientError("phone")} />
+          </div>
+        )}
       </section>
 
-      {locationsLoading && step === 2 && <div className="flex items-center gap-2 text-xs text-[var(--muted)]"><Spinner size="sm" />در حال دریافت اطلاعات استان و شهر…</div>}
       {error && <Alert status="danger"><Alert.Description>{error}</Alert.Description></Alert>}
     </div>
 

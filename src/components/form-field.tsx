@@ -15,7 +15,15 @@ import { Input, TextArea } from "@heroui/react";
  *   - hint and error sharing that line — the error takes it over, the hint returns when it clears
  */
 
+/**
+ * Which look the control wears. `auth` is the sign-in and password-recovery style — taller, on a
+ * warmer border, with a quieter label. It is a prop rather than a class those pages declare
+ * themselves, so the appearance stays owned by the design system.
+ */
+export type FieldTone = "default" | "auth";
+
 type FieldShellProps = {
+  tone?: FieldTone;
   label?: ReactNode;
   /** Shown under the control whenever there is no error to show instead. */
   hint?: ReactNode;
@@ -26,12 +34,12 @@ type FieldShellProps = {
   className?: string;
 };
 
-export function FormField({ id, label, hint, error, reserveMessage = true, required, counter, className = "", children }: FieldShellProps & { id: string; counter?: ReactNode; children: ReactNode }) {
+export function FormField({ id, tone = "default", label, hint, error, reserveMessage = true, required, counter, className = "", children }: FieldShellProps & { id: string; counter?: ReactNode; children: ReactNode }) {
   const messageId = `${id}-message`;
   return (
     <div className={className}>
       {label && (
-        <label className="field-label" htmlFor={id}>
+        <label className={`field-label ${tone === "auth" ? "field-label-auth" : ""}`.trim()} htmlFor={id}>
           {label}
           {required && <span aria-hidden className="text-[var(--danger)]"> *</span>}
         </label>
@@ -72,17 +80,17 @@ type TextFieldProps = FieldShellProps
   & Omit<React.ComponentProps<typeof Input>, "className" | "id">
   & { id?: string; wrapperClassName?: string; controlClassName?: string };
 
-export function TextField({ label, hint, error, reserveMessage, required, wrapperClassName = "", controlClassName = "", id, ...rest }: TextFieldProps) {
+export function TextField({ tone = "default", label, hint, error, reserveMessage, required, wrapperClassName = "", controlClassName = "", id, ...rest }: TextFieldProps) {
   const generated = useId();
   const fieldId = id ?? generated;
   return (
-    <FormField id={fieldId} label={label} hint={hint} error={error} reserveMessage={reserveMessage} required={required} className={wrapperClassName}>
+    <FormField id={fieldId} tone={tone} label={label} hint={hint} error={error} reserveMessage={reserveMessage} required={required} className={wrapperClassName}>
       <Input
         {...fieldControlProps(fieldId, error, hint)}
         required={required}
         fullWidth
         variant="secondary"
-        className={`field-control ${controlClassName}`.trim()}
+        className={`field-control ${tone === "auth" ? "field-control-auth" : ""} ${controlClassName}`.trim()}
         {...rest}
       />
     </FormField>

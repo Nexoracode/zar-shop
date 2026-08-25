@@ -241,6 +241,22 @@ html[dir="rtl"] [data-slot="modal-header"]:has([data-slot="modal-close-trigger"]
 .field-control[aria-invalid="true"]:focus { border-color: var(--danger); box-shadow: 0 0 0 4px color-mix(in srgb, var(--danger) 12%, transparent); }
 .field-control:disabled { opacity: 0.6; cursor: not-allowed; }
 
+/* The sign-in and password-recovery pages: a taller control on a warmer border, and a quieter
+   label. Declared here rather than in those files so the look stays part of the design system
+   and both pages keep using the shared field components. */
+.field-control-auth {
+  min-height: 3rem;
+  border-radius: 0.5rem;
+  border-color: #e0dfda;
+  background: #ffffff;
+  padding: 0 0.875rem;
+  font-size: 0.8125rem;
+}
+.field-control-auth:focus { border-color: var(--brand-primary); box-shadow: 0 0 0 2px color-mix(in srgb, var(--brand-primary) 15%, transparent); }
+.field-control-auth[aria-invalid="true"] { border-color: var(--danger); }
+.field-control-auth[aria-invalid="true"]:focus { border-color: var(--danger); box-shadow: 0 0 0 2px color-mix(in srgb, var(--danger) 15%, transparent); }
+.field-label-auth { font-weight: 400; color: #848484; }
+
 /* One reserved line: the error takes it while present, the hint sits there otherwise. */
 .field-message {
   display: block;

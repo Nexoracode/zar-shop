@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ComboBox, Input, Label, ListBox, Select } from "@heroui/react";
+import { ComboBox, Input, Label, ListBox, Select, Spinner } from "@heroui/react";
 
 import { includesNormalizedText } from "@/lib/text-search";
 
@@ -24,6 +24,8 @@ type Props = {
   disabled?: boolean;
   error?: string;
   reserveErrorSpace?: boolean;
+  /** Options are still being fetched: the control says so itself and refuses input meanwhile. */
+  loading?: boolean;
   searchable?: boolean;
   className?: string;
   controlClassName?: string;
@@ -45,6 +47,7 @@ export function HeroSelectField({
   disabled,
   error,
   reserveErrorSpace = false,
+  loading = false,
   searchable = false,
   className = "",
   controlClassName = "",
@@ -81,7 +84,7 @@ export function HeroSelectField({
           selectedKey={selectedValue || null}
           onSelectionChange={change}
           isRequired={required}
-          isDisabled={disabled}
+          isDisabled={disabled || loading}
           isInvalid={Boolean(error)}
           variant="secondary"
           fullWidth
@@ -89,10 +92,12 @@ export function HeroSelectField({
           menuTrigger="focus"
           className="min-w-0"
         >
-          {label && <Label className="mb-2 text-xs font-medium text-slate-600">{label}{required && <span className="mr-0.5 text-[var(--danger)]">*</span>}</Label>}
+          {label && <Label className="mb-2 text-xs font-medium text-slate-600">{label}</Label>}
           <ComboBox.InputGroup className={`min-h-11 min-w-0 rounded-lg border bg-white px-3.5 shadow-none focus-within:ring-2 ${controlClassName} ${error ? "border-[var(--danger)] focus-within:border-[var(--danger)] focus-within:ring-[var(--danger)]/15" : "border-slate-300 focus-within:border-slate-400 focus-within:ring-0"}`}>
-            <Input dir="rtl" placeholder="" className="hero-combobox-input min-h-11 min-w-0 flex-1 border-0 bg-transparent px-0 pl-9 text-right text-sm outline-none" />
-            <ComboBox.Trigger aria-label={`نمایش فهرست ${label ?? name}`} className="end-1 size-8 h-8 rounded-md p-0 pe-0 text-slate-600" />
+            <Input dir="rtl" placeholder={loading ? "در حال دریافت..." : ""} className="hero-combobox-input min-h-11 min-w-0 flex-1 border-0 bg-transparent px-0 pl-9 text-right text-sm outline-none" />
+            {loading
+              ? <span className="end-1 grid size-8 place-items-center"><Spinner size="sm" /></span>
+              : <ComboBox.Trigger aria-label={`نمایش فهرست ${label ?? name}`} className="end-1 size-8 h-8 rounded-md p-0 pe-0 text-slate-600" />}
           </ComboBox.InputGroup>
           <ComboBox.Popover offset={4} className="z-[180] w-[var(--trigger-width)] max-w-[calc(100vw-2rem)] overflow-hidden rounded-md border border-slate-200 bg-white shadow-sm" dir="rtl">
             <ListBox className="max-h-48 overflow-y-auto px-0 py-1 text-right">
@@ -111,18 +116,18 @@ export function HeroSelectField({
       <Select
         selectedKey={selectedKey}
         onSelectionChange={change}
-        placeholder={placeholder}
+        placeholder={loading ? "در حال دریافت..." : placeholder}
         isRequired={required}
-        isDisabled={disabled}
+        isDisabled={disabled || loading}
         isInvalid={Boolean(error)}
         variant="secondary"
         fullWidth
         aria-label={ariaLabel ?? label ?? name}
       >
-        {label && <Label className="mb-2 text-xs font-medium text-slate-600">{label}{required && <span className="mr-0.5 text-[var(--danger)]">*</span>}</Label>}
+        {label && <Label className="mb-2 text-xs font-medium text-slate-600">{label}</Label>}
         <Select.Trigger className={`min-h-11 rounded-xl border bg-white px-3.5 text-sm shadow-none ${controlClassName} ${error ? "border-[var(--danger)] ring-2 ring-[var(--danger)]/15" : "border-slate-200"}`}>
           <Select.Value />
-          <Select.Indicator />
+          {loading ? <Spinner size="sm" /> : <Select.Indicator />}
         </Select.Trigger>
         <Select.Popover className="z-[180] max-h-80 overflow-hidden" dir="rtl">
           <ListBox className="max-h-72 overflow-y-auto">

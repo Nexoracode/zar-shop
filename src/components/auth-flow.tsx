@@ -4,22 +4,20 @@ import { useState, type FormEvent, type ReactNode } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ChevronLeft } from "lucide-react";
-import { Alert, Button, Input, toast } from "@heroui/react";
+import { Alert, Button, toast } from "@heroui/react";
 import { AdminCheckbox } from "@/components/admin-checkbox";
 import { LoadingLabel } from "@/components/loading-label";
 import { OtpCodeInput } from "@/components/otp-code-input";
 import { OtpResendCountdown } from "@/components/otp-resend-countdown";
-import { PasswordInput } from "@/components/password-input";
+import { PasswordField } from "@/components/password-input";
 import { newPasswordSchema, phoneSchema } from "@/modules/auth/schemas";
 import { authFieldLimits } from "@/modules/auth/schemas";
+import { TextField } from "@/components/form-field";
 
 type Step = "phone" | "password" | "login-otp" | "register-otp" | "register-complete";
 type OtpPurpose = "LOGIN" | "REGISTER";
 type FieldName = "phone" | "password" | "code" | "firstName" | "lastName";
 
-const fieldClass = "w-full min-h-12 rounded-lg border border-[#e0dfda] bg-white px-[14px] text-[13px] outline-none transition focus:border-[var(--brand-primary)] focus:ring-2 focus:ring-[var(--brand-primary)]/15";
-const invalidFieldClass = "border-[var(--danger)] focus:border-[var(--danger)] focus:ring-[var(--danger)]/15";
-const labelClass = "text-xs font-normal text-[#848484]";
 // HeroUI's own Button base CSS sets text-sm/font-medium directly on `.button` (in the
 // "components" layer, imported by @heroui/styles) — a plain `text-xs`/`font-bold` utility
 // class ties with it on specificity and loses the cascade unpredictably, so button typography
@@ -80,9 +78,6 @@ export function AuthFlow() {
     setFieldErrors(next);
   }
 
-  const fieldError = (field: FieldName) => (
-    <span role={fieldErrors[field] ? "alert" : undefined} aria-hidden={fieldErrors[field] ? undefined : true} className={`block min-h-4 text-[11px] font-normal ${fieldErrors[field] ? "text-[var(--danger)]" : "invisible"}`}>{fieldErrors[field] ?? "بدون خطا"}</span>
-  );
 
   function goToOtpStep(nextStep: "login-otp" | "register-otp") {
     setOtp("");
@@ -204,11 +199,7 @@ export function AuthFlow() {
     return (
       <form className="grid gap-5" onSubmit={submitPhone} noValidate>
         <StepHeader title="ورود یا ثبت‌نام" subtitle="لطفاً شماره موبایل خود را وارد کنید" size="lg" />
-        <label className="grid gap-[7px]" htmlFor="phone">
-          <span className={labelClass}>شماره موبایل</span>
-          <Input id="phone" name="phone" inputMode="tel" dir="ltr" maxLength={authFieldLimits.phone} placeholder="09123456789" onChange={() => clearFieldError("phone")} aria-invalid={Boolean(fieldErrors.phone)} fullWidth variant="secondary" className={`${fieldClass} ${fieldErrors.phone ? invalidFieldClass : ""}`} autoFocus />
-          {fieldError("phone")}
-        </label>
+        <TextField tone="auth" label="شماره موبایل" error={fieldErrors.phone} id="phone" name="phone" inputMode="tel" dir="ltr" maxLength={authFieldLimits.phone} placeholder="09123456789" onChange={() => clearFieldError("phone")} autoFocus />
         {error && <Alert status="danger"><Alert.Description>{error}</Alert.Description></Alert>}
         <Button type="submit" variant="primary" fullWidth className={submitClass} isPending={loading}>
           {({ isPending }) => <LoadingLabel isPending={isPending}>ادامه</LoadingLabel>}
@@ -221,11 +212,7 @@ export function AuthFlow() {
     return (
       <form className="grid gap-5" onSubmit={submitPassword} noValidate>
         <StepHeader title="رمز عبور را وارد کنید" subtitle={<>ورود با شماره <strong dir="ltr">{phone}</strong></>} />
-        <label className="grid gap-[7px]" htmlFor="password">
-          <span className={labelClass}>رمز عبور</span>
-          <PasswordInput id="password" name="password" maxLength={authFieldLimits.password} onChange={() => clearFieldError("password")} aria-invalid={Boolean(fieldErrors.password)} fullWidth variant="secondary" className={`${fieldClass} ${fieldErrors.password ? invalidFieldClass : ""}`} autoFocus />
-          {fieldError("password")}
-        </label>
+        <PasswordField tone="auth" label="رمز عبور" error={fieldErrors.password} id="password" name="password" maxLength={authFieldLimits.password} onChange={() => clearFieldError("password")} autoFocus />
         <div className="grid gap-1 justify-items-start">
           <Button type="button" variant="ghost" isPending={altLoading} isDisabled={loading} onPress={requestLoginOtp} className={`${secondaryActionClass} px-2`}>
             {({ isPending }) => <LoadingLabel isPending={isPending}>ورود با کد یکبار مصرف<ChevronLeft size={15} /></LoadingLabel>}
@@ -265,22 +252,10 @@ export function AuthFlow() {
     <form className="grid gap-5" onSubmit={submitRegisterComplete} noValidate>
       <StepHeader title="تعیین رمز عبور" subtitle={<>شماره <strong dir="ltr">{phone}</strong> تأیید شد؛ برای تکمیل ثبت‌نام رمز عبور بسازید</>} />
       <div className="grid grid-cols-1 gap-[14px] sm:grid-cols-2">
-        <label className="grid gap-[7px]" htmlFor="firstName">
-          <span className={labelClass}>نام</span>
-          <Input id="firstName" name="firstName" maxLength={authFieldLimits.firstName} onChange={() => clearFieldError("firstName")} aria-invalid={Boolean(fieldErrors.firstName)} fullWidth variant="secondary" className={`${fieldClass} ${fieldErrors.firstName ? invalidFieldClass : ""}`} />
-          {fieldError("firstName")}
-        </label>
-        <label className="grid gap-[7px]" htmlFor="lastName">
-          <span className={labelClass}>نام خانوادگی</span>
-          <Input id="lastName" name="lastName" maxLength={authFieldLimits.lastName} onChange={() => clearFieldError("lastName")} aria-invalid={Boolean(fieldErrors.lastName)} fullWidth variant="secondary" className={`${fieldClass} ${fieldErrors.lastName ? invalidFieldClass : ""}`} />
-          {fieldError("lastName")}
-        </label>
+        <TextField tone="auth" label="نام" error={fieldErrors.firstName} id="firstName" name="firstName" maxLength={authFieldLimits.firstName} onChange={() => clearFieldError("firstName")} />
+        <TextField tone="auth" label="نام خانوادگی" error={fieldErrors.lastName} id="lastName" name="lastName" maxLength={authFieldLimits.lastName} onChange={() => clearFieldError("lastName")} />
       </div>
-      <label className="grid gap-[7px]" htmlFor="password">
-        <span className={labelClass}>رمز عبور</span>
-        <PasswordInput id="password" name="password" maxLength={authFieldLimits.password} onChange={() => clearFieldError("password")} aria-invalid={Boolean(fieldErrors.password)} fullWidth variant="secondary" className={`${fieldClass} ${fieldErrors.password ? invalidFieldClass : ""}`} />
-        {fieldError("password")}
-      </label>
+      <PasswordField tone="auth" label="رمز عبور" error={fieldErrors.password} id="password" name="password" maxLength={authFieldLimits.password} onChange={() => clearFieldError("password")} />
       <AdminCheckbox isSelected={smsMarketingConsent} onChange={setSmsMarketingConsent} description="برای تخفیف‌ها و خبرهای فروشگاه؛ هر زمان قابل لغو است">مایلم پیامک‌های اطلاع‌رسانی فروشگاه را دریافت کنم</AdminCheckbox>
       {error && <Alert status="danger"><Alert.Description>{error}</Alert.Description></Alert>}
       <Button type="submit" variant="primary" fullWidth className={submitClass} isPending={loading}>
