@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type DragEvent } from "react";
-import { GripVertical, Plus, Trash2 } from "lucide-react";
+import { Check, GripVertical, Pencil, Plus, Trash2 } from "lucide-react";
 import { productFieldLimits } from "@/modules/products/schemas";
 import { BpButton } from "./ui/button";
 import { BpCheckbox } from "./ui/checkbox";
@@ -57,6 +57,9 @@ export function BlueprintProductOptions({ storeIndustry, colors, options, onChan
   const [groupError, setGroupError] = useState("");
   const [activeIndex, setActiveIndex] = useState(0);
   const [draggedValue, setDraggedValue] = useState<string | null>(null);
+  // Renaming is asked for, not permanently on offer: the header states the group and turns into
+  // its own two fields only while the pencil is engaged.
+  const [editingGroup, setEditingGroup] = useState(false);
 
   const active = options[activeIndex] ?? options[0] ?? null;
   const activeAt = options.indexOf(active as OptionDraft);
@@ -85,6 +88,7 @@ export function BlueprintProductOptions({ storeIndustry, colors, options, onChan
   function removeGroup(index: number) {
     onChange(options.filter((_, position) => position !== index));
     setActiveIndex(0);
+    setEditingGroup(false);
   }
 
   return (
@@ -120,7 +124,7 @@ export function BlueprintProductOptions({ storeIndustry, colors, options, onChan
         <>
           <BpTabs label="گروه‌های تنوع">
             {options.map((option, index) => (
-              <button key={`${option.name}-${index}`} type="button" role="tab" aria-selected={index === activeAt} className="bp-tab" onClick={() => setActiveIndex(index)}>
+              <button key={`${option.name}-${index}`} type="button" role="tab" aria-selected={index === activeAt} className="bp-tab" onClick={() => { setActiveIndex(index); setEditingGroup(false); }}>
                 {option.name || "بدون نام"}
                 <span className="bp-muted text-[11px]">({option.values.length.toLocaleString("fa-IR")})</span>
               </button>
@@ -129,13 +133,37 @@ export function BlueprintProductOptions({ storeIndustry, colors, options, onChan
 
           {active && (
             <>
-              <div className="flex flex-wrap items-center gap-2">
-                <strong className="text-[13px]">{active.name || "بدون نام"}</strong>
-                <span className="bp-tag bp-tag-neutral">{active.type === "COLOR" ? "رنگ" : "فهرست ساده"}</span>
-                <BpButton isIconOnly variant="ghost" aria-label={`حذف تنوع ${active.name || "بدون نام"}`} className="ms-auto text-[var(--bp-danger)]" onClick={() => removeGroup(activeAt)}>
-                  <Trash2 size={15} />
-                </BpButton>
-              </div>
+              {editingGroup ? (
+                <div className="flex flex-wrap items-end gap-2">
+                  <BpInput
+                    label="نام تنوع"
+                    value={active.name}
+                    maxLength={productFieldLimits.optionName}
+                    wrapperClassName="w-[min(100%,220px)]"
+                    onChange={(event) => updateActive({ ...active, name: event.target.value })}
+                    onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); setEditingGroup(false); } }}
+                  />
+                  <BpSelect
+                    label="نوع"
+                    value={active.type}
+                    options={[{ value: "SELECT", label: "فهرست ساده" }, { value: "COLOR", label: "رنگ" }]}
+                    wrapperClassName="w-[min(100%,180px)]"
+                    onChange={(event) => updateActive({ ...active, type: event.target.value as OptionDraft["type"] })}
+                  />
+                  <BpButton variant="primary" className="field-action gap-1.5" onClick={() => setEditingGroup(false)}><Check size={15} />پایان ویرایش</BpButton>
+                </div>
+              ) : (
+                <div className="flex flex-wrap items-center gap-2">
+                  <strong className="text-[13px]">{active.name || "بدون نام"}</strong>
+                  <span className="bp-tag bp-tag-neutral">{active.type === "COLOR" ? "رنگ" : "فهرست ساده"}</span>
+                  <BpButton isIconOnly variant="ghost" aria-label={`ویرایش نام و نوع ${active.name || "بدون نام"}`} className="ms-auto" onClick={() => setEditingGroup(true)}>
+                    <Pencil size={15} />
+                  </BpButton>
+                  <BpButton isIconOnly variant="ghost" aria-label={`حذف تنوع ${active.name || "بدون نام"}`} className="text-[var(--bp-danger)]" onClick={() => removeGroup(activeAt)}>
+                    <Trash2 size={15} />
+                  </BpButton>
+                </div>
+              )}
 
               <div className="grid gap-2">
                 {active.values.map((item, index) => (
