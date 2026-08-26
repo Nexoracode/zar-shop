@@ -35,6 +35,8 @@ type StoredVariantRow = {
   weightGrams: { toString(): string } | null;
   discountType: "PERCENT" | "FIXED" | null;
   discountValue: { toString(): string } | null;
+  discountStartsAt: Date | null;
+  discountEndsAt: Date | null;
   stock: number;
   isActive: boolean;
 };
@@ -64,12 +66,12 @@ export function lineUnitPrice(product: PricedProduct, selectionKey: string, gold
 
   if (base === null) return null;
 
-  // The window stays the product's; only the type and the amount can be overridden, so a shop
-  // can discount one colour without restating when the sale runs.
+  // A combination with its own discount also brings its own window; one with neither reads the
+  // product's, so a shop can still discount one colour without restating when the sale runs.
   return calculateDiscountedPrice(base, {
     discountType: resolved.discountType,
     discountValue: resolved.discountValue,
-    discountStartsAt: product.discountStartsAt,
-    discountEndsAt: product.discountEndsAt,
+    discountStartsAt: resolved.discountStartsAt,
+    discountEndsAt: resolved.discountEndsAt,
   });
 }

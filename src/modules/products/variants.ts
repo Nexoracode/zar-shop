@@ -34,6 +34,8 @@ type StoredVariant = {
   weightGrams: { toString(): string } | null;
   discountType: "PERCENT" | "FIXED" | null;
   discountValue: { toString(): string } | null;
+  discountStartsAt: Date | null;
+  discountEndsAt: Date | null;
   stock: number;
   isActive: boolean;
 };
@@ -69,12 +71,18 @@ export function variantPricing(variant: StoredVariant | null, product: {
   fixedPrice: { toString(): string } | null;
   discountType: "PERCENT" | "FIXED" | null;
   discountValue: { toString(): string } | null;
+  discountStartsAt: Date | null;
+  discountEndsAt: Date | null;
 }) {
   return {
     weightGrams: (variant?.weightGrams ?? product.weightGrams).toString(),
     fixedPrice: variant?.price != null ? Number(variant.price) : product.fixedPrice != null ? Number(product.fixedPrice) : null,
     discountType: variant?.discountType ?? product.discountType,
     discountValue: variant?.discountValue ?? product.discountValue,
+    // A combination's own window travels with its own type/value; one with neither reads the
+    // product's, exactly like the amount already does.
+    discountStartsAt: variant?.discountStartsAt ?? product.discountStartsAt,
+    discountEndsAt: variant?.discountEndsAt ?? product.discountEndsAt,
   };
 }
 

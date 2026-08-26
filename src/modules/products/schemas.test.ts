@@ -39,8 +39,11 @@ test("the same combination cannot be listed twice", () => {
   assert.equal(result.success, false);
 });
 
-test("a combination's discount needs both its type and its amount", () => {
+test("a combination's discount needs its type, amount and window together", () => {
+  const window = { discountStartsAt: "2026-01-01", discountEndsAt: "2026-01-10" };
   assert.equal(productSchema.shape.variants.safeParse([{ selection: { "رنگ": "مشکی" }, discountType: "PERCENT" }]).success, false);
-  assert.equal(productSchema.shape.variants.safeParse([{ selection: { "رنگ": "مشکی" }, discountType: "PERCENT", discountValue: "20" }]).success, true);
-  assert.equal(productSchema.shape.variants.safeParse([{ selection: { "رنگ": "مشکی" }, discountType: "PERCENT", discountValue: "120" }]).success, false);
+  assert.equal(productSchema.shape.variants.safeParse([{ selection: { "رنگ": "مشکی" }, discountType: "PERCENT", discountValue: "20" }]).success, false);
+  assert.equal(productSchema.shape.variants.safeParse([{ selection: { "رنگ": "مشکی" }, discountType: "PERCENT", discountValue: "20", ...window }]).success, true);
+  assert.equal(productSchema.shape.variants.safeParse([{ selection: { "رنگ": "مشکی" }, discountType: "PERCENT", discountValue: "120", ...window }]).success, false);
+  assert.equal(productSchema.shape.variants.safeParse([{ selection: { "رنگ": "مشکی" }, discountType: "PERCENT", discountValue: "20", discountStartsAt: "2026-01-10", discountEndsAt: "2026-01-01" }]).success, false);
 });

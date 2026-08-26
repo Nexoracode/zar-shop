@@ -1,4 +1,5 @@
 import type { Prisma } from "@generated/prisma/client";
+import { tehranDateEnd, tehranDateStart } from "@/modules/products/discount";
 import { variantSelectionKey, type VariantSelection } from "@/modules/products/variants";
 
 /*
@@ -18,6 +19,8 @@ export type ProductVariantInput = {
   weightGrams: string | null;
   discountType: "PERCENT" | "FIXED" | null;
   discountValue: string | null;
+  discountStartsAt: string | null;
+  discountEndsAt: string | null;
   stock: number;
   isActive: boolean;
 };
@@ -106,6 +109,9 @@ export async function writeVariantSetup(
       weightGrams: row.weightGrams,
       discountType: row.discountType,
       discountValue: row.discountValue,
+      // Same bare-date-means-the-whole-Tehran-day handling as the product's own window.
+      discountStartsAt: tehranDateStart(row.discountStartsAt),
+      discountEndsAt: tehranDateEnd(row.discountEndsAt),
       stock: row.stock,
       isActive: row.isActive,
     };

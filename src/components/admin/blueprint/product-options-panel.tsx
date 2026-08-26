@@ -14,6 +14,7 @@ import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
 import { BpButton } from "./ui/button";
 import { BpCheckbox } from "./ui/checkbox";
 import { BpCombobox } from "./ui/combobox";
+import { BpDateTimeField } from "./ui/date-time-field";
 import { BpNumberInput } from "./ui/number-input";
 import { BpSelect } from "./ui/select";
 import { BpTable, BpTd, BpTh } from "./ui/table";
@@ -416,7 +417,7 @@ export function BlueprintProductOptions({ storeIndustry, colors, library, option
                           wrapperClassName="w-[min(100%,130px)]"
                           onChange={(event) => {
                             const next = event.target.value as "PERCENT" | "FIXED" | "";
-                            updateVariant(signature, { discountType: next || null, ...(next ? {} : { discountValue: null }) });
+                            updateVariant(signature, { discountType: next || null, ...(next ? {} : { discountValue: null, discountStartsAt: null, discountEndsAt: null }) });
                           }}
                         />
                         <BpNumberInput
@@ -428,6 +429,30 @@ export function BlueprintProductOptions({ storeIndustry, colors, library, option
                           wrapperClassName="w-[min(100%,140px)]"
                           onValueChange={(next) => updateVariant(signature, { discountValue: next || null })}
                         />
+                        {variant.discountType && (
+                          <>
+                            <BpDateTimeField
+                              label="شروع تخفیف"
+                              className="w-[min(100%,190px)]"
+                              value={variant.discountStartsAt}
+                              error={!variant.discountStartsAt ? "زمان شروع تخفیف ترکیب را مشخص کنید." : undefined}
+                              onChange={(next) => updateVariant(signature, { discountStartsAt: next })}
+                            />
+                            <BpDateTimeField
+                              label="پایان تخفیف"
+                              className="w-[min(100%,190px)]"
+                              value={variant.discountEndsAt}
+                              error={
+                                !variant.discountEndsAt
+                                  ? "زمان پایان تخفیف ترکیب را مشخص کنید."
+                                  : variant.discountStartsAt && variant.discountEndsAt < variant.discountStartsAt
+                                    ? "پایان تخفیف باید بعد از شروع آن باشد."
+                                    : undefined
+                              }
+                              onChange={(next) => updateVariant(signature, { discountEndsAt: next })}
+                            />
+                          </>
+                        )}
                       </div>
                     </BpTd>
                     <BpTd>

@@ -247,45 +247,45 @@ model Address {
 }
 
 model Province {
-  id              String    @id @default(cuid())
+  id              String             @id @default(cuid())
   externalId      Int
-  name            String    @db.VarChar(100)
-  slug            String    @db.VarChar(120)
-  latitude        Decimal?  @db.Decimal(10, 7)
-  longitude       Decimal?  @db.Decimal(10, 7)
-  source          String    @default("IRAN_POST_GITHUB") @db.VarChar(50)
+  name            String             @db.VarChar(100)
+  slug            String             @db.VarChar(120)
+  latitude        Decimal?           @db.Decimal(10, 7)
+  longitude       Decimal?           @db.Decimal(10, 7)
+  source          String             @default("IRAN_POST_GITHUB") @db.VarChar(50)
   sourceUpdatedAt DateTime
-  isActive        Boolean   @default(true)
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  isActive        Boolean            @default(true)
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
   cities          City[]
-  storeOrigins    StoreSetting[] @relation("StoreOriginProvince")
+  storeOrigins    StoreSetting[]     @relation("StoreOriginProvince")
   shippingZones   ShippingZoneRate[]
   addresses       Address[]
 
-  @@index([isActive, name])
   @@unique([source, externalId])
+  @@index([isActive, name])
 }
 
 model City {
-  id              String    @id @default(cuid())
+  id              String         @id @default(cuid())
   externalId      Int
   provinceId      String
-  name            String    @db.VarChar(120)
-  slug            String    @db.VarChar(140)
-  latitude        Decimal?  @db.Decimal(10, 7)
-  longitude       Decimal?  @db.Decimal(10, 7)
-  source          String    @default("IRAN_POST_GITHUB") @db.VarChar(50)
+  name            String         @db.VarChar(120)
+  slug            String         @db.VarChar(140)
+  latitude        Decimal?       @db.Decimal(10, 7)
+  longitude       Decimal?       @db.Decimal(10, 7)
+  source          String         @default("IRAN_POST_GITHUB") @db.VarChar(50)
   sourceUpdatedAt DateTime
-  isActive        Boolean   @default(true)
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-  province        Province  @relation(fields: [provinceId], references: [id], onDelete: Restrict)
+  isActive        Boolean        @default(true)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  province        Province       @relation(fields: [provinceId], references: [id], onDelete: Restrict)
   addresses       Address[]
   storeOrigins    StoreSetting[] @relation("StoreOriginCity")
 
-  @@index([provinceId, isActive, name])
   @@unique([source, externalId])
+  @@index([provinceId, isActive, name])
 }
 
 /// A delivery option the customer can pick at checkout.
@@ -350,13 +350,13 @@ model Category {
 /// A kind of variation the shop sells in — رنگ, سایز — defined once and reused by every product,
 /// the same way `Color` already is.
 model OptionType {
-  id        String        @id @default(cuid())
-  name      String        @unique @db.VarChar(80)
-  kind      OptionKind    @default(SELECT)
-  isActive  Boolean       @default(true)
-  sortOrder Int           @default(0)
-  createdAt DateTime      @default(now())
-  updatedAt DateTime      @updatedAt
+  id        String              @id @default(cuid())
+  name      String              @unique @db.VarChar(80)
+  kind      OptionKind          @default(SELECT)
+  isActive  Boolean             @default(true)
+  sortOrder Int                 @default(0)
+  createdAt DateTime            @default(now())
+  updatedAt DateTime            @updatedAt
   values    OptionValue[]
   products  ProductOptionType[] @relation("ProductOptionType")
 
@@ -366,15 +366,15 @@ model OptionType {
 /// One choice inside a type. A COLOR type points its values at the `Color` library rather than
 /// naming a colour twice.
 model OptionValue {
-  id        String     @id @default(cuid())
+  id        String               @id @default(cuid())
   typeId    String
-  label     String     @db.VarChar(80)
+  label     String               @db.VarChar(80)
   colorId   String?
-  isActive  Boolean    @default(true)
-  sortOrder Int        @default(0)
-  createdAt DateTime   @default(now())
-  type      OptionType @relation(fields: [typeId], references: [id], onDelete: Cascade)
-  color     Color?     @relation(fields: [colorId], references: [id], onDelete: SetNull)
+  isActive  Boolean              @default(true)
+  sortOrder Int                  @default(0)
+  createdAt DateTime             @default(now())
+  type      OptionType           @relation(fields: [typeId], references: [id], onDelete: Cascade)
+  color     Color?               @relation(fields: [colorId], references: [id], onDelete: SetNull)
   products  ProductOptionValue[]
 
   @@unique([typeId, label])
@@ -382,64 +382,64 @@ model OptionValue {
 }
 
 model Color {
-  id        String   @id @default(cuid())
-  name      String   @unique @db.VarChar(100)
-  hex       String   @db.Char(7)
-  isActive  Boolean  @default(true)
-  sortOrder Int      @default(0)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id           String        @id @default(cuid())
+  name         String        @unique @db.VarChar(100)
+  hex          String        @db.Char(7)
+  isActive     Boolean       @default(true)
+  sortOrder    Int           @default(0)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
   optionValues OptionValue[]
 
   @@index([isActive, sortOrder, name])
 }
 
 model Product {
-  id               String               @id @default(cuid())
-  sku              String               @unique @db.VarChar(80)
-  name             String               @db.VarChar(191)
-  slug             String               @unique @db.VarChar(191)
-  description      String?              @db.LongText
-  status           ProductStatus        @default(DRAFT)
-  storeIndustry    StoreIndustry        @default(GOLD)
-  categoryId       String?
-  optionGuideId    String?
-  purity           Int                  @default(750)
-  weightGrams      Decimal              @db.Decimal(10, 3)
-  makingFeeType    String               @default("PERCENT") @db.VarChar(20)
-  makingFeeValue   Decimal              @default(0) @db.Decimal(15, 3)
-  profitPercent    Decimal              @default(7) @db.Decimal(5, 2)
-  taxPercent       Decimal              @default(10) @db.Decimal(5, 2)
-  fixedPrice       Decimal?             @db.Decimal(18, 0)
-  discountType     ProductDiscountType?
-  discountValue    Decimal?             @db.Decimal(18, 3)
-  discountStartsAt DateTime?
-  discountEndsAt   DateTime?
-  stock            Int                  @default(0)
-  preparationDays  Int                  @default(2)
+  id                  String               @id @default(cuid())
+  sku                 String               @unique @db.VarChar(80)
+  name                String               @db.VarChar(191)
+  slug                String               @unique @db.VarChar(191)
+  description         String?              @db.LongText
+  status              ProductStatus        @default(DRAFT)
+  storeIndustry       StoreIndustry        @default(GOLD)
+  categoryId          String?
+  optionGuideId       String?
+  purity              Int                  @default(750)
+  weightGrams         Decimal              @db.Decimal(10, 3)
+  makingFeeType       String               @default("PERCENT") @db.VarChar(20)
+  makingFeeValue      Decimal              @default(0) @db.Decimal(15, 3)
+  profitPercent       Decimal              @default(7) @db.Decimal(5, 2)
+  taxPercent          Decimal              @default(10) @db.Decimal(5, 2)
+  fixedPrice          Decimal?             @db.Decimal(18, 0)
+  discountType        ProductDiscountType?
+  discountValue       Decimal?             @db.Decimal(18, 3)
+  discountStartsAt    DateTime?
+  discountEndsAt      DateTime?
+  stock               Int                  @default(0)
+  preparationDays     Int                  @default(2)
   // Packaged figures for shipping, kept apart from `weightGrams`, which is the gold weight the
   // price is built from. Null means "not measured yet", so a carrier quote can say so.
   shippingWeightGrams Int?
-  packageLengthCm  Decimal?             @db.Decimal(8, 2)
-  packageWidthCm   Decimal?             @db.Decimal(8, 2)
-  packageHeightCm  Decimal?             @db.Decimal(8, 2)
+  packageLengthCm     Decimal?             @db.Decimal(8, 2)
+  packageWidthCm      Decimal?             @db.Decimal(8, 2)
+  packageHeightCm     Decimal?             @db.Decimal(8, 2)
   // Per-product order limits. The store-wide cap in order settings still applies on top.
-  minOrderQuantity Int                  @default(1)
-  maxOrderQuantity Int?
-  featured         Boolean              @default(false)
-  attributes       Json?
-  createdAt        DateTime             @default(now())
-  updatedAt        DateTime             @updatedAt
-  category         Category?            @relation(fields: [categoryId], references: [id], onDelete: SetNull)
-  optionGuide      MediaAsset?          @relation("ProductOptionGuide", fields: [optionGuideId], references: [id], onDelete: SetNull)
-  optionTypes      ProductOptionType[]
-  variants         ProductVariant[]
-  media            ProductMedia[]
-  orderItems       OrderItem[]
-  cartItems        CartItem[]
-  reviews          ProductReview[]
-  favorites        ProductFavorite[]
-  visits           ProductVisit[]
+  minOrderQuantity    Int                  @default(1)
+  maxOrderQuantity    Int?
+  featured            Boolean              @default(false)
+  attributes          Json?
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  category            Category?            @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  optionGuide         MediaAsset?          @relation("ProductOptionGuide", fields: [optionGuideId], references: [id], onDelete: SetNull)
+  optionTypes         ProductOptionType[]
+  variants            ProductVariant[]
+  media               ProductMedia[]
+  orderItems          OrderItem[]
+  cartItems           CartItem[]
+  reviews             ProductReview[]
+  favorites           ProductFavorite[]
+  visits              ProductVisit[]
 
   @@index([categoryId, status])
   @@index([optionGuideId])
@@ -524,13 +524,13 @@ model ProductFavorite {
 }
 
 model ProductVisit {
-  id        String   @id @default(cuid())
-  userId    String
-  productId String
-  visitCount Int     @default(1)
-  visitedAt DateTime @default(now())
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  id         String   @id @default(cuid())
+  userId     String
+  productId  String
+  visitCount Int      @default(1)
+  visitedAt  DateTime @default(now())
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@unique([userId, productId])
   @@index([userId, visitedAt])
@@ -770,28 +770,32 @@ model ProductOptionValue {
 /// `selectionKey` is the same SHA-256 of the ordered selection that `CartItem` already stores, so
 /// a line in the cart finds its combination without a second identifier.
 model ProductVariant {
-  id            String               @id @default(cuid())
-  productId     String
-  selectionKey  String               @db.VarChar(64)
+  id               String               @id @default(cuid())
+  productId        String
+  selectionKey     String               @db.VarChar(64)
   /// Readable snapshot for the cart and the invoice: { "رنگ": "مشکی", "سایز": "XL" }.
-  selection     Json
+  selection        Json
   /// General shops price a combination directly; gold shops give it a weight and the day's rate
   /// builds the price. Only one of the two is ever set.
-  price         Decimal?             @db.Decimal(18, 0)
-  weightGrams   Decimal?             @db.Decimal(10, 3)
-  /// Overrides the product's discount for this combination; the window still comes from the product.
-  discountType  ProductDiscountType?
-  discountValue Decimal?             @db.Decimal(18, 3)
-  stock         Int                  @default(0)
-  isActive      Boolean              @default(true)
+  price            Decimal?             @db.Decimal(18, 0)
+  weightGrams      Decimal?             @db.Decimal(10, 3)
+  /// Overrides the product's discount for this combination, window included; a combination with
+  /// no discount of its own falls back to the product's, exactly as the type and amount already did.
+  discountType     ProductDiscountType?
+  discountValue    Decimal?             @db.Decimal(18, 3)
+  discountStartsAt DateTime?
+  discountEndsAt   DateTime?
+  stock            Int                  @default(0)
+  isActive         Boolean              @default(true)
   /// Optimistic lock, as `ProductOption.stockVersion` was: a concurrent order must not overwrite
   /// a stock read it made before the other one landed.
-  stockVersion  Int                  @default(0)
-  createdAt     DateTime             @default(now())
-  product       Product              @relation(fields: [productId], references: [id], onDelete: Cascade)
+  stockVersion     Int                  @default(0)
+  createdAt        DateTime             @default(now())
+  product          Product              @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@unique([productId, selectionKey])
   @@index([productId, isActive])
+  @@index([discountEndsAt])
 }
 
 model ProductMedia {

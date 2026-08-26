@@ -60,12 +60,20 @@ const productVariantSchema = z.object({
   price: z.string().trim().regex(/^[1-9]\d{0,17}$/, "قیمت ترکیب باید یک مبلغ معتبر و بیشتر از صفر باشد.").nullable().default(null),
   discountType: z.enum(["PERCENT", "FIXED"]).nullable().default(null),
   discountValue: z.string().trim().regex(/^\d{1,18}(\.\d{1,3})?$/, "مقدار تخفیف ترکیب معتبر نیست.").nullable().default(null),
+  // A combination's discount window is its own — independent of the product's, and required
+  // alongside the type and amount rather than inherited silently.
+  discountStartsAt: discountBoundarySchema.nullable().default(null),
+  discountEndsAt: discountBoundarySchema.nullable().default(null),
 }).superRefine((variant, context) => {
-  if ((variant.discountType === null) !== (variant.discountValue === null)) {
-    context.addIssue({ code: "custom", path: ["discountValue"], message: "نوع و مقدار تخفیف ترکیب را با هم وارد کنید." });
+  const discountFields = [variant.discountType, variant.discountValue, variant.discountStartsAt, variant.discountEndsAt];
+  if (discountFields.some((value) => value !== null) && discountFields.some((value) => value === null)) {
+    context.addIssue({ code: "custom", path: ["discountValue"], message: "نوع، مقدار و بازه زمانی تخفیف ترکیب را کامل کنید." });
   }
   if (variant.discountType === "PERCENT" && variant.discountValue !== null && Number(variant.discountValue) > 100) {
     context.addIssue({ code: "custom", path: ["discountValue"], message: "درصد تخفیف نمی‌تواند بیشتر از ۱۰۰ باشد." });
+  }
+  if (variant.discountStartsAt && variant.discountEndsAt && variant.discountEndsAt < variant.discountStartsAt) {
+    context.addIssue({ code: "custom", path: ["discountEndsAt"], message: "پایان تخفیف ترکیب باید بعد از شروع آن باشد." });
   }
 });
 

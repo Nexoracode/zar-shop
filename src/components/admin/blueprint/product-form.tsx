@@ -170,7 +170,9 @@ export function BlueprintProductForm({ storeIndustry, categories = [], colors = 
       const unattached: string[] = [];
       for (const issue of validation.error.issues) {
         const field = String(issue.path[0] ?? "");
-        if (!field) { unattached.push(issue.message); continue; }
+        // A row inside the variants table has no single field of its own to sit under either —
+        // it is announced the same way a rule with no path at all is.
+        if (!field || field === "variants") { unattached.push(issue.message); continue; }
         if (!found[field]) found[field] = issue.message;
       }
       setErrors(found);

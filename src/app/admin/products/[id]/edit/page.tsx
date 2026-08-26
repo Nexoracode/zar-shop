@@ -77,6 +77,8 @@ export default async function EditProductPage({ params }: Context) {
             weightGrams: variant.weightGrams === null ? null : variant.weightGrams.toString(),
             discountType: variant.discountType,
             discountValue: variant.discountValue === null ? null : variant.discountValue.toString(),
+            discountStartsAt: variant.discountStartsAt?.toISOString() ?? null,
+            discountEndsAt: variant.discountEndsAt?.toISOString() ?? null,
             stock: variant.stock,
             isActive: variant.isActive,
           })),

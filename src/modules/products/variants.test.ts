@@ -7,6 +7,7 @@ import {
   isVariantAvailable,
   mergeCombinations,
   selectionSignature,
+  variantPricing,
   variantSelectionKey,
   type VariantDraft,
 } from "@/modules/products/variants";
@@ -109,4 +110,38 @@ test("a cart line finds its combination by key, or nothing", () => {
 test("the form's signature and the stored key agree on what is the same combination", () => {
   assert.equal(selectionSignature({ رنگ: "مشکی", سایز: "XL" }), selectionSignature({ سایز: "XL", رنگ: "مشکی" }));
   assert.notEqual(selectionSignature({ رنگ: "مشکی" }), selectionSignature({ رنگ: "زرد" }));
+});
+
+test("a combination with its own discount window keeps it instead of the product's", () => {
+  const product = {
+    weightGrams: "0", fixedPrice: "1000000",
+    discountType: "PERCENT" as const, discountValue: "10",
+    discountStartsAt: new Date("2026-01-01"), discountEndsAt: new Date("2026-01-31"),
+  };
+  const variant = {
+    selectionKey: "k", selection: {}, price: null, weightGrams: null,
+    discountType: "FIXED" as const, discountValue: "50000",
+    discountStartsAt: new Date("2026-06-01"), discountEndsAt: new Date("2026-06-10"),
+    stock: 1, isActive: true,
+  };
+  const resolved = variantPricing(variant, product);
+  assert.equal(resolved.discountType, "FIXED");
+  assert.equal(resolved.discountStartsAt?.toISOString(), variant.discountStartsAt.toISOString());
+  assert.equal(resolved.discountEndsAt?.toISOString(), variant.discountEndsAt.toISOString());
+});
+
+test("a combination with no discount of its own reads the product's window", () => {
+  const product = {
+    weightGrams: "0", fixedPrice: "1000000",
+    discountType: "PERCENT" as const, discountValue: "10",
+    discountStartsAt: new Date("2026-01-01"), discountEndsAt: new Date("2026-01-31"),
+  };
+  const variant = {
+    selectionKey: "k", selection: {}, price: null, weightGrams: null,
+    discountType: null, discountValue: null, discountStartsAt: null, discountEndsAt: null,
+    stock: 1, isActive: true,
+  };
+  const resolved = variantPricing(variant, product);
+  assert.equal(resolved.discountStartsAt?.toISOString(), product.discountStartsAt.toISOString());
+  assert.equal(resolved.discountEndsAt?.toISOString(), product.discountEndsAt.toISOString());
 });

@@ -17,6 +17,10 @@ export type VariantDraft = {
   weightGrams: string | null;
   discountType: "PERCENT" | "FIXED" | null;
   discountValue: string | null;
+  /** The combination's own discount window — independent of the product's, falling back to it
+   * only when the combination carries no discount of its own. */
+  discountStartsAt: string | null;
+  discountEndsAt: string | null;
   stock: number;
   isActive: boolean;
 };
@@ -55,7 +59,7 @@ export function buildCombinations(types: SelectedType[]): VariantSelection[] {
 }
 
 function emptyDraft(selection: VariantSelection, defaultPrice: string | null): VariantDraft {
-  return { selection, price: defaultPrice, weightGrams: null, discountType: null, discountValue: null, stock: 0, isActive: true };
+  return { selection, price: defaultPrice, weightGrams: null, discountType: null, discountValue: null, discountStartsAt: null, discountEndsAt: null, stock: 0, isActive: true };
 }
 
 /**

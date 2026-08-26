@@ -2,7 +2,7 @@ type ProductAuditSource = Record<string, unknown> & {
   category?: { id: string; name: string } | null;
   media?: Array<{ position: number; isCover: boolean; media: { id: string; title: string | null; storageKey: string } }>;
   optionTypes?: Array<{ position: number; type: { name: string; kind: string }; values: Array<{ position: number; value: { label: string } }> }>;
-  variants?: Array<{ selectionKey: string; selection: unknown; price: unknown; weightGrams: unknown; discountType: string | null; discountValue: unknown; stock: number; isActive: boolean }>;
+  variants?: Array<{ selectionKey: string; selection: unknown; price: unknown; weightGrams: unknown; discountType: string | null; discountValue: unknown; discountStartsAt: unknown; discountEndsAt: unknown; stock: number; isActive: boolean }>;
   optionGuide?: { id: string; title: string | null; storageKey: string } | null;
 };
 
@@ -61,6 +61,8 @@ export function productAuditSnapshot(product: ProductAuditSource) {
       weightGrams: item.weightGrams,
       discountType: item.discountType,
       discountValue: item.discountValue,
+      discountStartsAt: item.discountStartsAt,
+      discountEndsAt: item.discountEndsAt,
       stock: item.stock,
       isActive: item.isActive,
     })) ?? [],

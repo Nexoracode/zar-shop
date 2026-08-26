@@ -104,8 +104,9 @@ export async function POST(request: Request) {
       const originalUnitPrice = p.storeIndustry === "GENERAL"
         ? resolved.fixedPrice ?? 0
         : resolved.fixedPrice ?? parts.total;
-      // The combination may override the amount, but the window is always the product's.
-      const pricing = calculateDiscountedPrice(originalUnitPrice, { ...p, discountType: resolved.discountType, discountValue: resolved.discountValue });
+      // A combination that overrides the amount also brings its own window; one that does not
+      // reads the product's, via `resolved`.
+      const pricing = calculateDiscountedPrice(originalUnitPrice, { ...p, discountType: resolved.discountType, discountValue: resolved.discountValue, discountStartsAt: resolved.discountStartsAt, discountEndsAt: resolved.discountEndsAt });
       const unitPrice = pricing.finalPrice;
       if (unitPrice <= 0) throw new Error(`قیمت ${p.name} معتبر نیست.`);
       return { item, p, parts, selectedWeight, originalUnitPrice, discountAmount: pricing.discountAmount, unitPrice, total: unitPrice * item.quantity };
