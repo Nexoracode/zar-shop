@@ -15,7 +15,8 @@ import { PromotionValidationError, resolveCheckoutPromotions } from "@/modules/p
 import { getGeneralStoreSettings, isStorefrontAvailable } from "@/modules/settings/general-settings";
 import { getOrderSettings, orderExpiresAt } from "@/modules/settings/order-settings";
 import { expirePendingOrders } from "@/modules/orders/expiration";
-import { baseShippingFee, defaultDeliveryMethod, estimatedReadyAt, getCommerceSettings } from "@/modules/settings/commerce-settings";
+import { baseShippingFee, defaultDeliveryMethod, estimatedReadyAt, getCommerceSettings, qualifiesForFreeShipping } from "@/modules/settings/commerce-settings";
+import { chargeableCartWeight, quoteForMethod } from "@/modules/shipping/quote";
 import { sendAutomatedSms } from "@/modules/communications/sms-service";
 import { InventoryUnavailableError, releaseInventory, reserveInventory } from "@/modules/orders/inventory";
 
@@ -27,6 +28,8 @@ const checkoutSchema = z.object({
   addressId: z.string().cuid(),
   couponCode: z.string().trim().max(64).optional().default(""),
   paymentProvider: storefrontPaymentMethodSchema,
+  /** Which delivery option the customer picked; its price is recomputed here, never trusted. */
+  shippingMethodId: z.union([z.null(), z.string().cuid()]).default(null),
 });
 
 export async function POST(request: Request) {
@@ -38,7 +41,7 @@ export async function POST(request: Request) {
     if (user.isGuest && !generalSettings.guestCheckout) return NextResponse.json({ message: "برای ادامه خرید وارد حساب شوید." }, { status: 403 });
     if (!commerceSettings.onlinePaymentEnabled) return NextResponse.json({ message: "پرداخت آنلاین موقتاً غیرفعال است." }, { status: 503 });
     const input = checkoutSchema.parse(await request.json());
-    const { couponCode, paymentProvider, addressId } = input;
+    const { couponCode, paymentProvider, addressId, shippingMethodId } = input;
     const deliveryMethod = defaultDeliveryMethod(commerceSettings);
     const selectedAddress = await db.address.findFirst({
       where: { id: addressId, userId: user.id, type: "SHIPPING" },
@@ -113,7 +116,28 @@ export async function POST(request: Request) {
     const order = await db.$transaction(async (tx) => {
       const inventoryItems = lines.map(({ item, p }) => ({ productId: p.id, quantity: item.quantity, selectedOptions: item.selectedOptions }));
       await reserveInventory(tx, inventoryItems);
-      const shippingFee = baseShippingFee(commerceSettings, merchandiseAmount, deliveryMethod);
+      /*
+       * Priced here rather than taken from the request: the browser's number is a display, and
+       * an order total has to be one the server worked out for itself.
+       */
+      const chosen = shippingMethodId && selectedAddress.provinceId && !qualifiesForFreeShipping(commerceSettings, merchandiseAmount)
+        ? await quoteForMethod(shippingMethodId, {
+          lines: [],
+          weightGrams: chargeableCartWeight(lines.map(({ item, p }) => ({
+            shippingWeightGrams: p.shippingWeightGrams,
+            packageLengthCm: p.packageLengthCm === null ? null : Number(p.packageLengthCm),
+            packageWidthCm: p.packageWidthCm === null ? null : Number(p.packageWidthCm),
+            packageHeightCm: p.packageHeightCm === null ? null : Number(p.packageHeightCm),
+            quantity: item.quantity,
+          })), commerceSettings.defaultParcelWeightGrams),
+          declaredValue: merchandiseAmount,
+          destination: { provinceId: selectedAddress.provinceId, cityId: selectedAddress.cityId },
+        })
+        : null;
+      if (shippingMethodId && !chosen && !qualifiesForFreeShipping(commerceSettings, merchandiseAmount)) {
+        throw new Error("روش ارسال انتخاب‌شده برای این سفارش در دسترس نیست.");
+      }
+      const shippingFee = chosen ? chosen.price : baseShippingFee(commerceSettings, merchandiseAmount, deliveryMethod);
       const promotions = await resolveCheckoutPromotions(tx, { userId: user.id, couponCode, merchandiseAmount, shippingFee, city: address.city });
       const shipping = Math.max(0, shippingFee - promotions.shippingDiscount);
       const total = merchandiseAmount - promotions.promotionDiscount + shipping;
@@ -136,6 +160,8 @@ export async function POST(request: Request) {
           discount: productDiscount + promotions.promotionDiscount,
           shipping,
           shippingDiscount: promotions.shippingDiscount,
+          shippingMethodId: chosen?.methodId ?? null,
+          shippingMethodTitle: chosen?.title ?? null,
           tax,
           total,
           shippingAddress: address,

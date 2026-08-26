@@ -7,13 +7,16 @@ import { getGoldPriceForDisplay } from "@/modules/gold/gold-price.service";
 import { calculateProductPrice } from "@/modules/products/pricing";
 import { calculateDiscountedPrice } from "@/modules/products/discount";
 import { getSelectedOptionPrice, getSelectedOptionWeight } from "@/modules/products/options";
-import { baseShippingFee, defaultDeliveryMethod, getCommerceSettings } from "@/modules/settings/commerce-settings";
+import { baseShippingFee, defaultDeliveryMethod, getCommerceSettings, qualifiesForFreeShipping } from "@/modules/settings/commerce-settings";
+import { chargeableCartWeight, quoteForMethod } from "@/modules/shipping/quote";
 import { getGeneralStoreSettings, isStorefrontAvailable } from "@/modules/settings/general-settings";
 import { PromotionValidationError, resolveCheckoutPromotions } from "@/modules/promotions/service";
 
 const schema = z.object({
   couponCode: z.string().trim().max(64).default(""),
   addressId: z.string().cuid(),
+  /** Absent until the customer has picked one; the flat fee stands in until then. */
+  shippingMethodId: z.union([z.null(), z.string().cuid()]).default(null),
 });
 
 export async function POST(request: Request) {
@@ -47,7 +50,23 @@ export async function POST(request: Request) {
     const subtotal = prices.reduce((sum, item) => sum + item.original * item.quantity, 0);
     const merchandiseAmount = prices.reduce((sum, item) => sum + item.final * item.quantity, 0);
     const productDiscount = subtotal - merchandiseAmount;
-    const shippingFee = baseShippingFee(commerceSettings, merchandiseAmount, defaultDeliveryMethod(commerceSettings));
+    // The picked method decides the fee; the flat rate stands in before a choice is made, and a
+    // cart over the free-shipping threshold pays nothing either way.
+    const chosen = input.shippingMethodId && address.provinceId && !qualifiesForFreeShipping(commerceSettings, merchandiseAmount)
+      ? await quoteForMethod(input.shippingMethodId, {
+        lines: [],
+        weightGrams: chargeableCartWeight(cart.items.map((item) => ({
+          shippingWeightGrams: item.product.shippingWeightGrams,
+          packageLengthCm: item.product.packageLengthCm === null ? null : Number(item.product.packageLengthCm),
+          packageWidthCm: item.product.packageWidthCm === null ? null : Number(item.product.packageWidthCm),
+          packageHeightCm: item.product.packageHeightCm === null ? null : Number(item.product.packageHeightCm),
+          quantity: item.quantity,
+        })), commerceSettings.defaultParcelWeightGrams),
+        declaredValue: merchandiseAmount,
+        destination: { provinceId: address.provinceId, cityId: address.cityId },
+      })
+      : null;
+    const shippingFee = chosen ? chosen.price : baseShippingFee(commerceSettings, merchandiseAmount, defaultDeliveryMethod(commerceSettings));
     const promotions = await resolveCheckoutPromotions(db, { userId: user.id, couponCode: input.couponCode, merchandiseAmount, shippingFee, city: address.cityRef?.name ?? address.city });
     const shipping = Math.max(0, shippingFee - promotions.shippingDiscount);
     return NextResponse.json({
@@ -57,6 +76,7 @@ export async function POST(request: Request) {
       promotionDiscount: promotions.promotionDiscount,
       shipping,
       shippingDiscount: promotions.shippingDiscount,
+      shippingMethodTitle: chosen?.title ?? null,
       total: merchandiseAmount - promotions.promotionDiscount + shipping,
       applications: promotions.applications.map((item) => ({ title: item.title, code: item.code, discountAmount: item.discountAmount, shippingDiscount: item.shippingDiscount })),
     });

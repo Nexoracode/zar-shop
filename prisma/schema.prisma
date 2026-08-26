@@ -259,6 +259,8 @@ model Province {
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
   cities          City[]
+  storeOrigins    StoreSetting[] @relation("StoreOriginProvince")
+  shippingZones   ShippingZoneRate[]
   addresses       Address[]
 
   @@index([isActive, name])
@@ -280,9 +282,48 @@ model City {
   updatedAt       DateTime  @updatedAt
   province        Province  @relation(fields: [provinceId], references: [id], onDelete: Restrict)
   addresses       Address[]
+  storeOrigins    StoreSetting[] @relation("StoreOriginCity")
 
   @@index([provinceId, isActive, name])
   @@unique([source, externalId])
+}
+
+/// A delivery option the customer can pick at checkout.
+///
+/// `source` decides where its price comes from: TAPIN asks the carrier for a live rate, TABLE
+/// reads the zone rows below. A TAPIN method keeps zone rows too — they are what answers when
+/// the rate service is unreachable, so a checkout never stalls on someone else's downtime.
+model ShippingMethod {
+  id            String             @id @default(cuid())
+  title         String             @db.VarChar(100)
+  carrier       String             @db.VarChar(40)
+  rateType      String?            @db.VarChar(40)
+  source        String             @default("TABLE") @db.VarChar(20)
+  orderType     Int                @default(1)
+  estimatedDays Int                @default(3)
+  isActive      Boolean            @default(true)
+  sortOrder     Int                @default(0)
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+  zones         ShippingZoneRate[]
+  orders        Order[]
+
+  @@index([isActive, sortOrder])
+}
+
+/// One price bracket: parcels up to `maxWeightGrams` going to `provinceId` cost `price`.
+/// A null province is the catch-all, used when no province-specific row matches.
+model ShippingZoneRate {
+  id             String         @id @default(cuid())
+  methodId       String
+  provinceId     String?
+  maxWeightGrams Int
+  price          Decimal        @db.Decimal(18, 0)
+  createdAt      DateTime       @default(now())
+  method         ShippingMethod @relation(fields: [methodId], references: [id], onDelete: Cascade)
+  province       Province?      @relation(fields: [provinceId], references: [id], onDelete: Cascade)
+
+  @@index([methodId, provinceId, maxWeightGrams])
 }
 
 model Category {
@@ -477,6 +518,12 @@ model StoreSetting {
   guestCheckout                 Boolean               @default(true)
   maintenanceMode               Boolean               @default(false)
   defaultShippingFee            Decimal               @default(0) @db.Decimal(18, 0)
+  // Where parcels ship from. A carrier quote needs an origin, and the store has only ever had a
+  // free-text address, which no rate API can read.
+  originProvinceId              String?
+  originCityId                  String?
+  // Used when a product carries no packaged weight, so the cart is never left without a price.
+  defaultParcelWeightGrams      Int                   @default(500)
   homepageSections              Json?
   menuCategoryIds               Json?
   homepageTreasureCards         Json?
@@ -506,6 +553,8 @@ model StoreSetting {
   brandBackgroundColor          String                @default("#F7F6F3") @db.VarChar(7)
   brandDangerColor              String                @default("#B8423A") @db.VarChar(7)
   adminTemplate                 AdminTemplate         @default(CLASSIC)
+  originProvince                Province?             @relation("StoreOriginProvince", fields: [originProvinceId], references: [id], onDelete: SetNull)
+  originCity                    City?                 @relation("StoreOriginCity", fields: [originCityId], references: [id], onDelete: SetNull)
   enforceColorContrast          Boolean               @default(true)
   stickyStoreHeader             Boolean               @default(true)
   compactMobileGrid             Boolean               @default(true)
@@ -786,6 +835,9 @@ model Order {
   promotionDiscount        Decimal               @default(0) @db.Decimal(18, 0)
   shipping                 Decimal               @default(0) @db.Decimal(18, 0)
   shippingDiscount         Decimal               @default(0) @db.Decimal(18, 0)
+  shippingMethodId         String?
+  // Snapshot: the method may be renamed or removed, and a past invoice must not change with it.
+  shippingMethodTitle      String?               @db.VarChar(100)
   tax                      Decimal               @default(0) @db.Decimal(18, 0)
   total                    Decimal               @db.Decimal(18, 0)
   shippingAddress          Json
@@ -794,6 +846,7 @@ model Order {
   expiredAt                DateTime?
   expirationHandledAt      DateTime?
   deliveryMethod           DeliveryMethod        @default(INSURED_SHIPPING)
+  shippingMethod           ShippingMethod?       @relation(fields: [shippingMethodId], references: [id], onDelete: SetNull)
   trackingNumber           String?               @db.VarChar(100)
   preparationDaysSnapshot  Int                   @default(2)
   estimatedReadyAt         DateTime?
