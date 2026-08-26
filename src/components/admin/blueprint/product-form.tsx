@@ -262,47 +262,6 @@ export function BlueprintProductForm({ storeIndustry, categories = [], product }
           <BpFieldMessage id="description-message" error={errors.description} reserve={Boolean(errors.description)} />
         </Panel>
 
-        <Panel
-          title="مشخصات محصول"
-          description="مشخصات محصول را اضافه کنید. گروه‌ها و نام ویژگی‌ها به دسته‌بندی تعلق دارند و روی همه محصولات همان دسته اثر می‌گذارند؛ مقدارها مخصوص همین محصول است."
-        >
-          {!categoryId ? (
-            <p className="bp-muted m-0 border border-dashed border-[var(--bp-divider)] p-4 text-center text-[12px]">برای افزودن مشخصات ابتدا دسته‌بندی محصول را انتخاب کنید.</p>
-          ) : (
-            <BlueprintProductAttributes
-              categoryName={selectedCategory?.name ?? ""}
-              groups={attributeGroups}
-              values={attributeValues}
-              onGroupsChange={setAttributeGroups}
-              onValuesChange={setAttributeValues}
-            />
-          )}
-        </Panel>
-
-        <Panel title="تنوع محصول" description="تنوع، موجودی و قیمت هر مقدار در صفحه اختصاصی مدیریت می‌شود.">
-          <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_220px]">
-            <div className="grid place-items-center border border-dashed border-[var(--bp-divider)] p-6 text-center">
-              <Ruler size={26} className="mb-2 text-[var(--bp-accent)]" />
-              <p className="bp-muted mb-3 max-w-md text-[12px] leading-6">{product ? "برای حفظ سوابق خرید، مقادیر ثبت‌شده حذف نمی‌شوند." : "ابتدا محصول را ثبت کنید تا به صفحه مدیریت تنوع منتقل شوید."}</p>
-              {product
-                ? <Link href={`/admin/products/${product.id}/options`} className="bp-btn bp-btn-secondary bp-btn-sm">مدیریت تنوع و موجودی</Link>
-                : <BpButton size="sm" isPending={loading} onClick={() => void submit("options")}>ثبت محصول و مدیریت تنوع</BpButton>}
-            </div>
-            <div className="border border-[var(--bp-divider)] p-3">
-              <div className="mb-2 flex items-center justify-between gap-2">
-                <span className="text-[12px] font-bold">راهنمای انتخاب</span>
-                {optionGuide && <BpButton isIconOnly size="sm" variant="ghost" aria-label="حذف راهنمای انتخاب" onClick={() => setOptionGuide(null)}><Trash2 size={13} /></BpButton>}
-              </div>
-              {optionGuide
-                ? optionGuide.type === "IMAGE"
-                  ? <div className="relative aspect-[4/3] border border-[var(--bp-divider)]"><Image src={optionGuide.url} alt={optionGuide.title} fill sizes="220px" className="object-cover" /></div>
-                  : <div className="grid min-h-24 place-items-center border border-[var(--bp-divider)] text-[var(--bp-accent)]"><span className="grid justify-items-center gap-1 text-[11px]"><FileText size={26} />فایل PDF راهنما</span></div>
-                : <div className="bp-muted grid min-h-24 place-items-center border border-dashed border-[var(--bp-divider)] text-center text-[11px]">فایلی انتخاب نشده است.</div>}
-              <BpButton size="sm" fullWidth className="mt-2.5 gap-2" onClick={() => setOptionGuidePickerOpen(true)}><Images size={14} />{optionGuide ? "تغییر فایل" : "انتخاب از گالری"}</BpButton>
-            </div>
-          </div>
-        </Panel>
-
         {storeIndustry === "GOLD" && (
           <Panel title="مشخصات و قیمت‌گذاری" description="قیمت از نرخ روز طلا، وزن، اجرت، سود و مالیات محاسبه می‌شود.">
             <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
@@ -362,6 +321,47 @@ export function BlueprintProductForm({ storeIndustry, categories = [], product }
               <BpDateTimeField label="تاریخ و ساعت پایان" required value={discountEndsAt} error={errors.discountEndsAt} onChange={(value) => { setDiscountEndsAt(value); clearError("discountEndsAt"); }} />
             </div>
           )}
+        </Panel>
+
+        <Panel
+          title="مشخصات محصول"
+          description="مشخصات محصول را اضافه کنید. گروه‌ها و نام ویژگی‌ها به دسته‌بندی تعلق دارند و روی همه محصولات همان دسته اثر می‌گذارند؛ مقدارها مخصوص همین محصول است."
+        >
+          {!categoryId ? (
+            <p className="bp-muted m-0 border border-dashed border-[var(--bp-divider)] p-4 text-center text-[12px]">برای افزودن مشخصات ابتدا دسته‌بندی محصول را انتخاب کنید.</p>
+          ) : (
+            <BlueprintProductAttributes
+              categoryName={selectedCategory?.name ?? ""}
+              groups={attributeGroups}
+              values={attributeValues}
+              onGroupsChange={setAttributeGroups}
+              onValuesChange={setAttributeValues}
+            />
+          )}
+        </Panel>
+
+        <Panel title="تنوع محصول" description="تنوع، موجودی و قیمت هر مقدار در صفحه اختصاصی مدیریت می‌شود.">
+          <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_220px]">
+            <div className="grid place-items-center border border-dashed border-[var(--bp-divider)] p-6 text-center">
+              <Ruler size={26} className="mb-2 text-[var(--bp-accent)]" />
+              <p className="bp-muted mb-3 max-w-md text-[12px] leading-6">{product ? "برای حفظ سوابق خرید، مقادیر ثبت‌شده حذف نمی‌شوند." : "ابتدا محصول را ثبت کنید تا به صفحه مدیریت تنوع منتقل شوید."}</p>
+              {product
+                ? <Link href={`/admin/products/${product.id}/options`} className="bp-btn bp-btn-secondary bp-btn-sm">مدیریت تنوع و موجودی</Link>
+                : <BpButton size="sm" isPending={loading} onClick={() => void submit("options")}>ثبت محصول و مدیریت تنوع</BpButton>}
+            </div>
+            <div className="border border-[var(--bp-divider)] p-3">
+              <div className="mb-2 flex items-center justify-between gap-2">
+                <span className="text-[12px] font-bold">راهنمای انتخاب</span>
+                {optionGuide && <BpButton isIconOnly size="sm" variant="ghost" aria-label="حذف راهنمای انتخاب" onClick={() => setOptionGuide(null)}><Trash2 size={13} /></BpButton>}
+              </div>
+              {optionGuide
+                ? optionGuide.type === "IMAGE"
+                  ? <div className="relative aspect-[4/3] border border-[var(--bp-divider)]"><Image src={optionGuide.url} alt={optionGuide.title} fill sizes="220px" className="object-cover" /></div>
+                  : <div className="grid min-h-24 place-items-center border border-[var(--bp-divider)] text-[var(--bp-accent)]"><span className="grid justify-items-center gap-1 text-[11px]"><FileText size={26} />فایل PDF راهنما</span></div>
+                : <div className="bp-muted grid min-h-24 place-items-center border border-dashed border-[var(--bp-divider)] text-center text-[11px]">فایلی انتخاب نشده است.</div>}
+              <BpButton size="sm" fullWidth className="mt-2.5 gap-2" onClick={() => setOptionGuidePickerOpen(true)}><Images size={14} />{optionGuide ? "تغییر فایل" : "انتخاب از گالری"}</BpButton>
+            </div>
+          </div>
         </Panel>
       </div>
 
