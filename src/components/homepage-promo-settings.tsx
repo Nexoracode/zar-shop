@@ -11,7 +11,7 @@ import { adminFieldClass } from "@/components/admin-ui";
 import type { MediaChoice } from "@/components/media-library";
 import { MediaPickerDialog } from "@/components/media-picker-dialog";
 import type { HomepageSettings } from "@/modules/settings/homepage-settings";
-import { homepageFieldLimits } from "@/modules/settings/homepage-settings";
+import { homepageFieldLimits } from "@/modules/settings/settings-limits";
 
 type PromoPickerTarget = "desktop" | "mobile";
 

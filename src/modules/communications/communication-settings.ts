@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { db } from "@/lib/db";
+import { communicationFieldLimits } from "@/modules/communications/limits";
 
 export const communicationTemplatesSchema = z.object({
   orderCreated: z.string().trim().max(500).default("سفارش {orderNumber} ثبت شد."),
@@ -8,9 +9,6 @@ export const communicationTemplatesSchema = z.object({
   orderExpired: z.string().trim().max(500).default("مهلت پرداخت سفارش {orderNumber} به پایان رسید."),
   lowStockAdmin: z.string().trim().max(500).default("موجودی محصول {productName} به {stock} رسید."),
 });
-
-/** See `authFieldLimits`: one number per field, shared by the form control and the schema. */
-export const communicationFieldLimits = { adminPhone: 20, template: 500 } as const;
 
 export const communicationSettingsSchema = z.object({
   smsEnabled: z.boolean(), inAppEnabled: z.boolean(), adminPhone: z.string().trim().max(communicationFieldLimits.adminPhone).nullable(),

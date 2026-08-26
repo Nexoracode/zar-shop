@@ -58,7 +58,7 @@ export function ShippingMethodTable({ methods }: { methods: ShippingMethodRow[] 
       <div className="hidden md:block">
         <Table><TableScrollContainer><TableContent aria-label="فهرست روش‌های ارسال" className="w-full min-w-[720px]">
           <TableHeader>
-            <TableColumn id="title" className="bg-slate-50/70 px-4 py-4 text-right text-xs font-bold text-slate-500">روش ارسال</TableColumn>
+            <TableColumn id="title" isRowHeader className="bg-slate-50/70 px-4 py-4 text-right text-xs font-bold text-slate-500">روش ارسال</TableColumn>
             <TableColumn id="carrier" className="bg-slate-50/70 px-4 py-4 text-right text-xs font-bold text-slate-500">شرکت حمل</TableColumn>
             <TableColumn id="source" className="bg-slate-50/70 px-4 py-4 text-right text-xs font-bold text-slate-500">منبع نرخ</TableColumn>
             <TableColumn id="days" className="bg-slate-50/70 px-4 py-4 text-right text-xs font-bold text-slate-500">زمان تحویل</TableColumn>

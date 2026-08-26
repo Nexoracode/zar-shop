@@ -3,18 +3,7 @@ import { db } from "@/lib/db";
 import type { UserRole } from "@generated/prisma/enums";
 import { adminRoles } from "@/modules/auth/permissions";
 import { STORE_SETTING_ID } from "@/modules/settings/store-settings";
-
-/** See `authFieldLimits`: one number per field, shared by the form control and the schema. */
-export const generalSettingsFieldLimits = {
-  storeName: 120,
-  tagline: 191,
-  shortDescription: 500,
-  supportPhone: 30,
-  supportEmail: 191,
-  storeAddress: 1000,
-  legalIdentifier: 80,
-  supportHours: 191,
-} as const;
+import { generalSettingsFieldLimits } from "@/modules/settings/settings-limits";
 
 const optionalText = (max: number) => z.union([z.null(), z.string().trim().max(max)]).transform((value) => value || null);
 

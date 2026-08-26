@@ -11,7 +11,7 @@ import { HeroSelectField } from "@/components/hero-select-field";
 import type { MediaChoice } from "@/components/media-library";
 import { MediaPickerDialog } from "@/components/media-picker-dialog";
 import type { HomepageSettings, HomepageTileLayout } from "@/modules/settings/homepage-settings";
-import { homepageFieldLimits } from "@/modules/settings/homepage-settings";
+import { homepageFieldLimits } from "@/modules/settings/settings-limits";
 
 type TileEditor = { id: string; href: string; media: MediaChoice | null };
 type TileGroupEditor = { id: string; layout: HomepageTileLayout; tiles: TileEditor[] };

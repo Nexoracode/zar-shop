@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { smsProviderFieldLimits } from "@/modules/communications/limits";
 
 export const smsProviderSchema = z.enum(["FARAZ_SMS", "IRAN_SMS"]);
 export type SmsProviderId = z.infer<typeof smsProviderSchema>;
@@ -21,9 +22,6 @@ export const smsProviders = [
     steps: ["در ایران اس‌ام‌اس حساب بسازید و پنل را فعال کنید.", "از پشتیبانی، دسترسی وب‌سرویس و مشخصات خط خدماتی را دریافت کنید.", "نام کاربری، رمز وب‌سرویس و سرشماره را در فرم ثبت کنید."],
   },
 ] as const;
-
-/** See `authFieldLimits`: one number per field, shared by the form control and the schema. */
-export const smsProviderFieldLimits = { apiKey: 500, username: 191, password: 500, senderNumber: 20 } as const;
 
 export const smsProviderInputSchema = z.discriminatedUnion("provider", [
   z.object({ provider: z.literal("FARAZ_SMS"), apiKey: z.string().trim().min(20).max(smsProviderFieldLimits.apiKey), senderNumber: z.string().trim().regex(/^\+?\d{3,20}$/) }),

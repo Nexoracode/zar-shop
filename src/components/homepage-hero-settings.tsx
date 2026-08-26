@@ -12,7 +12,7 @@ import { HeroSelectField } from "@/components/hero-select-field";
 import { MediaPickerDialog } from "@/components/media-picker-dialog";
 import type { MediaChoice } from "@/components/media-library";
 import type { HomepageSettings } from "@/modules/settings/homepage-settings";
-import { homepageFieldLimits } from "@/modules/settings/homepage-settings";
+import { homepageFieldLimits } from "@/modules/settings/settings-limits";
 
 type PickerTarget = `desktop:${string}` | `mobile:${string}`;
 

@@ -25,7 +25,7 @@ import type { CommerceSettings as CommerceSettingsData } from "@/modules/setting
 import type { ContentPageId, ContentSettings as ContentSettingsData } from "@/modules/settings/content-settings";
 import type { CatalogSettings as CatalogSettingsData } from "@/modules/settings/catalog-settings";
 import { RichTextEditor } from "@/components/rich-text-editor";
-import { generalSettingsFieldLimits } from "@/modules/settings/general-settings";
+import { generalSettingsFieldLimits } from "@/modules/settings/settings-limits";
 import { ShippingOriginPicker } from "@/components/shipping-origin-picker";
 
 export function GeneralSettings({ initialSettings }: { initialSettings: GeneralStoreSettingsInput }) {

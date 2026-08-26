@@ -86,6 +86,7 @@ export function CheckoutForm({ settings, paymentMethods, currency, itemCount, in
 
         <ShippingMethodPicker
           addressId={selectedAddress?.id ?? null}
+          currency={currency}
           selectedMethodId={shippingMethodId}
           onSelect={(methodId) => { setShippingMethodId(methodId); void refreshQuote(couponCode, methodId); }}
         />

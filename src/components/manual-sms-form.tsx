@@ -12,7 +12,7 @@ import { adminFieldClass, adminLabelClass } from "@/components/admin-ui";
 import { Table, TableBody, TableCell, TableColumn, TableContent, TableHeader, TableRow, TableScrollContainer, TruncatedTextTooltip } from "@/components/hero";
 import { smsAudienceOptions, type SmsAudience } from "@/modules/communications/sms-audiences";
 import { AdminBulkCheckbox, AdminBulkEditor } from "@/components/admin-bulk-editor";
-import { smsFieldLimits } from "@/modules/communications/sms-service";
+import { smsFieldLimits } from "@/modules/communications/limits";
 
 export type SmsCampaignListItem = { id: string; audience: string; message: string; recipientCount: number; successfulCount: number; failedCount: number; status: string; createdAt: string };
 export function ManualSmsForm() {

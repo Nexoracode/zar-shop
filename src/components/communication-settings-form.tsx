@@ -8,7 +8,7 @@ import { AdminSaveButton } from "@/components/admin-save-button";
 import { AdminSectionHelp } from "@/components/admin-section-help";
 import { adminFieldClass, adminLabelClass } from "@/components/admin-ui";
 import type { CommunicationSettingsData } from "@/modules/communications/communication-settings";
-import { communicationFieldLimits } from "@/modules/communications/communication-settings";
+import { communicationFieldLimits } from "@/modules/communications/limits";
 
 export function CommunicationSettingsForm({ initialSettings }: { initialSettings: CommunicationSettingsData }) {
   const [settings, setSettings] = useState(initialSettings); const [saving, setSaving] = useState(false);

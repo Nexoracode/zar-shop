@@ -3,9 +3,7 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { env } from "@/lib/env";
 import { gatewayProviderSchema, type GatewayProviderId } from "@/modules/payments/gateway-providers";
-
-/** See `authFieldLimits`: one number per field, shared by the form control and the schema. */
-export const gatewayFieldLimits = { credential: 500 } as const;
+import { gatewayFieldLimits } from "@/modules/payments/limits";
 
 export const gatewayConfigInputSchema = z.object({
   provider: gatewayProviderSchema,

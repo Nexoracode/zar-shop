@@ -5,9 +5,7 @@ import { decryptSmsCredentials } from "@/modules/communications/sms-config";
 import { getCommunicationSettings } from "@/modules/communications/communication-settings";
 import { getGeneralStoreSettings } from "@/modules/settings/general-settings";
 import { smsAudienceSchema, type SmsAudience } from "@/modules/communications/sms-audiences";
-
-/** See `authFieldLimits`: one number per field, shared by the form control and the schema. */
-export const smsFieldLimits = { message: 500, phone: 11 } as const;
+import { smsFieldLimits } from "@/modules/communications/limits";
 
 const smsMessageSchema = z.string().trim().min(3).max(smsFieldLimits.message);
 export const iranMobileSchema = z.string().trim().transform((value) => value.replace(/[۰-۹]/g, (digit) => String("۰۱۲۳۴۵۶۷۸۹".indexOf(digit))).replace(/[٠-٩]/g, (digit) => String("٠١٢٣٤٥٦٧٨٩".indexOf(digit)))).pipe(z.string().regex(/^09\d{9}$/));

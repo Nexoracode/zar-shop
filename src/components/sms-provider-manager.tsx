@@ -11,7 +11,7 @@ import { Table, TableBody, TableCell, TableColumn, TableContent, TableHeader, Ta
 import { smsProviders, type SmsProviderId } from "@/modules/communications/sms-providers";
 import type { PublicSmsProviderConfig } from "@/modules/communications/sms-config";
 import { AdminBulkCheckbox, AdminBulkEditor } from "@/components/admin-bulk-editor";
-import { smsProviderFieldLimits } from "@/modules/communications/sms-providers";
+import { smsProviderFieldLimits } from "@/modules/communications/limits";
 
 export function SmsProviderManager({ mode, initialConfigs }: { mode: "list" | "form"; initialConfigs: PublicSmsProviderConfig[] }) {
   const router = useRouter(); const [configs, setConfigs] = useState(initialConfigs); const [selectedId, setSelectedId] = useState<SmsProviderId>("FARAZ_SMS");

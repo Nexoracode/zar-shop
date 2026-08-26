@@ -11,7 +11,7 @@ import { Table, TableBody, TableCell, TableColumn, TableContent, TableHeader, Ta
 import { gatewayProviders, type GatewayProviderId } from "@/modules/payments/gateway-providers";
 import type { PublicGatewayConfig } from "@/modules/payments/gateway-config";
 import { AdminBulkCheckbox, AdminBulkEditor } from "@/components/admin-bulk-editor";
-import { gatewayFieldLimits } from "@/modules/payments/gateway-config";
+import { gatewayFieldLimits } from "@/modules/payments/limits";
 
 export function PaymentGatewayManager({ mode, initialConfigs }: { mode: "list" | "form"; initialConfigs: PublicGatewayConfig[] }) {
   const router = useRouter();

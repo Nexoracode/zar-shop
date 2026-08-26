@@ -20,8 +20,10 @@ export type ShippingOption = {
  * Prices are never worked out here — the browser asks and displays. The checkout recomputes the
  * one that gets picked, so what is shown is a quote, not the figure that lands on the order.
  */
-export function ShippingMethodPicker({ addressId, selectedMethodId, onSelect }: {
+export function ShippingMethodPicker({ addressId, currency, selectedMethodId, onSelect }: {
   addressId: string | null;
+  /** The store's unit, so a price here reads the same as the one in the order summary. */
+  currency: "IRR" | "IRT";
   selectedMethodId: string | null;
   onSelect: (methodId: string) => void;
 }) {
@@ -102,7 +104,7 @@ export function ShippingMethodPicker({ addressId, selectedMethodId, onSelect }: 
                   <small className="mt-1 block font-normal text-[var(--muted)]">{option.carrier} · تحویل حدود {option.estimatedDays.toLocaleString("fa-IR")} روز کاری</small>
                 </span>
                 <span className="mr-auto shrink-0 text-sm font-bold">
-                  {freeShipping || option.price === 0 ? "رایگان" : formatMoney(option.price)}
+                  {freeShipping || option.price === 0 ? "رایگان" : formatMoney(option.price, currency)}
                 </span>
                 {selectedMethodId === option.methodId && <Check size={18} className="shrink-0 text-[var(--brand-primary)]" />}
               </Button>

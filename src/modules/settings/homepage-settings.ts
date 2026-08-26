@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { STORE_SETTING_ID } from "@/modules/settings/store-settings";
+import { homepageFieldLimits } from "@/modules/settings/settings-limits";
 
 export const homepageSectionIds = ["HERO", "CATEGORIES", "FEATURED_PRODUCTS", "POPULAR_PRODUCTS", "BEST_SELLING_PRODUCTS", "LATEST_PRODUCTS", "ABOUT", "PROMISES", "CONCIERGE"] as const;
 export type HomepageSectionId = (typeof homepageSectionIds)[number];
@@ -33,15 +34,6 @@ const treasureCardsSchema = z.array(treasureCardSchema).length(homepageTreasureC
     context.addIssue({ code: "custom", message: "تصاویر کارت‌های گنجینه کامل یا معتبر نیستند." });
   }
 });
-
-/** See `authFieldLimits`: one number per field, shared by the form control and the schema. */
-export const homepageFieldLimits = {
-  href: 500,
-  menuLabel: 80,
-  heroTitle: 191,
-  heroDescription: 500,
-  heroButtonLabel: 80,
-} as const;
 
 const safeHrefSchema = z.string().trim().min(1).max(homepageFieldLimits.href).refine(
   (value) => (/^\/(?!\/)/.test(value) || /^https:\/\//i.test(value)),

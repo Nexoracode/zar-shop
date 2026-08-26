@@ -8,7 +8,7 @@ import { AdminSectionHelp } from "@/components/admin-section-help";
 import { HeroSelectField } from "@/components/hero-select-field";
 import { adminFieldClass } from "@/components/admin-ui";
 import type { HomepageMenuLinkOption, HomepageSettings } from "@/modules/settings/homepage-settings";
-import { homepageFieldLimits } from "@/modules/settings/homepage-settings";
+import { homepageFieldLimits } from "@/modules/settings/settings-limits";
 
 export function HomepageMenuSettings({ initialSettings, linkOptions }: { initialSettings: HomepageSettings; linkOptions: HomepageMenuLinkOption[] }) {
   const [saving, setSaving] = useState(false);
