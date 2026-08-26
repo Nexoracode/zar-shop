@@ -54,9 +54,6 @@ const MAX_TYPES = 5;
 export function BlueprintProductOptions({ storeIndustry, colors, library, optionTypes, variants, onChange, onLibraryChange }: Props) {
   const [pickedTypeId, setPickedTypeId] = useState("");
   const [typeError, setTypeError] = useState("");
-  const [creatingType, setCreatingType] = useState(false);
-  const [newTypeName, setNewTypeName] = useState("");
-  const [newTypeKind, setNewTypeKind] = useState<"SELECT" | "COLOR">("SELECT");
   const [newValueFor, setNewValueFor] = useState("");
   const [newValueLabel, setNewValueLabel] = useState("");
   const [newValueColorId, setNewValueColorId] = useState("");
@@ -117,27 +114,29 @@ export function BlueprintProductOptions({ storeIndustry, colors, library, option
     });
   }
 
-  /* A new type or value is written to the library straight away — a product that is still a draft
-   * cannot hold one, and the same word typed on the next product must find it already there. */
-  async function createType() {
-    const name = newTypeName.trim();
+  /* A new type is written to the library straight away — a product that is still a draft cannot
+   * hold one, and the same word typed on the next product must find it already there. Typed from
+   * the type picker itself, so it always starts as a plain list; a colour-linked type still comes
+   * from the library page, where its values point at the colour library on creation. */
+  async function createTypeFromQuery(query: string) {
+    const name = query.trim();
     if (!name || pending) return;
+    if (optionTypes.length >= MAX_TYPES) return setTypeError(`حداکثر ${MAX_TYPES.toLocaleString("fa-IR")} نوع تنوع برای هر محصول مجاز است.`);
     setPending(true);
     setTypeError("");
     try {
       const response = await fetch("/api/option-types", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, kind: newTypeKind, values: [] }),
+        body: JSON.stringify({ name, kind: "SELECT", values: [] }),
       });
       const result = await response.json().catch(() => null);
       if (!response.ok) throw new Error(result?.message ?? "ثبت نوع تنوع انجام نشد.");
       const created: LibraryType = { id: result.id, name: result.name, kind: result.kind, values: [] };
       onLibraryChange([...library, created]);
+      // Written to the product in the same step, matching the quick-add value flow below.
       onChange({ optionTypes: [...optionTypes, { typeId: created.id, valueIds: [] }], variants });
-      setNewTypeName("");
-      setNewTypeKind("SELECT");
-      setCreatingType(false);
+      setPickedTypeId("");
     } catch (reason) {
       setTypeError(reason instanceof Error ? reason.message : "ثبت نوع تنوع انجام نشد.");
     } finally {
@@ -223,51 +222,21 @@ export function BlueprintProductOptions({ storeIndustry, colors, library, option
   return (
     <>
     <div className="grid gap-3">
-      {creatingType ? (
-        <div className="flex flex-wrap items-end gap-2">
-          <BpInput
-            label="نام نوع جدید"
-            value={newTypeName}
-            error={typeError || undefined}
-            maxLength={optionFieldLimits.typeName}
-            placeholder="مثلاً سایز"
-            wrapperClassName="w-[min(100%,220px)]"
-            onChange={(event) => { setNewTypeName(event.target.value); setTypeError(""); }}
-          />
-          <BpSelect
-            label="نوع"
-            value={newTypeKind}
-            disabled={!newTypeName.trim()}
-            hint="تا نام وارد نشود قابل انتخاب نیست."
-            options={[{ value: "SELECT", label: "فهرست ساده" }, { value: "COLOR", label: "رنگ" }]}
-            wrapperClassName="w-[min(100%,180px)]"
-            onChange={(event) => setNewTypeKind(event.target.value as "SELECT" | "COLOR")}
-          />
-          <BpButton variant="primary" className="field-action gap-1.5" isPending={pending} disabled={!newTypeName.trim()} onClick={() => void createType()}>
-            <Plus size={15} />ثبت نوع
-          </BpButton>
-          <BpButton variant="ghost" className="field-action gap-1.5" onClick={() => { setCreatingType(false); setTypeError(""); }}>
-            <X size={15} />انصراف
-          </BpButton>
-        </div>
-      ) : (
-        <div className="flex flex-wrap items-end gap-2">
-          <BpCombobox
-            label="نوع تنوع"
-            value={pickedTypeId}
-            error={typeError || undefined}
-            placeholder="از فهرست انتخاب کنید"
-            emptyLabel="نوعی برای افزودن نمانده است"
-            options={availableTypes.map((type) => ({ value: type.id, label: type.name }))}
-            wrapperClassName="w-[min(100%,240px)]"
-            onChange={(value) => { setPickedTypeId(value); setTypeError(""); }}
-          />
-          <BpButton variant="primary" className="field-action gap-1.5" onClick={addType}><Plus size={15} />افزودن به محصول</BpButton>
-          <BpButton variant="ghost" className="field-action gap-1.5" onClick={() => { setCreatingType(true); setTypeError(""); }}>
-            <Plus size={15} />نوع جدید
-          </BpButton>
-        </div>
-      )}
+      <div className="flex flex-wrap items-end gap-2">
+        <BpCombobox
+          label="نوع تنوع"
+          value={pickedTypeId}
+          error={typeError || undefined}
+          placeholder="از فهرست انتخاب کنید یا نام نوع جدید را بنویسید"
+          emptyLabel="نوعی با این نام پیدا نشد"
+          options={availableTypes.map((type) => ({ value: type.id, label: type.name }))}
+          wrapperClassName="w-[min(100%,260px)]"
+          onChange={(value) => { setPickedTypeId(value); setTypeError(""); }}
+          onCreate={(query) => void createTypeFromQuery(query)}
+          creating={pending}
+        />
+        <BpButton variant="primary" className="field-action gap-1.5" onClick={addType}><Plus size={15} />افزودن به محصول</BpButton>
+      </div>
 
       {optionTypes.length === 0 ? (
         <p className="bp-muted m-0 rounded-[var(--bp-radius)] border border-dashed border-[var(--bp-divider)] p-4 text-center text-[12px]">

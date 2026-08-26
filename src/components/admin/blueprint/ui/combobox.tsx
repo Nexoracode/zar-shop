@@ -1,10 +1,11 @@
 "use client";
 
 import { useId, useMemo, useRef, useState } from "react";
-import { ChevronDown, Search } from "lucide-react";
+import { ChevronDown, Plus, Search } from "lucide-react";
 import { includesNormalizedText } from "@/lib/text-search";
 import { BpFieldMessage, BpRequiredMark, describedBy } from "./field-message";
 import { BpPopover } from "./popover";
+import { BpSpinner } from "./button";
 
 export type BpComboboxOption = {
   value: string;
@@ -20,7 +21,7 @@ export type BpComboboxOption = {
  * The input holds the query while the list is open and falls back to showing the selected label
  * once it closes, so the field always reads as the current choice when it is not being edited.
  */
-export function BpCombobox({ label, value, onChange, options, placeholder = "جستجو یا انتخاب کنید", emptyLabel = "موردی پیدا نشد", hint, error, reserveMessage = true, required, name, className = "", wrapperClassName = "" }: {
+export function BpCombobox({ label, value, onChange, options, placeholder = "جستجو یا انتخاب کنید", emptyLabel = "موردی پیدا نشد", hint, error, reserveMessage = true, required, name, className = "", wrapperClassName = "", onCreate, creating = false }: {
   label?: string;
   value: string;
   onChange: (value: string) => void;
@@ -34,6 +35,11 @@ export function BpCombobox({ label, value, onChange, options, placeholder = "ج�
   name?: string;
   className?: string;
   wrapperClassName?: string;
+  /** Offered when the typed text matches nothing: a "+" beside the field and a row in the open
+   * list, both creating a new option from the query instead of picking an existing one. */
+  onCreate?: (query: string) => void;
+  /** Shows a spinner in place of the "+" while the caller's create request is in flight. */
+  creating?: boolean;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [open, setOpen] = useState(false);
@@ -48,11 +54,18 @@ export function BpCombobox({ label, value, onChange, options, placeholder = "ج�
     () => (query.trim() ? options.filter((option) => includesNormalizedText(option.label, query)) : options),
     [options, query],
   );
+  const trimmedQuery = query.trim();
+  const canCreate = Boolean(onCreate) && open && trimmedQuery.length > 0 && matches.length === 0;
 
   function choose(option: BpComboboxOption) {
     onChange(option.value);
     setQuery("");
     setOpen(false);
+  }
+
+  function create() {
+    if (!onCreate || !trimmedQuery || creating) return;
+    onCreate(trimmedQuery);
   }
 
   return (
@@ -88,9 +101,20 @@ export function BpCombobox({ label, value, onChange, options, placeholder = "ج�
              */
             event.preventDefault();
             if (matches.length === 1) choose(matches[0]);
+            else if (canCreate) create();
           }}
         />
-        {open ? <Search size={15} aria-hidden /> : <ChevronDown size={15} aria-hidden />}
+        {canCreate ? (
+          <button
+            type="button"
+            aria-label={`افزودن «${trimmedQuery}»`}
+            disabled={creating}
+            onClick={create}
+            className="absolute end-[9px] top-1/2 grid h-[15px] w-[15px] -translate-y-1/2 place-items-center text-[var(--bp-accent)] hover:text-[var(--bp-accent-600)] disabled:opacity-50"
+          >
+            {creating ? <BpSpinner size={14} /> : <Plus size={15} aria-hidden />}
+          </button>
+        ) : open ? <Search size={15} aria-hidden /> : <ChevronDown size={15} aria-hidden />}
       </div>
 
       <BpPopover open={open} anchorRef={inputRef} onClose={() => { setQuery(""); setOpen(false); }} label={label ?? "انتخاب گزینه"} width={320}>
@@ -108,7 +132,15 @@ export function BpCombobox({ label, value, onChange, options, placeholder = "ج�
                 {option.label}
               </button>
             </li>
-          )) : <li className="bp-muted px-3 py-4 text-center text-[12px]">{emptyLabel}</li>}
+          )) : (
+            <li>
+              {canCreate ? (
+                <button type="button" disabled={creating} onClick={create} className="flex w-full items-center gap-2 border border-transparent px-3 py-2 text-start text-[13px] text-[var(--bp-accent)] hover:bg-[var(--bp-hover)] disabled:opacity-50">
+                  {creating ? <BpSpinner size={14} /> : <Plus size={14} aria-hidden />}افزودن «{trimmedQuery}»
+                </button>
+              ) : <span className="bp-muted block px-3 py-4 text-center text-[12px]">{emptyLabel}</span>}
+            </li>
+          )}
         </ul>
       </BpPopover>
 
