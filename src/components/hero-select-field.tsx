@@ -94,7 +94,23 @@ export function HeroSelectField({
         >
           {label && <Label className="mb-2 text-xs font-medium text-slate-600">{label}</Label>}
           <ComboBox.InputGroup className={`min-h-11 min-w-0 rounded-lg border bg-white px-3.5 shadow-none focus-within:ring-2 ${controlClassName} ${error ? "border-[var(--danger)] focus-within:border-[var(--danger)] focus-within:ring-[var(--danger)]/15" : "border-slate-300 focus-within:border-slate-400 focus-within:ring-0"}`}>
-            <Input dir="rtl" placeholder={loading ? "در حال دریافت..." : ""} className="hero-combobox-input min-h-11 min-w-0 flex-1 border-0 bg-transparent px-0 pl-9 text-right text-sm outline-none" />
+            <Input
+              dir="rtl"
+              placeholder={loading ? "در حال دریافت..." : ""}
+              className="hero-combobox-input min-h-11 min-w-0 flex-1 border-0 bg-transparent px-0 pl-9 text-right text-sm outline-none"
+              /*
+               * react-aria commits the option the reader arrowed to, but when none is focused it
+               * only closes the list and lets the key through — which submitted the form the
+               * moment someone typed a city and pressed Enter. Enter is the list's key while the
+               * reader is searching, so it never reaches the form; a single match is taken as the
+               * answer, and with several the arrow keys still decide.
+               */
+              onKeyDown={(event) => {
+                if (event.key !== "Enter") return;
+                event.preventDefault();
+                if (filteredOptions.length === 1) change(filteredOptions[0].value);
+              }}
+            />
             {loading
               ? <span className="end-1 grid size-8 place-items-center"><Spinner size="sm" /></span>
               : <ComboBox.Trigger aria-label={`نمایش فهرست ${label ?? name}`} className="end-1 size-8 h-8 rounded-md p-0 pe-0 text-slate-600" />}

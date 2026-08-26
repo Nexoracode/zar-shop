@@ -71,7 +71,14 @@ export function BpCombobox({ label, value, onChange, options, placeholder = "ج�
           onChange={(event) => { setQuery(event.target.value); setOpen(true); }}
           onKeyDown={(event) => {
             if (event.key === "Escape") { setQuery(""); setOpen(false); }
-            if (event.key === "Enter" && open && matches.length === 1) { event.preventDefault(); choose(matches[0]); }
+            if (event.key !== "Enter" || !open) return;
+            /*
+             * Enter belongs to the list while it is open, never to the surrounding form —
+             * otherwise picking a city submits the page instead. One match is unambiguous, so
+             * it is chosen; anything else just keeps the submit from happening.
+             */
+            event.preventDefault();
+            if (matches.length === 1) choose(matches[0]);
           }}
         />
         {open ? <Search size={15} aria-hidden /> : <ChevronDown size={15} aria-hidden />}
