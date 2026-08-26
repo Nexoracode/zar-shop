@@ -165,7 +165,7 @@ export function BlueprintProductAttributes({ categoryName, groups, values, onGro
                   value={attribute.name}
                   maxLength={attributeFieldLimits.attributeName}
                   placeholder="مثلاً ابعاد"
-                  wrapperClassName="w-[min(100%,180px)]"
+                  wrapperClassName="w-[min(100%,220px)]"
                   onChange={(event) => renameAttribute(attribute.id, event.target.value)}
                 />
                 <BpInput
@@ -173,10 +173,10 @@ export function BlueprintProductAttributes({ categoryName, groups, values, onGro
                   defaultValue={joinValues(valuesById.get(attribute.id) ?? [])}
                   maxLength={attributeFieldLimits.value}
                   placeholder="چند مقدار را با «،» جدا کنید"
-                  wrapperClassName="min-w-0 flex-1 sm:max-w-[320px]"
+                  wrapperClassName="w-[min(100%,220px)]"
                   onChange={(event) => setValue(attribute.id, event.target.value)}
                 />
-                <BpButton isIconOnly variant="ghost" aria-label={`حذف ویژگی ${attribute.name || "بدون نام"}`} className="field-action text-[var(--bp-danger)]" onClick={() => removeAttribute(attribute.id)}>
+                <BpButton isIconOnly variant="ghost" aria-label={`حذف ویژگی ${attribute.name || "بدون نام"}`} className="field-action ms-auto text-[var(--bp-danger)]" onClick={() => removeAttribute(attribute.id)}>
                   <Trash2 size={15} />
                 </BpButton>
               </div>
