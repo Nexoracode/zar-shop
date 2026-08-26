@@ -4,12 +4,12 @@ import { AlertDescription, AlertRoot, Card, ChipLabel, ChipRoot } from "@/compon
 import { getCurrentUser } from "@/modules/auth/session";
 import { db } from "@/lib/db";
 import { getGoldPriceForDisplay } from "@/modules/gold/gold-price.service";
-import { calculateProductPrice } from "@/modules/products/pricing";
 import { formatMoney } from "@/lib/format";
 import { CartItemCard } from "@/components/cart-item-card";
 import type { Prisma } from "@generated/prisma/client";
-import { getSelectedOptionPrice, getSelectedOptionWeight, optionEntries } from "@/modules/products/options";
-import { calculateDiscountedPrice } from "@/modules/products/discount";
+import { optionEntries } from "@/modules/products/options";
+import { lineUnitPrice } from "@/modules/products/line-pricing";
+import { findVariant, variantPricing } from "@/modules/products/variants";
 import { getGeneralStoreSettings } from "@/modules/settings/general-settings";
 import { getCommerceSettings } from "@/modules/settings/commerce-settings";
 import { getOrderSettings } from "@/modules/settings/order-settings";
@@ -36,11 +36,9 @@ export default async function CartPage() {
   const hasGoldItems = items.some((item) => item.product.storeIndustry === "GOLD");
   const pricedItems = items.map((item) => {
     const product = item.product;
-    const selectedWeight = getSelectedOptionWeight(product.options, item.selectedOptions, product.weightGrams);
-    const baseAmount = product.storeIndustry === "GENERAL"
-      ? getSelectedOptionPrice(product.options, item.selectedOptions, Number(product.fixedPrice ?? 0))
-      : product.fixedPrice ? Number(product.fixedPrice) : rate === null ? null : calculateProductPrice({ goldPricePerGram18: rate, weightGrams: selectedWeight, purity: product.purity, makingFeeType: product.makingFeeType, makingFeeValue: product.makingFeeValue, profitPercent: product.profitPercent, taxPercent: product.taxPercent }).total;
-    return { item, selectedWeight, pricing: baseAmount === null ? null : calculateDiscountedPrice(baseAmount, product) };
+    const pricing = lineUnitPrice(product, item.selectionKey, rate);
+    const selectedWeight = variantPricing(item.selectionKey ? findVariant(product.variants, item.selectionKey) : null, product).weightGrams;
+    return { item, selectedWeight, pricing };
   });
   const priceUnavailable = pricedItems.some((line) => line.pricing === null);
   const subtotal = priceUnavailable ? null : pricedItems.reduce((sum, line) => sum + line.pricing!.originalPrice * line.item.quantity, 0);

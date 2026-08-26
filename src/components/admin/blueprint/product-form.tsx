@@ -19,7 +19,7 @@ import { BpDateTimeField } from "./ui/date-time-field";
 import { BpInput } from "./ui/input";
 import { BpNumberInput } from "./ui/number-input";
 import { BlueprintProductAttributes } from "./product-attributes-panel";
-import { BlueprintProductOptions, type OptionDraft } from "./product-options-panel";
+import { BlueprintProductOptions, type LibraryType, type ProductTypeDraft, type VariantDraft } from "./product-options-panel";
 import { BpSeg } from "./ui/seg";
 import { BpSelect } from "./ui/select";
 import { BpSwitch } from "./ui/switch";
@@ -30,14 +30,14 @@ export type EditableProduct = {
   id: string; sku: string; name: string; slug: string; description: string; categoryId: string; purity: number; weightGrams: number;
   storeIndustry: "GOLD" | "GENERAL"; makingFeeType: string; makingFeeValue: number; profitPercent: number; taxPercent: number; fixedPrice: number | null; stock: number; preparationDays: number;
   discountType: "PERCENT" | "FIXED" | null; discountValue: number | null; discountStartsAt: string | null; discountEndsAt: string | null;
-  status: "DRAFT" | "ACTIVE" | "ARCHIVED"; featured: boolean; media: MediaChoice[]; options: OptionDraft[]; optionGuide: MediaChoice | null;
+  status: "DRAFT" | "ACTIVE" | "ARCHIVED"; featured: boolean; media: MediaChoice[]; optionTypes: ProductTypeDraft[]; variants: VariantDraft[]; optionGuide: MediaChoice | null;
   shippingWeightGrams: number | null; packageLengthCm: number | null; packageWidthCm: number | null; packageHeightCm: number | null;
   minOrderQuantity: number; maxOrderQuantity: number | null;
   attributes: ProductAttributeValue[];
 };
 
 export type ProductCategoryOption = { id: string; name: string; parentName: string | null; attributeGroups: CategoryAttributeGroup[] };
-type Props = { storeIndustry: "GOLD" | "GENERAL"; categories?: ProductCategoryOption[]; colors?: Array<{ id: string; name: string }>; product?: EditableProduct };
+type Props = { storeIndustry: "GOLD" | "GENERAL"; categories?: ProductCategoryOption[]; colors?: Array<{ id: string; name: string }>; optionLibrary?: LibraryType[]; product?: EditableProduct };
 
 /** Errors are keyed by the schema's own field names, so a zod issue maps straight onto a field. */
 type FieldErrors = Record<string, string>;
@@ -57,7 +57,7 @@ function Panel({ title, description, action, children, className = "" }: { title
   );
 }
 
-export function BlueprintProductForm({ storeIndustry, categories = [], colors = [], product }: Props) {
+export function BlueprintProductForm({ storeIndustry, categories = [], colors = [], optionLibrary = [], product }: Props) {
   const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
   const [loading, setLoading] = useState(false);
@@ -106,7 +106,11 @@ export function BlueprintProductForm({ storeIndustry, categories = [], colors = 
    */
   const [attributeGroups, setAttributeGroups] = useState<CategoryAttributeGroup[]>(selectedCategory?.attributeGroups ?? []);
   const [attributeValues, setAttributeValues] = useState<ProductAttributeValue[]>(product?.categoryId === categoryId ? product.attributes : []);
-  const [productOptions, setProductOptions] = useState<OptionDraft[]>(product?.options ?? []);
+  const [optionTypes, setOptionTypes] = useState<ProductTypeDraft[]>(product?.optionTypes ?? []);
+  const [variants, setVariants] = useState<VariantDraft[]>(product?.variants ?? []);
+  // A type or value added from inside this form lands in the library immediately, so the picker
+  // has to see it without waiting for the page to be fetched again.
+  const [library, setLibrary] = useState<LibraryType[]>(optionLibrary);
   // Picking a different category reseeds both: its groups have nothing to do with the last
   // one's, and values keyed to attributes that no longer exist would be dropped on save anyway.
   // Adjusted during render rather than in an effect, so no frame shows the wrong category's rows.
@@ -154,11 +158,11 @@ export function BlueprintProductForm({ storeIndustry, categories = [], colors = 
       discountStartsAt: discountEnabled ? discountStartsAt : null,
       discountEndsAt: discountEnabled ? discountEndsAt : null,
       featured, mediaIds: selectedMedia.map((media) => media.id),
-      options: productOptions, optionGuideId: optionGuide?.id ?? null, attributes: currentAttributes,
+      optionTypes, variants, optionGuideId: optionGuide?.id ?? null, attributes: currentAttributes,
     };
   }
 
-  async function submit(afterSave: "list" | "attributes" | "options") {
+  async function submit(afterSave: "list" | "attributes") {
     const validation = completeProductSchema.safeParse(buildBody());
     if (!validation.success) {
       // One message per field, straight from the schema that the server uses too.
@@ -344,12 +348,15 @@ export function BlueprintProductForm({ storeIndustry, categories = [], colors = 
           )}
         </Panel>
 
-        <Panel title="تنوع محصول" description="اگر محصول در چند سایز یا رنگ عرضه می‌شود، گروه‌ها و مقادیرش را همین‌جا تعریف کنید.">
+        <Panel title="تنوع محصول" description="اگر محصول در چند سایز یا رنگ عرضه می‌شود، نوع‌ها و مقادیرش را انتخاب کنید تا ترکیب‌ها ساخته شوند.">
           <BlueprintProductOptions
             storeIndustry={storeIndustry}
             colors={colors}
-            options={productOptions}
-            onChange={setProductOptions}
+            library={library}
+            optionTypes={optionTypes}
+            variants={variants}
+            onLibraryChange={setLibrary}
+            onChange={(next) => { setOptionTypes(next.optionTypes); setVariants(next.variants); }}
           />
           {/* A strip along the foot rather than a column beside the editor: it is one optional
               file, and it was taking 220px away from every value row above it. */}

@@ -1,7 +1,8 @@
 type ProductAuditSource = Record<string, unknown> & {
   category?: { id: string; name: string } | null;
   media?: Array<{ position: number; isCover: boolean; media: { id: string; title: string | null; storageKey: string } }>;
-  options?: Array<{ id: string; name: string; type: string; values: unknown; position: number }>;
+  optionTypes?: Array<{ position: number; type: { name: string; kind: string }; values: Array<{ position: number; value: { label: string } }> }>;
+  variants?: Array<{ selectionKey: string; selection: unknown; price: unknown; weightGrams: unknown; discountType: string | null; discountValue: unknown; stock: number; isActive: boolean }>;
   optionGuide?: { id: string; title: string | null; storageKey: string } | null;
 };
 
@@ -14,7 +15,7 @@ const productFieldLabels: Record<string, string> = {
   makingFeeType: "نوع اجرت", makingFeeValue: "مقدار اجرت", profitPercent: "درصد سود", taxPercent: "درصد مالیات",
   fixedPrice: "قیمت ثابت", discountType: "نوع تخفیف", discountValue: "مقدار تخفیف", discountStartsAt: "شروع تخفیف",
   discountEndsAt: "پایان تخفیف", stock: "موجودی", preparationDays: "زمان آماده‌سازی", featured: "محصول ویژه",
-  attributes: "ویژگی‌ها", media: "گالری رسانه", options: "تنوع‌ها", id: "شناسه", title: "عنوان", storageKey: "کلید فایل",
+  attributes: "ویژگی‌ها", media: "گالری رسانه", optionTypes: "نوع‌های تنوع", variants: "ترکیب‌های تنوع", selection: "ترکیب", selectionKey: "کلید ترکیب", kind: "نوع", id: "شناسه", title: "عنوان", storageKey: "کلید فایل",
   position: "جایگاه", isCover: "تصویر اصلی", values: "مقادیر", value: "مقدار", colorId: "شناسه رنگ", isActive: "فعال", type: "نوع تنوع",
   price: "قیمت", productId: "شناسه محصول",
 };
@@ -22,7 +23,7 @@ const productFieldLabels: Record<string, string> = {
 const productFields = [
   "sku", "name", "slug", "description", "status", "storeIndustry", "categoryId", "category", "optionGuideId", "optionGuide",
   "purity", "weightGrams", "makingFeeType", "makingFeeValue", "profitPercent", "taxPercent", "fixedPrice", "discountType",
-  "discountValue", "discountStartsAt", "discountEndsAt", "stock", "preparationDays", "featured", "attributes", "media", "options",
+  "discountValue", "discountStartsAt", "discountEndsAt", "stock", "preparationDays", "featured", "attributes", "media", "optionTypes", "variants",
 ] as const;
 
 function normalize(value: unknown): unknown {
@@ -48,7 +49,21 @@ export function productAuditSnapshot(product: ProductAuditSource) {
       position: item.position,
       isCover: item.isCover,
     })) ?? [],
-    options: product.options?.map((item) => ({ id: item.id, name: item.name, type: item.type, values: item.values, position: item.position })) ?? [],
+    optionTypes: product.optionTypes?.map((item) => ({
+      name: item.type.name,
+      kind: item.type.kind,
+      position: item.position,
+      values: item.values.map((entry) => entry.value.label),
+    })) ?? [],
+    variants: product.variants?.map((item) => ({
+      selection: item.selection,
+      price: item.price,
+      weightGrams: item.weightGrams,
+      discountType: item.discountType,
+      discountValue: item.discountValue,
+      stock: item.stock,
+      isActive: item.isActive,
+    })) ?? [],
   };
   return Object.fromEntries(productFields.map((field) => [field, normalize(snapshotSource[field])])) as Record<string, unknown>;
 }

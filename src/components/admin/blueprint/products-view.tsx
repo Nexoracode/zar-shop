@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { ImageOff, Layers, LayoutGrid, Plus, SlidersVertical, SquarePen, Star, Tag } from "lucide-react";
+import { ImageOff, Layers, Plus, SlidersVertical, SquarePen, Star, Tag } from "lucide-react";
 import { AdminEmptyState, AdminPageHeader, AdminPrimaryLink } from "@/components/admin-ui";
 import { productStatusLabels, productStatusTones } from "@/modules/admin/labels";
 import { AdminListFilters } from "@/components/admin-list-filters";
@@ -39,9 +39,6 @@ function RowActions({ product }: { product: ProductRow }) {
       <Link href={`/admin/products/${product.id}/attributes`} title="مدیریت ویژگی محصول" aria-label={`مدیریت ویژگی محصول ${product.name}`} className="bp-btn bp-btn-ghost bp-btn-icon bp-btn-sm">
         <SlidersVertical size={15} strokeWidth={1.5} />
       </Link>
-      <Link href={`/admin/products/${product.id}/options`} title="مدیریت تنوع محصول" aria-label={`مدیریت تنوع محصول ${product.name}`} className="bp-btn bp-btn-ghost bp-btn-icon bp-btn-sm">
-        <LayoutGrid size={15} strokeWidth={1.5} />
-      </Link>
     </div>
   );
 }
@@ -74,7 +71,7 @@ function ProductName({ product }: { product: ProductRow }) {
       <span className="truncate" title={product.name}>{product.name}</span>
       {product.featured && <Star size={14} strokeWidth={2} className="shrink-0 translate-y-0.5 fill-[var(--bp-accent)] text-[var(--bp-accent)]" aria-label="محصول ویژه" />}
       {isProductDiscountActive(product) && <span title={discountTooltip(product)} className="shrink-0 translate-y-0.5 cursor-help leading-none text-[var(--bp-danger)]"><Tag size={14} strokeWidth={1.9} aria-label={discountTooltip(product)} /></span>}
-      {product._count.options > 0 && <Layers size={14} strokeWidth={1.9} className="shrink-0 translate-y-0.5 text-[var(--bp-accent)]" aria-label={`${product._count.options.toLocaleString("fa-IR")} گروه تنوع`} />}
+      {product._count.variants > 0 && <Layers size={14} strokeWidth={1.9} className="shrink-0 translate-y-0.5 text-[var(--bp-accent)]" aria-label={`${product._count.variants.toLocaleString("fa-IR")} ترکیب تنوع`} />}
     </div>
   );
 }

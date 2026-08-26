@@ -4,19 +4,20 @@ import { BlueprintProductForm } from "@/components/admin/blueprint/product-form"
 import { db } from "@/lib/db";
 import { AdminPageHeader } from "@/components/admin-ui";
 import { requirePermission } from "@/modules/auth/session";
-import { parseOptionValues } from "@/modules/products/options";
 import { parseCategoryAttributeSchema, parseProductAttributes } from "@/modules/products/attributes";
 import { getBrandSettings } from "@/modules/settings/brand-settings";
+import { listSelectableOptionTypes } from "@/modules/options/option-library";
+import { productOptionTypeInclude } from "@/modules/products/variant-selection";
 
 type Context = { params: Promise<{ id: string }> };
 
 export default async function EditProductPage({ params }: Context) {
   await requirePermission("catalog:manage");
   const { id } = await params;
-  const [product, categories, colors, brandSettings] = await Promise.all([
+  const [product, categories, colors, optionLibrary, brandSettings] = await Promise.all([
     db.product.findUnique({
       where: { id },
-      include: { media: { include: { media: true }, orderBy: { position: "asc" } }, variants: true, optionGuide: true },
+      include: { media: { include: { media: true }, orderBy: { position: "asc" } }, variants: { orderBy: { createdAt: "asc" } }, optionTypes: productOptionTypeInclude, optionGuide: true },
     }),
     db.category.findMany({
       where: { isActive: true },
@@ -24,6 +25,7 @@ export default async function EditProductPage({ params }: Context) {
       orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
     }),
     db.color.findMany({ where: { isActive: true }, orderBy: [{ sortOrder: "asc" }, { name: "asc" }], select: { id: true, name: true } }),
+    listSelectableOptionTypes(),
     getBrandSettings(),
   ]);
   if (!product) notFound();
@@ -35,6 +37,7 @@ export default async function EditProductPage({ params }: Context) {
       <Form
         storeIndustry={product.storeIndustry}
         colors={colors}
+        optionLibrary={optionLibrary.map((type) => ({ id: type.id, name: type.name, kind: type.kind, values: type.values.map((value) => ({ id: value.id, label: value.label, colorId: value.colorId, hex: value.color?.hex ?? null })) }))}
         categories={categories.map((category) => ({ id: category.id, name: category.name, parentName: category.parent?.name ?? null, attributeGroups: parseCategoryAttributeSchema(category.attributeSchema) }))}
         product={{
           id: product.id,
@@ -67,7 +70,16 @@ export default async function EditProductPage({ params }: Context) {
           status: product.status,
           featured: product.featured,
           attributes: parseProductAttributes(product.attributes),
-          options: product.options.map((option) => ({ name: option.name, type: option.type === "COLOR" ? "COLOR" as const : "SELECT" as const, values: parseOptionValues(option.values) })),
+          optionTypes: product.optionTypes.map((row) => ({ typeId: row.typeId, valueIds: row.values.map((entry) => entry.valueId) })),
+          variants: product.variants.map((variant) => ({
+            selection: (variant.selection ?? {}) as Record<string, string>,
+            price: variant.price === null ? null : variant.price.toString(),
+            weightGrams: variant.weightGrams === null ? null : variant.weightGrams.toString(),
+            discountType: variant.discountType,
+            discountValue: variant.discountValue === null ? null : variant.discountValue.toString(),
+            stock: variant.stock,
+            isActive: variant.isActive,
+          })),
           optionGuide: product.optionGuide ? { id: product.optionGuide.id, title: product.optionGuide.title ?? product.optionGuide.storageKey, url: product.optionGuide.url, type: product.optionGuide.type } : null,
           media: product.media.map(({ media }) => ({ id: media.id, title: media.title ?? media.storageKey, url: media.url, type: media.type })),
         }}

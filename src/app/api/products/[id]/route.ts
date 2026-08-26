@@ -4,9 +4,9 @@ import { apiError } from "@/lib/http";
 import { getCurrentUser } from "@/modules/auth/session";
 import { parseProductPatch } from "@/modules/products/schemas";
 import { hasPermission } from "@/modules/auth/permissions";
-import { areOptionColorsValid } from "@/modules/products/color-validation";
 import { sanitizeProductDescription } from "@/modules/products/rich-text";
-import { mergeOptionsPreservingHistory, optionEntries, optionSelectionKey } from "@/modules/products/options";
+import { validateVariantSetup, writeVariantSetup } from "@/modules/products/variant-write";
+import { productOptionTypeInclude } from "@/modules/products/variant-selection";
 import { formatTehranDateInput, tehranDateEnd, tehranDateStart } from "@/modules/products/discount";
 import { parseProductAttributes, validateProductAttributes } from "@/modules/products/attributes";
 import { auditRequestContext } from "@/modules/audit/request-context";
@@ -24,18 +24,19 @@ export async function PATCH(request: Request, context: Context) {
       include: {
         category: { select: { id: true, name: true } },
         media: { select: { position: true, isCover: true, media: { select: { id: true, title: true, storageKey: true } } }, orderBy: { position: "asc" } },
-        options: { select: { id: true, name: true, type: true, values: true, position: true }, orderBy: { position: "asc" } },
+        optionTypes: productOptionTypeInclude,
+        variants: { orderBy: { createdAt: "asc" } },
         optionGuide: { select: { id: true, title: true, storageKey: true } },
       },
     });
     if (!existingProduct) return NextResponse.json({ message: "محصول پیدا نشد." }, { status: 404 });
-    const { mediaIds, options, optionGuideId, attributes, storeIndustry: _ignoredIndustry, ...input } = parseProductPatch(await request.json());
+    const { mediaIds, optionTypes, variants, optionGuideId, attributes, storeIndustry: _ignoredIndustry, ...input } = parseProductPatch(await request.json());
     void _ignoredIndustry;
-    if (existingProduct.storeIndustry === "GOLD" && options?.some((option) => option.values.some((item) => item.price !== null))) {
-      return NextResponse.json({ message: "برای محصول طلا، قیمت تنوع از وزن آن محاسبه می‌شود." }, { status: 422 });
+    if (existingProduct.storeIndustry === "GOLD" && variants?.some((variant) => variant.price !== null)) {
+      return NextResponse.json({ message: "برای محصول طلا، قیمت ترکیب از وزن آن محاسبه می‌شود." }, { status: 422 });
     }
-    if (existingProduct.storeIndustry === "GENERAL" && options?.some((option) => option.values.some((item) => item.weightGrams !== null))) {
-      return NextResponse.json({ message: "برای محصول معمولی، به‌جای وزن قیمت مستقیم تنوع را وارد کنید." }, { status: 422 });
+    if (existingProduct.storeIndustry === "GENERAL" && variants?.some((variant) => variant.weightGrams !== null)) {
+      return NextResponse.json({ message: "برای محصول معمولی، به‌جای وزن قیمت مستقیم ترکیب را وارد کنید." }, { status: 422 });
     }
     if (existingProduct.storeIndustry === "GENERAL" && input.fixedPrice === null) {
       return NextResponse.json({ message: "قیمت محصول را وارد کنید." }, { status: 422 });
@@ -56,7 +57,15 @@ export async function PATCH(request: Request, context: Context) {
     if (discount.startsAt && discount.endsAt && discount.endsAt < discount.startsAt) {
       return NextResponse.json({ message: "پایان تخفیف باید بعد از شروع آن باشد." }, { status: 422 });
     }
-    if (options && !await areOptionColorsValid(options)) return NextResponse.json({ message: "یک یا چند رنگ انتخاب‌شده معتبر یا فعال نیست." }, { status: 422 });
+    // The two arrive together or not at all: combinations are only meaningful against the types
+    // they are built from, so a patch that moved one must restate the other.
+    if ((optionTypes === undefined) !== (variants === undefined)) {
+      return NextResponse.json({ message: "نوع‌های تنوع و ترکیب‌های محصول باید با هم ارسال شوند." }, { status: 422 });
+    }
+    if (optionTypes && variants) {
+      const variantError = await validateVariantSetup(db, optionTypes, variants);
+      if (variantError) return NextResponse.json({ message: variantError.message }, { status: 422 });
+    }
     const nextCategoryId = input.categoryId !== undefined ? input.categoryId : existingProduct.categoryId;
     const nextAttributes = attributes ?? (input.categoryId !== undefined && input.categoryId !== existingProduct.categoryId ? [] : parseProductAttributes(existingProduct.attributes));
     const category = nextCategoryId ? await db.category.findUnique({ where: { id: nextCategoryId }, select: { attributeSchema: true } }) : null;
@@ -77,15 +86,8 @@ export async function PATCH(request: Request, context: Context) {
         await tx.productMedia.deleteMany({ where: { productId: id } });
         if (mediaIds.length) await tx.productMedia.createMany({ data: mediaIds.map((mediaId, position) => ({ productId: id, mediaId, position, isCover: position === 0 })) });
       }
-      if (options) {
-        const existingOptions = await tx.productOption.findMany({ where: { productId: id }, select: { name: true, type: true, values: true } });
-        const orderItems = await tx.orderItem.findMany({ where: { productId: id }, select: { selectedOptions: true } });
-        const usedSelectionKeys = new Set(orderItems.flatMap((item) => optionEntries(item.selectedOptions).map(([name, value]) => optionSelectionKey(name, value))));
-        const safeOptions = mergeOptionsPreservingHistory(existingOptions, options, usedSelectionKeys);
-        await tx.productOption.deleteMany({ where: { productId: id } });
-        if (safeOptions.length) await tx.productOption.createMany({ data: safeOptions.map((option, position) => ({ productId: id, ...option, position })) });
-      }
-      const updated = await tx.product.findUniqueOrThrow({ where: { id }, include: { media: { include: { media: true }, orderBy: { position: "asc" } }, category: true, variants: true, optionGuide: true } });
+      if (optionTypes && variants) await writeVariantSetup(tx, id, optionTypes, variants);
+      const updated = await tx.product.findUniqueOrThrow({ where: { id }, include: { media: { include: { media: true }, orderBy: { position: "asc" } }, category: true, variants: { orderBy: { createdAt: "asc" } }, optionTypes: productOptionTypeInclude, optionGuide: true } });
       const before = productAuditSnapshot(existingProduct);
       const after = productAuditSnapshot(updated);
       await tx.auditLog.create({ data: { actorId: actor.id, action: "PRODUCT_UPDATE", entityType: "Product", entityId: id, ...auditRequestContext(request, {

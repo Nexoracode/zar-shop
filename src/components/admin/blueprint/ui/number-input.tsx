@@ -27,6 +27,10 @@ export function BpNumberInput({ name, value, onValueChange, isPrice = false, cur
   placeholder?: string;
   required?: boolean;
   disabled?: boolean;
+  /** Keep the message line even when empty. Off only for controls inside a dense table row. */
+  reserveMessage?: boolean;
+  /** The accessible name when the column heading carries the label instead of the field. */
+  "aria-label"?: string;
   wrapperClassName?: string;
   className?: string;
 }) {

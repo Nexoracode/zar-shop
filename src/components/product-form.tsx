@@ -25,14 +25,26 @@ type EditableProduct = {
   id: string; sku: string; name: string; slug: string; description: string; categoryId: string; purity: number; weightGrams: number;
   storeIndustry: "GOLD" | "GENERAL"; makingFeeType: string; makingFeeValue: number; profitPercent: number; taxPercent: number; fixedPrice: number | null; stock: number; preparationDays: number;
   discountType: "PERCENT" | "FIXED" | null; discountValue: number | null; discountStartsAt: string | null; discountEndsAt: string | null;
-  status: "DRAFT" | "ACTIVE" | "ARCHIVED"; featured: boolean; media: MediaChoice[]; options: Array<{ name: string; type?: string; values: Array<{ value: string; colorId: string | null }> }>; optionGuide: MediaChoice | null;
+  status: "DRAFT" | "ACTIVE" | "ARCHIVED"; featured: boolean; media: MediaChoice[]; optionGuide: MediaChoice | null;
+  optionTypes?: unknown; variants?: unknown;
   attributes: ProductAttributeValue[];
 };
 
 type ProductCategoryOption = { id: string; name: string; parentName: string | null; attributeGroups: CategoryAttributeGroup[] };
 /** `colors` is accepted and ignored: the Blueprint form edits variants inline, this one links
     to their own page, and both templates render from the same call site. */
-type Props = { storeIndustry: "GOLD" | "GENERAL"; categories?: ProductCategoryOption[]; colors?: Array<{ id: string; name: string }>; product?: EditableProduct };
+/*
+ * `optionLibrary` and the product's own variant setup are accepted and ignored: combinations are
+ * edited in the Blueprint form, and both templates are rendered from the same page, so the props
+ * have to line up even where this one has nothing to do with them.
+ */
+type Props = {
+  storeIndustry: "GOLD" | "GENERAL";
+  categories?: ProductCategoryOption[];
+  colors?: Array<{ id: string; name: string }>;
+  optionLibrary?: unknown;
+  product?: EditableProduct;
+};
 
 const productFieldLabels: Record<string, string> = {
   sku: "کد کالا",
@@ -56,7 +68,6 @@ const productFieldLabels: Record<string, string> = {
   status: "وضعیت محصول",
   featured: "نمایش در محصولات ویژه",
   mediaIds: "گالری محصول",
-  options: "تنوع‌های محصول",
   optionGuideId: "راهنمای انتخاب",
   attributes: "ویژگی‌های محصول",
 };
@@ -103,7 +114,7 @@ export function ProductForm({ storeIndustry, categories = [], product }: Props) 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault(); setLoading(true);
     const form = new FormData(event.currentTarget);
-    const afterSave = form.get("afterSave") === "attributes" ? "attributes" : "options";
+    const afterSave = form.get("afterSave") === "attributes" ? "attributes" : "list";
     const body = {
       sku: form.get("sku"), name: form.get("name"), slug: form.get("slug"), description, categoryId,
       storeIndustry, purity: storeIndustry === "GOLD" ? Number(form.get("purity")) : 750, weightGrams: storeIndustry === "GOLD" ? Number(form.get("weightGrams")) : 0,
@@ -114,7 +125,7 @@ export function ProductForm({ storeIndustry, categories = [], product }: Props) 
       discountValue: discountEnabled ? Number(form.get("discountValue")) : null,
       discountStartsAt: discountEnabled ? discountRange?.start ?? null : null,
       discountEndsAt: discountEnabled ? discountRange?.end ?? null : null,
-      featured: form.get("featured") === "on", mediaIds: selectedMedia.map((media) => media.id), options: product?.options ?? [], optionGuideId: optionGuide?.id ?? null, attributes: currentAttributes,
+      featured: form.get("featured") === "on", mediaIds: selectedMedia.map((media) => media.id), optionGuideId: optionGuide?.id ?? null, attributes: currentAttributes,
     };
     const validation = completeProductSchema.safeParse(body);
     if (!validation.success) {
@@ -129,7 +140,7 @@ export function ProductForm({ storeIndustry, categories = [], product }: Props) 
       if (!response.ok) throw new Error(apiErrorMessage(result, "ذخیره محصول ناموفق بود.", productFieldLabels));
       if (!product && (!result || typeof result.id !== "string")) throw new Error("شناسه محصول جدید از سرور دریافت نشد.");
       toast.success(product ? "تغییرات محصول ذخیره شد" : "محصول جدید ثبت شد", { description: product ? "اطلاعات محصول با موفقیت به‌روزرسانی شد." : afterSave === "attributes" ? "اکنون ویژگی‌های توصیفی محصول را تکمیل کنید." : "اکنون تنوع‌ها و موجودی هر مقدار را مدیریت کنید.", timeout: 4000 });
-      router.push(product ? "/admin/products" : `/admin/products/${result.id}/${afterSave}`); router.refresh();
+      router.push(product || afterSave === "list" ? "/admin/products" : `/admin/products/${result.id}/${afterSave}`); router.refresh();
     } catch (reason) {
       const message = reason instanceof Error ? reason.message : "ارتباط با سرور برقرار نشد.";
       toast.danger("ذخیره محصول انجام نشد", { description: message, timeout: 5000 });
@@ -179,13 +190,13 @@ export function ProductForm({ storeIndustry, categories = [], product }: Props) 
           {!categoryId ? <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 px-5 py-7 text-center text-xs text-slate-500">برای مشاهده ویژگی‌ها ابتدا دسته‌بندی محصول را انتخاب کنید.</div> : attributeDefinitions.length === 0 ? <div className="rounded-xl border border-amber-200 bg-amber-50 p-4"><strong className="block text-sm text-amber-900">دسته «{selectedCategory?.name}» هنوز ویژگی ندارد</strong><p className="mb-0 mt-1 text-xs leading-6 text-amber-700">ویژگی‌های هر محصول از دسته‌بندی آن خوانده می‌شوند. ابتدا ویژگی‌های موردنیاز این دسته را تعریف کنید.</p><Link href={`/admin/categories/${categoryId}/attributes`} className="mt-3 inline-flex min-h-10 items-center justify-center rounded-xl bg-white px-4 text-xs font-bold text-amber-800 shadow-sm">تعریف ویژگی‌های این دسته</Link></div> : <div className="grid gap-3 rounded-xl border border-slate-200 bg-slate-50/60 p-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center sm:p-4"><div className="grid gap-2"><p className="m-0 text-[11px] leading-5 text-slate-500">این محصول براساس دسته «{selectedCategory?.name}» دارای {attributeDefinitions.length.toLocaleString("fa-IR")} ویژگی قابل تکمیل است.</p><div className="grid grid-cols-3 gap-2">{[{ label: "تعریف‌شده", value: attributeDefinitions.length }, { label: "تکمیل‌شده", value: completedAttributeCount }, { label: "مهم", value: importantAttributeCount }].map((item) => <div key={item.label} className="rounded-lg border border-slate-200 bg-white px-3 py-2"><strong className="block text-base font-bold text-slate-800">{item.value.toLocaleString("fa-IR")}</strong><span className="text-[10px] text-slate-500">{item.label}</span></div>)}</div></div><div className="flex justify-end">{product ? categoryChanged ? <span className="rounded-lg bg-amber-50 px-3 py-2 text-[11px] font-bold text-amber-700">ابتدا تغییر دسته را ذخیره کنید</span> : <Link href={`/admin/products/${product.id}/attributes`} className="inline-flex min-h-10 items-center justify-center rounded-xl bg-violet-700 px-5 text-xs font-bold text-white">مدیریت ویژگی‌ها</Link> : <AdminSaveButton isSaving={loading} name="afterSave" value="attributes" label="ثبت و مدیریت ویژگی‌ها" savingLabel="در حال ثبت..." />}</div></div>}
         </FormSection>
 
-        <FormSection icon={<Ruler size={18} />} title="تنوع‌های محصول" description="هر نوع ویژگی قابل انتخاب مثل سایز، رنگ، طول یا نوع قفل را تعریف کنید." help={{ summary: "مدیریت کامل تنوع در صفحه مستقل انجام می‌شود تا موجودی، وزن یا قیمت هر مقدار جدا ثبت شود.", blocks: [{ title: "محصول جدید", description: "ابتدا محصول را ذخیره کنید؛ سپس سیستم شما را به صفحه مدیریت تنوع همان محصول منتقل می‌کند." }, { title: "محصول موجود", description: "از دکمه مدیریت تنوع وارد صفحه اختصاصی شوید و گروه‌ها، مقادیر، ترتیب و وضعیت آن‌ها را تغییر دهید." }, { title: "راهنمای انتخاب", description: "می‌توانید یک تصویر یا PDF راهنما برای انتخاب سایز یا مدل ثبت کنید تا مشتری پیش از انتخاب تنوع آن را ببیند." }] }}>
+        <FormSection icon={<Ruler size={18} />} title="تنوع‌های محصول" description="هر نوع ویژگی قابل انتخاب مثل سایز، رنگ، طول یا نوع قفل را تعریف کنید." help={{ summary: "ترکیب‌های تنوع در قالب Blueprint و داخل همین فرم مدیریت می‌شوند؛ نوع‌ها و مقادیرشان از کتابخانه مشترک می‌آیند.", blocks: [{ title: "کتابخانه تنوع", description: "نوع‌هایی مانند رنگ یا سایز و مقادیر آن‌ها یک‌بار در «انواع تنوع» تعریف می‌شوند و در همه محصولات به‌کار می‌روند." }, { title: "ترکیب‌ها", description: "با انتخاب نوع‌ها و مقادیر، ترکیب‌هایی مانند «مشکی، XL» ساخته می‌شود و هر ترکیب قیمت، تخفیف و موجودی خودش را دارد." }, { title: "راهنمای انتخاب", description: "می‌توانید یک تصویر یا PDF راهنما برای انتخاب سایز یا مدل ثبت کنید تا مشتری پیش از انتخاب تنوع آن را ببیند." }] }}>
           <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_260px]">
             <div className="grid place-items-center rounded-xl border-2 border-dashed border-violet-200 bg-violet-50/50 px-5 py-10 text-center">
               <Ruler size={30} className="mb-3 text-violet-500" />
-              <strong className="text-sm text-slate-700">تنوع و موجودی هر مقدار در صفحه اختصاصی مدیریت می‌شود</strong>
-              <p className="mt-1 max-w-md text-xs leading-6 text-slate-500">{product ? "برای حفظ سوابق خرید، مقادیر ثبت‌شده حذف نمی‌شوند و از آن صفحه می‌توانید موجودی یا وضعیت فعال آن‌ها را تغییر دهید." : "ابتدا محصول را ثبت کنید؛ بلافاصله برای افزودن تنوع، وزن یا قیمت و موجودی هر مقدار به صفحه مدیریت تنوع منتقل می‌شوید."}</p>
-              {product ? <Link href={`/admin/products/${product.id}/options`} className="mt-4 inline-flex min-h-10 items-center justify-center rounded-xl bg-violet-700 px-5 text-xs font-bold text-white">مدیریت تنوع و موجودی</Link> : <AdminSaveButton isSaving={loading} label="ثبت محصول و مدیریت تنوع" savingLabel="در حال ثبت محصول..." className="mt-4" />}
+              <strong className="text-sm text-slate-700">ترکیب‌های تنوع در قالب Blueprint مدیریت می‌شوند</strong>
+              <p className="mt-1 max-w-md text-xs leading-6 text-slate-500">هر ترکیب مانند «مشکی، XL» قیمت، تخفیف و موجودی خودش را دارد. نوع‌ها و مقادیرشان از کتابخانه مشترک انتخاب می‌شوند تا در همه محصولات یکسان بمانند.</p>
+              <Link href="/admin/option-types" className="mt-4 inline-flex min-h-10 items-center justify-center rounded-xl bg-violet-700 px-5 text-xs font-bold text-white">مدیریت انواع تنوع</Link>
             </div>
             <div className="self-start rounded-xl border border-slate-200 bg-slate-50 p-3">
               <div className="mb-3 flex items-center justify-between gap-2"><strong className="text-xs text-slate-700">راهنمای انتخاب</strong>{optionGuide && <Button type="button" size="sm" isIconOnly variant="ghost" onPress={() => setOptionGuide(null)} className="h-7 min-h-7 w-7 min-w-7 text-slate-400 hover:text-[#d31736]" aria-label="حذف راهنمای انتخاب"><Trash2 size={14} /></Button>}</div>

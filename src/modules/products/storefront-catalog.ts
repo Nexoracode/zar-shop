@@ -2,10 +2,9 @@ import type { Prisma } from "@generated/prisma/client";
 import { db } from "@/lib/db";
 import { formatMoney } from "@/lib/format";
 import { getGoldPriceForDisplay } from "@/modules/gold/gold-price.service";
-import { calculateDiscountedPrice } from "@/modules/products/discount";
 import { parseCategoryAttributeSchema, parseProductAttributes } from "@/modules/products/attributes";
-import { parseOptionValues } from "@/modules/products/options";
-import { calculateProductPrice } from "@/modules/products/pricing";
+import { productColorIds } from "@/modules/products/variant-selection";
+import { lineUnitPrice } from "@/modules/products/line-pricing";
 import { matchesTomanPrice, type StorefrontCatalogQuery, type StorefrontCatalogResult } from "@/modules/products/storefront-catalog-contract";
 import { getCatalogSettings } from "@/modules/settings/catalog-settings";
 import { baseShippingFee, getCommerceSettings } from "@/modules/settings/commerce-settings";
@@ -32,7 +31,23 @@ const catalogProductSelect = {
   attributes: true,
   createdAt: true,
   category: { select: { name: true } },
-  options: { select: { values: true } },
+  optionTypes: {
+    orderBy: { position: "asc" as const },
+    select: {
+      position: true,
+      type: { select: { name: true, kind: true } },
+      values: {
+        orderBy: { position: "asc" as const },
+        select: { position: true, value: { select: { id: true, label: true, colorId: true } } },
+      },
+    },
+  },
+  variants: {
+    select: {
+      selectionKey: true, selection: true, price: true, weightGrams: true,
+      discountType: true, discountValue: true, stock: true, isActive: true,
+    },
+  },
   media: {
     orderBy: { position: "asc" as const },
     take: 1,
@@ -44,8 +59,8 @@ const catalogProductSelect = {
 type CatalogProduct = Prisma.ProductGetPayload<{ select: typeof catalogProductSelect }>;
 type PricedProduct = { product: CatalogProduct; finalPriceRials: number | null; originalPriceRials?: number };
 
-function productColorIds(product: CatalogProduct) {
-  return [...new Set(product.options.flatMap((option) => parseOptionValues(option.values).flatMap((value) => value.isActive && value.colorId ? [value.colorId] : [])))];
+function catalogColorIds(product: CatalogProduct) {
+  return productColorIds(product.optionTypes);
 }
 
 function selectedAttributeValues(tokens: string[] | undefined) {
@@ -73,7 +88,7 @@ function matchesFacetFilters(product: CatalogProduct, query: StorefrontCatalogQu
   const selectedBrands = new Set(query.brand ?? []);
   if (selectedBrands.size > 0 && !productBrandValues(product, brandAttributeIds).some((value) => selectedBrands.has(value))) return false;
   const selectedColors = new Set(categoryScoped ? query.color ?? [] : []);
-  if (selectedColors.size > 0 && !productColorIds(product).some((id) => selectedColors.has(id))) return false;
+  if (selectedColors.size > 0 && !catalogColorIds(product).some((id) => selectedColors.has(id))) return false;
   const attributes = new Map(parseProductAttributes(product.attributes).map((attribute) => [attribute.attributeId, new Set(attribute.values)]));
   for (const [attributeId, selectedValues] of selectedAttributeValues(categoryScoped ? query.attr : undefined)) {
     const productValues = attributes.get(attributeId);
@@ -113,21 +128,25 @@ export async function getStorefrontCatalog(query: StorefrontCatalogQuery, catego
   ]);
   const goldPrice = gold?.pricePerGram18 ?? null;
   const pricedProducts = products.map((product) => {
-    const calculated = goldPrice === null || product.storeIndustry !== "GOLD" ? null : calculateProductPrice({
-      goldPricePerGram18: goldPrice,
-      weightGrams: product.weightGrams,
-      purity: product.purity,
-      makingFeeType: product.makingFeeType,
-      makingFeeValue: product.makingFeeValue,
-      profitPercent: product.profitPercent,
-      taxPercent: product.taxPercent,
+    /*
+     * A card shows the cheapest combination a shopper could actually buy, so a product whose
+     * black is discounted advertises that price rather than the product's undiscounted base.
+     * Without combinations the product prices itself, which is the same call with an empty key.
+     */
+    const keys = product.variants.filter((variant) => variant.isActive).map((variant) => variant.selectionKey);
+    const quotes = (keys.length ? keys : [""]).flatMap((key) => {
+      const quote = lineUnitPrice(product, key, goldPrice);
+      return quote ? [quote] : [];
     });
-    const baseAmount = product.fixedPrice ? Number(product.fixedPrice) : calculated?.total ?? null;
-    const discounted = baseAmount === null ? null : calculateDiscountedPrice(baseAmount, product);
-    return { product, finalPriceRials: discounted?.finalPrice ?? null, originalPriceRials: discounted?.isActive ? discounted.originalPrice : undefined };
+    const cheapest = quotes.length ? quotes.reduce((best, quote) => quote.finalPrice < best.finalPrice ? quote : best) : null;
+    return {
+      product,
+      finalPriceRials: cheapest?.finalPrice ?? null,
+      originalPriceRials: cheapest?.isActive ? cheapest.originalPrice : undefined,
+    };
   });
 
-  const allColorIds = [...new Set(products.flatMap(productColorIds))];
+  const allColorIds = [...new Set(products.flatMap(catalogColorIds))];
   const colors = allColorIds.length ? await db.color.findMany({
     where: { id: { in: allColorIds }, isActive: true },
     orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
@@ -135,7 +154,7 @@ export async function getStorefrontCatalog(query: StorefrontCatalogQuery, catego
   }) : [];
   const colorsById = new Map(colors.map((color) => [color.id, color]));
   const colorCounts = new Map<string, number>();
-  for (const product of products) for (const colorId of productColorIds(product)) colorCounts.set(colorId, (colorCounts.get(colorId) ?? 0) + 1);
+  for (const product of products) for (const colorId of catalogColorIds(product)) colorCounts.set(colorId, (colorCounts.get(colorId) ?? 0) + 1);
 
   const attributeDefinitions = new Map(facetCategories.flatMap((category) => parseCategoryAttributeSchema(category.attributeSchema).flatMap((group) => group.attributes.filter((attribute) => attribute.filterable).map((attribute) => [attribute.id, attribute.name] as const))));
   const brandAttributeIds = new Set([...attributeDefinitions].flatMap(([id, name]) => ["برند", "brand"].includes(name.trim().toLocaleLowerCase("fa-IR")) ? [id] : []));
@@ -194,7 +213,7 @@ export async function getStorefrontCatalog(query: StorefrontCatalogQuery, catego
         image: media?.type === "IMAGE" ? { src: media.url, alt: media.alt ?? product.name } : undefined,
         stock: product.stock,
         rating: mockRating(product.id),
-        colors: productColorIds(product).flatMap((id) => colorsById.has(id) ? [colorsById.get(id)!] : []),
+        colors: catalogColorIds(product).flatMap((id) => colorsById.has(id) ? [colorsById.get(id)!] : []),
       };
     }),
   };

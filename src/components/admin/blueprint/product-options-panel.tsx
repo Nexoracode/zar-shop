@@ -1,245 +1,399 @@
 "use client";
 
-import { useState, type DragEvent } from "react";
-import { Check, GripVertical, Pencil, Plus, Trash2 } from "lucide-react";
-import { productFieldLimits } from "@/modules/products/schemas";
+import { useState } from "react";
+import { Plus, Trash2, X } from "lucide-react";
+import {
+  MAX_VARIANTS,
+  describeSelection,
+  mergeCombinations,
+  selectionSignature,
+  type VariantDraft,
+} from "@/modules/products/variant-combinations";
+import { optionFieldLimits } from "@/modules/options/schemas";
 import { BpButton } from "./ui/button";
 import { BpCheckbox } from "./ui/checkbox";
+import { BpCombobox } from "./ui/combobox";
 import { BpInput } from "./ui/input";
 import { BpNumberInput } from "./ui/number-input";
 import { BpSelect } from "./ui/select";
-import { BpTabs } from "./ui/tabs";
+import { BpTable, BpTd, BpTh } from "./ui/table";
 
 /**
- * Variant groups and their values, edited in place instead of on a page of their own.
+ * A product's variants, edited in place instead of on a page of their own.
  *
- * Unlike the attributes panel next to it, none of this belongs to the category: an option group
- * and every value in it are the product's own, and they travel in the same payload as the rest
- * of the form.
+ * Types and values come from the shared library, so «مشکی» on one product is the same «مشکی» on
+ * the next; either can also be added from here without leaving a half-written product behind.
+ * Choosing رنگ = مشکی، زرد and سایز = XL makes two rows — «مشکی، XL» and «زرد، XL» — and each
+ * carries its own price, discount and stock.
  *
- * What a value may carry depends on the shop. A gold product prices each variant from its
- * weight, so it takes grams and no price; a general one takes a price and no weight. The schema
- * refuses the other combination, so the panel only ever offers the one that applies.
+ * What a row may carry depends on the shop. A gold product prices a combination from its weight,
+ * so it takes grams and no price; a general one takes a price and no weight. The schema refuses
+ * the other pairing, so the panel only ever offers the one that applies.
  */
-export type OptionValueDraft = {
-  value: string;
-  colorId: string | null;
-  isActive: boolean;
-  stock: number | null;
-  weightGrams: string | null;
-  price: string | null;
-};
+export type LibraryValue = { id: string; label: string; colorId: string | null; hex: string | null };
+export type LibraryType = { id: string; name: string; kind: "SELECT" | "COLOR"; values: LibraryValue[] };
 
-export type OptionDraft = { name: string; type: "SELECT" | "COLOR"; values: OptionValueDraft[] };
+/** Which library types the product offers, and which of their values. */
+export type ProductTypeDraft = { typeId: string; valueIds: string[] };
+
+export type { VariantDraft };
 
 type Props = {
   storeIndustry: "GOLD" | "GENERAL";
   colors: Array<{ id: string; name: string }>;
-  options: OptionDraft[];
-  onChange: (options: OptionDraft[]) => void;
+  library: LibraryType[];
+  optionTypes: ProductTypeDraft[];
+  variants: VariantDraft[];
+  onChange: (next: { optionTypes: ProductTypeDraft[]; variants: VariantDraft[] }) => void;
+  onLibraryChange: (library: LibraryType[]) => void;
 };
 
-function emptyValue(): OptionValueDraft {
-  return { value: "", colorId: null, isActive: true, stock: null, weightGrams: null, price: null };
-}
+const MAX_TYPES = 5;
 
-function move<T>(items: T[], from: number, to: number) {
-  if (from === to || from < 0 || to < 0 || to >= items.length) return items;
-  const next = [...items];
-  const [moved] = next.splice(from, 1);
-  next.splice(to, 0, moved);
-  return next;
-}
+export function BlueprintProductOptions({ storeIndustry, colors, library, optionTypes, variants, onChange, onLibraryChange }: Props) {
+  const [pickedTypeId, setPickedTypeId] = useState("");
+  const [typeError, setTypeError] = useState("");
+  const [creatingType, setCreatingType] = useState(false);
+  const [newTypeName, setNewTypeName] = useState("");
+  const [newTypeKind, setNewTypeKind] = useState<"SELECT" | "COLOR">("SELECT");
+  const [newValueFor, setNewValueFor] = useState("");
+  const [newValueLabel, setNewValueLabel] = useState("");
+  const [newValueColorId, setNewValueColorId] = useState("");
+  const [pending, setPending] = useState(false);
 
-export function BlueprintProductOptions({ storeIndustry, colors, options, onChange }: Props) {
-  const [newGroupName, setNewGroupName] = useState("");
-  const [newGroupType, setNewGroupType] = useState<OptionDraft["type"]>("SELECT");
-  const [groupError, setGroupError] = useState("");
-  const [activeIndex, setActiveIndex] = useState(0);
-  const [draggedValue, setDraggedValue] = useState<string | null>(null);
-  // Renaming is asked for, not permanently on offer: the header states the group and turns into
-  // its own two fields only while the pencil is engaged.
-  const [editingGroup, setEditingGroup] = useState(false);
+  const libraryById = new Map(library.map((type) => [type.id, type]));
 
-  const active = options[activeIndex] ?? options[0] ?? null;
-  const activeAt = options.indexOf(active as OptionDraft);
-
-  function addGroup() {
-    const name = newGroupName.trim();
-    if (!name) return setGroupError("نام تنوع را وارد کنید.");
-    if (options.some((option) => option.name === name)) return setGroupError("تنوعی با این نام از قبل هست.");
-    if (options.length >= 10) return setGroupError("حداکثر ۱۰ گروه تنوع برای هر محصول مجاز است.");
-    onChange([...options, { name, type: newGroupType, values: [emptyValue()] }]);
-    setActiveIndex(options.length);
-    setNewGroupName("");
-    setNewGroupType("SELECT");
-    setGroupError("");
+  /** The chosen types as names and labels, which is the shape combinations are built from. */
+  function asSelectedTypes(next: ProductTypeDraft[]) {
+    return next.flatMap((chosen) => {
+      const type = libraryById.get(chosen.typeId);
+      if (!type) return [];
+      const labels = new Map(type.values.map((value) => [value.id, value.label]));
+      return [{ typeName: type.name, values: chosen.valueIds.flatMap((id) => (labels.has(id) ? [labels.get(id)!] : [])) }];
+    });
   }
 
-  function updateActive(next: OptionDraft) {
-    onChange(options.map((option, index) => (index === activeAt ? next : option)));
+  /** Every change to the types rebuilds the rows, keeping the figures already entered. */
+  function applyTypes(next: ProductTypeDraft[]) {
+    onChange({ optionTypes: next, variants: mergeCombinations(variants, asSelectedTypes(next)) });
   }
 
-  function updateValue(index: number, patch: Partial<OptionValueDraft>) {
-    if (!active) return;
-    updateActive({ ...active, values: active.values.map((item, position) => (position === index ? { ...item, ...patch } : item)) });
+  function addType() {
+    if (!pickedTypeId) return setTypeError("یک نوع تنوع انتخاب کنید.");
+    if (optionTypes.some((chosen) => chosen.typeId === pickedTypeId)) return setTypeError("این نوع از قبل به محصول اضافه شده است.");
+    if (optionTypes.length >= MAX_TYPES) return setTypeError(`حداکثر ${MAX_TYPES.toLocaleString("fa-IR")} نوع تنوع برای هر محصول مجاز است.`);
+    applyTypes([...optionTypes, { typeId: pickedTypeId, valueIds: [] }]);
+    setPickedTypeId("");
+    setTypeError("");
   }
 
-  function removeGroup(index: number) {
-    onChange(options.filter((_, position) => position !== index));
-    setActiveIndex(0);
-    setEditingGroup(false);
+  function toggleValue(typeId: string, valueId: string) {
+    applyTypes(optionTypes.map((chosen) => (chosen.typeId === typeId
+      ? { ...chosen, valueIds: chosen.valueIds.includes(valueId) ? chosen.valueIds.filter((id) => id !== valueId) : [...chosen.valueIds, valueId] }
+      : chosen)));
   }
+
+  function updateVariant(signature: string, patch: Partial<VariantDraft>) {
+    onChange({
+      optionTypes,
+      variants: variants.map((variant) => (selectionSignature(variant.selection) === signature ? { ...variant, ...patch } : variant)),
+    });
+  }
+
+  /* A new type or value is written to the library straight away — a product that is still a draft
+   * cannot hold one, and the same word typed on the next product must find it already there. */
+  async function createType() {
+    const name = newTypeName.trim();
+    if (!name || pending) return;
+    setPending(true);
+    setTypeError("");
+    try {
+      const response = await fetch("/api/option-types", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, kind: newTypeKind, values: [] }),
+      });
+      const result = await response.json().catch(() => null);
+      if (!response.ok) throw new Error(result?.message ?? "ثبت نوع تنوع انجام نشد.");
+      const created: LibraryType = { id: result.id, name: result.name, kind: result.kind, values: [] };
+      onLibraryChange([...library, created]);
+      onChange({ optionTypes: [...optionTypes, { typeId: created.id, valueIds: [] }], variants });
+      setNewTypeName("");
+      setNewTypeKind("SELECT");
+      setCreatingType(false);
+    } catch (reason) {
+      setTypeError(reason instanceof Error ? reason.message : "ثبت نوع تنوع انجام نشد.");
+    } finally {
+      setPending(false);
+    }
+  }
+
+  async function createValue(typeId: string) {
+    const label = newValueLabel.trim();
+    const type = libraryById.get(typeId);
+    if (!label || !type || pending) return;
+    if (type.kind === "COLOR" && !newValueColorId) return setTypeError("برای مقدارِ نوع رنگ، خود رنگ را انتخاب کنید.");
+    setPending(true);
+    setTypeError("");
+    try {
+      const response = await fetch("/api/option-types", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ typeId, label, colorId: type.kind === "COLOR" ? newValueColorId : null }),
+      });
+      const result = await response.json().catch(() => null);
+      if (!response.ok) throw new Error(result?.message ?? "ثبت مقدار انجام نشد.");
+      const value: LibraryValue = { id: result.id, label: result.label, colorId: result.colorId, hex: result.color?.hex ?? null };
+      onLibraryChange(library.map((item) => (item.id === typeId ? { ...item, values: [...item.values, value] } : item)));
+      // The value is added to the library and picked in one go, which is what the admin meant.
+      const nextTypes = optionTypes.map((chosen) => (chosen.typeId === typeId ? { ...chosen, valueIds: [...chosen.valueIds, value.id] } : chosen));
+      const withValue = library.map((item) => (item.id === typeId ? { ...item, values: [...item.values, value] } : item));
+      const labelsByType = new Map(withValue.map((item) => [item.id, new Map(item.values.map((entry) => [entry.id, entry.label]))]));
+      onChange({
+        optionTypes: nextTypes,
+        variants: mergeCombinations(variants, nextTypes.flatMap((chosen) => {
+          const item = withValue.find((entry) => entry.id === chosen.typeId);
+          if (!item) return [];
+          const labels = labelsByType.get(chosen.typeId)!;
+          return [{ typeName: item.name, values: chosen.valueIds.flatMap((id) => (labels.has(id) ? [labels.get(id)!] : [])) }];
+        })),
+      });
+      setNewValueLabel("");
+      setNewValueColorId("");
+      setNewValueFor("");
+    } catch (reason) {
+      setTypeError(reason instanceof Error ? reason.message : "ثبت مقدار انجام نشد.");
+    } finally {
+      setPending(false);
+    }
+  }
+
+  const typeOrder = optionTypes.flatMap((chosen) => (libraryById.has(chosen.typeId) ? [libraryById.get(chosen.typeId)!.name] : []));
+  const availableTypes = library.filter((type) => !optionTypes.some((chosen) => chosen.typeId === type.id));
 
   return (
     <div className="grid gap-3">
-      <div className="flex flex-wrap items-end gap-2">
-        <BpInput
-          label="نام تنوع"
-          value={newGroupName}
-          maxLength={productFieldLimits.optionName}
-          error={groupError || undefined}
-          placeholder="مثلاً سایز"
-          wrapperClassName="w-[min(100%,220px)]"
-          onChange={(event) => { setNewGroupName(event.target.value); setGroupError(""); }}
-          onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); addGroup(); } }}
-        />
-        <BpSelect
-          label="نوع"
-          value={newGroupType}
-          disabled={!newGroupName.trim()}
-          hint="تا نام تنوع وارد نشود قابل انتخاب نیست."
-          options={[{ value: "SELECT", label: "فهرست ساده" }, { value: "COLOR", label: "رنگ" }]}
-          wrapperClassName="w-[min(100%,180px)]"
-          onChange={(event) => setNewGroupType(event.target.value as OptionDraft["type"])}
-        />
-        <BpButton variant="primary" className="field-action gap-1.5" onClick={addGroup}><Plus size={15} />افزودن تنوع</BpButton>
-      </div>
+      {creatingType ? (
+        <div className="flex flex-wrap items-end gap-2">
+          <BpInput
+            label="نام نوع جدید"
+            value={newTypeName}
+            maxLength={optionFieldLimits.typeName}
+            placeholder="مثلاً سایز"
+            wrapperClassName="w-[min(100%,220px)]"
+            onChange={(event) => { setNewTypeName(event.target.value); setTypeError(""); }}
+          />
+          <BpSelect
+            label="نوع"
+            value={newTypeKind}
+            disabled={!newTypeName.trim()}
+            hint="تا نام وارد نشود قابل انتخاب نیست."
+            options={[{ value: "SELECT", label: "فهرست ساده" }, { value: "COLOR", label: "رنگ" }]}
+            wrapperClassName="w-[min(100%,180px)]"
+            onChange={(event) => setNewTypeKind(event.target.value as "SELECT" | "COLOR")}
+          />
+          <BpButton variant="primary" className="field-action gap-1.5" isPending={pending} disabled={!newTypeName.trim()} onClick={() => void createType()}>
+            <Plus size={15} />ثبت نوع
+          </BpButton>
+          <BpButton variant="ghost" className="field-action gap-1.5" onClick={() => { setCreatingType(false); setTypeError(""); }}>
+            <X size={15} />انصراف
+          </BpButton>
+        </div>
+      ) : (
+        <div className="flex flex-wrap items-end gap-2">
+          <BpCombobox
+            label="نوع تنوع"
+            value={pickedTypeId}
+            error={typeError || undefined}
+            placeholder="از فهرست انتخاب کنید"
+            emptyLabel="نوعی برای افزودن نمانده است"
+            options={availableTypes.map((type) => ({ value: type.id, label: type.name }))}
+            wrapperClassName="w-[min(100%,240px)]"
+            onChange={(value) => { setPickedTypeId(value); setTypeError(""); }}
+          />
+          <BpButton variant="primary" className="field-action gap-1.5" onClick={addType}><Plus size={15} />افزودن به محصول</BpButton>
+          <BpButton variant="ghost" className="field-action gap-1.5" onClick={() => { setCreatingType(true); setTypeError(""); }}>
+            <Plus size={15} />نوع جدید
+          </BpButton>
+        </div>
+      )}
 
-      {options.length === 0 ? (
+      {optionTypes.length === 0 ? (
         <p className="bp-muted m-0 rounded-[var(--bp-radius)] border border-dashed border-[var(--bp-divider)] p-4 text-center text-[12px]">
-          این محصول تنوعی ندارد. اگر در چند سایز یا رنگ عرضه می‌شود، اولین تنوع را از بالا اضافه کنید.
+          این محصول تنوعی ندارد. اگر در چند سایز یا رنگ عرضه می‌شود، نوع آن را از بالا اضافه کنید.
         </p>
       ) : (
-        <>
-          <BpTabs label="گروه‌های تنوع">
-            {options.map((option, index) => (
-              <button key={`${option.name}-${index}`} type="button" role="tab" aria-selected={index === activeAt} className="bp-tab" onClick={() => { setActiveIndex(index); setEditingGroup(false); }}>
-                {option.name || "بدون نام"}
-                <span className="bp-muted text-[11px]">({option.values.length.toLocaleString("fa-IR")})</span>
-              </button>
-            ))}
-          </BpTabs>
-
-          {active && (
-            <>
-              {editingGroup ? (
-                <div className="flex flex-wrap items-end gap-2">
-                  <BpInput
-                    label="نام تنوع"
-                    value={active.name}
-                    maxLength={productFieldLimits.optionName}
-                    wrapperClassName="w-[min(100%,220px)]"
-                    onChange={(event) => updateActive({ ...active, name: event.target.value })}
-                    onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); setEditingGroup(false); } }}
-                  />
-                  <BpSelect
-                    label="نوع"
-                    value={active.type}
-                    options={[{ value: "SELECT", label: "فهرست ساده" }, { value: "COLOR", label: "رنگ" }]}
-                    wrapperClassName="w-[min(100%,180px)]"
-                    onChange={(event) => updateActive({ ...active, type: event.target.value as OptionDraft["type"] })}
-                  />
-                  <BpButton variant="primary" className="field-action gap-1.5" onClick={() => setEditingGroup(false)}><Check size={15} />پایان ویرایش</BpButton>
-                </div>
-              ) : (
+        <div className="grid gap-2">
+          {optionTypes.map((chosen) => {
+            const type = libraryById.get(chosen.typeId);
+            if (!type) return null;
+            return (
+              <div key={chosen.typeId} className="grid gap-2 rounded-[var(--bp-radius)] border border-[var(--bp-divider)] px-3 py-2.5">
                 <div className="flex flex-wrap items-center gap-2">
-                  <strong className="text-[13px]">{active.name || "بدون نام"}</strong>
-                  <span className="bp-tag bp-tag-neutral">{active.type === "COLOR" ? "رنگ" : "فهرست ساده"}</span>
-                  <BpButton isIconOnly variant="ghost" aria-label={`ویرایش نام و نوع ${active.name || "بدون نام"}`} className="ms-auto" onClick={() => setEditingGroup(true)}>
-                    <Pencil size={15} />
-                  </BpButton>
-                  <BpButton isIconOnly variant="ghost" aria-label={`حذف تنوع ${active.name || "بدون نام"}`} className="text-[var(--bp-danger)]" onClick={() => removeGroup(activeAt)}>
+                  <strong className="text-[13px]">{type.name}</strong>
+                  <span className="bp-tag bp-tag-neutral">{type.kind === "COLOR" ? "رنگ" : "فهرست ساده"}</span>
+                  <span className="bp-muted text-[11px]">{chosen.valueIds.length.toLocaleString("fa-IR")} مقدار انتخاب‌شده</span>
+                  <BpButton isIconOnly variant="ghost" aria-label={`حذف نوع ${type.name}`} className="ms-auto text-[var(--bp-danger)]" onClick={() => applyTypes(optionTypes.filter((item) => item.typeId !== chosen.typeId))}>
                     <Trash2 size={15} />
                   </BpButton>
                 </div>
-              )}
 
-              <div className="grid gap-2">
-                {active.values.map((item, index) => (
-                  <div
-                    key={index}
-                    draggable
-                    onDragStart={(event: DragEvent<HTMLDivElement>) => { event.dataTransfer.effectAllowed = "move"; setDraggedValue(String(index)); }}
-                    onDragOver={(event) => {
-                      event.preventDefault();
-                      if (draggedValue === null || draggedValue === String(index)) return;
-                      updateActive({ ...active, values: move(active.values, Number(draggedValue), index) });
-                      setDraggedValue(String(index));
-                    }}
-                    onDrop={(event) => { event.preventDefault(); setDraggedValue(null); }}
-                    onDragEnd={() => setDraggedValue(null)}
-                    className={`flex flex-wrap items-end gap-2 rounded-[var(--bp-radius)] border px-3 py-1.5 ${draggedValue === String(index) ? "border-[var(--bp-accent)] opacity-60" : "border-[var(--bp-divider)]"}`}
-                  >
-                    <span className="cursor-grab self-center text-[var(--bp-muted)] active:cursor-grabbing" aria-hidden="true"><GripVertical size={16} /></span>
+                <div className="flex flex-wrap items-center gap-1.5">
+                  {type.values.map((value) => {
+                    const picked = chosen.valueIds.includes(value.id);
+                    return (
+                      <button
+                        key={value.id}
+                        type="button"
+                        aria-pressed={picked}
+                        onClick={() => toggleValue(chosen.typeId, value.id)}
+                        className={`inline-flex items-center gap-1.5 rounded-[var(--bp-radius)] border px-2.5 py-1 text-[12px] ${picked ? "border-[var(--bp-accent)] text-[var(--bp-accent)]" : "border-[var(--bp-divider)] text-[var(--bp-muted)]"}`}
+                      >
+                        {value.hex ? <span aria-hidden className="h-3 w-3 rounded-full border border-[var(--bp-divider)]" style={{ background: value.hex }} /> : null}
+                        {value.label}
+                      </button>
+                    );
+                  })}
+                  {type.values.length === 0 ? <span className="bp-muted text-[12px]">این نوع هنوز مقداری ندارد.</span> : null}
+                </div>
+
+                {newValueFor === chosen.typeId ? (
+                  <div className="flex flex-wrap items-end gap-2">
                     <BpInput
-                      label="مقدار"
-                      value={item.value}
-                      maxLength={productFieldLimits.optionValue}
-                      placeholder="مثلاً ۱۶"
-                      wrapperClassName="w-[min(100%,160px)]"
-                      onChange={(event) => updateValue(index, { value: event.target.value })}
+                      label="مقدار جدید"
+                      value={newValueLabel}
+                      maxLength={optionFieldLimits.valueLabel}
+                      placeholder="مثلاً مشکی"
+                      wrapperClassName="w-[min(100%,180px)]"
+                      onChange={(event) => { setNewValueLabel(event.target.value); setTypeError(""); }}
                     />
-                    {active.type === "COLOR" && (
+                    {type.kind === "COLOR" && (
                       <BpSelect
                         label="رنگ"
-                        value={item.colorId ?? ""}
+                        value={newValueColorId}
                         placeholder="انتخاب رنگ"
                         options={colors.map((color) => ({ value: color.id, label: color.name }))}
-                        wrapperClassName="w-[min(100%,160px)]"
-                        onChange={(event) => updateValue(index, { colorId: event.target.value || null })}
+                        wrapperClassName="w-[min(100%,180px)]"
+                        onChange={(event) => setNewValueColorId(event.target.value)}
                       />
                     )}
-                    <BpNumberInput
-                      label="موجودی"
-                      value={item.stock === null ? "" : String(item.stock)}
-                      hint="خالی = موجودی کل محصول"
-                      wrapperClassName="w-[min(100%,130px)]"
-                      onValueChange={(next) => updateValue(index, { stock: next === "" ? null : Number(next) })}
-                    />
-                    {storeIndustry === "GOLD" ? (
-                      <BpNumberInput
-                        label="وزن (گرم)"
-                        allowDecimal
-                        value={item.weightGrams ?? ""}
-                        wrapperClassName="w-[min(100%,140px)]"
-                        onValueChange={(next) => updateValue(index, { weightGrams: next || null })}
-                      />
-                    ) : (
-                      <BpNumberInput
-                        label="قیمت (ریال)"
-                        isPrice
-                        value={item.price ?? ""}
-                        wrapperClassName="w-[min(100%,190px)]"
-                        onValueChange={(next) => updateValue(index, { price: next || null })}
-                      />
-                    )}
-                    <span className="field-action"><BpCheckbox isSelected={item.isActive} label="فعال" onChange={(next) => updateValue(index, { isActive: next })} /></span>
-                    <BpButton isIconOnly variant="ghost" aria-label={`حذف مقدار ${item.value || "بدون نام"}`} className="field-action ms-auto text-[var(--bp-danger)]" onClick={() => updateActive({ ...active, values: active.values.filter((_, position) => position !== index) })}>
-                      <Trash2 size={15} />
+                    <BpButton variant="primary" className="field-action gap-1.5" isPending={pending} disabled={!newValueLabel.trim()} onClick={() => void createValue(chosen.typeId)}>
+                      <Plus size={15} />ثبت مقدار
+                    </BpButton>
+                    <BpButton variant="ghost" className="field-action gap-1.5" onClick={() => { setNewValueFor(""); setNewValueLabel(""); setNewValueColorId(""); }}>
+                      <X size={15} />انصراف
                     </BpButton>
                   </div>
-                ))}
+                ) : (
+                  <BpButton variant="ghost" className="w-fit gap-1.5" onClick={() => { setNewValueFor(chosen.typeId); setNewValueLabel(""); setNewValueColorId(""); }}>
+                    <Plus size={15} />مقدار جدید
+                  </BpButton>
+                )}
               </div>
+            );
+          })}
+        </div>
+      )}
 
-              <div className="flex justify-start">
-                <BpButton variant="primary" className="gap-1.5" disabled={active.values.length >= 50} onClick={() => updateActive({ ...active, values: [...active.values, emptyValue()] })}>
-                  <Plus size={15} />افزودن مقدار
-                </BpButton>
-              </div>
-            </>
-          )}
-        </>
+      {variants.length > 0 && (
+        <div className="grid gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <strong className="text-[13px]">ترکیب‌های این محصول</strong>
+            <span className="bp-muted text-[11px]">{variants.length.toLocaleString("fa-IR")} از {MAX_VARIANTS.toLocaleString("fa-IR")}</span>
+          </div>
+          <BpTable ariaLabel="ترکیب‌های تنوع محصول" minWidth={760}>
+            <thead>
+              <tr>
+                <BpTh>ترکیب</BpTh>
+                <BpTh>{storeIndustry === "GOLD" ? "وزن (گرم)" : "قیمت (ریال)"}</BpTh>
+                <BpTh>تخفیف</BpTh>
+                <BpTh>موجودی</BpTh>
+                <BpTh>فعال</BpTh>
+                <BpTh>حذف</BpTh>
+              </tr>
+            </thead>
+            <tbody>
+              {variants.map((variant) => {
+                const signature = selectionSignature(variant.selection);
+                const label = describeSelection(variant.selection, typeOrder);
+                return (
+                  <tr key={signature}>
+                    <BpTd>{label}</BpTd>
+                    <BpTd>
+                      {storeIndustry === "GOLD" ? (
+                        <BpNumberInput
+                          aria-label={`وزن ترکیب ${label}`}
+                          allowDecimal
+                          value={variant.weightGrams ?? ""}
+                          reserveMessage={false}
+                          wrapperClassName="w-[min(100%,140px)]"
+                          onValueChange={(next) => updateVariant(signature, { weightGrams: next || null })}
+                        />
+                      ) : (
+                        <BpNumberInput
+                          aria-label={`قیمت ترکیب ${label}`}
+                          isPrice
+                          value={variant.price ?? ""}
+                          reserveMessage={false}
+                          wrapperClassName="w-[min(100%,190px)]"
+                          onValueChange={(next) => updateVariant(signature, { price: next || null })}
+                        />
+                      )}
+                    </BpTd>
+                    <BpTd>
+                      <div className="flex flex-wrap items-end gap-1.5">
+                        <BpSelect
+                          aria-label={`نوع تخفیف ترکیب ${label}`}
+                          value={variant.discountType ?? ""}
+                          placeholder="بدون تخفیف"
+                          reserveMessage={false}
+                          options={[{ value: "PERCENT", label: "درصدی" }, { value: "FIXED", label: "مبلغ ثابت" }]}
+                          wrapperClassName="w-[min(100%,130px)]"
+                          onChange={(event) => {
+                            const next = event.target.value as "PERCENT" | "FIXED" | "";
+                            updateVariant(signature, { discountType: next || null, ...(next ? {} : { discountValue: null }) });
+                          }}
+                        />
+                        <BpNumberInput
+                          aria-label={`مقدار تخفیف ترکیب ${label}`}
+                          isPrice={variant.discountType === "FIXED"}
+                          value={variant.discountValue ?? ""}
+                          disabled={!variant.discountType}
+                          reserveMessage={false}
+                          wrapperClassName="w-[min(100%,140px)]"
+                          onValueChange={(next) => updateVariant(signature, { discountValue: next || null })}
+                        />
+                      </div>
+                    </BpTd>
+                    <BpTd>
+                      <BpNumberInput
+                        aria-label={`موجودی ترکیب ${label}`}
+                        value={String(variant.stock)}
+                        reserveMessage={false}
+                        wrapperClassName="w-[min(100%,110px)]"
+                        onValueChange={(next) => updateVariant(signature, { stock: next === "" ? 0 : Number(next) })}
+                      />
+                    </BpTd>
+                    <BpTd>
+                      <BpCheckbox isSelected={variant.isActive} label={`فعال بودن ترکیب ${label}`} onChange={() => updateVariant(signature, { isActive: !variant.isActive })} />
+                    </BpTd>
+                    <BpTd>
+                      <BpButton
+                        isIconOnly
+                        variant="ghost"
+                        aria-label={`حذف ترکیب ${label}`}
+                        className="text-[var(--bp-danger)]"
+                        onClick={() => onChange({ optionTypes, variants: variants.filter((item) => selectionSignature(item.selection) !== signature) })}
+                      >
+                        <Trash2 size={15} />
+                      </BpButton>
+                    </BpTd>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </BpTable>
+        </div>
       )}
     </div>
   );

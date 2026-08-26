@@ -7,8 +7,6 @@ import { StandaloneTopBar } from "@/components/standalone-top-bar";
 import { requireUser } from "@/modules/auth/session";
 import { db } from "@/lib/db";
 import { getGoldPriceForDisplay } from "@/modules/gold/gold-price.service";
-import { calculateProductPrice } from "@/modules/products/pricing";
-import { calculateDiscountedPrice } from "@/modules/products/discount";
 import { lineUnitPrice } from "@/modules/products/line-pricing";
 import { baseShippingFee, defaultDeliveryMethod, getCommerceSettings } from "@/modules/settings/commerce-settings";
 import { getGeneralStoreSettings } from "@/modules/settings/general-settings";
@@ -93,10 +91,8 @@ export default async function CheckoutPage() {
 
   const prices = items.map((item) => {
     const product = item.product;
-    const selectedWeight = getSelectedOptionWeight(product.options, item.selectedOptions, product.weightGrams);
-    const original = product.storeIndustry === "GENERAL" ? getSelectedOptionPrice(product.options, item.selectedOptions, Number(product.fixedPrice ?? 0)) : product.fixedPrice ? Number(product.fixedPrice) : calculateProductPrice({ goldPricePerGram18: rate!, weightGrams: selectedWeight, purity: product.purity, makingFeeType: product.makingFeeType, makingFeeValue: product.makingFeeValue, profitPercent: product.profitPercent, taxPercent: product.taxPercent }).total;
-    const pricing = calculateDiscountedPrice(original, product);
-    return { quantity: item.quantity, original: pricing.originalPrice, final: pricing.finalPrice };
+    const pricing = lineUnitPrice(product, item.selectionKey, rate);
+    return { quantity: item.quantity, original: pricing?.originalPrice ?? 0, final: pricing?.finalPrice ?? 0 };
   });
   const subtotal = prices.reduce((sum, item) => sum + item.original * item.quantity, 0);
   const merchandiseAmount = prices.reduce((sum, item) => sum + item.final * item.quantity, 0);

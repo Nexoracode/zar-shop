@@ -4,15 +4,15 @@ import { buildAuditChanges, productAuditSnapshot } from "./product-audit";
 
 test("product audit reports exact nested field and previous/new values", () => {
   const changes = buildAuditChanges(
-    { name: "انگشتر قدیمی", options: [{ name: "سایز", values: [{ value: "۵۲", stock: 1 }] }] },
-    { name: "انگشتر جدید", options: [{ name: "سایز", values: [{ value: "۵۲", stock: 4 }] }] },
+    { name: "انگشتر قدیمی", variants: [{ selection: { سایز: "۵۲" }, stock: 1 }] },
+    { name: "انگشتر جدید", variants: [{ selection: { سایز: "۵۲" }, stock: 4 }] },
   );
 
   assert.deepEqual(changes.map(({ path, before, after }) => ({ path, before, after })), [
     { path: "name", before: "انگشتر قدیمی", after: "انگشتر جدید" },
-    { path: "options.0.values.0.stock", before: 1, after: 4 },
+    { path: "variants.0.stock", before: 1, after: 4 },
   ]);
-  assert.match(changes[1].label, /تنوع‌ها.*ردیف 1.*موجودی/);
+  assert.match(changes[1].label, /ترکیب‌های تنوع.*ردیف 1.*موجودی/);
 });
 
 test("product snapshot keeps identifiers and serializes dates", () => {

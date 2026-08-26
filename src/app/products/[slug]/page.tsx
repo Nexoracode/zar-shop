@@ -14,7 +14,8 @@ import { db } from "@/lib/db";
 import { formatMoney } from "@/lib/format";
 import { buildProductAttributeGroups } from "@/modules/products/attributes";
 import { calculateDiscountedPrice } from "@/modules/products/discount";
-import { parseOptionValues } from "@/modules/products/options";
+import { productColorIds, productOptionTypeInclude, selectableTypes } from "@/modules/products/variant-selection";
+import { lineUnitPrice } from "@/modules/products/line-pricing";
 import { calculateProductPrice } from "@/modules/products/pricing";
 import { sanitizeProductDescription } from "@/modules/products/rich-text";
 import { calculateSoldPercent, completedSaleOrderStatuses } from "@/modules/products/sales";
@@ -36,7 +37,7 @@ export const dynamic = "force-dynamic";
 // apart from a slug that never existed, so that the first case can explain itself instead of
 // falling through to a bare 404.
 const getProductForPage = cache(async (slug: string, industry: "GOLD" | "GENERAL") =>
-  db.product.findFirst({ where: { slug, storeIndustry: industry }, include: { category: true, media: { include: { media: true }, orderBy: { position: "asc" } }, variants: true, optionGuide: true } }));
+  db.product.findFirst({ where: { slug, storeIndustry: industry }, include: { category: true, media: { include: { media: true }, orderBy: { position: "asc" } }, variants: true, optionTypes: productOptionTypeInclude, optionGuide: true } }));
 
 function plainProductDescription(product: { name: string; description: string | null }, storeName: string) {
   return product.description
@@ -78,10 +79,8 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
     return <ProductUnavailable name={product.name} categorySlug={category?.slug ?? null} categoryName={category?.name ?? null} />;
   }
 
-  const optionValues = product.options
-    .map((option) => ({ option, values: parseOptionValues(option.values).filter((item) => item.isActive) }))
-    .filter(({ values }) => values.length > 0);
-  const colorIds = [...new Set(optionValues.flatMap(({ values }) => values.flatMap((item) => item.colorId ? [item.colorId] : [])))];
+  const pickerTypes = selectableTypes(product.optionTypes);
+  const colorIds = productColorIds(product.optionTypes);
   const [colors, soldAggregate, reviewData, initialFavorite] = await Promise.all([
     colorIds.length ? db.color.findMany({ where: { id: { in: colorIds }, isActive: true }, select: { id: true, name: true, hex: true } }) : Promise.resolve([]),
     db.orderItem.aggregate({ where: { productId: product.id, order: { status: { in: [...completedSaleOrderStatuses] } } }, _sum: { quantity: true } }),
@@ -98,17 +97,6 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   const baseTotal = product.fixedPrice ? Number(product.fixedPrice) : parts?.total ?? null;
   const discounted = baseTotal === null ? null : calculateDiscountedPrice(baseTotal, product);
   const total = discounted?.finalPrice ?? null;
-  const pricingForVariant = (weightGrams: string | null, price: string | null) => {
-    let variantBase: number | null = null;
-    if (product.storeIndustry === "GENERAL") {
-      variantBase = price ? Number(price) : null;
-    } else if (weightGrams && rate !== null) {
-      variantBase = product.fixedPrice ? Number(product.fixedPrice) : calculateProductPrice({ goldPricePerGram18: rate, weightGrams, purity: product.purity, makingFeeType: product.makingFeeType, makingFeeValue: product.makingFeeValue, profitPercent: product.profitPercent, taxPercent: product.taxPercent }).total;
-    }
-    if (variantBase === null) return { price: null, originalPrice: null };
-    const variantDiscount = calculateDiscountedPrice(variantBase, product);
-    return { price: variantDiscount.finalPrice, originalPrice: variantDiscount.isActive ? variantDiscount.originalPrice : null };
-  };
   const galleryMedia = product.media.reduce<Array<{ id: string; type: "IMAGE" | "VIDEO"; url: string; alt: string }>>((items, item) => {
     if (item.media.type === "IMAGE" || item.media.type === "VIDEO") items.push({ id: item.media.id, type: item.media.type, url: item.media.url, alt: item.media.alt ?? product.name });
     return items;
@@ -122,19 +110,36 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
     ...attributeGroups.filter((group) => group.id !== generalAttributeGroup?.id).map((group) => ({ id: group.id, name: group.name, rows: group.attributes.map((attribute) => ({ label: attribute.name, value: attribute.values.join("، ") })) })),
   ];
 
-  const cartOptions = optionValues.map(({ option, values }) => ({
-    id: option.id,
-    name: option.name,
-    kind: option.type,
-    values: values.map((item) => {
-      const pricing = pricingForVariant(item.weightGrams, item.price);
-      return { value: item.value, stock: item.stock ?? product.stock, weightGrams: item.weightGrams, ...pricing, color: item.colorId ? colorsById.get(item.colorId) ?? null : null };
-    }),
+  /*
+   * The pickers are keyed by type name, which is also what a combination's selection is keyed by
+   * and what the cart endpoint hashes — so a choice made here needs no translation on the way in.
+   * A value stays selectable while any buyable combination still contains it.
+   */
+  const cartOptions = pickerTypes.map((type) => ({
+    id: type.name,
+    name: type.name,
+    kind: type.kind,
+    values: type.values.map((value) => ({
+      value: value.label,
+      stock: Math.max(0, ...product.variants
+        .filter((variant) => variant.isActive && (variant.selection as Record<string, string>)?.[type.name] === value.label)
+        .map((variant) => variant.stock)),
+      color: value.colorId ? colorsById.get(value.colorId) ?? null : null,
+    })),
   }));
-  const initialSelectedOptions = Object.fromEntries(cartOptions.flatMap((option) => {
-    const firstAvailable = option.values.find((item) => item.stock > 0);
-    return firstAvailable ? [[option.id, firstAvailable.value]] : [];
-  }));
+
+  const purchasableVariants = product.variants.map((variant) => {
+    const pricing = lineUnitPrice(product, variant.selectionKey, rate);
+    return {
+      selection: (variant.selection ?? {}) as Record<string, string>,
+      price: pricing?.finalPrice ?? null,
+      originalPrice: pricing?.originalPrice ?? null,
+      stock: variant.stock,
+      available: variant.isActive && variant.stock > 0,
+    };
+  });
+
+  const initialSelectedOptions = purchasableVariants.find((variant) => variant.available)?.selection ?? {};
   const relatedProducts = product.categoryId
     ? (await getStorefrontProductFeed({ sort: "POPULAR", page: 1, pageSize: 8, categoryId: product.categoryId, excludeProductId: product.id })).items
     : [];
@@ -157,6 +162,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
     currency: settings.currency,
     preparationDays: product.preparationDays,
     options: cartOptions,
+    variants: purchasableVariants,
     optionGuide: product.optionGuide && product.optionGuide.type !== "VIDEO" ? { url: product.optionGuide.url, type: product.optionGuide.type, title: product.optionGuide.title ?? "راهنمای انتخاب محصول" } : null,
     disabled: product.stock < 1 || total === null,
     disabledLabel: product.stock < 1 ? "ناموجود" : "قیمت موقتاً نامشخص",

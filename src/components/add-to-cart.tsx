@@ -10,7 +10,10 @@ import { formatMoney } from "@/lib/format";
 import { notifyCartUpdated } from "@/components/storefront-cart-link";
 
 type OptionGuide = { url: string; type: "IMAGE" | "DOCUMENT"; title: string };
-type ProductOption = { id: string; name: string; kind: "COLOR" | "SELECT"; values: Array<{ value: string; stock: number; weightGrams: string | null; price: number | null; originalPrice: number | null; color: { name: string; hex: string } | null }> };
+type ProductOption = { id: string; name: string; kind: "COLOR" | "SELECT"; values: Array<{ value: string; stock: number; color: { name: string; hex: string } | null }> };
+
+/** One buyable combination. `selection` is keyed by type name, the same key `options[].id` carries. */
+type PurchasableVariant = { selection: Record<string, string>; price: number | null; originalPrice: number | null; stock: number; available: boolean };
 
 type PurchaseState = {
   selectedOptions: Record<string, string>;
@@ -31,7 +34,7 @@ export function ProductPurchaseProvider({ children, initialSelectedOptions = {} 
   return <ProductPurchaseContext.Provider value={{ selectedOptions, setSelectedOptions, message, setMessage, loading, setLoading }}>{children}</ProductPurchaseContext.Provider>;
 }
 
-export function AddToCart({ productId, options = [], optionGuide, disabled, disabledLabel = "ناموجود", currency = "IRR", layout = "default", purchaseSummary, purchaseMeta, purchasePrice = null, purchaseOriginalPrice = null, discountLabel, preparationDays = 0, showOptionFields = true, showPurchaseCard = true, purchaseCardClassName, purchaseCardStickyTop = "6rem" }: { productId: string; options?: ProductOption[]; optionGuide?: OptionGuide | null; disabled: boolean; disabledLabel?: string; currency?: "IRR" | "IRT"; layout?: "default" | "product-detail"; purchaseSummary?: ReactNode; purchaseMeta?: ReactNode; purchasePrice?: number | null; purchaseOriginalPrice?: number | null; discountLabel?: string | null; preparationDays?: number; showOptionFields?: boolean; showPurchaseCard?: boolean; purchaseCardClassName?: string; purchaseCardStickyTop?: string }) {
+export function AddToCart({ productId, options = [], variants = [], optionGuide, disabled, disabledLabel = "ناموجود", currency = "IRR", layout = "default", purchaseSummary, purchaseMeta, purchasePrice = null, purchaseOriginalPrice = null, discountLabel, preparationDays = 0, showOptionFields = true, showPurchaseCard = true, purchaseCardClassName, purchaseCardStickyTop = "6rem" }: { productId: string; options?: ProductOption[]; variants?: PurchasableVariant[]; optionGuide?: OptionGuide | null; disabled: boolean; disabledLabel?: string; currency?: "IRR" | "IRT"; layout?: "default" | "product-detail"; purchaseSummary?: ReactNode; purchaseMeta?: ReactNode; purchasePrice?: number | null; purchaseOriginalPrice?: number | null; discountLabel?: string | null; preparationDays?: number; showOptionFields?: boolean; showPurchaseCard?: boolean; purchaseCardClassName?: string; purchaseCardStickyTop?: string }) {
   const router = useRouter();
   const sharedState = useContext(ProductPurchaseContext);
   const [localMessage, setLocalMessage] = useState("");
@@ -48,11 +51,15 @@ export function AddToCart({ productId, options = [], optionGuide, disabled, disa
   const setSelectedOptions = sharedState?.setSelectedOptions ?? setLocalSelectedOptions;
   const [guideOpen, setGuideOpen] = useState(false);
   const [addedQuantity, setAddedQuantity] = useState(0);
-  const optionStockUnavailable = options.some((option) => !option.values.some((item) => item.stock > 0));
-  const selectedPriceValue = options.flatMap((option) => option.values.filter((item) => selectedOptions[option.id] === item.value)).find((item) => item.price !== null);
+  /*
+   * The combination the current choices name. Price and stock belong to the pairing, not to a
+   * value — black is neither cheap nor plentiful on its own, only black in a given size is.
+   */
+  const selectedVariant = variants.find((variant) => options.every((option) => variant.selection[option.id] === selectedOptions[option.id])) ?? null;
+  const optionStockUnavailable = options.length > 0 && !variants.some((variant) => variant.available);
   const selectedColorValue = options.filter((option) => option.kind === "COLOR").flatMap((option) => option.values.filter((item) => selectedOptions[option.id] === item.value)).find((item) => item.color);
-  const displayedPrice = selectedPriceValue?.price ?? purchasePrice;
-  const displayedOriginalPrice = selectedPriceValue?.originalPrice ?? purchaseOriginalPrice;
+  const displayedPrice = selectedVariant?.price ?? purchasePrice;
+  const displayedOriginalPrice = selectedVariant?.originalPrice ?? purchaseOriginalPrice;
 
   async function add() {
     const missingOption = options.find((option) => !selectedOptions[option.id]);
