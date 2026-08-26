@@ -90,7 +90,7 @@ test("merging is capped so a form cannot be flooded", () => {
 });
 
 test("a combination reads in the order its types are given", () => {
-  assert.equal(describeSelection({ سایز: "XL", رنگ: "مشکی" }, ["رنگ", "سایز"]), "مشکی، XL");
+  assert.equal(describeSelection({ سایز: "XL", رنگ: "مشکی" }, ["رنگ", "سایز"]), "مشکی - XL");
 });
 
 test("availability needs both an active row and the stock for it", () => {

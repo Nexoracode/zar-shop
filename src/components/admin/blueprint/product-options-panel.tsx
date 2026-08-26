@@ -394,7 +394,7 @@ export function BlueprintProductOptions({ storeIndustry, colors, library, option
                           isPrice
                           value={variant.price ?? ""}
                           reserveMessage={false}
-                          wrapperClassName="w-[min(100%,190px)]"
+                          wrapperClassName="w-[min(100%,130px)]"
                           onValueChange={(next) => updateVariant(signature, { price: next || null })}
                         />
                       )}

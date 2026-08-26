@@ -79,7 +79,7 @@ export function mergeCombinations(existing: VariantDraft[], types: SelectedType[
 /** How a combination reads in a list: «مشکی، XL», in the types' own order. */
 export function describeSelection(selection: VariantSelection, order: string[] = []) {
   const names = order.length ? order.filter((name) => name in selection) : Object.keys(selection);
-  return names.map((name) => selection[name]).join("، ");
+  return names.map((name) => selection[name]).join(" - ");
 }
 
 /** Whether a combination can be bought right now, at this quantity. */
