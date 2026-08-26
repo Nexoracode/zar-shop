@@ -42,23 +42,23 @@ export function AdminListFilters({ path, query, queryLabel, queryPlaceholder, fi
   const updateQuery = useCallback((value: string) => update("q", value), [update]);
 
   if (template === "BLUEPRINT") {
+    // One row: the search takes the slack and the selects sit beside it, since a filter bar of
+    // four short controls has no reason to stack. It still wraps on a narrow screen.
     return (
-      <div className={`flex flex-col gap-3 ${isPending ? "opacity-70" : ""}`} aria-busy={isPending}>
+      <div className={`flex flex-wrap items-center gap-2 ${isPending ? "opacity-70" : ""}`} aria-busy={isPending}>
         <DebouncedSearch template={template} initialValue={query} label={queryLabel} placeholder={queryPlaceholder} onSearch={updateQuery} />
-        <div className="flex flex-wrap gap-2.5">
-          {filters.map((filter) => (
-            <BpSelect
-              key={filter.name}
-              aria-label={filter.label}
-              value={filter.value}
-              options={filter.options}
-              onChange={(event) => update(filter.name, event.target.value)}
-              reserveMessage={false}
-              wrapperClassName="w-full sm:w-auto"
-              className="w-full sm:w-48"
-            />
-          ))}
-        </div>
+        {filters.map((filter) => (
+          <BpSelect
+            key={filter.name}
+            aria-label={filter.label}
+            value={filter.value}
+            options={filter.options}
+            onChange={(event) => update(filter.name, event.target.value)}
+            reserveMessage={false}
+            wrapperClassName="w-full sm:w-auto"
+            className="w-full sm:w-44"
+          />
+        ))}
       </div>
     );
   }
@@ -89,7 +89,7 @@ function DebouncedSearch({ template, initialValue, label, placeholder, onSearch 
 
   if (template === "BLUEPRINT") {
     return (
-      <div className="relative w-full sm:max-w-[340px]">
+      <div className="relative w-full min-w-[180px] sm:w-auto sm:min-w-[220px] sm:flex-1">
         <Search className="pointer-events-none absolute start-2.5 top-1/2 z-10 -translate-y-1/2 text-[var(--bp-muted)]" size={15} />
         <input
           type="search"
