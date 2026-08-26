@@ -1,12 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import { createPortal } from "react-dom";
 import { CalendarDateTime, GregorianCalendar, PersianCalendar, toCalendar } from "@internationalized/date";
 import { CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
 import { BpButton } from "./button";
 import { BpFieldMessage, BpRequiredMark, describedBy } from "./field-message";
-import { normalizeNumericValue, toPersianDigits } from "@/lib/persian-numbers";
+import { toPersianDigits } from "@/lib/persian-numbers";
 
 /*
  * A Jalali date + time picker built on native elements — a grid of buttons and two number
@@ -57,6 +57,99 @@ function todayPersian() {
   return toPersianParts(now.toISOString())!;
 }
 
+/** A point on the dial for a clock-face angle (0° = 12 o'clock, clockwise), in percent of the
+ * dial's own box — usable directly as CSS `left`/`top` and, since the dial's SVG overlay shares
+ * the same 0–100 viewBox, as SVG coordinates too. */
+function clockPoint(angleDeg: number, radius: number) {
+  const rad = (angleDeg * Math.PI) / 180;
+  return { x: 50 + radius * Math.sin(rad), y: 50 - radius * Math.cos(rad) };
+}
+
+/** The same clock-face angle a pointer position reads as, relative to the dial's own centre. */
+function clockAngleFromPoint(clientX: number, clientY: number, rect: DOMRect) {
+  const dx = clientX - (rect.left + rect.width / 2);
+  const dy = clientY - (rect.top + rect.height / 2);
+  const theta = (Math.atan2(dx, -dy) * 180) / Math.PI;
+  return theta < 0 ? theta + 360 : theta;
+}
+
+/**
+ * The Android-style round dial: drag or tap a number, same as the system time picker. Twelve
+ * spots either way — hours 1–12, or minutes in fives — with the reachable minute continuous
+ * under a drag rather than snapped, so a value between two ticks is still just a drag away.
+ */
+function AnalogClock({ mode, hour12, minute, onHour12Change, onMinuteChange }: {
+  mode: "hour" | "minute";
+  hour12: number;
+  minute: number;
+  onHour12Change: (value: number) => void;
+  onMinuteChange: (value: number) => void;
+}) {
+  const dialRef = useRef<HTMLDivElement>(null);
+  const draggingRef = useRef(false);
+
+  function apply(clientX: number, clientY: number) {
+    const rect = dialRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    const theta = clockAngleFromPoint(clientX, clientY, rect);
+    if (mode === "hour") onHour12Change(Math.round(theta / 30) % 12 || 12);
+    else onMinuteChange(Math.round(theta / 6) % 60);
+  }
+
+  function onPointerDown(event: ReactPointerEvent<HTMLDivElement>) {
+    draggingRef.current = true;
+    dialRef.current?.setPointerCapture(event.pointerId);
+    apply(event.clientX, event.clientY);
+  }
+  function onPointerMove(event: ReactPointerEvent<HTMLDivElement>) {
+    if (draggingRef.current) apply(event.clientX, event.clientY);
+  }
+  function onPointerUp(event: ReactPointerEvent<HTMLDivElement>) {
+    draggingRef.current = false;
+    if (dialRef.current?.hasPointerCapture(event.pointerId)) dialRef.current.releasePointerCapture(event.pointerId);
+  }
+
+  const ticks = mode === "hour"
+    ? Array.from({ length: 12 }, (_, index) => (index === 0 ? 12 : index))
+    : Array.from({ length: 12 }, (_, index) => index * 5);
+  const selected = mode === "hour" ? hour12 : Math.round(minute / 5) % 12 * 5;
+  const handAngle = mode === "hour" ? (hour12 % 12) * 30 : minute * 6;
+  const tip = clockPoint(handAngle, 38);
+
+  return (
+    <div
+      ref={dialRef}
+      onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+      onPointerUp={onPointerUp}
+      onPointerCancel={onPointerUp}
+      className="relative mx-auto my-1 h-[190px] w-[190px] shrink-0 touch-none select-none rounded-full bg-[var(--bp-surface)]"
+    >
+      <svg viewBox="0 0 100 100" aria-hidden className="pointer-events-none absolute inset-0 h-full w-full">
+        <line x1={50} y1={50} x2={tip.x} y2={tip.y} stroke="var(--bp-accent)" strokeWidth={1.5} />
+        <circle cx={50} cy={50} r={2} fill="var(--bp-accent)" />
+      </svg>
+      {ticks.map((value) => {
+        const point = clockPoint(mode === "hour" ? (value % 12) * 30 : value * 6, 38);
+        const isSelected = value === selected;
+        return (
+          <button
+            key={value}
+            type="button"
+            aria-pressed={isSelected}
+            aria-label={mode === "hour" ? `ساعت ${value}` : `دقیقه ${value}`}
+            onClick={() => (mode === "hour" ? onHour12Change(value) : onMinuteChange(value))}
+            className={`absolute grid h-7 w-7 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full text-[12px] ${isSelected ? "bg-[var(--bp-accent)] text-[var(--bp-bg)]" : "hover:bg-[var(--bp-hover)]"}`}
+            style={{ left: `${point.x}%`, top: `${point.y}%` }}
+          >
+            {toPersianDigits(String(value).padStart(2, "0"))}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 /** "۱۴۰۶/۰۲/۰۳ — ۰۲:۲۰", or "" for `null` — the same reading the field's own trigger shows,
  * for a caller that displays a chosen instant outside the field itself. */
 export function formatPersianDateTime(iso: string | null) {
@@ -86,6 +179,9 @@ export function BpDateTimeField({ label, value, onChange, hint, error, reserveMe
   const [placement, setPlacement] = useState<{ top: number; left: number } | null>(null);
   const selected = useMemo(() => toPersianParts(value), [value]);
   const [view, setView] = useState(() => selected ?? todayPersian());
+  // Opening always starts on the hour ring, same as the system picker — the reader sets the hour,
+  // which jumps to minute on its own; reopening to fix just the minute is one tap away regardless.
+  const [clockMode, setClockMode] = useState<"hour" | "minute">("hour");
   const fieldId = `bp-datetime-${label ?? "field"}`;
   const messageId = `${fieldId}-message`;
 
@@ -100,7 +196,7 @@ export function BpDateTimeField({ label, value, onChange, hint, error, reserveMe
     const rect = trigger.getBoundingClientRect();
     const width = Math.min(290, window.innerWidth - 16);
     // Measured once the panel exists; the estimate only covers the very first frame.
-    const height = panelRef.current?.offsetHeight || 330;
+    const height = panelRef.current?.offsetHeight || 460;
     const openUpwards = rect.bottom + height > window.innerHeight && rect.top > height;
     const preferred = openUpwards ? rect.top - height - 4 : rect.bottom + 4;
     // Clamped to the viewport on both axes, so the panel is always fully reachable even when the
@@ -141,6 +237,10 @@ export function BpDateTimeField({ label, value, onChange, hint, error, reserveMe
   const offset = persianMonthStartOffset(view.year, view.month);
   const hour = selected?.hour ?? 0;
   const minute = selected?.minute ?? 0;
+  // The dial only ever shows 1–12; ق.ظ/ب.ظ carries the half of the day the stored 24-hour value
+  // is actually in.
+  const hour12 = hour % 12 || 12;
+  const isPM = hour >= 12;
 
   function pickDay(day: number) {
     onChange(persianToIso(view.year, view.month, day, hour, minute));
@@ -149,6 +249,18 @@ export function BpDateTimeField({ label, value, onChange, hint, error, reserveMe
   function setTime(nextHour: number, nextMinute: number) {
     const base = selected ?? { ...todayPersian() };
     onChange(persianToIso(base.year, base.month, base.day, nextHour, nextMinute));
+  }
+
+  function pickHour12(nextHour12: number, pm: boolean) {
+    setTime(pm ? (nextHour12 % 12) + 12 : nextHour12 % 12, minute);
+    // Same flow as the system picker: setting the hour hands control straight to the minute ring.
+    setClockMode("minute");
+  }
+
+  /** ق.ظ/ب.ظ is a correction, not a hand-off — unlike picking the hour itself, it must not also
+   * jump the dial to the minute ring. */
+  function setPeriod(pm: boolean) {
+    if (pm !== isPM) setTime(pm ? (hour12 % 12) + 12 : hour12 % 12, minute);
   }
 
   function shiftMonth(direction: -1 | 1) {
@@ -174,7 +286,7 @@ export function BpDateTimeField({ label, value, onChange, hint, error, reserveMe
         aria-expanded={open}
         data-invalid={error ? "true" : undefined}
         aria-describedby={describedBy(messageId, error, hint)}
-        onClick={() => { if (!open && selected) setView(selected); setOpen((current) => !current); }}
+        onClick={() => { if (!open) { if (selected) setView(selected); setClockMode("hour"); } setOpen((current) => !current); }}
         className="bp-input flex items-center justify-between gap-2 text-start"
       >
         <span className={display ? "" : "text-[var(--bp-muted)]"}>{display || "انتخاب تاریخ و ساعت"}</span>
@@ -218,12 +330,32 @@ export function BpDateTimeField({ label, value, onChange, hint, error, reserveMe
             })}
           </div>
 
-          <div className="mt-3 flex items-center gap-2 border-t border-[var(--bp-divider)] pt-3">
-            <span className="bp-muted text-[11px]">ساعت</span>
-            <input type="text" inputMode="numeric" maxLength={2} value={toPersianDigits(String(hour).padStart(2, "0"))} aria-label="ساعت" dir="ltr" onChange={(event) => setTime(Math.min(23, Math.max(0, Number(normalizeNumericValue(event.target.value, false)))), minute)} className="bp-input w-14 text-center" />
-            <span aria-hidden>:</span>
-            <input type="text" inputMode="numeric" maxLength={2} value={toPersianDigits(String(minute).padStart(2, "0"))} aria-label="دقیقه" dir="ltr" onChange={(event) => setTime(hour, Math.min(59, Math.max(0, Number(normalizeNumericValue(event.target.value, false)))))} className="bp-input w-14 text-center" />
-            <BpButton size="sm" variant="ghost" className="ms-auto" onClick={() => { onChange(null); setOpen(false); }}>پاک کردن</BpButton>
+          <div className="mt-3 border-t border-[var(--bp-divider)] pt-3">
+            <div className="flex items-center justify-center gap-3">
+              <div className="flex items-center gap-1 text-[20px] font-bold">
+                <button type="button" onClick={() => setClockMode("hour")} className={clockMode === "hour" ? "text-[var(--bp-accent)]" : "bp-muted"}>
+                  {toPersianDigits(String(hour12).padStart(2, "0"))}
+                </button>
+                <span aria-hidden className="bp-muted">:</span>
+                <button type="button" onClick={() => setClockMode("minute")} className={clockMode === "minute" ? "text-[var(--bp-accent)]" : "bp-muted"}>
+                  {toPersianDigits(String(minute).padStart(2, "0"))}
+                </button>
+              </div>
+              <div className="flex flex-col overflow-hidden rounded-[var(--bp-radius)] border border-[var(--bp-divider)] text-[11px]">
+                <button type="button" aria-pressed={!isPM} onClick={() => setPeriod(false)} className={`px-2 py-1 ${!isPM ? "bg-[var(--bp-accent)] text-[var(--bp-bg)]" : "hover:bg-[var(--bp-hover)]"}`}>ق.ظ</button>
+                <button type="button" aria-pressed={isPM} onClick={() => setPeriod(true)} className={`border-t border-[var(--bp-divider)] px-2 py-1 ${isPM ? "bg-[var(--bp-accent)] text-[var(--bp-bg)]" : "hover:bg-[var(--bp-hover)]"}`}>ب.ظ</button>
+              </div>
+            </div>
+
+            <AnalogClock
+              mode={clockMode}
+              hour12={hour12}
+              minute={minute}
+              onHour12Change={(next) => pickHour12(next, isPM)}
+              onMinuteChange={(next) => setTime(hour, next)}
+            />
+
+            <BpButton size="sm" variant="ghost" fullWidth onClick={() => { onChange(null); setOpen(false); }}>پاک کردن</BpButton>
           </div>
         </div>,
         document.body,
