@@ -8,7 +8,7 @@ import { auditRequestContext } from "@/modules/audit/request-context";
 import { releaseInventory } from "@/modules/orders/inventory";
 
 const bodySchema = z.object({
-  entity: z.enum(["products", "categories", "orders", "users", "reviews", "colors", "promotions", "contactMessages", "paymentGateways", "smsProviders", "smsCampaigns"]),
+  entity: z.enum(["products", "categories", "orders", "users", "reviews", "colors", "optionTypes", "promotions", "contactMessages", "paymentGateways", "smsProviders", "smsCampaigns"]),
   action: z.string().min(1).max(191),
   ids: z.array(z.string().min(1)).min(1).max(100),
 });
@@ -90,6 +90,9 @@ export async function PATCH(request: Request) {
   } else if (entity === "colors") {
     if (action !== "active:on" && action !== "active:off") return NextResponse.json({ message: "عملیات رنگ معتبر نیست." }, { status: 422 });
     updated = (await db.color.updateMany({ where: { id: { in: uniqueIds } }, data: { isActive: action === "active:on" } })).count;
+  } else if (entity === "optionTypes") {
+    if (action !== "active:on" && action !== "active:off") return NextResponse.json({ message: "عملیات نوع تنوع معتبر نیست." }, { status: 422 });
+    updated = (await db.optionType.updateMany({ where: { id: { in: uniqueIds } }, data: { isActive: action === "active:on" } })).count;
   } else if (entity === "promotions") {
     if (action !== "active:on" && action !== "active:off") return NextResponse.json({ message: "عملیات پروموشن معتبر نیست." }, { status: 422 });
     updated = (await db.promotion.updateMany({ where: { id: { in: uniqueIds } }, data: { isActive: action === "active:on" } })).count;

@@ -29,7 +29,7 @@ export const adminNavGroups: AdminNavGroup[] = [
     title: "تنوع و ویژگی‌ها",
     icon: ListTree,
     items: [
-      { href: "/admin/product-options", label: "تنوع محصولات", icon: ListTree, permission: "catalog:manage" },
+      { href: "/admin/option-types", label: "انواع تنوع", icon: ListTree, permission: "catalog:manage" },
       { href: "/admin/product-attributes", label: "ویژگی‌های محصولات", icon: ListChecks, permission: "catalog:manage" },
       { href: "/admin/colors", label: "رنگ‌های تنوع", icon: Palette, permission: "catalog:manage" },
       { href: "/admin/category-attributes", label: "ویژگی‌های دسته‌بندی", icon: SlidersHorizontal, permission: "catalog:manage" },
