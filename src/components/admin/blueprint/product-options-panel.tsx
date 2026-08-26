@@ -252,7 +252,7 @@ export function BlueprintProductOptions({ storeIndustry, colors, library, option
                   </BpButton>
                 </div>
 
-                <div className="flex flex-wrap items-start gap-1.5">
+                <div className="flex flex-wrap items-center gap-1.5">
                   {type.values.map((value) => {
                     const picked = chosen.valueIds.includes(value.id);
                     return (
@@ -279,12 +279,13 @@ export function BlueprintProductOptions({ storeIndustry, colors, library, option
                   {type.values.length === 0 && newValueFor !== chosen.typeId ? <span className="bp-muted text-[12px]">این نوع هنوز مقداری ندارد.</span> : null}
 
                   {newValueFor === chosen.typeId ? (
-                    <div className="flex items-start gap-1">
+                    <div className="flex items-center gap-1">
                       {type.kind === "COLOR" ? (
                         <BpCombobox
                           aria-label="جستجو یا انتخاب رنگ برای مقدار جدید"
                           value=""
                           error={valueError || undefined}
+                          reserveMessage={false}
                           placeholder="جستجو یا انتخاب رنگ"
                           emptyLabel="رنگی با این نام پیدا نشد"
                           options={colors.filter((color) => !type.values.some((value) => value.colorId === color.id)).map((color) => ({ value: color.id, label: color.name, color: color.hex }))}
@@ -301,6 +302,7 @@ export function BlueprintProductOptions({ storeIndustry, colors, library, option
                           aria-label="نام مقدار جدید"
                           value=""
                           error={valueError || undefined}
+                          reserveMessage={false}
                           placeholder="نام مقدار را بنویسید"
                           emptyLabel="برای افزودن، نام را تایپ کنید"
                           options={[]}
