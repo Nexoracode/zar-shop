@@ -1,16 +1,16 @@
-import { Plus } from "lucide-react";
-import { AdminEmptyState, AdminPageHeader, AdminPanel, AdminPrimaryLink } from "@/components/admin-ui";
-import { ColorTable } from "@/components/color-table";
+import { ClassicColorsView } from "@/components/admin/classic/colors-view";
+import { BlueprintColorsView } from "@/components/admin/blueprint/colors-view";
 import { db } from "@/lib/db";
 import { requirePermission } from "@/modules/auth/session";
+import { getBrandSettings } from "@/modules/settings/brand-settings";
 
 export default async function ColorsPage() {
   await requirePermission("catalog:manage");
-  const colors = await db.color.findMany({ orderBy: [{ sortOrder: "asc" }, { name: "asc" }] });
-  return <>
-    <AdminPageHeader eyebrow="مدیریت کاتالوگ" title="رنگ‌ها" description="رنگ‌های قابل انتخاب برای تنوع محصولات را تعریف و مدیریت کنید." action={<AdminPrimaryLink href="/admin/colors/new"><Plus size={17} />رنگ جدید</AdminPrimaryLink>} />
-    <AdminPanel>
-      {colors.length ? <ColorTable colors={colors} /> : <AdminEmptyState title="رنگی ثبت نشده" description="اولین رنگ فروشگاه را برای تعریف تنوع محصولات ثبت کنید." />}
-    </AdminPanel>
-  </>;
+  const [colors, brandSettings] = await Promise.all([
+    db.color.findMany({ orderBy: [{ sortOrder: "asc" }, { name: "asc" }] }),
+    getBrandSettings(),
+  ]);
+  return brandSettings.adminTemplate === "BLUEPRINT"
+    ? <BlueprintColorsView colors={colors} />
+    : <ClassicColorsView colors={colors} />;
 }
