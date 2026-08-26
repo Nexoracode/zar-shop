@@ -13,9 +13,10 @@ import { ProductReviews } from "@/components/product-reviews";
 import { db } from "@/lib/db";
 import { formatMoney } from "@/lib/format";
 import { buildProductAttributeGroups } from "@/modules/products/attributes";
-import { calculateDiscountedPrice } from "@/modules/products/discount";
+import { calculateDiscountedPrice, isProductDiscountActive } from "@/modules/products/discount";
 import { productColorIds, productOptionTypeInclude, selectableTypes } from "@/modules/products/variant-selection";
 import { lineUnitPrice } from "@/modules/products/line-pricing";
+import { variantPricing } from "@/modules/products/variants";
 import { calculateProductPrice } from "@/modules/products/pricing";
 import { sanitizeProductDescription } from "@/modules/products/rich-text";
 import { calculateSoldPercent, completedSaleOrderStatuses } from "@/modules/products/sales";
@@ -97,6 +98,14 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   const baseTotal = product.fixedPrice ? Number(product.fixedPrice) : parts?.total ?? null;
   const discounted = baseTotal === null ? null : calculateDiscountedPrice(baseTotal, product);
   const total = discounted?.finalPrice ?? null;
+  // "پیشنهاد شگفت‌انگیز" has to notice a discount set on a combination too, not just the
+  // product's own — otherwise a product priced only through a discounted variant never shows
+  // the badge at all. The countdown races the earliest of every currently-active window.
+  const activeDiscountEndsAt = [variantPricing(null, product), ...product.variants.map((variant) => variantPricing(variant, product))]
+    .filter((resolved) => isProductDiscountActive(resolved))
+    .map((resolved) => resolved.discountEndsAt)
+    .filter((endsAt): endsAt is Date => endsAt !== null)
+    .sort((a, b) => a.getTime() - b.getTime())[0] ?? null;
   const galleryMedia = product.media.reduce<Array<{ id: string; type: "IMAGE" | "VIDEO"; url: string; alt: string }>>((items, item) => {
     if (item.media.type === "IMAGE" || item.media.type === "VIDEO") items.push({ id: item.media.id, type: item.media.type, url: item.media.url, alt: item.media.alt ?? product.name });
     return items;
@@ -204,7 +213,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
       <div className="grid items-stretch gap-7 lg:grid-cols-[minmax(0,1fr)_320px]">
         <div className="min-w-0">
           <section className="grid items-start gap-7 lg:grid-cols-[minmax(330px,1.05fr)_minmax(0,1.1fr)] lg:grid-rows-[auto_auto] lg:gap-x-7 lg:gap-y-5">
-            <ProductDetailGallery productId={product.id} media={galleryMedia} productName={product.name} productCode={product.sku} hasDiscount={Boolean(discounted?.isActive)} discountEndsAt={discounted?.isActive && product.discountEndsAt ? product.discountEndsAt.toISOString() : null} soldPercent={soldPercent} authenticated={Boolean(currentUser && !currentUser.isGuest)} initialFavorite={initialFavorite} />
+            <ProductDetailGallery productId={product.id} media={galleryMedia} productName={product.name} productCode={product.sku} hasDiscount={activeDiscountEndsAt !== null} discountEndsAt={activeDiscountEndsAt?.toISOString() ?? null} soldPercent={soldPercent} authenticated={Boolean(currentUser && !currentUser.isGuest)} initialFavorite={initialFavorite} />
 
             <div className="min-w-0 lg:col-start-2 lg:row-start-1">
               {product.category && <Link href={`/products?category=${encodeURIComponent(product.category.slug)}`} className="text-sm font-bold text-[var(--brand-accent)] transition-colors hover:text-[var(--brand-primary)]">{product.category.name}</Link>}
