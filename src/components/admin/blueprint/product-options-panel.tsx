@@ -230,7 +230,8 @@ export function BlueprintProductOptions({ storeIndustry, colors, library, option
           placeholder="از فهرست انتخاب کنید یا نام نوع جدید را بنویسید"
           emptyLabel="نوعی با این نام پیدا نشد"
           options={availableTypes.map((type) => ({ value: type.id, label: type.name }))}
-          wrapperClassName="w-[min(100%,260px)]"
+          className="bp-input-sm"
+          wrapperClassName="w-[min(100%,340px)]"
           onChange={(value) => { setPickedTypeId(value); setTypeError(""); }}
           onCreate={(query) => void createTypeFromQuery(query)}
           creating={pending}

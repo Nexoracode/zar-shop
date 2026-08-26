@@ -271,6 +271,12 @@
 .bp-input:disabled { opacity: 0.55; cursor: not-allowed; }
 textarea.bp-input { min-height: 90px; resize: vertical; }
 
+/* A smaller reading size for a field whose placeholder or values run long — combined with
+   `.bp-input` on the same element, so it has to come after it here to win the tie. Tailwind's
+   own font-size utilities cannot: they are layered, `.bp-input` is not, and an unlayered rule
+   always outranks a layered one regardless of specificity or source order. */
+.bp-input.bp-input-sm { font-size: 13px; }
+
 /* Dropdowns carry no border at rest — the surface and the chevron are enough to read as a
    control. They take the hairline only while focused, so the field is still findable. */
 select.bp-input { appearance: none; padding-inline-end: 28px; border-color: transparent; }
