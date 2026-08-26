@@ -22,16 +22,21 @@ export function BpDialog({ open, title, description, onClose, children, actions,
   size?: BpDialogSize;
 }) {
   const panelRef = useRef<HTMLDivElement>(null);
+  // Read through a ref so the effects below depend on `open` alone. Callers pass an inline
+  // arrow, so depending on `onClose` re-ran them on every render — and that focus() call pulled
+  // the caret out of whatever field the reader was typing in, one character at a time.
+  const onCloseRef = useRef(onClose);
+  useEffect(() => { onCloseRef.current = onClose; }, [onClose]);
 
   useEffect(() => {
     if (!open) return;
     function onKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") onClose();
+      if (event.key === "Escape") onCloseRef.current();
     }
     document.addEventListener("keydown", onKeyDown);
     panelRef.current?.focus();
     return () => document.removeEventListener("keydown", onKeyDown);
-  }, [open, onClose]);
+  }, [open]);
 
   if (!open || typeof document === "undefined") return null;
 
