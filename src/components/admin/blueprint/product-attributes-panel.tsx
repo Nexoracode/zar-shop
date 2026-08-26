@@ -117,7 +117,8 @@ export function BlueprintProductAttributes({ categoryName, groups, values, onGro
         <BpButton variant="primary" className="field-action gap-1.5" onClick={addGroup}><Plus size={15} />افزودن یک گروه</BpButton>
         {groups.length > 0 && (
           <>
-            <span className="bp-muted field-action self-center text-[12px]">یا</span>
+            {/* Same 36px box as the buttons it sits between, so it lands on their centre line. */}
+            <span className="field-action grid h-9 place-items-center px-1 text-[13px] text-[var(--bp-text)]">یا</span>
             <BpButton className="field-action" onClick={() => setEditingGroups(groups.map((group) => ({ ...group })))}>ویرایش گروه‌ها</BpButton>
           </>
         )}
