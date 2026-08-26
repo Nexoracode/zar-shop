@@ -496,8 +496,35 @@ select.bp-input:focus-visible { border-color: var(--bp-accent); outline: none; }
   gap: 0;
   border-bottom: 1px solid var(--bp-divider);
 }
+/* A strip that can hold more tabs than fit: it scrolls sideways rather than wrapping to a
+   second line or pushing its card wider. `min-width: 0` is what stops the flex row from
+   claiming the width of all its tabs at once. */
+.bp-tabs-scroller { display: flex; align-items: stretch; min-width: 0; }
+.bp-tabs-scroll {
+  min-width: 0;
+  flex: 1;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.bp-tabs-scroll::-webkit-scrollbar { display: none; }
+.bp-tabs-scroll > .bp-tabs { flex-wrap: nowrap; width: max-content; min-width: 100%; }
+.bp-tabs-arrow {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 26px;
+  cursor: pointer;
+  color: var(--bp-muted);
+  background: var(--bp-bg);
+  border: 0;
+  border-bottom: 1px solid var(--bp-divider);
+}
+.bp-tabs-arrow:hover { color: var(--bp-text); background: var(--bp-hover); }
+.bp-tabs-arrow:disabled { opacity: 0.3; cursor: default; }
 .bp-tab {
   display: inline-flex;
+  flex: none;
+  white-space: nowrap;
   align-items: center;
   gap: 7px;
   padding: 9px 16px;

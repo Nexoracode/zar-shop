@@ -13,4 +13,5 @@ export { BpSeg, type BpSegOption } from "./seg";
 export { BpSelect, type BpSelectOption } from "./select";
 export { BpSwitch } from "./switch";
 export { BpTable, BpTd, BpTh } from "./table";
+export { BpTabs } from "./tabs";
 export { BpTag, type BpTagTone } from "./tag";

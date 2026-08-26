@@ -6,6 +6,7 @@ import { attributeFieldLimits, type CategoryAttributeGroup, type ProductAttribut
 import { BpButton } from "./ui/button";
 import { BpDialog } from "./ui/dialog";
 import { BpInput } from "./ui/input";
+import { BpTabs } from "./ui/tabs";
 
 /**
  * Attribute groups, their definitions and this product's values — all edited in place, so
@@ -109,7 +110,7 @@ export function BlueprintProductAttributes({ categoryName, groups, values, onGro
           maxLength={attributeFieldLimits.groupName}
           error={groupError || undefined}
           placeholder="مثلاً مشخصات فنی"
-          wrapperClassName="min-w-0 flex-1"
+          wrapperClassName="w-[min(100%,220px)]"
           onChange={(event) => { setNewGroupName(event.target.value); setGroupError(""); }}
           onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); addGroup(); } }}
         />
@@ -128,7 +129,7 @@ export function BlueprintProductAttributes({ categoryName, groups, values, onGro
         </p>
       ) : (
         <>
-          <div className="bp-tabs" role="tablist" aria-label="گروه‌های مشخصات">
+          <BpTabs label="گروه‌های مشخصات">
             {groups.map((group) => (
               <button
                 key={group.id}
@@ -142,7 +143,7 @@ export function BlueprintProductAttributes({ categoryName, groups, values, onGro
                 <span className="bp-muted text-[11px]">({group.attributes.length.toLocaleString("fa-IR")})</span>
               </button>
             ))}
-          </div>
+          </BpTabs>
 
           <div className="grid gap-2">
             {activeGroup && activeGroup.attributes.length === 0 && (
@@ -156,7 +157,7 @@ export function BlueprintProductAttributes({ categoryName, groups, values, onGro
                 onDragOver={(event) => { event.preventDefault(); const bounds = event.currentTarget.getBoundingClientRect(); reorderAttribute(attribute.id, event.clientY > bounds.top + bounds.height / 2); }}
                 onDrop={(event) => { event.preventDefault(); setDraggedId(null); }}
                 onDragEnd={() => setDraggedId(null)}
-                className={`flex items-end gap-2 border p-3 transition ${draggedId === attribute.id ? "border-[var(--bp-accent)] opacity-60" : "border-[var(--bp-divider)]"}`}
+                className={`flex flex-wrap items-end gap-2 border p-3 transition ${draggedId === attribute.id ? "border-[var(--bp-accent)] opacity-60" : "border-[var(--bp-divider)]"}`}
               >
                 <span className="field-action cursor-grab text-[var(--bp-muted)] active:cursor-grabbing" aria-hidden="true"><GripVertical size={16} /></span>
                 <BpInput
@@ -164,7 +165,7 @@ export function BlueprintProductAttributes({ categoryName, groups, values, onGro
                   value={attribute.name}
                   maxLength={attributeFieldLimits.attributeName}
                   placeholder="مثلاً ابعاد"
-                  wrapperClassName="min-w-0 flex-1"
+                  wrapperClassName="w-[min(100%,180px)]"
                   onChange={(event) => renameAttribute(attribute.id, event.target.value)}
                 />
                 <BpInput
@@ -172,7 +173,7 @@ export function BlueprintProductAttributes({ categoryName, groups, values, onGro
                   defaultValue={joinValues(valuesById.get(attribute.id) ?? [])}
                   maxLength={attributeFieldLimits.value}
                   placeholder="چند مقدار را با «،» جدا کنید"
-                  wrapperClassName="min-w-0 flex-[1.4]"
+                  wrapperClassName="min-w-0 flex-1 sm:max-w-[320px]"
                   onChange={(event) => setValue(attribute.id, event.target.value)}
                 />
                 <BpButton isIconOnly variant="ghost" aria-label={`حذف ویژگی ${attribute.name || "بدون نام"}`} className="field-action text-[var(--bp-danger)]" onClick={() => removeAttribute(attribute.id)}>
@@ -220,7 +221,7 @@ export function BlueprintProductAttributes({ categoryName, groups, values, onGro
               label="نام گروه"
               value={group.name}
               maxLength={attributeFieldLimits.groupName}
-              wrapperClassName="min-w-0 flex-1"
+              wrapperClassName="min-w-0 flex-1 max-w-[280px]"
               onChange={(event) => setEditingGroups(editingGroups.map((item) => (item.id === group.id ? { ...item, name: event.target.value } : item)))}
             />
             <BpButton isIconOnly variant="ghost" aria-label={`حذف گروه ${group.name || "بدون نام"}`} className="field-action text-[var(--bp-danger)]" onClick={() => setEditingGroups(editingGroups.filter((item) => item.id !== group.id))}>
