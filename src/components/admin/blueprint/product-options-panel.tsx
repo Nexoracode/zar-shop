@@ -10,6 +10,7 @@ import {
   type VariantDraft,
 } from "@/modules/products/variant-combinations";
 import { optionFieldLimits } from "@/modules/options/schemas";
+import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
 import { BpButton } from "./ui/button";
 import { BpCheckbox } from "./ui/checkbox";
 import { BpCombobox } from "./ui/combobox";
@@ -72,6 +73,10 @@ export function BlueprintProductOptions({ storeIndustry, colors, library, option
     setValueLabelError("");
     setValueColorError("");
   }
+
+  const [deletingValue, setDeletingValue] = useState<{ typeId: string; id: string; label: string } | null>(null);
+  const [deletingValuePending, setDeletingValuePending] = useState(false);
+  const [deletingValueError, setDeletingValueError] = useState("");
 
   const libraryById = new Map(library.map((type) => [type.id, type]));
 
@@ -179,10 +184,44 @@ export function BlueprintProductOptions({ storeIndustry, colors, library, option
     }
   }
 
+  /** Removes a value from the shared library — and, by the same cascade the type-edit page relies
+   * on, from every product that had it picked, including this one's own selection and rows. */
+  async function confirmDeleteValue() {
+    if (!deletingValue || deletingValuePending) return;
+    setDeletingValuePending(true);
+    setDeletingValueError("");
+    try {
+      const response = await fetch(`/api/option-types/values/${deletingValue.id}`, { method: "DELETE" });
+      if (!response.ok) {
+        const result = response.status === 204 ? null : await response.json().catch(() => null);
+        throw new Error(result?.message ?? "حذف مقدار انجام نشد.");
+      }
+      const nextLibrary = library.map((item) => (item.id === deletingValue.typeId ? { ...item, values: item.values.filter((entry) => entry.id !== deletingValue.id) } : item));
+      onLibraryChange(nextLibrary);
+      const nextTypes = optionTypes.map((chosen) => (chosen.typeId === deletingValue.typeId ? { ...chosen, valueIds: chosen.valueIds.filter((id) => id !== deletingValue.id) } : chosen));
+      const labelsByType = new Map(nextLibrary.map((item) => [item.id, new Map(item.values.map((entry) => [entry.id, entry.label]))]));
+      onChange({
+        optionTypes: nextTypes,
+        variants: mergeCombinations(variants, nextTypes.flatMap((chosen) => {
+          const item = nextLibrary.find((entry) => entry.id === chosen.typeId);
+          if (!item) return [];
+          const labels = labelsByType.get(chosen.typeId)!;
+          return [{ typeName: item.name, values: chosen.valueIds.flatMap((id) => (labels.has(id) ? [labels.get(id)!] : [])) }];
+        })),
+      });
+      setDeletingValue(null);
+    } catch (reason) {
+      setDeletingValueError(reason instanceof Error ? reason.message : "حذف مقدار انجام نشد.");
+    } finally {
+      setDeletingValuePending(false);
+    }
+  }
+
   const typeOrder = optionTypes.flatMap((chosen) => (libraryById.has(chosen.typeId) ? [libraryById.get(chosen.typeId)!.name] : []));
   const availableTypes = library.filter((type) => !optionTypes.some((chosen) => chosen.typeId === type.id));
 
   return (
+    <>
     <div className="grid gap-3">
       {creatingType ? (
         <div className="flex flex-wrap items-end gap-2">
@@ -254,16 +293,24 @@ export function BlueprintProductOptions({ storeIndustry, colors, library, option
                   {type.values.map((value) => {
                     const picked = chosen.valueIds.includes(value.id);
                     return (
-                      <button
+                      <span
                         key={value.id}
-                        type="button"
-                        aria-pressed={picked}
-                        onClick={() => toggleValue(chosen.typeId, value.id)}
-                        className={`inline-flex items-center gap-1.5 rounded-[var(--bp-radius)] border px-2.5 py-1 text-[12px] ${picked ? "border-[var(--bp-accent)] text-[var(--bp-accent)]" : "border-[var(--bp-divider)] text-[var(--bp-muted)]"}`}
+                        className={`inline-flex items-center gap-1 rounded-[var(--bp-radius)] border ps-2.5 pe-1 py-1 text-[12px] ${picked ? "border-[var(--bp-accent)] text-[var(--bp-accent)]" : "border-[var(--bp-divider)] text-[var(--bp-muted)]"}`}
                       >
-                        {value.hex ? <span aria-hidden className="h-3 w-3 rounded-full border border-[var(--bp-divider)]" style={{ background: value.hex }} /> : null}
-                        {value.label}
-                      </button>
+                        <button type="button" aria-pressed={picked} onClick={() => toggleValue(chosen.typeId, value.id)} className="inline-flex items-center gap-1.5">
+                          {value.hex ? <span aria-hidden className="h-3 w-3 rounded-full border border-[var(--bp-divider)]" style={{ background: value.hex }} /> : null}
+                          {value.label}
+                        </button>
+                        <button
+                          type="button"
+                          aria-label={`حذف مقدار ${value.label} از کتابخانه تنوع‌ها`}
+                          title="حذف از کتابخانه"
+                          onClick={() => { setDeletingValueError(""); setDeletingValue({ typeId: chosen.typeId, id: value.id, label: value.label }); }}
+                          className="grid h-4 w-4 place-items-center rounded-full text-[var(--bp-muted)] hover:text-[var(--bp-danger)]"
+                        >
+                          <X size={11} />
+                        </button>
+                      </span>
                     );
                   })}
                   {type.values.length === 0 ? <span className="bp-muted text-[12px]">این نوع هنوز مقداری ندارد.</span> : null}
@@ -411,5 +458,16 @@ export function BlueprintProductOptions({ storeIndustry, colors, library, option
         </div>
       )}
     </div>
+
+    <DeleteConfirmDialog
+      open={deletingValue !== null}
+      itemName={deletingValue?.label}
+      description="این مقدار از کتابخانه تنوع‌ها حذف می‌شود و از هر محصولی که استفاده‌اش کرده نیز برداشته خواهد شد."
+      error={deletingValueError}
+      loading={deletingValuePending}
+      onClose={() => { if (!deletingValuePending) setDeletingValue(null); }}
+      onConfirm={() => void confirmDeleteValue()}
+    />
+    </>
   );
 }
