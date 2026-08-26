@@ -104,3 +104,65 @@ export function isVariantAvailable(variant: Pick<VariantDraft, "isActive" | "sto
 export function findVariant<T extends { selectionKey: string }>(variants: T[], selectionKey: string) {
   return variants.find((variant) => variant.selectionKey === selectionKey) ?? null;
 }
+
+/*
+ * The rest of the app talks to a combination through these. Everything above is arithmetic on
+ * drafts; everything below reads a stored row, whose money columns arrive as `Decimal`.
+ */
+
+type StoredVariant = {
+  selectionKey: string;
+  selection: unknown;
+  price: { toString(): string } | null;
+  weightGrams: { toString(): string } | null;
+  discountType: "PERCENT" | "FIXED" | null;
+  discountValue: { toString(): string } | null;
+  stock: number;
+  isActive: boolean;
+};
+
+/** The selection a customer made, as a readable snapshot, or null when the product has no variants. */
+export function resolveVariantSelection(variants: StoredVariant[], selected: Record<string, string>, quantity = 1) {
+  const sellable = variants.filter((variant) => variant.isActive);
+  if (!sellable.length) return { ok: true as const, selectionKey: "", snapshot: null };
+
+  const selectionKey = variantSelectionKey(selected);
+  const match = sellable.find((variant) => variant.selectionKey === selectionKey);
+  if (!match) return { ok: false as const, reason: "unknown" as const };
+  if (match.stock < quantity) return { ok: false as const, reason: "stock" as const };
+  return { ok: true as const, selectionKey, snapshot: match.selection as Record<string, string> };
+}
+
+/** Whether a snapshot already in a cart still names a combination that can be bought. */
+export function isVariantSnapshotValid(variants: StoredVariant[], selectionKey: string, quantity = 1) {
+  const sellable = variants.filter((variant) => variant.isActive);
+  if (!sellable.length) return selectionKey === "";
+  const match = sellable.find((variant) => variant.selectionKey === selectionKey);
+  return Boolean(match && match.stock >= quantity);
+}
+
+/**
+ * The figures a line is priced from.
+ *
+ * A combination overrides the product on any field it sets and inherits the rest, so a shop can
+ * price one colour differently without restating everything else about the product.
+ */
+export function variantPricing(variant: StoredVariant | null, product: {
+  weightGrams: { toString(): string };
+  fixedPrice: { toString(): string } | null;
+  discountType: "PERCENT" | "FIXED" | null;
+  discountValue: { toString(): string } | null;
+}) {
+  return {
+    weightGrams: (variant?.weightGrams ?? product.weightGrams).toString(),
+    fixedPrice: variant?.price != null ? Number(variant.price) : product.fixedPrice != null ? Number(product.fixedPrice) : null,
+    discountType: variant?.discountType ?? product.discountType,
+    discountValue: variant?.discountValue ?? product.discountValue,
+  };
+}
+
+/** The cheapest sellable combination, for a catalogue card that shows "from …". */
+export function lowestVariantPrice(variants: StoredVariant[]) {
+  const prices = variants.filter((variant) => variant.isActive && variant.price != null).map((variant) => Number(variant.price));
+  return prices.length ? Math.min(...prices) : null;
+}

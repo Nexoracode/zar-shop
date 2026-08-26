@@ -4,9 +4,7 @@ import { db } from "@/lib/db";
 import { apiError } from "@/lib/http";
 import { getCurrentUser } from "@/modules/auth/session";
 import { getGoldPriceForDisplay } from "@/modules/gold/gold-price.service";
-import { calculateProductPrice } from "@/modules/products/pricing";
-import { calculateDiscountedPrice } from "@/modules/products/discount";
-import { getSelectedOptionPrice, getSelectedOptionWeight } from "@/modules/products/options";
+import { lineUnitPrice } from "@/modules/products/line-pricing";
 import { baseShippingFee, defaultDeliveryMethod, getCommerceSettings, qualifiesForFreeShipping } from "@/modules/settings/commerce-settings";
 import { chargeableCartWeight, quoteForMethod } from "@/modules/shipping/quote";
 import { getGeneralStoreSettings, isStorefrontAvailable } from "@/modules/settings/general-settings";
@@ -25,7 +23,7 @@ export async function POST(request: Request) {
     if (!user) return NextResponse.json({ message: "برای بررسی سفارش ابتدا وارد حساب شوید." }, { status: 401 });
     const input = schema.parse(await request.json());
     const [cart, gold, commerceSettings, generalSettings, address] = await Promise.all([
-      db.cart.findUnique({ where: { userId: user.id }, include: { items: { include: { product: { include: { options: true } } } } } }),
+      db.cart.findUnique({ where: { userId: user.id }, include: { items: { include: { product: { include: { variants: true } } } } } }),
       getGoldPriceForDisplay(),
       getCommerceSettings(),
       getGeneralStoreSettings(),
@@ -40,12 +38,8 @@ export async function POST(request: Request) {
     if (needsGoldRate && rate === null) return NextResponse.json({ message: "نرخ لحظه‌ای طلا موقتاً در دسترس نیست." }, { status: 503 });
     const prices = cart.items.map((item) => {
       const product = item.product;
-      const selectedWeight = getSelectedOptionWeight(product.options, item.selectedOptions, product.weightGrams);
-      const original = product.storeIndustry === "GENERAL"
-        ? getSelectedOptionPrice(product.options, item.selectedOptions, Number(product.fixedPrice ?? 0))
-        : product.fixedPrice ? Number(product.fixedPrice) : calculateProductPrice({ goldPricePerGram18: rate!, weightGrams: selectedWeight, purity: product.purity, makingFeeType: product.makingFeeType, makingFeeValue: product.makingFeeValue, profitPercent: product.profitPercent, taxPercent: product.taxPercent }).total;
-      const pricing = calculateDiscountedPrice(original, product);
-      return { quantity: item.quantity, original: pricing.originalPrice, final: pricing.finalPrice };
+      const pricing = lineUnitPrice(product, item.selectionKey, rate);
+      return { quantity: item.quantity, original: pricing?.originalPrice ?? 0, final: pricing?.finalPrice ?? 0 };
     });
     const subtotal = prices.reduce((sum, item) => sum + item.original * item.quantity, 0);
     const merchandiseAmount = prices.reduce((sum, item) => sum + item.final * item.quantity, 0);

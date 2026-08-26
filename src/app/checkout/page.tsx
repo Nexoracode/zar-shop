@@ -9,7 +9,7 @@ import { db } from "@/lib/db";
 import { getGoldPriceForDisplay } from "@/modules/gold/gold-price.service";
 import { calculateProductPrice } from "@/modules/products/pricing";
 import { calculateDiscountedPrice } from "@/modules/products/discount";
-import { getSelectedOptionPrice, getSelectedOptionWeight } from "@/modules/products/options";
+import { lineUnitPrice } from "@/modules/products/line-pricing";
 import { baseShippingFee, defaultDeliveryMethod, getCommerceSettings } from "@/modules/settings/commerce-settings";
 import { getGeneralStoreSettings } from "@/modules/settings/general-settings";
 import { getOrderSettings } from "@/modules/settings/order-settings";
@@ -76,7 +76,7 @@ export default async function CheckoutPage() {
   }
 
   const [cart, gold, settings, commerceSettings, paymentMethods, addresses] = await Promise.all([
-    db.cart.findUnique({ where: { userId: user.id }, include: { items: { include: { product: { include: { options: true } } } } } }),
+    db.cart.findUnique({ where: { userId: user.id }, include: { items: { include: { product: { include: { variants: true } } } } } }),
     getGoldPriceForDisplay(),
     getGeneralStoreSettings(),
     getCommerceSettings(),

@@ -937,6 +937,9 @@ model OrderItem {
   sku               String        @db.VarChar(80)
   name              String        @db.VarChar(191)
   selectedOptions   Json?
+  /// The combination this line bought, so releasing it can find the row to give stock back to.
+  /// Empty for a product sold without variants.
+  selectionKey      String        @default("") @db.VarChar(64)
   storeIndustry     StoreIndustry @default(GOLD)
   quantity          Int
   weightGrams       Decimal       @db.Decimal(10, 3)

@@ -1,6 +1,6 @@
 import type { Prisma } from "@generated/prisma/client";
 
-export type ProductRow = Prisma.ProductGetPayload<{ include: { category: true; media: { include: { media: true } }; _count: { select: { options: true } } } }>;
+export type ProductRow = Prisma.ProductGetPayload<{ include: { category: true; media: { include: { media: true } }; _count: { select: { variants: true } } } }>;
 
 /** Everything `/admin/products` reads, shaped once so both list skins agree. */
 export type AdminProductsListData = {

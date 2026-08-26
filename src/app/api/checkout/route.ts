@@ -6,7 +6,8 @@ import { apiError } from "@/lib/http";
 import { getCurrentUser } from "@/modules/auth/session";
 import { getGoldPrice } from "@/modules/gold/gold-price.service";
 import { calculateProductPrice } from "@/modules/products/pricing";
-import { getSelectedOptionPrice, getSelectedOptionWeight, isOptionSnapshotValid, optionEntries } from "@/modules/products/options";
+import { optionEntries } from "@/modules/products/options";
+import { findVariant, isVariantSnapshotValid, variantPricing } from "@/modules/products/variants";
 import { getStorefrontPaymentMethods, getStorefrontPaymentProvider, storefrontPaymentMethodSchema } from "@/modules/payments/storefront-methods";
 import { PaymentProviderError } from "@/modules/payments/payment-provider";
 import type { Prisma } from "@generated/prisma/client";
@@ -20,9 +21,9 @@ import { chargeableCartWeight, quoteForMethod } from "@/modules/shipping/quote";
 import { sendAutomatedSms } from "@/modules/communications/sms-service";
 import { InventoryUnavailableError, releaseInventory, reserveInventory } from "@/modules/orders/inventory";
 
-type ItemWithProduct = Prisma.CartItemGetPayload<{ include: { product: { include: { options: true } } } }>;
+type ItemWithProduct = Prisma.CartItemGetPayload<{ include: { product: { include: { variants: true } } } }>;
 type PriceParts = ReturnType<typeof calculateProductPrice>;
-type CheckoutLine = { item: ItemWithProduct; p: ItemWithProduct["product"]; parts: PriceParts; originalUnitPrice: number; discountAmount: number; unitPrice: number; total: number };
+type CheckoutLine = { item: ItemWithProduct; p: ItemWithProduct["product"]; parts: PriceParts; selectedWeight: string; originalUnitPrice: number; discountAmount: number; unitPrice: number; total: number };
 
 const checkoutSchema = z.object({
   addressId: z.string().cuid(),
@@ -65,7 +66,7 @@ export async function POST(request: Request) {
     const availableMethods = await getStorefrontPaymentMethods();
     if (!availableMethods.some((method) => method.id === paymentProvider)) return NextResponse.json({ message: "روش پرداخت انتخاب‌شده در دسترس نیست." }, { status: 422 });
     const selectedPaymentProvider = await getStorefrontPaymentProvider(paymentProvider);
-    const cart = await db.cart.findUnique({ where: { userId: user.id }, include: { items: { include: { product: { include: { options: true } } } } } });
+    const cart = await db.cart.findUnique({ where: { userId: user.id }, include: { items: { include: { product: { include: { variants: true } } } } } });
     if (!cart?.items.length) return NextResponse.json({ message: "سبد خرید خالی است." }, { status: 409 });
     if (cart.items.some((item) => item.product.storeIndustry !== generalSettings.industry)) {
       return NextResponse.json({ message: "نوع بعضی محصولات سبد خرید با قالب فعلی فروشگاه سازگار نیست؛ لطفاً سبد خرید را بازبینی کنید." }, { status: 409 });
@@ -88,8 +89,9 @@ export async function POST(request: Request) {
       const p = item.product;
       if (item.quantity > orderSettings.maxOrderItemQuantity) throw new Error(`حداکثر تعداد مجاز برای هر قلم ${orderSettings.maxOrderItemQuantity.toLocaleString("fa-IR")} عدد است.`);
       if (p.status !== "ACTIVE" || p.stock < item.quantity) throw new Error(`موجودی ${p.name} کافی نیست.`);
-      if (!isOptionSnapshotValid(p.options, item.selectedOptions, item.quantity, p.stock)) throw new Error(`تنوع انتخاب‌شده برای ${p.name} غیرفعال یا ناموجود است.`);
-      const selectedWeight = getSelectedOptionWeight(p.options, item.selectedOptions, p.weightGrams);
+      if (!isVariantSnapshotValid(p.variants, item.selectionKey, item.quantity)) throw new Error(`تنوع انتخاب‌شده برای ${p.name} غیرفعال یا ناموجود است.`);
+      const resolved = variantPricing(item.selectionKey ? findVariant(p.variants, item.selectionKey) : null, p);
+      const selectedWeight = resolved.weightGrams;
       const parts = calculateProductPrice({
         goldPricePerGram18: rate,
         weightGrams: p.storeIndustry === "GOLD" ? selectedWeight : 0,
@@ -100,12 +102,13 @@ export async function POST(request: Request) {
         taxPercent: p.taxPercent,
       });
       const originalUnitPrice = p.storeIndustry === "GENERAL"
-        ? getSelectedOptionPrice(p.options, item.selectedOptions, Number(p.fixedPrice ?? 0))
-        : p.fixedPrice ? Number(p.fixedPrice) : parts.total;
-      const pricing = calculateDiscountedPrice(originalUnitPrice, p);
+        ? resolved.fixedPrice ?? 0
+        : resolved.fixedPrice ?? parts.total;
+      // The combination may override the amount, but the window is always the product's.
+      const pricing = calculateDiscountedPrice(originalUnitPrice, { ...p, discountType: resolved.discountType, discountValue: resolved.discountValue });
       const unitPrice = pricing.finalPrice;
       if (unitPrice <= 0) throw new Error(`قیمت ${p.name} معتبر نیست.`);
-      return { item, p, parts, originalUnitPrice, discountAmount: pricing.discountAmount, unitPrice, total: unitPrice * item.quantity };
+      return { item, p, parts, selectedWeight, originalUnitPrice, discountAmount: pricing.discountAmount, unitPrice, total: unitPrice * item.quantity };
     });
     const merchandiseAmount = lines.reduce((sum: number, line: CheckoutLine) => sum + line.total, 0);
     if (merchandiseAmount < orderSettings.minimumOrderAmount) return NextResponse.json({ message: `حداقل مبلغ سفارش ${orderSettings.minimumOrderAmount.toLocaleString("fa-IR")} ریال است.` }, { status: 422 });
@@ -114,7 +117,7 @@ export async function POST(request: Request) {
     const tax = lines.reduce((sum: number, line: CheckoutLine) => sum + line.parts.tax * line.item.quantity, 0);
     const preparationDays = Math.max(...lines.map((line) => line.p.preparationDays));
     const order = await db.$transaction(async (tx) => {
-      const inventoryItems = lines.map(({ item, p }) => ({ productId: p.id, quantity: item.quantity, selectedOptions: item.selectedOptions }));
+      const inventoryItems = lines.map(({ item, p }) => ({ productId: p.id, quantity: item.quantity, selectionKey: item.selectionKey }));
       await reserveInventory(tx, inventoryItems);
       /*
        * Priced here rather than taken from the request: the browser's number is a display, and
@@ -166,10 +169,10 @@ export async function POST(request: Request) {
           total,
           shippingAddress: address,
           items: {
-            create: lines.map(({ item, p, parts, originalUnitPrice, discountAmount, unitPrice, total: lineTotal }: CheckoutLine) => ({
-              productId: p.id, sku: p.sku, name: p.name, selectedOptions: optionEntries(item.selectedOptions).length ? Object.fromEntries(optionEntries(item.selectedOptions)) : undefined, quantity: item.quantity,
+            create: lines.map(({ item, p, parts, selectedWeight, originalUnitPrice, discountAmount, unitPrice, total: lineTotal }: CheckoutLine) => ({
+              productId: p.id, sku: p.sku, name: p.name, selectionKey: item.selectionKey, selectedOptions: optionEntries(item.selectedOptions).length ? Object.fromEntries(optionEntries(item.selectedOptions)) : undefined, quantity: item.quantity,
               storeIndustry: p.storeIndustry,
-              weightGrams: getSelectedOptionWeight(p.options, item.selectedOptions, p.weightGrams), purity: p.purity, rawGold: parts.rawGold, makingFee: parts.makingFee,
+              weightGrams: selectedWeight, purity: p.purity, rawGold: parts.rawGold, makingFee: parts.makingFee,
               profit: parts.profit, tax: parts.tax, originalUnitPrice, discountAmount, unitPrice, total: lineTotal,
             })),
           },

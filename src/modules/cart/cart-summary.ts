@@ -1,7 +1,5 @@
 import { db } from "@/lib/db";
-import { calculateDiscountedPrice } from "@/modules/products/discount";
-import { getSelectedOptionPrice, getSelectedOptionWeight } from "@/modules/products/options";
-import { calculateProductPrice } from "@/modules/products/pricing";
+import { lineUnitPrice } from "@/modules/products/line-pricing";
 import { getGoldPriceForDisplay } from "@/modules/gold/gold-price.service";
 import { getGeneralStoreSettings } from "@/modules/settings/general-settings";
 import { getOrderSettings } from "@/modules/settings/order-settings";
@@ -29,7 +27,7 @@ export async function getCartSummary(userId: string) {
       include: {
         items: {
           orderBy: { id: "asc" },
-          include: { product: { include: { options: true, media: { where: { isCover: true }, include: { media: true }, take: 1 } } } },
+          include: { product: { include: { variants: true, media: { where: { isCover: true }, include: { media: true }, take: 1 } } } },
         },
       },
     }),
@@ -42,11 +40,7 @@ export async function getCartSummary(userId: string) {
 
   const items = cartItems.map((item) => {
     const product = item.product;
-    const selectedWeight = getSelectedOptionWeight(product.options, item.selectedOptions, product.weightGrams);
-    const baseAmount = product.storeIndustry === "GENERAL"
-      ? getSelectedOptionPrice(product.options, item.selectedOptions, Number(product.fixedPrice ?? 0))
-      : product.fixedPrice ? Number(product.fixedPrice) : rate === null ? null : calculateProductPrice({ goldPricePerGram18: rate, weightGrams: selectedWeight, purity: product.purity, makingFeeType: product.makingFeeType, makingFeeValue: product.makingFeeValue, profitPercent: product.profitPercent, taxPercent: product.taxPercent }).total;
-    const pricing = baseAmount === null ? null : calculateDiscountedPrice(baseAmount, product);
+    const pricing = lineUnitPrice(product, item.selectionKey, rate);
     if (!pricing) priceUnavailable = true;
     const cover = product.media[0]?.media;
     return {

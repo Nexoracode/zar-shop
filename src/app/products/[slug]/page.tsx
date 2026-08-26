@@ -36,7 +36,7 @@ export const dynamic = "force-dynamic";
 // apart from a slug that never existed, so that the first case can explain itself instead of
 // falling through to a bare 404.
 const getProductForPage = cache(async (slug: string, industry: "GOLD" | "GENERAL") =>
-  db.product.findFirst({ where: { slug, storeIndustry: industry }, include: { category: true, media: { include: { media: true }, orderBy: { position: "asc" } }, options: { orderBy: { position: "asc" } }, optionGuide: true } }));
+  db.product.findFirst({ where: { slug, storeIndustry: industry }, include: { category: true, media: { include: { media: true }, orderBy: { position: "asc" } }, variants: true, optionGuide: true } }));
 
 function plainProductDescription(product: { name: string; description: string | null }, storeName: string) {
   return product.description

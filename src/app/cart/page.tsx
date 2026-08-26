@@ -16,7 +16,7 @@ import { getOrderSettings } from "@/modules/settings/order-settings";
 import { expirePendingOrders } from "@/modules/orders/expiration";
 import { PendingOrderCartNotice } from "@/components/pending-order-cart-notice";
 
-type CartItemRow = Prisma.CartItemGetPayload<{ include: { product: { include: { options: true; media: { include: { media: true } } } } } }>;
+type CartItemRow = Prisma.CartItemGetPayload<{ include: { product: { include: { variants: true; media: { include: { media: true } } } } } }>;
 
 export const dynamic = "force-dynamic";
 
@@ -24,7 +24,7 @@ export default async function CartPage() {
   const user = await getCurrentUser();
   if (user) await expirePendingOrders();
   const [cart, gold, settings, commerceSettings, orderSettings, pendingOrder] = await Promise.all([
-    user ? db.cart.findUnique({ where: { userId: user.id }, include: { items: { orderBy: { id: "asc" }, include: { product: { include: { options: true, media: { where: { isCover: true }, include: { media: true }, take: 1 } } } } } } }) : Promise.resolve(null),
+    user ? db.cart.findUnique({ where: { userId: user.id }, include: { items: { orderBy: { id: "asc" }, include: { product: { include: { variants: true, media: { where: { isCover: true }, include: { media: true }, take: 1 } } } } } } }) : Promise.resolve(null),
     getGoldPriceForDisplay(),
     getGeneralStoreSettings(),
     getCommerceSettings(),

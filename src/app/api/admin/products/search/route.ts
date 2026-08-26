@@ -31,7 +31,7 @@ export async function GET(request: Request) {
         storeIndustry: true,
         stock: true,
         category: { select: { name: true } },
-        _count: { select: { options: true } },
+        _count: { select: { variants: true } },
       },
       orderBy: { updatedAt: "desc" },
       take: 12,

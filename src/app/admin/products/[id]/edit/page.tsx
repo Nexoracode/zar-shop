@@ -16,7 +16,7 @@ export default async function EditProductPage({ params }: Context) {
   const [product, categories, colors, brandSettings] = await Promise.all([
     db.product.findUnique({
       where: { id },
-      include: { media: { include: { media: true }, orderBy: { position: "asc" } }, options: { orderBy: { position: "asc" } }, optionGuide: true },
+      include: { media: { include: { media: true }, orderBy: { position: "asc" } }, variants: true, optionGuide: true },
     }),
     db.category.findMany({
       where: { isActive: true },

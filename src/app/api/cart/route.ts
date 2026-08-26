@@ -4,7 +4,7 @@ import { db } from "@/lib/db";
 import { apiError } from "@/lib/http";
 import { createGuestSessionUser, getCurrentUser } from "@/modules/auth/session";
 import { consumeGuestSessionAttempt, rateLimitResponse } from "@/modules/auth/rate-limit";
-import { isOptionSnapshotValid, resolveOptionSelection } from "@/modules/products/options";
+import { isVariantSnapshotValid, resolveVariantSelection } from "@/modules/products/variants";
 import { getGeneralStoreSettings, isStorefrontAvailable } from "@/modules/settings/general-settings";
 import { getOrderSettings } from "@/modules/settings/order-settings";
 import { getCartProductCount, getCartSummary } from "@/modules/cart/cart-summary";
@@ -40,10 +40,14 @@ export async function POST(request: Request) {
     if (!isStorefrontAvailable(settings, currentUser?.role)) return NextResponse.json({ message: "فروشگاه در حال حاضر امکان ثبت خرید ندارد." }, { status: 503 });
     if (!currentUser && !settings.guestCheckout) return NextResponse.json({ message: "ابتدا وارد حساب خود شوید." }, { status: 401 });
     const input = inputSchema.parse(await request.json());
-    const product = await db.product.findFirst({ where: { id: input.productId, status: "ACTIVE", storeIndustry: settings.industry }, include: { options: { orderBy: { position: "asc" } } } });
+    const product = await db.product.findFirst({ where: { id: input.productId, status: "ACTIVE", storeIndustry: settings.industry }, include: { variants: true } });
     if (!product || product.stock < input.quantity) return NextResponse.json({ message: "محصول موجود نیست یا موجودی کافی ندارد." }, { status: 409 });
-    const selection = resolveOptionSelection(product.options, input.selectedOptions, input.quantity, product.stock);
-    if (!selection.ok) return NextResponse.json({ message: `لطفاً یک مقدار معتبر برای «${selection.optionName}» انتخاب کنید.` }, { status: 422 });
+    const selection = resolveVariantSelection(product.variants, input.selectedOptions, input.quantity);
+    if (!selection.ok) {
+      return selection.reason === "stock"
+        ? NextResponse.json({ message: "موجودی تنوع انتخاب‌شده کافی نیست." }, { status: 409 })
+        : NextResponse.json({ message: "ترکیب انتخاب‌شده برای این محصول موجود نیست." }, { status: 422 });
+    }
     if (!currentUser) {
       const blockedUntil = await consumeGuestSessionAttempt(request);
       if (blockedUntil) return rateLimitResponse(blockedUntil);
@@ -54,8 +58,7 @@ export async function POST(request: Request) {
     const nextQuantity = (existing?.quantity ?? 0) + input.quantity;
     const limitMessage = quantityLimitMessage(nextQuantity, product, orderSettings.maxOrderItemQuantity);
     if (limitMessage) return NextResponse.json({ message: limitMessage }, { status: 422 });
-    const finalSelection = resolveOptionSelection(product.options, input.selectedOptions, nextQuantity, product.stock);
-    if (!finalSelection.ok) return NextResponse.json({ message: "موجودی تنوع انتخاب‌شده برای این تعداد کافی نیست." }, { status: 409 });
+    if (!isVariantSnapshotValid(product.variants, selection.selectionKey, nextQuantity)) return NextResponse.json({ message: "موجودی تنوع انتخاب‌شده برای این تعداد کافی نیست." }, { status: 409 });
     await db.cartItem.upsert({
       where: { cartId_productId_selectionKey: { cartId: cart.id, productId: product.id, selectionKey: selection.selectionKey } },
       create: { cartId: cart.id, productId: product.id, selectionKey: selection.selectionKey, selectedOptions: selection.snapshot ?? undefined, quantity: input.quantity },
@@ -71,11 +74,11 @@ export async function PATCH(request: Request) {
     if (!user) return NextResponse.json({ message: "دسترسی غیرمجاز است." }, { status: 401 });
     if (!isStorefrontAvailable(settings, user.role)) return NextResponse.json({ message: "فروشگاه در حال حاضر امکان تغییر سبد را ندارد." }, { status: 503 });
     const input = updateSchema.parse(await request.json());
-    const item = await db.cartItem.findFirst({ where: { id: input.cartItemId, cart: { userId: user.id } }, include: { product: { include: { options: true } } } });
+    const item = await db.cartItem.findFirst({ where: { id: input.cartItemId, cart: { userId: user.id } }, include: { product: { include: { variants: true } } } });
     if (!item) return NextResponse.json({ message: "این قلم در سبد خرید پیدا نشد." }, { status: 404 });
     const limitMessage = quantityLimitMessage(input.quantity, item.product, orderSettings.maxOrderItemQuantity);
     if (limitMessage) return NextResponse.json({ message: limitMessage }, { status: 422 });
-    if (item.product.stock < input.quantity || !isOptionSnapshotValid(item.product.options, item.selectedOptions, input.quantity, item.product.stock)) return NextResponse.json({ message: "موجودی کالا برای این تعداد کافی نیست." }, { status: 409 });
+    if (item.product.stock < input.quantity || !isVariantSnapshotValid(item.product.variants, item.selectionKey, input.quantity)) return NextResponse.json({ message: "موجودی کالا برای این تعداد کافی نیست." }, { status: 409 });
     await db.cartItem.update({ where: { id: item.id }, data: { quantity: input.quantity } });
     return NextResponse.json({ message: "تعداد کالا به‌روزرسانی شد.", itemCount: await getCartProductCount(user.id, settings.industry) });
   } catch (error) { return apiError(error); }

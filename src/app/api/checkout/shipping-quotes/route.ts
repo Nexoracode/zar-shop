@@ -4,9 +4,7 @@ import { db } from "@/lib/db";
 import { apiError } from "@/lib/http";
 import { getCurrentUser } from "@/modules/auth/session";
 import { getGoldPriceForDisplay } from "@/modules/gold/gold-price.service";
-import { calculateDiscountedPrice } from "@/modules/products/discount";
-import { getSelectedOptionPrice, getSelectedOptionWeight } from "@/modules/products/options";
-import { calculateProductPrice } from "@/modules/products/pricing";
+import { lineUnitPrice } from "@/modules/products/line-pricing";
 import { getCommerceSettings, qualifiesForFreeShipping } from "@/modules/settings/commerce-settings";
 import { getGeneralStoreSettings, isStorefrontAvailable } from "@/modules/settings/general-settings";
 import { chargeableCartWeight, getShippingQuotes } from "@/modules/shipping/quote";
@@ -27,7 +25,7 @@ export async function POST(request: Request) {
     const input = schema.parse(await request.json());
 
     const [cart, gold, commerceSettings, generalSettings, address] = await Promise.all([
-      db.cart.findUnique({ where: { userId: user.id }, include: { items: { include: { product: { include: { options: true } } } } } }),
+      db.cart.findUnique({ where: { userId: user.id }, include: { items: { include: { product: { include: { variants: true } } } } } }),
       getGoldPriceForDisplay(),
       getCommerceSettings(),
       getGeneralStoreSettings(),
@@ -40,13 +38,7 @@ export async function POST(request: Request) {
     const rate = gold?.pricePerGram18 ?? null;
     const merchandiseAmount = cart.items.reduce((sum, item) => {
       const product = item.product;
-      const selectedWeight = getSelectedOptionWeight(product.options, item.selectedOptions, product.weightGrams);
-      const original = product.storeIndustry === "GENERAL"
-        ? getSelectedOptionPrice(product.options, item.selectedOptions, Number(product.fixedPrice ?? 0))
-        : product.fixedPrice
-          ? Number(product.fixedPrice)
-          : rate === null ? 0 : calculateProductPrice({ goldPricePerGram18: rate, weightGrams: selectedWeight, purity: product.purity, makingFeeType: product.makingFeeType, makingFeeValue: product.makingFeeValue, profitPercent: product.profitPercent, taxPercent: product.taxPercent }).total;
-      return sum + calculateDiscountedPrice(original, product).finalPrice * item.quantity;
+      return sum + (lineUnitPrice(product, item.selectionKey, rate)?.finalPrice ?? 0) * item.quantity;
     }, 0);
 
     const products = cart.items.map((item) => ({

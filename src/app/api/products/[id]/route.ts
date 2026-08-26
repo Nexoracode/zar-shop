@@ -85,7 +85,7 @@ export async function PATCH(request: Request, context: Context) {
         await tx.productOption.deleteMany({ where: { productId: id } });
         if (safeOptions.length) await tx.productOption.createMany({ data: safeOptions.map((option, position) => ({ productId: id, ...option, position })) });
       }
-      const updated = await tx.product.findUniqueOrThrow({ where: { id }, include: { media: { include: { media: true }, orderBy: { position: "asc" } }, category: true, options: { orderBy: { position: "asc" } }, optionGuide: true } });
+      const updated = await tx.product.findUniqueOrThrow({ where: { id }, include: { media: { include: { media: true }, orderBy: { position: "asc" } }, category: true, variants: true, optionGuide: true } });
       const before = productAuditSnapshot(existingProduct);
       const after = productAuditSnapshot(updated);
       await tx.auditLog.create({ data: { actorId: actor.id, action: "PRODUCT_UPDATE", entityType: "Product", entityId: id, ...auditRequestContext(request, {

@@ -20,7 +20,7 @@ export async function GET() {
   if (!isStorefrontAvailable(settings, user?.role)) return NextResponse.json({ message: "فروشگاه موقتاً در دسترس نیست." }, { status: 503 });
   const products = await db.product.findMany({
     where: { status: "ACTIVE", storeIndustry: settings.industry, ...(catalogSettings.hideOutOfStockProducts ? { stock: { gt: 0 } } : {}) },
-    include: { media: { include: { media: true }, orderBy: { position: "asc" } }, category: true, options: { orderBy: { position: "asc" } }, optionGuide: true },
+    include: { media: { include: { media: true }, orderBy: { position: "asc" } }, category: true, variants: true, optionGuide: true },
     orderBy: { createdAt: "desc" },
   });
   const colorIds = [...new Set(products.flatMap((product) => product.options.flatMap((option) => parseOptionValues(option.values).flatMap((value) => value.colorId ? [value.colorId] : []))))];
@@ -54,7 +54,7 @@ export async function POST(request: Request) {
     const product = await db.$transaction(async (tx) => {
       const created = await tx.product.create({ data: { ...input, attributes: attributeValidation.data, discountStartsAt: tehranDateStart(input.discountStartsAt), discountEndsAt: tehranDateEnd(input.discountEndsAt), description: sanitizeProductDescription(input.description), optionGuideId, options: { create: options.map((option, position) => ({ ...option, position })) } } });
       if (mediaIds.length) await tx.productMedia.createMany({ data: mediaIds.map((mediaId, position) => ({ productId: created.id, mediaId, position, isCover: position === 0 })) });
-      const result = await tx.product.findUniqueOrThrow({ where: { id: created.id }, include: { media: { include: { media: true }, orderBy: { position: "asc" } }, category: true, options: { orderBy: { position: "asc" } }, optionGuide: true } });
+      const result = await tx.product.findUniqueOrThrow({ where: { id: created.id }, include: { media: { include: { media: true }, orderBy: { position: "asc" } }, category: true, variants: true, optionGuide: true } });
       const after = productAuditSnapshot(result);
       await tx.auditLog.create({ data: { actorId: actor.id, action: "PRODUCT_CREATE", entityType: "Product", entityId: created.id, ...auditRequestContext(request, {
         subject: { id: result.id, type: "Product", name: result.name, sku: result.sku },

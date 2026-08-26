@@ -3,7 +3,7 @@ import { optionEntries, optionSelectionKey, parseOptionValues } from "@/modules/
 
 export async function getProductOptionManagement(productId: string) {
   const [product, colors, orderItems] = await Promise.all([
-    db.product.findUnique({ where: { id: productId }, select: { id: true, name: true, sku: true, stock: true, storeIndustry: true, options: { orderBy: { position: "asc" } } } }),
+    db.product.findUnique({ where: { id: productId }, select: { id: true, name: true, sku: true, stock: true, storeIndustry: true, variants: true } }),
     db.color.findMany({ where: { isActive: true }, select: { id: true, name: true, hex: true }, orderBy: [{ sortOrder: "asc" }, { name: "asc" }] }),
     db.orderItem.findMany({ where: { productId }, select: { selectedOptions: true } }),
   ]);

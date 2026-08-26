@@ -1,11 +1,11 @@
 import type { Prisma } from "@generated/prisma/client";
-import { decrementOptionValueStock, incrementOptionValueStock, isOptionSnapshotValid, selectedOptionRows } from "@/modules/products/options";
 
-export type InventoryTransaction = Pick<Prisma.TransactionClient, "product" | "productOption">;
+export type InventoryTransaction = Pick<Prisma.TransactionClient, "product" | "productVariant">;
 export type InventoryOrderItem = {
   productId: string | null;
   quantity: number;
-  selectedOptions: Prisma.JsonValue | null;
+  /** Empty for a product sold without variants. */
+  selectionKey: string;
 };
 
 export class InventoryUnavailableError extends Error {
@@ -15,39 +15,47 @@ export class InventoryUnavailableError extends Error {
   }
 }
 
-// A concurrent order touching the same option value (e.g. the last unit of one size) can
-// invalidate our read between fetching the row and writing it back. `stockVersion` gives
-// us a compare-and-swap: on a lost race we re-read the fresh row and try again, instead of
-// blindly overwriting whatever the other transaction just committed.
-const MAX_OPTION_STOCK_ATTEMPTS = 5;
+/*
+ * A concurrent order buying the same combination — the last black XL — can invalidate our read
+ * between fetching the row and writing it back. `stockVersion` gives a compare-and-swap: on a
+ * lost race we re-read the fresh row and try again, rather than overwriting whatever the other
+ * transaction just committed.
+ *
+ * One row per line now, where the per-value model had to touch one row per option. Selling a
+ * black XL used to decrement "مشکی" and "XL" separately, which could not express that the pair
+ * itself had run out.
+ */
+const MAX_VARIANT_STOCK_ATTEMPTS = 5;
 
-async function adjustOptionRowStock(
+async function adjustVariantStock(
   transaction: InventoryTransaction,
-  optionId: string,
-  targetValue: string,
+  productId: string,
+  selectionKey: string,
   quantity: number,
-  fallbackStock: number,
   mode: "decrement" | "increment",
 ) {
-  for (let attempt = 0; attempt < MAX_OPTION_STOCK_ATTEMPTS; attempt += 1) {
-    const row = await transaction.productOption.findUnique({
-      where: { id: optionId },
-      select: { id: true, name: true, values: true, stockVersion: true },
+  for (let attempt = 0; attempt < MAX_VARIANT_STOCK_ATTEMPTS; attempt += 1) {
+    const variant = await transaction.productVariant.findUnique({
+      where: { productId_selectionKey: { productId, selectionKey } },
+      select: { id: true, stock: true, isActive: true, stockVersion: true },
     });
-    if (!row) return;
-
-    let nextValues;
-    try {
-      nextValues = mode === "decrement"
-        ? decrementOptionValueStock(row, targetValue, quantity, fallbackStock)
-        : incrementOptionValueStock(row, targetValue, quantity);
-    } catch {
+    // Releasing stock for a combination that has since been deleted is a no-op, not a failure:
+    // the order keeps its own snapshot and nothing is owed back to a row that is gone.
+    if (!variant) {
+      if (mode === "increment") return;
       throw new InventoryUnavailableError();
     }
 
-    const written = await transaction.productOption.updateMany({
-      where: { id: optionId, stockVersion: row.stockVersion },
-      data: { values: nextValues, stockVersion: { increment: 1 } },
+    if (mode === "decrement" && (!variant.isActive || variant.stock < quantity)) {
+      throw new InventoryUnavailableError();
+    }
+
+    const written = await transaction.productVariant.updateMany({
+      where: { id: variant.id, stockVersion: variant.stockVersion },
+      data: {
+        stock: mode === "decrement" ? { decrement: quantity } : { increment: quantity },
+        stockVersion: { increment: 1 },
+      },
     });
     if (written.count === 1) return;
   }
@@ -63,18 +71,8 @@ export async function reserveInventory(transaction: InventoryTransaction, items:
     });
     if (reserved.count !== 1) throw new InventoryUnavailableError();
 
-    const product = await transaction.product.findUnique({
-      where: { id: item.productId },
-      select: { stock: true, options: { select: { id: true, name: true, values: true } } },
-    });
-    if (!product) throw new InventoryUnavailableError();
-    const stockBeforeReservation = product.stock + item.quantity;
-    if (!isOptionSnapshotValid(product.options, item.selectedOptions, item.quantity, stockBeforeReservation)) {
-      throw new InventoryUnavailableError();
-    }
-
-    for (const row of selectedOptionRows(product.options, item.selectedOptions)) {
-      await adjustOptionRowStock(transaction, row.id, row.targetValue, item.quantity, stockBeforeReservation, "decrement");
+    if (item.selectionKey) {
+      await adjustVariantStock(transaction, item.productId, item.selectionKey, item.quantity, "decrement");
     }
   }
 }
@@ -82,14 +80,8 @@ export async function reserveInventory(transaction: InventoryTransaction, items:
 export async function releaseInventory(transaction: InventoryTransaction, items: InventoryOrderItem[]) {
   for (const item of items) {
     if (!item.productId) continue;
-    const product = await transaction.product.findUnique({
-      where: { id: item.productId },
-      select: { options: { select: { id: true, name: true, values: true } } },
-    });
-    if (product) {
-      for (const row of selectedOptionRows(product.options, item.selectedOptions)) {
-        await adjustOptionRowStock(transaction, row.id, row.targetValue, item.quantity, 0, "increment");
-      }
+    if (item.selectionKey) {
+      await adjustVariantStock(transaction, item.productId, item.selectionKey, item.quantity, "increment");
     }
     await transaction.product.update({ where: { id: item.productId }, data: { stock: { increment: item.quantity } } });
   }

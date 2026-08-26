@@ -64,4 +64,7 @@ ALTER TABLE `ProductVariant` ADD CONSTRAINT `ProductVariant_productId_fkey` FORE
 -- longer exist, so they go with it. Placed orders keep their own snapshot and are untouched.
 DELETE FROM `CartItem` WHERE `selectionKey` <> '';
 
+-- An order line records the combination it bought, so cancelling it knows which row to credit.
+ALTER TABLE `OrderItem` ADD COLUMN `selectionKey` VARCHAR(64) NOT NULL DEFAULT '';
+
 DROP TABLE `ProductOption`;
