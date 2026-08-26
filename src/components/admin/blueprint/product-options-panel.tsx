@@ -360,10 +360,10 @@ export function BlueprintProductOptions({ storeIndustry, colors, library, option
             <strong className="text-[13px]">ترکیب‌های این محصول</strong>
             <span className="bp-muted text-[11px]">{variants.length.toLocaleString("fa-IR")} از {MAX_VARIANTS.toLocaleString("fa-IR")}</span>
           </div>
-          <BpTable ariaLabel="ترکیب‌های تنوع محصول" minWidth={820}>
+          <BpTable ariaLabel="ترکیب‌های تنوع محصول" minWidth={760}>
             <thead>
               <tr>
-                <BpTh className="min-w-[180px]">ترکیب</BpTh>
+                <BpTh>ترکیب</BpTh>
                 <BpTh>{storeIndustry === "GOLD" ? "وزن (گرم)" : "قیمت (ریال)"}</BpTh>
                 <BpTh>تخفیف</BpTh>
                 <BpTh>موجودی</BpTh>
@@ -377,7 +377,7 @@ export function BlueprintProductOptions({ storeIndustry, colors, library, option
                 const label = describeSelection(variant.selection, typeOrder);
                 return (
                   <tr key={signature}>
-                    <BpTd className="min-w-[180px]">{label}</BpTd>
+                    <BpTd className="whitespace-nowrap">{label}</BpTd>
                     <BpTd>
                       {storeIndustry === "GOLD" ? (
                         <BpNumberInput
