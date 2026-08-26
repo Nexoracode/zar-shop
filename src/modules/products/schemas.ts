@@ -25,6 +25,16 @@ export function isDateOnly(value: string) {
 /** See `authFieldLimits`: one number per field, shared by the form control and the schema. */
 export const productFieldLimits = { sku: 80, name: 191, slug: 191, description: 200000, optionName: 80, optionValue: 80 } as const;
 
+/** A parcel side in centimetres, to two decimals — what a carrier's form asks for. */
+function dimensionSchema(label: string) {
+  return z.coerce.number(`${label} را وارد کنید.`).positive(`${label} باید بیشتر از صفر باشد.`).max(500, `${label} نمی‌تواند بیشتر از ۵۰۰ سانتی‌متر باشد.`);
+}
+
+/** An untouched box arrives as "" or null; either way the column stays empty. */
+function emptyToNull<T extends z.ZodType>(schema: T) {
+  return z.preprocess((value) => (value === "" || value === undefined ? null : value), schema.nullable()).default(null);
+}
+
 const productOptionSchema = z.object({
   name: z.string().trim().min(1).max(productFieldLimits.optionName),
   type: z.enum(["SELECT", "COLOR"]).default("SELECT"),
@@ -69,6 +79,13 @@ export const productSchema = z.object({
   discountEndsAt: discountBoundarySchema.nullable().default(null),
   stock: z.coerce.number("موجودی انبار را وارد کنید.").int("موجودی باید عدد صحیح باشد.").nonnegative("موجودی نمی‌تواند منفی باشد."),
   preparationDays: z.coerce.number("زمان آماده‌سازی را وارد کنید.").int("زمان آماده‌سازی باید عدد صحیح باشد.").min(0, "زمان آماده‌سازی نمی‌تواند منفی باشد.").max(90, "زمان آماده‌سازی نمی‌تواند بیشتر از ۹۰ روز باشد.").default(2),
+  // Shipping figures describe the parcel, not the gold: left null until someone measures it.
+  shippingWeightGrams: emptyToNull(z.coerce.number("وزن ارسال را وارد کنید.").int("وزن ارسال باید عدد صحیح باشد.").positive("وزن ارسال باید بیشتر از صفر باشد.").max(500000, "وزن ارسال بیش از حد مجاز است.")),
+  packageLengthCm: emptyToNull(dimensionSchema("طول بسته")),
+  packageWidthCm: emptyToNull(dimensionSchema("عرض بسته")),
+  packageHeightCm: emptyToNull(dimensionSchema("ارتفاع بسته")),
+  minOrderQuantity: z.coerce.number("حداقل سفارش را وارد کنید.").int("حداقل سفارش باید عدد صحیح باشد.").min(1, "حداقل سفارش نمی‌تواند کمتر از ۱ باشد.").max(1000, "حداقل سفارش بیش از حد مجاز است.").default(1),
+  maxOrderQuantity: emptyToNull(z.coerce.number("حداکثر سفارش را وارد کنید.").int("حداکثر سفارش باید عدد صحیح باشد.").positive("حداکثر سفارش باید بیشتر از صفر باشد.").max(1000, "حداکثر سفارش بیش از حد مجاز است.")),
   status: z.enum(["DRAFT", "ACTIVE", "ARCHIVED"]).default("DRAFT"),
   featured: z.boolean().default(false),
   mediaIds: z.array(z.string().cuid("رسانه انتخاب‌شده معتبر نیست.")).max(20, "حداکثر ۲۰ رسانه برای هر محصول مجاز است.").refine((ids) => new Set(ids).size === ids.length, "رسانه تکراری مجاز نیست.").default([]),
@@ -108,6 +125,9 @@ export const completeProductSchema = productSchema.superRefine((product, context
   }
   if (product.discountType === "PERCENT" && product.discountValue !== null && product.discountValue > 100) {
     context.addIssue({ code: "custom", path: ["discountValue"], message: "درصد تخفیف نمی‌تواند بیشتر از ۱۰۰ باشد." });
+  }
+  if (product.maxOrderQuantity !== null && product.maxOrderQuantity < product.minOrderQuantity) {
+    context.addIssue({ code: "custom", path: ["maxOrderQuantity"], message: "حداکثر سفارش نمی‌تواند کمتر از حداقل سفارش باشد." });
   }
   if (product.discountStartsAt && product.discountEndsAt && product.discountEndsAt < product.discountStartsAt) {
     context.addIssue({ code: "custom", path: ["discountEndsAt"], message: "پایان تخفیف باید بعد از شروع آن باشد." });

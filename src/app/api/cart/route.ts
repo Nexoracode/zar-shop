@@ -52,7 +52,8 @@ export async function POST(request: Request) {
     const cart = await db.cart.upsert({ where: { userId: user.id }, update: {}, create: { userId: user.id } });
     const existing = await db.cartItem.findUnique({ where: { cartId_productId_selectionKey: { cartId: cart.id, productId: product.id, selectionKey: selection.selectionKey } } });
     const nextQuantity = (existing?.quantity ?? 0) + input.quantity;
-    if (nextQuantity > orderSettings.maxOrderItemQuantity) return NextResponse.json({ message: `حداکثر تعداد مجاز برای هر کالا ${orderSettings.maxOrderItemQuantity.toLocaleString("fa-IR")} عدد است.` }, { status: 422 });
+    const limitMessage = quantityLimitMessage(nextQuantity, product, orderSettings.maxOrderItemQuantity);
+    if (limitMessage) return NextResponse.json({ message: limitMessage }, { status: 422 });
     const finalSelection = resolveOptionSelection(product.options, input.selectedOptions, nextQuantity, product.stock);
     if (!finalSelection.ok) return NextResponse.json({ message: "موجودی تنوع انتخاب‌شده برای این تعداد کافی نیست." }, { status: 409 });
     await db.cartItem.upsert({
@@ -70,9 +71,10 @@ export async function PATCH(request: Request) {
     if (!user) return NextResponse.json({ message: "دسترسی غیرمجاز است." }, { status: 401 });
     if (!isStorefrontAvailable(settings, user.role)) return NextResponse.json({ message: "فروشگاه در حال حاضر امکان تغییر سبد را ندارد." }, { status: 503 });
     const input = updateSchema.parse(await request.json());
-    if (input.quantity > orderSettings.maxOrderItemQuantity) return NextResponse.json({ message: `حداکثر تعداد مجاز ${orderSettings.maxOrderItemQuantity.toLocaleString("fa-IR")} عدد است.` }, { status: 422 });
     const item = await db.cartItem.findFirst({ where: { id: input.cartItemId, cart: { userId: user.id } }, include: { product: { include: { options: true } } } });
     if (!item) return NextResponse.json({ message: "این قلم در سبد خرید پیدا نشد." }, { status: 404 });
+    const limitMessage = quantityLimitMessage(input.quantity, item.product, orderSettings.maxOrderItemQuantity);
+    if (limitMessage) return NextResponse.json({ message: limitMessage }, { status: 422 });
     if (item.product.stock < input.quantity || !isOptionSnapshotValid(item.product.options, item.selectedOptions, input.quantity, item.product.stock)) return NextResponse.json({ message: "موجودی کالا برای این تعداد کافی نیست." }, { status: 409 });
     await db.cartItem.update({ where: { id: item.id }, data: { quantity: input.quantity } });
     return NextResponse.json({ message: "تعداد کالا به‌روزرسانی شد.", itemCount: await getCartProductCount(user.id, settings.industry) });
@@ -90,4 +92,21 @@ export async function DELETE(request: Request) {
   const cart = await db.cart.findUnique({ where: { userId: user.id } });
   if (cart) await db.cartItem.deleteMany({ where: { cartId: cart.id, ...(cartItemId ? { id: cartItemId } : { productId: productId! }) } });
   return NextResponse.json({ ok: true, itemCount: await getCartProductCount(user.id, settings.industry) });
+}
+
+/**
+ * Why a quantity is not allowed, or null when it is.
+ *
+ * A product may narrow the store-wide cap but never widen it, so the effective ceiling is
+ * whichever of the two is lower.
+ */
+function quantityLimitMessage(quantity: number, product: { minOrderQuantity: number; maxOrderQuantity: number | null }, storeMaximum: number) {
+  if (quantity < product.minOrderQuantity) {
+    return `حداقل تعداد سفارش این کالا ${product.minOrderQuantity.toLocaleString("fa-IR")} عدد است.`;
+  }
+  const ceiling = Math.min(product.maxOrderQuantity ?? storeMaximum, storeMaximum);
+  if (quantity > ceiling) {
+    return `حداکثر تعداد مجاز برای این کالا ${ceiling.toLocaleString("fa-IR")} عدد است.`;
+  }
+  return null;
 }

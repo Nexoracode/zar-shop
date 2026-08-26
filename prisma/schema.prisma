@@ -341,6 +341,15 @@ model Product {
   discountEndsAt   DateTime?
   stock            Int                  @default(0)
   preparationDays  Int                  @default(2)
+  // Packaged figures for shipping, kept apart from `weightGrams`, which is the gold weight the
+  // price is built from. Null means "not measured yet", so a carrier quote can say so.
+  shippingWeightGrams Int?
+  packageLengthCm  Decimal?             @db.Decimal(8, 2)
+  packageWidthCm   Decimal?             @db.Decimal(8, 2)
+  packageHeightCm  Decimal?             @db.Decimal(8, 2)
+  // Per-product order limits. The store-wide cap in order settings still applies on top.
+  minOrderQuantity Int                  @default(1)
+  maxOrderQuantity Int?
   featured         Boolean              @default(false)
   attributes       Json?
   createdAt        DateTime             @default(now())

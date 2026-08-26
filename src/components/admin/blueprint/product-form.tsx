@@ -30,6 +30,8 @@ export type EditableProduct = {
   storeIndustry: "GOLD" | "GENERAL"; makingFeeType: string; makingFeeValue: number; profitPercent: number; taxPercent: number; fixedPrice: number | null; stock: number; preparationDays: number;
   discountType: "PERCENT" | "FIXED" | null; discountValue: number | null; discountStartsAt: string | null; discountEndsAt: string | null;
   status: "DRAFT" | "ACTIVE" | "ARCHIVED"; featured: boolean; media: MediaChoice[]; options: Array<{ name: string; values: Array<{ value: string; colorId: string | null }> }>; optionGuide: MediaChoice | null;
+  shippingWeightGrams: number | null; packageLengthCm: number | null; packageWidthCm: number | null; packageHeightCm: number | null;
+  minOrderQuantity: number; maxOrderQuantity: number | null;
   attributes: ProductAttributeValue[];
 };
 
@@ -70,6 +72,12 @@ export function BlueprintProductForm({ storeIndustry, categories = [], product }
   const [featured, setFeatured] = useState(product?.featured ?? false);
   const [stock, setStock] = useState(String(product?.stock ?? 1));
   const [preparationDays, setPreparationDays] = useState(String(product?.preparationDays ?? 2));
+  const [shippingWeightGrams, setShippingWeightGrams] = useState(product?.shippingWeightGrams != null ? String(product.shippingWeightGrams) : "");
+  const [packageLengthCm, setPackageLengthCm] = useState(product?.packageLengthCm != null ? String(product.packageLengthCm) : "");
+  const [packageWidthCm, setPackageWidthCm] = useState(product?.packageWidthCm != null ? String(product.packageWidthCm) : "");
+  const [packageHeightCm, setPackageHeightCm] = useState(product?.packageHeightCm != null ? String(product.packageHeightCm) : "");
+  const [minOrderQuantity, setMinOrderQuantity] = useState(String(product?.minOrderQuantity ?? 1));
+  const [maxOrderQuantity, setMaxOrderQuantity] = useState(product?.maxOrderQuantity != null ? String(product.maxOrderQuantity) : "");
   const [fixedPrice, setFixedPrice] = useState(product?.fixedPrice != null ? String(product.fixedPrice) : "");
 
   const [weightGrams, setWeightGrams] = useState(String(product?.weightGrams ?? ""));
@@ -138,6 +146,8 @@ export function BlueprintProductForm({ storeIndustry, categories = [], product }
       taxPercent: storeIndustry === "GOLD" ? Number(taxPercent) : 0,
       fixedPrice: storeIndustry === "GENERAL" ? Number(fixedPrice) : null,
       stock: Number(stock), preparationDays: Number(preparationDays), status,
+      shippingWeightGrams, packageLengthCm, packageWidthCm, packageHeightCm,
+      minOrderQuantity: Number(minOrderQuantity), maxOrderQuantity,
       discountType: discountEnabled ? discountType : null,
       discountValue: discountEnabled && discountValue !== "" ? Number(discountValue) : null,
       discountStartsAt: discountEnabled ? discountStartsAt : null,
@@ -307,10 +317,21 @@ export function BlueprintProductForm({ storeIndustry, categories = [], product }
           </Panel>
         )}
 
+        <Panel title="ارسال و بسته‌بندی" description="ابعاد و وزن بسته آماده ارسال است، نه وزن خود کالا؛ برای محاسبه هزینه ارسال استفاده می‌شود.">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <BpInput name="shippingWeightGrams" label="وزن بسته (گرم)" type="number" min="1" dir="ltr" value={shippingWeightGrams} error={errors.shippingWeightGrams} onChange={(event) => { setShippingWeightGrams(event.target.value); clearError("shippingWeightGrams"); }} />
+            <BpInput name="packageLengthCm" label="طول (سانتی‌متر)" type="number" step="0.01" min="0.01" dir="ltr" value={packageLengthCm} error={errors.packageLengthCm} onChange={(event) => { setPackageLengthCm(event.target.value); clearError("packageLengthCm"); }} />
+            <BpInput name="packageWidthCm" label="عرض (سانتی‌متر)" type="number" step="0.01" min="0.01" dir="ltr" value={packageWidthCm} error={errors.packageWidthCm} onChange={(event) => { setPackageWidthCm(event.target.value); clearError("packageWidthCm"); }} />
+            <BpInput name="packageHeightCm" label="ارتفاع (سانتی‌متر)" type="number" step="0.01" min="0.01" dir="ltr" value={packageHeightCm} error={errors.packageHeightCm} onChange={(event) => { setPackageHeightCm(event.target.value); clearError("packageHeightCm"); }} />
+          </div>
+        </Panel>
+
         <Panel title="موجودی و آماده‌سازی">
           <div className="grid gap-3 sm:grid-cols-2">
             <BpInput name="stock" label="تعداد موجودی در انبار" required type="number" min="0" dir="ltr" value={stock} error={errors.stock} onChange={(event) => { setStock(event.target.value); clearError("stock"); }} />
             <BpInput name="preparationDays" label="زمان آماده‌سازی (روز)" required type="number" min="0" max="90" dir="ltr" value={preparationDays} error={errors.preparationDays} onChange={(event) => { setPreparationDays(event.target.value); clearError("preparationDays"); }} />
+            <BpInput name="minOrderQuantity" label="حداقل سفارش" required type="number" min="1" dir="ltr" value={minOrderQuantity} error={errors.minOrderQuantity} hint="کمترین تعدادی که مشتری می‌تواند از این کالا بخرد." onChange={(event) => { setMinOrderQuantity(event.target.value); clearError("minOrderQuantity"); }} />
+            <BpInput name="maxOrderQuantity" label="حداکثر سفارش" type="number" min="1" dir="ltr" value={maxOrderQuantity} error={errors.maxOrderQuantity} hint="خالی بگذارید تا فقط سقف کلی فروشگاه اعمال شود." onChange={(event) => { setMaxOrderQuantity(event.target.value); clearError("maxOrderQuantity"); }} />
           </div>
         </Panel>
 
