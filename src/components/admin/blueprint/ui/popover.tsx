@@ -11,12 +11,18 @@ import { createPortal } from "react-dom";
  * soon as it reaches past the bottom of the page, which stretches the page downwards. Fixed
  * positioning in a portal cannot do that.
  */
-export function BpPopover({ open, anchorRef, onClose, label, width = 300, children }: {
+export function BpPopover({ open, anchorRef, onClose, label, width = 300, placement: side = "below", children }: {
   open: boolean;
   anchorRef: RefObject<HTMLElement | null>;
   onClose: () => void;
   label: string;
   width?: number;
+  /**
+   * `below` hangs the panel under its trigger, end edges aligned. `beside` puts it alongside —
+   * what the collapsed admin rail needs, since a panel under an icon in a 76px column would sit
+   * on top of the next icon.
+   */
+  placement?: "below" | "beside";
   children: ReactNode;
 }) {
   const panelRef = useRef<HTMLDivElement>(null);
@@ -28,13 +34,16 @@ export function BpPopover({ open, anchorRef, onClose, label, width = 300, childr
     const rect = anchor.getBoundingClientRect();
     const panelWidth = Math.min(width, window.innerWidth - 16);
     const height = panelRef.current?.offsetHeight ?? 240;
-    const openUpwards = rect.bottom + height > window.innerHeight && rect.top > height;
-    const preferred = openUpwards ? rect.top - height - 6 : rect.bottom + 6;
+    const openUpwards = side === "below" && rect.bottom + height > window.innerHeight && rect.top > height;
+    // `beside` lines the panel's top up with the trigger's; `below` hangs it under.
+    const preferred = side === "beside" ? rect.top : openUpwards ? rect.top - height - 6 : rect.bottom + 6;
     const top = Math.min(Math.max(8, preferred), Math.max(8, window.innerHeight - height - 8));
-    // RTL: line the panel's end edge up with the trigger's, then keep it inside the viewport.
-    const left = Math.min(Math.max(8, rect.right - panelWidth), window.innerWidth - panelWidth - 8);
+    // RTL: `below` lines the panel's end edge up with the trigger's; `beside` sets it just past
+    // the trigger's near edge, which in RTL means to its left. Both stay inside the viewport.
+    const wanted = side === "beside" ? rect.left - panelWidth - 6 : rect.right - panelWidth;
+    const left = Math.min(Math.max(8, wanted), window.innerWidth - panelWidth - 8);
     setPlacement({ top, left });
-  }, [anchorRef, width]);
+  }, [anchorRef, width, side]);
 
   // The panel is mounted as soon as it opens but stays invisible until measured, so this single
   // layout pass reads a real height instead of guessing and then correcting.

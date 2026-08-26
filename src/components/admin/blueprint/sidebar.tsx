@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useCallback, useMemo, useState, useSyncExternalStore } from "react";
+import { useCallback, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { ChevronDown, X } from "lucide-react";
 import type { UserRole } from "@generated/prisma/enums";
 import { isAdminNavItemActive, visibleAdminNavGroups } from "@/modules/admin/navigation";
 import { getSidebarCollapsed, subscribeToSidebarCollapsed } from "@/lib/admin-sidebar-state";
 import { BpButton } from "./ui/button";
+import { BpPopover } from "./ui/popover";
 
 type Props = {
   role: UserRole;
@@ -33,7 +34,9 @@ export function BlueprintSidebar({ role, fullName, mobileOpen, onCloseMobile, in
   const showLabels = !isCollapsed;
 
   function isGroupOpen(group: (typeof groups)[number]) {
-    if (openGroup === undefined) return group.items.some((item) => isAdminNavItemActive(item.href, pathname));
+    // Collapsed, "open" means a flyout is showing, and one of those has to be asked for — the
+    // route-follows fallback would pop a panel open on every page load.
+    if (openGroup === undefined) return !isCollapsed && group.items.some((item) => isAdminNavItemActive(item.href, pathname));
     return openGroup === group.title;
   }
 
@@ -52,38 +55,17 @@ export function BlueprintSidebar({ role, fullName, mobileOpen, onCloseMobile, in
             </Link>
           );
         }
-        const GroupIcon = group.icon;
-        const expanded = isGroupOpen(group) && showLabels;
-        const groupActive = group.items.some((item) => isAdminNavItemActive(item.href, pathname));
         return (
-          <div key={group.title}>
-            <button
-              type="button"
-              className="bp-nav-item"
-              data-active={isCollapsed && groupActive}
-              aria-expanded={expanded}
-              title={isCollapsed ? group.title : undefined}
-              onClick={() => setOpenGroup(isGroupOpen(group) ? null : group.title)}
-            >
-              <GroupIcon size={18} strokeWidth={1.5} className="flex-none" />
-              {showLabels && <>
-                <span className="flex-1 text-right">{group.title}</span>
-                <ChevronDown size={13} strokeWidth={1.5} className={`flex-none opacity-60 transition-transform ${expanded ? "rotate-180" : ""}`} />
-              </>}
-            </button>
-            {expanded && (
-              <div className="mt-0.5 flex flex-col gap-0.5">
-                {group.items.map((item) => {
-                  const active = isAdminNavItemActive(item.href, pathname);
-                  return (
-                    <Link key={item.href} href={item.href} onClick={onCloseMobile} data-active={active} className="bp-nav-item bp-nav-sub">
-                      <span>{item.label}</span>
-                    </Link>
-                  );
-                })}
-              </div>
-            )}
-          </div>
+          <NavGroup
+            key={group.title}
+            group={group}
+            pathname={pathname}
+            collapsed={isCollapsed}
+            open={isGroupOpen(group)}
+            onToggle={() => setOpenGroup(isGroupOpen(group) ? null : group.title)}
+            onClose={() => setOpenGroup(null)}
+            onNavigate={onCloseMobile}
+          />
         );
       })}
     </nav>
@@ -123,5 +105,71 @@ export function BlueprintSidebar({ role, fullName, mobileOpen, onCloseMobile, in
         </div>
       )}
     </>
+  );
+}
+
+type NavGroupData = ReturnType<typeof visibleAdminNavGroups>[number];
+
+/**
+ * One accordion group in the rail.
+ *
+ * Collapsed, there is no room to expand under the icon — and hiding the items there would leave
+ * half the panel unreachable — so the group opens as a flyout beside the rail instead. Expanded,
+ * it behaves as an ordinary accordion.
+ */
+function NavGroup({ group, pathname, collapsed, open, onToggle, onClose, onNavigate }: {
+  group: NavGroupData;
+  pathname: string;
+  collapsed: boolean;
+  open: boolean;
+  onToggle: () => void;
+  onClose: () => void;
+  onNavigate: () => void;
+}) {
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const GroupIcon = group.icon;
+  const groupActive = group.items.some((item) => isAdminNavItemActive(item.href, pathname));
+  const expandedInline = open && !collapsed;
+
+  const links = group.items.map((item) => (
+    <Link
+      key={item.href}
+      href={item.href}
+      onClick={() => { onNavigate(); onClose(); }}
+      data-active={isAdminNavItemActive(item.href, pathname)}
+      className="bp-nav-item bp-nav-sub"
+    >
+      <span>{item.label}</span>
+    </Link>
+  ));
+
+  return (
+    <div>
+      <button
+        ref={triggerRef}
+        type="button"
+        className="bp-nav-item"
+        data-active={collapsed && groupActive}
+        aria-expanded={open}
+        aria-haspopup={collapsed ? "dialog" : undefined}
+        title={collapsed ? group.title : undefined}
+        onClick={onToggle}
+      >
+        <GroupIcon size={18} strokeWidth={1.5} className="flex-none" />
+        {!collapsed && <>
+          <span className="flex-1 text-right">{group.title}</span>
+          <ChevronDown size={13} strokeWidth={1.5} className={`flex-none opacity-60 transition-transform ${expandedInline ? "rotate-180" : ""}`} />
+        </>}
+      </button>
+
+      {expandedInline && <div className="mt-0.5 flex flex-col gap-0.5">{links}</div>}
+
+      {collapsed && (
+        <BpPopover open={open} anchorRef={triggerRef} onClose={onClose} label={group.title} width={210} placement="beside">
+          <strong className="mb-2 block border-b border-[var(--bp-divider)] pb-2 text-[13px]">{group.title}</strong>
+          <div className="flex flex-col gap-0.5">{links}</div>
+        </BpPopover>
+      )}
+    </div>
   );
 }
