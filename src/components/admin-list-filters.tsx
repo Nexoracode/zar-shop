@@ -47,6 +47,9 @@ export function AdminListFilters({ path, query, queryLabel, queryPlaceholder, fi
     return (
       <div className={`flex flex-wrap items-center gap-2 ${isPending ? "opacity-70" : ""}`} aria-busy={isPending}>
         <DebouncedSearch template={template} initialValue={query} label={queryLabel} placeholder={queryPlaceholder} onSearch={updateQuery} />
+        {/* Searching and filtering are two different acts; the rule says so without a label.
+            Dropped on narrow screens, where the controls stack and a vertical line means nothing. */}
+        <span aria-hidden className="mx-1 hidden h-6 w-px shrink-0 bg-[var(--bp-divider)] sm:block" />
         {filters.map((filter) => (
           <BpSelect
             key={filter.name}
