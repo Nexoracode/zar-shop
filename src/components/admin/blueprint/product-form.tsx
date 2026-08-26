@@ -17,6 +17,7 @@ import { BpCorners, BpKicker } from "./ui/card";
 import { BpCombobox } from "./ui/combobox";
 import { BpDateTimeField } from "./ui/date-time-field";
 import { BpInput } from "./ui/input";
+import { BpNumberInput } from "./ui/number-input";
 import { BpSeg } from "./ui/seg";
 import { BpSelect } from "./ui/select";
 import { BpSwitch } from "./ui/switch";
@@ -297,7 +298,7 @@ export function BlueprintProductForm({ storeIndustry, categories = [], product }
               <BpInput name="weightGrams" label="وزن (گرم)" required type="number" step="0.001" min="0.001" dir="ltr" value={weightGrams} error={errors.weightGrams} onChange={(event) => { setWeightGrams(event.target.value); clearError("weightGrams"); }} />
               <BpInput name="purity" label="عیار" required type="number" min="1" max="999" dir="ltr" value={purity} error={errors.purity} onChange={(event) => { setPurity(event.target.value); clearError("purity"); }} />
               <BpSelect name="makingFeeType" label="نوع اجرت" value={makingFeeType} error={errors.makingFeeType} onChange={(event) => setMakingFeeType(event.target.value as "PERCENT" | "FIXED")} options={[{ value: "PERCENT", label: "درصدی" }, { value: "FIXED", label: "مبلغ ثابت" }]} />
-              <BpInput name="makingFeeValue" label={`مقدار اجرت (${makingFeeType === "FIXED" ? "ریال" : "درصد"})`} required type="number" step="0.001" min="0" dir="ltr" value={makingFeeValue} error={errors.makingFeeValue} onChange={(event) => { setMakingFeeValue(event.target.value); clearError("makingFeeValue"); }} />
+              <BpNumberInput name="makingFeeValue" label={`مقدار اجرت (${makingFeeType === "FIXED" ? "ریال" : "درصد"})`} required allowDecimal isPrice={makingFeeType === "FIXED"} value={makingFeeValue} error={errors.makingFeeValue} onValueChange={(next) => { setMakingFeeValue(next); clearError("makingFeeValue"); }} />
               <BpInput name="profitPercent" label="درصد سود" required type="number" step="0.01" min="0" dir="ltr" value={profitPercent} error={errors.profitPercent} onChange={(event) => { setProfitPercent(event.target.value); clearError("profitPercent"); }} />
               <BpInput name="taxPercent" label="درصد مالیات" required type="number" step="0.01" min="0" dir="ltr" value={taxPercent} error={errors.taxPercent} onChange={(event) => { setTaxPercent(event.target.value); clearError("taxPercent"); }} />
             </div>
@@ -314,7 +315,7 @@ export function BlueprintProductForm({ storeIndustry, categories = [], product }
         <Panel title={storeIndustry === "GENERAL" ? "قیمت و تخفیف" : "تخفیف محصول"}>
           {storeIndustry === "GENERAL" && (
             <div className="mb-3 border-b border-[var(--bp-divider)] pb-3 sm:max-w-xs">
-              <BpInput name="fixedPrice" label="قیمت فروش (ریال)" required type="number" min="1" dir="ltr" value={fixedPrice} error={errors.fixedPrice} placeholder="۱۵۰۰۰۰۰" onChange={(event) => { setFixedPrice(event.target.value); clearError("fixedPrice"); }} />
+              <BpNumberInput name="fixedPrice" label="قیمت فروش (ریال)" required isPrice value={fixedPrice} error={errors.fixedPrice} placeholder="۱٬۵۰۰٬۰۰۰" onValueChange={(next) => { setFixedPrice(next); clearError("fixedPrice"); }} />
             </div>
           )}
           <div className="flex items-center justify-between gap-3">
@@ -334,7 +335,7 @@ export function BlueprintProductForm({ storeIndustry, categories = [], product }
                 />
                 <BpFieldMessage id="discountType-message" error={errors.discountType} />
               </div>
-              <BpInput name="discountValue" label={discountType === "FIXED" ? "مبلغ تخفیف (ریال)" : "درصد تخفیف"} required type="number" step="0.001" min="0.001" dir="ltr" value={discountValue} error={errors.discountValue} onChange={(event) => { setDiscountValue(event.target.value); clearError("discountValue"); }} />
+              <BpNumberInput name="discountValue" label={discountType === "FIXED" ? "مبلغ تخفیف (ریال)" : "درصد تخفیف"} required allowDecimal isPrice={discountType === "FIXED"} value={discountValue} error={errors.discountValue} onValueChange={(next) => { setDiscountValue(next); clearError("discountValue"); }} />
               <BpDateTimeField label="تاریخ و ساعت شروع" value={discountStartsAt} error={errors.discountStartsAt} onChange={(value) => { setDiscountStartsAt(value); clearError("discountStartsAt"); }} />
               <BpDateTimeField label="تاریخ و ساعت پایان" value={discountEndsAt} error={errors.discountEndsAt} onChange={(value) => { setDiscountEndsAt(value); clearError("discountEndsAt"); }} />
             </div>
