@@ -358,8 +358,8 @@ export function BlueprintProductForm({ storeIndustry, categories = [], product }
                 <BpFieldMessage id="discountType-message" error={errors.discountType} />
               </div>
               <BpNumberInput name="discountValue" label={discountType === "FIXED" ? "مبلغ تخفیف (ریال)" : "درصد تخفیف"} required allowDecimal isPrice={discountType === "FIXED"} value={discountValue} error={errors.discountValue} onValueChange={(next) => { setDiscountValue(next); clearError("discountValue"); }} />
-              <BpDateTimeField label="تاریخ و ساعت شروع" value={discountStartsAt} error={errors.discountStartsAt} onChange={(value) => { setDiscountStartsAt(value); clearError("discountStartsAt"); }} />
-              <BpDateTimeField label="تاریخ و ساعت پایان" value={discountEndsAt} error={errors.discountEndsAt} onChange={(value) => { setDiscountEndsAt(value); clearError("discountEndsAt"); }} />
+              <BpDateTimeField label="تاریخ و ساعت شروع" required value={discountStartsAt} error={errors.discountStartsAt} onChange={(value) => { setDiscountStartsAt(value); clearError("discountStartsAt"); }} />
+              <BpDateTimeField label="تاریخ و ساعت پایان" required value={discountEndsAt} error={errors.discountEndsAt} onChange={(value) => { setDiscountEndsAt(value); clearError("discountEndsAt"); }} />
             </div>
           )}
         </Panel>

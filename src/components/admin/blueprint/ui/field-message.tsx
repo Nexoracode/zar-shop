@@ -16,6 +16,11 @@ export function BpFieldMessage({ id, error, hint, reserve = true }: { id: string
   );
 }
 
+/** The asterisk on a required field's label. Shared so every control marks it the same way. */
+export function BpRequiredMark() {
+  return <span aria-hidden className="text-[var(--bp-danger)]"> *</span>;
+}
+
 /** The control is described by its message only when one is actually being shown. */
 export function describedBy(id: string, error?: ReactNode, hint?: ReactNode) {
   return error || hint ? id : undefined;

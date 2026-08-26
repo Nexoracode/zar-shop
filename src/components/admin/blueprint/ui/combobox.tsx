@@ -3,7 +3,7 @@
 import { useId, useMemo, useRef, useState } from "react";
 import { ChevronDown, Search } from "lucide-react";
 import { includesNormalizedText } from "@/lib/text-search";
-import { BpFieldMessage, describedBy } from "./field-message";
+import { BpFieldMessage, BpRequiredMark, describedBy } from "./field-message";
 import { BpPopover } from "./popover";
 
 export type BpComboboxOption = { value: string; label: string };
@@ -50,7 +50,7 @@ export function BpCombobox({ label, value, onChange, options, placeholder = "Ø¬Ø
 
   return (
     <div className={`bp-field ${wrapperClassName}`.trim()}>
-      {label && <label htmlFor={fieldId}>{label}{required && <span aria-hidden className="text-[var(--bp-danger)]"> *</span>}</label>}
+      {label && <label htmlFor={fieldId}>{label}{required && <BpRequiredMark />}</label>}
       <div className="bp-select-wrap">
         <input
           ref={inputRef}

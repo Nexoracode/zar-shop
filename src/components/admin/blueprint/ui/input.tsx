@@ -1,7 +1,7 @@
 "use client";
 
 import { useId, type InputHTMLAttributes, type ReactNode, type TextareaHTMLAttributes } from "react";
-import { BpFieldMessage, describedBy } from "./field-message";
+import { BpFieldMessage, BpRequiredMark, describedBy } from "./field-message";
 
 type SharedFieldProps = {
   label?: ReactNode;
@@ -16,15 +16,16 @@ type SharedFieldProps = {
 
 type BpInputProps = Omit<InputHTMLAttributes<HTMLInputElement>, "className"> & SharedFieldProps;
 
-export function BpInput({ label, hint, error, reserveMessage = true, className = "", wrapperClassName = "", id, ...rest }: BpInputProps) {
+export function BpInput({ label, hint, error, reserveMessage = true, className = "", wrapperClassName = "", id, required, ...rest }: BpInputProps) {
   const generated = useId();
   const inputId = id ?? generated;
   const messageId = `${inputId}-message`;
   return (
     <div className={`bp-field ${wrapperClassName}`.trim()}>
-      {label && <label htmlFor={inputId}>{label}</label>}
+      {label && <label htmlFor={inputId}>{label}{required && <BpRequiredMark />}</label>}
       <input
         id={inputId}
+        required={required}
         aria-invalid={error ? true : undefined}
         aria-describedby={describedBy(messageId, error, hint)}
         className={`bp-input ${className}`.trim()}
@@ -37,7 +38,7 @@ export function BpInput({ label, hint, error, reserveMessage = true, className =
 
 type BpTextareaProps = Omit<TextareaHTMLAttributes<HTMLTextAreaElement>, "className"> & SharedFieldProps;
 
-export function BpTextarea({ label, hint, error, reserveMessage = true, className = "", wrapperClassName = "", id, ...rest }: BpTextareaProps) {
+export function BpTextarea({ label, hint, error, reserveMessage = true, className = "", wrapperClassName = "", id, required, ...rest }: BpTextareaProps) {
   const generated = useId();
   const inputId = id ?? generated;
   const messageId = `${inputId}-message`;
@@ -46,9 +47,10 @@ export function BpTextarea({ label, hint, error, reserveMessage = true, classNam
   const showCounter = remaining !== null && typeof rest.maxLength === "number" && remaining <= Math.min(50, Math.floor(rest.maxLength / 4));
   return (
     <div className={`bp-field ${wrapperClassName}`.trim()}>
-      {label && <label htmlFor={inputId}>{label}</label>}
+      {label && <label htmlFor={inputId}>{label}{required && <BpRequiredMark />}</label>}
       <textarea
         id={inputId}
+        required={required}
         aria-invalid={error ? true : undefined}
         aria-describedby={describedBy(messageId, error, hint)}
         className={`bp-input ${className}`.trim()}

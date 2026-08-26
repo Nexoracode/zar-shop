@@ -5,7 +5,7 @@ import { createPortal } from "react-dom";
 import { CalendarDateTime, GregorianCalendar, PersianCalendar, toCalendar } from "@internationalized/date";
 import { CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
 import { BpButton } from "./button";
-import { BpFieldMessage, describedBy } from "./field-message";
+import { BpFieldMessage, BpRequiredMark, describedBy } from "./field-message";
 import { toPersianDigits } from "@/lib/persian-numbers";
 
 /*
@@ -64,11 +64,12 @@ type Props = {
   hint?: string;
   error?: string;
   reserveMessage?: boolean;
+  required?: boolean;
   isDisabled?: boolean;
   className?: string;
 };
 
-export function BpDateTimeField({ label, value, onChange, hint, error, reserveMessage = true, isDisabled = false, className = "" }: Props) {
+export function BpDateTimeField({ label, value, onChange, hint, error, reserveMessage = true, required = false, isDisabled = false, className = "" }: Props) {
   const rootRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
@@ -159,7 +160,7 @@ export function BpDateTimeField({ label, value, onChange, hint, error, reserveMe
 
   return (
     <div ref={rootRef} className={`bp-field relative ${className}`.trim()}>
-      {label && <label htmlFor={fieldId}>{label}</label>}
+      {label && <label htmlFor={fieldId}>{label}{required && <BpRequiredMark />}</label>}
       <button
         ref={triggerRef}
         type="button"
