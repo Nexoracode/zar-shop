@@ -292,13 +292,19 @@ select.bp-input:focus-visible { border-color: var(--bp-accent); outline: none; }
 
 /* One line is reserved under every form field so that an error appearing or clearing never
    changes the field's height — the form must not jump. The hint and the error share this one
-   slot: the error takes it over while present, otherwise the hint sits there. */
+   slot: the error takes it over while present, otherwise the hint sits there. Clipped to exactly
+   that one line: unclipped text wrapping to a second line would grow past the reserved 18px and
+   shift the field — and, in a row of fields aligned by their bottom edge, its neighbours too. The
+   full text is still reachable through the span's own title tooltip. */
 .bp-field-message {
   display: block;
+  overflow: hidden;
   margin-top: 4px;
   font-size: 11px;
   line-height: 18px;
-  min-height: 18px;
+  height: 18px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 /* Same idea as `.field-action` in globals.css, for this template's message metrics: 18px of
    line plus its 4px margin. */

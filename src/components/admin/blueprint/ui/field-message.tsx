@@ -9,9 +9,13 @@ import type { ReactNode } from "react";
  */
 export function BpFieldMessage({ id, error, hint, reserve = true }: { id: string; error?: ReactNode; hint?: ReactNode; reserve?: boolean }) {
   if (!reserve && !error && !hint) return null;
+  const content = error ?? hint ?? "";
+  // The slot is clipped to its one reserved line in CSS, so a message longer than the field is
+  // wide would otherwise wrap and grow the slot — the exact height jump this component exists to
+  // prevent. The full text still reaches the reader through the native title tooltip.
   return (
-    <span id={id} className={`bp-field-message ${error ? "bp-field-message-error" : "bp-field-message-hint"}`}>
-      {error ?? hint ?? ""}
+    <span id={id} title={typeof content === "string" ? content : undefined} className={`bp-field-message ${error ? "bp-field-message-error" : "bp-field-message-hint"}`}>
+      {content}
     </span>
   );
 }
