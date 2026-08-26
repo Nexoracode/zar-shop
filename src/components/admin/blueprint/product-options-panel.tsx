@@ -443,7 +443,7 @@ export function BlueprintProductOptions({ storeIndustry, colors, library, option
                       )}
                     </BpTd>
                     <BpTd>
-                      <div className="flex flex-wrap items-center gap-1.5">
+                      <div className="flex flex-nowrap items-center gap-1.5">
                         <BpSelect
                           aria-label={`نوع تخفیف ترکیب ${label}`}
                           value={variant.discountType ?? ""}
@@ -483,7 +483,7 @@ export function BlueprintProductOptions({ storeIndustry, colors, library, option
                         aria-label={`موجودی ترکیب ${label}`}
                         value={String(variant.stock)}
                         reserveMessage={false}
-                        wrapperClassName="w-[min(100%,110px)]"
+                        wrapperClassName="w-[min(100%,70px)]"
                         onValueChange={(next) => updateVariant(signature, { stock: next === "" ? 0 : Number(next) })}
                       />
                     </BpTd>
