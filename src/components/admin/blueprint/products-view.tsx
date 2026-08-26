@@ -70,7 +70,7 @@ function ProductThumb({ product }: { product: ProductRow }) {
 /** Name cell: the product name with bare inline glyphs for its flags. */
 function ProductName({ product }: { product: ProductRow }) {
   return (
-    <div className="flex items-baseline gap-[7px]">
+    <div className="flex min-w-0 items-baseline gap-[7px]">
       <span className="truncate" title={product.name}>{product.name}</span>
       {product.featured && <Star size={14} strokeWidth={2} className="shrink-0 translate-y-0.5 fill-[var(--bp-accent)] text-[var(--bp-accent)]" aria-label="محصول ویژه" />}
       {isProductDiscountActive(product) && <span title={discountTooltip(product)} className="shrink-0 translate-y-0.5 cursor-help leading-none text-[var(--bp-danger)]"><Tag size={14} strokeWidth={1.9} aria-label={discountTooltip(product)} /></span>}
@@ -158,7 +158,7 @@ export function BlueprintProductsView({ products, categories, filters, paginatio
                     <tr key={product.id}>
                       <BpTd className="w-10 text-center"><AdminBulkCheckbox id={product.id} label={`انتخاب محصول ${product.name}`} /></BpTd>
                       <BpTd className="bp-muted w-10">{(pagination.skip + index + 1).toLocaleString("fa-IR")}</BpTd>
-                      <BpTd className="max-w-[300px]"><div className="flex items-center gap-2.5"><ProductThumb product={product} /><ThumbRule /><ProductName product={product} /></div></BpTd>
+                      <BpTd className="w-[240px] max-w-[240px]"><div className="flex min-w-0 items-center gap-2.5"><ProductThumb product={product} /><ThumbRule /><ProductName product={product} /></div></BpTd>
                       <BpTd className="bp-muted max-w-[180px] truncate" title={product.category?.name ?? "بدون دسته‌بندی"}>{product.category?.name ?? "بدون دسته‌بندی"}</BpTd>
                       <BpTd>{priceLabel(product)}</BpTd>
                       <BpTd className={product.stock <= lowStockThreshold ? "font-bold text-[var(--bp-danger)]" : ""}>{product.stock.toLocaleString("fa-IR")}</BpTd>
