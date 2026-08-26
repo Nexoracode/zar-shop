@@ -57,6 +57,15 @@ function todayPersian() {
   return toPersianParts(now.toISOString())!;
 }
 
+/** "۱۴۰۶/۰۲/۰۳ — ۰۲:۲۰", or "" for `null` — the same reading the field's own trigger shows,
+ * for a caller that displays a chosen instant outside the field itself. */
+export function formatPersianDateTime(iso: string | null) {
+  const parts = toPersianParts(iso);
+  if (!parts) return "";
+  const pad = (value: number) => toPersianDigits(String(value).padStart(2, "0"));
+  return `${toPersianDigits(parts.year)}/${pad(parts.month)}/${pad(parts.day)} — ${pad(parts.hour)}:${pad(parts.minute)}`;
+}
+
 type Props = {
   label?: string;
   value: string | null;
@@ -151,12 +160,7 @@ export function BpDateTimeField({ label, value, onChange, hint, error, reserveMe
     });
   }
 
-  // Every part goes through the same conversion, so the string is not half Persian digits and
-  // half Latin.
-  const pad = (value: number) => toPersianDigits(String(value).padStart(2, "0"));
-  const display = selected
-    ? `${toPersianDigits(selected.year)}/${pad(selected.month)}/${pad(selected.day)} — ${pad(selected.hour)}:${pad(selected.minute)}`
-    : "";
+  const display = formatPersianDateTime(value);
 
   return (
     <div ref={rootRef} className={`bp-field relative ${className}`.trim()}>

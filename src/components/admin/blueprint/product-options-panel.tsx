@@ -14,7 +14,8 @@ import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
 import { BpButton } from "./ui/button";
 import { BpCheckbox } from "./ui/checkbox";
 import { BpCombobox } from "./ui/combobox";
-import { BpDateTimeField } from "./ui/date-time-field";
+import { BpDateTimeField, formatPersianDateTime } from "./ui/date-time-field";
+import { BpDialog } from "./ui/dialog";
 import { BpNumberInput } from "./ui/number-input";
 import { BpSelect } from "./ui/select";
 import { BpTable, BpTd, BpTh } from "./ui/table";
@@ -73,6 +74,41 @@ export function BlueprintProductOptions({ storeIndustry, colors, library, option
   const [deletingValue, setDeletingValue] = useState<{ typeId: string; id: string; label: string } | null>(null);
   const [deletingValuePending, setDeletingValuePending] = useState(false);
   const [deletingValueError, setDeletingValueError] = useState("");
+
+  // Picking a discount type opens this instead of unrolling four more controls into the row —
+  // the row only ever shows a compact summary once the discount is actually complete.
+  const [discountDraft, setDiscountDraft] = useState<{ signature: string; type: "PERCENT" | "FIXED"; value: string; startsAt: string | null; endsAt: string | null } | null>(null);
+  const [discountDraftTouched, setDiscountDraftTouched] = useState(false);
+
+  function openDiscountModal(variant: VariantDraft, type: "PERCENT" | "FIXED") {
+    setDiscountDraft({
+      signature: selectionSignature(variant.selection),
+      type,
+      value: variant.discountType === type ? (variant.discountValue ?? "") : "",
+      startsAt: variant.discountStartsAt,
+      endsAt: variant.discountEndsAt,
+    });
+    setDiscountDraftTouched(false);
+  }
+
+  function confirmDiscountDraft() {
+    if (!discountDraft) return;
+    const { signature, type, value, startsAt, endsAt } = discountDraft;
+    const valueError = !value.trim()
+      ? "مقدار تخفیف را وارد کنید."
+      : type === "PERCENT" && Number(value) > 100
+        ? "درصد تخفیف نمی‌تواند بیشتر از ۱۰۰ باشد."
+        : undefined;
+    const endError = !endsAt
+      ? "زمان پایان تخفیف را مشخص کنید."
+      : startsAt && endsAt < startsAt
+        ? "پایان تخفیف باید بعد از شروع آن باشد."
+        : undefined;
+    const startError = !startsAt ? "زمان شروع تخفیف را مشخص کنید." : undefined;
+    if (valueError || startError || endError) { setDiscountDraftTouched(true); return; }
+    updateVariant(signature, { discountType: type, discountValue: value, discountStartsAt: startsAt, discountEndsAt: endsAt });
+    setDiscountDraft(null);
+  }
 
   const libraryById = new Map(library.map((type) => [type.id, type]));
 
@@ -407,7 +443,7 @@ export function BlueprintProductOptions({ storeIndustry, colors, library, option
                       )}
                     </BpTd>
                     <BpTd>
-                      <div className="flex flex-wrap items-end gap-1.5">
+                      <div className="flex flex-wrap items-center gap-1.5">
                         <BpSelect
                           aria-label={`نوع تخفیف ترکیب ${label}`}
                           value={variant.discountType ?? ""}
@@ -417,41 +453,28 @@ export function BlueprintProductOptions({ storeIndustry, colors, library, option
                           wrapperClassName="w-[min(100%,130px)]"
                           onChange={(event) => {
                             const next = event.target.value as "PERCENT" | "FIXED" | "";
-                            updateVariant(signature, { discountType: next || null, ...(next ? {} : { discountValue: null, discountStartsAt: null, discountEndsAt: null }) });
+                            if (!next) { updateVariant(signature, { discountType: null, discountValue: null, discountStartsAt: null, discountEndsAt: null }); return; }
+                            openDiscountModal(variant, next);
                           }}
                         />
-                        <BpNumberInput
-                          aria-label={`مقدار تخفیف ترکیب ${label}`}
-                          isPrice={variant.discountType === "FIXED"}
-                          value={variant.discountValue ?? ""}
-                          disabled={!variant.discountType}
-                          reserveMessage={false}
-                          wrapperClassName="w-[min(100%,140px)]"
-                          onValueChange={(next) => updateVariant(signature, { discountValue: next || null })}
-                        />
-                        {variant.discountType && (
-                          <>
-                            <BpDateTimeField
-                              label="شروع تخفیف"
-                              className="w-[min(100%,190px)]"
-                              value={variant.discountStartsAt}
-                              error={!variant.discountStartsAt ? "زمان شروع تخفیف ترکیب را مشخص کنید." : undefined}
-                              onChange={(next) => updateVariant(signature, { discountStartsAt: next })}
-                            />
-                            <BpDateTimeField
-                              label="پایان تخفیف"
-                              className="w-[min(100%,190px)]"
-                              value={variant.discountEndsAt}
-                              error={
-                                !variant.discountEndsAt
-                                  ? "زمان پایان تخفیف ترکیب را مشخص کنید."
-                                  : variant.discountStartsAt && variant.discountEndsAt < variant.discountStartsAt
-                                    ? "پایان تخفیف باید بعد از شروع آن باشد."
-                                    : undefined
-                              }
-                              onChange={(next) => updateVariant(signature, { discountEndsAt: next })}
-                            />
-                          </>
+                        {variant.discountType && variant.discountValue && variant.discountStartsAt && variant.discountEndsAt && (
+                          <span className="inline-flex items-center gap-1 rounded-[var(--bp-radius)] border border-[var(--bp-divider)] ps-2 pe-1 py-1 text-[11px] whitespace-nowrap">
+                            <button
+                              type="button"
+                              className="hover:text-[var(--bp-accent)]"
+                              onClick={() => openDiscountModal(variant, variant.discountType!)}
+                            >
+                              {Number(variant.discountValue).toLocaleString("fa-IR")}{variant.discountType === "PERCENT" ? "٪" : " ریال"} | {formatPersianDateTime(variant.discountStartsAt)} تا {formatPersianDateTime(variant.discountEndsAt)}
+                            </button>
+                            <button
+                              type="button"
+                              aria-label={`حذف تخفیف ترکیب ${label}`}
+                              className="grid h-4 w-4 place-items-center rounded-full text-[var(--bp-muted)] hover:text-[var(--bp-danger)]"
+                              onClick={() => updateVariant(signature, { discountType: null, discountValue: null, discountStartsAt: null, discountEndsAt: null })}
+                            >
+                              <X size={11} />
+                            </button>
+                          </span>
                         )}
                       </div>
                     </BpTd>
@@ -496,6 +519,49 @@ export function BlueprintProductOptions({ storeIndustry, colors, library, option
       onClose={() => { if (!deletingValuePending) setDeletingValue(null); }}
       onConfirm={() => void confirmDeleteValue()}
     />
+
+    <BpDialog
+      open={discountDraft !== null}
+      labelledBy="variant-discount-title"
+      title={discountDraft?.type === "FIXED" ? "تخفیف مبلغ ثابت ترکیب" : "تخفیف درصدی ترکیب"}
+      onClose={() => setDiscountDraft(null)}
+      actions={<>
+        <BpButton variant="primary" onClick={confirmDiscountDraft}>تأیید</BpButton>
+        <BpButton onClick={() => setDiscountDraft(null)}>انصراف</BpButton>
+      </>}
+    >
+      {discountDraft && (
+        <div className="grid gap-3">
+          <BpNumberInput
+            label={discountDraft.type === "FIXED" ? "مبلغ تخفیف (ریال)" : "درصد تخفیف"}
+            isPrice={discountDraft.type === "FIXED"}
+            value={discountDraft.value}
+            error={discountDraftTouched && (!discountDraft.value.trim() ? "مقدار تخفیف را وارد کنید." : discountDraft.type === "PERCENT" && Number(discountDraft.value) > 100 ? "درصد تخفیف نمی‌تواند بیشتر از ۱۰۰ باشد." : undefined)}
+            onValueChange={(next) => setDiscountDraft((current) => current && { ...current, value: next })}
+          />
+          <BpDateTimeField
+            label="شروع تخفیف"
+            value={discountDraft.startsAt}
+            error={discountDraftTouched && !discountDraft.startsAt ? "زمان شروع تخفیف را مشخص کنید." : undefined}
+            onChange={(next) => setDiscountDraft((current) => current && { ...current, startsAt: next })}
+          />
+          <BpDateTimeField
+            label="پایان تخفیف"
+            value={discountDraft.endsAt}
+            error={
+              discountDraftTouched
+                ? !discountDraft.endsAt
+                  ? "زمان پایان تخفیف را مشخص کنید."
+                  : discountDraft.startsAt && discountDraft.endsAt < discountDraft.startsAt
+                    ? "پایان تخفیف باید بعد از شروع آن باشد."
+                    : undefined
+                : undefined
+            }
+            onChange={(next) => setDiscountDraft((current) => current && { ...current, endsAt: next })}
+          />
+        </div>
+      )}
+    </BpDialog>
     </>
   );
 }
