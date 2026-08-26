@@ -57,6 +57,8 @@
   --bp-info: #416180;
   --bp-info-bg: #eef6ff;
 
+  --bp-radius: 10px;
+
   --bp-font: "Vazir", Tahoma, Arial, sans-serif;
 
   --bp-space-1: 3.4px;
@@ -163,12 +165,12 @@
 .bp-muted { color: var(--bp-muted); }
 .bp-hr { height: 1px; border: 0; margin: var(--bp-space-4) 0; background: var(--bp-divider); }
 
-/* — blueprint frame: every surface is a wireframe object — square, transparent, hairline —
+/* — blueprint frame: every surface is a wireframe object — hairline, rounded to --bp-radius —
      with registration marks drawn just outside its corners — */
 .bp-frame {
   position: relative;
   border: 1px solid var(--bp-divider);
-  border-radius: 0;
+  border-radius: var(--bp-radius);
 }
 /* A card is a surface, not an outline drawn on the page. Buttons carry `bp-frame` too, which is
    why the rule does not reach them. */
@@ -180,7 +182,7 @@
   flex-direction: column;
   gap: var(--bp-space-2);
   padding: var(--bp-space-3);
-  border-radius: 0;
+  border-radius: var(--bp-radius);
   background: transparent;
   border: 1px solid var(--bp-divider);
 }
@@ -207,7 +209,7 @@
   color: var(--bp-text);
   background: transparent;
   border: 1px solid var(--bp-divider);
-  border-radius: 0;
+  border-radius: var(--bp-radius);
   padding: var(--bp-space-2) calc(var(--bp-space-3) * 1.2);
   min-height: 36px;
 }
@@ -253,7 +255,7 @@
   caret-color: var(--bp-accent);
   background: var(--bp-surface);
   border: 1px solid var(--bp-divider);
-  border-radius: 0;
+  border-radius: var(--bp-radius);
 }
 .bp-input::placeholder { color: var(--bp-muted); }
 .bp-input:hover { border-color: color-mix(in srgb, var(--bp-text) 45%, transparent); }
@@ -313,7 +315,7 @@ select.bp-input:focus-visible { border-color: var(--bp-accent); outline: none; }
   display: inline-flex;
   overflow: hidden;
   border: 1px solid var(--bp-divider);
-  border-radius: 0;
+  border-radius: var(--bp-radius);
 }
 .bp-seg-opt {
   position: relative;
@@ -381,7 +383,7 @@ select.bp-input:focus-visible { border-color: var(--bp-accent); outline: none; }
   line-height: 1.2;
   letter-spacing: 0.02em;
   padding: 3px 10px;
-  border-radius: 0;
+  border-radius: var(--bp-radius);
   border: 1px solid transparent;
   white-space: nowrap;
 }
@@ -458,7 +460,7 @@ select.bp-input:focus-visible { border-color: var(--bp-accent); outline: none; }
   flex-direction: column;
   gap: var(--bp-space-3);
   padding: var(--bp-space-6);
-  border-radius: 0;
+  border-radius: var(--bp-radius);
   border: 1px solid var(--bp-divider);
   background: var(--bp-bg);
   color: var(--bp-text);
@@ -527,7 +529,9 @@ select.bp-input:focus-visible { border-color: var(--bp-accent); outline: none; }
   background: transparent;
   border: 1px solid transparent;
   border-bottom: 0;
-  border-radius: 0;
+  /* Top corners only: the bottom edge has to meet the strip's line, and rounding it there would
+     lift the active tab off the panel it is supposed to be continuous with. */
+  border-radius: var(--bp-radius) var(--bp-radius) 0 0;
   margin-bottom: -1px;
 }
 .bp-tab:hover { background: var(--bp-hover); color: var(--bp-text); }
@@ -664,8 +668,9 @@ select.bp-input:focus-visible { border-color: var(--bp-accent); outline: none; }
   --success-foreground: var(--bp-bg);
 }
 
-/* Square every corner except genuinely circular things (avatars, status dots). */
-.bp-root [class*="rounded-"]:not([class~="rounded-full"]) { border-radius: 0 !important; }
+/* One radius for every corner except genuinely circular things (avatars, status dots), so a
+   page that still carries Tailwind rounding matches the template instead of its own scale. */
+.bp-root [class*="rounded-"]:not([class~="rounded-full"]) { border-radius: var(--bp-radius) !important; }
 
 /* Soft drop shadows belong to the classic skin; the blueprint separates with hairlines. */
 .bp-root [class*="shadow-["],
@@ -685,7 +690,7 @@ select.bp-input:focus-visible { border-color: var(--bp-accent); outline: none; }
 
 /* Shared field classes from `admin-ui.tsx` (see the note beside their definition). */
 .bp-root .admin-field {
-  border-radius: 0 !important;
+  border-radius: var(--bp-radius) !important;
   padding: 6px 10px !important;
   min-height: 36px;
   font-size: 14px !important;
