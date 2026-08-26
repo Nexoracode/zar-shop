@@ -54,6 +54,11 @@ function discountTooltip(product: ProductRow) {
 تا ${formatDateTime(product.discountEndsAt)}`;
 }
 
+/** Sets the picture apart from the words, so the two do not read as one run of content. */
+function ThumbRule() {
+  return <span aria-hidden className="h-7 w-px shrink-0 self-center bg-[var(--bp-divider)]" />;
+}
+
 function ProductThumb({ product }: { product: ProductRow }) {
   const cover = product.media[0]?.media;
   if (cover?.type === "IMAGE") {
@@ -118,6 +123,7 @@ export function BlueprintProductsView({ products, categories, filters, paginatio
                 <article key={product.id} className="flex flex-col gap-3 border-b border-[var(--bp-row-line)] p-4 last:border-b-0">
                   <div className="flex items-start justify-between gap-3">
                     <ProductThumb product={product} />
+                    <ThumbRule />
                     <div className="min-w-0 flex-1">
                       <ProductName product={product} />
                       <span className="bp-muted mt-1 block truncate text-[11px]">{product.category?.name ?? "بدون دسته‌بندی"}</span>
@@ -152,7 +158,7 @@ export function BlueprintProductsView({ products, categories, filters, paginatio
                     <tr key={product.id}>
                       <BpTd className="w-10 text-center"><AdminBulkCheckbox id={product.id} label={`انتخاب محصول ${product.name}`} /></BpTd>
                       <BpTd className="bp-muted w-10">{(pagination.skip + index + 1).toLocaleString("fa-IR")}</BpTd>
-                      <BpTd className="max-w-[300px]"><div className="flex items-center gap-2.5"><ProductThumb product={product} /><ProductName product={product} /></div></BpTd>
+                      <BpTd className="max-w-[300px]"><div className="flex items-center gap-2.5"><ProductThumb product={product} /><ThumbRule /><ProductName product={product} /></div></BpTd>
                       <BpTd className="bp-muted max-w-[180px] truncate" title={product.category?.name ?? "بدون دسته‌بندی"}>{product.category?.name ?? "بدون دسته‌بندی"}</BpTd>
                       <BpTd>{priceLabel(product)}</BpTd>
                       <BpTd className={product.stock <= lowStockThreshold ? "font-bold text-[var(--bp-danger)]" : ""}>{product.stock.toLocaleString("fa-IR")}</BpTd>
