@@ -13,7 +13,7 @@ type Context = { params: Promise<{ id: string }> };
 export default async function EditProductPage({ params }: Context) {
   await requirePermission("catalog:manage");
   const { id } = await params;
-  const [product, categories, brandSettings] = await Promise.all([
+  const [product, categories, colors, brandSettings] = await Promise.all([
     db.product.findUnique({
       where: { id },
       include: { media: { include: { media: true }, orderBy: { position: "asc" } }, options: { orderBy: { position: "asc" } }, optionGuide: true },
@@ -23,6 +23,7 @@ export default async function EditProductPage({ params }: Context) {
       include: { parent: { select: { name: true } } },
       orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
     }),
+    db.color.findMany({ where: { isActive: true }, orderBy: [{ sortOrder: "asc" }, { name: "asc" }], select: { id: true, name: true } }),
     getBrandSettings(),
   ]);
   if (!product) notFound();
@@ -33,6 +34,7 @@ export default async function EditProductPage({ params }: Context) {
       <AdminPageHeader title={`ویرایش «${product.name}»`} description="اطلاعات، قیمت‌گذاری، موجودی و گالری این محصول را به‌روزرسانی کنید." backHref="/admin/products" backLabel="بازگشت به محصولات" />
       <Form
         storeIndustry={product.storeIndustry}
+        colors={colors}
         categories={categories.map((category) => ({ id: category.id, name: category.name, parentName: category.parent?.name ?? null, attributeGroups: parseCategoryAttributeSchema(category.attributeSchema) }))}
         product={{
           id: product.id,
@@ -65,7 +67,7 @@ export default async function EditProductPage({ params }: Context) {
           status: product.status,
           featured: product.featured,
           attributes: parseProductAttributes(product.attributes),
-          options: product.options.map((option) => ({ name: option.name, values: parseOptionValues(option.values) })),
+          options: product.options.map((option) => ({ name: option.name, type: option.type === "COLOR" ? "COLOR" as const : "SELECT" as const, values: parseOptionValues(option.values) })),
           optionGuide: product.optionGuide ? { id: product.optionGuide.id, title: product.optionGuide.title ?? product.optionGuide.storageKey, url: product.optionGuide.url, type: product.optionGuide.type } : null,
           media: product.media.map(({ media }) => ({ id: media.id, title: media.title ?? media.storageKey, url: media.url, type: media.type })),
         }}

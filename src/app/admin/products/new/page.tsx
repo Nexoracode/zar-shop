@@ -9,8 +9,9 @@ import { parseCategoryAttributeSchema } from "@/modules/products/attributes";
 
 export default async function NewProduct() {
   await requirePermission("catalog:manage");
-  const [categories, storeIndustry, brandSettings] = await Promise.all([
+  const [categories, colors, storeIndustry, brandSettings] = await Promise.all([
     db.category.findMany({ where: { isActive: true }, include: { parent: { select: { name: true } } }, orderBy: [{ sortOrder: "asc" }, { name: "asc" }] }),
+    db.color.findMany({ where: { isActive: true }, orderBy: [{ sortOrder: "asc" }, { name: "asc" }], select: { id: true, name: true } }),
     getStoreIndustry(),
     getBrandSettings(),
   ]);
@@ -19,7 +20,7 @@ export default async function NewProduct() {
   return (
     <>
       <AdminPageHeader title="ثبت محصول جدید" description="اطلاعات فنی، قیمت‌گذاری، موجودی و تصاویر محصول را تکمیل کنید." backHref="/admin/products" backLabel="بازگشت به محصولات" />
-      <Form storeIndustry={storeIndustry} categories={categoryOptions} />
+      <Form storeIndustry={storeIndustry} categories={categoryOptions} colors={colors} />
     </>
   );
 }

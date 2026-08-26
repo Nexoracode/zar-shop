@@ -25,12 +25,14 @@ type EditableProduct = {
   id: string; sku: string; name: string; slug: string; description: string; categoryId: string; purity: number; weightGrams: number;
   storeIndustry: "GOLD" | "GENERAL"; makingFeeType: string; makingFeeValue: number; profitPercent: number; taxPercent: number; fixedPrice: number | null; stock: number; preparationDays: number;
   discountType: "PERCENT" | "FIXED" | null; discountValue: number | null; discountStartsAt: string | null; discountEndsAt: string | null;
-  status: "DRAFT" | "ACTIVE" | "ARCHIVED"; featured: boolean; media: MediaChoice[]; options: Array<{ name: string; values: Array<{ value: string; colorId: string | null }> }>; optionGuide: MediaChoice | null;
+  status: "DRAFT" | "ACTIVE" | "ARCHIVED"; featured: boolean; media: MediaChoice[]; options: Array<{ name: string; type?: string; values: Array<{ value: string; colorId: string | null }> }>; optionGuide: MediaChoice | null;
   attributes: ProductAttributeValue[];
 };
 
 type ProductCategoryOption = { id: string; name: string; parentName: string | null; attributeGroups: CategoryAttributeGroup[] };
-type Props = { storeIndustry: "GOLD" | "GENERAL"; categories?: ProductCategoryOption[]; product?: EditableProduct };
+/** `colors` is accepted and ignored: the Blueprint form edits variants inline, this one links
+    to their own page, and both templates render from the same call site. */
+type Props = { storeIndustry: "GOLD" | "GENERAL"; categories?: ProductCategoryOption[]; colors?: Array<{ id: string; name: string }>; product?: EditableProduct };
 
 const productFieldLabels: Record<string, string> = {
   sku: "کد کالا",

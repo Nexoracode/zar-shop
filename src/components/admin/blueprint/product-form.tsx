@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "@heroui/react";
-import { FileText, GripVertical, Images, Ruler, Trash2 } from "lucide-react";
+import { FileText, GripVertical, Images, Trash2 } from "lucide-react";
 import { MediaPickerDialog } from "@/components/media-picker-dialog";
 import type { MediaChoice } from "@/components/media-library";
 import { RichTextEditor } from "@/components/rich-text-editor";
@@ -19,6 +19,7 @@ import { BpDateTimeField } from "./ui/date-time-field";
 import { BpInput } from "./ui/input";
 import { BpNumberInput } from "./ui/number-input";
 import { BlueprintProductAttributes } from "./product-attributes-panel";
+import { BlueprintProductOptions, type OptionDraft } from "./product-options-panel";
 import { BpSeg } from "./ui/seg";
 import { BpSelect } from "./ui/select";
 import { BpSwitch } from "./ui/switch";
@@ -29,14 +30,14 @@ export type EditableProduct = {
   id: string; sku: string; name: string; slug: string; description: string; categoryId: string; purity: number; weightGrams: number;
   storeIndustry: "GOLD" | "GENERAL"; makingFeeType: string; makingFeeValue: number; profitPercent: number; taxPercent: number; fixedPrice: number | null; stock: number; preparationDays: number;
   discountType: "PERCENT" | "FIXED" | null; discountValue: number | null; discountStartsAt: string | null; discountEndsAt: string | null;
-  status: "DRAFT" | "ACTIVE" | "ARCHIVED"; featured: boolean; media: MediaChoice[]; options: Array<{ name: string; values: Array<{ value: string; colorId: string | null }> }>; optionGuide: MediaChoice | null;
+  status: "DRAFT" | "ACTIVE" | "ARCHIVED"; featured: boolean; media: MediaChoice[]; options: OptionDraft[]; optionGuide: MediaChoice | null;
   shippingWeightGrams: number | null; packageLengthCm: number | null; packageWidthCm: number | null; packageHeightCm: number | null;
   minOrderQuantity: number; maxOrderQuantity: number | null;
   attributes: ProductAttributeValue[];
 };
 
 export type ProductCategoryOption = { id: string; name: string; parentName: string | null; attributeGroups: CategoryAttributeGroup[] };
-type Props = { storeIndustry: "GOLD" | "GENERAL"; categories?: ProductCategoryOption[]; product?: EditableProduct };
+type Props = { storeIndustry: "GOLD" | "GENERAL"; categories?: ProductCategoryOption[]; colors?: Array<{ id: string; name: string }>; product?: EditableProduct };
 
 /** Errors are keyed by the schema's own field names, so a zod issue maps straight onto a field. */
 type FieldErrors = Record<string, string>;
@@ -56,7 +57,7 @@ function Panel({ title, description, action, children, className = "" }: { title
   );
 }
 
-export function BlueprintProductForm({ storeIndustry, categories = [], product }: Props) {
+export function BlueprintProductForm({ storeIndustry, categories = [], colors = [], product }: Props) {
   const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
   const [loading, setLoading] = useState(false);
@@ -105,6 +106,7 @@ export function BlueprintProductForm({ storeIndustry, categories = [], product }
    */
   const [attributeGroups, setAttributeGroups] = useState<CategoryAttributeGroup[]>(selectedCategory?.attributeGroups ?? []);
   const [attributeValues, setAttributeValues] = useState<ProductAttributeValue[]>(product?.categoryId === categoryId ? product.attributes : []);
+  const [productOptions, setProductOptions] = useState<OptionDraft[]>(product?.options ?? []);
   // Picking a different category reseeds both: its groups have nothing to do with the last
   // one's, and values keyed to attributes that no longer exist would be dropped on save anyway.
   // Adjusted during render rather than in an effect, so no frame shows the wrong category's rows.
@@ -152,7 +154,7 @@ export function BlueprintProductForm({ storeIndustry, categories = [], product }
       discountStartsAt: discountEnabled ? discountStartsAt : null,
       discountEndsAt: discountEnabled ? discountEndsAt : null,
       featured, mediaIds: selectedMedia.map((media) => media.id),
-      options: product?.options ?? [], optionGuideId: optionGuide?.id ?? null, attributes: currentAttributes,
+      options: productOptions, optionGuideId: optionGuide?.id ?? null, attributes: currentAttributes,
     };
   }
 
@@ -342,15 +344,14 @@ export function BlueprintProductForm({ storeIndustry, categories = [], product }
           )}
         </Panel>
 
-        <Panel title="تنوع محصول" description="تنوع، موجودی و قیمت هر مقدار در صفحه اختصاصی مدیریت می‌شود.">
-          <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_220px]">
-            <div className="grid place-items-center border border-dashed border-[var(--bp-divider)] p-6 text-center">
-              <Ruler size={26} className="mb-2 text-[var(--bp-accent)]" />
-              <p className="bp-muted mb-3 max-w-md text-[12px] leading-6">{product ? "برای حفظ سوابق خرید، مقادیر ثبت‌شده حذف نمی‌شوند." : "ابتدا محصول را ثبت کنید تا به صفحه مدیریت تنوع منتقل شوید."}</p>
-              {product
-                ? <Link href={`/admin/products/${product.id}/options`} className="bp-btn bp-btn-secondary bp-btn-sm">مدیریت تنوع و موجودی</Link>
-                : <BpButton size="sm" isPending={loading} onClick={() => void submit("options")}>ثبت محصول و مدیریت تنوع</BpButton>}
-            </div>
+        <Panel title="تنوع محصول" description="اگر محصول در چند سایز یا رنگ عرضه می‌شود، گروه‌ها و مقادیرش را همین‌جا تعریف کنید.">
+          <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_220px]">
+            <BlueprintProductOptions
+              storeIndustry={storeIndustry}
+              colors={colors}
+              options={productOptions}
+              onChange={setProductOptions}
+            />
             <div className="border border-[var(--bp-divider)] p-3">
               <div className="mb-2 flex items-center justify-between gap-2">
                 <span className="text-[12px] font-bold">راهنمای انتخاب</span>
