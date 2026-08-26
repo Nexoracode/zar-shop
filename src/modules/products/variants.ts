@@ -21,6 +21,11 @@ export function variantSelectionKey(selection: VariantSelection) {
   return createHash("sha256").update(selectionSignature(selection)).digest("hex");
 }
 
+/** The combination a cart line refers to, or null when the product no longer offers it. */
+export function findVariant<T extends { selectionKey: string }>(variants: T[], selectionKey: string) {
+  return variants.find((variant) => variant.selectionKey === selectionKey) ?? null;
+}
+
 /** A row as it comes back from the database, whose money columns arrive as `Decimal`. */
 type StoredVariant = {
   selectionKey: string;
