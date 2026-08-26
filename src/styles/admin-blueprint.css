@@ -302,6 +302,9 @@ select.bp-input:focus-visible { border-color: var(--bp-accent); outline: none; }
   line-height: 18px;
   min-height: 18px;
 }
+/* Same idea as `.field-action` in globals.css, for this template's message metrics: 18px of
+   line plus its 4px margin. */
+.bp-root .field-action { margin-bottom: 22px; }
 .bp-field-message-error { color: var(--bp-danger); }
 .bp-field-message-hint { color: var(--bp-muted); }
 

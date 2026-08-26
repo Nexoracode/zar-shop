@@ -99,6 +99,7 @@ export function RichTextEditor({ value, onChange }: Props) {
   const [imageUrl, setImageUrl] = useState("");
   const [imageAlt, setImageAlt] = useState("");
   const [imageError, setImageError] = useState("");
+  const [imageUrlError, setImageUrlError] = useState("");
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
 
@@ -159,9 +160,9 @@ export function RichTextEditor({ value, onChange }: Props) {
   }
 
   function insertImage(url: string, alt = "") {
-    if (!/^https?:\/\//i.test(url)) return setImageError("لینک تصویر باید با http:// یا https:// شروع شود.");
+    if (!/^https?:\/\//i.test(url)) return setImageUrlError(url ? "لینک تصویر باید با http:// یا https:// شروع شود." : "نشانی تصویر را وارد کنید.");
     editor?.chain().focus().setImage({ src: url, alt }).run();
-    setImageOpen(false); setImageUrl(""); setImageAlt(""); setImageFile(null); setImageError("");
+    setImageOpen(false); setImageUrl(""); setImageAlt(""); setImageFile(null); setImageError(""); setImageUrlError("");
   }
 
   async function uploadImage() {
@@ -277,12 +278,13 @@ export function RichTextEditor({ value, onChange }: Props) {
       open={imageOpen}
       alt={imageAlt}
       url={imageUrl}
-      error={imageError}
+      fileError={imageError}
+      urlError={imageUrlError}
       uploading={uploading}
       hasFile={Boolean(imageFile)}
       onFileChange={(file) => { setImageFile(file); setImageError(""); }}
       onAltChange={setImageAlt}
-      onUrlChange={(next) => { setImageUrl(next); setImageError(""); }}
+      onUrlChange={(next) => { setImageUrl(next); setImageUrlError(""); }}
       onInsertUrl={() => insertImage(imageUrl.trim(), imageAlt.trim())}
       onUpload={() => void uploadImage()}
       onClose={() => setImageOpen(false)}
@@ -387,8 +389,8 @@ function LinkDialog({ open, url, error, onUrlChange, onClose, onApply }: {
   );
 }
 
-function ImageDialog({ open, alt, url, error, uploading, hasFile, onFileChange, onAltChange, onUrlChange, onInsertUrl, onUpload, onClose }: {
-  open: boolean; alt: string; url: string; error: string; uploading: boolean; hasFile: boolean;
+function ImageDialog({ open, alt, url, fileError, urlError, uploading, hasFile, onFileChange, onAltChange, onUrlChange, onInsertUrl, onUpload, onClose }: {
+  open: boolean; alt: string; url: string; fileError: string; urlError: string; uploading: boolean; hasFile: boolean;
   onFileChange: (file: File | null) => void; onAltChange: (value: string) => void; onUrlChange: (value: string) => void;
   onInsertUrl: () => void; onUpload: () => void; onClose: () => void;
 }) {
@@ -405,11 +407,13 @@ function ImageDialog({ open, alt, url, error, uploading, hasFile, onFileChange, 
         <AdminDialogButton variant="secondary" isDisabled={uploading} onPress={onClose}>انصراف</AdminDialogButton>
       </>}
     >
-      <AdminTextField label="انتخاب از سیستم" type="file" accept="image/jpeg,image/png,image/webp" error={error || undefined} onChange={(event) => onFileChange(event.target.files?.[0] ?? null)} />
+      <AdminTextField label="انتخاب از سیستم" type="file" accept="image/jpeg,image/png,image/webp" error={fileError || undefined} onChange={(event) => onFileChange(event.target.files?.[0] ?? null)} />
       <AdminTextField label="متن جایگزین تصویر" value={alt} placeholder="توضیح کوتاه تصویر" hint="برای سئو و دسترس‌پذیری لازم است." onChange={(event) => onAltChange(event.target.value)} />
-      <div className="flex items-start gap-2">
-        <AdminTextField label="یا لینک مستقیم تصویر" value={url} dir="ltr" placeholder="https://example.com/image.jpg" wrapperClassName="flex-1" onChange={(event) => onUrlChange(event.target.value)} />
-        <AdminDialogButton variant="secondary" className="mt-7" onPress={onInsertUrl}>افزودن لینک</AdminDialogButton>
+      {/* `field-action` drops the button by the height of the field's reserved message line, so it
+          lands level with the control rather than with the bottom of the whole field. */}
+      <div className="flex items-end gap-2">
+        <AdminTextField label="یا لینک مستقیم تصویر" value={url} dir="ltr" placeholder="https://example.com/image.jpg" error={urlError || undefined} wrapperClassName="flex-1" onChange={(event) => onUrlChange(event.target.value)} />
+        <AdminDialogButton variant="secondary" className="field-action" onPress={onInsertUrl}>افزودن لینک</AdminDialogButton>
       </div>
     </AdminDialog>
   );

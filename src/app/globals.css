@@ -281,6 +281,10 @@ html[dir="rtl"] [data-slot="modal-header"]:has([data-slot="modal-close-trigger"]
   line-height: 1.125rem;
   min-height: 1.125rem;
 }
+/* A button that sits on a field's own row. Lifted by the height of the reserved message line —
+   1.125rem plus its 0.25rem margin — so `items-end` lands it level with the control instead of
+   with the bottom of the whole field. */
+.field-action { margin-bottom: 1.375rem; }
 .field-message-error { color: var(--danger); }
 .field-message-hint { color: var(--muted); }
 
