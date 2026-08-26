@@ -53,6 +53,7 @@ function move<T>(items: T[], from: number, to: number) {
 
 export function BlueprintProductOptions({ storeIndustry, colors, options, onChange }: Props) {
   const [newGroupName, setNewGroupName] = useState("");
+  const [newGroupType, setNewGroupType] = useState<OptionDraft["type"]>("SELECT");
   const [groupError, setGroupError] = useState("");
   const [activeIndex, setActiveIndex] = useState(0);
   const [draggedValue, setDraggedValue] = useState<string | null>(null);
@@ -65,9 +66,10 @@ export function BlueprintProductOptions({ storeIndustry, colors, options, onChan
     if (!name) return setGroupError("نام تنوع را وارد کنید.");
     if (options.some((option) => option.name === name)) return setGroupError("تنوعی با این نام از قبل هست.");
     if (options.length >= 10) return setGroupError("حداکثر ۱۰ گروه تنوع برای هر محصول مجاز است.");
-    onChange([...options, { name, type: "SELECT", values: [emptyValue()] }]);
+    onChange([...options, { name, type: newGroupType, values: [emptyValue()] }]);
     setActiveIndex(options.length);
     setNewGroupName("");
+    setNewGroupType("SELECT");
     setGroupError("");
   }
 
@@ -98,6 +100,15 @@ export function BlueprintProductOptions({ storeIndustry, colors, options, onChan
           onChange={(event) => { setNewGroupName(event.target.value); setGroupError(""); }}
           onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); addGroup(); } }}
         />
+        <BpSelect
+          label="نوع"
+          value={newGroupType}
+          disabled={!newGroupName.trim()}
+          hint="تا نام تنوع وارد نشود قابل انتخاب نیست."
+          options={[{ value: "SELECT", label: "فهرست ساده" }, { value: "COLOR", label: "رنگ" }]}
+          wrapperClassName="w-[min(100%,180px)]"
+          onChange={(event) => setNewGroupType(event.target.value as OptionDraft["type"])}
+        />
         <BpButton variant="primary" className="field-action gap-1.5" onClick={addGroup}><Plus size={15} />افزودن تنوع</BpButton>
       </div>
 
@@ -118,22 +129,10 @@ export function BlueprintProductOptions({ storeIndustry, colors, options, onChan
 
           {active && (
             <>
-              <div className="flex flex-wrap items-end gap-2">
-                <BpInput
-                  label="نام تنوع"
-                  value={active.name}
-                  maxLength={productFieldLimits.optionName}
-                  wrapperClassName="w-[min(100%,220px)]"
-                  onChange={(event) => updateActive({ ...active, name: event.target.value })}
-                />
-                <BpSelect
-                  label="نوع"
-                  value={active.type}
-                  options={[{ value: "SELECT", label: "فهرست ساده" }, { value: "COLOR", label: "رنگ" }]}
-                  wrapperClassName="w-[min(100%,180px)]"
-                  onChange={(event) => updateActive({ ...active, type: event.target.value as OptionDraft["type"] })}
-                />
-                <BpButton isIconOnly variant="ghost" aria-label={`حذف تنوع ${active.name || "بدون نام"}`} className="field-action ms-auto text-[var(--bp-danger)]" onClick={() => removeGroup(activeAt)}>
+              <div className="flex flex-wrap items-center gap-2">
+                <strong className="text-[13px]">{active.name || "بدون نام"}</strong>
+                <span className="bp-tag bp-tag-neutral">{active.type === "COLOR" ? "رنگ" : "فهرست ساده"}</span>
+                <BpButton isIconOnly variant="ghost" aria-label={`حذف تنوع ${active.name || "بدون نام"}`} className="ms-auto text-[var(--bp-danger)]" onClick={() => removeGroup(activeAt)}>
                   <Trash2 size={15} />
                 </BpButton>
               </div>
