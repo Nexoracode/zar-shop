@@ -77,7 +77,7 @@ export function BlueprintProductsView({ products, categories, filters, paginatio
   ];
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-3">
       {/* Redraws the rows the moment any discount opens or closes, so the flags cannot go stale. */}
       <DiscountExpiryRefresh at={nextDiscountBoundaryAt} />
       <AdminPageHeader
