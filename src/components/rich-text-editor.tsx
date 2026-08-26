@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { EditorContent, useEditor, useEditorState, type Editor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Image from "@tiptap/extension-image";
@@ -14,7 +14,7 @@ import { TableDeleteShortcut } from "@/components/rich-text-table-delete";
 import { Button, Spinner, toast } from "@heroui/react";
 import {
   AlignCenter, AlignJustify, AlignLeft, AlignRight, Bold, Braces, ChevronDown, Code2, Columns3, Eraser, Heading1, Heading2, Heading3, Highlighter,
-  Grid2x2X, ImagePlus, Italic, Link2, List, ListOrdered, Minus, Palette, Pilcrow, Plus, Quote, Redo2, Rows3, Strikethrough,
+  Grid2x2X, ImagePlus, Italic, Link2, List, ListOrdered, Maximize2, Minimize2, Minus, Palette, Pilcrow, Plus, Quote, Redo2, Rows3, Strikethrough,
   SubscriptIcon, SuperscriptIcon, Table2, Underline, Undo2, Unlink, type LucideIcon,
 } from "lucide-react";
 import { HeroSelectField } from "@/components/hero-select-field";
@@ -96,11 +96,27 @@ export function RichTextEditor({ value, onChange }: Props) {
   const [linkError, setLinkError] = useState("");
   const [imageOpen, setImageOpen] = useState(false);
   const [showAllTools, setShowAllTools] = useState(false);
+  const [fullscreen, setFullscreen] = useState(false);
   const [imageUrl, setImageUrl] = useState("");
   const [imageAlt, setImageAlt] = useState("");
   const [imageError, setImageError] = useState("");
   const [imageUrlError, setImageUrlError] = useState("");
   const [imageFile, setImageFile] = useState<File | null>(null);
+
+  // Escape leaves, and the page behind stops scrolling while the editor owns the screen.
+  useEffect(() => {
+    if (!fullscreen) return;
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") setFullscreen(false);
+    }
+    document.addEventListener("keydown", onKeyDown);
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onKeyDown);
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [fullscreen]);
   const [uploading, setUploading] = useState(false);
 
   const editor = useEditor({
@@ -194,7 +210,11 @@ export function RichTextEditor({ value, onChange }: Props) {
     finally { setUploading(false); }
   }
 
-  return <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+  return <div
+    // `position` is set inline: the admin sheet is unlayered and can outrank Tailwind's `fixed`.
+    style={fullscreen ? { position: "fixed", inset: 0, zIndex: 190 } : undefined}
+    className={`overflow-hidden border border-slate-200 bg-white shadow-sm ${fullscreen ? "flex flex-col rounded-none" : "rounded-2xl"}`}
+  >
     <div className="sticky top-0 z-20 grid gap-2 border-b border-slate-200 bg-slate-50/95 p-2.5 backdrop-blur">
       {/*
         What is always out is what writing a product description actually needs. Everything else
@@ -259,10 +279,17 @@ export function RichTextEditor({ value, onChange }: Props) {
             <Tool editor={editor} label="پاک‌کردن قالب‌بندی" icon={<Eraser size={15} />} run={() => editor.chain().focus().unsetAllMarks().clearNodes().run()} />
           </>}
         </div>
+        <Tool
+          editor={editor}
+          label={fullscreen ? "خروج از تمام‌صفحه" : "نمایش تمام‌صفحه"}
+          icon={fullscreen ? <Minimize2 size={15} /> : <Maximize2 size={15} />}
+          active={fullscreen}
+          run={() => setFullscreen((current) => !current)}
+        />
         <MoreToolsToggle expanded={showAllTools} onToggle={() => setShowAllTools((current) => !current)} />
       </div>
     </div>
-    <EditorContent editor={editor} className="rich-text-editor-content min-h-80 bg-white" />
+    <EditorContent editor={editor} className={`rich-text-editor-content bg-white ${fullscreen ? "min-h-0 flex-1 overflow-y-auto" : "min-h-80"}`} />
     <div className="flex items-center justify-between border-t border-slate-100 bg-slate-50 px-4 py-2 text-[11px] text-slate-400"><span>برای تغییر اندازه تصویر، آن را انتخاب کنید و دستگیره‌ها را بکشید.</span><span>{marks.characters.toLocaleString("fa-IR")} نویسه</span></div>
 
     <LinkDialog
