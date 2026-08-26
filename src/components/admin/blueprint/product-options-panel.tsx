@@ -14,7 +14,6 @@ import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
 import { BpButton } from "./ui/button";
 import { BpCheckbox } from "./ui/checkbox";
 import { BpCombobox } from "./ui/combobox";
-import { BpInput } from "./ui/input";
 import { BpNumberInput } from "./ui/number-input";
 import { BpSelect } from "./ui/select";
 import { BpTable, BpTd, BpTh } from "./ui/table";
@@ -55,20 +54,14 @@ export function BlueprintProductOptions({ storeIndustry, colors, library, option
   const [pickedTypeId, setPickedTypeId] = useState("");
   const [typeError, setTypeError] = useState("");
   const [newValueFor, setNewValueFor] = useState("");
-  const [newValueLabel, setNewValueLabel] = useState("");
-  const [newValueColorId, setNewValueColorId] = useState("");
   // Kept apart from `typeError`: a value belongs to a specific type's own row, so its error must
   // land under that row's fields — not on the type picker at the top of the panel.
-  const [valueLabelError, setValueLabelError] = useState("");
-  const [valueColorError, setValueColorError] = useState("");
+  const [valueError, setValueError] = useState("");
   const [pending, setPending] = useState(false);
 
   function resetValueForm() {
     setNewValueFor("");
-    setNewValueLabel("");
-    setNewValueColorId("");
-    setValueLabelError("");
-    setValueColorError("");
+    setValueError("");
   }
 
   const [deletingValue, setDeletingValue] = useState<{ typeId: string; id: string; label: string } | null>(null);
@@ -144,19 +137,19 @@ export function BlueprintProductOptions({ storeIndustry, colors, library, option
     }
   }
 
-  async function createValue(typeId: string) {
-    const label = newValueLabel.trim();
-    const type = libraryById.get(typeId);
-    if (!label || !type || pending) return;
-    if (type.kind === "COLOR" && !newValueColorId) return setValueColorError("برای مقدارِ نوع رنگ، خود رنگ را انتخاب کنید.");
+  /** A color-kind value takes its label from the color's own name — nothing left for the admin to
+   * type — so this is reached either from a picked color or from free-typed text for a plain
+   * list, never from both a label and a color entered separately. */
+  async function createValueQuick(typeId: string, label: string, colorId: string | null) {
+    const trimmed = label.trim();
+    if (!trimmed || pending) return;
     setPending(true);
-    setValueLabelError("");
-    setValueColorError("");
+    setValueError("");
     try {
       const response = await fetch("/api/option-types", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ typeId, label, colorId: type.kind === "COLOR" ? newValueColorId : null }),
+        body: JSON.stringify({ typeId, label: trimmed, colorId }),
       });
       const result = await response.json().catch(() => null);
       if (!response.ok) throw new Error(result?.message ?? "ثبت مقدار انجام نشد.");
@@ -177,7 +170,7 @@ export function BlueprintProductOptions({ storeIndustry, colors, library, option
       });
       resetValueForm();
     } catch (reason) {
-      setValueLabelError(reason instanceof Error ? reason.message : "ثبت مقدار انجام نشد.");
+      setValueError(reason instanceof Error ? reason.message : "ثبت مقدار انجام نشد.");
     } finally {
       setPending(false);
     }
@@ -234,7 +227,7 @@ export function BlueprintProductOptions({ storeIndustry, colors, library, option
           wrapperClassName="w-[min(100%,340px)]"
           onChange={(value) => { setPickedTypeId(value); setTypeError(""); }}
           onCreate={(query) => void createTypeFromQuery(query)}
-          creating={pending}
+          pending={pending}
         />
         <BpButton variant="primary" className="field-action gap-1.5" onClick={addType}><Plus size={15} />افزودن به محصول</BpButton>
       </div>
@@ -283,44 +276,56 @@ export function BlueprintProductOptions({ storeIndustry, colors, library, option
                       </span>
                     );
                   })}
-                  {type.values.length === 0 ? <span className="bp-muted text-[12px]">این نوع هنوز مقداری ندارد.</span> : null}
-                </div>
+                  {type.values.length === 0 && newValueFor !== chosen.typeId ? <span className="bp-muted text-[12px]">این نوع هنوز مقداری ندارد.</span> : null}
 
-                {newValueFor === chosen.typeId ? (
-                  <div className="flex flex-wrap items-end gap-2">
-                    <BpInput
-                      label="مقدار جدید"
-                      value={newValueLabel}
-                      error={valueLabelError || undefined}
-                      maxLength={optionFieldLimits.valueLabel}
-                      placeholder="مثلاً مشکی"
-                      wrapperClassName="w-[min(100%,260px)]"
-                      onChange={(event) => { setNewValueLabel(event.target.value); setValueLabelError(""); }}
-                    />
-                    {type.kind === "COLOR" && (
-                      <BpCombobox
-                        label="رنگ"
-                        value={newValueColorId}
-                        error={valueColorError || undefined}
-                        placeholder="جستجو یا انتخاب رنگ"
-                        emptyLabel="رنگی با این نام پیدا نشد"
-                        options={colors.map((color) => ({ value: color.id, label: color.name, color: color.hex }))}
-                        wrapperClassName="w-[min(100%,260px)]"
-                        onChange={(value) => { setNewValueColorId(value); setValueColorError(""); }}
-                      />
-                    )}
-                    <BpButton variant="primary" className="field-action gap-1.5" isPending={pending} disabled={!newValueLabel.trim()} onClick={() => void createValue(chosen.typeId)}>
-                      <Plus size={15} />ثبت مقدار
-                    </BpButton>
-                    <BpButton variant="ghost" className="field-action gap-1.5" onClick={resetValueForm}>
-                      <X size={15} />انصراف
-                    </BpButton>
-                  </div>
-                ) : (
-                  <BpButton variant="ghost" className="w-fit gap-1.5" onClick={() => { setNewValueFor(chosen.typeId); setNewValueLabel(""); setNewValueColorId(""); setValueLabelError(""); setValueColorError(""); }}>
-                    <Plus size={15} />مقدار جدید
-                  </BpButton>
-                )}
+                  {newValueFor === chosen.typeId ? (
+                    <div className="flex items-start gap-1">
+                      {type.kind === "COLOR" ? (
+                        <BpCombobox
+                          aria-label="جستجو یا انتخاب رنگ برای مقدار جدید"
+                          value=""
+                          error={valueError || undefined}
+                          placeholder="جستجو یا انتخاب رنگ"
+                          emptyLabel="رنگی با این نام پیدا نشد"
+                          options={colors.map((color) => ({ value: color.id, label: color.name, color: color.hex }))}
+                          className="bp-input-sm"
+                          wrapperClassName="w-[190px]"
+                          pending={pending}
+                          onChange={(colorId) => {
+                            const color = colors.find((item) => item.id === colorId);
+                            if (color) void createValueQuick(chosen.typeId, color.name, color.id);
+                          }}
+                        />
+                      ) : (
+                        <BpCombobox
+                          aria-label="نام مقدار جدید"
+                          value=""
+                          error={valueError || undefined}
+                          placeholder="نام مقدار را بنویسید"
+                          emptyLabel="برای افزودن، نام را تایپ کنید"
+                          options={[]}
+                          maxLength={optionFieldLimits.valueLabel}
+                          className="bp-input-sm"
+                          wrapperClassName="w-[190px]"
+                          pending={pending}
+                          onChange={() => {}}
+                          onCreate={(query) => void createValueQuick(chosen.typeId, query, null)}
+                        />
+                      )}
+                      <BpButton isIconOnly size="sm" variant="ghost" aria-label="انصراف از افزودن مقدار" disabled={pending} onClick={resetValueForm}>
+                        <X size={14} />
+                      </BpButton>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => { setNewValueFor(chosen.typeId); setValueError(""); }}
+                      className="inline-flex items-center gap-1.5 rounded-[var(--bp-radius)] border border-dashed border-[var(--bp-accent)] px-2.5 py-1 text-[12px] text-[var(--bp-accent)] hover:bg-[var(--bp-hover)]"
+                    >
+                      <Plus size={13} />اضافه کردن
+                    </button>
+                  )}
+                </div>
               </div>
             );
           })}
