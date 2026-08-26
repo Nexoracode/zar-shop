@@ -134,6 +134,11 @@
 
 .bp-root :focus { outline: none; }
 .bp-root :focus-visible { outline: 2px solid var(--bp-accent); outline-offset: 2px; }
+/* The rich text body is a writing surface, not a control: a ring drawn around it the moment the
+   caret lands frames the very content the writer is looking at. Its own `outline-none` cannot win
+   here — this sheet is unlayered and that is a Tailwind utility — so the exception is stated. */
+.bp-root .rich-text-content:focus,
+.bp-root .rich-text-content:focus-visible { outline: none; }
 .bp-root ::selection { background: color-mix(in srgb, var(--bp-accent) 30%, transparent); }
 /* Anchors reset to the inherited colour — except the ones styled as buttons, which would
    otherwise outrank `.bp-btn*` on specificity and lose their own foreground. */
