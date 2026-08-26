@@ -59,7 +59,19 @@ export function BlueprintProductOptions({ storeIndustry, colors, library, option
   const [newValueFor, setNewValueFor] = useState("");
   const [newValueLabel, setNewValueLabel] = useState("");
   const [newValueColorId, setNewValueColorId] = useState("");
+  // Kept apart from `typeError`: a value belongs to a specific type's own row, so its error must
+  // land under that row's fields — not on the type picker at the top of the panel.
+  const [valueLabelError, setValueLabelError] = useState("");
+  const [valueColorError, setValueColorError] = useState("");
   const [pending, setPending] = useState(false);
+
+  function resetValueForm() {
+    setNewValueFor("");
+    setNewValueLabel("");
+    setNewValueColorId("");
+    setValueLabelError("");
+    setValueColorError("");
+  }
 
   const libraryById = new Map(library.map((type) => [type.id, type]));
 
@@ -132,9 +144,10 @@ export function BlueprintProductOptions({ storeIndustry, colors, library, option
     const label = newValueLabel.trim();
     const type = libraryById.get(typeId);
     if (!label || !type || pending) return;
-    if (type.kind === "COLOR" && !newValueColorId) return setTypeError("برای مقدارِ نوع رنگ، خود رنگ را انتخاب کنید.");
+    if (type.kind === "COLOR" && !newValueColorId) return setValueColorError("برای مقدارِ نوع رنگ، خود رنگ را انتخاب کنید.");
     setPending(true);
-    setTypeError("");
+    setValueLabelError("");
+    setValueColorError("");
     try {
       const response = await fetch("/api/option-types", {
         method: "POST",
@@ -158,11 +171,9 @@ export function BlueprintProductOptions({ storeIndustry, colors, library, option
           return [{ typeName: item.name, values: chosen.valueIds.flatMap((id) => (labels.has(id) ? [labels.get(id)!] : [])) }];
         })),
       });
-      setNewValueLabel("");
-      setNewValueColorId("");
-      setNewValueFor("");
+      resetValueForm();
     } catch (reason) {
-      setTypeError(reason instanceof Error ? reason.message : "ثبت مقدار انجام نشد.");
+      setValueLabelError(reason instanceof Error ? reason.message : "ثبت مقدار انجام نشد.");
     } finally {
       setPending(false);
     }
@@ -178,6 +189,7 @@ export function BlueprintProductOptions({ storeIndustry, colors, library, option
           <BpInput
             label="نام نوع جدید"
             value={newTypeName}
+            error={typeError || undefined}
             maxLength={optionFieldLimits.typeName}
             placeholder="مثلاً سایز"
             wrapperClassName="w-[min(100%,220px)]"
@@ -262,31 +274,33 @@ export function BlueprintProductOptions({ storeIndustry, colors, library, option
                     <BpInput
                       label="مقدار جدید"
                       value={newValueLabel}
+                      error={valueLabelError || undefined}
                       maxLength={optionFieldLimits.valueLabel}
                       placeholder="مثلاً مشکی"
                       wrapperClassName="w-[min(100%,180px)]"
-                      onChange={(event) => { setNewValueLabel(event.target.value); setTypeError(""); }}
+                      onChange={(event) => { setNewValueLabel(event.target.value); setValueLabelError(""); }}
                     />
                     {type.kind === "COLOR" && (
                       <BpCombobox
                         label="رنگ"
                         value={newValueColorId}
+                        error={valueColorError || undefined}
                         placeholder="جستجو یا انتخاب رنگ"
                         emptyLabel="رنگی با این نام پیدا نشد"
                         options={colors.map((color) => ({ value: color.id, label: color.name, color: color.hex }))}
                         wrapperClassName="w-[min(100%,180px)]"
-                        onChange={setNewValueColorId}
+                        onChange={(value) => { setNewValueColorId(value); setValueColorError(""); }}
                       />
                     )}
                     <BpButton variant="primary" className="field-action gap-1.5" isPending={pending} disabled={!newValueLabel.trim()} onClick={() => void createValue(chosen.typeId)}>
                       <Plus size={15} />ثبت مقدار
                     </BpButton>
-                    <BpButton variant="ghost" className="field-action gap-1.5" onClick={() => { setNewValueFor(""); setNewValueLabel(""); setNewValueColorId(""); }}>
+                    <BpButton variant="ghost" className="field-action gap-1.5" onClick={resetValueForm}>
                       <X size={15} />انصراف
                     </BpButton>
                   </div>
                 ) : (
-                  <BpButton variant="ghost" className="w-fit gap-1.5" onClick={() => { setNewValueFor(chosen.typeId); setNewValueLabel(""); setNewValueColorId(""); }}>
+                  <BpButton variant="ghost" className="w-fit gap-1.5" onClick={() => { setNewValueFor(chosen.typeId); setNewValueLabel(""); setNewValueColorId(""); setValueLabelError(""); setValueColorError(""); }}>
                     <Plus size={15} />مقدار جدید
                   </BpButton>
                 )}
