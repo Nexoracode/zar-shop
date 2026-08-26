@@ -202,8 +202,8 @@ export function BlueprintProductForm({ storeIndustry, categories = [], product }
   }
 
   return <>
-    <form ref={formRef} noValidate onSubmit={(event) => { event.preventDefault(); void submit("list"); }} className="grid items-start gap-3 lg:grid-cols-[minmax(0,1fr)_320px]">
-      <div className="grid gap-3">
+    <form ref={formRef} noValidate onSubmit={(event) => { event.preventDefault(); void submit("list"); }} className="grid items-start gap-2 lg:grid-cols-[minmax(0,1fr)_320px]">
+      <div className="grid gap-2">
         <Panel
           title="گالری محصول"
           description="اولین رسانه به‌عنوان تصویر شاخص استفاده می‌شود. برای تغییر ترتیب، کارت را بکشید و رها کنید."
@@ -366,7 +366,7 @@ export function BlueprintProductForm({ storeIndustry, categories = [], product }
       </div>
 
       {/* Stays in view while the long left column scrolls. */}
-      <aside className="grid gap-3 lg:sticky lg:top-20">
+      <aside className="grid gap-2 lg:sticky lg:top-20">
         <Panel title="وضعیت انتشار">
           <BpSeg
             label="وضعیت انتشار"

@@ -46,7 +46,7 @@ export function BlueprintDashboardView({ isFullAdmin, activeProducts, customers,
         <p className="bp-muted mb-0 mt-1 max-w-2xl text-[13px]">وضعیت فروش، سفارش‌ها و موجودی محصولات را یک‌جا دنبال کنید.</p>
       </header>
 
-      <div className={`grid grid-cols-1 gap-3 sm:grid-cols-2 ${isFullAdmin ? "xl:grid-cols-4" : "xl:grid-cols-2"}`}>
+      <div className={`grid grid-cols-1 gap-2 sm:grid-cols-2 ${isFullAdmin ? "xl:grid-cols-4" : "xl:grid-cols-2"}`}>
         {visibleKpis.map(({ label, value, hint, icon: Icon, compact }) => (
           <Panel key={label} className="p-[18px]">
             <div className="flex items-start justify-between gap-3">
@@ -59,7 +59,7 @@ export function BlueprintDashboardView({ isFullAdmin, activeProducts, customers,
         ))}
       </div>
 
-      <div className={`grid gap-3 ${isFullAdmin ? "xl:grid-cols-[minmax(0,1.55fr)_minmax(280px,0.75fr)]" : "grid-cols-1"}`}>
+      <div className={`grid gap-2 ${isFullAdmin ? "xl:grid-cols-[minmax(0,1.55fr)_minmax(280px,0.75fr)]" : "grid-cols-1"}`}>
         <Panel>
           <div className="flex items-center justify-between gap-3 border-b border-[var(--bp-divider)] px-[18px] py-4">
             <div>
@@ -131,7 +131,7 @@ export function BlueprintDashboardView({ isFullAdmin, activeProducts, customers,
         </Panel>
 
         {isFullAdmin && (
-          <div className="grid content-start gap-3">
+          <div className="grid content-start gap-2">
             <Panel>
               <div className="flex items-center gap-2.5 border-b border-[var(--bp-divider)] px-[18px] py-4">
                 <span className="flex h-9 w-9 flex-none items-center justify-center border border-[var(--bp-divider)] text-[var(--bp-danger)]"><TriangleAlert size={17} strokeWidth={1.5} /></span>
