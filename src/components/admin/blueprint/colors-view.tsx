@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, type DragEvent, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "@heroui/react";
-import { GripVertical, Pencil, Trash2 } from "lucide-react";
+import { GripVertical, Info, Pencil, Trash2 } from "lucide-react";
 import { AdminEmptyState, AdminPageHeader, AdminStatusBadge } from "@/components/admin-ui";
 import { AdminBulkCheckbox, AdminBulkEditor } from "@/components/admin-bulk-editor";
 import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
@@ -28,16 +28,8 @@ function move<T>(list: T[], from: number, to: number): T[] {
   return next;
 }
 
-function Panel({ title, description, children }: { title: string; description?: string; children: ReactNode }) {
-  return (
-    <section className="bp-frame relative p-[18px]">
-      <div className="min-w-0">
-        <h3 className="m-0">{title}</h3>
-        {description && <p className="bp-muted mb-0 mt-1 text-[12px] leading-6">{description}</p>}
-      </div>
-      <div className="mt-3">{children}</div>
-    </section>
-  );
+function Panel({ children }: { children: ReactNode }) {
+  return <section className="bp-frame relative p-[18px]">{children}</section>;
 }
 
 function ColorSwatchBox({ hex }: { hex: string }) {
@@ -194,7 +186,7 @@ export function BlueprintColorsView({ colors }: { colors: ColorItem[] }) {
       <div className="grid items-start gap-2 lg:grid-cols-[320px_minmax(0,1fr)]">
         <aside className="lg:sticky lg:top-20">
           <form ref={formRef} noValidate onSubmit={(event) => { event.preventDefault(); void submit(); }}>
-            <Panel title={editing ? `ویرایش «${editing.name}»` : "رنگ جدید"} description="نام و کد رنگ را تکمیل کنید؛ ترتیب نمایش از جدول کنار آن تنظیم می‌شود.">
+            <Panel>
               <div className="grid gap-3">
                 <BpInput name="name" label="نام رنگ" required maxLength={colorFieldLimits.name} value={name} error={errors.name} placeholder="مثلاً رزگلد" onChange={(event) => { setName(event.target.value); clearError("name"); }} />
                 <BpColorField name="hex" label="کد رنگ" required maxLength={colorFieldLimits.hex} value={hex} error={errors.hex} onChange={(next) => { setHex(next); clearError("hex"); }} />
@@ -208,7 +200,7 @@ export function BlueprintColorsView({ colors }: { colors: ColorItem[] }) {
           </form>
         </aside>
 
-        <Panel title="فهرست رنگ‌ها" description="با کشیدن ردیف، ترتیب نمایش رنگ‌ها در فروشگاه را تنظیم کنید.">
+        <Panel>
           {items.length ? (
             <>
               <div className="md:hidden">
@@ -240,6 +232,10 @@ export function BlueprintColorsView({ colors }: { colors: ColorItem[] }) {
               </div>
 
               <AdminBulkEditor entity="colors" entityLabel="رنگ" ids={items.map((color) => color.id)} actions={[{ value: "active:on", label: "فعال‌کردن رنگ‌ها" }, { value: "active:off", label: "غیرفعال‌کردن رنگ‌ها" }]}>
+                <p className="m-0 flex items-center gap-1.5 border-b border-[var(--bp-divider)] px-4 py-2 text-[12px] text-[var(--bp-info)]">
+                  <Info size={14} className="shrink-0" aria-hidden />
+                  با کشیدن ردیف، ترتیب نمایش رنگ‌ها در فروشگاه را تنظیم کنید.
+                </p>
                 <BpTable ariaLabel="فهرست رنگ‌ها" minWidth={640}>
                   <thead>
                     <tr>
