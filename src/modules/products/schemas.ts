@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { MAX_VARIANTS, selectionSignature } from "@/modules/products/variant-combinations";
 import { productAttributesSchema } from "@/modules/products/attributes";
 
 const dateOnlySchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "تاریخ واردشده معتبر نیست.").refine((value) => {
@@ -35,20 +36,36 @@ function emptyToNull<T extends z.ZodType>(schema: T) {
   return z.preprocess((value) => (value === "" || value === undefined ? null : value), schema.nullable()).default(null);
 }
 
-const productOptionSchema = z.object({
-  name: z.string().trim().min(1).max(productFieldLimits.optionName),
-  type: z.enum(["SELECT", "COLOR"]).default("SELECT"),
-  values: z.array(z.object({
-    value: z.string().trim().min(1).max(productFieldLimits.optionValue),
-    colorId: z.string().cuid().nullable().default(null),
-    isActive: z.boolean().default(true),
-    stock: z.coerce.number().int().nonnegative().nullable().default(null),
-    weightGrams: z.string().trim().regex(/^\d{1,7}(\.\d{1,3})?$/, "وزن تنوع باید حداکثر سه رقم اعشار داشته باشد.").nullable().default(null),
-    price: z.string().trim().regex(/^[1-9]\d{0,17}$/, "قیمت تنوع باید یک مبلغ معتبر و بیشتر از صفر باشد.").nullable().default(null),
-  })).min(1).max(50).refine((values) => new Set(values.map((item) => item.value)).size === values.length, "مقدار تکراری در یک تنوع مجاز نیست."),
-}).superRefine((option, context) => {
-  if (option.type === "COLOR" && option.values.some((item) => !item.colorId)) {
-    context.addIssue({ code: "custom", path: ["values"], message: "برای هر مقدارِ تنوع رنگ، خود رنگ را نیز انتخاب کنید." });
+/*
+ * What the form sends about variants: which types the product offers, and one row per
+ * combination of their values. The rows are built in the browser but never trusted — the server
+ * rebuilds each combination's key from the selection it is given.
+ */
+const productOptionTypeSchema = z.object({
+  typeId: z.string().cuid("نوع تنوع انتخاب‌شده معتبر نیست."),
+  valueIds: z.array(z.string().cuid("مقدار تنوع انتخاب‌شده معتبر نیست."))
+    .min(1, "برای هر نوع تنوع حداقل یک مقدار انتخاب کنید.")
+    .max(50, "حداکثر ۵۰ مقدار برای هر نوع تنوع مجاز است.")
+    .refine((ids) => new Set(ids).size === ids.length, "مقدار تکراری در یک نوع تنوع مجاز نیست."),
+});
+
+const productVariantSchema = z.object({
+  selection: z.record(
+    z.string().trim().min(1).max(productFieldLimits.optionName),
+    z.string().trim().min(1).max(productFieldLimits.optionValue),
+  ).refine((selection) => Object.keys(selection).length > 0, "ترکیب تنوع نمی‌تواند خالی باشد."),
+  stock: z.coerce.number("موجودی ترکیب را وارد کنید.").int("موجودی ترکیب باید عدد صحیح باشد.").nonnegative("موجودی ترکیب نمی‌تواند منفی باشد.").default(0),
+  isActive: z.boolean().default(true),
+  weightGrams: z.string().trim().regex(/^\d{1,7}(\.\d{1,3})?$/, "وزن ترکیب باید حداکثر سه رقم اعشار داشته باشد.").nullable().default(null),
+  price: z.string().trim().regex(/^[1-9]\d{0,17}$/, "قیمت ترکیب باید یک مبلغ معتبر و بیشتر از صفر باشد.").nullable().default(null),
+  discountType: z.enum(["PERCENT", "FIXED"]).nullable().default(null),
+  discountValue: z.string().trim().regex(/^\d{1,18}(\.\d{1,3})?$/, "مقدار تخفیف ترکیب معتبر نیست.").nullable().default(null),
+}).superRefine((variant, context) => {
+  if ((variant.discountType === null) !== (variant.discountValue === null)) {
+    context.addIssue({ code: "custom", path: ["discountValue"], message: "نوع و مقدار تخفیف ترکیب را با هم وارد کنید." });
+  }
+  if (variant.discountType === "PERCENT" && variant.discountValue !== null && Number(variant.discountValue) > 100) {
+    context.addIssue({ code: "custom", path: ["discountValue"], message: "درصد تخفیف نمی‌تواند بیشتر از ۱۰۰ باشد." });
   }
 });
 
@@ -89,14 +106,14 @@ export const productSchema = z.object({
   status: z.enum(["DRAFT", "ACTIVE", "ARCHIVED"]).default("DRAFT"),
   featured: z.boolean().default(false),
   mediaIds: z.array(z.string().cuid("رسانه انتخاب‌شده معتبر نیست.")).max(20, "حداکثر ۲۰ رسانه برای هر محصول مجاز است.").refine((ids) => new Set(ids).size === ids.length, "رسانه تکراری مجاز نیست.").default([]),
-  options: z.array(productOptionSchema).max(10, "حداکثر ۱۰ گروه تنوع برای هر محصول مجاز است.").refine((options) => new Set(options.map((option) => option.name)).size === options.length, "عنوان تنوع تکراری مجاز نیست.").superRefine((options, context) => {
-    if (options.filter((option) => option.values.some((item) => item.weightGrams !== null)).length > 1) {
-      context.addIssue({ code: "custom", message: "وزن فقط در یک گروه تنوع، مانند سایز، قابل تعریف است." });
-    }
-    if (options.filter((option) => option.values.some((item) => item.price !== null)).length > 1) {
-      context.addIssue({ code: "custom", message: "قیمت مستقیم فقط در یک گروه تنوع قابل تعریف است." });
-    }
-  }).default([]),
+  optionTypes: z.array(productOptionTypeSchema)
+    .max(5, "حداکثر ۵ نوع تنوع برای هر محصول مجاز است.")
+    .refine((types) => new Set(types.map((type) => type.typeId)).size === types.length, "نوع تنوع تکراری مجاز نیست.")
+    .default([]),
+  variants: z.array(productVariantSchema)
+    .max(MAX_VARIANTS, "تعداد ترکیب‌های این محصول بیش از حد مجاز است.")
+    .refine((variants) => new Set(variants.map((variant) => selectionSignature(variant.selection))).size === variants.length, "ترکیب تکراری مجاز نیست.")
+    .default([]),
   optionGuideId: z.string().cuid().nullable().default(null),
   attributes: productAttributesSchema.default([]),
 });
@@ -132,10 +149,15 @@ export const completeProductSchema = productSchema.superRefine((product, context
   if (product.discountStartsAt && product.discountEndsAt && product.discountEndsAt < product.discountStartsAt) {
     context.addIssue({ code: "custom", path: ["discountEndsAt"], message: "پایان تخفیف باید بعد از شروع آن باشد." });
   }
-  if (product.storeIndustry === "GOLD" && product.options.some((option) => option.values.some((item) => item.price !== null))) {
-    context.addIssue({ code: "custom", path: ["options"], message: "برای محصول طلا، قیمت تنوع از وزن آن محاسبه می‌شود." });
+  if (product.storeIndustry === "GOLD" && product.variants.some((variant) => variant.price !== null)) {
+    context.addIssue({ code: "custom", path: ["variants"], message: "برای محصول طلا، قیمت ترکیب از وزن آن محاسبه می‌شود." });
   }
-  if (product.storeIndustry === "GENERAL" && product.options.some((option) => option.values.some((item) => item.weightGrams !== null))) {
-    context.addIssue({ code: "custom", path: ["options"], message: "برای محصول معمولی، به‌جای وزن می‌توانید قیمت مستقیم تنوع را وارد کنید." });
+  if (product.storeIndustry === "GENERAL" && product.variants.some((variant) => variant.weightGrams !== null)) {
+    context.addIssue({ code: "custom", path: ["variants"], message: "برای محصول معمولی، به‌جای وزن می‌توانید قیمت مستقیم ترکیب را وارد کنید." });
+  }
+  // A combination names its types; offering one the product does not carry is a broken form.
+  const offered = new Set(product.variants.flatMap((variant) => Object.keys(variant.selection)));
+  if (product.optionTypes.length === 0 && offered.size > 0) {
+    context.addIssue({ code: "custom", path: ["variants"], message: "برای تعریف ترکیب، ابتدا نوع تنوع محصول را انتخاب کنید." });
   }
 });

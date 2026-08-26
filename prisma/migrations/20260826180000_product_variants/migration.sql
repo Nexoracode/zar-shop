@@ -30,9 +30,19 @@ CREATE TABLE `ProductOptionType` (
   `productId` VARCHAR(191) NOT NULL,
   `typeId` VARCHAR(191) NOT NULL,
   `position` INTEGER NOT NULL DEFAULT 0,
-  `valueIds` JSON NOT NULL,
   INDEX `ProductOptionType_productId_position_idx`(`productId`, `position`),
   PRIMARY KEY (`productId`, `typeId`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- Which of a type's values this product offers; a row rather than a list of ids, so the catalogue
+-- can join through to the colour and filter by it.
+CREATE TABLE `ProductOptionValue` (
+  `productId` VARCHAR(191) NOT NULL,
+  `typeId` VARCHAR(191) NOT NULL,
+  `valueId` VARCHAR(191) NOT NULL,
+  `position` INTEGER NOT NULL DEFAULT 0,
+  INDEX `ProductOptionValue_valueId_idx`(`valueId`),
+  PRIMARY KEY (`productId`, `typeId`, `valueId`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- One buyable combination, with its own price, discount and stock.
@@ -58,6 +68,8 @@ ALTER TABLE `OptionValue` ADD CONSTRAINT `OptionValue_typeId_fkey` FOREIGN KEY (
 ALTER TABLE `OptionValue` ADD CONSTRAINT `OptionValue_colorId_fkey` FOREIGN KEY (`colorId`) REFERENCES `Color`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
 ALTER TABLE `ProductOptionType` ADD CONSTRAINT `ProductOptionType_productId_fkey` FOREIGN KEY (`productId`) REFERENCES `Product`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 ALTER TABLE `ProductOptionType` ADD CONSTRAINT `ProductOptionType_typeId_fkey` FOREIGN KEY (`typeId`) REFERENCES `OptionType`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE `ProductOptionValue` ADD CONSTRAINT `ProductOptionValue_optionType_fkey` FOREIGN KEY (`productId`, `typeId`) REFERENCES `ProductOptionType`(`productId`, `typeId`) ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE `ProductOptionValue` ADD CONSTRAINT `ProductOptionValue_valueId_fkey` FOREIGN KEY (`valueId`) REFERENCES `OptionValue`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 ALTER TABLE `ProductVariant` ADD CONSTRAINT `ProductVariant_productId_fkey` FOREIGN KEY (`productId`) REFERENCES `Product`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- Open carts referencing the old per-value model would check out against combinations that no

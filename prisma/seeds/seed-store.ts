@@ -46,9 +46,13 @@ async function clearDevelopmentData(db: PrismaClient) {
   await db.auditLog.deleteMany();
   await db.user.deleteMany();
   await db.productMedia.deleteMany();
-  await db.productOption.deleteMany();
+  await db.productVariant.deleteMany();
+  await db.productOptionValue.deleteMany();
+  await db.productOptionType.deleteMany();
   await db.product.deleteMany();
   await db.category.deleteMany();
+  await db.optionValue.deleteMany();
+  await db.optionType.deleteMany();
   await db.color.deleteMany();
   await db.storeSetting.deleteMany();
   await db.mediaAsset.deleteMany();

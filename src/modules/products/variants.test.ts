@@ -6,6 +6,7 @@ import {
   findVariant,
   isVariantAvailable,
   mergeCombinations,
+  selectionSignature,
   variantSelectionKey,
   type VariantDraft,
 } from "@/modules/products/variants";
@@ -100,6 +101,12 @@ test("availability needs both an active row and the stock for it", () => {
 
 test("a cart line finds its combination by key, or nothing", () => {
   const variants: VariantDraft[] = mergeCombinations([], colourAndSize);
-  assert.equal(findVariant(variants, variants[1].selectionKey)?.selection["رنگ"], "زرد");
-  assert.equal(findVariant(variants, "missing"), null);
+  const stored = variants.map((variant) => ({ ...variant, selectionKey: variantSelectionKey(variant.selection) }));
+  assert.equal(findVariant(stored, stored[1].selectionKey)?.selection["رنگ"], "زرد");
+  assert.equal(findVariant(stored, "missing"), null);
+});
+
+test("the form's signature and the stored key agree on what is the same combination", () => {
+  assert.equal(selectionSignature({ رنگ: "مشکی", سایز: "XL" }), selectionSignature({ سایز: "XL", رنگ: "مشکی" }));
+  assert.notEqual(selectionSignature({ رنگ: "مشکی" }), selectionSignature({ رنگ: "زرد" }));
 });
