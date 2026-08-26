@@ -18,6 +18,7 @@ import { BpCombobox } from "./ui/combobox";
 import { BpDateTimeField } from "./ui/date-time-field";
 import { BpInput } from "./ui/input";
 import { BpNumberInput } from "./ui/number-input";
+import { BlueprintProductAttributes } from "./product-attributes-panel";
 import { BpSeg } from "./ui/seg";
 import { BpSelect } from "./ui/select";
 import { BpSwitch } from "./ui/switch";
@@ -91,12 +92,23 @@ export function BlueprintProductForm({ storeIndustry, categories = [], product }
   const [draggedMediaId, setDraggedMediaId] = useState<string | null>(null);
 
   const selectedCategory = categories.find((category) => category.id === categoryId);
-  const attributeDefinitions = selectedCategory?.attributeGroups.flatMap((group) => group.attributes) ?? [];
-  const currentAttributes = product?.categoryId === categoryId ? product.attributes : [];
-  const completedAttributeIds = new Set(currentAttributes.filter((attribute) => attribute.values.length).map((attribute) => attribute.attributeId));
-  const completedAttributeCount = attributeDefinitions.filter((attribute) => completedAttributeIds.has(attribute.id)).length;
-  const importantAttributeCount = attributeDefinitions.filter((attribute) => attribute.important && completedAttributeIds.has(attribute.id)).length;
-  const categoryChanged = Boolean(product && product.categoryId !== categoryId);
+  /*
+   * Both sides of the attributes panel are edited here now. The groups belong to the category,
+   * so they are seeded from it and written back to it on save; the values are the product's.
+   */
+  const [attributeGroups, setAttributeGroups] = useState<CategoryAttributeGroup[]>(selectedCategory?.attributeGroups ?? []);
+  const [attributeValues, setAttributeValues] = useState<ProductAttributeValue[]>(product?.categoryId === categoryId ? product.attributes : []);
+  // Picking a different category reseeds both: its groups have nothing to do with the last
+  // one's, and values keyed to attributes that no longer exist would be dropped on save anyway.
+  // Adjusted during render rather than in an effect, so no frame shows the wrong category's rows.
+  const [seededCategoryId, setSeededCategoryId] = useState(categoryId);
+  if (seededCategoryId !== categoryId) {
+    setSeededCategoryId(categoryId);
+    setAttributeGroups(selectedCategory?.attributeGroups ?? []);
+    setAttributeValues(product?.categoryId === categoryId ? product.attributes : []);
+  }
+  const currentAttributes = attributeValues;
+  const attributeGroupsChanged = JSON.stringify(attributeGroups) !== JSON.stringify(selectedCategory?.attributeGroups ?? []);
 
   function clearError(field: string) {
     setErrors((current) => (current[field] ? { ...current, [field]: undefined as unknown as string } : current));
@@ -156,6 +168,13 @@ export function BlueprintProductForm({ storeIndustry, categories = [], product }
     }
     setLoading(true);
     try {
+      if (categoryId && attributeGroupsChanged) {
+        await requestJson(`/api/categories/${categoryId}/attributes`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(attributeGroups.filter((group) => group.name.trim() && group.attributes.every((attribute) => attribute.name.trim()))),
+        }, { fallbackMessage: "ذخیره گروه‌های مشخصات ناموفق بود." });
+      }
       const result = await requestJson<{ id?: string }>(product ? `/api/products/${product.id}` : "/api/products", {
         method: product ? "PATCH" : "POST",
         headers: { "Content-Type": "application/json" },
@@ -234,37 +253,20 @@ export function BlueprintProductForm({ storeIndustry, categories = [], product }
           <BpFieldMessage id="description-message" error={errors.description} reserve={Boolean(errors.description)} />
         </Panel>
 
-        {/* The mockup used free-form name/value rows here. This project reads attributes from the
-            product's category and edits them on their own page, so the form shows completion
-            state and links there instead. */}
         <Panel
-          title="ویژگی‌های محصول"
-          description="ویژگی‌ها از دسته‌بندی محصول خوانده می‌شوند و در صفحه اختصاصی تکمیل می‌شوند."
-          action={categoryId && attributeDefinitions.length > 0
-            ? product
-              ? categoryChanged
-                ? <span className="bp-tag bp-tag-warning">ابتدا تغییر دسته را ذخیره کنید</span>
-                : <Link href={`/admin/products/${product.id}/attributes`} className="bp-btn bp-btn-secondary bp-btn-sm">مدیریت ویژگی‌ها</Link>
-              : <BpButton size="sm" isPending={loading} onClick={() => void submit("attributes")}>ثبت و مدیریت ویژگی‌ها</BpButton>
-            : undefined}
+          title="مشخصات محصول"
+          description="مشخصات محصول را اضافه کنید. گروه‌ها و نام ویژگی‌ها به دسته‌بندی تعلق دارند و روی همه محصولات همان دسته اثر می‌گذارند؛ مقدارها مخصوص همین محصول است."
         >
           {!categoryId ? (
-            <p className="bp-muted m-0 border border-dashed border-[var(--bp-divider)] p-4 text-center text-[12px]">برای مشاهده ویژگی‌ها ابتدا دسته‌بندی محصول را انتخاب کنید.</p>
-          ) : attributeDefinitions.length === 0 ? (
-            <div className="border border-[var(--bp-divider)] p-4">
-              <strong className="block text-[13px]">دسته «{selectedCategory?.name}» هنوز ویژگی ندارد</strong>
-              <p className="bp-muted mb-0 mt-1 text-[12px] leading-6">ابتدا ویژگی‌های موردنیاز این دسته را تعریف کنید.</p>
-              <Link href={`/admin/categories/${categoryId}/attributes`} className="bp-btn bp-btn-secondary bp-btn-sm mt-3">تعریف ویژگی‌های این دسته</Link>
-            </div>
+            <p className="bp-muted m-0 border border-dashed border-[var(--bp-divider)] p-4 text-center text-[12px]">برای افزودن مشخصات ابتدا دسته‌بندی محصول را انتخاب کنید.</p>
           ) : (
-            <div className="grid grid-cols-3 gap-2.5">
-              {[{ label: "تعریف‌شده", value: attributeDefinitions.length }, { label: "تکمیل‌شده", value: completedAttributeCount }, { label: "مهم", value: importantAttributeCount }].map((item) => (
-                <div key={item.label} className="border border-[var(--bp-divider)] px-3 py-2">
-                  <strong className="block text-[17px] font-bold">{item.value.toLocaleString("fa-IR")}</strong>
-                  <span className="bp-muted text-[10px]">{item.label}</span>
-                </div>
-              ))}
-            </div>
+            <BlueprintProductAttributes
+              categoryName={selectedCategory?.name ?? ""}
+              groups={attributeGroups}
+              values={attributeValues}
+              onGroupsChange={setAttributeGroups}
+              onValuesChange={setAttributeValues}
+            />
           )}
         </Panel>
 
