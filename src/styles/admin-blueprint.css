@@ -732,3 +732,58 @@ select.bp-input:focus-visible { border-color: var(--bp-accent); outline: none; }
 }
 .bp-root .admin-field:focus { border-color: var(--bp-accent) !important; box-shadow: none !important; }
 .bp-root .admin-field-label { font-weight: 400; font-size: 12px; color: var(--bp-label); }
+
+/* ── react-multi-date-picker re-skin ────────────────────────────────────────────────────────
+   The package injects its own CSS at runtime as plain, unscoped `.rmdp-*` rules — no layer, no
+   `!important`. Matching the compound-selector trick above (`.admin-field`, `.bp-input-sm`): a
+   two-class selector outranks the library's single-class one on specificity alone, so these win
+   regardless of which stylesheet lands in the document first. */
+.bp-datetime-popover .rmdp-wrapper {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  border-radius: 0;
+  font-family: var(--bp-font);
+  color: var(--bp-text);
+}
+.bp-datetime-popover .rmdp-calendar { padding: 2px; }
+.bp-datetime-popover .rmdp-header { padding: 4px 0; }
+.bp-datetime-popover .rmdp-header-values { color: var(--bp-text); font-weight: 700; font-size: 13px; }
+.bp-datetime-popover .rmdp-week-day { color: var(--bp-muted); font-size: 11px; }
+.bp-datetime-popover .rmdp-day,
+.bp-datetime-popover .rmdp-week-day { height: 30px; width: 30px; }
+.bp-datetime-popover .rmdp-day span { font-size: 12px; color: var(--bp-text); }
+.bp-datetime-popover .rmdp-day.rmdp-today span { background: var(--bp-hover); color: var(--bp-text); }
+.bp-datetime-popover .rmdp-day.rmdp-selected span:not(.highlight) { background: var(--bp-accent); box-shadow: none; color: var(--bp-bg); }
+.bp-datetime-popover .rmdp-day.rmdp-disabled,
+.bp-datetime-popover .rmdp-day.rmdp-deactive { color: var(--bp-muted); }
+@media (hover: hover) {
+  .bp-datetime-popover .rmdp-day:not(.rmdp-disabled, .rmdp-day-hidden) span:hover { background: var(--bp-hover); color: var(--bp-text); }
+}
+.bp-datetime-popover .rmdp-arrow { border-color: var(--bp-muted); }
+.bp-datetime-popover .rmdp-arrow-container:hover { background: var(--bp-accent); box-shadow: none; }
+.bp-datetime-popover .rmdp-arrow-container:hover .rmdp-arrow { border-color: var(--bp-bg); }
+.bp-datetime-popover .rmdp-arrow-container.disabled .rmdp-arrow { border-color: var(--bp-divider); }
+.bp-datetime-popover .rmdp-month-picker,
+.bp-datetime-popover .rmdp-year-picker { background: var(--bp-bg); }
+.bp-datetime-popover .rmdp-ym .rmdp-day.rmdp-selected span { background: var(--bp-accent); color: var(--bp-bg); }
+
+/* The analog-clock plugin: same accent, on the template's own surface/divider tokens instead of
+   the package's hard-coded blue. */
+.bp-datetime-popover .rmdp-analog-clock { background: var(--bp-surface); border: 1px solid var(--bp-divider); }
+.bp-datetime-popover .rmdp-analog-clock .dot { background: var(--bp-accent); box-shadow: none; }
+.bp-datetime-popover .rmdp-analog-clock .rmdp-hour { background: var(--bp-text); }
+.bp-datetime-popover .rmdp-analog-clock .rmdp-minute { background: var(--bp-muted); }
+.bp-datetime-popover .rmdp-analog-clock span { color: var(--bp-text); font-family: var(--bp-font); }
+.bp-datetime-popover .rmdp-analog-clock .dial-lines { background: var(--bp-divider); }
+.bp-datetime-popover .rmdp-analog-clock .dial-lines:nth-of-type(5n) { background: var(--bp-accent); }
+.bp-datetime-popover .rmdp-time-picker div input {
+  border-radius: var(--bp-radius);
+  background: var(--bp-surface);
+  color: var(--bp-text);
+  font-family: var(--bp-font);
+}
+.bp-datetime-popover .rmdp-time-picker div input:focus { outline: 1px solid var(--bp-accent); }
+.bp-datetime-popover .rmdp-time-picker .rmdp-am { color: var(--bp-muted); }
+.bp-datetime-popover .rmdp-up i,
+.bp-datetime-popover .rmdp-down i { border-color: var(--bp-muted); }
