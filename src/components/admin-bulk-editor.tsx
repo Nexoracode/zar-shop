@@ -10,7 +10,6 @@ import { requestErrorMessage, requestJson } from "@/lib/api-request";
 import { useAdminTemplate } from "@/components/admin/template-context";
 import { AdminDialog, AdminDialogButton } from "@/components/admin/admin-dialog";
 import { BpCheckbox } from "@/components/admin/blueprint/ui/checkbox";
-import { BpSelect } from "@/components/admin/blueprint/ui/select";
 
 type BulkContextValue = {
   selected: Set<string>;
@@ -77,15 +76,6 @@ export function AdminBulkEditor({ entity, entityLabel, ids, actions, children, d
               <div className="flex items-center gap-2 border border-[var(--bp-divider)] px-3 py-1.5"><AdminBulkSelectAll /><span>انتخاب همه</span></div>
               <span className="bp-muted flex items-center gap-2">{loading ? <Loader2 size={16} className="animate-spin text-[var(--bp-accent)]" /> : <CheckSquare size={16} className="text-[var(--bp-accent)]" />}{loading ? "در حال اعمال تغییر..." : selected.size ? `${selected.size.toLocaleString("fa-IR")} ${entityLabel} انتخاب شده` : `برای ویرایش سریع، ${entityLabel} را انتخاب کنید`}</span>
             </div>
-            <BpSelect
-              aria-label="ویرایش سریع"
-              value={action}
-              disabled={!selected.size || loading}
-              onChange={(event) => { const value = event.target.value; setAction(value); if (!value) return; const selectedAction = actions.find((item) => item.value === value); if (selectedAction?.confirmation) setPendingAction(selectedAction); else void apply(value); }}
-              options={[{ value: "", label: "انتخاب عملیات؛ اعمال خودکار" }, ...actions]}
-              reserveMessage={false}
-              className="w-72"
-            />
             <AdminTableRefreshButton />
           </div>
         ) : (
