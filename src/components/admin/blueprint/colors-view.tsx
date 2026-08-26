@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type DragEvent, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "@heroui/react";
-import { ChevronDown, ChevronUp, Pencil, Trash2 } from "lucide-react";
+import { ChevronDown, ChevronUp, GripVertical, Pencil, Trash2 } from "lucide-react";
 import { AdminEmptyState, AdminPageHeader, AdminStatusBadge } from "@/components/admin-ui";
 import { AdminBulkCheckbox, AdminBulkEditor } from "@/components/admin-bulk-editor";
 import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
@@ -19,6 +19,14 @@ type FieldErrors = Record<string, string>;
 const colorFormSchema = colorSchema.omit({ sortOrder: true });
 
 const emptyForm = { name: "", hex: "#C9A56A", isActive: true };
+
+function move<T>(list: T[], from: number, to: number): T[] {
+  if (from === to || from < 0 || to < 0 || to >= list.length) return list;
+  const next = [...list];
+  const [moved] = next.splice(from, 1);
+  next.splice(to, 0, moved);
+  return next;
+}
 
 function Panel({ title, description, children }: { title: string; description?: string; children: ReactNode }) {
   return (
@@ -118,18 +126,12 @@ export function BlueprintColorsView({ colors }: { colors: ColorItem[] }) {
     }
   }
 
-  async function moveColor(id: string, direction: -1 | 1) {
-    if (savingOrder) return;
-    const index = items.findIndex((item) => item.id === id);
-    const target = index + direction;
-    if (index < 0 || target < 0 || target >= items.length) return;
-    const previous = items;
-    const swapped = [...items];
-    [swapped[index], swapped[target]] = [swapped[target], swapped[index]];
-    const next = swapped.map((item, position) => ({ ...item, sortOrder: position }));
-    const changed = next.filter((item, position) => previous.find((entry) => entry.id === item.id)?.sortOrder !== position);
-
-    setItems(next);
+  /** Renumbers `next` sequentially and pushes only the rows whose position actually moved. */
+  async function persistOrder(next: ColorItem[], previous: ColorItem[]) {
+    const numbered = next.map((item, position) => ({ ...item, sortOrder: position }));
+    const changed = numbered.filter((item, position) => previous.find((entry) => entry.id === item.id)?.sortOrder !== position);
+    setItems(numbered);
+    if (!changed.length) return;
     setSavingOrder(true);
     try {
       await Promise.all(changed.map((item) => requestJson(`/api/colors/${item.id}`, {
@@ -144,6 +146,45 @@ export function BlueprintColorsView({ colors }: { colors: ColorItem[] }) {
     } finally {
       setSavingOrder(false);
     }
+  }
+
+  function moveColor(id: string, direction: -1 | 1) {
+    if (savingOrder) return;
+    const index = items.findIndex((item) => item.id === id);
+    const target = index + direction;
+    if (index < 0 || target < 0 || target >= items.length) return;
+    void persistOrder(move(items, index, target), items);
+  }
+
+  // Rows reorder live as the pointer passes over them; `dragOrigin` keeps the list from before
+  // the gesture started, so `endDrag` only has to diff the two snapshots once, on release.
+  const [draggedId, setDraggedId] = useState<string | null>(null);
+  const dragOrigin = useRef<ColorItem[] | null>(null);
+
+  function beginDrag(id: string) {
+    if (savingOrder) return;
+    dragOrigin.current = items;
+    setDraggedId(id);
+  }
+
+  function dragOver(event: DragEvent<HTMLElement>, overId: string) {
+    event.preventDefault();
+    if (!draggedId || draggedId === overId) return;
+    const bounds = event.currentTarget.getBoundingClientRect();
+    const after = event.clientY > bounds.top + bounds.height / 2;
+    setItems((current) => {
+      const from = current.findIndex((item) => item.id === draggedId);
+      const overIndex = current.findIndex((item) => item.id === overId);
+      if (from < 0 || overIndex < 0) return current;
+      return move(current, from, after ? overIndex : Math.max(0, overIndex));
+    });
+  }
+
+  function endDrag() {
+    const origin = dragOrigin.current;
+    setDraggedId(null);
+    dragOrigin.current = null;
+    if (origin) void persistOrder(items, origin);
   }
 
   async function confirmDelete() {
@@ -184,12 +225,20 @@ export function BlueprintColorsView({ colors }: { colors: ColorItem[] }) {
           </form>
         </aside>
 
-        <Panel title="فهرست رنگ‌ها" description="با فلش‌های بالا/پایین، ترتیب نمایش رنگ‌ها در فروشگاه را تنظیم کنید.">
+        <Panel title="فهرست رنگ‌ها" description="با کشیدن ردیف یا دکمه‌های بالا/پایین، ترتیب نمایش رنگ‌ها در فروشگاه را تنظیم کنید.">
           {items.length ? (
             <>
               <div className="md:hidden">
                 {items.map((color, index) => (
-                  <article key={color.id} className="flex flex-col gap-3 border-b border-[var(--bp-row-line)] p-4 last:border-b-0">
+                  <article
+                    key={color.id}
+                    draggable={!savingOrder}
+                    onDragStart={(event) => { event.dataTransfer.effectAllowed = "move"; beginDrag(color.id); }}
+                    onDragOver={(event) => dragOver(event, color.id)}
+                    onDrop={(event) => event.preventDefault()}
+                    onDragEnd={endDrag}
+                    className={`flex flex-col gap-3 border-b border-[var(--bp-row-line)] p-4 last:border-b-0 ${draggedId === color.id ? "opacity-50" : ""}`}
+                  >
                     <div className="flex items-center gap-3">
                       <ColorSwatchBox hex={color.hex} />
                       <div className="min-w-0 flex-1">
@@ -199,7 +248,7 @@ export function BlueprintColorsView({ colors }: { colors: ColorItem[] }) {
                       <AdminStatusBadge tone={color.isActive ? "success" : "neutral"}>{color.isActive ? "فعال" : "غیرفعال"}</AdminStatusBadge>
                     </div>
                     <div className="flex items-center gap-2">
-                      <ReorderButtons canMoveUp={index > 0} canMoveDown={index < items.length - 1} disabled={savingOrder} onUp={() => void moveColor(color.id, -1)} onDown={() => void moveColor(color.id, 1)} />
+                      <ReorderButtons canMoveUp={index > 0} canMoveDown={index < items.length - 1} disabled={savingOrder} onUp={() => moveColor(color.id, -1)} onDown={() => moveColor(color.id, 1)} />
                       <div className="me-auto flex gap-1">
                         <BpButton isIconOnly size="sm" variant="ghost" aria-label={`ویرایش ${color.name}`} onClick={() => startEdit(color)}><Pencil size={14} /></BpButton>
                         <BpButton isIconOnly size="sm" variant="ghost" className="text-[var(--bp-danger)]" aria-label={`حذف ${color.name}`} onClick={() => { setDeleteError(""); setDeleteTarget(color); }}><Trash2 size={14} /></BpButton>
@@ -224,12 +273,25 @@ export function BlueprintColorsView({ colors }: { colors: ColorItem[] }) {
                   </thead>
                   <tbody>
                     {items.map((color, index) => (
-                      <tr key={color.id}>
+                      <tr
+                        key={color.id}
+                        draggable={!savingOrder}
+                        onDragStart={(event) => { event.dataTransfer.effectAllowed = "move"; beginDrag(color.id); }}
+                        onDragOver={(event) => dragOver(event, color.id)}
+                        onDrop={(event) => event.preventDefault()}
+                        onDragEnd={endDrag}
+                        className={draggedId === color.id ? "opacity-50" : undefined}
+                      >
                         <BpTd className="w-10 text-center"><AdminBulkCheckbox id={color.id} label={`انتخاب رنگ ${color.name}`} /></BpTd>
                         <BpTd><ColorSwatchBox hex={color.hex} /></BpTd>
                         <BpTd className="max-w-[180px] truncate font-bold" title={color.name}>{color.name}</BpTd>
                         <BpTd className="bp-muted font-mono"><span dir="ltr">{color.hex}</span></BpTd>
-                        <BpTd><ReorderButtons canMoveUp={index > 0} canMoveDown={index < items.length - 1} disabled={savingOrder} onUp={() => void moveColor(color.id, -1)} onDown={() => void moveColor(color.id, 1)} /></BpTd>
+                        <BpTd>
+                          <div className="flex items-center justify-center gap-1">
+                            <span aria-hidden="true" title="برای جابه‌جایی بکشید" className="bp-muted cursor-grab active:cursor-grabbing"><GripVertical size={15} /></span>
+                            <ReorderButtons canMoveUp={index > 0} canMoveDown={index < items.length - 1} disabled={savingOrder} onUp={() => moveColor(color.id, -1)} onDown={() => moveColor(color.id, 1)} />
+                          </div>
+                        </BpTd>
                         <BpTd><AdminStatusBadge tone={color.isActive ? "success" : "neutral"}>{color.isActive ? "فعال" : "غیرفعال"}</AdminStatusBadge></BpTd>
                         <BpTd>
                           <div className="flex items-center justify-center gap-1">
