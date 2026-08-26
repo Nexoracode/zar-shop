@@ -355,6 +355,7 @@ export function BlueprintProductForm({ storeIndustry, categories = [], colors = 
             library={library}
             optionTypes={optionTypes}
             variants={variants}
+            fixedPrice={fixedPrice}
             onLibraryChange={setLibrary}
             onChange={(next) => { setOptionTypes(next.optionTypes); setVariants(next.variants); }}
           />

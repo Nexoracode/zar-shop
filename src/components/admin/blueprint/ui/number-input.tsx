@@ -13,12 +13,15 @@ import { BpInput } from "./input";
  *
  * Stored values are in rials; the words read in tomans, which is what the reader thinks in.
  */
-export function BpNumberInput({ name, value, onValueChange, isPrice = false, currency = "تومان", allowDecimal = false, hint, ...rest }: {
+export function BpNumberInput({ name, value, onValueChange, isPrice = false, showWords = true, currency = "تومان", allowDecimal = false, hint, ...rest }: {
   name?: string;
   value: string;
   onValueChange: (value: string) => void;
   /** Group the digits and spell the amount out below. */
   isPrice?: boolean;
+  /** Turns off the spelled-out amount under an `isPrice` field — for a column too narrow to
+   * carry it, where the grouped digits alone are enough. */
+  showWords?: boolean;
   currency?: string;
   allowDecimal?: boolean;
   hint?: ReactNode;
@@ -35,7 +38,7 @@ export function BpNumberInput({ name, value, onValueChange, isPrice = false, cur
   className?: string;
 }) {
   const raw = normalizeNumericValue(value, allowDecimal);
-  const words = isPrice
+  const words = isPrice && showWords
     ? currency === "تومان" ? rialPriceToTomanWords(raw) : priceToPersianWords(raw, currency)
     : "";
 

@@ -54,8 +54,8 @@ export function buildCombinations(types: SelectedType[]): VariantSelection[] {
   }, [{}]);
 }
 
-function emptyDraft(selection: VariantSelection): VariantDraft {
-  return { selection, price: null, weightGrams: null, discountType: null, discountValue: null, stock: 0, isActive: true };
+function emptyDraft(selection: VariantSelection, defaultPrice: string | null): VariantDraft {
+  return { selection, price: defaultPrice, weightGrams: null, discountType: null, discountValue: null, stock: 0, isActive: true };
 }
 
 /**
@@ -64,15 +64,19 @@ function emptyDraft(selection: VariantSelection): VariantDraft {
  * Adding a fourth colour must not blank the prices on the three that were already priced, and
  * removing a size must take only its own rows. Rows are matched by signature, so a pairing
  * survives anything that does not change which values it is made of.
+ *
+ * `defaultPrice` seeds a brand-new row with the product's own price rather than leaving it
+ * blank — a combination usually costs the same as the product until the admin says otherwise.
+ * An existing row's price, even one already cleared to nothing, is never touched.
  */
-export function mergeCombinations(existing: VariantDraft[], types: SelectedType[]): VariantDraft[] {
+export function mergeCombinations(existing: VariantDraft[], types: SelectedType[], defaultPrice: string | null = null): VariantDraft[] {
   const bySignature = new Map(existing.map((variant) => [selectionSignature(variant.selection), variant]));
   return buildCombinations(types)
     .slice(0, MAX_VARIANTS)
     .map((selection) => {
       const kept = bySignature.get(selectionSignature(selection));
       // The selection is rewritten from the current types so a renamed type reaches its rows.
-      return kept ? { ...kept, selection } : emptyDraft(selection);
+      return kept ? { ...kept, selection } : emptyDraft(selection, defaultPrice);
     });
 }
 

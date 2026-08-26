@@ -44,13 +44,18 @@ type Props = {
   library: LibraryType[];
   optionTypes: ProductTypeDraft[];
   variants: VariantDraft[];
+  /** The product's own sale price — a brand-new combination is seeded with it, since it usually
+   * costs the same as the product until the admin overrides it. Not used for a gold product,
+   * which prices from weight instead. */
+  fixedPrice?: string;
   onChange: (next: { optionTypes: ProductTypeDraft[]; variants: VariantDraft[] }) => void;
   onLibraryChange: (library: LibraryType[]) => void;
 };
 
 const MAX_TYPES = 5;
 
-export function BlueprintProductOptions({ storeIndustry, colors, library, optionTypes, variants, onChange, onLibraryChange }: Props) {
+export function BlueprintProductOptions({ storeIndustry, colors, library, optionTypes, variants, fixedPrice, onChange, onLibraryChange }: Props) {
+  const defaultVariantPrice = storeIndustry === "GENERAL" && fixedPrice ? fixedPrice : null;
   const [pickedTypeId, setPickedTypeId] = useState("");
   const [typeError, setTypeError] = useState("");
   const [newValueFor, setNewValueFor] = useState("");
@@ -82,7 +87,7 @@ export function BlueprintProductOptions({ storeIndustry, colors, library, option
 
   /** Every change to the types rebuilds the rows, keeping the figures already entered. */
   function applyTypes(next: ProductTypeDraft[]) {
-    onChange({ optionTypes: next, variants: mergeCombinations(variants, asSelectedTypes(next)) });
+    onChange({ optionTypes: next, variants: mergeCombinations(variants, asSelectedTypes(next), defaultVariantPrice) });
   }
 
   function addType() {
@@ -186,7 +191,7 @@ export function BlueprintProductOptions({ storeIndustry, colors, library, option
           if (!item) return [];
           const labels = labelsByType.get(chosen.typeId)!;
           return [{ typeName: item.name, values: chosen.valueIds.flatMap((id) => (labels.has(id) ? [labels.get(id)!] : [])) }];
-        })),
+        }), defaultVariantPrice),
       });
       resetValueForm();
     } catch (reason) {
@@ -219,7 +224,7 @@ export function BlueprintProductOptions({ storeIndustry, colors, library, option
           if (!item) return [];
           const labels = labelsByType.get(chosen.typeId)!;
           return [{ typeName: item.name, values: chosen.valueIds.flatMap((id) => (labels.has(id) ? [labels.get(id)!] : [])) }];
-        })),
+        }), defaultVariantPrice),
       });
       setDeletingValue(null);
     } catch (reason) {
@@ -392,6 +397,7 @@ export function BlueprintProductOptions({ storeIndustry, colors, library, option
                         <BpNumberInput
                           aria-label={`قیمت ترکیب ${label}`}
                           isPrice
+                          showWords={false}
                           value={variant.price ?? ""}
                           reserveMessage={false}
                           wrapperClassName="w-[min(100%,130px)]"
