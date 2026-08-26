@@ -6,7 +6,12 @@ import { includesNormalizedText } from "@/lib/text-search";
 import { BpFieldMessage, BpRequiredMark, describedBy } from "./field-message";
 import { BpPopover } from "./popover";
 
-export type BpComboboxOption = { value: string; label: string };
+export type BpComboboxOption = {
+  value: string;
+  label: string;
+  /** Hex code â€” shown as a small swatch beside the label, e.g. for a colour value. */
+  color?: string | null;
+};
 
 /**
  * A select you can type into. Built from a text input and a list of buttons rather than a combobox
@@ -36,7 +41,9 @@ export function BpCombobox({ label, value, onChange, options, placeholder = "Ø¬Ø
   const fieldId = useId();
   const messageId = `${fieldId}-message`;
 
-  const selectedLabel = options.find((option) => option.value === value)?.label ?? "";
+  const selectedOption = options.find((option) => option.value === value);
+  const selectedLabel = selectedOption?.label ?? "";
+  const showSwatch = !open && Boolean(selectedOption?.color);
   const matches = useMemo(
     () => (query.trim() ? options.filter((option) => includesNormalizedText(option.label, query)) : options),
     [options, query],
@@ -52,6 +59,7 @@ export function BpCombobox({ label, value, onChange, options, placeholder = "Ø¬Ø
     <div className={`bp-field ${wrapperClassName}`.trim()}>
       {label && <label htmlFor={fieldId}>{label}{required && <BpRequiredMark />}</label>}
       <div className="bp-select-wrap">
+        {showSwatch && <span aria-hidden className="absolute start-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 rounded-full border border-[var(--bp-divider)]" style={{ background: selectedOption!.color! }} />}
         <input
           ref={inputRef}
           id={fieldId}
@@ -64,6 +72,7 @@ export function BpCombobox({ label, value, onChange, options, placeholder = "Ø¬Ø
           aria-invalid={error ? true : undefined}
           aria-describedby={describedBy(messageId, error, hint)}
           className={`bp-input ${className}`.trim()}
+          style={showSwatch ? { paddingInlineStart: 30 } : undefined}
           placeholder={placeholder}
           value={open ? query : selectedLabel}
           onFocus={() => setOpen(true)}
@@ -93,8 +102,9 @@ export function BpCombobox({ label, value, onChange, options, placeholder = "Ø¬Ø
                 role="option"
                 aria-selected={option.value === value}
                 onClick={() => choose(option)}
-                className={`w-full border border-transparent px-3 py-2 text-start text-[13px] hover:bg-[var(--bp-hover)] ${option.value === value ? "bg-[var(--bp-accent-100)] text-[var(--bp-accent-800)]" : ""}`}
+                className={`flex w-full items-center gap-2 border border-transparent px-3 py-2 text-start text-[13px] hover:bg-[var(--bp-hover)] ${option.value === value ? "bg-[var(--bp-accent-100)] text-[var(--bp-accent-800)]" : ""}`}
               >
+                {option.color && <span aria-hidden className="h-3.5 w-3.5 shrink-0 rounded-full border border-[var(--bp-divider)]" style={{ background: option.color }} />}
                 {option.label}
               </button>
             </li>

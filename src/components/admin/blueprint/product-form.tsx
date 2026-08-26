@@ -37,7 +37,7 @@ export type EditableProduct = {
 };
 
 export type ProductCategoryOption = { id: string; name: string; parentName: string | null; attributeGroups: CategoryAttributeGroup[] };
-type Props = { storeIndustry: "GOLD" | "GENERAL"; categories?: ProductCategoryOption[]; colors?: Array<{ id: string; name: string }>; optionLibrary?: LibraryType[]; product?: EditableProduct };
+type Props = { storeIndustry: "GOLD" | "GENERAL"; categories?: ProductCategoryOption[]; colors?: Array<{ id: string; name: string; hex: string }>; optionLibrary?: LibraryType[]; product?: EditableProduct };
 
 /** Errors are keyed by the schema's own field names, so a zod issue maps straight onto a field. */
 type FieldErrors = Record<string, string>;

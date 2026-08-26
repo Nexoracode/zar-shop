@@ -40,7 +40,7 @@ export type { VariantDraft };
 
 type Props = {
   storeIndustry: "GOLD" | "GENERAL";
-  colors: Array<{ id: string; name: string }>;
+  colors: Array<{ id: string; name: string; hex: string }>;
   library: LibraryType[];
   optionTypes: ProductTypeDraft[];
   variants: VariantDraft[];
@@ -268,13 +268,14 @@ export function BlueprintProductOptions({ storeIndustry, colors, library, option
                       onChange={(event) => { setNewValueLabel(event.target.value); setTypeError(""); }}
                     />
                     {type.kind === "COLOR" && (
-                      <BpSelect
+                      <BpCombobox
                         label="رنگ"
                         value={newValueColorId}
-                        placeholder="انتخاب رنگ"
-                        options={colors.map((color) => ({ value: color.id, label: color.name }))}
+                        placeholder="جستجو یا انتخاب رنگ"
+                        emptyLabel="رنگی با این نام پیدا نشد"
+                        options={colors.map((color) => ({ value: color.id, label: color.name, color: color.hex }))}
                         wrapperClassName="w-[min(100%,180px)]"
-                        onChange={(event) => setNewValueColorId(event.target.value)}
+                        onChange={setNewValueColorId}
                       />
                     )}
                     <BpButton variant="primary" className="field-action gap-1.5" isPending={pending} disabled={!newValueLabel.trim()} onClick={() => void createValue(chosen.typeId)}>

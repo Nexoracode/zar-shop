@@ -12,7 +12,7 @@ export default async function NewProduct() {
   await requirePermission("catalog:manage");
   const [categories, colors, optionLibrary, storeIndustry, brandSettings] = await Promise.all([
     db.category.findMany({ where: { isActive: true }, include: { parent: { select: { name: true } } }, orderBy: [{ sortOrder: "asc" }, { name: "asc" }] }),
-    db.color.findMany({ where: { isActive: true }, orderBy: [{ sortOrder: "asc" }, { name: "asc" }], select: { id: true, name: true } }),
+    db.color.findMany({ where: { isActive: true }, orderBy: [{ sortOrder: "asc" }, { name: "asc" }], select: { id: true, name: true, hex: true } }),
     listSelectableOptionTypes(),
     getStoreIndustry(),
     getBrandSettings(),
