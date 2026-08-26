@@ -11,12 +11,14 @@ import type { StorefrontAddress } from "@/components/address-form";
 import { notifyCartUpdated } from "@/components/storefront-cart-link";
 import { promotionFieldLimits } from "@/modules/promotions/schemas";
 import { TextField } from "@/components/form-field";
+import { ShippingMethodPicker } from "@/components/shipping-method-picker";
 
 type Quote = { subtotal: number; productDiscount: number; merchandiseAmount: number; promotionDiscount: number; shipping: number; shippingDiscount: number; total: number; applications: Array<{ title: string; code: string | null; discountAmount: number; shippingDiscount: number }> };
 
 export function CheckoutForm({ settings, paymentMethods, currency, itemCount, initialQuote, initialAddresses, user }: { settings: CommerceSettings; paymentMethods: StorefrontPaymentMethod[]; currency: "IRR" | "IRT"; itemCount: number; initialQuote: Quote; initialAddresses: StorefrontAddress[]; user: { firstName: string | null; lastName: string | null; phone: string | null } }) {
   const formRef = useRef<HTMLFormElement>(null);
   const [paymentProvider, setPaymentProvider] = useState(paymentMethods[0]?.id ?? "");
+  const [shippingMethodId, setShippingMethodId] = useState<string | null>(null);
   const [couponCode, setCouponCode] = useState("");
   const [quote, setQuote] = useState(initialQuote);
   const [couponMessage, setCouponMessage] = useState("");
@@ -36,11 +38,11 @@ export function CheckoutForm({ settings, paymentMethods, currency, itemCount, in
     return () => window.removeEventListener(ADDRESS_UPDATED_EVENT, update);
   }, []);
 
-  async function refreshQuote(nextCoupon = couponCode) {
+  async function refreshQuote(nextCoupon = couponCode, nextMethodId = shippingMethodId) {
     setCheckingCoupon(true); setCouponError(""); setCouponMessage("");
     if (!selectedAddress) { setCouponError("ابتدا نشانی تحویل را ثبت و انتخاب کنید."); setCheckingCoupon(false); return; }
     try {
-      const response = await fetch("/api/checkout/preview", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ couponCode: nextCoupon, addressId: selectedAddress.id }) });
+      const response = await fetch("/api/checkout/preview", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ couponCode: nextCoupon, addressId: selectedAddress.id, shippingMethodId: nextMethodId }) });
       const result = await response.json().catch(() => null);
       if (!response.ok) throw new Error(result?.message ?? "بررسی تخفیف انجام نشد.");
       setQuote(result as Quote);
@@ -81,6 +83,12 @@ export function CheckoutForm({ settings, paymentMethods, currency, itemCount, in
             {selectedAddress ? <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-secondary)]/45 p-4"><div className="flex flex-wrap items-center gap-2"><strong className="text-sm">{selectedAddress.title}</strong>{selectedAddress.isDefault && <span className="rounded-full bg-[var(--brand-primary)] px-2 py-0.5 text-[10px] font-bold text-[var(--brand-primary-foreground)]">پیش‌فرض</span>}</div><p className="mb-0 mt-3 text-sm leading-7">{selectedAddress.province}، {selectedAddress.city}، {selectedAddress.addressLine}، پلاک {selectedAddress.plaque}{selectedAddress.unit ? `، واحد ${selectedAddress.unit}` : ""}</p><div className="mt-3 text-xs text-[var(--muted)]">کد پستی: <b dir="ltr">{selectedAddress.postalCode}</b></div></div> : <Alert status="warning"><Alert.Description>برای ادامه، اولین نشانی تحویل خود را ثبت کنید.</Alert.Description></Alert>}
           </Card.Content>
         </Card>
+
+        <ShippingMethodPicker
+          addressId={selectedAddress?.id ?? null}
+          selectedMethodId={shippingMethodId}
+          onSelect={(methodId) => { setShippingMethodId(methodId); void refreshQuote(couponCode, methodId); }}
+        />
 
         <Card variant="secondary" className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-sm"><Card.Content className="p-5 sm:p-6"><div className="mb-5 flex items-start gap-3"><span className="grid size-10 shrink-0 place-items-center rounded-full bg-[var(--brand-primary)]/10 text-[var(--brand-primary)]"><CreditCard size={20} /></span><div><h2 className="m-0 text-base font-bold">روش پرداخت</h2><p className="mb-0 mt-1 text-xs text-[var(--muted)]">پرداخت از طریق درگاه امن بانکی انجام می‌شود.</p></div></div><input type="hidden" name="paymentProvider" value={paymentProvider} />{paymentMethods.length ? <div className="grid gap-3">{paymentMethods.map((method) => <Button key={method.id} type="button" variant="secondary" onPress={() => setPaymentProvider(method.id)} className={`h-auto min-h-20 justify-start gap-3 rounded-xl border p-4 text-right ${paymentProvider === method.id ? "border-[var(--brand-primary)] bg-[var(--brand-primary)]/5 ring-1 ring-[var(--brand-primary)]" : "border-[var(--border)]"}`}><span className="grid size-11 shrink-0 place-items-center rounded-xl bg-[var(--surface-secondary)] text-[var(--brand-primary)]"><CreditCard size={22} /></span><span><strong className="block">{method.name}</strong><small className="mt-1 block font-normal text-[var(--muted)]">{method.description}</small></span>{method.sandbox && <span className="mr-auto rounded-full bg-amber-50 px-2 py-1 text-[10px] font-bold text-amber-700">آزمایشی</span>}{paymentProvider === method.id && <Check size={18} className="text-[var(--brand-primary)]" />}</Button>)}</div> : <Alert status="warning"><Alert.Description>هنوز هیچ درگاه پرداختی برای فروشگاه پیکربندی نشده است.</Alert.Description></Alert>}</Card.Content></Card>
 

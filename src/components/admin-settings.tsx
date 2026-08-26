@@ -26,6 +26,7 @@ import type { ContentPageId, ContentSettings as ContentSettingsData } from "@/mo
 import type { CatalogSettings as CatalogSettingsData } from "@/modules/settings/catalog-settings";
 import { RichTextEditor } from "@/components/rich-text-editor";
 import { generalSettingsFieldLimits } from "@/modules/settings/general-settings";
+import { ShippingOriginPicker } from "@/components/shipping-origin-picker";
 
 export function GeneralSettings({ initialSettings }: { initialSettings: GeneralStoreSettingsInput }) {
   const [saving, setSaving] = useState(false);
@@ -347,6 +348,16 @@ export function CommerceSettings({ initialSettings, configuredGatewayCount }: { 
       <section className="grid gap-3 rounded-xl border border-[var(--border)] p-4">
         <div><strong className="block text-sm">روش‌های تحویل</strong><p className="m-0 mt-1 text-xs leading-5 text-[var(--muted)]">حداقل یک روش فعال برای ثبت سفارش لازم است.</p></div>
         <div className="grid gap-3 2xl:grid-cols-2"><AdminCheckbox isSelected={settings.insuredShippingEnabled} onChange={(value) => set("insuredShippingEnabled", value)} icon={<Truck size={18} />} description="هزینه پس از دریافت نشانی و بر اساس وزن مرسوله محاسبه می‌شود">ارسال بیمه‌شده</AdminCheckbox><AdminCheckbox isSelected={settings.inStorePickupEnabled} onChange={(value) => set("inStorePickupEnabled", value)} icon={<MapPin size={18} />} description="مشتری سفارش پرداخت‌شده را بدون هزینه ارسال از فروشگاه تحویل می‌گیرد">تحویل حضوری</AdminCheckbox></div>
+      </section>
+      <section className="grid gap-3 rounded-xl border border-[var(--border)] p-4">
+        <div><strong className="block text-sm">مبدأ ارسال و وزن پیش‌فرض</strong><p className="m-0 mt-1 text-xs leading-5 text-[var(--muted)]">برای گرفتن نرخ از شرکت حمل، مبدأ لازم است. وزن پیش‌فرض روی محصولاتی اعمال می‌شود که هنوز وزن بسته ندارند.</p></div>
+        <ShippingOriginPicker
+          provinceId={settings.originProvinceId}
+          cityId={settings.originCityId}
+          onChange={(next) => setSettings((current) => ({ ...current, originProvinceId: next.provinceId, originCityId: next.cityId }))}
+        />
+        <label className={`${adminLabelClass} sm:max-w-[240px]`}>وزن پیش‌فرض بسته (گرم)<HeroNumberInput name="defaultParcelWeightGrams" min="1" value={String(settings.defaultParcelWeightGrams)} onValueChange={(value) => set("defaultParcelWeightGrams", Number(value || 0))} fullWidth variant="secondary" className={adminFieldClass} /></label>
+        <Link href="/admin/shipping-methods" className={buttonVariants({ variant: "secondary", className: "min-h-11 w-full gap-2 sm:w-auto" })}><Truck size={16} />مدیریت روش‌های ارسال</Link>
       </section>
     </SettingCard>
   </div><Card variant="secondary" className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4 shadow-sm"><div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"><div><strong className="block text-sm">ذخیره تنظیمات ارسال و پرداخت</strong><p className="m-0 mt-1 text-xs text-[var(--muted)]">وضعیت درگاه و روش‌های تحویل با هم ذخیره می‌شوند.</p></div><AdminSaveButton isSaving={saving} label="ذخیره تنظیمات" /></div></Card></form>;
