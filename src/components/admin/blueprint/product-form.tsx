@@ -172,7 +172,9 @@ export function BlueprintProductForm({ storeIndustry, categories = [], product }
       // instead of being dropped silently.
       if (unattached.length) toast.danger("اطلاعات محصول کامل نیست", { description: unattached[0] });
       const first = Object.keys(found)[0];
-      if (first) formRef.current?.querySelector<HTMLElement>(`[name="${first}"]`)?.focus();
+      // A numeric control keeps `name` on its hidden raw-value input, so the visible box is
+      // found by `data-field` instead; document order puts the visible one first.
+      if (first) formRef.current?.querySelector<HTMLElement>(`[name="${first}"], [data-field="${first}"]`)?.focus();
       return;
     }
     setLoading(true);
@@ -265,31 +267,31 @@ export function BlueprintProductForm({ storeIndustry, categories = [], product }
         {storeIndustry === "GOLD" && (
           <Panel title="مشخصات و قیمت‌گذاری" description="قیمت از نرخ روز طلا، وزن، اجرت، سود و مالیات محاسبه می‌شود.">
             <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-              <BpInput name="weightGrams" label="وزن (گرم)" required type="number" step="0.001" min="0.001" dir="ltr" value={weightGrams} error={errors.weightGrams} onChange={(event) => { setWeightGrams(event.target.value); clearError("weightGrams"); }} />
-              <BpInput name="purity" label="عیار" required type="number" min="1" max="999" dir="ltr" value={purity} error={errors.purity} onChange={(event) => { setPurity(event.target.value); clearError("purity"); }} />
+              <BpNumberInput name="weightGrams" allowDecimal label="وزن (گرم)" required value={weightGrams} error={errors.weightGrams} onValueChange={(next) => { setWeightGrams(next); clearError("weightGrams"); }} />
+              <BpNumberInput name="purity" label="عیار" required value={purity} error={errors.purity} onValueChange={(next) => { setPurity(next); clearError("purity"); }} />
               <BpSelect name="makingFeeType" label="نوع اجرت" value={makingFeeType} error={errors.makingFeeType} onChange={(event) => setMakingFeeType(event.target.value as "PERCENT" | "FIXED")} options={[{ value: "PERCENT", label: "درصدی" }, { value: "FIXED", label: "مبلغ ثابت" }]} />
               <BpNumberInput name="makingFeeValue" label={`مقدار اجرت (${makingFeeType === "FIXED" ? "ریال" : "درصد"})`} required allowDecimal isPrice={makingFeeType === "FIXED"} value={makingFeeValue} error={errors.makingFeeValue} onValueChange={(next) => { setMakingFeeValue(next); clearError("makingFeeValue"); }} />
-              <BpInput name="profitPercent" label="درصد سود" required type="number" step="0.01" min="0" dir="ltr" value={profitPercent} error={errors.profitPercent} onChange={(event) => { setProfitPercent(event.target.value); clearError("profitPercent"); }} />
-              <BpInput name="taxPercent" label="درصد مالیات" required type="number" step="0.01" min="0" dir="ltr" value={taxPercent} error={errors.taxPercent} onChange={(event) => { setTaxPercent(event.target.value); clearError("taxPercent"); }} />
+              <BpNumberInput name="profitPercent" allowDecimal label="درصد سود" required value={profitPercent} error={errors.profitPercent} onValueChange={(next) => { setProfitPercent(next); clearError("profitPercent"); }} />
+              <BpNumberInput name="taxPercent" allowDecimal label="درصد مالیات" required value={taxPercent} error={errors.taxPercent} onValueChange={(next) => { setTaxPercent(next); clearError("taxPercent"); }} />
             </div>
           </Panel>
         )}
 
         <Panel title="ارسال و بسته‌بندی" description="ابعاد و وزن بسته آماده ارسال است، نه وزن خود کالا؛ برای محاسبه هزینه ارسال استفاده می‌شود.">
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <BpInput name="shippingWeightGrams" label="وزن بسته (گرم)" type="number" min="1" dir="ltr" value={shippingWeightGrams} error={errors.shippingWeightGrams} onChange={(event) => { setShippingWeightGrams(event.target.value); clearError("shippingWeightGrams"); }} />
-            <BpInput name="packageLengthCm" label="طول (سانتی‌متر)" type="number" step="0.01" min="0.01" dir="ltr" value={packageLengthCm} error={errors.packageLengthCm} onChange={(event) => { setPackageLengthCm(event.target.value); clearError("packageLengthCm"); }} />
-            <BpInput name="packageWidthCm" label="عرض (سانتی‌متر)" type="number" step="0.01" min="0.01" dir="ltr" value={packageWidthCm} error={errors.packageWidthCm} onChange={(event) => { setPackageWidthCm(event.target.value); clearError("packageWidthCm"); }} />
-            <BpInput name="packageHeightCm" label="ارتفاع (سانتی‌متر)" type="number" step="0.01" min="0.01" dir="ltr" value={packageHeightCm} error={errors.packageHeightCm} onChange={(event) => { setPackageHeightCm(event.target.value); clearError("packageHeightCm"); }} />
+            <BpNumberInput name="shippingWeightGrams" label="وزن بسته (گرم)" value={shippingWeightGrams} error={errors.shippingWeightGrams} onValueChange={(next) => { setShippingWeightGrams(next); clearError("shippingWeightGrams"); }} />
+            <BpNumberInput name="packageLengthCm" allowDecimal label="طول (سانتی‌متر)" value={packageLengthCm} error={errors.packageLengthCm} onValueChange={(next) => { setPackageLengthCm(next); clearError("packageLengthCm"); }} />
+            <BpNumberInput name="packageWidthCm" allowDecimal label="عرض (سانتی‌متر)" value={packageWidthCm} error={errors.packageWidthCm} onValueChange={(next) => { setPackageWidthCm(next); clearError("packageWidthCm"); }} />
+            <BpNumberInput name="packageHeightCm" allowDecimal label="ارتفاع (سانتی‌متر)" value={packageHeightCm} error={errors.packageHeightCm} onValueChange={(next) => { setPackageHeightCm(next); clearError("packageHeightCm"); }} />
           </div>
         </Panel>
 
         <Panel title="موجودی و آماده‌سازی">
           <div className="grid gap-3 sm:grid-cols-2">
-            <BpInput name="stock" label="تعداد موجودی در انبار" required type="number" min="0" dir="ltr" value={stock} error={errors.stock} onChange={(event) => { setStock(event.target.value); clearError("stock"); }} />
-            <BpInput name="preparationDays" label="زمان آماده‌سازی (روز)" required type="number" min="0" max="90" dir="ltr" value={preparationDays} error={errors.preparationDays} onChange={(event) => { setPreparationDays(event.target.value); clearError("preparationDays"); }} />
-            <BpInput name="minOrderQuantity" label="حداقل سفارش" required type="number" min="1" dir="ltr" value={minOrderQuantity} error={errors.minOrderQuantity} hint="کمترین تعدادی که مشتری می‌تواند از این کالا بخرد." onChange={(event) => { setMinOrderQuantity(event.target.value); clearError("minOrderQuantity"); }} />
-            <BpInput name="maxOrderQuantity" label="حداکثر سفارش" type="number" min="1" dir="ltr" value={maxOrderQuantity} error={errors.maxOrderQuantity} hint="خالی بگذارید تا فقط سقف کلی فروشگاه اعمال شود." onChange={(event) => { setMaxOrderQuantity(event.target.value); clearError("maxOrderQuantity"); }} />
+            <BpNumberInput name="stock" label="تعداد موجودی در انبار" required value={stock} error={errors.stock} onValueChange={(next) => { setStock(next); clearError("stock"); }} />
+            <BpNumberInput name="preparationDays" label="زمان آماده‌سازی (روز)" required value={preparationDays} error={errors.preparationDays} onValueChange={(next) => { setPreparationDays(next); clearError("preparationDays"); }} />
+            <BpNumberInput name="minOrderQuantity" label="حداقل سفارش" required value={minOrderQuantity} error={errors.minOrderQuantity} hint="کمترین تعدادی که مشتری می‌تواند از این کالا بخرد." onValueChange={(next) => { setMinOrderQuantity(next); clearError("minOrderQuantity"); }} />
+            <BpNumberInput name="maxOrderQuantity" label="حداکثر سفارش" value={maxOrderQuantity} error={errors.maxOrderQuantity} hint="خالی بگذارید تا فقط سقف کلی فروشگاه اعمال شود." onValueChange={(next) => { setMaxOrderQuantity(next); clearError("maxOrderQuantity"); }} />
           </div>
         </Panel>
 

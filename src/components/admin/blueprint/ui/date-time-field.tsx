@@ -6,7 +6,7 @@ import { CalendarDateTime, GregorianCalendar, PersianCalendar, toCalendar } from
 import { CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
 import { BpButton } from "./button";
 import { BpFieldMessage, BpRequiredMark, describedBy } from "./field-message";
-import { toPersianDigits } from "@/lib/persian-numbers";
+import { normalizeNumericValue, toPersianDigits } from "@/lib/persian-numbers";
 
 /*
  * A Jalali date + time picker built on native elements — a grid of buttons and two number
@@ -216,9 +216,9 @@ export function BpDateTimeField({ label, value, onChange, hint, error, reserveMe
 
           <div className="mt-3 flex items-center gap-2 border-t border-[var(--bp-divider)] pt-3">
             <span className="bp-muted text-[11px]">ساعت</span>
-            <input type="number" min={0} max={23} value={hour} aria-label="ساعت" dir="ltr" onChange={(event) => setTime(Math.min(23, Math.max(0, Number(event.target.value))), minute)} className="bp-input w-14 text-center" />
+            <input type="text" inputMode="numeric" maxLength={2} value={toPersianDigits(String(hour).padStart(2, "0"))} aria-label="ساعت" dir="ltr" onChange={(event) => setTime(Math.min(23, Math.max(0, Number(normalizeNumericValue(event.target.value, false)))), minute)} className="bp-input w-14 text-center" />
             <span aria-hidden>:</span>
-            <input type="number" min={0} max={59} value={minute} aria-label="دقیقه" dir="ltr" onChange={(event) => setTime(hour, Math.min(59, Math.max(0, Number(event.target.value))))} className="bp-input w-14 text-center" />
+            <input type="text" inputMode="numeric" maxLength={2} value={toPersianDigits(String(minute).padStart(2, "0"))} aria-label="دقیقه" dir="ltr" onChange={(event) => setTime(hour, Math.min(59, Math.max(0, Number(normalizeNumericValue(event.target.value, false)))))} className="bp-input w-14 text-center" />
             <BpButton size="sm" variant="ghost" className="ms-auto" onClick={() => { onChange(null); setOpen(false); }}>پاک کردن</BpButton>
           </div>
         </div>,

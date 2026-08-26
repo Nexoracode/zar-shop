@@ -39,6 +39,7 @@ export function BpNumberInput({ name, value, onValueChange, isPrice = false, cur
     <>
       <BpInput
         {...rest}
+        data-field={name}
         type="text"
         inputMode={allowDecimal ? "decimal" : "numeric"}
         dir="ltr"
