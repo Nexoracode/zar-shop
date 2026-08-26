@@ -345,25 +345,24 @@ export function BlueprintProductForm({ storeIndustry, categories = [], colors = 
         </Panel>
 
         <Panel title="تنوع محصول" description="اگر محصول در چند سایز یا رنگ عرضه می‌شود، گروه‌ها و مقادیرش را همین‌جا تعریف کنید.">
-          <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_220px]">
-            <BlueprintProductOptions
-              storeIndustry={storeIndustry}
-              colors={colors}
-              options={productOptions}
-              onChange={setProductOptions}
-            />
-            <div className="border border-[var(--bp-divider)] p-3">
-              <div className="mb-2 flex items-center justify-between gap-2">
-                <span className="text-[12px] font-bold">راهنمای انتخاب</span>
-                {optionGuide && <BpButton isIconOnly size="sm" variant="ghost" aria-label="حذف راهنمای انتخاب" onClick={() => setOptionGuide(null)}><Trash2 size={13} /></BpButton>}
-              </div>
-              {optionGuide
-                ? optionGuide.type === "IMAGE"
-                  ? <div className="relative aspect-[4/3] border border-[var(--bp-divider)]"><Image src={optionGuide.url} alt={optionGuide.title} fill sizes="220px" className="object-cover" /></div>
-                  : <div className="grid min-h-24 place-items-center border border-[var(--bp-divider)] text-[var(--bp-accent)]"><span className="grid justify-items-center gap-1 text-[11px]"><FileText size={26} />فایل PDF راهنما</span></div>
-                : <div className="bp-muted grid min-h-24 place-items-center border border-dashed border-[var(--bp-divider)] text-center text-[11px]">فایلی انتخاب نشده است.</div>}
-              <BpButton size="sm" fullWidth className="mt-2.5 gap-2" onClick={() => setOptionGuidePickerOpen(true)}><Images size={14} />{optionGuide ? "تغییر فایل" : "انتخاب از گالری"}</BpButton>
-            </div>
+          <BlueprintProductOptions
+            storeIndustry={storeIndustry}
+            colors={colors}
+            options={productOptions}
+            onChange={setProductOptions}
+          />
+          {/* A strip along the foot rather than a column beside the editor: it is one optional
+              file, and it was taking 220px away from every value row above it. */}
+          <div className="mt-3 flex flex-wrap items-center gap-3 border-t border-[var(--bp-divider)] pt-3">
+            <span className="text-[12px] font-bold">راهنمای انتخاب</span>
+            {optionGuide
+              ? optionGuide.type === "IMAGE"
+                ? <span className="relative h-10 w-14 overflow-hidden rounded-[var(--bp-radius)] border border-[var(--bp-divider)]"><Image src={optionGuide.url} alt={optionGuide.title} fill sizes="56px" className="object-cover" /></span>
+                : <span className="grid h-10 w-14 place-items-center rounded-[var(--bp-radius)] border border-[var(--bp-divider)] text-[var(--bp-accent)]"><FileText size={18} /></span>
+              : <span className="bp-muted text-[11px]">فایلی انتخاب نشده است.</span>}
+            {optionGuide && <span className="bp-muted min-w-0 truncate text-[11px]">{optionGuide.title}</span>}
+            <BpButton size="sm" className="ms-auto gap-2" onClick={() => setOptionGuidePickerOpen(true)}><Images size={14} />{optionGuide ? "تغییر فایل" : "انتخاب از گالری"}</BpButton>
+            {optionGuide && <BpButton isIconOnly size="sm" variant="ghost" aria-label="حذف راهنمای انتخاب" className="text-[var(--bp-danger)]" onClick={() => setOptionGuide(null)}><Trash2 size={14} /></BpButton>}
           </div>
         </Panel>
       </div>

@@ -133,8 +133,8 @@ export function BlueprintProductOptions({ storeIndustry, colors, options, onChan
                   wrapperClassName="w-[min(100%,180px)]"
                   onChange={(event) => updateActive({ ...active, type: event.target.value as OptionDraft["type"] })}
                 />
-                <BpButton variant="danger" className="field-action ms-auto gap-1.5" onClick={() => removeGroup(activeAt)}>
-                  <Trash2 size={15} />حذف این تنوع
+                <BpButton isIconOnly variant="ghost" aria-label={`حذف تنوع ${active.name || "بدون نام"}`} className="field-action ms-auto text-[var(--bp-danger)]" onClick={() => removeGroup(activeAt)}>
+                  <Trash2 size={15} />
                 </BpButton>
               </div>
 
