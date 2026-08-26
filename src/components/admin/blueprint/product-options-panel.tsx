@@ -252,7 +252,7 @@ export function BlueprintProductOptions({ storeIndustry, colors, library, option
                   </BpButton>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-1.5">
+                <div className="flex flex-wrap items-start gap-1.5">
                   {type.values.map((value) => {
                     const picked = chosen.valueIds.includes(value.id);
                     return (
@@ -287,7 +287,7 @@ export function BlueprintProductOptions({ storeIndustry, colors, library, option
                           error={valueError || undefined}
                           placeholder="جستجو یا انتخاب رنگ"
                           emptyLabel="رنگی با این نام پیدا نشد"
-                          options={colors.map((color) => ({ value: color.id, label: color.name, color: color.hex }))}
+                          options={colors.filter((color) => !type.values.some((value) => value.colorId === color.id)).map((color) => ({ value: color.id, label: color.name, color: color.hex }))}
                           className="bp-input-sm"
                           wrapperClassName="w-[190px]"
                           pending={pending}
