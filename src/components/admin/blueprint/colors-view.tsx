@@ -1,20 +1,24 @@
 "use client";
 
-import { useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "@heroui/react";
-import { Pencil, Trash2 } from "lucide-react";
+import { ChevronDown, ChevronUp, Pencil, Trash2 } from "lucide-react";
 import { AdminEmptyState, AdminPageHeader, AdminStatusBadge } from "@/components/admin-ui";
 import { AdminBulkCheckbox, AdminBulkEditor } from "@/components/admin-bulk-editor";
 import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
 import { requestErrorMessage, requestJson } from "@/lib/api-request";
 import { colorFieldLimits, colorSchema } from "@/modules/colors/schemas";
-import { BpButton, BpColorField, BpInput, BpNumberInput, BpSwitch, BpTable, BpTd, BpTh } from "./ui";
+import { BpButton, BpColorField, BpInput, BpSwitch, BpTable, BpTd, BpTh } from "./ui";
 
 type ColorItem = { id: string; name: string; hex: string; isActive: boolean; sortOrder: number };
 type FieldErrors = Record<string, string>;
 
-const emptyForm = { name: "", hex: "#C9A56A", sortOrder: "0", isActive: true };
+/** The form no longer collects an order value — new colors are appended, existing ones are
+ * reordered from the table — so it only validates the fields it still owns. */
+const colorFormSchema = colorSchema.omit({ sortOrder: true });
+
+const emptyForm = { name: "", hex: "#C9A56A", isActive: true };
 
 function Panel({ title, description, children }: { title: string; description?: string; children: ReactNode }) {
   return (
@@ -32,19 +36,33 @@ function ColorSwatchBox({ hex }: { hex: string }) {
   return <span aria-hidden className="bp-frame block h-7 w-7 shrink-0" style={{ background: hex }} />;
 }
 
+function ReorderButtons({ canMoveUp, canMoveDown, disabled, onUp, onDown }: { canMoveUp: boolean; canMoveDown: boolean; disabled: boolean; onUp: () => void; onDown: () => void }) {
+  return (
+    <div className="flex items-center justify-center gap-1">
+      <BpButton isIconOnly size="sm" variant="ghost" aria-label="انتقال به بالا" disabled={disabled || !canMoveUp} onClick={onUp}><ChevronUp size={14} /></BpButton>
+      <BpButton isIconOnly size="sm" variant="ghost" aria-label="انتقال به پایین" disabled={disabled || !canMoveDown} onClick={onDown}><ChevronDown size={14} /></BpButton>
+    </div>
+  );
+}
+
 export function BlueprintColorsView({ colors }: { colors: ColorItem[] }) {
   const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
+  const [items, setItems] = useState(colors);
   const [editing, setEditing] = useState<ColorItem | null>(null);
   const [name, setName] = useState(emptyForm.name);
   const [hex, setHex] = useState(emptyForm.hex);
-  const [sortOrder, setSortOrder] = useState(emptyForm.sortOrder);
   const [isActive, setIsActive] = useState<boolean>(emptyForm.isActive);
   const [errors, setErrors] = useState<FieldErrors>({});
   const [loading, setLoading] = useState(false);
+  const [savingOrder, setSavingOrder] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<ColorItem | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [deleteError, setDeleteError] = useState("");
+
+  // The server list is the source of truth once a mutation settles and `router.refresh()`
+  // brings a fresh copy; picking it up here keeps the optimistic reorder from drifting.
+  useEffect(() => { setItems(colors); }, [colors]);
 
   function clearError(field: string) {
     setErrors((current) => (current[field] ? { ...current, [field]: undefined as unknown as string } : current));
@@ -54,7 +72,6 @@ export function BlueprintColorsView({ colors }: { colors: ColorItem[] }) {
     setEditing(null);
     setName(emptyForm.name);
     setHex(emptyForm.hex);
-    setSortOrder(emptyForm.sortOrder);
     setIsActive(emptyForm.isActive);
     setErrors({});
   }
@@ -63,14 +80,13 @@ export function BlueprintColorsView({ colors }: { colors: ColorItem[] }) {
     setEditing(color);
     setName(color.name);
     setHex(color.hex);
-    setSortOrder(String(color.sortOrder));
     setIsActive(color.isActive);
     setErrors({});
     formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
   async function submit() {
-    const validation = colorSchema.safeParse({ name, hex, sortOrder, isActive });
+    const validation = colorFormSchema.safeParse({ name, hex, isActive });
     if (!validation.success) {
       const found: FieldErrors = {};
       for (const issue of validation.error.issues) {
@@ -84,10 +100,13 @@ export function BlueprintColorsView({ colors }: { colors: ColorItem[] }) {
     }
     setLoading(true);
     try {
+      // New colors join at the end of the list; an edit never touches the color's place in it.
+      const nextSortOrder = items.length ? Math.max(...items.map((item) => item.sortOrder)) + 1 : 0;
+      const body = editing ? validation.data : { ...validation.data, sortOrder: nextSortOrder };
       await requestJson(editing ? `/api/colors/${editing.id}` : "/api/colors", {
         method: editing ? "PATCH" : "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(validation.data),
+        body: JSON.stringify(body),
       }, { fallbackMessage: "ذخیره رنگ انجام نشد." });
       toast.success(editing ? "تغییرات رنگ ذخیره شد" : "رنگ جدید ثبت شد");
       resetForm();
@@ -96,6 +115,34 @@ export function BlueprintColorsView({ colors }: { colors: ColorItem[] }) {
       toast.danger("ذخیره رنگ انجام نشد", { description: requestErrorMessage(reason, "ارتباط با سرور برقرار نشد.") });
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function moveColor(id: string, direction: -1 | 1) {
+    if (savingOrder) return;
+    const index = items.findIndex((item) => item.id === id);
+    const target = index + direction;
+    if (index < 0 || target < 0 || target >= items.length) return;
+    const previous = items;
+    const swapped = [...items];
+    [swapped[index], swapped[target]] = [swapped[target], swapped[index]];
+    const next = swapped.map((item, position) => ({ ...item, sortOrder: position }));
+    const changed = next.filter((item, position) => previous.find((entry) => entry.id === item.id)?.sortOrder !== position);
+
+    setItems(next);
+    setSavingOrder(true);
+    try {
+      await Promise.all(changed.map((item) => requestJson(`/api/colors/${item.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sortOrder: item.sortOrder }),
+      }, { fallbackMessage: "ذخیره ترتیب رنگ‌ها انجام نشد." })));
+      router.refresh();
+    } catch (reason) {
+      setItems(previous);
+      toast.danger("ذخیره ترتیب رنگ‌ها انجام نشد", { description: requestErrorMessage(reason, "ارتباط با سرور برقرار نشد.") });
+    } finally {
+      setSavingOrder(false);
     }
   }
 
@@ -123,11 +170,10 @@ export function BlueprintColorsView({ colors }: { colors: ColorItem[] }) {
       <div className="grid items-start gap-2 lg:grid-cols-[320px_minmax(0,1fr)]">
         <aside className="lg:sticky lg:top-20">
           <form ref={formRef} noValidate onSubmit={(event) => { event.preventDefault(); void submit(); }}>
-            <Panel title={editing ? `ویرایش «${editing.name}»` : "رنگ جدید"} description="نام، کد و ترتیب نمایش رنگ را تکمیل کنید.">
+            <Panel title={editing ? `ویرایش «${editing.name}»` : "رنگ جدید"} description="نام و کد رنگ را تکمیل کنید؛ ترتیب نمایش از جدول کنار آن تنظیم می‌شود.">
               <div className="grid gap-3">
                 <BpInput name="name" label="نام رنگ" required maxLength={colorFieldLimits.name} value={name} error={errors.name} placeholder="مثلاً رزگلد" onChange={(event) => { setName(event.target.value); clearError("name"); }} />
                 <BpColorField name="hex" label="کد رنگ" required maxLength={colorFieldLimits.hex} value={hex} error={errors.hex} onChange={(next) => { setHex(next); clearError("hex"); }} />
-                <BpNumberInput name="sortOrder" label="ترتیب نمایش" value={sortOrder} error={errors.sortOrder} onValueChange={(next) => { setSortOrder(next); clearError("sortOrder"); }} />
                 <BpSwitch isSelected={isActive} onChange={setIsActive}>فعال</BpSwitch>
               </div>
               <div className="mt-4 grid gap-2">
@@ -138,11 +184,11 @@ export function BlueprintColorsView({ colors }: { colors: ColorItem[] }) {
           </form>
         </aside>
 
-        <Panel title="فهرست رنگ‌ها">
-          {colors.length ? (
+        <Panel title="فهرست رنگ‌ها" description="با فلش‌های بالا/پایین، ترتیب نمایش رنگ‌ها در فروشگاه را تنظیم کنید.">
+          {items.length ? (
             <>
               <div className="md:hidden">
-                {colors.map((color) => (
+                {items.map((color, index) => (
                   <article key={color.id} className="flex flex-col gap-3 border-b border-[var(--bp-row-line)] p-4 last:border-b-0">
                     <div className="flex items-center gap-3">
                       <ColorSwatchBox hex={color.hex} />
@@ -153,7 +199,7 @@ export function BlueprintColorsView({ colors }: { colors: ColorItem[] }) {
                       <AdminStatusBadge tone={color.isActive ? "success" : "neutral"}>{color.isActive ? "فعال" : "غیرفعال"}</AdminStatusBadge>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="bp-muted text-xs">ترتیب {color.sortOrder.toLocaleString("fa-IR")}</span>
+                      <ReorderButtons canMoveUp={index > 0} canMoveDown={index < items.length - 1} disabled={savingOrder} onUp={() => void moveColor(color.id, -1)} onDown={() => void moveColor(color.id, 1)} />
                       <div className="me-auto flex gap-1">
                         <BpButton isIconOnly size="sm" variant="ghost" aria-label={`ویرایش ${color.name}`} onClick={() => startEdit(color)}><Pencil size={14} /></BpButton>
                         <BpButton isIconOnly size="sm" variant="ghost" className="text-[var(--bp-danger)]" aria-label={`حذف ${color.name}`} onClick={() => { setDeleteError(""); setDeleteTarget(color); }}><Trash2 size={14} /></BpButton>
@@ -163,27 +209,27 @@ export function BlueprintColorsView({ colors }: { colors: ColorItem[] }) {
                 ))}
               </div>
 
-              <AdminBulkEditor entity="colors" entityLabel="رنگ" ids={colors.map((color) => color.id)} actions={[{ value: "active:on", label: "فعال‌کردن رنگ‌ها" }, { value: "active:off", label: "غیرفعال‌کردن رنگ‌ها" }]}>
-                <BpTable ariaLabel="فهرست رنگ‌ها" minWidth={620}>
+              <AdminBulkEditor entity="colors" entityLabel="رنگ" ids={items.map((color) => color.id)} actions={[{ value: "active:on", label: "فعال‌کردن رنگ‌ها" }, { value: "active:off", label: "غیرفعال‌کردن رنگ‌ها" }]}>
+                <BpTable ariaLabel="فهرست رنگ‌ها" minWidth={640}>
                   <thead>
                     <tr>
                       <BpTh className="w-10 text-center"><span className="sr-only">انتخاب</span></BpTh>
                       <BpTh className="w-10">رنگ</BpTh>
                       <BpTh>نام</BpTh>
                       <BpTh>کد</BpTh>
-                      <BpTh>ترتیب</BpTh>
+                      <BpTh className="text-center">ترتیب</BpTh>
                       <BpTh>وضعیت</BpTh>
                       <BpTh className="text-center">عملیات</BpTh>
                     </tr>
                   </thead>
                   <tbody>
-                    {colors.map((color) => (
+                    {items.map((color, index) => (
                       <tr key={color.id}>
                         <BpTd className="w-10 text-center"><AdminBulkCheckbox id={color.id} label={`انتخاب رنگ ${color.name}`} /></BpTd>
                         <BpTd><ColorSwatchBox hex={color.hex} /></BpTd>
                         <BpTd className="max-w-[180px] truncate font-bold" title={color.name}>{color.name}</BpTd>
                         <BpTd className="bp-muted font-mono"><span dir="ltr">{color.hex}</span></BpTd>
-                        <BpTd className="bp-muted">{color.sortOrder.toLocaleString("fa-IR")}</BpTd>
+                        <BpTd><ReorderButtons canMoveUp={index > 0} canMoveDown={index < items.length - 1} disabled={savingOrder} onUp={() => void moveColor(color.id, -1)} onDown={() => void moveColor(color.id, 1)} /></BpTd>
                         <BpTd><AdminStatusBadge tone={color.isActive ? "success" : "neutral"}>{color.isActive ? "فعال" : "غیرفعال"}</AdminStatusBadge></BpTd>
                         <BpTd>
                           <div className="flex items-center justify-center gap-1">
