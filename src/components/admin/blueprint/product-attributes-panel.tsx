@@ -158,9 +158,9 @@ export function BlueprintProductAttributes({ categoryName, groups, values, onGro
                 onDragOver={(event) => { event.preventDefault(); const bounds = event.currentTarget.getBoundingClientRect(); reorderAttribute(attribute.id, event.clientY > bounds.top + bounds.height / 2); }}
                 onDrop={(event) => { event.preventDefault(); setDraggedId(null); }}
                 onDragEnd={() => setDraggedId(null)}
-                className={`flex flex-wrap items-end gap-2 border p-3 transition ${draggedId === attribute.id ? "border-[var(--bp-accent)] opacity-60" : "border-[var(--bp-divider)]"}`}
+                className={`flex flex-wrap items-end gap-2 rounded-[var(--bp-radius)] border px-3 py-1.5 transition ${draggedId === attribute.id ? "border-[var(--bp-accent)] opacity-60" : "border-[var(--bp-divider)]"}`}
               >
-                <span className="field-action cursor-grab text-[var(--bp-muted)] active:cursor-grabbing" aria-hidden="true"><GripVertical size={16} /></span>
+                <span className="cursor-grab self-center text-[var(--bp-muted)] active:cursor-grabbing" aria-hidden="true"><GripVertical size={16} /></span>
                 <BpInput
                   label="ویژگی"
                   value={attribute.name}
@@ -215,9 +215,9 @@ export function BlueprintProductAttributes({ categoryName, groups, values, onGro
             }}
             onDrop={(event) => { event.preventDefault(); setDraggedId(null); }}
             onDragEnd={() => setDraggedId(null)}
-            className={`flex items-end gap-2 border p-3 ${draggedId === group.id ? "border-[var(--bp-accent)] opacity-60" : "border-[var(--bp-divider)]"}`}
+            className={`flex items-end gap-2 rounded-[var(--bp-radius)] border px-3 py-1.5 ${draggedId === group.id ? "border-[var(--bp-accent)] opacity-60" : "border-[var(--bp-divider)]"}`}
           >
-            <span className="field-action cursor-grab text-[var(--bp-muted)] active:cursor-grabbing" aria-hidden="true"><GripVertical size={16} /></span>
+            <span className="cursor-grab self-center text-[var(--bp-muted)] active:cursor-grabbing" aria-hidden="true"><GripVertical size={16} /></span>
             <BpInput
               label="نام گروه"
               value={group.name}
