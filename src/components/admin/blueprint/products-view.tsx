@@ -1,5 +1,6 @@
+import Image from "next/image";
 import Link from "next/link";
-import { Layers, LayoutGrid, Plus, SlidersVertical, SquarePen, Star, Tag } from "lucide-react";
+import { ImageOff, Layers, LayoutGrid, Plus, SlidersVertical, SquarePen, Star, Tag } from "lucide-react";
 import { AdminEmptyState, AdminPageHeader, AdminPrimaryLink } from "@/components/admin-ui";
 import { productStatusLabels, productStatusTones } from "@/modules/admin/labels";
 import { AdminListFilters } from "@/components/admin-list-filters";
@@ -53,7 +54,15 @@ function discountTooltip(product: ProductRow) {
 تا ${formatDateTime(product.discountEndsAt)}`;
 }
 
-/** Name cell: the product name with bare inline glyphs for its flags — no chips, no thumbnail. */
+function ProductThumb({ product }: { product: ProductRow }) {
+  const cover = product.media[0]?.media;
+  if (cover?.type === "IMAGE") {
+    return <span className="bp-thumb"><Image src={cover.url} alt={cover.alt ?? product.name} fill sizes="38px" /></span>;
+  }
+  return <span className="bp-thumb bp-thumb-empty"><ImageOff size={15} strokeWidth={1.6} /></span>;
+}
+
+/** Name cell: the product name with bare inline glyphs for its flags. */
 function ProductName({ product }: { product: ProductRow }) {
   return (
     <div className="flex items-baseline gap-[7px]">
@@ -108,7 +117,8 @@ export function BlueprintProductsView({ products, categories, filters, paginatio
               {products.map((product) => (
                 <article key={product.id} className="flex flex-col gap-3 border-b border-[var(--bp-row-line)] p-4 last:border-b-0">
                   <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
+                    <ProductThumb product={product} />
+                    <div className="min-w-0 flex-1">
                       <ProductName product={product} />
                       <span className="bp-muted mt-1 block truncate text-[11px]">{product.category?.name ?? "بدون دسته‌بندی"}</span>
                     </div>
@@ -142,7 +152,7 @@ export function BlueprintProductsView({ products, categories, filters, paginatio
                     <tr key={product.id}>
                       <BpTd className="w-10 text-center"><AdminBulkCheckbox id={product.id} label={`انتخاب محصول ${product.name}`} /></BpTd>
                       <BpTd className="bp-muted w-10">{(pagination.skip + index + 1).toLocaleString("fa-IR")}</BpTd>
-                      <BpTd className="max-w-[300px]"><ProductName product={product} /></BpTd>
+                      <BpTd className="max-w-[300px]"><div className="flex items-center gap-2.5"><ProductThumb product={product} /><ProductName product={product} /></div></BpTd>
                       <BpTd className="bp-muted max-w-[180px] truncate" title={product.category?.name ?? "بدون دسته‌بندی"}>{product.category?.name ?? "بدون دسته‌بندی"}</BpTd>
                       <BpTd>{priceLabel(product)}</BpTd>
                       <BpTd className={product.stock <= lowStockThreshold ? "font-bold text-[var(--bp-danger)]" : ""}>{product.stock.toLocaleString("fa-IR")}</BpTd>
