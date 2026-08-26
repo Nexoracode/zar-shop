@@ -107,6 +107,26 @@ export function BlueprintProductOptions({ storeIndustry, colors, library, option
     });
   }
 
+  /** Deleting a row also drops any value it used that no other remaining row still needs — «زرد»
+   * disappears from the رنگ picker the moment its last combination is removed, so a picked pill
+   * never outlives every row it produced. */
+  function removeVariant(signature: string) {
+    const target = variants.find((variant) => selectionSignature(variant.selection) === signature);
+    if (!target) return;
+    const remaining = variants.filter((variant) => selectionSignature(variant.selection) !== signature);
+    const nextOptionTypes = optionTypes.map((chosen) => {
+      const type = libraryById.get(chosen.typeId);
+      const usedLabel = type ? target.selection[type.name] : undefined;
+      if (!type || usedLabel === undefined) return chosen;
+      const stillUsed = remaining.some((variant) => variant.selection[type.name] === usedLabel);
+      if (stillUsed) return chosen;
+      const value = type.values.find((entry) => entry.label === usedLabel);
+      if (!value) return chosen;
+      return { ...chosen, valueIds: chosen.valueIds.filter((id) => id !== value.id) };
+    });
+    onChange({ optionTypes: nextOptionTypes, variants: remaining });
+  }
+
   /* A new type is written to the library straight away — a product that is still a draft cannot
    * hold one, and the same word typed on the next product must find it already there. Typed from
    * the type picker itself, so it always starts as a plain list; a colour-linked type still comes
@@ -422,7 +442,7 @@ export function BlueprintProductOptions({ storeIndustry, colors, library, option
                         variant="ghost"
                         aria-label={`حذف ترکیب ${label}`}
                         className="text-[var(--bp-danger)]"
-                        onClick={() => onChange({ optionTypes, variants: variants.filter((item) => selectionSignature(item.selection) !== signature) })}
+                        onClick={() => removeVariant(signature)}
                       >
                         <Trash2 size={15} />
                       </BpButton>
