@@ -324,7 +324,7 @@ export function BlueprintProductOptions({ storeIndustry, colors, library, option
                       error={valueLabelError || undefined}
                       maxLength={optionFieldLimits.valueLabel}
                       placeholder="مثلاً مشکی"
-                      wrapperClassName="w-[min(100%,180px)]"
+                      wrapperClassName="w-[min(100%,260px)]"
                       onChange={(event) => { setNewValueLabel(event.target.value); setValueLabelError(""); }}
                     />
                     {type.kind === "COLOR" && (
@@ -335,7 +335,7 @@ export function BlueprintProductOptions({ storeIndustry, colors, library, option
                         placeholder="جستجو یا انتخاب رنگ"
                         emptyLabel="رنگی با این نام پیدا نشد"
                         options={colors.map((color) => ({ value: color.id, label: color.name, color: color.hex }))}
-                        wrapperClassName="w-[min(100%,180px)]"
+                        wrapperClassName="w-[min(100%,260px)]"
                         onChange={(value) => { setNewValueColorId(value); setValueColorError(""); }}
                       />
                     )}
