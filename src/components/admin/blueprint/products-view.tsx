@@ -10,12 +10,11 @@ import { DiscountExpiryRefresh } from "@/components/discount-expiry-refresh";
 import { formatDateTime } from "@/lib/format";
 import type { AdminProductsListData, ProductRow } from "@/components/admin/products-list-data";
 import { ProductPublishToggle } from "./product-publish-toggle";
-import { BpCorners } from "./ui/card";
 import { BpTable, BpTd, BpTh } from "./ui/table";
 import { BpTag } from "./ui/tag";
 
 function Panel({ children, className = "" }: { children: React.ReactNode; className?: string }) {
-  return <section className={`bp-frame relative ${className}`}><BpCorners />{children}</section>;
+  return <section className={`bp-frame relative ${className}`}>{children}</section>;
 }
 
 /*

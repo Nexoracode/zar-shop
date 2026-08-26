@@ -4,12 +4,12 @@ import { formatDate, formatMoney } from "@/lib/format";
 import { orderStatusLabels, orderStatusTones } from "@/modules/admin/labels";
 import { AdminBulkCheckbox, AdminBulkEditor } from "@/components/admin-bulk-editor";
 import type { AdminDashboardData } from "@/components/admin/dashboard-data";
-import { BpCorners, BpKicker } from "./ui/card";
+import { BpKicker } from "./ui/card";
 import { BpTable, BpTd, BpTh } from "./ui/table";
 import { BpTag } from "./ui/tag";
 
 function Panel({ children, className = "" }: { children: React.ReactNode; className?: string }) {
-  return <section className={`bp-frame relative ${className}`}><BpCorners />{children}</section>;
+  return <section className={`bp-frame relative ${className}`}>{children}</section>;
 }
 
 function Empty({ title, description }: { title: string; description: string }) {

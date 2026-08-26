@@ -13,7 +13,7 @@ import { requestErrorMessage, requestJson } from "@/lib/api-request";
 import { completeProductSchema } from "@/modules/products/schemas";
 import type { CategoryAttributeGroup, ProductAttributeValue } from "@/modules/products/attributes";
 import { BpButton } from "./ui/button";
-import { BpCorners, BpKicker } from "./ui/card";
+import { BpKicker } from "./ui/card";
 import { BpCombobox } from "./ui/combobox";
 import { BpDateTimeField } from "./ui/date-time-field";
 import { BpInput } from "./ui/input";
@@ -44,8 +44,7 @@ type FieldErrors = Record<string, string>;
 function Panel({ title, description, action, children, className = "" }: { title: string; description?: string; action?: React.ReactNode; children: React.ReactNode; className?: string }) {
   return (
     <section className={`bp-frame relative p-[18px] ${className}`.trim()}>
-      <BpCorners />
-      <div className="flex items-start justify-between gap-4">
+            <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
           <BpKicker>{title}</BpKicker>
           {description && <p className="bp-muted mb-0 mt-1 text-[12px] leading-6">{description}</p>}
@@ -380,7 +379,7 @@ export function BlueprintProductForm({ storeIndustry, categories = [], product }
             <BpSwitch isSelected={featured} onChange={setFeatured}>نمایش در محصولات ویژه</BpSwitch>
           </div>
           <div className="mt-4 grid gap-2">
-            <BpButton type="submit" variant="primary" fullWidth withCorners isPending={loading}>{product ? "ذخیره و بازگشت به لیست" : "ثبت و بازگشت به لیست"}</BpButton>
+            <BpButton type="submit" variant="primary" fullWidth isPending={loading}>{product ? "ذخیره و بازگشت به لیست" : "ثبت و بازگشت به لیست"}</BpButton>
             <Link href="/admin/products" className="bp-btn bp-btn-secondary bp-btn-block">انصراف</Link>
           </div>
         </Panel>

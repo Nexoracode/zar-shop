@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import type { ButtonHTMLAttributes, ReactNode, Ref } from "react";
-import { BpCorners } from "./card";
 
 export type BpButtonVariant = "primary" | "secondary" | "ghost" | "danger";
 
@@ -29,8 +28,6 @@ type BpButtonStyleProps = {
   size?: "sm" | "md";
   isIconOnly?: boolean;
   fullWidth?: boolean;
-  /** Draws the design system's registration marks outside the button box. */
-  withCorners?: boolean;
   className?: string;
 };
 
@@ -55,16 +52,15 @@ type BpButtonProps = BpButtonStyleProps
     children?: ReactNode;
   };
 
-export function BpButton({ variant = "secondary", size, isIconOnly, fullWidth, withCorners, className, isPending, disabled, children, type = "button", ...rest }: BpButtonProps) {
+export function BpButton({ variant = "secondary", size, isIconOnly, fullWidth, className, isPending, disabled, children, type = "button", ...rest }: BpButtonProps) {
   return (
     <button
       type={type}
       disabled={disabled || isPending}
       aria-busy={isPending || undefined}
-      className={classes({ variant, size, isIconOnly, fullWidth, className: `${withCorners ? "bp-frame " : ""}${className ?? ""}` })}
+      className={classes({ variant, size, isIconOnly, fullWidth, className: className ?? "" })}
       {...rest}
     >
-      {withCorners && <BpCorners />}
       {isPending && <BpSpinner size={size === "sm" ? 13 : 15} />}
       {children}
     </button>
@@ -73,14 +69,13 @@ export function BpButton({ variant = "secondary", size, isIconOnly, fullWidth, w
 
 type BpLinkButtonProps = BpButtonStyleProps & { href: string; children: ReactNode; "aria-label"?: string };
 
-export function BpLinkButton({ href, variant = "secondary", size, isIconOnly, fullWidth, withCorners, className, children, ...rest }: BpLinkButtonProps) {
+export function BpLinkButton({ href, variant = "secondary", size, isIconOnly, fullWidth, className, children, ...rest }: BpLinkButtonProps) {
   return (
     <Link
       href={href}
-      className={classes({ variant, size, isIconOnly, fullWidth, className: `${withCorners ? "bp-frame " : ""}${className ?? ""}` })}
+      className={classes({ variant, size, isIconOnly, fullWidth, className: className ?? "" })}
       {...rest}
     >
-      {withCorners && <BpCorners />}
       {children}
     </Link>
   );

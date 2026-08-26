@@ -331,7 +331,7 @@ export function MediaPickerDialog({ open, scope, multiple = false, allowedTypes,
           <span className="bp-muted hidden text-[12px] sm:block">{draft.length ? `${draft.length.toLocaleString("fa-IR")} رسانه برای ثبت انتخاب شده است.` : "هنوز رسانه‌ای انتخاب نشده است."}</span>
           <div className="grid grid-cols-2 gap-2 sm:flex">
             <BpButton onClick={onClose}>انصراف</BpButton>
-            <BpButton variant="primary" withCorners disabled={!draft.length} onClick={confirm} className="gap-2"><Check size={15} />تأیید انتخاب ({draft.length.toLocaleString("fa-IR")})</BpButton>
+            <BpButton variant="primary" disabled={!draft.length} onClick={confirm} className="gap-2"><Check size={15} />تأیید انتخاب ({draft.length.toLocaleString("fa-IR")})</BpButton>
           </div>
         </footer>
 

@@ -6,7 +6,6 @@ import { Card, Chip, buttonVariants } from "@heroui/react";
 import { ChevronLeft, ChevronRight, PackageOpen } from "lucide-react";
 import type { AdminTone } from "@/modules/admin/labels";
 import { useAdminTemplate } from "@/components/admin/template-context";
-import { BpCorners } from "@/components/admin/blueprint/ui/card";
 import { BpTag } from "@/components/admin/blueprint/ui/tag";
 
 const tones: Record<AdminTone, string> = {
@@ -68,8 +67,7 @@ export function AdminPrimaryLink({ href, children }: { href: string; children: R
   if (template === "BLUEPRINT") {
     return (
       <Link href={href} className="bp-btn bp-btn-primary bp-frame">
-        <BpCorners />
-        {children}
+                {children}
         <ChevronLeft size={15} />
       </Link>
     );
@@ -80,7 +78,7 @@ export function AdminPrimaryLink({ href, children }: { href: string; children: R
 export function AdminPanel({ children, className = "" }: { children: ReactNode; className?: string }) {
   const template = useAdminTemplate();
   if (template === "BLUEPRINT") {
-    return <section className={`bp-frame relative bg-transparent ${className}`}><BpCorners />{children}</section>;
+    return <section className={`bp-frame relative ${className}`}>{children}</section>;
   }
   return <Card variant="secondary" className={`overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] text-[var(--foreground)] shadow-sm ${className}`}>{children}</Card>;
 }
