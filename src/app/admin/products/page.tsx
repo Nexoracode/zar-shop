@@ -11,7 +11,7 @@ import { BlueprintProductsView } from "@/components/admin/blueprint/products-vie
 import { ClassicProductsView } from "@/components/admin/classic/products-view";
 import type { AdminProductsListData } from "@/components/admin/products-list-data";
 
-type Context = { searchParams: Promise<{ q?: string; status?: string; category?: string; featured?: string; page?: string; pageSize?: string }> };
+type Context = { searchParams: Promise<{ q?: string; status?: string; category?: string; featured?: string; stock?: string; discount?: string; page?: string; pageSize?: string }> };
 
 export default async function AdminProducts({ searchParams }: Context) {
   await requirePermission("catalog:manage");
@@ -20,12 +20,30 @@ export default async function AdminProducts({ searchParams }: Context) {
   const query = params.q?.trim() ?? "";
   const status = (["DRAFT", "ACTIVE", "ARCHIVED"] as const).includes(params.status as ProductStatus) ? params.status as ProductStatus : undefined;
   const featured = params.featured === "yes" || params.featured === "no" ? params.featured : undefined;
+  const stockFilter = (["out", "low", "in"] as const).includes(params.stock as "out" | "low" | "in") ? params.stock as "out" | "low" | "in" : undefined;
+  const discountFilter = (["active", "upcoming", "none"] as const).includes(params.discount as "active" | "upcoming" | "none") ? params.discount as "active" | "upcoming" | "none" : undefined;
   const { requestedPage, pageSize } = await parseAdminPaginationRequest(params);
+  const now = new Date();
+  const lowStockThreshold = catalogSettings.catalogLowStockThreshold;
+  // A variant's own discount stands in for the product's whenever it has one, so "has a
+  // discount" has to check both sides — same reasoning as the storefront's own badge and the
+  // admin list's countdown.
+  const activeDiscount: Prisma.ProductWhereInput = { OR: [
+    { discountType: { not: null }, discountStartsAt: { lte: now }, discountEndsAt: { gte: now } },
+    { variants: { some: { discountType: { not: null }, discountStartsAt: { lte: now }, discountEndsAt: { gte: now } } } },
+  ] };
+  const upcomingDiscount: Prisma.ProductWhereInput = { OR: [
+    { discountType: { not: null }, discountStartsAt: { gt: now } },
+    { variants: { some: { discountType: { not: null }, discountStartsAt: { gt: now } } } },
+  ] };
+  const noDiscount: Prisma.ProductWhereInput = { discountType: null, variants: { none: { discountType: { not: null } } } };
   const where: Prisma.ProductWhereInput = {
     ...(query ? { OR: [{ name: { contains: query } }, { sku: { contains: query } }, { slug: { contains: query } }] } : {}),
     ...(status ? { status } : {}),
     ...(params.category ? { categoryId: params.category } : {}),
     ...(featured ? { featured: featured === "yes" } : {}),
+    ...(stockFilter === "out" ? { stock: { lte: 0 } } : stockFilter === "low" ? { stock: { gt: 0, lte: lowStockThreshold } } : stockFilter === "in" ? { stock: { gt: lowStockThreshold } } : {}),
+    ...(discountFilter === "active" ? activeDiscount : discountFilter === "upcoming" ? upcomingDiscount : discountFilter === "none" ? noDiscount : {}),
   };
   const filteredTotal = await db.product.count({ where });
   const pagination = resolveAdminPagination(filteredTotal, requestedPage, pageSize);
@@ -45,9 +63,9 @@ export default async function AdminProducts({ searchParams }: Context) {
     products,
     categories,
     counts: { total, active, drafts },
-    filters: { query, status: status ?? "", category: params.category ?? "", featured: featured ?? "" },
+    filters: { query, status: status ?? "", category: params.category ?? "", featured: featured ?? "", stock: stockFilter ?? "", discount: discountFilter ?? "" },
     pagination,
-    lowStockThreshold: catalogSettings.catalogLowStockThreshold,
+    lowStockThreshold,
     storeIndustry,
     // A boundary on a combination's own discount window counts too — otherwise the list would
     // not know to refresh when a variant-only discount starts or ends.

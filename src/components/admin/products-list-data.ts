@@ -7,7 +7,7 @@ export type AdminProductsListData = {
   products: ProductRow[];
   categories: Array<{ id: string; name: string }>;
   counts: { total: number; active: number; drafts: number };
-  filters: { query: string; status: string; category: string; featured: string };
+  filters: { query: string; status: string; category: string; featured: string; stock: string; discount: string };
   pagination: { page: number; pageSize: number; totalItems: number; totalPages: number; skip: number };
   lowStockThreshold: number;
   storeIndustry: "GOLD" | "GENERAL";
