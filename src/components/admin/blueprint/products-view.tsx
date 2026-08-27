@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { ImageOff, Layers, Plus, SlidersVertical, SquarePen, Star, Tag } from "lucide-react";
+import { ImageOff, Layers, Plus, SquarePen, Star, Tag } from "lucide-react";
 import { AdminEmptyState, AdminPageHeader, AdminPrimaryLink } from "@/components/admin-ui";
 import { productStatusLabels, productStatusTones } from "@/modules/admin/labels";
 import { AdminListFilters } from "@/components/admin-list-filters";
@@ -31,7 +31,7 @@ function priceLabel(product: ProductRow) {
   return product.fixedPrice ? Number(product.fixedPrice).toLocaleString("fa-IR", { maximumFractionDigits: 0 }) : "بدون قیمت";
 }
 
-/** Row action group: four ghost icon buttons, 15px strokes, 4px apart — as in the mockup. */
+/** Row action group: ghost icon buttons, 15px strokes, 4px apart — as in the mockup. */
 function RowActions({ product }: { product: ProductRow }) {
   return (
     <div className="flex items-center gap-1">
@@ -39,9 +39,6 @@ function RowActions({ product }: { product: ProductRow }) {
         <SquarePen size={15} strokeWidth={1.5} />
       </Link>
       <ProductStatusMenu id={product.id} name={product.name} status={product.status} />
-      <Link href={`/admin/products/${product.id}/attributes`} title="مدیریت ویژگی محصول" aria-label={`مدیریت ویژگی محصول ${product.name}`} className="bp-btn bp-btn-ghost bp-btn-icon bp-btn-sm">
-        <SlidersVertical size={15} strokeWidth={1.5} />
-      </Link>
       <ProductDeleteButton id={product.id} name={product.name} disabled={product._count.orderItems > 0} />
       <ProductRowMenu id={product.id} name={product.name} />
     </div>
