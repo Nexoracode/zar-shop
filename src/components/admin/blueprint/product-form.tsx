@@ -378,7 +378,7 @@ export function BlueprintProductForm({ storeIndustry, categories = [], colors = 
               </div>
               <div className="flex items-center justify-between gap-3 border-t border-[var(--bp-divider)] pt-3">
                 <span className="bp-muted text-[12px]">بدون بازه زمانی؛ تا وقتی خاموشش نکنید فعال می‌ماند.</span>
-                <BpSwitch isSelected={discountIsSpecialSale} onChange={setDiscountIsSpecialSale}>فروش ویژه (بدون زمان)</BpSwitch>
+                <BpSwitch isSelected={discountIsSpecialSale} onChange={setDiscountIsSpecialSale}>فروش ویژه</BpSwitch>
               </div>
               {!discountIsSpecialSale && (
                 <div className="grid gap-3 sm:grid-cols-2">
@@ -416,6 +416,7 @@ export function BlueprintProductForm({ storeIndustry, categories = [], colors = 
             variants={variants}
             fixedPrice={fixedPrice}
             weightGrams={weightGrams}
+            stock={Number(stock) || 0}
             discountType={discountEnabled ? discountType : null}
             discountValue={discountEnabled && discountValue !== "" ? discountValue : null}
             discountStartsAt={discountEnabled && !discountIsSpecialSale ? discountStartsAt : null}

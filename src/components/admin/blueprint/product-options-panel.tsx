@@ -55,6 +55,8 @@ type Props = {
   /** The product's own weight — seeded into a brand-new combination the same way `fixedPrice` is,
    * but only for a gold product, which prices from weight instead of a stored amount. */
   weightGrams?: string;
+  /** The product's own stock — seeded into a brand-new combination the same way `fixedPrice` is. */
+  stock?: number;
   /** The product's own discount, exactly as it would be submitted (`null` when the product has
    * none). A brand-new combination starts with its own explicit copy of these instead of reading
    * the product's live at display time — so the admin can then opt a single combination out of a
@@ -69,10 +71,11 @@ type Props = {
 
 const MAX_TYPES = 5;
 
-export function BlueprintProductOptions({ storeIndustry, colors, library, optionTypes, variants, fixedPrice, weightGrams, discountType, discountValue, discountStartsAt, discountEndsAt, onChange, onLibraryChange }: Props) {
+export function BlueprintProductOptions({ storeIndustry, colors, library, optionTypes, variants, fixedPrice, weightGrams, stock, discountType, discountValue, discountStartsAt, discountEndsAt, onChange, onLibraryChange }: Props) {
   const defaultVariantBase: VariantDraftDefaults = {
     price: storeIndustry === "GENERAL" && fixedPrice ? fixedPrice : null,
     weightGrams: storeIndustry === "GOLD" && weightGrams ? weightGrams : null,
+    stock: stock ?? null,
     discountType: discountType ?? null,
     discountValue: discountValue ?? null,
     discountStartsAt: discountStartsAt ?? null,
@@ -586,7 +589,7 @@ export function BlueprintProductOptions({ storeIndustry, colors, library, option
           />
           <div className="flex items-center justify-between gap-3 border-t border-[var(--bp-divider)] pt-3">
             <span className="bp-muted text-[12px]">بدون بازه زمانی؛ تا وقتی خاموشش نکنید فعال می‌ماند.</span>
-            <BpSwitch isSelected={discountDraft.isSpecialSale} onChange={(value) => setDiscountDraft((current) => current && { ...current, isSpecialSale: value })}>فروش ویژه (بدون زمان)</BpSwitch>
+            <BpSwitch isSelected={discountDraft.isSpecialSale} onChange={(value) => setDiscountDraft((current) => current && { ...current, isSpecialSale: value })}>فروش ویژه</BpSwitch>
           </div>
           {!discountDraft.isSpecialSale && (
             <>

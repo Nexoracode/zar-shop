@@ -58,10 +58,11 @@ export function buildCombinations(types: SelectedType[]): VariantSelection[] {
   }, [{}]);
 }
 
-/** The product's own price, weight and discount, offered to a brand-new combination row. */
+/** The product's own price, weight, stock and discount, offered to a brand-new combination row. */
 export type VariantDraftDefaults = {
   price?: string | null;
   weightGrams?: string | null;
+  stock?: number | null;
   discountType?: "PERCENT" | "FIXED" | null;
   discountValue?: string | null;
   discountStartsAt?: string | null;
@@ -77,7 +78,7 @@ function emptyDraft(selection: VariantSelection, defaults: VariantDraftDefaults)
     discountValue: defaults.discountValue ?? null,
     discountStartsAt: defaults.discountStartsAt ?? null,
     discountEndsAt: defaults.discountEndsAt ?? null,
-    stock: 0,
+    stock: defaults.stock ?? 0,
     isActive: true,
   };
 }
@@ -89,11 +90,11 @@ function emptyDraft(selection: VariantSelection, defaults: VariantDraftDefaults)
  * removing a size must take only its own rows. Rows are matched by signature, so a pairing
  * survives anything that does not change which values it is made of.
  *
- * `defaults` seeds a brand-new row with the product's own price, weight and discount rather than
- * leaving them blank — a combination usually starts out the same as the product until the admin
- * says otherwise, and having its own explicit values (rather than reading the product's live at
- * display time) is what lets one combination opt out of a sale the rest of the product is on. An
- * existing row, even one already cleared to nothing, is never touched.
+ * `defaults` seeds a brand-new row with the product's own price, weight, stock and discount
+ * rather than leaving them blank — a combination usually starts out the same as the product until
+ * the admin says otherwise, and having its own explicit values (rather than reading the product's
+ * live at display time) is what lets one combination opt out of a sale the rest of the product is
+ * on. An existing row, even one already cleared to nothing, is never touched.
  */
 export function mergeCombinations(existing: VariantDraft[], types: SelectedType[], defaults: VariantDraftDefaults = {}): VariantDraft[] {
   const bySignature = new Map(existing.map((variant) => [selectionSignature(variant.selection), variant]));
