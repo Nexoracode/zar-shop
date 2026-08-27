@@ -27,7 +27,7 @@ import {
 } from "@/components/hero";
 
 type OrderRow = Prisma.OrderGetPayload<{ include: { user: true; _count: { select: { items: true } } } }>;
-type SearchParams = Promise<{ q?: string; status?: string; page?: string; pageSize?: string }>;
+type SearchParams = Promise<{ q?: string; status?: string; product?: string; page?: string; pageSize?: string }>;
 
 const statuses = Object.values(OrderStatus);
 
@@ -36,9 +36,12 @@ export default async function OrdersPage({ searchParams }: { searchParams: Searc
   const params = await searchParams;
   const query = params.q?.trim() ?? "";
   const status = statuses.includes(params.status as OrderStatus) ? params.status as OrderStatus : undefined;
+  const productId = params.product?.trim() || undefined;
+  const filteredProduct = productId ? await db.product.findUnique({ where: { id: productId }, select: { id: true, name: true } }) : null;
   const { requestedPage, pageSize } = await parseAdminPaginationRequest(params);
   const where: Prisma.OrderWhereInput = {
     ...(status ? { status } : {}),
+    ...(filteredProduct ? { items: { some: { productId: filteredProduct.id } } } : {}),
     ...(query ? {
       OR: [
         { orderNumber: { contains: query } },
@@ -65,6 +68,14 @@ export default async function OrdersPage({ searchParams }: { searchParams: Searc
   return (
     <>
       <AdminPageHeader eyebrow="مدیریت فروش" title="سفارش‌ها" description="پرداخت‌ها، وضعیت آماده‌سازی و ارسال سفارش‌ها را یک‌جا پیگیری کنید." />
+
+      {filteredProduct && (
+        <div className="mb-5 flex flex-wrap items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm">
+          <span className="text-slate-500">فقط سفارش‌های شامل محصول:</span>
+          <strong className="text-slate-800">{filteredProduct.name}</strong>
+          <Link href="/admin/orders" className="mr-auto text-xs font-bold text-[var(--accent)] hover:underline">حذف فیلتر</Link>
+        </div>
+      )}
 
       <AdminPanel className="mb-5 p-4 sm:p-5">
         <AdminListFilters path="/admin/orders" query={query} queryLabel="جستجوی سفارش" queryPlaceholder="شماره سفارش، نام، ایمیل یا موبایل" filters={[{ name: "status", label: "وضعیت سفارش", value: status ?? "", options: [{ value: "", label: "همه وضعیت‌ها" }, ...statuses.map((item) => ({ value: item, label: orderStatusLabels[item] }))] }]} />

@@ -12,6 +12,7 @@ import { formatDateTime } from "@/lib/format";
 import type { AdminProductsListData, ProductRow } from "@/components/admin/products-list-data";
 import { ProductBulkEditButton } from "@/components/product-bulk-edit-modal";
 import { ProductDeleteButton } from "./product-delete-button";
+import { ProductRowMenu } from "./product-row-menu";
 import { ProductStatusMenu } from "./product-publish-toggle";
 import { BpTable, BpTd, BpTh } from "./ui/table";
 import { BpTag } from "./ui/tag";
@@ -42,6 +43,7 @@ function RowActions({ product }: { product: ProductRow }) {
         <SlidersVertical size={15} strokeWidth={1.5} />
       </Link>
       <ProductDeleteButton id={product.id} name={product.name} disabled={product._count.orderItems > 0} />
+      <ProductRowMenu id={product.id} name={product.name} />
     </div>
   );
 }
