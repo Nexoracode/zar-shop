@@ -27,7 +27,7 @@ type Row = {
   storeIndustry: "GOLD" | "GENERAL";
   price: number | null;
   stock: number;
-  hasDiscountWindow: boolean;
+  hasDiscount: boolean;
 };
 
 /**
@@ -44,7 +44,7 @@ function rowsFor(product: Awaited<ReturnType<typeof loadProducts>>[number]): Row
       storeIndustry: product.storeIndustry,
       price: variant.price !== null ? Number(variant.price) : null,
       stock: variant.stock,
-      hasDiscountWindow: variant.discountStartsAt !== null && variant.discountEndsAt !== null,
+      hasDiscount: variant.discountType !== null,
     }));
   }
   return [{
@@ -53,7 +53,7 @@ function rowsFor(product: Awaited<ReturnType<typeof loadProducts>>[number]): Row
     storeIndustry: product.storeIndustry,
     price: product.fixedPrice !== null ? Number(product.fixedPrice) : null,
     stock: product.stock,
-    hasDiscountWindow: product.discountStartsAt !== null && product.discountEndsAt !== null,
+    hasDiscount: product.discountType !== null,
   }];
 }
 
@@ -103,9 +103,10 @@ export async function POST(request: Request) {
           const amount = Math.trunc(value);
           data.stock = method === "set" ? amount : method === "increase" ? row.stock + amount : Math.max(0, row.stock - amount);
         } else if (type === "discount") {
-          // Only the amount changes here; a row with no discount window of its own has nothing
-          // to attach a bare value to, since the four discount fields travel together.
-          if (!row.hasDiscountWindow) { skipped += 1; continue; }
+          // Only the amount changes here — a row with no discount at all has nothing to attach a
+          // bare value to. One that already has a window (or a windowless «فروش ویژه») keeps it
+          // exactly as it was, since this branch never touches the date fields either way.
+          if (!row.hasDiscount) { skipped += 1; continue; }
           data.discountType = unit;
           data.discountValue = value;
         } else {
