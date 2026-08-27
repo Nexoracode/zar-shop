@@ -44,7 +44,7 @@ export type AdminTone = "neutral" | "info" | "success" | "warning" | "danger" | 
 export const productStatusTones: Record<ProductStatus, AdminTone> = {
   DRAFT: "warning",
   ACTIVE: "success",
-  ARCHIVED: "neutral",
+  ARCHIVED: "info",
 };
 
 export const orderStatusTones: Record<OrderStatus, AdminTone> = {
