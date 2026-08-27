@@ -45,7 +45,10 @@ type FieldErrors = Record<string, string>;
 
 function Panel({ title, description, action, children, className = "" }: { title: string; description?: string; action?: React.ReactNode; children: React.ReactNode; className?: string }) {
   return (
-    <section className={`bp-frame relative p-[18px] ${className}`.trim()}>
+    // `min-w-0`: a grid item's automatic minimum size is its content's own — without this, a wide
+    // table inside (the combinations table, in particular) forced this whole column wider than
+    // its track and spilled onto the sticky sidebar instead of scrolling within itself.
+    <section className={`bp-frame relative min-w-0 p-[18px] ${className}`.trim()}>
             <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
           <BpKicker>{title}</BpKicker>
@@ -241,7 +244,7 @@ export function BlueprintProductForm({ storeIndustry, categories = [], colors = 
 
   return <>
     <form ref={formRef} noValidate onSubmit={(event) => { event.preventDefault(); setPendingLabel(product ? "ذخیره و بازگشت به لیست" : "ثبت و بازگشت به لیست"); void submit("list"); }} className="grid items-start gap-2 lg:grid-cols-[minmax(0,1fr)_320px]">
-      <div className="grid gap-2">
+      <div className="grid min-w-0 gap-2">
         <Panel
           title="گالری محصول"
           description="اولین رسانه به‌عنوان تصویر شاخص استفاده می‌شود. برای تغییر ترتیب، کارت را بکشید و رها کنید."
