@@ -18,7 +18,12 @@ export type BpDialogSize = "sm" | "md" | "lg" | "full";
 let openDialogCount = 0;
 let scrollLockPreviousOverflow = "";
 
-function lockBodyScroll() {
+/**
+ * Exported so a hand-rolled full-screen overlay outside `BpDialog` — the Blueprint media
+ * gallery, which is its own component rather than a dialog with content — shares the same
+ * counter instead of fighting it over `document.body.style.overflow`.
+ */
+export function lockBodyScroll() {
   if (openDialogCount === 0) {
     scrollLockPreviousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
@@ -26,7 +31,7 @@ function lockBodyScroll() {
   openDialogCount += 1;
 }
 
-function unlockBodyScroll() {
+export function unlockBodyScroll() {
   openDialogCount = Math.max(0, openDialogCount - 1);
   if (openDialogCount === 0) document.body.style.overflow = scrollLockPreviousOverflow;
 }

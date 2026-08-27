@@ -8,7 +8,7 @@ import type { MediaChoice, MediaScope } from "@/components/media-library";
 import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
 import { useAdminTemplate } from "@/components/admin/template-context";
 import { BpButton } from "@/components/admin/blueprint/ui/button";
-import { BpDialog } from "@/components/admin/blueprint/ui/dialog";
+import { BpDialog, lockBodyScroll, unlockBodyScroll } from "@/components/admin/blueprint/ui/dialog";
 import { MediaDetailsPanel, type MediaDetails } from "@/components/admin/media-details-panel";
 import { mediaUsageCount, type MediaUsageCounts } from "@/modules/media/usage";
 import { readImageDimensions } from "@/modules/media/image-dimensions";
@@ -87,6 +87,14 @@ export function MediaPickerDialog({ open, scope, multiple = false, allowedTypes,
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
   }, [open, template, pendingDelete, onClose]);
+
+  // This gallery is its own full-screen overlay, not `BpDialog` content, so it shares that
+  // component's scroll-lock counter directly instead of going without one.
+  useEffect(() => {
+    if (!open || template !== "BLUEPRINT") return;
+    lockBodyScroll();
+    return unlockBodyScroll;
+  }, [open, template]);
 
   function toggle(item: MediaChoice) {
     if (!multiple) {
