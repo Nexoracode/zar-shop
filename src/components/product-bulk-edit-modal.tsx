@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Button, toast } from "@heroui/react";
 import { ListChecks } from "lucide-react";
 import { AdminDialog, AdminDialogButton } from "@/components/admin/admin-dialog";
+import { useBulkSelection } from "@/components/admin-bulk-editor";
 import { adminFieldClass, adminLabelClass } from "@/components/admin-ui";
 import { useAdminTemplate } from "@/components/admin/template-context";
 import { requestErrorMessage, requestJson } from "@/lib/api-request";
@@ -198,9 +199,11 @@ function ProductBulkEditModal({ open, ids, onClose, onCompleted }: { open: boole
 }
 
 /** Sits beside the quick-edit control in the products table's selection toolbar. */
-export function ProductBulkEditButton({ selectedIds }: { selectedIds: string[] }) {
+export function ProductBulkEditButton() {
   const template = useAdminTemplate();
+  const { selected } = useBulkSelection();
   const [open, setOpen] = useState(false);
+  const selectedIds = [...selected];
   const disabled = selectedIds.length === 0;
 
   return (
