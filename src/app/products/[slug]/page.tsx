@@ -173,7 +173,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
     : !catalogSettings.showProductStock
       ? "موجود در انبار"
       : lowStock
-        ? `🔥 تنها ${product.stock.toLocaleString("fa-IR")} در انبار باقی مانده`
+        ? `🔥 تنها ${product.stock.toLocaleString("fa-IR")} عدد در انبار باقی مانده`
         : `${product.stock.toLocaleString("fa-IR")} عدد موجود در انبار`;
   const purchaseMeta = <span className={`text-xs font-bold ${product.stock < 1 || lowStock ? "text-[var(--danger)]" : "text-[var(--success)]"}`}>{stockLabel}</span>;
   const cartProps = {
