@@ -54,9 +54,12 @@ function discountTooltip(product: ProductRow) {
 تا ${formatDateTime(product.discountEndsAt)}`;
 }
 
+/** One line per type, its own values after a colon — the same multi-line `title` shape as `discountTooltip`. */
 function variantTooltip(product: ProductRow) {
-  const names = product.optionTypes.map((optionType) => optionType.type.name);
-  return names.length ? `تنوع: ${names.join("، ")}` : `${product._count.variants.toLocaleString("fa-IR")} ترکیب تنوع`;
+  if (!product.optionTypes.length) return `${product._count.variants.toLocaleString("fa-IR")} ترکیب تنوع`;
+  return product.optionTypes
+    .map((optionType) => `${optionType.type.name}: ${optionType.values.map((item) => item.value.label).join("، ")}`)
+    .join("\n");
 }
 
 /** Sets the picture apart from the words, so the two do not read as one run of content. */
