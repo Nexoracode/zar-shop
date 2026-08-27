@@ -42,13 +42,16 @@ const stockMethodOptions: { value: AdjustMethod; label: string }[] = [
 
 const unitOptions: { value: DiscountUnit; label: string }[] = [
   { value: "PERCENT", label: "درصد" },
-  { value: "FIXED", label: "تومان" },
+  { value: "FIXED", label: "ریال" },
 ];
 
+// Every price/discount field in this admin panel takes a rial amount — the same amount stored in
+// the database — and only ever shows a toman reading as a spelled-out hint underneath. Labelling
+// these "تومان" would ask for one unit while the value entered is actually stored as another.
 function valueLabel(type: ChangeType, method: AdjustMethod, unit: DiscountUnit) {
-  if (type === "price") return method === "set" ? "قیمت جدید (تومان)" : method === "increase" ? "مقدار افزایش قیمت (تومان)" : "مقدار کاهش قیمت (تومان)";
+  if (type === "price") return method === "set" ? "قیمت جدید (ریال)" : method === "increase" ? "مقدار افزایش قیمت (ریال)" : "مقدار کاهش قیمت (ریال)";
   if (type === "stock") return method === "set" ? "موجودی جدید" : method === "increase" ? "مقدار افزایش موجودی" : "مقدار کاهش موجودی";
-  return unit === "PERCENT" ? "درصد تخفیف" : "مبلغ تخفیف (تومان)";
+  return unit === "PERCENT" ? "درصد تخفیف" : "مبلغ تخفیف (ریال)";
 }
 
 /**
