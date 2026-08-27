@@ -276,7 +276,7 @@ export function BlueprintProductOptions({ storeIndustry, colors, library, option
 
   return (
     <>
-    <div className="grid gap-3">
+    <div className="grid min-w-0 gap-3">
       <div className="flex flex-wrap items-end gap-2">
         <BpCombobox
           label="نوع تنوع"
@@ -299,12 +299,12 @@ export function BlueprintProductOptions({ storeIndustry, colors, library, option
           این محصول تنوعی ندارد. اگر در چند سایز یا رنگ عرضه می‌شود، نوع آن را از بالا اضافه کنید.
         </p>
       ) : (
-        <div className="grid gap-2">
+        <div className="grid min-w-0 gap-2">
           {optionTypes.map((chosen) => {
             const type = libraryById.get(chosen.typeId);
             if (!type) return null;
             return (
-              <div key={chosen.typeId} className="grid gap-2 rounded-[var(--bp-radius)] border border-[var(--bp-divider)] px-3 py-2.5">
+              <div key={chosen.typeId} className="grid min-w-0 gap-2 rounded-[var(--bp-radius)] border border-[var(--bp-divider)] px-3 py-2.5">
                 <div className="flex flex-wrap items-center gap-2">
                   <strong className="text-[13px]">{type.name}</strong>
                   <span className="bp-tag bp-tag-neutral">{type.kind === "COLOR" ? "رنگ" : "فهرست ساده"}</span>
@@ -314,7 +314,10 @@ export function BlueprintProductOptions({ storeIndustry, colors, library, option
                   </BpButton>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-1.5">
+                {/* `min-w-0`: without it this row's own automatic minimum size was its unwrapped
+                    content — every pill plus the add control in one line — which pushed past the
+                    card's own fixed width instead of wrapping onto a second line inside it. */}
+                <div className="flex min-w-0 flex-wrap items-center gap-1.5">
                   {type.values.map((value) => {
                     const picked = chosen.valueIds.includes(value.id);
                     return (
@@ -397,7 +400,7 @@ export function BlueprintProductOptions({ storeIndustry, colors, library, option
       )}
 
       {variants.length > 0 && (
-        <div className="grid gap-2">
+        <div className="grid min-w-0 gap-2">
           <div className="flex flex-wrap items-center gap-2">
             <strong className="text-[13px]">ترکیب‌های این محصول</strong>
             <span className="bp-muted text-[11px]">{variants.length.toLocaleString("fa-IR")} از {MAX_VARIANTS.toLocaleString("fa-IR")}</span>
