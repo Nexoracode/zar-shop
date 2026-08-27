@@ -154,13 +154,20 @@ export function BlueprintProductAttributes({ categoryName, groups, values, onGro
               <div
                 key={attribute.id}
                 draggable
-                onDragStart={(event: DragEvent<HTMLDivElement>) => { event.dataTransfer.effectAllowed = "move"; setDraggedId(attribute.id); }}
+                // Draggable reaches the whole row, but a drag that did not start on the handle
+                // is cancelled — otherwise dragging to select text inside either input below
+                // was hijacked into a reorder instead.
+                onDragStart={(event: DragEvent<HTMLDivElement>) => {
+                  if (!(event.target as HTMLElement).closest("[data-drag-handle]")) { event.preventDefault(); return; }
+                  event.dataTransfer.effectAllowed = "move";
+                  setDraggedId(attribute.id);
+                }}
                 onDragOver={(event) => { event.preventDefault(); const bounds = event.currentTarget.getBoundingClientRect(); reorderAttribute(attribute.id, event.clientY > bounds.top + bounds.height / 2); }}
                 onDrop={(event) => { event.preventDefault(); setDraggedId(null); }}
                 onDragEnd={() => setDraggedId(null)}
                 className={`flex flex-wrap items-end gap-2 rounded-[var(--bp-radius)] border px-3 py-1.5 transition ${draggedId === attribute.id ? "border-[var(--bp-accent)] opacity-60" : "border-[var(--bp-divider)]"}`}
               >
-                <span className="cursor-grab self-center text-[var(--bp-muted)] active:cursor-grabbing" aria-hidden="true"><GripVertical size={16} /></span>
+                <span data-drag-handle className="cursor-grab self-center text-[var(--bp-muted)] active:cursor-grabbing" aria-hidden="true"><GripVertical size={16} /></span>
                 <BpInput
                   label="ویژگی"
                   value={attribute.name}
@@ -207,7 +214,11 @@ export function BlueprintProductAttributes({ categoryName, groups, values, onGro
           <div
             key={group.id}
             draggable
-            onDragStart={(event: DragEvent<HTMLDivElement>) => { event.dataTransfer.effectAllowed = "move"; setDraggedId(group.id); }}
+            onDragStart={(event: DragEvent<HTMLDivElement>) => {
+              if (!(event.target as HTMLElement).closest("[data-drag-handle]")) { event.preventDefault(); return; }
+              event.dataTransfer.effectAllowed = "move";
+              setDraggedId(group.id);
+            }}
             onDragOver={(event) => {
               event.preventDefault();
               if (!draggedId || draggedId === group.id) return;
@@ -217,7 +228,7 @@ export function BlueprintProductAttributes({ categoryName, groups, values, onGro
             onDragEnd={() => setDraggedId(null)}
             className={`flex items-end gap-2 rounded-[var(--bp-radius)] border px-3 py-1.5 ${draggedId === group.id ? "border-[var(--bp-accent)] opacity-60" : "border-[var(--bp-divider)]"}`}
           >
-            <span className="cursor-grab self-center text-[var(--bp-muted)] active:cursor-grabbing" aria-hidden="true"><GripVertical size={16} /></span>
+            <span data-drag-handle className="cursor-grab self-center text-[var(--bp-muted)] active:cursor-grabbing" aria-hidden="true"><GripVertical size={16} /></span>
             <BpInput
               label="نام گروه"
               value={group.name}
