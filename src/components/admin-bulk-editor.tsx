@@ -29,7 +29,7 @@ function useBulkSelection() {
   return context;
 }
 
-export function AdminBulkEditor({ entity, entityLabel, ids, actions, children, desktopClassName = "hidden md:block", onCompleted }: { entity: "products" | "categories" | "orders" | "users" | "reviews" | "colors" | "promotions" | "contactMessages" | "paymentGateways" | "smsProviders" | "smsCampaigns"; entityLabel: string; ids: string[]; actions: AdminBulkAction[]; children: ReactNode; desktopClassName?: string; onCompleted?: (result: { action: string; ids: string[] }) => void }) {
+export function AdminBulkEditor({ entity, entityLabel, ids, actions, children, desktopClassName = "hidden md:block", onCompleted, renderExtra }: { entity: "products" | "categories" | "orders" | "users" | "reviews" | "colors" | "promotions" | "contactMessages" | "paymentGateways" | "smsProviders" | "smsCampaigns"; entityLabel: string; ids: string[]; actions: AdminBulkAction[]; children: ReactNode; desktopClassName?: string; onCompleted?: (result: { action: string; ids: string[] }) => void; /** A caller-owned action beside the quick-edit control — e.g. products' own bulk-edit modal trigger. */ renderExtra?: (selectedIds: string[]) => ReactNode }) {
   const router = useRouter();
   const template = useAdminTemplate();
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -76,6 +76,7 @@ export function AdminBulkEditor({ entity, entityLabel, ids, actions, children, d
               <div className="flex items-center gap-2 border border-[var(--bp-divider)] px-3 py-1.5"><AdminBulkSelectAll /><span>انتخاب همه</span></div>
               <span className="bp-muted flex items-center gap-2">{loading ? <Loader2 size={16} className="animate-spin text-[var(--bp-accent)]" /> : <CheckSquare size={16} className="text-[var(--bp-accent)]" />}{loading ? "در حال اعمال تغییر..." : selected.size ? `${selected.size.toLocaleString("fa-IR")} ${entityLabel} انتخاب شده` : `برای ویرایش سریع، ${entityLabel} را انتخاب کنید`}</span>
             </div>
+            {renderExtra?.([...selected])}
             <AdminTableRefreshButton />
           </div>
         ) : (
@@ -85,6 +86,7 @@ export function AdminBulkEditor({ entity, entityLabel, ids, actions, children, d
               <span className="flex items-center gap-2">{loading ? <Loader2 size={17} className="animate-spin text-[var(--warning)]" /> : <CheckSquare size={17} className="text-[var(--warning)]" />}{loading ? "در حال اعمال تغییر..." : selected.size ? `${selected.size.toLocaleString("fa-IR")} ${entityLabel} انتخاب شده` : `برای ویرایش سریع، ${entityLabel} را انتخاب کنید`}</span>
             </div>
             <HeroSelectField name={`${entity}-bulk-action`} label="ویرایش سریع" value={action} disabled={!selected.size || loading} onValueChange={(value) => { setAction(value); if (!value) return; const selectedAction = actions.find((item) => item.value === value); if (selectedAction?.confirmation) setPendingAction(selectedAction); else void apply(value); }} options={[{ value: "", label: "انتخاب عملیات؛ اعمال خودکار" }, ...actions]} className="w-72" />
+            {renderExtra?.([...selected])}
             <AdminTableRefreshButton className="mb-0.5" />
           </div>
         )}

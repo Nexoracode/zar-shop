@@ -10,6 +10,7 @@ import { isProductDiscountActive } from "@/modules/products/discount";
 import { DiscountExpiryRefresh } from "@/components/discount-expiry-refresh";
 import { formatDateTime } from "@/lib/format";
 import type { AdminProductsListData, ProductRow } from "@/components/admin/products-list-data";
+import { ProductBulkEditButton } from "@/components/product-bulk-edit-modal";
 import { ProductDeleteButton } from "./product-delete-button";
 import { ProductPublishToggle } from "./product-publish-toggle";
 import { BpTable, BpTd, BpTh } from "./ui/table";
@@ -138,7 +139,7 @@ export function BlueprintProductsView({ products, categories, filters, paginatio
               ))}
             </div>
 
-            <AdminBulkEditor entity="products" entityLabel="محصول" ids={products.map((product) => product.id)} actions={bulkActions}>
+            <AdminBulkEditor entity="products" entityLabel="محصول" ids={products.map((product) => product.id)} actions={bulkActions} renderExtra={(selected) => <ProductBulkEditButton selectedIds={selected} />}>
               <BpTable ariaLabel="فهرست محصولات" minWidth={860}>
                 <thead>
                   <tr>
