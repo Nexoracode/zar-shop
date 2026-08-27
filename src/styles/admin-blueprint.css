@@ -509,6 +509,9 @@ select.bp-input:focus-visible { border-color: var(--bp-accent); outline: none; }
 .bp-dialog-sm { width: min(440px, 100%); }
 .bp-dialog-md { width: min(620px, 100%); }
 .bp-dialog-lg { width: min(880px, 100%); }
+/* For content that genuinely needs room to breathe — a wide table, say — rather than fighting a
+   form column's own width for it. */
+.bp-dialog-full { width: min(1400px, 96vw); }
 /* Only the body scrolls, so the title and the actions stay reachable in a long dialog. */
 .bp-dialog-content {
   display: flex;

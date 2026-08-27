@@ -8,7 +8,7 @@ import { createPortal } from "react-dom";
  * own content boundary instead of inheriting it from the page root, and re-declares `.bp-root`
  * so the blueprint tokens resolve outside the shell subtree.
  */
-export type BpDialogSize = "sm" | "md" | "lg";
+export type BpDialogSize = "sm" | "md" | "lg" | "full";
 
 export function BpDialog({ open, title, description, onClose, children, actions, labelledBy, size = "sm" }: {
   open: boolean;
