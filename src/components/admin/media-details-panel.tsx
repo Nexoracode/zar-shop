@@ -107,8 +107,11 @@ export function MediaDetailsPanel({ media, onSaved, className = "" }: { media: M
     ["تعداد استفاده", (media.usageCount ?? 0).toLocaleString("fa-IR")],
   ];
 
+  // A square preview at the panel's own width (as narrow as 300px) stood as tall as it was wide —
+  // most of the card, crowding out the facts and fields under it. A fixed, modest height keeps it
+  // a thumbnail regardless of how narrow the panel gets.
   const preview = (
-    <div className={`relative aspect-square w-full overflow-hidden ${blueprint ? "border border-[var(--bp-divider)] bg-[var(--bp-surface)]" : "rounded-xl border border-[var(--border)] bg-[var(--surface-secondary)]"}`}>
+    <div className={`relative h-44 w-full overflow-hidden ${blueprint ? "border border-[var(--bp-divider)] bg-[var(--bp-surface)]" : "rounded-xl border border-[var(--border)] bg-[var(--surface-secondary)]"}`}>
       {media.type === "IMAGE"
         ? <Image src={media.url} alt={fields.alt || media.title} fill unoptimized={media.mimeType === "image/gif"} sizes="320px" className="object-contain" />
         : media.type === "VIDEO"
