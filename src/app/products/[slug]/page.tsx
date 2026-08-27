@@ -165,7 +165,17 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
       makingFeeValue={Number(product.makingFeeValue)}
     />}
   </div>;
-  const purchaseMeta = <span className={`text-xs font-bold ${product.stock > 0 ? "text-[var(--success)]" : "text-[var(--danger)]"}`}>{product.stock > 0 ? catalogSettings.showProductStock ? `${product.stock.toLocaleString("fa-IR")} عدد موجود در انبار` : "موجود در انبار" : "در حال حاضر ناموجود"}</span>;
+  // Same threshold the admin panel's own stock column warns at, so the storefront's urgency
+  // matches what the seller configured rather than an unrelated number of its own.
+  const lowStock = product.stock > 0 && product.stock <= catalogSettings.catalogLowStockThreshold;
+  const stockLabel = product.stock < 1
+    ? "در حال حاضر ناموجود"
+    : !catalogSettings.showProductStock
+      ? "موجود در انبار"
+      : lowStock
+        ? `🔥 تنها ${product.stock.toLocaleString("fa-IR")} در انبار باقی مانده`
+        : `${product.stock.toLocaleString("fa-IR")} عدد موجود در انبار`;
+  const purchaseMeta = <span className={`text-xs font-bold ${product.stock < 1 || lowStock ? "text-[var(--danger)]" : "text-[var(--success)]"}`}>{stockLabel}</span>;
   const cartProps = {
     productId: product.id,
     currency: settings.currency,
@@ -179,7 +189,9 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
     purchaseMeta,
     purchasePrice: total,
     purchaseOriginalPrice: discounted?.isActive ? discounted.originalPrice : null,
-    discountLabel: discounted?.isActive ? product.discountType === "PERCENT" ? `${Number(product.discountValue).toLocaleString("fa-IR")}٪` : "تخفیف" : null,
+    // Always read as a percentage off the badge, even for a fixed-amount discount — the reader
+    // never has to work out what a flat toman amount comes to relative to the price.
+    discountLabel: discounted?.isActive ? `${Math.round((discounted.discountAmount / discounted.originalPrice) * 100).toLocaleString("fa-IR")}٪` : null,
   };
 
   const productJsonLd = {
