@@ -12,7 +12,7 @@ import { formatDateTime } from "@/lib/format";
 import type { AdminProductsListData, ProductRow } from "@/components/admin/products-list-data";
 import { ProductBulkEditButton } from "@/components/product-bulk-edit-modal";
 import { ProductDeleteButton } from "./product-delete-button";
-import { ProductPublishToggle } from "./product-publish-toggle";
+import { ProductStatusMenu } from "./product-publish-toggle";
 import { BpTable, BpTd, BpTh } from "./ui/table";
 import { BpTag } from "./ui/tag";
 
@@ -37,7 +37,7 @@ function RowActions({ product }: { product: ProductRow }) {
       <Link href={`/admin/products/${product.id}/edit`} title="ویرایش محصول" aria-label={`ویرایش محصول ${product.name}`} className="bp-btn bp-btn-ghost bp-btn-icon bp-btn-sm">
         <SquarePen size={15} strokeWidth={1.5} />
       </Link>
-      <ProductPublishToggle id={product.id} name={product.name} status={product.status} />
+      <ProductStatusMenu id={product.id} name={product.name} status={product.status} />
       <Link href={`/admin/products/${product.id}/attributes`} title="مدیریت ویژگی محصول" aria-label={`مدیریت ویژگی محصول ${product.name}`} className="bp-btn bp-btn-ghost bp-btn-icon bp-btn-sm">
         <SlidersVertical size={15} strokeWidth={1.5} />
       </Link>
