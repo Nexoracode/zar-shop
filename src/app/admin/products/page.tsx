@@ -28,9 +28,13 @@ export default async function AdminProducts({ searchParams }: Context) {
   // A variant's own discount stands in for the product's whenever it has one, so "has a
   // discount" has to check both sides — same reasoning as the storefront's own badge and the
   // admin list's countdown.
+  // A "فروش ویژه" carries no window at all and counts as active regardless of the clock, same as
+  // `isProductDiscountActive` treats it.
   const activeDiscount: Prisma.ProductWhereInput = { OR: [
     { discountType: { not: null }, discountStartsAt: { lte: now }, discountEndsAt: { gte: now } },
+    { discountType: { not: null }, discountStartsAt: null, discountEndsAt: null },
     { variants: { some: { discountType: { not: null }, discountStartsAt: { lte: now }, discountEndsAt: { gte: now } } } },
+    { variants: { some: { discountType: { not: null }, discountStartsAt: null, discountEndsAt: null } } },
   ] };
   const upcomingDiscount: Prisma.ProductWhereInput = { OR: [
     { discountType: { not: null }, discountStartsAt: { gt: now } },

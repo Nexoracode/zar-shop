@@ -23,6 +23,12 @@ test("keeps at least one rial payable", () => {
   assert.equal(result.finalPrice, 1);
 });
 
+test("applies a فروش ویژه with no window at all, active regardless of the clock", () => {
+  const noSchedule = { discountType: "PERCENT" as const, discountValue: 10, discountStartsAt: null, discountEndsAt: null };
+  const result = calculateDiscountedPrice(1_000_000, noSchedule, new Date("2099-01-01T00:00:00.000Z"));
+  assert.deepEqual(result, { originalPrice: 1_000_000, discountAmount: 100_000, finalPrice: 900_000, isActive: true });
+});
+
 test("converts Tehran day boundaries to UTC", () => {
   assert.equal(tehranDateStart("2026-07-29")?.toISOString(), "2026-07-28T20:30:00.000Z");
   assert.equal(tehranDateEnd("2026-07-29")?.toISOString(), "2026-07-29T20:29:59.999Z");

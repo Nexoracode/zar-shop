@@ -144,9 +144,18 @@ export const completeProductSchema = productSchema.superRefine((product, context
   if (product.storeIndustry === "GENERAL" && product.fixedPrice === null) {
     context.addIssue({ code: "custom", path: ["fixedPrice"], message: "قیمت محصول را وارد کنید." });
   }
-  const discountFields = [product.discountType, product.discountValue, product.discountStartsAt, product.discountEndsAt];
-  if (discountFields.some((value) => value !== null) && discountFields.some((value) => value === null)) {
-    context.addIssue({ code: "custom", path: ["discountType"], message: "نوع، مقدار و بازه زمانی تخفیف را کامل کنید." });
+  // Type and value always travel together. The window is the one part allowed to be entirely
+  // absent instead — that is a "فروش ویژه", a discount with no schedule rather than a bare date
+  // missing its other half.
+  const hasDiscountAmount = product.discountType !== null || product.discountValue !== null;
+  if ((product.discountType !== null) !== (product.discountValue !== null)) {
+    context.addIssue({ code: "custom", path: ["discountType"], message: "نوع و مقدار تخفیف را با هم مشخص کنید." });
+  }
+  if ((product.discountStartsAt !== null) !== (product.discountEndsAt !== null)) {
+    context.addIssue({ code: "custom", path: ["discountStartsAt"], message: "بازه زمانی تخفیف را کامل کنید یا برای فروش ویژه بدون زمان، هر دو را خالی بگذارید." });
+  }
+  if (!hasDiscountAmount && (product.discountStartsAt !== null || product.discountEndsAt !== null)) {
+    context.addIssue({ code: "custom", path: ["discountType"], message: "برای بازه زمانی تخفیف، نوع و مقدار آن را هم مشخص کنید." });
   }
   if (product.discountType === "PERCENT" && product.discountValue !== null && product.discountValue > 100) {
     context.addIssue({ code: "custom", path: ["discountValue"], message: "درصد تخفیف نمی‌تواند بیشتر از ۱۰۰ باشد." });

@@ -85,6 +85,10 @@ export function ProductDetailGallery({ productId, media, productName, productCod
   const selected = media[selectedIndex] ?? media[0];
   const previewMedia = useMemo(() => media.slice(0, 5), [media]);
   const countdown = hydrated ? formatCountdown(discountEndsAt, now) : null;
+  // Known at server-render time already, unlike `countdown` — a "فروش ویژه" has no window to
+  // wait on, so its badge does not have to hold for hydration the way the countdown text does.
+  const hasSchedule = Boolean(discountEndsAt);
+  const showBadge = hasDiscount && (hasSchedule ? Boolean(countdown) : true);
   const normalizedSoldPercent = Math.min(100, Math.max(0, soldPercent));
   const showSoldProgress = normalizedSoldPercent > 50;
 
@@ -157,7 +161,7 @@ export function ProductDetailGallery({ productId, media, productName, productCod
   ];
 
   return <section className="min-w-0 lg:col-start-1 lg:row-span-2 lg:row-start-1" aria-label="گالری محصول">
-    {hasDiscount && countdown && <div className="mb-5 flex min-h-12 items-center gap-3 px-3 text-[11px] font-bold text-[var(--danger)] sm:gap-4 sm:px-5 sm:text-xs" style={{ backgroundColor: "color-mix(in srgb, var(--danger) 10%, white)" }}><span className="shrink-0">پیشنهاد شگفت‌انگیز</span>{showSoldProgress && <div className="flex min-w-0 flex-1 items-center gap-2 text-slate-500"><span className="shrink-0 font-medium"><strong className="text-[var(--danger)]">{normalizedSoldPercent.toLocaleString("fa-IR")}٪</strong> فروش رفته</span><ProgressBar value={normalizedSoldPercent} aria-label="درصد فروش محصول" dir="ltr" className="min-w-8 flex-1"><ProgressBar.Track className="h-1 overflow-hidden rounded-full" style={{ backgroundColor: "color-mix(in srgb, var(--danger) 18%, white)" }}><ProgressBar.Fill className="h-full rounded-full bg-[var(--danger)]" /></ProgressBar.Track></ProgressBar></div>}<span dir="ltr" className={`${showSoldProgress ? "" : "mr-auto"} flex shrink-0 items-center gap-2 whitespace-nowrap tabular-nums`}>{countdown.days > 0 && <span dir="rtl" className="inline-flex h-7 items-center rounded-md border bg-white/70 px-2 text-[10px] font-bold text-[var(--danger)] sm:text-[11px]" style={{ borderColor: "color-mix(in srgb, var(--danger) 28%, white)" }}>{countdown.days.toLocaleString("fa-IR")} روز</span>}<bdi dir="ltr">{countdown.clock}</bdi></span></div>}
+    {showBadge && <div className="mb-5 flex min-h-12 items-center gap-3 px-3 text-[11px] font-bold text-[var(--danger)] sm:gap-4 sm:px-5 sm:text-xs" style={{ backgroundColor: "color-mix(in srgb, var(--danger) 10%, white)" }}><span className="shrink-0">{hasSchedule ? "پیشنهاد شگفت‌انگیز" : "فروش ویژه"}</span>{showSoldProgress && <div className="flex min-w-0 flex-1 items-center gap-2 text-slate-500"><span className="shrink-0 font-medium"><strong className="text-[var(--danger)]">{normalizedSoldPercent.toLocaleString("fa-IR")}٪</strong> فروش رفته</span><ProgressBar value={normalizedSoldPercent} aria-label="درصد فروش محصول" dir="ltr" className="min-w-8 flex-1"><ProgressBar.Track className="h-1 overflow-hidden rounded-full" style={{ backgroundColor: "color-mix(in srgb, var(--danger) 18%, white)" }}><ProgressBar.Fill className="h-full rounded-full bg-[var(--danger)]" /></ProgressBar.Track></ProgressBar></div>}{hasSchedule && countdown && <span dir="ltr" className={`${showSoldProgress ? "" : "mr-auto"} flex shrink-0 items-center gap-2 whitespace-nowrap tabular-nums`}>{countdown.days > 0 && <span dir="rtl" className="inline-flex h-7 items-center rounded-md border bg-white/70 px-2 text-[10px] font-bold text-[var(--danger)] sm:text-[11px]" style={{ borderColor: "color-mix(in srgb, var(--danger) 28%, white)" }}>{countdown.days.toLocaleString("fa-IR")} روز</span>}<bdi dir="ltr">{countdown.clock}</bdi></span>}</div>}
 
     <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
       <div className="flex shrink-0 flex-row gap-1 sm:w-10 sm:flex-col" aria-label="عملیات محصول">

@@ -9,9 +9,13 @@ export type ProductDiscountLike = {
 
 export function isProductDiscountActive(product: ProductDiscountLike, now = new Date()) {
   const value = new Prisma.Decimal(product.discountValue?.toString() ?? 0);
+  if (!product.discountType || !value.greaterThan(0)) return false;
   const startsAt = product.discountStartsAt ? new Date(product.discountStartsAt) : null;
   const endsAt = product.discountEndsAt ? new Date(product.discountEndsAt) : null;
-  return Boolean(product.discountType && value.greaterThan(0) && startsAt && endsAt && now >= startsAt && now <= endsAt);
+  // No window at all is a "فروش ویژه" — a discount with nothing scheduling it, active until
+  // someone turns it off, rather than a bare date missing its other half.
+  if (!startsAt && !endsAt) return true;
+  return Boolean(startsAt && endsAt && now >= startsAt && now <= endsAt);
 }
 
 export function calculateDiscountedPrice(price: number, product: ProductDiscountLike, now = new Date()) {

@@ -100,6 +100,10 @@ export function BlueprintProductForm({ storeIndustry, categories = [], colors = 
   const [discountEnabled, setDiscountEnabled] = useState(Boolean(product?.discountType));
   const [discountType, setDiscountType] = useState<"PERCENT" | "FIXED">(product?.discountType ?? "PERCENT");
   const [discountValue, setDiscountValue] = useState(product?.discountValue != null ? String(product.discountValue) : "");
+  // A "فروش ویژه" is the same discount with no schedule at all — always on instead of racing a
+  // window. Existing data always carries both dates together, so this only ever starts true for
+  // a product that was already saved without one.
+  const [discountIsSpecialSale, setDiscountIsSpecialSale] = useState(Boolean(product?.discountType) && !product?.discountStartsAt);
   const [discountStartsAt, setDiscountStartsAt] = useState<string | null>(product?.discountStartsAt ?? null);
   const [discountEndsAt, setDiscountEndsAt] = useState<string | null>(product?.discountEndsAt ?? null);
 
@@ -165,8 +169,8 @@ export function BlueprintProductForm({ storeIndustry, categories = [], colors = 
       minOrderQuantity: Number(minOrderQuantity), maxOrderQuantity,
       discountType: discountEnabled ? discountType : null,
       discountValue: discountEnabled && discountValue !== "" ? Number(discountValue) : null,
-      discountStartsAt: discountEnabled ? discountStartsAt : null,
-      discountEndsAt: discountEnabled ? discountEndsAt : null,
+      discountStartsAt: discountEnabled && !discountIsSpecialSale ? discountStartsAt : null,
+      discountEndsAt: discountEnabled && !discountIsSpecialSale ? discountEndsAt : null,
       featured, mediaIds: selectedMedia.map((media) => media.id),
       optionTypes, variants, optionGuideId: optionGuide?.id ?? null, attributes: currentAttributes,
     };
@@ -357,21 +361,31 @@ export function BlueprintProductForm({ storeIndustry, categories = [], colors = 
             <BpSwitch isSelected={discountEnabled} onChange={setDiscountEnabled}>تخفیف داشته باشد</BpSwitch>
           </div>
           {discountEnabled && (
-            <div className="mt-3 grid gap-3 sm:grid-cols-2">
-              <div className="bp-field">
-                <label>نوع تخفیف</label>
-                <BpSeg
-                  label="نوع تخفیف"
-                  fullWidth
-                  value={discountType}
-                  onChange={(value) => { setDiscountType(value); clearError("discountType"); }}
-                  options={[{ value: "PERCENT", label: "درصدی" }, { value: "FIXED", label: "مبلغ ثابت" }]}
-                />
-                <BpFieldMessage id="discountType-message" error={errors.discountType} />
+            <div className="mt-3 grid gap-3">
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="bp-field">
+                  <label>نوع تخفیف</label>
+                  <BpSeg
+                    label="نوع تخفیف"
+                    fullWidth
+                    value={discountType}
+                    onChange={(value) => { setDiscountType(value); clearError("discountType"); }}
+                    options={[{ value: "PERCENT", label: "درصدی" }, { value: "FIXED", label: "مبلغ ثابت" }]}
+                  />
+                  <BpFieldMessage id="discountType-message" error={errors.discountType} />
+                </div>
+                <BpNumberInput name="discountValue" label={discountType === "FIXED" ? "مبلغ تخفیف (ریال)" : "درصد تخفیف"} required allowDecimal isPrice={discountType === "FIXED"} value={discountValue} error={errors.discountValue} onValueChange={(next) => { setDiscountValue(next); clearError("discountValue"); }} />
               </div>
-              <BpNumberInput name="discountValue" label={discountType === "FIXED" ? "مبلغ تخفیف (ریال)" : "درصد تخفیف"} required allowDecimal isPrice={discountType === "FIXED"} value={discountValue} error={errors.discountValue} onValueChange={(next) => { setDiscountValue(next); clearError("discountValue"); }} />
-              <BpDateTimeField label="تاریخ و ساعت شروع" required value={discountStartsAt} error={errors.discountStartsAt} onChange={(value) => { setDiscountStartsAt(value); clearError("discountStartsAt"); }} />
-              <BpDateTimeField label="تاریخ و ساعت پایان" required value={discountEndsAt} error={errors.discountEndsAt} onChange={(value) => { setDiscountEndsAt(value); clearError("discountEndsAt"); }} />
+              <div className="flex items-center justify-between gap-3 border-t border-[var(--bp-divider)] pt-3">
+                <span className="bp-muted text-[12px]">بدون بازه زمانی؛ تا وقتی خاموشش نکنید فعال می‌ماند.</span>
+                <BpSwitch isSelected={discountIsSpecialSale} onChange={setDiscountIsSpecialSale}>فروش ویژه (بدون زمان)</BpSwitch>
+              </div>
+              {!discountIsSpecialSale && (
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <BpDateTimeField label="تاریخ و ساعت شروع" required value={discountStartsAt} error={errors.discountStartsAt} onChange={(value) => { setDiscountStartsAt(value); clearError("discountStartsAt"); }} />
+                  <BpDateTimeField label="تاریخ و ساعت پایان" required value={discountEndsAt} error={errors.discountEndsAt} onChange={(value) => { setDiscountEndsAt(value); clearError("discountEndsAt"); }} />
+                </div>
+              )}
             </div>
           )}
         </Panel>

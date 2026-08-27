@@ -47,9 +47,17 @@ export async function PATCH(request: Request, context: Context) {
       startsAt: input.discountStartsAt !== undefined ? input.discountStartsAt : formatTehranDateInput(existingProduct.discountStartsAt),
       endsAt: input.discountEndsAt !== undefined ? input.discountEndsAt : formatTehranDateInput(existingProduct.discountEndsAt),
     };
-    const discountFields = [discount.type, discount.value, discount.startsAt, discount.endsAt];
-    if (discountFields.some((value) => value !== null) && discountFields.some((value) => value === null)) {
-      return NextResponse.json({ message: "نوع، مقدار و بازه زمانی تخفیف را کامل کنید." }, { status: 422 });
+    // Type and value always travel together; the window may be entirely absent instead — a
+    // "فروش ویژه" with no schedule, rather than a bare date missing its other half.
+    const hasDiscountAmount = discount.type !== null || discount.value !== null;
+    if ((discount.type !== null) !== (discount.value !== null)) {
+      return NextResponse.json({ message: "نوع و مقدار تخفیف را با هم مشخص کنید." }, { status: 422 });
+    }
+    if ((discount.startsAt !== null) !== (discount.endsAt !== null)) {
+      return NextResponse.json({ message: "بازه زمانی تخفیف را کامل کنید یا برای فروش ویژه بدون زمان، هر دو را خالی بگذارید." }, { status: 422 });
+    }
+    if (!hasDiscountAmount && (discount.startsAt !== null || discount.endsAt !== null)) {
+      return NextResponse.json({ message: "برای بازه زمانی تخفیف، نوع و مقدار آن را هم مشخص کنید." }, { status: 422 });
     }
     if (discount.type === "PERCENT" && Number(discount.value) > 100) {
       return NextResponse.json({ message: "درصد تخفیف نمی‌تواند بیشتر از ۱۰۰ باشد." }, { status: 422 });
