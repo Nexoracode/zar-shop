@@ -135,10 +135,13 @@ export function MediaDetailsPanel({ media, onSaved, className = "" }: { media: M
   const altHint = "چیزی که تصویر نشان می‌دهد را کوتاه توصیف کنید؛ همین متن برای موتور جستجو و صفحه‌خوان خوانده می‌شود.";
 
   return (
-    // `min-w-0`: this panel sits in a fixed-width grid track beside the media grid — a track's
-    // own length does not exempt its item from the same automatic-minimum-size default, so a
-    // long fact value could still force the whole card past its 300px column without this.
-    <aside className={`grid min-w-0 content-start gap-4 ${className}`.trim()}>
+    // `min-w-0` keeps this panel itself from being forced past its own 300px column. `overflow-x-
+    // hidden` handles a second, independent issue one level in: this element is also a grid
+    // container for its own children, and its implicit column sizes to fit their content with no
+    // ceiling of its own — `min-w-0` on a descendant does not add one. A long, unwrapped hint
+    // (`.bp-field-message`'s `white-space: nowrap`) was reaching through every wrapper in between
+    // and inflating that column past the card no matter how far down min-w-0 was chased.
+    <aside className={`grid min-w-0 content-start gap-4 overflow-x-hidden ${className}`.trim()}>
       {preview}
 
       {missingAlt && (

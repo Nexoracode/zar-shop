@@ -248,7 +248,12 @@
 }
 
 /* — forms — */
-.bp-field { display: block; }
+/* `min-width: 0`: as a flex/grid item, this otherwise takes its automatic minimum size from its
+   content's own min-content — and a percentage width on a descendant (the message span below)
+   does not shield that calculation, since percentages resolve to `auto` for intrinsic sizing.
+   A long, unwrapped hint or error (`.bp-field-message`'s own `white-space: nowrap`) was reaching
+   through this wrapper and inflating whatever row or card the field sat in. */
+.bp-field { display: block; min-width: 0; }
 .bp-field > label,
 .bp-label {
   display: block;
@@ -311,6 +316,12 @@ select.bp-input:focus-visible { border-color: var(--bp-accent); outline: none; }
    full text is still reachable through the span's own title tooltip. */
 .bp-field-message {
   display: block;
+  /* `overflow: hidden` on a block box establishes its own formatting context, which then sizes
+     the box by shrink-to-fit instead of filling its parent — and since `white-space: nowrap`
+     below makes a long hint's min-content equal to its full, unbroken width, shrink-to-fit landed
+     on that full width and pushed straight through the field's own card. `width: 100%` pins it
+     back to the field's actual width, which is what let `text-overflow: ellipsis` clip it at all. */
+  width: 100%;
   overflow: hidden;
   margin-top: 4px;
   font-size: 11px;
