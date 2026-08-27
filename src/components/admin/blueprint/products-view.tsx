@@ -139,7 +139,7 @@ export function BlueprintProductsView({ products, categories, filters, paginatio
               ))}
             </div>
 
-            <AdminBulkEditor entity="products" entityLabel="محصول" ids={products.map((product) => product.id)} actions={bulkActions} extraAction={<ProductBulkEditButton />}>
+            <AdminBulkEditor entity="products" entityLabel="محصول" ids={products.map((product) => product.id)} actions={bulkActions} extraAction={<ProductBulkEditButton products={products.map((product) => ({ id: product.id, variantTypeNames: product.optionTypes.map((optionType) => optionType.type.name) }))} />}>
               <BpTable ariaLabel="فهرست محصولات" minWidth={860}>
                 <thead>
                   <tr>

@@ -111,7 +111,7 @@ function BulkEditFields({
   );
 }
 
-function ProductBulkEditModal({ open, ids, onClose, onCompleted }: { open: boolean; ids: string[]; onClose: () => void; onCompleted: () => void }) {
+function ProductBulkEditModal({ open, ids, variantTypeNames, variantProductCount, onClose, onCompleted }: { open: boolean; ids: string[]; variantTypeNames: string[]; variantProductCount: number; onClose: () => void; onCompleted: () => void }) {
   const router = useRouter();
   const [type, setType] = useState<ChangeType>("price");
   const [method, setMethod] = useState<AdjustMethod>("set");
@@ -195,19 +195,28 @@ function ProductBulkEditModal({ open, ids, onClose, onCompleted }: { open: boole
         isDisabled={loading}
       />
       {/* Combinations carry their own price, stock and discount — the base product's fields stay
-         untouched once it has any, so this note keeps the reach of the change from being a surprise. */}
-      <p className="bp-muted m-0 text-[11px] leading-6 text-[var(--muted)]">محصولی که تنوع (رنگ، سایز و…) دارد، این تغییر روی همهٔ ترکیب‌های آن اعمال می‌شود.</p>
+         untouched once it has any, so this note keeps the reach of the change from being a surprise.
+         Naming the actual variant types found in the selection beats a generic example. */}
+      {variantProductCount > 0 && (
+        <p className="bp-muted m-0 text-[11px] leading-6 text-[var(--muted)]">
+          {variantProductCount.toLocaleString("fa-IR")} محصول انتخاب‌شده تنوع ({variantTypeNames.join("، ")}) دارند؛ این تغییر روی همهٔ ترکیب‌های آن‌ها اعمال می‌شود.
+        </p>
+      )}
     </AdminDialog>
   );
 }
 
+export type BulkEditProductSummary = { id: string; variantTypeNames: string[] };
+
 /** Sits beside the quick-edit control in the products table's selection toolbar. */
-export function ProductBulkEditButton() {
+export function ProductBulkEditButton({ products }: { products: BulkEditProductSummary[] }) {
   const template = useAdminTemplate();
   const { selected } = useBulkSelection();
   const [open, setOpen] = useState(false);
   const selectedIds = [...selected];
   const disabled = selectedIds.length === 0;
+  const selectedWithVariants = products.filter((product) => selected.has(product.id) && product.variantTypeNames.length > 0);
+  const variantTypeNames = [...new Set(selectedWithVariants.flatMap((product) => product.variantTypeNames))];
 
   return (
     <>
@@ -220,7 +229,7 @@ export function ProductBulkEditButton() {
           <ListChecks size={14} />ویرایش گروهی
         </Button>
       )}
-      <ProductBulkEditModal open={open} ids={selectedIds} onClose={() => setOpen(false)} onCompleted={() => setOpen(false)} />
+      <ProductBulkEditModal open={open} ids={selectedIds} variantTypeNames={variantTypeNames} variantProductCount={selectedWithVariants.length} onClose={() => setOpen(false)} onCompleted={() => setOpen(false)} />
     </>
   );
 }
