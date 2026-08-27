@@ -416,8 +416,9 @@ export function BlueprintProductForm({ storeIndustry, categories = [], colors = 
             <BpSwitch isSelected={featured} onChange={setFeatured}>نمایش در محصولات ویژه</BpSwitch>
           </div>
           <div className="mt-4 grid gap-2">
-            <div className="flex items-stretch gap-[10px]">
-              <BpButton type="submit" variant="primary" isPending={loading} className="flex-1">{product ? "ذخیره و بازگشت به لیست" : "ثبت و بازگشت به لیست"}</BpButton>
+            <div className="flex items-stretch">
+              <BpButton type="submit" variant="primary" isPending={loading} className="bp-split-start flex-1">{product ? "ذخیره و بازگشت به لیست" : "ثبت و بازگشت به لیست"}</BpButton>
+              <span aria-hidden className="w-px shrink-0 bg-white/25" />
               <BpButton
                 ref={saveMenuTriggerRef}
                 type="button"
@@ -427,6 +428,7 @@ export function BlueprintProductForm({ storeIndustry, categories = [], colors = 
                 aria-label="گزینه‌های بیشتر ذخیره"
                 aria-haspopup="menu"
                 aria-expanded={saveMenuOpen}
+                className="bp-split-end"
                 onClick={() => setSaveMenuOpen((current) => !current)}
               >
                 <ChevronDown size={15} />

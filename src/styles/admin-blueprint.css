@@ -234,6 +234,13 @@
 .bp-btn-sm { min-height: 30px; font-size: 13px; padding: 4px 10px; }
 .bp-btn-block { width: 100%; }
 
+/* Split button: two `.bp-btn`s fused into one shape, flush against each other with no gap —
+   only the corners on their touching side are squared off. A plain class rather than a Tailwind
+   `rounded-*` one on purpose: `[class*="rounded-"]` below forces every corner back to
+   `--bp-radius`, which would undo exactly the corners this is meant to square. */
+.bp-btn.bp-split-start { border-start-end-radius: 0; border-end-end-radius: 0; }
+.bp-btn.bp-split-end { border-start-start-radius: 0; border-end-start-radius: 0; }
+
 .bp-spinner { animation: bp-spin 0.7s linear infinite; }
 @keyframes bp-spin { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) {
