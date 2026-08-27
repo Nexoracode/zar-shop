@@ -83,7 +83,7 @@ export function AdminShell({ user, showGoldPrice, goldPrice, goldFetchedAt, noti
               <Popover>
                 <Popover.Trigger aria-label="نمایش اعلان‌ها" className="relative grid h-10 w-10 cursor-pointer place-items-center rounded-full border border-[var(--border)] bg-[var(--surface-secondary)] text-[var(--foreground)] outline-none transition hover:bg-[var(--surface-tertiary)] focus-visible:ring-2 focus-visible:ring-[var(--focus)]">
                   <Bell size={18} />
-                  {notificationCount > 0 && <span className="absolute -left-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full bg-[var(--danger)] px-1 text-[10px] font-bold text-[var(--danger-foreground)]">{notificationCount.toLocaleString("fa-IR")}</span>}
+                  {notificationCount > 0 && <span className="absolute -bottom-1 -right-1 grid h-5 min-w-5 place-items-center rounded-full bg-[var(--danger)] px-1 text-[10px] font-bold text-[var(--danger-foreground)]">{notificationCount.toLocaleString("fa-IR")}</span>}
                 </Popover.Trigger>
                 <Popover.Content dir="rtl" placement="bottom right" className="w-[min(90vw,320px)] rounded-[5px] border border-[var(--border)] bg-[var(--overlay)] p-0 text-right text-[var(--overlay-foreground)] shadow-xl">
                   <Popover.Dialog dir="rtl" className="p-0 text-right">

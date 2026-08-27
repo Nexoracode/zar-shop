@@ -108,7 +108,7 @@ export function BlueprintShell({ user, showGoldPrice, goldPrice, goldFetchedAt, 
             <BpButton ref={bellRef} isIconOnly aria-label="نمایش اعلان‌ها" aria-haspopup="dialog" aria-expanded={openMenu === "bell"} onClick={() => setOpenMenu((current) => current === "bell" ? null : "bell")} className="relative">
               <Bell size={17} />
               {notificationCount > 0 && (
-                <span className="absolute -top-2 left-[-6px] flex h-4 min-w-4 items-center justify-center border border-[var(--bp-danger)] bg-[var(--bp-danger-bg)] px-1 text-[10px] font-bold text-[var(--bp-danger)]">
+                <span className="absolute -bottom-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-[var(--bp-danger)] px-1 text-[10px] font-bold text-[var(--bp-bg)]">
                   {notificationCount.toLocaleString("fa-IR")}
                 </span>
               )}
