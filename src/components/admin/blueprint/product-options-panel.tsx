@@ -18,6 +18,7 @@ import { BpDateTimeField, formatPersianDateTime } from "./ui/date-time-field";
 import { BpDialog } from "./ui/dialog";
 import { BpNumberInput } from "./ui/number-input";
 import { BpSelect } from "./ui/select";
+import { BpSwitch } from "./ui/switch";
 import { BpTable, BpTd, BpTh } from "./ui/table";
 
 /**
@@ -80,14 +81,18 @@ export function BlueprintProductOptions({ storeIndustry, colors, library, option
 
   // Picking a discount type opens this instead of unrolling four more controls into the row —
   // the row only ever shows a compact summary once the discount is actually complete.
-  const [discountDraft, setDiscountDraft] = useState<{ signature: string; type: "PERCENT" | "FIXED"; value: string; startsAt: string | null; endsAt: string | null } | null>(null);
+  const [discountDraft, setDiscountDraft] = useState<{ signature: string; type: "PERCENT" | "FIXED"; value: string; isSpecialSale: boolean; startsAt: string | null; endsAt: string | null } | null>(null);
   const [discountDraftTouched, setDiscountDraftTouched] = useState(false);
 
   function openDiscountModal(variant: VariantDraft, type: "PERCENT" | "FIXED") {
+    const matchesDraft = variant.discountType === type;
     setDiscountDraft({
       signature: selectionSignature(variant.selection),
       type,
-      value: variant.discountType === type ? (variant.discountValue ?? "") : "",
+      value: matchesDraft ? (variant.discountValue ?? "") : "",
+      // «فروش ویژه» — a discount with no schedule at all — is what an existing windowless
+      // combination already is, so reopening it keeps that instead of defaulting back to scheduled.
+      isSpecialSale: matchesDraft && Boolean(variant.discountValue) && !variant.discountStartsAt,
       startsAt: variant.discountStartsAt,
       endsAt: variant.discountEndsAt,
     });
@@ -96,20 +101,20 @@ export function BlueprintProductOptions({ storeIndustry, colors, library, option
 
   function confirmDiscountDraft() {
     if (!discountDraft) return;
-    const { signature, type, value, startsAt, endsAt } = discountDraft;
+    const { signature, type, value, isSpecialSale, startsAt, endsAt } = discountDraft;
     const valueError = !value.trim()
       ? "مقدار تخفیف را وارد کنید."
       : type === "PERCENT" && Number(value) > 100
         ? "درصد تخفیف نمی‌تواند بیشتر از ۱۰۰ باشد."
         : undefined;
-    const endError = !endsAt
+    const endError = isSpecialSale ? undefined : !endsAt
       ? "زمان پایان تخفیف را مشخص کنید."
       : startsAt && endsAt < startsAt
         ? "پایان تخفیف باید بعد از شروع آن باشد."
         : undefined;
-    const startError = !startsAt ? "زمان شروع تخفیف را مشخص کنید." : undefined;
+    const startError = isSpecialSale ? undefined : !startsAt ? "زمان شروع تخفیف را مشخص کنید." : undefined;
     if (valueError || startError || endError) { setDiscountDraftTouched(true); return; }
-    updateVariant(signature, { discountType: type, discountValue: value, discountStartsAt: startsAt, discountEndsAt: endsAt });
+    updateVariant(signature, { discountType: type, discountValue: value, discountStartsAt: isSpecialSale ? null : startsAt, discountEndsAt: isSpecialSale ? null : endsAt });
     setDiscountDraft(null);
   }
 
@@ -480,14 +485,14 @@ export function BlueprintProductOptions({ storeIndustry, colors, library, option
                         openDiscountModal(variant, next);
                       }}
                     />
-                    {variant.discountType && variant.discountValue && variant.discountStartsAt && variant.discountEndsAt && (
+                    {variant.discountType && variant.discountValue && (
                       <span className="inline-flex items-center gap-1 rounded-[var(--bp-radius)] border border-[var(--bp-divider)] ps-2 pe-1 py-1 text-[11px] whitespace-nowrap">
                         <button
                           type="button"
                           className="hover:text-[var(--bp-accent)]"
                           onClick={() => openDiscountModal(variant, variant.discountType!)}
                         >
-                          {Number(variant.discountValue).toLocaleString("fa-IR")}{variant.discountType === "PERCENT" ? "٪" : " ریال"} | {formatPersianDateTime(variant.discountStartsAt)} تا {formatPersianDateTime(variant.discountEndsAt)}
+                          {Number(variant.discountValue).toLocaleString("fa-IR")}{variant.discountType === "PERCENT" ? "٪" : " ریال"} | {variant.discountStartsAt && variant.discountEndsAt ? `${formatPersianDateTime(variant.discountStartsAt)} تا ${formatPersianDateTime(variant.discountEndsAt)}` : "فروش ویژه"}
                         </button>
                         <button
                           type="button"
@@ -560,26 +565,34 @@ export function BlueprintProductOptions({ storeIndustry, colors, library, option
             error={discountDraftTouched && (!discountDraft.value.trim() ? "مقدار تخفیف را وارد کنید." : discountDraft.type === "PERCENT" && Number(discountDraft.value) > 100 ? "درصد تخفیف نمی‌تواند بیشتر از ۱۰۰ باشد." : undefined)}
             onValueChange={(next) => setDiscountDraft((current) => current && { ...current, value: next })}
           />
-          <BpDateTimeField
-            label="شروع تخفیف"
-            value={discountDraft.startsAt}
-            error={discountDraftTouched && !discountDraft.startsAt ? "زمان شروع تخفیف را مشخص کنید." : undefined}
-            onChange={(next) => setDiscountDraft((current) => current && { ...current, startsAt: next })}
-          />
-          <BpDateTimeField
-            label="پایان تخفیف"
-            value={discountDraft.endsAt}
-            error={
-              discountDraftTouched
-                ? !discountDraft.endsAt
-                  ? "زمان پایان تخفیف را مشخص کنید."
-                  : discountDraft.startsAt && discountDraft.endsAt < discountDraft.startsAt
-                    ? "پایان تخفیف باید بعد از شروع آن باشد."
+          <div className="flex items-center justify-between gap-3 border-t border-[var(--bp-divider)] pt-3">
+            <span className="bp-muted text-[12px]">بدون بازه زمانی؛ تا وقتی خاموشش نکنید فعال می‌ماند.</span>
+            <BpSwitch isSelected={discountDraft.isSpecialSale} onChange={(value) => setDiscountDraft((current) => current && { ...current, isSpecialSale: value })}>فروش ویژه (بدون زمان)</BpSwitch>
+          </div>
+          {!discountDraft.isSpecialSale && (
+            <>
+              <BpDateTimeField
+                label="شروع تخفیف"
+                value={discountDraft.startsAt}
+                error={discountDraftTouched && !discountDraft.startsAt ? "زمان شروع تخفیف را مشخص کنید." : undefined}
+                onChange={(next) => setDiscountDraft((current) => current && { ...current, startsAt: next })}
+              />
+              <BpDateTimeField
+                label="پایان تخفیف"
+                value={discountDraft.endsAt}
+                error={
+                  discountDraftTouched
+                    ? !discountDraft.endsAt
+                      ? "زمان پایان تخفیف را مشخص کنید."
+                      : discountDraft.startsAt && discountDraft.endsAt < discountDraft.startsAt
+                        ? "پایان تخفیف باید بعد از شروع آن باشد."
+                        : undefined
                     : undefined
-                : undefined
-            }
-            onChange={(next) => setDiscountDraft((current) => current && { ...current, endsAt: next })}
-          />
+                }
+                onChange={(next) => setDiscountDraft((current) => current && { ...current, endsAt: next })}
+              />
+            </>
+          )}
         </div>
       )}
     </BpDialog>

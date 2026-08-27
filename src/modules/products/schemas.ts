@@ -60,14 +60,21 @@ const productVariantSchema = z.object({
   price: z.string().trim().regex(/^[1-9]\d{0,17}$/, "قیمت ترکیب باید یک مبلغ معتبر و بیشتر از صفر باشد.").nullable().default(null),
   discountType: z.enum(["PERCENT", "FIXED"]).nullable().default(null),
   discountValue: z.string().trim().regex(/^\d{1,18}(\.\d{1,3})?$/, "مقدار تخفیف ترکیب معتبر نیست.").nullable().default(null),
-  // A combination's discount window is its own — independent of the product's, and required
-  // alongside the type and amount rather than inherited silently.
+  // A combination's discount window is its own — independent of the product's — but, like the
+  // product's, may be entirely absent instead: a windowless «فروش ویژه» rather than a bare date
+  // missing its other half.
   discountStartsAt: discountBoundarySchema.nullable().default(null),
   discountEndsAt: discountBoundarySchema.nullable().default(null),
 }).superRefine((variant, context) => {
-  const discountFields = [variant.discountType, variant.discountValue, variant.discountStartsAt, variant.discountEndsAt];
-  if (discountFields.some((value) => value !== null) && discountFields.some((value) => value === null)) {
-    context.addIssue({ code: "custom", path: ["discountValue"], message: "نوع، مقدار و بازه زمانی تخفیف ترکیب را کامل کنید." });
+  const hasDiscountAmount = variant.discountType !== null || variant.discountValue !== null;
+  if ((variant.discountType !== null) !== (variant.discountValue !== null)) {
+    context.addIssue({ code: "custom", path: ["discountValue"], message: "نوع و مقدار تخفیف ترکیب را با هم مشخص کنید." });
+  }
+  if ((variant.discountStartsAt !== null) !== (variant.discountEndsAt !== null)) {
+    context.addIssue({ code: "custom", path: ["discountEndsAt"], message: "بازه زمانی تخفیف ترکیب را کامل کنید یا برای فروش ویژه بدون زمان، هر دو را خالی بگذارید." });
+  }
+  if (!hasDiscountAmount && (variant.discountStartsAt !== null || variant.discountEndsAt !== null)) {
+    context.addIssue({ code: "custom", path: ["discountValue"], message: "برای بازه زمانی تخفیف ترکیب، نوع و مقدار آن را هم مشخص کنید." });
   }
   if (variant.discountType === "PERCENT" && variant.discountValue !== null && Number(variant.discountValue) > 100) {
     context.addIssue({ code: "custom", path: ["discountValue"], message: "درصد تخفیف نمی‌تواند بیشتر از ۱۰۰ باشد." });
