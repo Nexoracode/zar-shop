@@ -5,7 +5,7 @@ import { AdminEmptyState, AdminPageHeader, AdminPrimaryLink } from "@/components
 import { productStatusLabels, productStatusTones } from "@/modules/admin/labels";
 import { AdminListFilters } from "@/components/admin-list-filters";
 import { AdminPagination } from "@/components/admin-pagination";
-import { AdminBulkCheckbox, AdminBulkEditor } from "@/components/admin-bulk-editor";
+import { AdminBulkCheckbox, AdminBulkEditor, AdminBulkTr } from "@/components/admin-bulk-editor";
 import { isProductDiscountActive } from "@/modules/products/discount";
 import { DiscountExpiryRefresh } from "@/components/discount-expiry-refresh";
 import { formatDateTime } from "@/lib/format";
@@ -165,7 +165,7 @@ export function BlueprintProductsView({ products, categories, filters, paginatio
                 </thead>
                 <tbody>
                   {products.map((product, index) => (
-                    <tr key={product.id}>
+                    <AdminBulkTr key={product.id} id={product.id}>
                       <BpTd className="w-10 text-center"><AdminBulkCheckbox id={product.id} label={`انتخاب محصول ${product.name}`} /></BpTd>
                       <BpTd className="bp-muted w-10">{(pagination.skip + index + 1).toLocaleString("fa-IR")}</BpTd>
                       <BpTd className="w-[240px] max-w-[240px]"><div className="flex min-w-0 items-center gap-2.5"><ProductThumb product={product} /><ThumbRule /><ProductName product={product} /></div></BpTd>
@@ -174,7 +174,7 @@ export function BlueprintProductsView({ products, categories, filters, paginatio
                       <BpTd className={product.stock <= lowStockThreshold ? "font-bold text-[var(--bp-danger)]" : ""}>{product.stock.toLocaleString("fa-IR")}</BpTd>
                       <BpTd><BpTag tone={productStatusTones[product.status]} size="md" withDot>{productStatusLabels[product.status]}</BpTag></BpTd>
                       <BpTd><RowActions product={product} /></BpTd>
-                    </tr>
+                    </AdminBulkTr>
                   ))}
                 </tbody>
               </BpTable>

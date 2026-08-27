@@ -130,3 +130,38 @@ export function AdminBulkCheckbox({ id, label, disabled = false }: { id: string;
   const { selected, toggle } = useBulkSelection();
   return <SelectionCheckbox checked={selected.has(id)} disabled={disabled} label={label} onChange={() => toggle(id)} />;
 }
+
+/**
+ * A native `<tr>` that also toggles its own row's selection on a click anywhere inside it,
+ * except on an interactive control the row already carries (a link, a button, the checkbox
+ * itself) — those keep doing their own thing instead of being swallowed by the row.
+ */
+export function AdminBulkTr({ id, className, children }: { id: string; className?: string; children: ReactNode }) {
+  const { toggle } = useBulkSelection();
+  return (
+    <tr
+      className={`cursor-pointer ${className ?? ""}`.trim()}
+      onClick={(event) => {
+        const target = event.target as HTMLElement;
+        if (target.closest("a, button, input, label, [role='menu'], [role='menuitem'], [role='menuitemradio']")) return;
+        toggle(id);
+      }}
+    >
+      {children}
+    </tr>
+  );
+}
+
+/**
+ * Same idea for a React Aria `Table.Row` — its `Row` primitive deliberately excludes a bare
+ * `onClick` from its own props, so this wraps a cell's content in a plain clickable element
+ * instead of fighting that. Skip it on cells that already carry their own controls.
+ */
+export function AdminBulkRowArea({ id, className, children }: { id: string; className?: string; children: ReactNode }) {
+  const { toggle } = useBulkSelection();
+  return (
+    <span role="presentation" className={`block cursor-pointer ${className ?? ""}`.trim()} onClick={() => toggle(id)}>
+      {children}
+    </span>
+  );
+}
