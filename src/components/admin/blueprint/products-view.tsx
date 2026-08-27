@@ -54,6 +54,11 @@ function discountTooltip(product: ProductRow) {
 تا ${formatDateTime(product.discountEndsAt)}`;
 }
 
+function variantTooltip(product: ProductRow) {
+  const names = product.optionTypes.map((optionType) => optionType.type.name);
+  return names.length ? `تنوع: ${names.join("، ")}` : `${product._count.variants.toLocaleString("fa-IR")} ترکیب تنوع`;
+}
+
 /** Sets the picture apart from the words, so the two do not read as one run of content. */
 function ThumbRule() {
   return <span aria-hidden className="h-7 w-px shrink-0 self-center bg-[var(--bp-divider)]" />;
@@ -74,7 +79,7 @@ function ProductName({ product }: { product: ProductRow }) {
       <span className="truncate" title={product.name}>{product.name}</span>
       {product.featured && <Star size={14} strokeWidth={2} className="shrink-0 translate-y-0.5 fill-[var(--bp-accent)] text-[var(--bp-accent)]" aria-label="محصول ویژه" />}
       {isProductDiscountActive(product) && <span title={discountTooltip(product)} className="shrink-0 translate-y-0.5 cursor-help leading-none text-[var(--bp-danger)]"><Tag size={14} strokeWidth={1.9} aria-label={discountTooltip(product)} /></span>}
-      {product._count.variants > 0 && <Layers size={14} strokeWidth={1.9} className="shrink-0 translate-y-0.5 text-[var(--bp-accent)]" aria-label={`${product._count.variants.toLocaleString("fa-IR")} ترکیب تنوع`} />}
+      {product._count.variants > 0 && <span title={variantTooltip(product)} className="shrink-0 translate-y-0.5 cursor-help leading-none text-[var(--bp-accent)]"><Layers size={14} strokeWidth={1.9} aria-label={variantTooltip(product)} /></span>}
     </div>
   );
 }
