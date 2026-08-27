@@ -8,6 +8,7 @@ import {
   mergeCombinations,
   selectionSignature,
   type VariantDraft,
+  type VariantDraftDefaults,
 } from "@/modules/products/variant-combinations";
 import { optionFieldLimits } from "@/modules/options/schemas";
 import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
@@ -51,14 +52,32 @@ type Props = {
    * costs the same as the product until the admin overrides it. Not used for a gold product,
    * which prices from weight instead. */
   fixedPrice?: string;
+  /** The product's own weight — seeded into a brand-new combination the same way `fixedPrice` is,
+   * but only for a gold product, which prices from weight instead of a stored amount. */
+  weightGrams?: string;
+  /** The product's own discount, exactly as it would be submitted (`null` when the product has
+   * none). A brand-new combination starts with its own explicit copy of these instead of reading
+   * the product's live at display time — so the admin can then opt a single combination out of a
+   * sale the rest of the product is on, rather than every undecorated row silently tracking it. */
+  discountType?: "PERCENT" | "FIXED" | null;
+  discountValue?: string | null;
+  discountStartsAt?: string | null;
+  discountEndsAt?: string | null;
   onChange: (next: { optionTypes: ProductTypeDraft[]; variants: VariantDraft[] }) => void;
   onLibraryChange: (library: LibraryType[]) => void;
 };
 
 const MAX_TYPES = 5;
 
-export function BlueprintProductOptions({ storeIndustry, colors, library, optionTypes, variants, fixedPrice, onChange, onLibraryChange }: Props) {
-  const defaultVariantPrice = storeIndustry === "GENERAL" && fixedPrice ? fixedPrice : null;
+export function BlueprintProductOptions({ storeIndustry, colors, library, optionTypes, variants, fixedPrice, weightGrams, discountType, discountValue, discountStartsAt, discountEndsAt, onChange, onLibraryChange }: Props) {
+  const defaultVariantBase: VariantDraftDefaults = {
+    price: storeIndustry === "GENERAL" && fixedPrice ? fixedPrice : null,
+    weightGrams: storeIndustry === "GOLD" && weightGrams ? weightGrams : null,
+    discountType: discountType ?? null,
+    discountValue: discountValue ?? null,
+    discountStartsAt: discountStartsAt ?? null,
+    discountEndsAt: discountEndsAt ?? null,
+  };
   const [pickedTypeId, setPickedTypeId] = useState("");
   const [typeError, setTypeError] = useState("");
   const [newValueFor, setNewValueFor] = useState("");
@@ -132,7 +151,7 @@ export function BlueprintProductOptions({ storeIndustry, colors, library, option
 
   /** Every change to the types rebuilds the rows, keeping the figures already entered. */
   function applyTypes(next: ProductTypeDraft[]) {
-    onChange({ optionTypes: next, variants: mergeCombinations(variants, asSelectedTypes(next), defaultVariantPrice) });
+    onChange({ optionTypes: next, variants: mergeCombinations(variants, asSelectedTypes(next), defaultVariantBase) });
   }
 
   function addType() {
@@ -236,7 +255,7 @@ export function BlueprintProductOptions({ storeIndustry, colors, library, option
           if (!item) return [];
           const labels = labelsByType.get(chosen.typeId)!;
           return [{ typeName: item.name, values: chosen.valueIds.flatMap((id) => (labels.has(id) ? [labels.get(id)!] : [])) }];
-        }), defaultVariantPrice),
+        }), defaultVariantBase),
       });
       resetValueForm();
     } catch (reason) {
@@ -269,7 +288,7 @@ export function BlueprintProductOptions({ storeIndustry, colors, library, option
           if (!item) return [];
           const labels = labelsByType.get(chosen.typeId)!;
           return [{ typeName: item.name, values: chosen.valueIds.flatMap((id) => (labels.has(id) ? [labels.get(id)!] : [])) }];
-        }), defaultVariantPrice),
+        }), defaultVariantBase),
       });
       setDeletingValue(null);
     } catch (reason) {

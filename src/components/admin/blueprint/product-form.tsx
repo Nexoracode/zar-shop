@@ -415,6 +415,11 @@ export function BlueprintProductForm({ storeIndustry, categories = [], colors = 
             optionTypes={optionTypes}
             variants={variants}
             fixedPrice={fixedPrice}
+            weightGrams={weightGrams}
+            discountType={discountEnabled ? discountType : null}
+            discountValue={discountEnabled && discountValue !== "" ? discountValue : null}
+            discountStartsAt={discountEnabled && !discountIsSpecialSale ? discountStartsAt : null}
+            discountEndsAt={discountEnabled && !discountIsSpecialSale ? discountEndsAt : null}
             onLibraryChange={setLibrary}
             onChange={(next) => { setOptionTypes(next.optionTypes); setVariants(next.variants); }}
           />

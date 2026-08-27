@@ -58,8 +58,28 @@ export function buildCombinations(types: SelectedType[]): VariantSelection[] {
   }, [{}]);
 }
 
-function emptyDraft(selection: VariantSelection, defaultPrice: string | null): VariantDraft {
-  return { selection, price: defaultPrice, weightGrams: null, discountType: null, discountValue: null, discountStartsAt: null, discountEndsAt: null, stock: 0, isActive: true };
+/** The product's own price, weight and discount, offered to a brand-new combination row. */
+export type VariantDraftDefaults = {
+  price?: string | null;
+  weightGrams?: string | null;
+  discountType?: "PERCENT" | "FIXED" | null;
+  discountValue?: string | null;
+  discountStartsAt?: string | null;
+  discountEndsAt?: string | null;
+};
+
+function emptyDraft(selection: VariantSelection, defaults: VariantDraftDefaults): VariantDraft {
+  return {
+    selection,
+    price: defaults.price ?? null,
+    weightGrams: defaults.weightGrams ?? null,
+    discountType: defaults.discountType ?? null,
+    discountValue: defaults.discountValue ?? null,
+    discountStartsAt: defaults.discountStartsAt ?? null,
+    discountEndsAt: defaults.discountEndsAt ?? null,
+    stock: 0,
+    isActive: true,
+  };
 }
 
 /**
@@ -69,18 +89,20 @@ function emptyDraft(selection: VariantSelection, defaultPrice: string | null): V
  * removing a size must take only its own rows. Rows are matched by signature, so a pairing
  * survives anything that does not change which values it is made of.
  *
- * `defaultPrice` seeds a brand-new row with the product's own price rather than leaving it
- * blank — a combination usually costs the same as the product until the admin says otherwise.
- * An existing row's price, even one already cleared to nothing, is never touched.
+ * `defaults` seeds a brand-new row with the product's own price, weight and discount rather than
+ * leaving them blank — a combination usually starts out the same as the product until the admin
+ * says otherwise, and having its own explicit values (rather than reading the product's live at
+ * display time) is what lets one combination opt out of a sale the rest of the product is on. An
+ * existing row, even one already cleared to nothing, is never touched.
  */
-export function mergeCombinations(existing: VariantDraft[], types: SelectedType[], defaultPrice: string | null = null): VariantDraft[] {
+export function mergeCombinations(existing: VariantDraft[], types: SelectedType[], defaults: VariantDraftDefaults = {}): VariantDraft[] {
   const bySignature = new Map(existing.map((variant) => [selectionSignature(variant.selection), variant]));
   return buildCombinations(types)
     .slice(0, MAX_VARIANTS)
     .map((selection) => {
       const kept = bySignature.get(selectionSignature(selection));
       // The selection is rewritten from the current types so a renamed type reaches its rows.
-      return kept ? { ...kept, selection } : emptyDraft(selection, defaultPrice);
+      return kept ? { ...kept, selection } : emptyDraft(selection, defaults);
     });
 }
 
