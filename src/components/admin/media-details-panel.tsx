@@ -122,8 +122,8 @@ export function MediaDetailsPanel({ media, onSaved, className = "" }: { media: M
     <dl className={`m-0 grid gap-1.5 ${blueprint ? "text-[12px]" : "text-xs"}`}>
       {facts.map(([label, value]) => (
         <div key={label} className="flex items-center justify-between gap-3">
-          <dt className={blueprint ? "bp-muted" : "text-[var(--muted)]"}>{label}</dt>
-          <dd className="m-0 truncate" dir={label === "نوع فایل" ? "ltr" : undefined}>{value}</dd>
+          <dt className={`shrink-0 ${blueprint ? "bp-muted" : "text-[var(--muted)]"}`}>{label}</dt>
+          <dd className="m-0 min-w-0 truncate" dir={label === "نوع فایل" ? "ltr" : undefined}>{value}</dd>
         </div>
       ))}
     </dl>
@@ -132,7 +132,10 @@ export function MediaDetailsPanel({ media, onSaved, className = "" }: { media: M
   const altHint = "چیزی که تصویر نشان می‌دهد را کوتاه توصیف کنید؛ همین متن برای موتور جستجو و صفحه‌خوان خوانده می‌شود.";
 
   return (
-    <aside className={`grid content-start gap-4 ${className}`.trim()}>
+    // `min-w-0`: this panel sits in a fixed-width grid track beside the media grid — a track's
+    // own length does not exempt its item from the same automatic-minimum-size default, so a
+    // long fact value could still force the whole card past its 300px column without this.
+    <aside className={`grid min-w-0 content-start gap-4 ${className}`.trim()}>
       {preview}
 
       {missingAlt && (
