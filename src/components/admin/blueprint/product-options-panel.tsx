@@ -405,7 +405,7 @@ export function BlueprintProductOptions({ storeIndustry, colors, library, option
             <strong className="text-[13px]">ترکیب‌های این محصول</strong>
             <span className="bp-muted text-[11px]">{variants.length.toLocaleString("fa-IR")} از {MAX_VARIANTS.toLocaleString("fa-IR")}</span>
           </div>
-          <BpTable ariaLabel="ترکیب‌های تنوع محصول" minWidth={760} alwaysScrollable>
+          <BpTable ariaLabel="ترکیب‌های تنوع محصول" minWidth={760}>
             <thead>
               <tr>
                 <BpTh>ترکیب</BpTh>

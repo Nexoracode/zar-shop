@@ -462,12 +462,9 @@ select.bp-input:focus-visible { border-color: var(--bp-accent); outline: none; }
 .bp-table-scroll { width: 100%; overflow-x: auto; }
 /* A scroll container captures `position: sticky`, so above the widest table's own minimum —
    where there is nothing left to scroll sideways anyway — it stops being one and the header
-   sticks to the viewport instead of to this box. That assumption only holds for a table given
-   the page's full width; one embedded in a narrower column (a form's main column, say) can still
-   be narrower than its own minimum up there, so `.bp-table-scroll-fixed` opts a table out and
-   keeps scrolling — and clipping — at every width instead of spilling past its card. */
+   sticks to the viewport instead of to this box. */
 @media (min-width: 960px) {
-  .bp-table-scroll:not(.bp-table-scroll-fixed) { overflow: visible; }
+  .bp-table-scroll { overflow: visible; }
 }
 
 /* — product thumbnail: unframed, so the picture is the picture. The tinted ground is what makes

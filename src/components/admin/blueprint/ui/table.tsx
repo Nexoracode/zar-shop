@@ -1,20 +1,8 @@
 import type { ReactNode, ThHTMLAttributes, TdHTMLAttributes } from "react";
 
-export function BpTable({ ariaLabel, minWidth, children, className = "", alwaysScrollable = false }: {
-  ariaLabel: string;
-  minWidth?: number;
-  children: ReactNode;
-  className?: string;
-  /**
-   * Past 960px the scroll container normally turns itself off so the header can stick to the
-   * page instead of to this box — an assumption that only holds when the table gets the page's
-   * full width. Set this for a table embedded in a narrower column, where its own minimum can
-   * still be wider than the space it actually has.
-   */
-  alwaysScrollable?: boolean;
-}) {
+export function BpTable({ ariaLabel, minWidth, children, className = "" }: { ariaLabel: string; minWidth?: number; children: ReactNode; className?: string }) {
   return (
-    <div className={`bp-table-scroll ${alwaysScrollable ? "bp-table-scroll-fixed" : ""}`.trim()}>
+    <div className="bp-table-scroll">
       <table aria-label={ariaLabel} className={`bp-table ${className}`.trim()} style={minWidth ? { minWidth } : undefined}>
         {children}
       </table>
