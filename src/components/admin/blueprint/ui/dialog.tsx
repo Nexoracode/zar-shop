@@ -10,6 +10,27 @@ import { createPortal } from "react-dom";
  */
 export type BpDialogSize = "sm" | "md" | "lg" | "full";
 
+/*
+ * A count, not a plain flag: a dialog opened from inside another dialog (the variant discount
+ * modal over the fullscreen combinations one, say) would otherwise have the inner one's cleanup
+ * unlock scrolling out from under the outer one still open behind it.
+ */
+let openDialogCount = 0;
+let scrollLockPreviousOverflow = "";
+
+function lockBodyScroll() {
+  if (openDialogCount === 0) {
+    scrollLockPreviousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+  }
+  openDialogCount += 1;
+}
+
+function unlockBodyScroll() {
+  openDialogCount = Math.max(0, openDialogCount - 1);
+  if (openDialogCount === 0) document.body.style.overflow = scrollLockPreviousOverflow;
+}
+
 export function BpDialog({ open, title, description, onClose, children, actions, labelledBy, size = "sm" }: {
   open: boolean;
   title?: ReactNode;
@@ -36,6 +57,12 @@ export function BpDialog({ open, title, description, onClose, children, actions,
     document.addEventListener("keydown", onKeyDown);
     panelRef.current?.focus();
     return () => document.removeEventListener("keydown", onKeyDown);
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    lockBodyScroll();
+    return unlockBodyScroll;
   }, [open]);
 
   if (!open || typeof document === "undefined") return null;
