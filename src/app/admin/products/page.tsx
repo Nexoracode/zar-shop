@@ -34,7 +34,7 @@ export default async function AdminProducts({ searchParams }: Context) {
     // top of the list, so a row would jump away from under the cursor the moment its status was
     // toggled. `id` breaks ties — seeded rows share a `createdAt` to the millisecond, and
     // without a deterministic tiebreaker LIMIT/OFFSET can repeat or skip them across pages.
-    db.product.findMany({ where, skip: pagination.skip, take: pagination.pageSize, orderBy: [{ createdAt: "desc" }, { id: "desc" }], include: { category: true, media: { where: { isCover: true }, include: { media: true }, take: 1 }, _count: { select: { variants: true } }, variants: { select: { discountStartsAt: true, discountEndsAt: true } } } }),
+    db.product.findMany({ where, skip: pagination.skip, take: pagination.pageSize, orderBy: [{ createdAt: "desc" }, { id: "desc" }], include: { category: true, media: { where: { isCover: true }, include: { media: true }, take: 1 }, _count: { select: { variants: true, orderItems: true } }, variants: { select: { discountStartsAt: true, discountEndsAt: true } } } }),
     db.category.findMany({ orderBy: [{ sortOrder: "asc" }, { name: "asc" }], select: { id: true, name: true } }),
     db.product.count(),
     db.product.count({ where: { status: "ACTIVE" } }),

@@ -102,3 +102,23 @@ export async function PATCH(request: Request, context: Context) {
     return NextResponse.json(product);
   } catch (error) { return apiError(error); }
 }
+
+export async function DELETE(request: Request, context: Context) {
+  try {
+    const actor = await getCurrentUser();
+    if (!actor || !hasPermission(actor.role, "catalog:manage")) return NextResponse.json({ message: "دسترسی غیرمجاز است." }, { status: 403 });
+    const { id } = await context.params;
+    const product = await db.product.findUnique({ where: { id }, include: { _count: { select: { orderItems: true } } } });
+    if (!product) return NextResponse.json({ message: "محصول پیدا نشد." }, { status: 404 });
+    // A product that has ever sold is kept for the order history and invoices that reference it;
+    // archiving is the reversible way to take it out of the catalogue instead.
+    if (product._count.orderItems > 0) {
+      return NextResponse.json({ message: "این محصول سابقه فروش دارد و قابل حذف نیست؛ می‌توانید آن را بایگانی کنید." }, { status: 409 });
+    }
+    await db.$transaction(async (tx) => {
+      await tx.product.delete({ where: { id } });
+      await tx.auditLog.create({ data: { actorId: actor.id, action: "PRODUCT_DELETE", entityType: "Product", entityId: id, ...auditRequestContext(request, { name: product.name, sku: product.sku }) } });
+    });
+    return new NextResponse(null, { status: 204 });
+  } catch (error) { return apiError(error); }
+}
