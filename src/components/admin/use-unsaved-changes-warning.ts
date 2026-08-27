@@ -17,7 +17,7 @@ import { useEffect, useRef } from "react";
  */
 export function useUnsavedChangesWarning(isDirty: boolean) {
   const isDirtyRef = useRef(isDirty);
-  isDirtyRef.current = isDirty;
+  useEffect(() => { isDirtyRef.current = isDirty; });
 
   useEffect(() => {
     function handleBeforeUnload(event: BeforeUnloadEvent) {

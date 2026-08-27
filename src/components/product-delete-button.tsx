@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { Button, toast } from "@heroui/react";
+import { Button, Tooltip, toast } from "@heroui/react";
 import { Trash2 } from "lucide-react";
 import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
 
@@ -32,19 +32,25 @@ export function ProductDeleteButton({ id, name, disabled, iconOnly = false }: { 
 
   return (
     <>
-      <Button
-        type="button"
-        size="sm"
-        variant="danger-soft"
-        isIconOnly={iconOnly}
-        aria-label={`حذف محصول ${name}`}
-        title={disabled ? "محصولی که فروش داشته قابل حذف نیست؛ به‌جای آن بایگانی کنید." : "حذف محصول"}
-        isDisabled={disabled || loading}
-        onPress={() => { setError(""); setOpen(true); }}
-        className={iconOnly ? "h-9 min-h-9 w-9 min-w-9 rounded-lg" : "min-h-10 gap-1.5 rounded-xl text-xs font-bold"}
-      >
-        <Trash2 size={14} />{iconOnly ? null : "حذف محصول"}
-      </Button>
+      <Tooltip delay={200} closeDelay={100}>
+        <Tooltip.Trigger>
+          <Button
+            type="button"
+            size="sm"
+            variant="danger-soft"
+            isIconOnly={iconOnly}
+            aria-label={`حذف محصول ${name}`}
+            isDisabled={disabled || loading}
+            onPress={() => { setError(""); setOpen(true); }}
+            className={iconOnly ? "h-9 min-h-9 w-9 min-w-9 rounded-lg" : "min-h-10 gap-1.5 rounded-xl text-xs font-bold"}
+          >
+            <Trash2 size={14} />{iconOnly ? null : "حذف محصول"}
+          </Button>
+        </Tooltip.Trigger>
+        <Tooltip.Content showArrow dir="rtl" className="z-50 max-w-sm border border-[var(--border)] bg-[var(--overlay)] px-3 py-2 text-xs leading-6 text-[var(--overlay-foreground)] text-right shadow-lg">
+          {disabled ? "محصولی که فروش داشته قابل حذف نیست؛ به‌جای آن بایگانی کنید." : "حذف محصول"}
+        </Tooltip.Content>
+      </Tooltip>
       <DeleteConfirmDialog
         open={open}
         itemName={name}

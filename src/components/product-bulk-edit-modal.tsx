@@ -103,7 +103,7 @@ function BulkEditFields({
       {(type === "discount" || type === "scheduledDiscount") && (
         <HeroSelectField name="bulk-edit-unit" label="واحد تخفیف" value={unit} onValueChange={(next) => setUnit(next as DiscountUnit)} options={unitOptions as HeroSelectOption[]} includeEmptyOption={false} disabled={isDisabled} />
       )}
-      <label className={adminLabelClass}>{label}<HeroNumberInput value={value} onValueChange={setValue} isPrice={isPriceLike} isDisabled={isDisabled} fullWidth variant="secondary" className={adminFieldClass} /></label>
+      <label className={adminLabelClass}>{label}<HeroNumberInput value={value} onValueChange={setValue} isPrice={isPriceLike} disabled={isDisabled} fullWidth variant="secondary" className={adminFieldClass} /></label>
       {type === "scheduledDiscount" && (
         <HeroDateRangeField label="بازه زمانی تخفیف" start={startsAt} end={endsAt} withTime onChange={(range) => { setStartsAt(range?.start ?? null); setEndsAt(range?.end ?? null); }} isDisabled={isDisabled} />
       )}

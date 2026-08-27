@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type DragEvent, type ReactNode } from "react";
+import { useRef, useState, type DragEvent, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "@heroui/react";
 import { GripVertical, Info, Pencil, Trash2 } from "lucide-react";
@@ -40,6 +40,14 @@ export function BlueprintColorsView({ colors }: { colors: ColorItem[] }) {
   const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
   const [items, setItems] = useState(colors);
+  // The server list is the source of truth once a mutation settles and `router.refresh()` brings
+  // a fresh copy; this render-time sync (not an effect) picks it up without an extra render pass,
+  // and still keeps the optimistic reorder from drifting.
+  const [prevColors, setPrevColors] = useState(colors);
+  if (colors !== prevColors) {
+    setPrevColors(colors);
+    setItems(colors);
+  }
   const [editing, setEditing] = useState<ColorItem | null>(null);
   const [name, setName] = useState(emptyForm.name);
   const [hex, setHex] = useState(emptyForm.hex);
@@ -50,10 +58,6 @@ export function BlueprintColorsView({ colors }: { colors: ColorItem[] }) {
   const [deleteTarget, setDeleteTarget] = useState<ColorItem | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [deleteError, setDeleteError] = useState("");
-
-  // The server list is the source of truth once a mutation settles and `router.refresh()`
-  // brings a fresh copy; picking it up here keeps the optimistic reorder from drifting.
-  useEffect(() => { setItems(colors); }, [colors]);
 
   function clearError(field: string) {
     setErrors((current) => (current[field] ? { ...current, [field]: undefined as unknown as string } : current));

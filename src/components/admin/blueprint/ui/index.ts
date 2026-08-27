@@ -1,5 +1,5 @@
 export { BpButton, BpLinkButton, BpSpinner, type BpButtonVariant } from "./button";
-export { BpCard, BpCardTitle, BpCorners, BpKicker } from "./card";
+export { BpCard, BpCardTitle, BpKicker } from "./card";
 export { BpCheckbox } from "./checkbox";
 export { BpColorField } from "./color-field";
 export { BpColorPicker, type BpColorPickerProps } from "./color-picker";

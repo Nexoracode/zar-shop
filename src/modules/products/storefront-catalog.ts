@@ -45,7 +45,8 @@ const catalogProductSelect = {
   variants: {
     select: {
       selectionKey: true, selection: true, price: true, weightGrams: true,
-      discountType: true, discountValue: true, stock: true, isActive: true,
+      discountType: true, discountValue: true, discountStartsAt: true, discountEndsAt: true,
+      stock: true, isActive: true,
     },
   },
   media: {

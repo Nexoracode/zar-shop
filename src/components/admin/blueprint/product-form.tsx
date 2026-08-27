@@ -44,6 +44,12 @@ type Props = { storeIndustry: "GOLD" | "GENERAL"; categories?: ProductCategoryOp
 /** Errors are keyed by the schema's own field names, so a zod issue maps straight onto a field. */
 type FieldErrors = Record<string, string>;
 
+/** A short random tag for a duplicated product's sku/slug — module-level so the impure call sits
+ * outside the component, not inside it, even though it only ever runs from a click handler. */
+function randomSuffix() {
+  return Math.random().toString(36).slice(2, 6);
+}
+
 function Panel({ title, description, action, children, className = "" }: { title: string; description?: string; action?: React.ReactNode; children: React.ReactNode; className?: string }) {
   return (
     // `min-w-0`: a grid item's automatic minimum size is its content's own — without this, a wide
@@ -178,10 +184,10 @@ export function BlueprintProductForm({ storeIndustry, categories = [], colors = 
 
   // Captured once, on the very first render: the loaded product's own values when editing, or
   // the form's empty defaults when creating one — either way, "what the form looked like before
-  // the reader touched anything."
-  const initialBodyRef = useRef<string | null>(null);
-  if (initialBodyRef.current === null) initialBodyRef.current = JSON.stringify(buildBody());
-  const isDirty = attributeGroupsChanged || JSON.stringify(buildBody()) !== initialBodyRef.current;
+  // the reader touched anything." State rather than a ref, since a ref may not be read during
+  // render — this value only ever changes via `setInitialBody`, right after a successful save.
+  const [initialBody, setInitialBody] = useState(() => JSON.stringify(buildBody()));
+  const isDirty = attributeGroupsChanged || JSON.stringify(buildBody()) !== initialBody;
   useUnsavedChangesWarning(isDirty);
 
   async function submit(afterSave: "list" | "attributes" | "duplicate" | "new") {
@@ -226,7 +232,7 @@ export function BlueprintProductForm({ storeIndustry, categories = [], colors = 
       setErrors({});
       // The save just landed, so this is the new "unchanged" baseline — otherwise the tab-close
       // warning would still fire off the pre-save snapshot for the moment before navigation lands.
-      initialBodyRef.current = JSON.stringify(buildBody());
+      setInitialBody(JSON.stringify(buildBody()));
       toast.success(product ? "تغییرات محصول ذخیره شد" : "محصول جدید ثبت شد");
 
       if (afterSave === "duplicate") {
@@ -234,7 +240,7 @@ export function BlueprintProductForm({ storeIndustry, categories = [], colors = 
         // duplicate itself, not the edits just made, so it gets its own message and the admin
         // stays right where they are instead of losing the page they were just on.
         try {
-          const suffix = Math.random().toString(36).slice(2, 6);
+          const suffix = randomSuffix();
           const duplicate = await requestJson<{ id: string }>("/api/products", {
             method: "POST",
             headers: { "Content-Type": "application/json" },

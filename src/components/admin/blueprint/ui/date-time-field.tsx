@@ -167,7 +167,7 @@ export function BpDateTimeField({ label, value, onChange, hint, error, reserveMe
           {step === "date" ? (
             <Calendar
               value={value ? toDateObject(value) : undefined}
-              onChange={(next) => next && pickDate(next)}
+              onChange={(next) => { if (next) pickDate(next); }}
               calendar={persian}
               locale={persian_fa}
               shadow={false}
@@ -175,7 +175,7 @@ export function BpDateTimeField({ label, value, onChange, hint, error, reserveMe
           ) : (
             <Calendar
               value={value ? toDateObject(value) : undefined}
-              onChange={(next) => next && pickTime(next)}
+              onChange={(next) => { if (next) pickTime(next); }}
               calendar={persian}
               locale={persian_fa}
               disableDayPicker
