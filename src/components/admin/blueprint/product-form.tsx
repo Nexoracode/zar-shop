@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "@heroui/react";
-import { FileText, GripVertical, Images, Trash2 } from "lucide-react";
+import { ChevronDown, FileText, GripVertical, Images, Trash2 } from "lucide-react";
 import { MediaPickerDialog } from "@/components/media-picker-dialog";
 import type { MediaChoice } from "@/components/media-library";
 import { RichTextEditor } from "@/components/rich-text-editor";
@@ -18,6 +18,7 @@ import { BpCombobox } from "./ui/combobox";
 import { BpDateTimeField } from "./ui/date-time-field";
 import { BpInput } from "./ui/input";
 import { BpNumberInput } from "./ui/number-input";
+import { BpPopover } from "./ui/popover";
 import { BlueprintProductAttributes } from "./product-attributes-panel";
 import { BlueprintProductOptions, type LibraryType, type ProductTypeDraft, type VariantDraft } from "./product-options-panel";
 import { BpSeg } from "./ui/seg";
@@ -60,7 +61,9 @@ function Panel({ title, description, action, children, className = "" }: { title
 export function BlueprintProductForm({ storeIndustry, categories = [], colors = [], optionLibrary = [], product }: Props) {
   const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
+  const saveMenuTriggerRef = useRef<HTMLButtonElement>(null);
   const [loading, setLoading] = useState(false);
+  const [saveMenuOpen, setSaveMenuOpen] = useState(false);
   const [errors, setErrors] = useState<FieldErrors>({});
 
   const [name, setName] = useState(product?.name ?? "");
@@ -162,7 +165,7 @@ export function BlueprintProductForm({ storeIndustry, categories = [], colors = 
     };
   }
 
-  async function submit(afterSave: "list" | "attributes") {
+  async function submit(afterSave: "list" | "attributes" | "duplicate" | "new") {
     const validation = completeProductSchema.safeParse(buildBody());
     if (!validation.success) {
       // One message per field, straight from the schema that the server uses too.
@@ -203,7 +206,29 @@ export function BlueprintProductForm({ storeIndustry, categories = [], colors = 
       if (!id) throw new Error("شناسه محصول جدید از سرور دریافت نشد.");
       setErrors({});
       toast.success(product ? "تغییرات محصول ذخیره شد" : "محصول جدید ثبت شد");
-      router.push(afterSave === "list" ? "/admin/products" : `/admin/products/${id}/${afterSave}`);
+
+      if (afterSave === "duplicate") {
+        // The main product is already saved at this point — a failure past here means the
+        // duplicate itself, not the edits just made, so it gets its own message and the admin
+        // stays right where they are instead of losing the page they were just on.
+        try {
+          const suffix = Math.random().toString(36).slice(2, 6);
+          const duplicate = await requestJson<{ id: string }>("/api/products", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ ...validation.data, sku: `${validation.data.sku}-${suffix}`, slug: `${validation.data.slug}-${suffix}`, name: `${validation.data.name} (کپی)`, status: "DRAFT" }),
+          }, { fallbackMessage: "تکثیر محصول انجام نشد." });
+          toast.success("یک نسخه تکثیرشده از محصول ساخته شد");
+          router.push(`/admin/products/${duplicate.id}/edit`);
+          router.refresh();
+        } catch (reason) {
+          toast.danger("تکثیر محصول انجام نشد", { description: requestErrorMessage(reason, "ارتباط با سرور برقرار نشد.") });
+          setLoading(false);
+        }
+        return;
+      }
+
+      router.push(afterSave === "list" ? "/admin/products" : afterSave === "new" ? "/admin/products/new" : `/admin/products/${id}/${afterSave}`);
       router.refresh();
     } catch (reason) {
       toast.danger("ذخیره محصول انجام نشد", { description: requestErrorMessage(reason, "ارتباط با سرور برقرار نشد.") });
@@ -391,7 +416,43 @@ export function BlueprintProductForm({ storeIndustry, categories = [], colors = 
             <BpSwitch isSelected={featured} onChange={setFeatured}>نمایش در محصولات ویژه</BpSwitch>
           </div>
           <div className="mt-4 grid gap-2">
-            <BpButton type="submit" variant="primary" fullWidth isPending={loading}>{product ? "ذخیره و بازگشت به لیست" : "ثبت و بازگشت به لیست"}</BpButton>
+            <div className="flex items-stretch gap-[10px]">
+              <BpButton type="submit" variant="primary" isPending={loading} className="flex-1">{product ? "ذخیره و بازگشت به لیست" : "ثبت و بازگشت به لیست"}</BpButton>
+              <BpButton
+                ref={saveMenuTriggerRef}
+                type="button"
+                isIconOnly
+                variant="primary"
+                disabled={loading}
+                aria-label="گزینه‌های بیشتر ذخیره"
+                aria-haspopup="menu"
+                aria-expanded={saveMenuOpen}
+                onClick={() => setSaveMenuOpen((current) => !current)}
+              >
+                <ChevronDown size={15} />
+              </BpButton>
+              <BpPopover open={saveMenuOpen} anchorRef={saveMenuTriggerRef} onClose={() => setSaveMenuOpen(false)} label="گزینه‌های بیشتر ذخیره" width={230}>
+                <ul role="menu" className="bp-scroll m-0 list-none p-0">
+                  {([
+                    { value: "list", label: "ذخیره و بازگشت به محصولات" },
+                    { value: "duplicate", label: "ذخیره و تکثیر کردن" },
+                    { value: "new", label: "ذخیره و ثبت محصول جدید" },
+                  ] as const).map((action) => (
+                    <li key={action.value}>
+                      <button
+                        type="button"
+                        role="menuitem"
+                        disabled={loading}
+                        onClick={() => { setSaveMenuOpen(false); void submit(action.value); }}
+                        className="w-full border border-transparent px-3 py-2 text-start text-[13px] hover:bg-[var(--bp-hover)] disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        {action.label}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </BpPopover>
+            </div>
             <Link href="/admin/products" className="bp-btn bp-btn-secondary bp-btn-block">انصراف</Link>
           </div>
         </Panel>
