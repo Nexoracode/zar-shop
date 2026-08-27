@@ -64,6 +64,9 @@ export function BlueprintProductForm({ storeIndustry, categories = [], colors = 
   const saveMenuTriggerRef = useRef<HTMLButtonElement>(null);
   const [loading, setLoading] = useState(false);
   const [saveMenuOpen, setSaveMenuOpen] = useState(false);
+  // Whichever trigger started the save — the main button or a menu item — so the spinner sits
+  // next to that same wording instead of always the main button's own label.
+  const [pendingLabel, setPendingLabel] = useState("");
   const [errors, setErrors] = useState<FieldErrors>({});
 
   const [name, setName] = useState(product?.name ?? "");
@@ -237,7 +240,7 @@ export function BlueprintProductForm({ storeIndustry, categories = [], colors = 
   }
 
   return <>
-    <form ref={formRef} noValidate onSubmit={(event) => { event.preventDefault(); void submit("list"); }} className="grid items-start gap-2 lg:grid-cols-[minmax(0,1fr)_320px]">
+    <form ref={formRef} noValidate onSubmit={(event) => { event.preventDefault(); setPendingLabel(product ? "ذخیره و بازگشت به لیست" : "ثبت و بازگشت به لیست"); void submit("list"); }} className="grid items-start gap-2 lg:grid-cols-[minmax(0,1fr)_320px]">
       <div className="grid gap-2">
         <Panel
           title="گالری محصول"
@@ -417,7 +420,7 @@ export function BlueprintProductForm({ storeIndustry, categories = [], colors = 
           </div>
           <div className="mt-4 grid gap-2">
             <div className="flex items-stretch">
-              <BpButton type="submit" variant="primary" isPending={loading} className="bp-split-start flex-1">{product ? "ذخیره و بازگشت به لیست" : "ثبت و بازگشت به لیست"}</BpButton>
+              <BpButton type="submit" variant="primary" isPending={loading} className="bp-split-start flex-1">{loading && pendingLabel ? pendingLabel : (product ? "ذخیره و بازگشت به لیست" : "ثبت و بازگشت به لیست")}</BpButton>
               <span aria-hidden className="w-px shrink-0 bg-white/25" />
               <BpButton
                 ref={saveMenuTriggerRef}
@@ -445,7 +448,7 @@ export function BlueprintProductForm({ storeIndustry, categories = [], colors = 
                         type="button"
                         role="menuitem"
                         disabled={loading}
-                        onClick={() => { setSaveMenuOpen(false); void submit(action.value); }}
+                        onClick={() => { setSaveMenuOpen(false); setPendingLabel(action.label); void submit(action.value); }}
                         className="w-full border border-transparent px-3 py-2 text-start text-[13px] hover:bg-[var(--bp-hover)] disabled:cursor-not-allowed disabled:opacity-50"
                       >
                         {action.label}
