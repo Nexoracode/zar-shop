@@ -135,7 +135,10 @@ function NavGroup({ group, pathname, collapsed, open, onToggle, onClose, onNavig
     <Link
       key={item.href}
       href={item.href}
-      onClick={() => { onNavigate(); onClose(); }}
+      // Closing the group on click only makes sense collapsed, where it's a flyout popover that
+      // should tuck itself away after navigating — expanded, it's an ordinary accordion, and
+      // closing it there was the bug: picking an item inside it collapsed the whole group.
+      onClick={() => { onNavigate(); if (collapsed) onClose(); }}
       data-active={isAdminNavItemActive(item.href, pathname)}
       className="bp-nav-item bp-nav-sub"
     >
