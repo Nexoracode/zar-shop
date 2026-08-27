@@ -26,6 +26,7 @@ import { BpSelect } from "./ui/select";
 import { BpSwitch } from "./ui/switch";
 import { BpFieldMessage } from "./ui/field-message";
 import { productFieldLimits } from "@/modules/products/schemas";
+import { useUnsavedChangesWarning } from "@/components/admin/use-unsaved-changes-warning";
 
 export type EditableProduct = {
   id: string; sku: string; name: string; slug: string; description: string; categoryId: string; purity: number; weightGrams: number;
@@ -171,6 +172,14 @@ export function BlueprintProductForm({ storeIndustry, categories = [], colors = 
     };
   }
 
+  // Captured once, on the very first render: the loaded product's own values when editing, or
+  // the form's empty defaults when creating one — either way, "what the form looked like before
+  // the reader touched anything."
+  const initialBodyRef = useRef<string | null>(null);
+  if (initialBodyRef.current === null) initialBodyRef.current = JSON.stringify(buildBody());
+  const isDirty = attributeGroupsChanged || JSON.stringify(buildBody()) !== initialBodyRef.current;
+  useUnsavedChangesWarning(isDirty);
+
   async function submit(afterSave: "list" | "attributes" | "duplicate" | "new") {
     const validation = completeProductSchema.safeParse(buildBody());
     if (!validation.success) {
@@ -211,6 +220,9 @@ export function BlueprintProductForm({ storeIndustry, categories = [], colors = 
       const id = product?.id ?? result?.id;
       if (!id) throw new Error("شناسه محصول جدید از سرور دریافت نشد.");
       setErrors({});
+      // The save just landed, so this is the new "unchanged" baseline — otherwise the tab-close
+      // warning would still fire off the pre-save snapshot for the moment before navigation lands.
+      initialBodyRef.current = JSON.stringify(buildBody());
       toast.success(product ? "تغییرات محصول ذخیره شد" : "محصول جدید ثبت شد");
 
       if (afterSave === "duplicate") {
