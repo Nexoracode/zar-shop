@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import { Bell, Globe, LogOut, Menu, Moon, PanelRightClose, PanelRightOpen, Sun, UserRound } from "lucide-react";
+import { Bell, Globe, LogOut, Menu, Moon, PanelRight, Sun, UserRound } from "lucide-react";
 import type { UserRole } from "@generated/prisma/enums";
 import { formatDateTime, formatMoney } from "@/lib/format";
 import { userRoleLabels } from "@/modules/admin/labels";
@@ -85,7 +85,8 @@ export function BlueprintShell({ user, showGoldPrice, goldPrice, goldFetchedAt, 
                 title={railCollapsed ? "باز کردن منوی کناری" : "جمع کردن منوی کناری"}
                 onClick={() => setSidebarCollapsed(!railCollapsed)}
               >
-                {railCollapsed ? <PanelRightOpen size={17} /> : <PanelRightClose size={17} />}
+                {/* Same glyph both states — it just rotates, so the toggle reads as one smooth flip instead of a glyph swap. */}
+                <PanelRight size={17} className={`transition-transform duration-300 ease-out ${railCollapsed ? "rotate-180" : ""}`} />
               </BpButton>
             </div>
 
