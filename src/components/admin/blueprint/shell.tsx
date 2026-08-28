@@ -73,7 +73,7 @@ export function BlueprintShell({ user, showGoldPrice, goldPrice, goldFetchedAt, 
       />
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header ref={headerRef} className="sticky top-0 z-40 flex flex-wrap items-center justify-between gap-4 border-b border-[var(--bp-divider)] bg-[var(--bp-bg)] px-4 py-3 sm:px-7">
+        <header ref={headerRef} className="bp-dark-bar sticky top-0 z-40 flex flex-wrap items-center justify-between gap-4 border-b border-[var(--bp-sidebar-border)] px-4 py-3 sm:px-7">
           {/* First child, so in RTL this cluster sits on the right: rail toggle, admin, bell, theme. */}
           <div className="flex items-center gap-4">
             {/* Desktop only: on mobile the rail is a drawer with its own trigger. */}
@@ -97,7 +97,7 @@ export function BlueprintShell({ user, showGoldPrice, goldPrice, goldFetchedAt, 
               aria-haspopup="dialog"
               aria-expanded={openMenu === "user"}
               onClick={() => setOpenMenu((current) => current === "user" ? null : "user")}
-              className="flex cursor-pointer items-center gap-2.5 border border-transparent bg-transparent px-1.5 py-1 text-start text-[var(--bp-text)] hover:bg-[var(--bp-hover)]"
+              className="flex cursor-pointer items-center gap-2.5 border border-transparent bg-transparent px-1.5 py-1 text-start hover:bg-[var(--bp-sidebar-hover)]"
             >
               <span className="flex h-9 w-9 flex-none items-center justify-center rounded-full bg-[var(--bp-accent-100)] text-[13px] font-bold text-[var(--bp-accent-800)]">{fullName.slice(0, 1)}</span>
               <span className="hidden min-w-0 leading-tight sm:block">
@@ -131,7 +131,7 @@ export function BlueprintShell({ user, showGoldPrice, goldPrice, goldFetchedAt, 
 
             {showGoldPrice && (
               <div className="flex min-w-0 items-center gap-2.5">
-                <span className="flex h-9 w-9 flex-none items-center justify-center border border-[var(--bp-divider)] text-sm font-bold text-[var(--bp-accent-700)]">۱۸</span>
+                <span className="flex h-9 w-9 flex-none items-center justify-center border border-[var(--bp-sidebar-border)] text-sm font-bold text-[var(--bp-sidebar-text)]">۱۸</span>
                 <div className="min-w-0 leading-tight">
                   <span className="bp-muted block text-[10px]">نرخ هر گرم طلای ۱۸ عیار</span>
                   <strong className="block truncate text-[13px] font-bold sm:text-sm">{goldPrice ? formatMoney(goldPrice) : "نرخ فعلاً در دسترس نیست"}</strong>

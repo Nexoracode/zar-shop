@@ -690,13 +690,15 @@ select.bp-input:focus-visible { border-color: var(--bp-accent); outline: none; }
   padding-inline-start: 32px;
 }
 
-/* — sidebar surface — the rail and its mobile drawer, always the dark strip above regardless of
-   the admin theme toggle; nested `.bp-btn`/`.bp-muted` need their own colours here since both
-   set an explicit colour of their own that would otherwise stay theme-bound and unreadable. */
-.bp-sidebar-surface { background: var(--bp-sidebar-bg); color: var(--bp-sidebar-text); border-color: var(--bp-sidebar-border); }
-.bp-sidebar-surface .bp-muted { color: var(--bp-sidebar-muted); }
-.bp-sidebar-surface .bp-btn { color: var(--bp-sidebar-text); border-color: var(--bp-sidebar-border); }
-.bp-sidebar-surface .bp-btn:hover { background: var(--bp-sidebar-hover); }
+/* — dark bar — the sidebar rail, its mobile drawer, and the header all share this: the same dark
+   strip regardless of the admin theme toggle. Nested `.bp-btn`/`.bp-muted` need their own colours
+   here since both set an explicit colour of their own that would otherwise stay theme-bound and
+   unreadable, and `.bp-btn-secondary`'s own hover needs restating to outrank it at equal
+   specificity — it comes first in the file, so the cascade alone would not be enough. */
+.bp-dark-bar { background: var(--bp-sidebar-bg); color: var(--bp-sidebar-text); border-color: var(--bp-sidebar-border); }
+.bp-dark-bar .bp-muted { color: var(--bp-sidebar-muted); }
+.bp-dark-bar .bp-btn { color: var(--bp-sidebar-text); border-color: var(--bp-sidebar-border); }
+.bp-dark-bar .bp-btn:hover, .bp-dark-bar .bp-btn-secondary:not(:disabled):hover { background: var(--bp-sidebar-hover); }
 
 /* ── Compatibility layer ────────────────────────────────────────────────────────────────────
    Admin pages that have not been migrated off HeroUI yet still render inside the blueprint

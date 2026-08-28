@@ -20,6 +20,29 @@ type Props = {
   initialCollapsed: boolean;
 };
 
+/**
+ * Shortened labels for this rail alone — it stays narrow like WordPress's, which the shared nav
+ * copy (`@/modules/admin/navigation`, also read by the classic sidebar, where there is room for
+ * the fuller wording) was never written for. The full text still reaches the reader as a native
+ * tooltip, so nothing here is a content loss, only a display one.
+ */
+const shortLabels: Record<string, string> = {
+  "کاتالوگ و محصولات": "کاتالوگ",
+  "تنوع و ویژگی‌ها": "تنوع و ویژگی",
+  "فروش و مشتریان": "فروش",
+  "تنظیمات سیستم": "تنظیمات",
+  "ویژگی‌های محصولات": "ویژگی محصول",
+  "ویژگی‌های دسته‌بندی": "ویژگی دسته",
+  "دیدگاه‌ها و امتیازها": "دیدگاه‌ها",
+  "تاریخچه فعالیت‌ها": "تاریخچه",
+  "روش‌های ارسال": "روش ارسال",
+  "پیام‌های تماس": "پیام‌ها",
+  "رنگ‌های تنوع": "رنگ‌ها",
+};
+function shortLabel(text: string) {
+  return shortLabels[text] ?? text;
+}
+
 export function BlueprintSidebar({ role, fullName, mobileOpen, onCloseMobile, initialCollapsed }: Props) {
   const pathname = usePathname();
   const groups = useMemo(() => visibleAdminNavGroups(role), [role]);
@@ -51,7 +74,7 @@ export function BlueprintSidebar({ role, fullName, mobileOpen, onCloseMobile, in
           return (
             <Link key={item.href} href={item.href} onClick={onCloseMobile} data-active={active} className="bp-nav-item" title={isCollapsed ? item.label : undefined}>
               <Icon size={18} strokeWidth={1.5} className="flex-none" />
-              {showLabels && <span>{item.label}</span>}
+              {showLabels && <span>{shortLabel(item.label)}</span>}
             </Link>
           );
         }
@@ -85,7 +108,7 @@ export function BlueprintSidebar({ role, fullName, mobileOpen, onCloseMobile, in
     <>
       {/* Desktop rail — deliberately narrow and always dark, like WordPress's own admin menu. */}
       <aside
-        className="bp-scroll bp-sidebar-surface sticky top-0 hidden h-dvh flex-none flex-col gap-5 overflow-y-auto border-e border-[var(--bp-sidebar-border)] lg:flex"
+        className="bp-scroll bp-dark-bar sticky top-0 hidden h-dvh flex-none flex-col gap-5 overflow-y-auto border-e border-[var(--bp-sidebar-border)] lg:flex"
         style={{ width: isCollapsed ? 60 : 160, padding: isCollapsed ? "16px 8px" : "16px 10px" }}
       >
         {brand}
@@ -95,7 +118,7 @@ export function BlueprintSidebar({ role, fullName, mobileOpen, onCloseMobile, in
       {/* Mobile drawer */}
       {mobileOpen && (
         <div className="fixed inset-0 z-[120] bg-[color-mix(in_srgb,#0b0c0d_55%,transparent)] lg:hidden" onMouseDown={(event) => { if (event.target === event.currentTarget) onCloseMobile(); }}>
-          <aside className="bp-scroll bp-sidebar-surface me-auto flex h-full w-[min(84vw,260px)] flex-col gap-4 overflow-y-auto border-e border-[var(--bp-sidebar-border)] p-4">
+          <aside className="bp-scroll bp-dark-bar me-auto flex h-full w-[min(84vw,260px)] flex-col gap-4 overflow-y-auto border-e border-[var(--bp-sidebar-border)] p-4">
             <div className="flex items-center justify-between gap-3">
               <strong className="text-sm">منوی مدیریت</strong>
               <BpButton isIconOnly aria-label="بستن منوی مدیریت" onClick={onCloseMobile}><X size={17} /></BpButton>
@@ -141,8 +164,9 @@ function NavGroup({ group, pathname, collapsed, open, onToggle, onClose, onNavig
       onClick={() => { onNavigate(); if (collapsed) onClose(); }}
       data-active={isAdminNavItemActive(item.href, pathname)}
       className="bp-nav-item bp-nav-sub"
+      title={item.label}
     >
-      <span>{item.label}</span>
+      <span>{shortLabel(item.label)}</span>
     </Link>
   ));
 
@@ -160,7 +184,7 @@ function NavGroup({ group, pathname, collapsed, open, onToggle, onClose, onNavig
       >
         <GroupIcon size={18} strokeWidth={1.5} className="flex-none" />
         {!collapsed && <>
-          <span className="flex-1 text-right">{group.title}</span>
+          <span className="flex-1 text-right">{shortLabel(group.title)}</span>
           <ChevronDown size={13} strokeWidth={1.5} className={`flex-none opacity-60 transition-transform ${expandedInline ? "rotate-180" : ""}`} />
         </>}
       </button>
