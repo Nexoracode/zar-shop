@@ -674,15 +674,19 @@ select.bp-input:focus-visible { border-color: var(--bp-accent); outline: none; }
   padding: 9px 10px;
   cursor: pointer;
   border: 1px solid transparent;
+  border-radius: var(--bp-radius);
   background: transparent;
-  color: var(--bp-sidebar-text);
+  /* Theme-following by default — this class also renders inside the collapsed rail's flyout
+     popover, a normal (light-in-light-theme) surface, not the permanently dark rail itself. The
+     dark rail/drawer override this below, scoped under `.bp-dark-bar`. */
+  color: var(--bp-text);
   font-family: var(--bp-font);
   font-weight: 500;
   font-size: 13px;
   text-align: right;
 }
-.bp-nav-item:hover { background: var(--bp-sidebar-hover); }
-.bp-nav-item[data-active="true"] { background: var(--bp-sidebar-active-bg); color: var(--bp-sidebar-active-text); }
+.bp-nav-item:hover { background: var(--bp-hover); }
+.bp-nav-item[data-active="true"] { background: var(--bp-accent-solid); color: #ffffff; }
 .bp-nav-sub {
   font-weight: 400;
   font-size: 12.5px;
@@ -691,14 +695,17 @@ select.bp-input:focus-visible { border-color: var(--bp-accent); outline: none; }
 }
 
 /* — dark bar — the sidebar rail, its mobile drawer, and the header all share this: the same dark
-   strip regardless of the admin theme toggle. Nested `.bp-btn`/`.bp-muted` need their own colours
-   here since both set an explicit colour of their own that would otherwise stay theme-bound and
-   unreadable, and `.bp-btn-secondary`'s own hover needs restating to outrank it at equal
-   specificity — it comes first in the file, so the cascade alone would not be enough. */
+   strip regardless of the admin theme toggle. Nested `.bp-nav-item`/`.bp-btn`/`.bp-muted` need
+   their own colours here since each sets an explicit colour of its own that would otherwise stay
+   theme-bound and unreadable, and `.bp-btn-secondary`'s own hover needs restating to outrank it
+   at equal specificity — it comes first in the file, so the cascade alone would not be enough. */
 .bp-dark-bar { background: var(--bp-sidebar-bg); color: var(--bp-sidebar-text); border-color: var(--bp-sidebar-border); }
 .bp-dark-bar .bp-muted { color: var(--bp-sidebar-muted); }
 .bp-dark-bar .bp-btn { color: var(--bp-sidebar-text); border-color: var(--bp-sidebar-border); }
 .bp-dark-bar .bp-btn:hover, .bp-dark-bar .bp-btn-secondary:not(:disabled):hover { background: var(--bp-sidebar-hover); }
+.bp-dark-bar .bp-nav-item { color: var(--bp-sidebar-text); }
+.bp-dark-bar .bp-nav-item:hover { background: var(--bp-sidebar-hover); }
+.bp-dark-bar .bp-nav-item[data-active="true"] { background: var(--bp-sidebar-active-bg); color: var(--bp-sidebar-active-text); }
 
 /* ── Compatibility layer ────────────────────────────────────────────────────────────────────
    Admin pages that have not been migrated off HeroUI yet still render inside the blueprint
