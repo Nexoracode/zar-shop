@@ -265,7 +265,7 @@ export function BlueprintProductForm({ storeIndustry, categories = [], colors = 
   }
 
   return <>
-    <form ref={formRef} noValidate onSubmit={(event) => { event.preventDefault(); setPendingLabel(product ? "ذخیره و بازگشت به لیست" : "ثبت و بازگشت به لیست"); void submit("list"); }} className="grid items-start gap-2 lg:grid-cols-[minmax(0,1fr)_320px]">
+    <form ref={formRef} noValidate onSubmit={(event) => { event.preventDefault(); setPendingLabel(product ? "ذخیره و بازگشت" : "ثبت و بازگشت به لیست"); void submit("list"); }} className="grid items-start gap-2 lg:grid-cols-[minmax(0,1fr)_320px]">
       <div className="grid min-w-0 gap-2">
         <Panel
           title="گالری محصول"
@@ -461,7 +461,7 @@ export function BlueprintProductForm({ storeIndustry, categories = [], colors = 
           </div>
           <div className="mt-4 grid gap-2">
             <div className="flex items-stretch">
-              <BpButton type="submit" variant="primary" isPending={loading} className="bp-split-start flex-1">{loading && pendingLabel ? pendingLabel : (product ? "ذخیره و بازگشت به لیست" : "ثبت و بازگشت به لیست")}</BpButton>
+              <BpButton type="submit" variant="primary" isPending={loading} className="bp-split-start flex-1">{loading && pendingLabel ? pendingLabel : (product ? "ذخیره و بازگشت" : "ثبت و بازگشت به لیست")}</BpButton>
               <span aria-hidden className="w-px shrink-0 bg-white/25" />
               <BpButton
                 ref={saveMenuTriggerRef}
@@ -480,7 +480,7 @@ export function BlueprintProductForm({ storeIndustry, categories = [], colors = 
               <BpPopover open={saveMenuOpen} anchorRef={saveMenuTriggerRef} onClose={() => setSaveMenuOpen(false)} label="گزینه‌های بیشتر ذخیره" width={230}>
                 <ul role="menu" className="bp-scroll m-0 list-none p-0">
                   {([
-                    { value: "list", label: "ذخیره و بازگشت به محصولات" },
+                    { value: "list", label: "ذخیره و بازگشت" },
                     { value: "duplicate", label: "ذخیره و تکثیر کردن" },
                     { value: "new", label: "ذخیره و ثبت محصول جدید" },
                   ] as const).map((action) => (
