@@ -20,6 +20,9 @@ type HeroNumberInputProps = Omit<InputProps, "defaultValue" | "name" | "onChange
   reserveHelperSpace?: boolean;
   containerClassName?: string;
   onValueChange?: (value: string) => void;
+  /** Shown in the same slot as the spelled-out amount — an error there takes it over. */
+  hint?: ReactNode;
+  error?: ReactNode;
 };
 
 export function HeroNumberInput({
@@ -38,6 +41,9 @@ export function HeroNumberInput({
   step,
   dir = "ltr",
   className = "",
+  hint,
+  error,
+  id,
   ...inputProps
 }: HeroNumberInputProps) {
   const decimalEnabled = allowDecimal ?? (step !== undefined && String(step).includes("."));
@@ -46,6 +52,8 @@ export function HeroNumberInput({
   const rawValue = controlled ? normalizeNumericValue(String(value ?? ""), decimalEnabled) : internalValue;
   const displayValue = formatPersianNumber(rawValue, isPrice);
   const words = isPrice ? currency === "تومان" ? rialPriceToTomanWords(rawValue) : priceToPersianWords(rawValue, currency) : "";
+  const message = error ?? hint ?? (words || undefined);
+  const messageId = id ? `${id}-message` : undefined;
 
   function changeValue(nextDisplayValue: string) {
     const nextValue = normalizeNumericValue(nextDisplayValue, decimalEnabled);
@@ -58,19 +66,27 @@ export function HeroNumberInput({
       <div className="relative">
         <Input
           {...inputProps}
+          id={id}
           type="text"
           inputMode={decimalEnabled ? "decimal" : "numeric"}
+          data-field={name}
           data-min={min}
           data-max={max}
           dir={dir}
           value={displayValue}
-          className={`${className} ${suffix ? "pl-14" : ""}`}
+          aria-invalid={error ? true : undefined}
+          aria-describedby={message ? messageId : undefined}
+          className={`${className} ${error ? "!border-[var(--danger)]" : ""} ${suffix ? "pl-14" : ""}`}
           onChange={(event) => changeValue(event.target.value)}
         />
         {suffix ? <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[11px] font-bold text-slate-400">{suffix}</span> : null}
       </div>
       {name && <input type="hidden" name={name} value={rawValue} />}
-      {(words || reserveHelperSpace) && <p className="mt-1.5 min-h-4 break-words px-1 text-right text-[10px] leading-4 text-slate-500">{words || "\u00a0"}</p>}
+      {(message || reserveHelperSpace) && (
+        <p id={messageId} className={`mt-1.5 min-h-4 break-words px-1 text-right text-[10px] leading-4 ${error ? "font-bold text-[var(--danger)]" : "text-slate-500"}`}>
+          {message || " "}
+        </p>
+      )}
     </div>
   );
 }

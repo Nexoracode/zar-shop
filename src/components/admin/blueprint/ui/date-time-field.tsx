@@ -44,9 +44,12 @@ type Props = {
   required?: boolean;
   isDisabled?: boolean;
   className?: string;
+  /** Set on the trigger button so a caller can query it for focus, the same way `data-field`
+   * works on a plain `BpInput` — this field has no `name` of its own to derive one from. */
+  "data-field"?: string;
 };
 
-export function BpDateTimeField({ label, value, onChange, hint, error, reserveMessage = true, required = false, isDisabled = false, className = "" }: Props) {
+export function BpDateTimeField({ label, value, onChange, hint, error, reserveMessage = true, required = false, isDisabled = false, className = "", "data-field": dataField }: Props) {
   const rootRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
@@ -129,6 +132,7 @@ export function BpDateTimeField({ label, value, onChange, hint, error, reserveMe
         ref={triggerRef}
         type="button"
         id={fieldId}
+        data-field={dataField}
         disabled={isDisabled}
         aria-haspopup="dialog"
         aria-expanded={open}

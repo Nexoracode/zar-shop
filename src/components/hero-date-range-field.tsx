@@ -19,9 +19,12 @@ type Props = {
    * sending dates, which the server still reads as midnight-to-midnight in Tehran.
    */
   withTime?: boolean;
+  hint?: string;
+  error?: string;
 };
 
-export function HeroDateRangeField({ label, start, end, onChange, isDisabled = false, withTime = false }: Props) {
+export function HeroDateRangeField({ label, start, end, onChange, isDisabled = false, withTime = false, hint, error }: Props) {
+  const message = error ?? hint;
   function parse(value: string | null) {
     if (!value) return null;
     // A stored instant is read back on Tehran's clock, so the segments show the local time the
@@ -47,7 +50,7 @@ export function HeroDateRangeField({ label, start, end, onChange, isDisabled = f
         className="grid gap-1.5"
       >
         <Label className="text-xs font-bold text-slate-500">{label}</Label>
-        <DateField.Group fullWidth variant="secondary" className="min-h-11 rounded-xl border border-slate-200 bg-white">
+        <DateField.Group data-field="dates" fullWidth variant="secondary" aria-invalid={error ? true : undefined} className={`min-h-11 rounded-xl border bg-white ${error ? "!border-[var(--danger)]" : "border-slate-200"}`}>
           <DateField.InputContainer className="min-w-0 flex-1 px-3">
             <DateField.Input slot="start" dir="ltr" className={`flex-1 justify-center [direction:ltr] ${withTime ? "min-w-[150px]" : "min-w-[104px]"}`}>
               {(segment) => <DateField.Segment segment={segment} />}
@@ -63,6 +66,7 @@ export function HeroDateRangeField({ label, start, end, onChange, isDisabled = f
             </DateRangePicker.Trigger>
           </DateField.Suffix>
         </DateField.Group>
+        {message && <p className={`m-0 min-h-4 px-1 text-[10px] leading-4 ${error ? "font-bold text-[var(--danger)]" : "text-slate-500"}`}>{message}</p>}
         <DateRangePicker.Popover className="rounded-xl border border-slate-200 bg-white p-2 shadow-xl" placement="bottom end">
           <RangeCalendar aria-label={label} firstDayOfWeek="sat" className="w-80 max-w-[calc(100vw-32px)]">
             <RangeCalendar.Header>

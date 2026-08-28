@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button, toast } from "@heroui/react";
 import { ListChecks } from "lucide-react";
@@ -61,6 +61,7 @@ function valueLabel(type: ChangeType, method: AdjustMethod, unit: DiscountUnit) 
  */
 function BulkEditFields({
   type, setType, method, setMethod, unit, setUnit, value, setValue, startsAt, setStartsAt, endsAt, setEndsAt, isDisabled,
+  valueError, onClearValueError, datesError, onClearDatesError,
 }: {
   type: ChangeType; setType: (value: ChangeType) => void;
   method: AdjustMethod; setMethod: (value: AdjustMethod) => void;
@@ -69,6 +70,10 @@ function BulkEditFields({
   startsAt: string | null; setStartsAt: (value: string | null) => void;
   endsAt: string | null; setEndsAt: (value: string | null) => void;
   isDisabled: boolean;
+  valueError?: string;
+  onClearValueError: () => void;
+  datesError?: string;
+  onClearDatesError: () => void;
 }) {
   const template = useAdminTemplate();
   const isPriceLike = type === "price" || ((type === "discount" || type === "scheduledDiscount") && unit === "FIXED");
@@ -87,12 +92,12 @@ function BulkEditFields({
           <BpSeg label="واحد تخفیف" fullWidth value={unit} onChange={setUnit} options={unitOptions as BpSegOption<DiscountUnit>[]} />
         )}
         {type === "removeDiscount" ? removeDiscountNote : (
-          <BpNumberInput label={label} value={value} onValueChange={setValue} isPrice={isPriceLike} showWords={isPriceLike} disabled={isDisabled} />
+          <BpNumberInput name="value" label={label} value={value} onValueChange={(next) => { setValue(next); onClearValueError(); }} isPrice={isPriceLike} showWords={isPriceLike} error={valueError} disabled={isDisabled} />
         )}
         {type === "scheduledDiscount" && (
           <div className="grid grid-cols-2 gap-2">
-            <BpDateTimeField label="شروع تخفیف" value={startsAt} onChange={setStartsAt} isDisabled={isDisabled} required />
-            <BpDateTimeField label="پایان تخفیف" value={endsAt} onChange={setEndsAt} isDisabled={isDisabled} required />
+            <BpDateTimeField label="شروع تخفیف" value={startsAt} onChange={(next) => { setStartsAt(next); onClearDatesError(); }} error={datesError} isDisabled={isDisabled} required data-field="dates" />
+            <BpDateTimeField label="پایان تخفیف" value={endsAt} onChange={(next) => { setEndsAt(next); onClearDatesError(); }} error={datesError} isDisabled={isDisabled} required />
           </div>
         )}
       </div>
@@ -109,10 +114,10 @@ function BulkEditFields({
         <HeroSelectField name="bulk-edit-unit" label="واحد تخفیف" value={unit} onValueChange={(next) => setUnit(next as DiscountUnit)} options={unitOptions as HeroSelectOption[]} includeEmptyOption={false} disabled={isDisabled} />
       )}
       {type === "removeDiscount" ? removeDiscountNote : (
-        <label className={adminLabelClass}>{label}<HeroNumberInput value={value} onValueChange={setValue} isPrice={isPriceLike} disabled={isDisabled} fullWidth variant="secondary" className={adminFieldClass} /></label>
+        <label className={adminLabelClass}>{label}<HeroNumberInput name="value" value={value} onValueChange={(next) => { setValue(next); onClearValueError(); }} isPrice={isPriceLike} error={valueError} disabled={isDisabled} fullWidth variant="secondary" className={adminFieldClass} /></label>
       )}
       {type === "scheduledDiscount" && (
-        <HeroDateRangeField label="بازه زمانی تخفیف" start={startsAt} end={endsAt} withTime onChange={(range) => { setStartsAt(range?.start ?? null); setEndsAt(range?.end ?? null); }} isDisabled={isDisabled} />
+        <HeroDateRangeField label="بازه زمانی تخفیف" start={startsAt} end={endsAt} withTime onChange={(range) => { setStartsAt(range?.start ?? null); setEndsAt(range?.end ?? null); onClearDatesError(); }} error={datesError} isDisabled={isDisabled} />
       )}
     </div>
   );
@@ -127,10 +132,16 @@ function ProductBulkEditModal({ open, ids, variantTypeNames, variantProductCount
   const [startsAt, setStartsAt] = useState<string | null>(null);
   const [endsAt, setEndsAt] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  // Field-level errors sit under their own control; `formError` is only for a failure that
+  // belongs to the request as a whole (the server unreachable, etc.), not to one input.
+  const [valueError, setValueError] = useState<string | undefined>(undefined);
+  const [datesError, setDatesError] = useState<string | undefined>(undefined);
+  const [formError, setFormError] = useState("");
+  const fieldsRef = useRef<HTMLDivElement>(null);
 
   function reset() {
-    setType("price"); setMethod("set"); setUnit("PERCENT"); setValue(""); setStartsAt(null); setEndsAt(null); setError("");
+    setType("price"); setMethod("set"); setUnit("PERCENT"); setValue(""); setStartsAt(null); setEndsAt(null);
+    setValueError(undefined); setDatesError(undefined); setFormError("");
   }
 
   function close() {
@@ -140,15 +151,29 @@ function ProductBulkEditModal({ open, ids, variantTypeNames, variantProductCount
   }
 
   async function submit() {
-    setError("");
+    setFormError("");
     const amount = Number(value);
+    let nextValueError: string | undefined;
+    let nextDatesError: string | undefined;
     if (type !== "removeDiscount") {
-      if (!value || !Number.isFinite(amount) || amount <= 0) return setError("مقدار را وارد کنید.");
-      if ((type === "discount" || type === "scheduledDiscount") && unit === "PERCENT" && amount > 100) return setError("درصد تخفیف نمی‌تواند بیشتر از ۱۰۰ باشد.");
+      if (!value || !Number.isFinite(amount) || amount <= 0) nextValueError = "مقدار را وارد کنید.";
+      else if ((type === "discount" || type === "scheduledDiscount") && unit === "PERCENT" && amount > 100) nextValueError = "درصد تخفیف نمی‌تواند بیشتر از ۱۰۰ باشد.";
     }
     if (type === "scheduledDiscount") {
-      if (!startsAt || !endsAt) return setError("بازه زمانی تخفیف را کامل کنید.");
-      if (endsAt < startsAt) return setError("پایان تخفیف باید بعد از شروع آن باشد.");
+      if (!startsAt || !endsAt) nextDatesError = "بازه زمانی تخفیف را کامل کنید.";
+      else if (endsAt < startsAt) nextDatesError = "پایان تخفیف باید بعد از شروع آن باشد.";
+    }
+    if (nextValueError || nextDatesError) {
+      setValueError(nextValueError);
+      setDatesError(nextDatesError);
+      // The value field comes first in the form, so it wins when both are invalid. The matched
+      // element is sometimes the focusable control itself (a plain input, or Blueprint's date
+      // trigger button) and sometimes a wrapper around one (HeroUI's date range group, whose own
+      // focusable part is a segment inside it) — either way, this reaches the real target.
+      const container = fieldsRef.current?.querySelector<HTMLElement>(nextValueError ? '[data-field="value"]' : '[data-field="dates"]');
+      const focusable = container?.matches("input, button") ? container : container?.querySelector<HTMLElement>("input, button, [tabindex]");
+      focusable?.focus();
+      return;
     }
     setLoading(true);
     try {
@@ -174,7 +199,7 @@ function ProductBulkEditModal({ open, ids, variantTypeNames, variantProductCount
       onCompleted();
       router.refresh();
     } catch (reason) {
-      setError(requestErrorMessage(reason, "ویرایش گروهی انجام نشد."));
+      setFormError(requestErrorMessage(reason, "ویرایش گروهی انجام نشد."));
     } finally {
       setLoading(false);
     }
@@ -193,16 +218,20 @@ function ProductBulkEditModal({ open, ids, variantTypeNames, variantProductCount
         <AdminDialogButton variant="secondary" isDisabled={loading} onPress={close}>انصراف</AdminDialogButton>
       </>}
     >
-      {error && <p className="m-0 border border-[var(--danger)] bg-[var(--danger)]/10 p-3 text-xs leading-6 text-[var(--danger)]">{error}</p>}
-      <BulkEditFields
-        type={type} setType={setType}
-        method={method} setMethod={setMethod}
-        unit={unit} setUnit={setUnit}
-        value={value} setValue={setValue}
-        startsAt={startsAt} setStartsAt={setStartsAt}
-        endsAt={endsAt} setEndsAt={setEndsAt}
-        isDisabled={loading}
-      />
+      {formError && <p className="m-0 border border-[var(--danger)] bg-[var(--danger)]/10 p-3 text-xs leading-6 text-[var(--danger)]">{formError}</p>}
+      <div ref={fieldsRef}>
+        <BulkEditFields
+          type={type} setType={setType}
+          method={method} setMethod={setMethod}
+          unit={unit} setUnit={setUnit}
+          value={value} setValue={setValue}
+          startsAt={startsAt} setStartsAt={setStartsAt}
+          endsAt={endsAt} setEndsAt={setEndsAt}
+          isDisabled={loading}
+          valueError={valueError} onClearValueError={() => setValueError(undefined)}
+          datesError={datesError} onClearDatesError={() => setDatesError(undefined)}
+        />
+      </div>
       {/* Combinations carry their own price, stock and discount — the base product's fields stay
          untouched once it has any, so this note keeps the reach of the change from being a surprise.
          Naming the actual variant types found in the selection beats a generic example. */}
