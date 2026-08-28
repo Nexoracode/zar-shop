@@ -38,12 +38,12 @@ export function AdminPageHeader({ eyebrow, title, description, action, backHref,
   const spacing = flush ? "" : "mb-6";
   if (template === "BLUEPRINT") {
     return (
-      <header className={`${spacing} flex flex-col gap-4 border-b border-[var(--bp-divider)] pb-5 sm:flex-row sm:items-center sm:justify-between`.trim()}>
+      <header className={`${spacing} flex flex-col gap-4 border-b border-[var(--bp-divider)] pb-2.5 sm:flex-row sm:items-center sm:justify-between`.trim()}>
         <div className="min-w-0">
-          {backHref && <Link href={backHref} className="bp-muted mb-3 inline-flex items-center gap-1.5 text-[13px] hover:text-[var(--bp-text)]"><ChevronRight size={16} />{backLabel}</Link>}
+          {backHref && <Link href={backHref} className="bp-muted mb-2 inline-flex items-center gap-1.5 text-[13px] hover:text-[var(--bp-text)]"><ChevronRight size={16} />{backLabel}</Link>}
           {eyebrow && <div className="bp-kicker mb-1">{eyebrow}</div>}
           <h2 className="m-0">{title}</h2>
-          <p className="bp-muted mb-0 mt-1 max-w-2xl text-[13px]">{description}</p>
+          <p className="bp-muted mb-0 mt-0.5 max-w-2xl text-[13px]">{description}</p>
         </div>
         {action && <div className="shrink-0">{action}</div>}
       </header>
