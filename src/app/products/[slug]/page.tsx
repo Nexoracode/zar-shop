@@ -98,16 +98,18 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   const baseTotal = product.fixedPrice ? Number(product.fixedPrice) : parts?.total ?? null;
   const discounted = baseTotal === null ? null : calculateDiscountedPrice(baseTotal, product);
   const total = discounted?.finalPrice ?? null;
-  // The badge has to notice a discount set on a combination too, not just the product's own —
-  // otherwise a product priced only through a discounted variant never shows it at all.
-  const activeDiscounts = [variantPricing(null, product), ...product.variants.map((variant) => variantPricing(variant, product))]
-    .filter((resolved) => isProductDiscountActive(resolved));
-  // A "فروش ویژه" carries no window at all, so it never contributes to this — only a scheduled
-  // discount does, and the badge races the earliest end among however many are active at once.
-  const activeDiscountEndsAt = activeDiscounts
-    .map((resolved) => resolved.discountEndsAt)
-    .filter((endsAt): endsAt is Date => endsAt !== null)
-    .sort((a, b) => a.getTime() - b.getTime())[0] ?? null;
+  // One entry per combination the gallery badge can be asked about — the base product itself
+  // (an empty selection, for a product with no combinations) plus every one of them — so the
+  // client can show the discount that applies to whatever is actually selected, rather than an
+  // aggregate across every combination the product happens to offer.
+  const discountBySelection = [
+    { selection: {} as Record<string, string>, ...variantPricing(null, product) },
+    ...product.variants.map((variant) => ({ selection: (variant.selection ?? {}) as Record<string, string>, ...variantPricing(variant, product) })),
+  ].map((entry) => ({
+    selection: entry.selection,
+    hasDiscount: isProductDiscountActive(entry),
+    discountEndsAt: entry.discountEndsAt ? entry.discountEndsAt.toISOString() : null,
+  }));
   const galleryMedia = product.media.reduce<Array<{ id: string; type: "IMAGE" | "VIDEO"; url: string; alt: string }>>((items, item) => {
     if (item.media.type === "IMAGE" || item.media.type === "VIDEO") items.push({ id: item.media.id, type: item.media.type, url: item.media.url, alt: item.media.alt ?? product.name });
     return items;
@@ -191,9 +193,6 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
     purchaseMeta,
     purchasePrice: total,
     purchaseOriginalPrice: discounted?.isActive ? discounted.originalPrice : null,
-    // Always read as a percentage off the badge, even for a fixed-amount discount — the reader
-    // never has to work out what a flat toman amount comes to relative to the price.
-    discountLabel: discounted?.isActive ? `${Math.round((discounted.discountAmount / discounted.originalPrice) * 100).toLocaleString("fa-IR")}٪` : null,
   };
 
   const productJsonLd = {
@@ -227,7 +226,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
       <div className="grid items-stretch gap-7 lg:grid-cols-[minmax(0,1fr)_320px]">
         <div className="min-w-0">
           <section className="grid items-start gap-7 lg:grid-cols-[minmax(330px,1.05fr)_minmax(0,1.1fr)] lg:grid-rows-[auto_auto] lg:gap-x-7 lg:gap-y-5">
-            <ProductDetailGallery productId={product.id} media={galleryMedia} productName={product.name} productCode={product.sku} hasDiscount={activeDiscounts.length > 0} discountEndsAt={activeDiscountEndsAt?.toISOString() ?? null} soldPercent={soldPercent} authenticated={Boolean(currentUser && !currentUser.isGuest)} initialFavorite={initialFavorite} />
+            <ProductDetailGallery productId={product.id} media={galleryMedia} productName={product.name} productCode={product.sku} discountBySelection={discountBySelection} soldPercent={soldPercent} authenticated={Boolean(currentUser && !currentUser.isGuest)} initialFavorite={initialFavorite} />
 
             <div className="min-w-0 lg:col-start-2 lg:row-start-1">
               {product.category && <Link href={`/products?category=${encodeURIComponent(product.category.slug)}`} className="text-sm font-bold text-[var(--brand-accent)] transition-colors hover:text-[var(--brand-primary)]">{product.category.name}</Link>}

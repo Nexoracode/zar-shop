@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { Button, Modal, ProgressBar, toast } from "@heroui/react";
 import { Bell, ChartNoAxesCombined, ChevronLeft, ChevronRight, Ellipsis, Heart, ImageIcon, Info, List, Play, Scale, Share2, X } from "lucide-react";
+import { useSelectedProductOptions } from "@/components/add-to-cart";
+import { selectionSignature } from "@/modules/products/variant-combinations";
 
 type ProductGalleryMedia = {
   id: string;
@@ -13,13 +15,17 @@ type ProductGalleryMedia = {
   alt: string;
 };
 
+/** Whether a combination (or, with an empty `selection`, the product itself) is on sale — one
+ * entry per combination the reader could pick, so the badge follows whatever is actually chosen
+ * instead of showing a sale that belongs to a different colour. */
+type SelectionDiscount = { selection: Record<string, string>; hasDiscount: boolean; discountEndsAt: string | null };
+
 type ProductDetailGalleryProps = {
   productId: string;
   media: ProductGalleryMedia[];
   productName: string;
   productCode: string;
-  hasDiscount?: boolean;
-  discountEndsAt?: string | null;
+  discountBySelection?: SelectionDiscount[];
   soldPercent?: number;
   authenticated?: boolean;
   initialFavorite?: boolean;
@@ -70,8 +76,17 @@ function renderFullscreenGallery({ media, selected, selectedIndex, productName, 
   </Modal.Backdrop>;
 }
 
-export function ProductDetailGallery({ productId, media, productName, productCode, hasDiscount = false, discountEndsAt = null, soldPercent = 0, authenticated = false, initialFavorite = false }: ProductDetailGalleryProps) {
+export function ProductDetailGallery({ productId, media, productName, productCode, discountBySelection = [], soldPercent = 0, authenticated = false, initialFavorite = false }: ProductDetailGalleryProps) {
   const router = useRouter();
+  const selectedOptions = useSelectedProductOptions();
+  // The entry matching whatever is currently picked — the base product's own entry has an empty
+  // `selection`, which is also what a product with no combinations, or no pick made yet, reads as.
+  const activeDiscount = useMemo(() => {
+    const signature = selectionSignature(selectedOptions);
+    return discountBySelection.find((entry) => selectionSignature(entry.selection) === signature) ?? discountBySelection[0] ?? null;
+  }, [discountBySelection, selectedOptions]);
+  const hasDiscount = activeDiscount?.hasDiscount ?? false;
+  const discountEndsAt = activeDiscount?.discountEndsAt ?? null;
   const [selectedId, setSelectedId] = useState(media[0]?.id ?? "");
   const [favorite, setFavorite] = useState(initialFavorite);
   const [priceAlert, setPriceAlert] = useState(false);

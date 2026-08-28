@@ -34,7 +34,13 @@ export function ProductPurchaseProvider({ children, initialSelectedOptions = {} 
   return <ProductPurchaseContext.Provider value={{ selectedOptions, setSelectedOptions, message, setMessage, loading, setLoading }}>{children}</ProductPurchaseContext.Provider>;
 }
 
-export function AddToCart({ productId, options = [], variants = [], optionGuide, disabled, disabledLabel = "ناموجود", currency = "IRR", layout = "default", purchaseSummary, purchaseMeta, purchasePrice = null, purchaseOriginalPrice = null, discountLabel, preparationDays = 0, showOptionFields = true, showPurchaseCard = true, purchaseCardClassName, purchaseCardStickyTop = "6rem" }: { productId: string; options?: ProductOption[]; variants?: PurchasableVariant[]; optionGuide?: OptionGuide | null; disabled: boolean; disabledLabel?: string; currency?: "IRR" | "IRT"; layout?: "default" | "product-detail"; purchaseSummary?: ReactNode; purchaseMeta?: ReactNode; purchasePrice?: number | null; purchaseOriginalPrice?: number | null; discountLabel?: string | null; preparationDays?: number; showOptionFields?: boolean; showPurchaseCard?: boolean; purchaseCardClassName?: string; purchaseCardStickyTop?: string }) {
+/** The combination currently picked, shared with every `AddToCart` instance on the page — so a
+ * sibling like the gallery badge can react to a choice made in a different one. */
+export function useSelectedProductOptions(): Record<string, string> {
+  return useContext(ProductPurchaseContext)?.selectedOptions ?? {};
+}
+
+export function AddToCart({ productId, options = [], variants = [], optionGuide, disabled, disabledLabel = "ناموجود", currency = "IRR", layout = "default", purchaseSummary, purchaseMeta, purchasePrice = null, purchaseOriginalPrice = null, preparationDays = 0, showOptionFields = true, showPurchaseCard = true, purchaseCardClassName, purchaseCardStickyTop = "6rem" }: { productId: string; options?: ProductOption[]; variants?: PurchasableVariant[]; optionGuide?: OptionGuide | null; disabled: boolean; disabledLabel?: string; currency?: "IRR" | "IRT"; layout?: "default" | "product-detail"; purchaseSummary?: ReactNode; purchaseMeta?: ReactNode; purchasePrice?: number | null; purchaseOriginalPrice?: number | null; preparationDays?: number; showOptionFields?: boolean; showPurchaseCard?: boolean; purchaseCardClassName?: string; purchaseCardStickyTop?: string }) {
   const router = useRouter();
   const sharedState = useContext(ProductPurchaseContext);
   const [localMessage, setLocalMessage] = useState("");
@@ -60,6 +66,12 @@ export function AddToCart({ productId, options = [], variants = [], optionGuide,
   const selectedColorValue = options.filter((option) => option.kind === "COLOR").flatMap((option) => option.values.filter((item) => selectedOptions[option.id] === item.value)).find((item) => item.color);
   const displayedPrice = selectedVariant?.price ?? purchasePrice;
   const displayedOriginalPrice = selectedVariant?.originalPrice ?? purchaseOriginalPrice;
+  // Worked out from whichever price ended up on screen, not passed in as its own prop — a
+  // combination can carry a different discount than the product, so a static percentage would
+  // drift the moment the picked combination changed.
+  const discountLabel = displayedOriginalPrice !== null && displayedPrice !== null && displayedOriginalPrice > displayedPrice
+    ? `${Math.round(((displayedOriginalPrice - displayedPrice) / displayedOriginalPrice) * 100).toLocaleString("fa-IR")}٪`
+    : null;
 
   async function add() {
     const missingOption = options.find((option) => !selectedOptions[option.id]);
