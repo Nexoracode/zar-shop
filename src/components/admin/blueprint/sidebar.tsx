@@ -72,21 +72,21 @@ export function BlueprintSidebar({ role, fullName, mobileOpen, onCloseMobile, in
   );
 
   const brand = (
-    <div className="flex items-center gap-2.5 px-1 pb-2 pt-1">
-      <span className="flex h-[34px] w-[34px] flex-none items-center justify-center border border-[var(--bp-accent)] text-base font-bold text-[var(--bp-accent-700)]">ز</span>
+    <div className="flex items-center gap-2 px-1 pb-2 pt-1">
+      <span className="flex h-[30px] w-[30px] flex-none items-center justify-center border border-[var(--bp-sidebar-border)] text-sm font-bold text-[var(--bp-sidebar-text)]">ز</span>
       {showLabels && <div className="min-w-0">
-        <strong className="block truncate text-[19px] font-bold leading-tight">زر گالری</strong>
-        <span className="bp-muted block truncate text-[11px]">{fullName}</span>
+        <strong className="block truncate text-[15px] font-bold leading-tight">زر گالری</strong>
+        <span className="bp-muted block truncate text-[10px]">{fullName}</span>
       </div>}
     </div>
   );
 
   return (
     <>
-      {/* Desktop rail */}
+      {/* Desktop rail — deliberately narrow and always dark, like WordPress's own admin menu. */}
       <aside
-        className="bp-scroll sticky top-0 hidden h-dvh flex-none flex-col gap-6 overflow-y-auto border-e border-[var(--bp-divider)] lg:flex"
-        style={{ width: isCollapsed ? 76 : 240, padding: isCollapsed ? "20px 14px" : 20 }}
+        className="bp-scroll bp-sidebar-surface sticky top-0 hidden h-dvh flex-none flex-col gap-5 overflow-y-auto border-e border-[var(--bp-sidebar-border)] lg:flex"
+        style={{ width: isCollapsed ? 60 : 160, padding: isCollapsed ? "16px 8px" : "16px 10px" }}
       >
         {brand}
         {nav}
@@ -95,7 +95,7 @@ export function BlueprintSidebar({ role, fullName, mobileOpen, onCloseMobile, in
       {/* Mobile drawer */}
       {mobileOpen && (
         <div className="fixed inset-0 z-[120] bg-[color-mix(in_srgb,#0b0c0d_55%,transparent)] lg:hidden" onMouseDown={(event) => { if (event.target === event.currentTarget) onCloseMobile(); }}>
-          <aside className="bp-scroll me-auto flex h-full w-[min(84vw,300px)] flex-col gap-4 overflow-y-auto border-e border-[var(--bp-divider)] bg-[var(--bp-bg)] p-4">
+          <aside className="bp-scroll bp-sidebar-surface me-auto flex h-full w-[min(84vw,260px)] flex-col gap-4 overflow-y-auto border-e border-[var(--bp-sidebar-border)] p-4">
             <div className="flex items-center justify-between gap-3">
               <strong className="text-sm">منوی مدیریت</strong>
               <BpButton isIconOnly aria-label="بستن منوی مدیریت" onClick={onCloseMobile}><X size={17} /></BpButton>

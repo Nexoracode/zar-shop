@@ -71,6 +71,18 @@
   --bp-shadow-md: 0 3px 10px color-mix(in srgb, #2b2b2d 16%, transparent);
   --bp-shadow-lg: 0 12px 32px color-mix(in srgb, #2b2b2d 22%, transparent);
 
+  /* The sidebar rail, WordPress-style: a dark strip that stays this colour under either admin
+     theme rather than following the toggle above — same as WordPress's own admin menu, which
+     never turns light no matter which colour scheme the rest of the page is on. Hardcoded rather
+     than built from the accent tokens, since those are meant to shift with the theme. */
+  --bp-sidebar-bg: #1d2327;
+  --bp-sidebar-text: #f0f0f1;
+  --bp-sidebar-muted: #a7aaad;
+  --bp-sidebar-border: rgba(255, 255, 255, 0.12);
+  --bp-sidebar-hover: rgba(255, 255, 255, 0.08);
+  --bp-sidebar-active-bg: #5980a6;
+  --bp-sidebar-active-text: #ffffff;
+
   background: var(--bp-bg);
   color: var(--bp-text);
   font-family: var(--bp-font);
@@ -659,24 +671,32 @@ select.bp-input:focus-visible { border-color: var(--bp-accent); outline: none; }
   align-items: center;
   gap: 10px;
   width: 100%;
-  padding: 10px 12px;
+  padding: 9px 10px;
   cursor: pointer;
   border: 1px solid transparent;
   background: transparent;
-  color: var(--bp-text);
+  color: var(--bp-sidebar-text);
   font-family: var(--bp-font);
   font-weight: 500;
-  font-size: 14px;
+  font-size: 13px;
   text-align: right;
 }
-.bp-nav-item:hover { background: var(--bp-hover); }
-.bp-nav-item[data-active="true"] { background: var(--bp-accent-100); color: var(--bp-accent-800); }
+.bp-nav-item:hover { background: var(--bp-sidebar-hover); }
+.bp-nav-item[data-active="true"] { background: var(--bp-sidebar-active-bg); color: var(--bp-sidebar-active-text); }
 .bp-nav-sub {
   font-weight: 400;
-  font-size: 13px;
-  padding: 8px 12px;
-  padding-inline-start: 40px;
+  font-size: 12.5px;
+  padding: 7px 10px;
+  padding-inline-start: 32px;
 }
+
+/* — sidebar surface — the rail and its mobile drawer, always the dark strip above regardless of
+   the admin theme toggle; nested `.bp-btn`/`.bp-muted` need their own colours here since both
+   set an explicit colour of their own that would otherwise stay theme-bound and unreadable. */
+.bp-sidebar-surface { background: var(--bp-sidebar-bg); color: var(--bp-sidebar-text); border-color: var(--bp-sidebar-border); }
+.bp-sidebar-surface .bp-muted { color: var(--bp-sidebar-muted); }
+.bp-sidebar-surface .bp-btn { color: var(--bp-sidebar-text); border-color: var(--bp-sidebar-border); }
+.bp-sidebar-surface .bp-btn:hover { background: var(--bp-sidebar-hover); }
 
 /* ── Compatibility layer ────────────────────────────────────────────────────────────────────
    Admin pages that have not been migrated off HeroUI yet still render inside the blueprint
