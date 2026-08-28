@@ -13,12 +13,18 @@ const boundarySchema = z.union([dateOnlySchema, dateTimeSchema], "تاریخ و 
 
 const bodySchema = z.object({
   ids: z.array(z.string().min(1)).min(1, "دست‌کم یک محصول را انتخاب کنید.").max(50, "حداکثر ۵۰ محصول در هر ویرایش گروهی قابل انتخاب است."),
-  type: z.enum(["price", "stock", "discount", "scheduledDiscount"], "نوع تغییر را انتخاب کنید."),
+  type: z.enum(["price", "stock", "discount", "scheduledDiscount", "removeDiscount"], "نوع تغییر را انتخاب کنید."),
   method: z.enum(["set", "increase", "decrease"]).optional(),
   unit: z.enum(["PERCENT", "FIXED"]).optional(),
-  value: z.coerce.number("مقدار را وارد کنید.").positive("مقدار باید بیشتر از صفر باشد.").max(999999999999999999, "مقدار واردشده بیش از حد مجاز است."),
+  // Every type but removeDiscount needs an amount — that one only ever clears fields, so it is
+  // the sole type allowed to leave this out.
+  value: z.coerce.number("مقدار را وارد کنید.").positive("مقدار باید بیشتر از صفر باشد.").max(999999999999999999, "مقدار واردشده بیش از حد مجاز است.").optional(),
   startsAt: boundarySchema.nullable().optional(),
   endsAt: boundarySchema.nullable().optional(),
+}).superRefine((data, context) => {
+  if (data.type !== "removeDiscount" && data.value === undefined) {
+    context.addIssue({ code: "custom", path: ["value"], message: "مقدار را وارد کنید." });
+  }
 });
 
 type Row = {
@@ -69,10 +75,13 @@ export async function POST(request: Request) {
     if (!parsed.success) return NextResponse.json({ message: parsed.error.issues[0]?.message ?? "اطلاعات ویرایش گروهی معتبر نیست." }, { status: 422 });
     const { ids, type, method, unit, value, startsAt, endsAt } = parsed.data;
     const uniqueIds = [...new Set(ids)];
+    // Guaranteed defined here for every type but removeDiscount, which never reads it — the
+    // schema's own superRefine already rejected a missing value for the others.
+    const amount = value ?? 0;
 
     if ((type === "price" || type === "stock") && !method) return NextResponse.json({ message: "روش تغییر را انتخاب کنید." }, { status: 422 });
     if ((type === "discount" || type === "scheduledDiscount") && !unit) return NextResponse.json({ message: "واحد تخفیف را انتخاب کنید." }, { status: 422 });
-    if (unit === "PERCENT" && value > 100) return NextResponse.json({ message: "درصد تخفیف نمی‌تواند بیشتر از ۱۰۰ باشد." }, { status: 422 });
+    if (unit === "PERCENT" && amount > 100) return NextResponse.json({ message: "درصد تخفیف نمی‌تواند بیشتر از ۱۰۰ باشد." }, { status: 422 });
 
     let windowStart: Date | null = null;
     let windowEnd: Date | null = null;
@@ -97,21 +106,28 @@ export async function POST(request: Request) {
           // Gold-industry rows price themselves from weight and the day's rate, not a stored
           // number, so a direct price change has nothing to act on there.
           if (row.storeIndustry === "GOLD" || row.price === null) { skipped += 1; continue; }
-          const next = method === "set" ? value : method === "increase" ? row.price + value : Math.max(1, row.price - value);
+          const next = method === "set" ? amount : method === "increase" ? row.price + amount : Math.max(1, row.price - amount);
           data[row.kind === "product" ? "fixedPrice" : "price"] = Math.round(next);
         } else if (type === "stock") {
-          const amount = Math.trunc(value);
-          data.stock = method === "set" ? amount : method === "increase" ? row.stock + amount : Math.max(0, row.stock - amount);
+          const change = Math.trunc(amount);
+          data.stock = method === "set" ? change : method === "increase" ? row.stock + change : Math.max(0, row.stock - change);
+        } else if (type === "removeDiscount") {
+          // Nothing to clear on a row that has no discount to begin with.
+          if (!row.hasDiscount) { skipped += 1; continue; }
+          data.discountType = null;
+          data.discountValue = null;
+          data.discountStartsAt = null;
+          data.discountEndsAt = null;
         } else if (type === "discount") {
           // Only the amount changes here — a row with no discount at all has nothing to attach a
           // bare value to. One that already has a window (or a windowless «فروش ویژه») keeps it
           // exactly as it was, since this branch never touches the date fields either way.
           if (!row.hasDiscount) { skipped += 1; continue; }
           data.discountType = unit;
-          data.discountValue = value;
+          data.discountValue = amount;
         } else {
           data.discountType = unit;
-          data.discountValue = value;
+          data.discountValue = amount;
           data.discountStartsAt = windowStart;
           data.discountEndsAt = windowEnd;
         }

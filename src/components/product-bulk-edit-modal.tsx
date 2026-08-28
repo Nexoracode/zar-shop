@@ -17,7 +17,7 @@ import { HeroSelectField, type HeroSelectOption } from "@/components/hero-select
 import { HeroNumberInput } from "@/components/hero-number-input";
 import { HeroDateRangeField } from "@/components/hero-date-range-field";
 
-type ChangeType = "price" | "stock" | "discount" | "scheduledDiscount";
+type ChangeType = "price" | "stock" | "discount" | "scheduledDiscount" | "removeDiscount";
 type AdjustMethod = "set" | "increase" | "decrease";
 type DiscountUnit = "PERCENT" | "FIXED";
 
@@ -26,6 +26,7 @@ const typeOptions: { value: ChangeType; label: string }[] = [
   { value: "stock", label: "تغییر موجودی" },
   { value: "discount", label: "تغییر تخفیف" },
   { value: "scheduledDiscount", label: "تخفیف زمان‌بندی‌شده" },
+  { value: "removeDiscount", label: "حذف تخفیف" },
 ];
 
 const priceMethodOptions: { value: AdjustMethod; label: string }[] = [
@@ -72,6 +73,8 @@ function BulkEditFields({
   const template = useAdminTemplate();
   const isPriceLike = type === "price" || ((type === "discount" || type === "scheduledDiscount") && unit === "FIXED");
   const label = valueLabel(type, method, unit);
+  // Nothing to enter for this one — it only clears whatever discount a row already has.
+  const removeDiscountNote = <p className="bp-muted m-0 text-[12px] leading-6 text-[var(--muted)]">تخفیف (زمان‌بندی‌شده یا فروش ویژه) هر محصول انتخاب‌شده که تخفیف داشته باشد، پاک می‌شود.</p>;
 
   if (template === "BLUEPRINT") {
     return (
@@ -83,7 +86,9 @@ function BulkEditFields({
         {(type === "discount" || type === "scheduledDiscount") && (
           <BpSeg label="واحد تخفیف" fullWidth value={unit} onChange={setUnit} options={unitOptions as BpSegOption<DiscountUnit>[]} />
         )}
-        <BpNumberInput label={label} value={value} onValueChange={setValue} isPrice={isPriceLike} showWords={isPriceLike} disabled={isDisabled} />
+        {type === "removeDiscount" ? removeDiscountNote : (
+          <BpNumberInput label={label} value={value} onValueChange={setValue} isPrice={isPriceLike} showWords={isPriceLike} disabled={isDisabled} />
+        )}
         {type === "scheduledDiscount" && (
           <div className="grid grid-cols-2 gap-2">
             <BpDateTimeField label="شروع تخفیف" value={startsAt} onChange={setStartsAt} isDisabled={isDisabled} required />
@@ -103,7 +108,9 @@ function BulkEditFields({
       {(type === "discount" || type === "scheduledDiscount") && (
         <HeroSelectField name="bulk-edit-unit" label="واحد تخفیف" value={unit} onValueChange={(next) => setUnit(next as DiscountUnit)} options={unitOptions as HeroSelectOption[]} includeEmptyOption={false} disabled={isDisabled} />
       )}
-      <label className={adminLabelClass}>{label}<HeroNumberInput value={value} onValueChange={setValue} isPrice={isPriceLike} disabled={isDisabled} fullWidth variant="secondary" className={adminFieldClass} /></label>
+      {type === "removeDiscount" ? removeDiscountNote : (
+        <label className={adminLabelClass}>{label}<HeroNumberInput value={value} onValueChange={setValue} isPrice={isPriceLike} disabled={isDisabled} fullWidth variant="secondary" className={adminFieldClass} /></label>
+      )}
       {type === "scheduledDiscount" && (
         <HeroDateRangeField label="بازه زمانی تخفیف" start={startsAt} end={endsAt} withTime onChange={(range) => { setStartsAt(range?.start ?? null); setEndsAt(range?.end ?? null); }} isDisabled={isDisabled} />
       )}
@@ -135,8 +142,10 @@ function ProductBulkEditModal({ open, ids, variantTypeNames, variantProductCount
   async function submit() {
     setError("");
     const amount = Number(value);
-    if (!value || !Number.isFinite(amount) || amount <= 0) return setError("مقدار را وارد کنید.");
-    if ((type === "discount" || type === "scheduledDiscount") && unit === "PERCENT" && amount > 100) return setError("درصد تخفیف نمی‌تواند بیشتر از ۱۰۰ باشد.");
+    if (type !== "removeDiscount") {
+      if (!value || !Number.isFinite(amount) || amount <= 0) return setError("مقدار را وارد کنید.");
+      if ((type === "discount" || type === "scheduledDiscount") && unit === "PERCENT" && amount > 100) return setError("درصد تخفیف نمی‌تواند بیشتر از ۱۰۰ باشد.");
+    }
     if (type === "scheduledDiscount") {
       if (!startsAt || !endsAt) return setError("بازه زمانی تخفیف را کامل کنید.");
       if (endsAt < startsAt) return setError("پایان تخفیف باید بعد از شروع آن باشد.");
@@ -151,7 +160,7 @@ function ProductBulkEditModal({ open, ids, variantTypeNames, variantProductCount
           type,
           ...(type === "price" || type === "stock" ? { method } : {}),
           ...(type === "discount" || type === "scheduledDiscount" ? { unit } : {}),
-          value: amount,
+          ...(type !== "removeDiscount" ? { value: amount } : {}),
           ...(type === "scheduledDiscount" ? { startsAt, endsAt } : {}),
         }),
       }, { fallbackMessage: "ویرایش گروهی انجام نشد." });
