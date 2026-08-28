@@ -12,7 +12,6 @@ import { BpPopover } from "./ui/popover";
 
 type Props = {
   role: UserRole;
-  fullName: string;
   /** Mobile drawer control — the shell owns the open state so the topbar can toggle it. */
   mobileOpen: boolean;
   onCloseMobile: () => void;
@@ -43,7 +42,7 @@ function shortLabel(text: string) {
   return shortLabels[text] ?? text;
 }
 
-export function BlueprintSidebar({ role, fullName, mobileOpen, onCloseMobile, initialCollapsed }: Props) {
+export function BlueprintSidebar({ role, mobileOpen, onCloseMobile, initialCollapsed }: Props) {
   const pathname = usePathname();
   const groups = useMemo(() => visibleAdminNavGroups(role), [role]);
   /*
@@ -94,24 +93,21 @@ export function BlueprintSidebar({ role, fullName, mobileOpen, onCloseMobile, in
     </nav>
   );
 
-  const brand = (
-    <div className="flex items-center gap-2 px-1 pb-2 pt-1">
-      <span className="flex h-[30px] w-[30px] flex-none items-center justify-center border border-[var(--bp-sidebar-border)] text-sm font-bold text-[var(--bp-sidebar-text)]">ز</span>
-      {showLabels && <div className="min-w-0">
-        <strong className="block truncate text-[15px] font-bold leading-tight">زر گالری</strong>
-        <span className="bp-muted block truncate text-[10px]">{fullName}</span>
-      </div>}
-    </div>
-  );
-
   return (
     <>
-      {/* Desktop rail — deliberately narrow and always dark, like WordPress's own admin menu. */}
+      {/* Desktop rail — deliberately narrow and always dark, like WordPress's own admin menu.
+          The brand mark now lives in the header above, which spans the rail too, so this only
+          ever has to start below it — `top`/`height` read the header's measured own height
+          (`--admin-sticky-top`, published by `useStickyHeaderOffset`) instead of the viewport. */}
       <aside
-        className="bp-scroll bp-dark-bar sticky top-0 hidden h-dvh flex-none flex-col gap-5 overflow-y-auto border-e border-[var(--bp-sidebar-border)] lg:flex"
-        style={{ width: isCollapsed ? 60 : 160, padding: isCollapsed ? "16px 8px" : "16px 10px" }}
+        className="bp-scroll bp-dark-bar sticky hidden flex-none flex-col gap-5 overflow-y-auto border-e border-[var(--bp-sidebar-border)] lg:flex"
+        style={{
+          width: isCollapsed ? 60 : 160,
+          padding: isCollapsed ? "16px 8px" : "16px 10px",
+          top: "var(--admin-sticky-top, 0px)",
+          height: "calc(100dvh - var(--admin-sticky-top, 0px))",
+        }}
       >
-        {brand}
         {nav}
       </aside>
 
