@@ -8,7 +8,7 @@ import type { StoreIndustry } from "../../generated/prisma/enums";
 // slot that references it; the real cuid is only known once the row is actually created.
 export type DevelopmentMediaSeed = {
   key: string;
-  scope: "CATEGORY" | "PRODUCT" | "HOMEPAGE" | "BRAND";
+  scope: "CATEGORY" | "PRODUCT" | "HOMEPAGE" | "BRAND" | "PRODUCT_BRAND";
   type: "IMAGE" | "VIDEO" | "DOCUMENT";
   url: string;
   storageKey: string;
@@ -26,11 +26,22 @@ export type DevelopmentCategorySeed = {
   attributeSchema?: Array<{ id: string; name: string; attributes: Array<{ id: string; name: string; important?: boolean }> }>;
 };
 
+/** A product manufacturer/atelier (`Brand`) — distinct from the free-text "برند" category
+ * attribute some categories below still carry, which is a different, older mechanism. */
+export type DevelopmentBrandSeed = {
+  name: string;
+  slug: string;
+  logoKey?: string;
+  featured?: boolean;
+};
+
 export type DevelopmentProductSeed = {
   sku: string;
   name: string;
   slug: string;
   categorySlug: string;
+  // Every seeded product names one, so development data never has a product without a برند.
+  brandSlug: string;
   description: string;
   stock: number;
   featured?: boolean;
@@ -58,6 +69,7 @@ export type DevelopmentStoreSeed = {
   tagline: string;
   shortDescription: string;
   categories: readonly DevelopmentCategorySeed[];
+  brands: readonly DevelopmentBrandSeed[];
   products: readonly DevelopmentProductSeed[];
   media?: readonly DevelopmentMediaSeed[];
   brandLogoKey?: string;

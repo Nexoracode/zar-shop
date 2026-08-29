@@ -51,6 +51,7 @@ async function clearDevelopmentData(db: PrismaClient) {
   await db.productOptionType.deleteMany();
   await db.product.deleteMany();
   await db.category.deleteMany();
+  await db.brand.deleteMany();
   await db.optionValue.deleteMany();
   await db.optionType.deleteMany();
   await db.color.deleteMany();
@@ -154,6 +155,14 @@ async function createStore(db: PrismaClient, seed: DevelopmentStoreSeed) {
     return id;
   }
 
+  const brandIds = new Map<string, string>();
+  for (const [index, brand] of seed.brands.entries()) {
+    const created = await db.brand.create({
+      data: { name: brand.name, slug: brand.slug, logoId: resolveMediaId(brand.logoKey), isActive: true, featured: brand.featured ?? false, sortOrder: (index + 1) * 10 },
+    });
+    brandIds.set(brand.slug, created.id);
+  }
+
   const categoryIds = new Map<string, string>();
   const rootMenuItems: Array<{ id: string; label: string; href: string }> = [];
   for (const [index, category] of seed.categories.entries()) {
@@ -169,6 +178,8 @@ async function createStore(db: PrismaClient, seed: DevelopmentStoreSeed) {
   for (const product of seed.products) {
     const categoryId = categoryIds.get(product.categorySlug);
     if (!categoryId) throw new Error(`Seed category not found: ${product.categorySlug}`);
+    const brandId = brandIds.get(product.brandSlug);
+    if (!brandId) throw new Error(`Seed brand not found: ${product.brandSlug}`);
     const hasDiscount = Boolean(product.discountPercent);
     const created = await db.product.create({
       data: {
@@ -179,6 +190,7 @@ async function createStore(db: PrismaClient, seed: DevelopmentStoreSeed) {
         status: "ACTIVE",
         storeIndustry: seed.industry,
         categoryId,
+        brandId,
         purity: seed.industry === "GOLD" ? 750 : 0,
         weightGrams: seed.industry === "GOLD" ? product.weightGrams ?? "1.000" : "0",
         makingFeeType: "PERCENT",
@@ -248,16 +260,18 @@ export async function seedDevelopmentStore(industry: StoreIndustry) {
   try {
     await clearDevelopmentData(db);
     await createStore(db, seed);
-    const [categoryCount, productCount, industries, setting] = await Promise.all([
+    const [categoryCount, brandCount, productCount, productsWithoutBrand, industries, setting] = await Promise.all([
       db.category.count(),
+      db.brand.count(),
       db.product.count(),
+      db.product.count({ where: { brandId: null } }),
       db.product.groupBy({ by: ["storeIndustry"], _count: { _all: true } }),
       db.storeSetting.findUnique({ where: { id: "main" }, select: { industry: true } }),
     ]);
-    if (categoryCount !== seed.categories.length || productCount !== seed.products.length || industries.length !== 1 || industries[0].storeIndustry !== industry || setting?.industry !== industry) {
+    if (categoryCount !== seed.categories.length || brandCount !== seed.brands.length || productCount !== seed.products.length || productsWithoutBrand > 0 || industries.length !== 1 || industries[0].storeIndustry !== industry || setting?.industry !== industry) {
       throw new Error("Development seed verification failed.");
     }
-    console.info(`[seed] ${industry}: ${categoryCount} categories and ${productCount} products created.`);
+    console.info(`[seed] ${industry}: ${categoryCount} categories, ${brandCount} brands and ${productCount} products created.`);
   } finally {
     await db.$disconnect();
   }
