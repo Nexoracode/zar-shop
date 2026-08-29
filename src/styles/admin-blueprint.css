@@ -686,7 +686,7 @@ select.bp-input:focus-visible { border-color: var(--bp-accent); outline: none; }
   text-align: right;
 }
 .bp-nav-item:hover { background: var(--bp-hover); }
-.bp-nav-item[data-active="true"] { background: var(--bp-accent-solid); color: #ffffff; }
+.bp-nav-item[data-active="true"] { background: var(--bp-accent-solid); color: #ffffff !important; }
 .bp-nav-sub {
   font-weight: 400;
   font-size: 12.5px;
@@ -705,7 +705,7 @@ select.bp-input:focus-visible { border-color: var(--bp-accent); outline: none; }
 .bp-dark-bar .bp-btn:hover, .bp-dark-bar .bp-btn-secondary:not(:disabled):hover { background: var(--bp-sidebar-hover); }
 .bp-dark-bar .bp-nav-item { color: var(--bp-sidebar-text); }
 .bp-dark-bar .bp-nav-item:hover { background: var(--bp-sidebar-hover); }
-.bp-dark-bar .bp-nav-item[data-active="true"] { background: var(--bp-sidebar-active-bg); color: var(--bp-sidebar-active-text); }
+.bp-dark-bar .bp-nav-item[data-active="true"] { background: var(--bp-sidebar-active-bg); color: var(--bp-sidebar-active-text) !important; }
 
 /* ── Compatibility layer ────────────────────────────────────────────────────────────────────
    Admin pages that have not been migrated off HeroUI yet still render inside the blueprint
