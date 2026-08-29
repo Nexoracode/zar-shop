@@ -1,6 +1,6 @@
 import type { Prisma } from "@generated/prisma/client";
 
-export type ProductRow = Prisma.ProductGetPayload<{ include: { category: true; media: { include: { media: true } }; _count: { select: { variants: true; orderItems: true } }; optionTypes: { select: { type: { select: { name: true } }; values: { select: { value: { select: { label: true } } } } } } } }>;
+export type ProductRow = Prisma.ProductGetPayload<{ include: { category: true; brand: { select: { name: true } }; media: { include: { media: true } }; _count: { select: { variants: true; orderItems: true } }; optionTypes: { select: { type: { select: { name: true } }; values: { select: { value: { select: { label: true } } } } } } } }>;
 
 /** Everything `/admin/products` reads, shaped once so both list skins agree. */
 export type AdminProductsListData = {

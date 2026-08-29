@@ -135,7 +135,7 @@ export function BlueprintProductsView({ products, categories, filters, paginatio
                     <ThumbRule />
                     <div className="min-w-0 flex-1">
                       <ProductName product={product} />
-                      <span className="bp-muted mt-1 block truncate text-[11px]">{product.category?.name ?? "بدون دسته‌بندی"}</span>
+                      <span className="bp-muted mt-1 block truncate text-[11px]">{product.category?.name ?? "بدون دسته‌بندی"}{product.brand && ` · ${product.brand.name}`}</span>
                     </div>
                     <BpTag tone={productStatusTones[product.status]} size="md" withDot>{productStatusLabels[product.status]}</BpTag>
                   </div>
@@ -156,6 +156,7 @@ export function BlueprintProductsView({ products, categories, filters, paginatio
                     <BpTh className="w-10">#</BpTh>
                     <BpTh>محصول</BpTh>
                     <BpTh>دسته‌بندی</BpTh>
+                    <BpTh>برند</BpTh>
                     <BpTh>{storeIndustry === "GOLD" ? "وزن (گرم)" : "قیمت (ریال)"}</BpTh>
                     <BpTh>موجودی</BpTh>
                     <BpTh>وضعیت</BpTh>
@@ -169,6 +170,7 @@ export function BlueprintProductsView({ products, categories, filters, paginatio
                       <BpTd className="bp-muted w-10">{(pagination.skip + index + 1).toLocaleString("fa-IR")}</BpTd>
                       <BpTd className="w-[240px] max-w-[240px]"><div className="flex min-w-0 items-center gap-2.5"><ProductThumb product={product} /><ThumbRule /><ProductName product={product} /></div></BpTd>
                       <BpTd className="bp-muted max-w-[180px] truncate" title={product.category?.name ?? "بدون دسته‌بندی"}>{product.category?.name ?? "بدون دسته‌بندی"}</BpTd>
+                      <BpTd className="bp-muted max-w-[140px] truncate" title={product.brand?.name ?? "بدون برند"}>{product.brand?.name ?? "بدون برند"}</BpTd>
                       <BpTd>{priceLabel(product)}</BpTd>
                       <BpTd className={product.stock <= lowStockThreshold ? "font-bold text-[var(--bp-danger)]" : ""}>{product.stock.toLocaleString("fa-IR")}</BpTd>
                       <BpTd><BpTag tone={productStatusTones[product.status]} size="md" withDot>{productStatusLabels[product.status]}</BpTag></BpTd>
