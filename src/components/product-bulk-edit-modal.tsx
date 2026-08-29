@@ -11,6 +11,7 @@ import { useAdminTemplate } from "@/components/admin/template-context";
 import { requestErrorMessage, requestJson } from "@/lib/api-request";
 import { BpButton } from "@/components/admin/blueprint/ui/button";
 import { BpSeg, type BpSegOption } from "@/components/admin/blueprint/ui/seg";
+import { BpSelect, type BpSelectOption } from "@/components/admin/blueprint/ui/select";
 import { BpNumberInput } from "@/components/admin/blueprint/ui/number-input";
 import { BpDateTimeField } from "@/components/admin/blueprint/ui/date-time-field";
 import { HeroSelectField, type HeroSelectOption } from "@/components/hero-select-field";
@@ -93,7 +94,7 @@ function BulkEditFields({
   if (template === "BLUEPRINT") {
     return (
       <div className="grid gap-3">
-        <BpSeg label="نوع تغییر" fullWidth value={type} onChange={setType} options={typeOptions as BpSegOption<ChangeType>[]} />
+        <BpSelect label="نوع تغییر" value={type} onChange={(event) => setType(event.target.value as ChangeType)} options={typeOptions as BpSelectOption[]} />
         {(type === "price" || type === "stock") && (
           <BpSeg label="روش تغییر" fullWidth value={method} onChange={setMethod} options={(type === "price" ? priceMethodOptions : stockMethodOptions) as BpSegOption<AdjustMethod>[]} />
         )}
