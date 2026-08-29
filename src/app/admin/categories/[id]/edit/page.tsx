@@ -1,13 +1,16 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { CategoryForm } from "@/components/category-form";
 import { AdminPageHeader } from "@/components/admin-ui";
 import { db } from "@/lib/db";
 import { requirePermission } from "@/modules/auth/session";
+import { getBrandSettings } from "@/modules/settings/brand-settings";
 
 type Context = { params: Promise<{ id: string }> };
 
 export default async function EditCategoryPage({ params }: Context) {
   await requirePermission("catalog:manage");
+  const brandSettings = await getBrandSettings();
+  if (brandSettings.adminTemplate === "BLUEPRINT") redirect("/admin/categories");
   const { id } = await params;
   const [category, categories] = await Promise.all([
     db.category.findUnique({ where: { id }, include: { image: true } }),

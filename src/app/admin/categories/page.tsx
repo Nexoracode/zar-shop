@@ -11,13 +11,28 @@ import { AdminPagination } from "@/components/admin-pagination";
 import { resolveAdminPagination } from "@/lib/admin-pagination";
 import { parseAdminPaginationRequest } from "@/lib/admin-pagination-server";
 import { requirePermission } from "@/modules/auth/session";
+import { getBrandSettings } from "@/modules/settings/brand-settings";
 import { AdminBulkCheckbox, AdminBulkEditor } from "@/components/admin-bulk-editor";
+import { BlueprintCategoriesView } from "@/components/admin/blueprint/categories-view";
 
 type Context = { searchParams: Promise<{ q?: string; status?: string; featured?: string; page?: string; pageSize?: string }> };
 type CategoryRow = Prisma.CategoryGetPayload<{ include: { image: true; parent: { select: { name: true } }; _count: { select: { products: true; children: true } } } }>;
 
 export default async function CategoriesPage({ searchParams }: Context) {
   await requirePermission("catalog:manage");
+  const brandSettings = await getBrandSettings();
+  if (brandSettings.adminTemplate === "BLUEPRINT") {
+    const categories = await db.category.findMany({
+      include: { image: { select: { id: true, url: true, alt: true } }, parent: { select: { name: true } }, _count: { select: { products: true, children: true } } },
+      orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
+    });
+    return <BlueprintCategoriesView categories={categories.map((category) => ({
+      id: category.id, name: category.name, slug: category.slug, description: category.description,
+      parentId: category.parentId, parentName: category.parent?.name ?? null,
+      isActive: category.isActive, featured: category.featured, sortOrder: category.sortOrder,
+      image: category.image, _count: category._count,
+    }))} />;
+  }
   const params = await searchParams;
   const query = params.q?.trim() ?? "";
   const status = params.status === "active" || params.status === "inactive" ? params.status : undefined;
