@@ -6,7 +6,7 @@ export default async function BrandsPage() {
   await requirePermission("catalog:manage");
   const brands = await db.brand.findMany({
     orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
-    include: { logo: { select: { url: true, alt: true } }, _count: { select: { products: true } } },
+    include: { logo: { select: { id: true, url: true, alt: true } }, _count: { select: { products: true } } },
   });
   return <BlueprintBrandsView brands={brands} />;
 }
