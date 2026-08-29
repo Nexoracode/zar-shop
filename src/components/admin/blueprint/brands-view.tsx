@@ -170,7 +170,13 @@ export function BlueprintBrandsView({ brands }: { brands: BrandRow[] }) {
       const from = current.findIndex((item) => item.id === draggedId);
       const overIndex = current.findIndex((item) => item.id === overId);
       if (from < 0 || overIndex < 0) return current;
-      return move(current, from, after ? overIndex : Math.max(0, overIndex));
+      // Where the dragged row should land in `current`, before `move` splices it out of `from` —
+      // that removal closes a gap ahead of any index past it, so a target past `from` has to
+      // shift back by one to still land in the same visual spot. Without this, dragging upward
+      // to "after" a row landed it "before" instead — off by one, every time.
+      let target = after ? overIndex + 1 : overIndex;
+      if (target > from) target -= 1;
+      return move(current, from, target);
     });
   }
 
