@@ -17,9 +17,10 @@ import { HeroSelectField, type HeroSelectOption } from "@/components/hero-select
 import { HeroNumberInput } from "@/components/hero-number-input";
 import { HeroDateRangeField } from "@/components/hero-date-range-field";
 
-type ChangeType = "price" | "stock" | "discount" | "scheduledDiscount" | "removeDiscount";
+type ChangeType = "price" | "stock" | "discount" | "scheduledDiscount" | "removeDiscount" | "featured";
 type AdjustMethod = "set" | "increase" | "decrease";
 type DiscountUnit = "PERCENT" | "FIXED";
+type FeaturedAction = "add" | "remove";
 
 const typeOptions: { value: ChangeType; label: string }[] = [
   { value: "price", label: "تغییر قیمت" },
@@ -27,6 +28,12 @@ const typeOptions: { value: ChangeType; label: string }[] = [
   { value: "discount", label: "تغییر تخفیف" },
   { value: "scheduledDiscount", label: "تخفیف زمان‌بندی‌شده" },
   { value: "removeDiscount", label: "حذف تخفیف" },
+  { value: "featured", label: "محصول ویژه" },
+];
+
+const featuredActionOptions: { value: FeaturedAction; label: string }[] = [
+  { value: "add", label: "افزودن به محصولات ویژه" },
+  { value: "remove", label: "حذف از محصولات ویژه" },
 ];
 
 const priceMethodOptions: { value: AdjustMethod; label: string }[] = [
@@ -60,7 +67,8 @@ function valueLabel(type: ChangeType, method: AdjustMethod, unit: DiscountUnit) 
  * chrome. Only the field controls branch, each through its template's own shared component.
  */
 function BulkEditFields({
-  type, setType, method, setMethod, unit, setUnit, value, setValue, startsAt, setStartsAt, endsAt, setEndsAt, isDisabled,
+  type, setType, method, setMethod, unit, setUnit, value, setValue, startsAt, setStartsAt, endsAt, setEndsAt,
+  featuredAction, setFeaturedAction, isDisabled,
   valueError, onClearValueError, datesError, onClearDatesError,
 }: {
   type: ChangeType; setType: (value: ChangeType) => void;
@@ -69,6 +77,7 @@ function BulkEditFields({
   value: string; setValue: (value: string) => void;
   startsAt: string | null; setStartsAt: (value: string | null) => void;
   endsAt: string | null; setEndsAt: (value: string | null) => void;
+  featuredAction: FeaturedAction; setFeaturedAction: (value: FeaturedAction) => void;
   isDisabled: boolean;
   valueError?: string;
   onClearValueError: () => void;
@@ -91,7 +100,10 @@ function BulkEditFields({
         {(type === "discount" || type === "scheduledDiscount") && (
           <BpSeg label="واحد تخفیف" fullWidth value={unit} onChange={setUnit} options={unitOptions as BpSegOption<DiscountUnit>[]} />
         )}
-        {type === "removeDiscount" ? removeDiscountNote : (
+        {type === "featured" && (
+          <BpSeg label="نوع تغییر ویژه" fullWidth value={featuredAction} onChange={setFeaturedAction} options={featuredActionOptions as BpSegOption<FeaturedAction>[]} />
+        )}
+        {type === "removeDiscount" ? removeDiscountNote : type === "featured" ? null : (
           <BpNumberInput name="value" label={label} value={value} onValueChange={(next) => { setValue(next); onClearValueError(); }} isPrice={isPriceLike} showWords={isPriceLike} error={valueError} disabled={isDisabled} />
         )}
         {type === "scheduledDiscount" && (
@@ -113,7 +125,10 @@ function BulkEditFields({
       {(type === "discount" || type === "scheduledDiscount") && (
         <HeroSelectField name="bulk-edit-unit" label="واحد تخفیف" value={unit} onValueChange={(next) => setUnit(next as DiscountUnit)} options={unitOptions as HeroSelectOption[]} includeEmptyOption={false} disabled={isDisabled} />
       )}
-      {type === "removeDiscount" ? removeDiscountNote : (
+      {type === "featured" && (
+        <HeroSelectField name="bulk-edit-featured" label="نوع تغییر ویژه" value={featuredAction} onValueChange={(next) => setFeaturedAction(next as FeaturedAction)} options={featuredActionOptions as HeroSelectOption[]} includeEmptyOption={false} disabled={isDisabled} />
+      )}
+      {type === "removeDiscount" || type === "featured" ? null : (
         <label className={adminLabelClass}>{label}<HeroNumberInput name="value" value={value} onValueChange={(next) => { setValue(next); onClearValueError(); }} isPrice={isPriceLike} error={valueError} disabled={isDisabled} fullWidth variant="secondary" className={adminFieldClass} /></label>
       )}
       {type === "scheduledDiscount" && (
@@ -131,6 +146,7 @@ function ProductBulkEditModal({ open, ids, variantTypeNames, variantProductCount
   const [value, setValue] = useState("");
   const [startsAt, setStartsAt] = useState<string | null>(null);
   const [endsAt, setEndsAt] = useState<string | null>(null);
+  const [featuredAction, setFeaturedAction] = useState<FeaturedAction>("add");
   const [loading, setLoading] = useState(false);
   // Field-level errors sit under their own control; `formError` is only for a failure that
   // belongs to the request as a whole (the server unreachable, etc.), not to one input.
@@ -140,7 +156,7 @@ function ProductBulkEditModal({ open, ids, variantTypeNames, variantProductCount
   const fieldsRef = useRef<HTMLDivElement>(null);
 
   function reset() {
-    setType("price"); setMethod("set"); setUnit("PERCENT"); setValue(""); setStartsAt(null); setEndsAt(null);
+    setType("price"); setMethod("set"); setUnit("PERCENT"); setValue(""); setStartsAt(null); setEndsAt(null); setFeaturedAction("add");
     setValueError(undefined); setDatesError(undefined); setFormError("");
   }
 
@@ -155,7 +171,7 @@ function ProductBulkEditModal({ open, ids, variantTypeNames, variantProductCount
     const amount = Number(value);
     let nextValueError: string | undefined;
     let nextDatesError: string | undefined;
-    if (type !== "removeDiscount") {
+    if (type !== "removeDiscount" && type !== "featured") {
       if (!value || !Number.isFinite(amount) || amount <= 0) nextValueError = "مقدار را وارد کنید.";
       else if ((type === "discount" || type === "scheduledDiscount") && unit === "PERCENT" && amount > 100) nextValueError = "درصد تخفیف نمی‌تواند بیشتر از ۱۰۰ باشد.";
     }
@@ -185,8 +201,9 @@ function ProductBulkEditModal({ open, ids, variantTypeNames, variantProductCount
           type,
           ...(type === "price" || type === "stock" ? { method } : {}),
           ...(type === "discount" || type === "scheduledDiscount" ? { unit } : {}),
-          ...(type !== "removeDiscount" ? { value: amount } : {}),
+          ...(type !== "removeDiscount" && type !== "featured" ? { value: amount } : {}),
           ...(type === "scheduledDiscount" ? { startsAt, endsAt } : {}),
+          ...(type === "featured" ? { featuredAction } : {}),
         }),
       }, { fallbackMessage: "ویرایش گروهی انجام نشد." });
       toast.success("ویرایش گروهی انجام شد", {
@@ -227,6 +244,7 @@ function ProductBulkEditModal({ open, ids, variantTypeNames, variantProductCount
           value={value} setValue={setValue}
           startsAt={startsAt} setStartsAt={setStartsAt}
           endsAt={endsAt} setEndsAt={setEndsAt}
+          featuredAction={featuredAction} setFeaturedAction={setFeaturedAction}
           isDisabled={loading}
           valueError={valueError} onClearValueError={() => setValueError(undefined)}
           datesError={datesError} onClearDatesError={() => setDatesError(undefined)}
@@ -234,8 +252,9 @@ function ProductBulkEditModal({ open, ids, variantTypeNames, variantProductCount
       </div>
       {/* Combinations carry their own price, stock and discount — the base product's fields stay
          untouched once it has any, so this note keeps the reach of the change from being a surprise.
-         Naming the actual variant types found in the selection beats a generic example. */}
-      {variantProductCount > 0 && (
+         Naming the actual variant types found in the selection beats a generic example. «ویژه» is
+         product-only and never reaches a combination, so this would be misleading for it. */}
+      {type !== "featured" && variantProductCount > 0 && (
         <p className="bp-muted m-0 text-[11px] leading-6 text-[var(--muted)]">
           {variantProductCount.toLocaleString("fa-IR")} محصول انتخاب‌شده تنوع ({variantTypeNames.join("، ")}) دارند؛ این تغییر روی همهٔ ترکیب‌های آن‌ها اعمال می‌شود.
         </p>
