@@ -47,6 +47,10 @@ export async function POST(request: Request) {
     const { mediaIds, optionTypes, variants, optionGuideId, attributes, ...input } = completeProductSchema.parse({ ...(await request.json()), storeIndustry });
     const category = input.categoryId ? await db.category.findUnique({ where: { id: input.categoryId }, select: { attributeSchema: true } }) : null;
     if (input.categoryId && !category) return NextResponse.json({ message: "دسته‌بندی انتخاب‌شده پیدا نشد." }, { status: 422 });
+    if (input.brandId) {
+      const brand = await db.brand.findUnique({ where: { id: input.brandId }, select: { id: true } });
+      if (!brand) return NextResponse.json({ message: "برند انتخاب‌شده پیدا نشد." }, { status: 422 });
+    }
     const attributeValidation = validateProductAttributes(category?.attributeSchema ?? [], attributes);
     if (!attributeValidation.ok) return NextResponse.json({ message: attributeValidation.message }, { status: 422 });
     const variantError = await validateVariantSetup(db, optionTypes, variants);
@@ -61,7 +65,7 @@ export async function POST(request: Request) {
       const created = await tx.product.create({ data: { ...input, attributes: attributeValidation.data, discountStartsAt: tehranDateStart(input.discountStartsAt), discountEndsAt: tehranDateEnd(input.discountEndsAt), description: sanitizeProductDescription(input.description), optionGuideId } });
       await writeVariantSetup(tx, created.id, optionTypes, variants);
       if (mediaIds.length) await tx.productMedia.createMany({ data: mediaIds.map((mediaId, position) => ({ productId: created.id, mediaId, position, isCover: position === 0 })) });
-      const result = await tx.product.findUniqueOrThrow({ where: { id: created.id }, include: { media: { include: { media: true }, orderBy: { position: "asc" } }, category: true, variants: { orderBy: { createdAt: "asc" } }, optionTypes: productOptionTypeInclude, optionGuide: true } });
+      const result = await tx.product.findUniqueOrThrow({ where: { id: created.id }, include: { media: { include: { media: true }, orderBy: { position: "asc" } }, category: true, brand: true, variants: { orderBy: { createdAt: "asc" } }, optionTypes: productOptionTypeInclude, optionGuide: true } });
       const after = productAuditSnapshot(result);
       await tx.auditLog.create({ data: { actorId: actor.id, action: "PRODUCT_CREATE", entityType: "Product", entityId: created.id, ...auditRequestContext(request, {
         subject: { id: result.id, type: "Product", name: result.name, sku: result.sku },

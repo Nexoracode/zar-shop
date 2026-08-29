@@ -121,6 +121,7 @@ export async function getStorefrontCatalog(query: StorefrontCatalogQuery, catego
     ...(query.q ? { OR: [{ name: { contains: query.q } }, { sku: { contains: query.q } }, { slug: { contains: query.q } }, { category: { name: { contains: query.q } } }] } : {}),
     ...(catalogSettings.hideOutOfStockProducts ? { stock: { gt: 0 } } : {}),
     ...(categoryIds ? { categoryId: { in: categoryIds } } : {}),
+    ...(query.brandSlug ? { brand: { slug: query.brandSlug } } : {}),
   };
   const [products, gold, facetCategories] = await Promise.all([
     db.product.findMany({ where, select: catalogProductSelect }),
@@ -185,7 +186,7 @@ export async function getStorefrontCatalog(query: StorefrontCatalogQuery, catego
   const pageProducts = sortedProducts.slice((page - 1) * pageSize, page * pageSize);
 
   return {
-    filters: { q: query.q, sortby: query.sortby, MinPrice: query.MinPrice, MaxPrice: query.MaxPrice, category: query.category, brand: query.brand, color: categoryIds ? query.color : undefined, attr: categoryIds ? query.attr : undefined, inStock: query.inStock, hasDiscount: query.hasDiscount, freeShipping: query.freeShipping, sameDayDelivery: query.sameDayDelivery },
+    filters: { q: query.q, sortby: query.sortby, MinPrice: query.MinPrice, MaxPrice: query.MaxPrice, category: query.category, brandSlug: query.brandSlug, brand: query.brand, color: categoryIds ? query.color : undefined, attr: categoryIds ? query.attr : undefined, inStock: query.inStock, hasDiscount: query.hasDiscount, freeShipping: query.freeShipping, sameDayDelivery: query.sameDayDelivery },
     facets: {
       brands: [...brandCounts].map(([value, count]) => ({ value, count })).sort((left, right) => left.value.localeCompare(right.value, "fa")),
       colors: categoryIds ? colors.map((color) => ({ ...color, count: colorCounts.get(color.id) ?? 0 })).filter((color) => color.count > 0) : [],

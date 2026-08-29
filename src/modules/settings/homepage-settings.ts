@@ -3,7 +3,7 @@ import { db } from "@/lib/db";
 import { STORE_SETTING_ID } from "@/modules/settings/store-settings";
 import { homepageFieldLimits } from "@/modules/settings/settings-limits";
 
-export const homepageSectionIds = ["HERO", "CATEGORIES", "FEATURED_PRODUCTS", "POPULAR_PRODUCTS", "BEST_SELLING_PRODUCTS", "LATEST_PRODUCTS", "ABOUT", "PROMISES", "CONCIERGE"] as const;
+export const homepageSectionIds = ["HERO", "CATEGORIES", "BRANDS", "FEATURED_PRODUCTS", "POPULAR_PRODUCTS", "BEST_SELLING_PRODUCTS", "LATEST_PRODUCTS", "ABOUT", "PROMISES", "CONCIERGE"] as const;
 export type HomepageSectionId = (typeof homepageSectionIds)[number];
 export type HomepageLayoutItemId = HomepageSectionId | `TILE_GROUP:${string}`;
 export const homepageTileLayouts = ["TWO_COLUMNS", "THREE_COLUMNS", "FOUR_COLUMNS", "TWO_BY_TWO"] as const;
@@ -105,8 +105,8 @@ const storedHeroSlidesSchema = z.array(heroSlideSchema.extend({ href: safeHrefSc
 
 function homepageBaseSectionIds(industry: "GOLD" | "GENERAL"): HomepageSectionId[] {
   return industry === "GENERAL"
-    ? ["HERO", "CATEGORIES", "FEATURED_PRODUCTS", "POPULAR_PRODUCTS", "BEST_SELLING_PRODUCTS", "LATEST_PRODUCTS"]
-    : ["HERO", "LATEST_PRODUCTS", "ABOUT", "PROMISES", "CONCIERGE"];
+    ? ["HERO", "CATEGORIES", "BRANDS", "FEATURED_PRODUCTS", "POPULAR_PRODUCTS", "BEST_SELLING_PRODUCTS", "LATEST_PRODUCTS"]
+    : ["HERO", "BRANDS", "LATEST_PRODUCTS", "ABOUT", "PROMISES", "CONCIERGE"];
 }
 
 function normalizeStoredSections(value: unknown, industry: "GOLD" | "GENERAL", tileGroups: z.infer<typeof homepageTileGroupsSchema>) {

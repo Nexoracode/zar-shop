@@ -3,6 +3,7 @@ import Link from "next/link";
 import type { LucideIcon } from "lucide-react";
 import { ChevronLeft, Dumbbell, HeartPulse, House, Laptop, Shirt, ShoppingBag, Smartphone, Sparkles } from "lucide-react";
 import { DragScrollRow } from "@/components/drag-scroll-row";
+import { HomepageBrands } from "@/components/homepage-brands";
 import { HomepageProductFeed } from "@/components/homepage-product-feed";
 import { HomepageBestSellers } from "@/components/homepage-best-sellers";
 import { ProductCard } from "@/components/product-card";
@@ -40,7 +41,7 @@ function ProductRail({ title, description, products, href }: { title: string; de
 }
 
 export async function GeneralHome() {
-  const [homepage, latestFeed, popularFeed, categories] = await Promise.all([
+  const [homepage, latestFeed, popularFeed, categories, brands] = await Promise.all([
     getHomepageSettings(),
     getStorefrontProductFeed({ sort: "LATEST", page: 1 }),
     getStorefrontProductFeed({ sort: "POPULAR", page: 1, pageSize: 12 }),
@@ -49,6 +50,12 @@ export async function GeneralHome() {
       include: { image: true, _count: { select: { products: { where: { status: "ACTIVE", storeIndustry: "GENERAL" } } } } },
       orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
       take: 10,
+    }),
+    db.brand.findMany({
+      where: { isActive: true, featured: true },
+      include: { logo: { select: { url: true, alt: true } } },
+      orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
+      take: 20,
     }),
   ]);
 
@@ -70,6 +77,8 @@ export async function GeneralHome() {
         return <Link key={category.id} href={`/products?category=${category.slug}`} className="group grid min-w-0 justify-items-center gap-2.5 text-center"><span className={`relative grid aspect-square w-full max-w-[112px] place-items-center overflow-hidden rounded-full ${categoryTones[index % categoryTones.length]} transition duration-300 group-hover:-translate-y-1 group-hover:shadow-md`}>{category.image?.type === "IMAGE" ? <Image src={category.image.url} alt={category.image.alt ?? category.name} fill sizes="112px" className="object-cover transition duration-500 group-hover:scale-105" /> : <><span className="absolute -left-4 -top-4 size-14 rounded-full bg-white/50" /><Icon size={38} strokeWidth={1.4} /></>}</span><span className="w-full truncate text-xs font-bold text-[#3d4450]">{category.name}</span><small className="-mt-1 text-[10px] text-[#9298a2]">{category._count.products.toLocaleString("fa-IR")} کالا</small></Link>;
       })}</div>
     </section>}
+
+    {brands.length > 0 && <div {...sectionProps("BRANDS")} className={container}><HomepageBrands brands={brands} /></div>}
 
     {discountedProducts.length > 0 && <section {...sectionProps("FEATURED_PRODUCTS")} className={`${container} overflow-hidden rounded-2xl bg-[var(--brand-primary)] p-3 text-[var(--brand-primary-foreground)] sm:p-4 lg:p-5`} aria-label="پیشنهادهای ویژه">
       <div className="grid min-w-0 gap-4 lg:grid-cols-[170px_minmax(0,1fr)] lg:items-center">

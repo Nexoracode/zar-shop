@@ -16,6 +16,7 @@ import { env } from "@/lib/env";
 type ProductSearchParams = {
   q?: string;
   category?: string;
+  brandSlug?: string;
   page?: string;
   sortby?: string;
   MinPrice?: string;
@@ -32,6 +33,7 @@ type ProductSearchParams = {
 type ProductHrefState = {
   q?: string;
   category?: string;
+  brandSlug?: string;
   page?: string;
   sortby?: string;
   MinPrice?: string;
@@ -54,7 +56,8 @@ export async function generateMetadata({ searchParams }: { searchParams: Promise
     ? "جدیدترین زیورآلات طلا با قیمت لحظه‌ای و فاکتور رسمی."
     : "کالاهای فروشگاه با قیمت به‌روز و ارسال قابل پیگیری.";
   const category = typeof params.category === "string" ? params.category : undefined;
-  const canonicalUrl = `${env.APP_URL}/products${category ? `?category=${encodeURIComponent(category)}` : ""}`;
+  const brandSlug = typeof params.brandSlug === "string" ? params.brandSlug : undefined;
+  const canonicalUrl = `${env.APP_URL}/products${category ? `?category=${encodeURIComponent(category)}` : brandSlug ? `?brandSlug=${encodeURIComponent(brandSlug)}` : ""}`;
   return { title, description, alternates: { canonical: canonicalUrl } };
 }
 
@@ -67,6 +70,8 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
   const selectedCategory = query.category ? allCategories.find((category) => category.slug === query.category) : null;
   if (query.category && !selectedCategory) notFound();
   const categoryIds = selectedCategory ? collectCategoryAndDescendantIds(selectedCategory.id, allCategories) : undefined;
+  const selectedBrand = query.brandSlug ? await db.brand.findFirst({ where: { slug: query.brandSlug, isActive: true }, select: { name: true, slug: true } }) : null;
+  if (query.brandSlug && !selectedBrand) notFound();
   const catalog = await getStorefrontCatalog(query, categoryIds);
   const { page, totalPages: pageCount, totalItems: total } = catalog.pagination;
   const sortOptions = [
@@ -81,6 +86,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
     const values: ProductHrefState = {
       q: query.q,
       category: query.category,
+      brandSlug: query.brandSlug,
       sortby: query.sortby,
       MinPrice: query.MinPrice?.toString(),
       MaxPrice: query.MaxPrice?.toString(),
@@ -97,6 +103,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
     const next = new URLSearchParams();
     if (values.q) next.set("q", values.q);
     if (values.category) next.set("category", values.category);
+    if (values.brandSlug) next.set("brandSlug", values.brandSlug);
     if (values.sortby) next.set("sortby", values.sortby);
     if (values.MinPrice) next.set("MinPrice", values.MinPrice);
     if (values.MaxPrice) next.set("MaxPrice", values.MaxPrice);
@@ -111,7 +118,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
     return `/products?${next.toString()}`;
   }
 
-  const resetFiltersHref = productsHref({ MinPrice: undefined, MaxPrice: undefined, brand: [], color: [], attr: [], inStock: undefined, hasDiscount: undefined, freeShipping: undefined, sameDayDelivery: undefined, page: undefined });
+  const resetFiltersHref = productsHref({ MinPrice: undefined, MaxPrice: undefined, brandSlug: undefined, brand: [], color: [], attr: [], inStock: undefined, hasDiscount: undefined, freeShipping: undefined, sameDayDelivery: undefined, page: undefined });
   const filters = <StorefrontCatalogFilters
     key={[query.MinPrice, query.MaxPrice].join("|")}
     facets={catalog.facets}
@@ -133,6 +140,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
       <nav className="mb-5 flex flex-wrap items-center gap-2 text-xs text-slate-500" aria-label="مسیر صفحه">
         <Link href="/" className="transition hover:text-slate-900">خانه</Link><span>/</span>
         {selectedCategory ? <><Link href="/products" className="transition hover:text-slate-900">محصولات</Link><span>/</span><span className="font-bold text-slate-800">{selectedCategory.name}</span></> : <span className="font-bold text-slate-800">محصولات</span>}
+        {selectedBrand && <><span>/</span><span className="font-bold text-slate-800">برند {selectedBrand.name}</span><Link href={productsHref({ brandSlug: undefined, page: undefined })} className="text-[11px] font-bold text-[var(--brand-primary)]">حذف</Link></>}
       </nav>
       <div className="grid items-start gap-6 lg:grid-cols-[270px_minmax(0,1fr)]">
         <aside className="sticky top-[var(--storefront-sticky-offset,112px)] hidden lg:block" aria-label="فیلتر محصولات">{filters}</aside>

@@ -34,7 +34,7 @@ export function useBulkSelection() {
   return context;
 }
 
-export function AdminBulkEditor({ entity, entityLabel, ids, actions, children, desktopClassName = "hidden md:block", onCompleted, extraAction }: { entity: "products" | "categories" | "orders" | "users" | "reviews" | "colors" | "optionTypes" | "promotions" | "contactMessages" | "paymentGateways" | "smsProviders" | "smsCampaigns"; entityLabel: string; ids: string[]; actions: AdminBulkAction[]; children: ReactNode; desktopClassName?: string; onCompleted?: (result: { action: string; ids: string[] }) => void; /** A caller-owned action beside the quick-edit control — e.g. products' own bulk-edit modal trigger. Reads the selection itself via `useBulkSelection`. */ extraAction?: ReactNode }) {
+export function AdminBulkEditor({ entity, entityLabel, ids, actions, children, desktopClassName = "hidden md:block", onCompleted, extraAction }: { entity: "products" | "categories" | "brands" | "orders" | "users" | "reviews" | "colors" | "optionTypes" | "promotions" | "contactMessages" | "paymentGateways" | "smsProviders" | "smsCampaigns"; entityLabel: string; ids: string[]; actions: AdminBulkAction[]; children: ReactNode; desktopClassName?: string; onCompleted?: (result: { action: string; ids: string[] }) => void; /** A caller-owned action beside the quick-edit control — e.g. products' own bulk-edit modal trigger. Reads the selection itself via `useBulkSelection`. */ extraAction?: ReactNode }) {
   const router = useRouter();
   const template = useAdminTemplate();
   const [selected, setSelected] = useState<Set<string>>(new Set());

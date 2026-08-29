@@ -8,7 +8,7 @@ import { auditRequestContext } from "@/modules/audit/request-context";
 import { releaseInventory } from "@/modules/orders/inventory";
 
 const bodySchema = z.object({
-  entity: z.enum(["products", "categories", "orders", "users", "reviews", "colors", "optionTypes", "promotions", "contactMessages", "paymentGateways", "smsProviders", "smsCampaigns"]),
+  entity: z.enum(["products", "categories", "brands", "orders", "users", "reviews", "colors", "optionTypes", "promotions", "contactMessages", "paymentGateways", "smsProviders", "smsCampaigns"]),
   action: z.string().min(1).max(191),
   ids: z.array(z.string().min(1)).min(1).max(100),
 });
@@ -47,6 +47,10 @@ export async function PATCH(request: Request) {
     if (action === "active:on" || action === "active:off") updated = (await db.category.updateMany({ where: { id: { in: uniqueIds } }, data: { isActive: action === "active:on" } })).count;
     else if (action === "featured:on" || action === "featured:off") updated = (await db.category.updateMany({ where: { id: { in: uniqueIds } }, data: { featured: action === "featured:on" } })).count;
     else return NextResponse.json({ message: "عملیات دسته‌بندی معتبر نیست." }, { status: 422 });
+  } else if (entity === "brands") {
+    if (action === "active:on" || action === "active:off") updated = (await db.brand.updateMany({ where: { id: { in: uniqueIds } }, data: { isActive: action === "active:on" } })).count;
+    else if (action === "featured:on" || action === "featured:off") updated = (await db.brand.updateMany({ where: { id: { in: uniqueIds } }, data: { featured: action === "featured:on" } })).count;
+    else return NextResponse.json({ message: "عملیات برند معتبر نیست." }, { status: 422 });
   } else if (entity === "orders") {
     if (!action.startsWith("status:")) return NextResponse.json({ message: "عملیات سفارش معتبر نیست." }, { status: 422 });
     const status = action.slice(7) as OrderStatus;

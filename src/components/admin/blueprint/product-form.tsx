@@ -29,7 +29,7 @@ import { productFieldLimits } from "@/modules/products/schemas";
 import { useUnsavedChangesWarning } from "@/components/admin/use-unsaved-changes-warning";
 
 export type EditableProduct = {
-  id: string; sku: string; name: string; slug: string; description: string; categoryId: string; purity: number; weightGrams: number;
+  id: string; sku: string; name: string; slug: string; description: string; categoryId: string; brandId: string | null; purity: number; weightGrams: number;
   storeIndustry: "GOLD" | "GENERAL"; makingFeeType: string; makingFeeValue: number; profitPercent: number; taxPercent: number; fixedPrice: number | null; stock: number; preparationDays: number;
   discountType: "PERCENT" | "FIXED" | null; discountValue: number | null; discountStartsAt: string | null; discountEndsAt: string | null;
   status: "DRAFT" | "ACTIVE" | "ARCHIVED"; featured: boolean; media: MediaChoice[]; optionTypes: ProductTypeDraft[]; variants: VariantDraft[]; optionGuide: MediaChoice | null;
@@ -39,7 +39,8 @@ export type EditableProduct = {
 };
 
 export type ProductCategoryOption = { id: string; name: string; parentName: string | null; attributeGroups: CategoryAttributeGroup[] };
-type Props = { storeIndustry: "GOLD" | "GENERAL"; categories?: ProductCategoryOption[]; colors?: Array<{ id: string; name: string; hex: string }>; optionLibrary?: LibraryType[]; product?: EditableProduct };
+export type ProductBrandOption = { id: string; name: string };
+type Props = { storeIndustry: "GOLD" | "GENERAL"; categories?: ProductCategoryOption[]; brands?: ProductBrandOption[]; colors?: Array<{ id: string; name: string; hex: string }>; optionLibrary?: LibraryType[]; product?: EditableProduct };
 
 /** Errors are keyed by the schema's own field names, so a zod issue maps straight onto a field. */
 type FieldErrors = Record<string, string>;
@@ -68,7 +69,7 @@ function Panel({ title, description, action, children, className = "" }: { title
   );
 }
 
-export function BlueprintProductForm({ storeIndustry, categories = [], colors = [], optionLibrary = [], product }: Props) {
+export function BlueprintProductForm({ storeIndustry, categories = [], brands = [], colors = [], optionLibrary = [], product }: Props) {
   const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
   const saveMenuTriggerRef = useRef<HTMLButtonElement>(null);
@@ -83,6 +84,7 @@ export function BlueprintProductForm({ storeIndustry, categories = [], colors = 
   const [sku, setSku] = useState(product?.sku ?? "");
   const [slug, setSlug] = useState(product?.slug ?? "");
   const [categoryId, setCategoryId] = useState(product?.categoryId ?? "");
+  const [brandId, setBrandId] = useState(product?.brandId ?? "");
   const [description, setDescription] = useState(product?.description ?? "");
   const [status, setStatus] = useState<"DRAFT" | "ACTIVE" | "ARCHIVED">(product?.status ?? "DRAFT");
   const [featured, setFeatured] = useState(product?.featured ?? false);
@@ -162,7 +164,7 @@ export function BlueprintProductForm({ storeIndustry, categories = [], colors = 
 
   function buildBody() {
     return {
-      sku, name, slug, description, categoryId, storeIndustry,
+      sku, name, slug, description, categoryId, brandId: brandId || null, storeIndustry,
       purity: storeIndustry === "GOLD" ? Number(purity) : 750,
       weightGrams: storeIndustry === "GOLD" ? Number(weightGrams) : 0,
       makingFeeType: storeIndustry === "GOLD" ? makingFeeType : "PERCENT",
@@ -316,6 +318,16 @@ export function BlueprintProductForm({ storeIndustry, categories = [], colors = 
               emptyLabel="دسته‌بندی با این نام پیدا نشد"
               onChange={(next) => { setCategoryId(next); clearError("categoryId"); }}
               options={categories.map((category) => ({ value: category.id, label: `${category.parentName ? `${category.parentName} ← ` : ""}${category.name}` }))}
+            />
+            <BpCombobox
+              name="brandId"
+              label="برند"
+              value={brandId}
+              error={errors.brandId}
+              placeholder="نام برند را بنویسید یا انتخاب کنید"
+              emptyLabel="برندی با این نام پیدا نشد"
+              onChange={(next) => { setBrandId(next); clearError("brandId"); }}
+              options={brands.map((brand) => ({ value: brand.id, label: brand.name }))}
             />
           </div>
         </Panel>

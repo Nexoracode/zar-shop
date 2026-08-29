@@ -42,11 +42,11 @@ export function MediaPickerDialog({ open, scope, multiple = false, allowedTypes,
   const uploadInputRef = useRef<HTMLInputElement>(null);
   const template = useAdminTemplate();
 
-  const scopeLabel = scope === "CATEGORY" ? "دسته‌بندی" : scope === "HOMEPAGE" ? "صفحه اصلی" : scope === "BRAND" ? "هویت بصری" : "محصول";
+  const scopeLabel = scope === "CATEGORY" ? "دسته‌بندی" : scope === "HOMEPAGE" ? "صفحه اصلی" : scope === "BRAND" ? "هویت بصری" : scope === "PRODUCT_BRAND" ? "برند محصول" : "محصول";
   const allowedTypeKey = (allowedTypes ?? (scope === "CATEGORY" ? ["IMAGE"] : ["IMAGE", "VIDEO"])).join(",");
   const acceptedFiles = allowedTypeKey.includes("DOCUMENT")
     ? "image/jpeg,image/png,image/webp,application/pdf"
-    : scope === "HOMEPAGE" ? "image/jpeg,image/png,image/webp,image/gif" : scope === "CATEGORY" || scope === "BRAND" ? "image/jpeg,image/png,image/webp" : "image/jpeg,image/png,image/webp,video/mp4,video/webm";
+    : scope === "HOMEPAGE" ? "image/jpeg,image/png,image/webp,image/gif" : scope === "CATEGORY" || scope === "BRAND" || scope === "PRODUCT_BRAND" ? "image/jpeg,image/png,image/webp" : "image/jpeg,image/png,image/webp,video/mp4,video/webm";
 
   const load = useCallback(async (signal?: AbortSignal) => {
     setLoading(true);

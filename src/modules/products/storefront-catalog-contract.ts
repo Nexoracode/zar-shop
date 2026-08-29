@@ -20,6 +20,9 @@ export const storefrontCatalogQuerySchema = z.object({
   MinPrice: optionalTomanAmount,
   MaxPrice: optionalTomanAmount,
   category: z.string().trim().min(1).max(120).optional(),
+  // The manufacturer a product is made by (`Brand`) — a single relation, unlike `brand` below,
+  // which is a category attribute's free-text values and can hold several at once.
+  brandSlug: z.string().trim().min(1).max(120).optional(),
   brand: optionalStringList,
   color: optionalStringList,
   attr: optionalStringList,
@@ -38,7 +41,7 @@ export type StorefrontCatalogQuery = z.infer<typeof storefrontCatalogQuerySchema
 
 export type StorefrontCatalogResult = {
   items: StorefrontProductCardItem[];
-  filters: Pick<StorefrontCatalogQuery, "q" | "sortby" | "MinPrice" | "MaxPrice" | "category" | "brand" | "color" | "attr" | "inStock" | "hasDiscount" | "freeShipping" | "sameDayDelivery">;
+  filters: Pick<StorefrontCatalogQuery, "q" | "sortby" | "MinPrice" | "MaxPrice" | "category" | "brandSlug" | "brand" | "color" | "attr" | "inStock" | "hasDiscount" | "freeShipping" | "sameDayDelivery">;
   facets: {
     brands: Array<{ value: string; count: number }>;
     colors: Array<{ id: string; name: string; hex: string; count: number }>;

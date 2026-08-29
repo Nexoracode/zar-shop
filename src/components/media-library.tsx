@@ -15,7 +15,7 @@ import { mediaUsageCount, type MediaUsageCounts } from "@/modules/media/usage";
 import { requestErrorMessage, requestJson } from "@/lib/api-request";
 import { readImageDimensions } from "@/modules/media/image-dimensions";
 
-export type MediaScope = "CATEGORY" | "PRODUCT" | "HOMEPAGE" | "BRAND";
+export type MediaScope = "CATEGORY" | "PRODUCT" | "HOMEPAGE" | "BRAND" | "PRODUCT_BRAND";
 export type MediaChoice = {
   id: string;
   title: string;
@@ -43,6 +43,7 @@ const scopes: Array<{ value: MediaScope; label: string }> = [
   { value: "PRODUCT", label: "محصولات" },
   { value: "HOMEPAGE", label: "صفحه اصلی" },
   { value: "BRAND", label: "هویت بصری" },
+  { value: "PRODUCT_BRAND", label: "برند محصول" },
 ];
 
 const typeFilters = [

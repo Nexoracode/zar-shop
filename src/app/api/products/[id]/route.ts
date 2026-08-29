@@ -80,6 +80,10 @@ export async function PATCH(request: Request, context: Context) {
     if (nextCategoryId && !category) return NextResponse.json({ message: "دسته‌بندی انتخاب‌شده پیدا نشد." }, { status: 422 });
     const attributeValidation = validateProductAttributes(category?.attributeSchema ?? [], nextAttributes);
     if (!attributeValidation.ok) return NextResponse.json({ message: attributeValidation.message }, { status: 422 });
+    if (input.brandId) {
+      const brand = await db.brand.findUnique({ where: { id: input.brandId }, select: { id: true } });
+      if (!brand) return NextResponse.json({ message: "برند انتخاب‌شده پیدا نشد." }, { status: 422 });
+    }
     if (mediaIds) {
       const media = mediaIds.length ? await db.mediaAsset.findMany({ where: { id: { in: mediaIds }, scope: "PRODUCT", type: { in: ["IMAGE", "VIDEO"] } }, select: { id: true } }) : [];
       if (media.length !== new Set(mediaIds).size) return NextResponse.json({ message: "یک یا چند رسانه محصول معتبر نیست." }, { status: 422 });
@@ -95,7 +99,7 @@ export async function PATCH(request: Request, context: Context) {
         if (mediaIds.length) await tx.productMedia.createMany({ data: mediaIds.map((mediaId, position) => ({ productId: id, mediaId, position, isCover: position === 0 })) });
       }
       if (optionTypes && variants) await writeVariantSetup(tx, id, optionTypes, variants);
-      const updated = await tx.product.findUniqueOrThrow({ where: { id }, include: { media: { include: { media: true }, orderBy: { position: "asc" } }, category: true, variants: { orderBy: { createdAt: "asc" } }, optionTypes: productOptionTypeInclude, optionGuide: true } });
+      const updated = await tx.product.findUniqueOrThrow({ where: { id }, include: { media: { include: { media: true }, orderBy: { position: "asc" } }, category: true, brand: true, variants: { orderBy: { createdAt: "asc" } }, optionTypes: productOptionTypeInclude, optionGuide: true } });
       const before = productAuditSnapshot(existingProduct);
       const after = productAuditSnapshot(updated);
       await tx.auditLog.create({ data: { actorId: actor.id, action: "PRODUCT_UPDATE", entityType: "Product", entityId: id, ...auditRequestContext(request, {

@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { BadgeCheck, PackageCheck, ReceiptText, Truck } from "lucide-react";
 import type { Prisma } from "@generated/prisma/client";
+import { HomepageBrands } from "@/components/homepage-brands";
 import { HomepageProductFeed } from "@/components/homepage-product-feed";
 import { StorefrontHeroSlider } from "@/components/storefront-hero-slider";
 import { StorefrontLicenses } from "@/components/storefront-licenses";
@@ -18,7 +19,7 @@ const container = "mx-auto w-[min(1440px,calc(100%-32px))] lg:w-[min(1440px,calc
 
 export async function GoldHome() {
   const settings = await getGeneralStoreSettings();
-  const [productFeed, homepageCategories, homepage] = await Promise.all([
+  const [productFeed, homepageCategories, homepage, brands] = await Promise.all([
     getStorefrontProductFeed({ sort: "LATEST", page: 1 }),
     db.category.findMany({
       where: { isActive: true, featured: true, products: { some: { status: "ACTIVE", storeIndustry: "GOLD" } } },
@@ -26,6 +27,12 @@ export async function GoldHome() {
       orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
     }),
     getHomepageSettings(),
+    db.brand.findMany({
+      where: { isActive: true, featured: true },
+      include: { logo: { select: { url: true, alt: true } } },
+      orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
+      take: 20,
+    }),
   ]);
 
   const categories = homepageCategories;
@@ -50,6 +57,8 @@ export async function GoldHome() {
     {homepage.tileGroups.map((group) => group.tiles.some((tile) => tile.media) && <section key={group.id} {...sectionProps(`TILE_GROUP:${group.id}`)} className="bg-white py-5 lg:py-10" aria-label="پیشنهادهای تصویری">
       <div className={container}><StorefrontImageTiles groups={[group]} /></div>
     </section>)}
+
+    {brands.length > 0 && <section {...sectionProps("BRANDS")} className="bg-white py-5 lg:py-10"><div className={container}><HomepageBrands brands={brands} /></div></section>}
 
     <section {...sectionProps("LATEST_PRODUCTS")} className="bg-white py-[30px] lg:py-[60px]" aria-labelledby="latest-products">
       <div className={container}>

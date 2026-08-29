@@ -27,7 +27,7 @@ const EXTENSIONS: Record<string, string> = {
 };
 
 function parseScope(value: string | null): MediaScope | null {
-  return value === "CATEGORY" || value === "PRODUCT" || value === "HOMEPAGE" || value === "BRAND" ? value : null;
+  return value === "CATEGORY" || value === "PRODUCT" || value === "HOMEPAGE" || value === "BRAND" || value === "PRODUCT_BRAND" ? value : null;
 }
 
 function parseType(value: string | null): MediaType | null {
@@ -111,7 +111,7 @@ export async function POST(request: Request) {
     if (!scope) return NextResponse.json({ message: "بخش گالری مشخص نشده است." }, { status: 422 });
     if (files.length > MAX_FILES) return NextResponse.json({ message: `در هر بار حداکثر ${MAX_FILES.toLocaleString("fa-IR")} فایل قابل بارگذاری است.` }, { status: 422 });
     if (files.reduce((total, file) => total + file.size, 0) > MAX_TOTAL_SIZE) return NextResponse.json({ message: "حجم مجموع فایل‌ها نباید بیشتر از ۱۰۰ مگابایت باشد." }, { status: 422 });
-    if (files.some((file) => !EXTENSIONS[file.type] || file.size > MAX_SIZE || ((scope === "CATEGORY" || scope === "BRAND") && !["image/jpeg", "image/png", "image/webp"].includes(file.type)) || (scope === "HOMEPAGE" && !file.type.startsWith("image/")))) {
+    if (files.some((file) => !EXTENSIONS[file.type] || file.size > MAX_SIZE || ((scope === "CATEGORY" || scope === "BRAND" || scope === "PRODUCT_BRAND") && !["image/jpeg", "image/png", "image/webp"].includes(file.type)) || (scope === "HOMEPAGE" && !file.type.startsWith("image/")))) {
       return NextResponse.json({ message: "نوع یا حجم فایل برای این بخش مجاز نیست." }, { status: 422 });
     }
 
@@ -125,7 +125,7 @@ export async function POST(request: Request) {
     const sharedTitle = typeof form.get("title") === "string" ? String(form.get("title")).trim() : "";
     const sharedAlt = typeof form.get("alt") === "string" && String(form.get("alt")).trim() ? String(form.get("alt")).trim() : null;
 
-    const folder = scope === "CATEGORY" ? "categories" : scope === "HOMEPAGE" ? "homepage" : scope === "BRAND" ? "brand" : "products";
+    const folder = scope === "CATEGORY" ? "categories" : scope === "HOMEPAGE" ? "homepage" : scope === "BRAND" ? "brand" : scope === "PRODUCT_BRAND" ? "product-brands" : "products";
     const uploaded: Array<{ file: File; storageKey: string; url: string }> = [];
     try {
       for (const file of files) {

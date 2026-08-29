@@ -80,7 +80,12 @@ enum MediaScope {
   CATEGORY
   PRODUCT
   HOMEPAGE
+  /// The store's own visual identity (logo, favicon, social image) — see `StoreSetting`'s
+  /// `brand*` fields. Not the same thing as `PRODUCT_BRAND`, a manufacturer a product is made by.
   BRAND
+  /// A product manufacturer's own logo (Samsung, Xiaomi, …) — kept apart from `BRAND`, which is
+  /// the store's own identity, not a product's.
+  PRODUCT_BRAND
 }
 
 enum OrderStatus {
@@ -403,6 +408,7 @@ model Product {
   status              ProductStatus        @default(DRAFT)
   storeIndustry       StoreIndustry        @default(GOLD)
   categoryId          String?
+  brandId             String?
   optionGuideId       String?
   purity              Int                  @default(750)
   weightGrams         Decimal              @db.Decimal(10, 3)
@@ -431,6 +437,7 @@ model Product {
   createdAt           DateTime             @default(now())
   updatedAt           DateTime             @updatedAt
   category            Category?            @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  brand               Brand?               @relation(fields: [brandId], references: [id], onDelete: SetNull)
   optionGuide         MediaAsset?          @relation("ProductOptionGuide", fields: [optionGuideId], references: [id], onDelete: SetNull)
   optionTypes         ProductOptionType[]
   variants            ProductVariant[]
@@ -442,9 +449,31 @@ model Product {
   visits              ProductVisit[]
 
   @@index([categoryId, status])
+  @@index([brandId, status])
   @@index([optionGuideId])
   @@index([featured, status])
   @@index([discountEndsAt])
+}
+
+/// A product's manufacturer — Samsung, Xiaomi, … — shown as its own logo strip on the homepage
+/// and filterable on the catalogue, the same role `Category` plays for grouping.
+model Brand {
+  id        String      @id @default(cuid())
+  name      String      @db.VarChar(100)
+  slug      String      @unique @db.VarChar(120)
+  logoId    String?
+  isActive  Boolean     @default(true)
+  /// Shown in the homepage's "محبوب‌ترین برندها" carousel — same role `Product.featured` and
+  /// `Category.featured` already play for their own homepage sections.
+  featured  Boolean     @default(false)
+  sortOrder Int         @default(0)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  logo      MediaAsset? @relation("ProductBrandLogo", fields: [logoId], references: [id], onDelete: SetNull)
+  products  Product[]
+
+  @@index([logoId])
+  @@index([isActive, featured, sortOrder])
 }
 
 model ProductReview {
@@ -725,6 +754,7 @@ model MediaAsset {
   products             ProductMedia[]
   optionGuideProducts  Product[]      @relation("ProductOptionGuide")
   categories           Category[]     @relation("CategoryImage")
+  brandLogos           Brand[]        @relation("ProductBrandLogo")
   homepageHeroDesktop  StoreSetting[] @relation("HomepageHeroDesktop")
   homepageHeroMobile   StoreSetting[] @relation("HomepageHeroMobile")
   homepagePromoDesktop StoreSetting[] @relation("HomepagePromoDesktop")
