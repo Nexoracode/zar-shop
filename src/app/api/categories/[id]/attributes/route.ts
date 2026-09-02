@@ -12,9 +12,13 @@ export async function GET(_request: Request, context: Context) {
   const actor = await getCurrentUser();
   if (!actor || !hasPermission(actor.role, "catalog:manage")) return NextResponse.json({ message: "دسترسی غیرمجاز است." }, { status: 403 });
   const { id } = await context.params;
-  const category = await db.category.findUnique({ where: { id }, select: { id: true, name: true, attributeSchema: true } });
+  const category = await db.category.findUnique({
+    where: { id },
+    select: { id: true, name: true, attributeSchema: true, products: { select: { attributes: true } } },
+  });
   if (!category) return NextResponse.json({ message: "دسته‌بندی پیدا نشد." }, { status: 404 });
-  return NextResponse.json({ id: category.id, name: category.name, groups: parseCategoryAttributeSchema(category.attributeSchema) });
+  const usedAttributeIds = [...new Set(category.products.flatMap((product) => parseProductAttributes(product.attributes).map((attribute) => attribute.attributeId)))];
+  return NextResponse.json({ id: category.id, name: category.name, groups: parseCategoryAttributeSchema(category.attributeSchema), usedAttributeIds });
 }
 
 export async function PATCH(request: Request, context: Context) {

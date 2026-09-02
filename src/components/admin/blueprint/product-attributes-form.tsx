@@ -3,14 +3,14 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "@heroui/react";
-import { ListChecks } from "lucide-react";
+import { ListChecks, SlidersHorizontal } from "lucide-react";
 import { AdminPageHeader } from "@/components/admin-ui";
 import { requestErrorMessage, requestJson } from "@/lib/api-request";
 import type { CategoryAttributeGroup, ProductAttributeValue } from "@/modules/products/attributes";
 import { BlueprintProductAttributes } from "./product-attributes-panel";
 import { BpButton, BpLinkButton } from "./ui";
 
-type Props = {
+type EditorProps = {
   productId: string;
   productName: string;
   productSku: string;
@@ -37,7 +37,27 @@ function Notice({ title, description, href, cta }: { title: string; description:
   );
 }
 
-export function BlueprintProductAttributesForm({ productId, productName, productSku, categoryId, categoryName, initialGroups, initialAttributes }: Props) {
+/** Page wrapper for the standalone route `/admin/products/[id]/attributes`. */
+export function BlueprintProductAttributesForm(props: EditorProps) {
+  return (
+    <>
+      <AdminPageHeader
+        flush
+        eyebrow={`محصول ${props.productSku}`}
+        title={`ویژگی‌های «${props.productName}»`}
+        description="مقادیر توصیفی این محصول را بر اساس ساختار ویژگی‌های دسته‌بندی تکمیل کنید."
+        backHref="/admin/product-attributes"
+        backLabel="بازگشت به ویژگی‌های محصولات"
+      />
+      <div className="mt-2">
+        <ProductAttributeValuesEditor {...props} />
+      </div>
+    </>
+  );
+}
+
+/** The editor body, usable both on its own route and embedded in the picker page. */
+export function ProductAttributeValuesEditor({ productId, productName, productSku, categoryId, categoryName, initialGroups, initialAttributes }: EditorProps) {
   const router = useRouter();
   const [groups, setGroups] = useState(initialGroups);
   const [values, setValues] = useState(initialAttributes);
@@ -85,55 +105,50 @@ export function BlueprintProductAttributesForm({ productId, productName, product
     }
   }
 
-  return (
-    <>
-      <AdminPageHeader
-        flush
-        eyebrow={`محصول ${productSku}`}
-        title={`ویژگی‌های «${productName}»`}
-        description="مقادیر توصیفی این محصول را بر اساس ساختار ویژگی‌های دسته‌بندی تکمیل کنید."
-        backHref="/admin/product-attributes"
-        backLabel="بازگشت به ویژگی‌های محصولات"
+  if (!categoryId) {
+    return (
+      <Notice
+        title="این محصول دسته‌بندی ندارد"
+        description="ویژگی‌های توصیفی از ساختار دستهٔ محصول خوانده می‌شوند. ابتدا از فرم محصول یک دسته‌بندی انتخاب و ذخیره کنید."
+        href={`/admin/products/${productId}/edit`}
+        cta="ویرایش محصول"
       />
+    );
+  }
 
-      {!categoryId ? (
-        <div className="mt-2">
-          <Notice
-            title="این محصول دسته‌بندی ندارد"
-            description="ویژگی‌های توصیفی از ساختار دستهٔ محصول خوانده می‌شوند. ابتدا از فرم محصول یک دسته‌بندی انتخاب و ذخیره کنید."
-            href={`/admin/products/${productId}/edit`}
-            cta="ویرایش محصول"
-          />
-        </div>
-      ) : (
-        <div className="mt-2 flex flex-col gap-2">
-          <div className="grid grid-cols-3 gap-2">
-            {[{ label: "کل ویژگی‌ها", value: definitions.length }, { label: "تکمیل‌شده", value: completedCount }, { label: "مهم و تکمیل‌شده", value: importantCount }].map((item) => (
-              <div key={item.label} className="bp-frame p-3">
-                <strong className="block text-lg font-bold">{item.value.toLocaleString("fa-IR")}</strong>
-                <span className="bp-muted mt-1 block text-[11px]">{item.label}</span>
-              </div>
-            ))}
-          </div>
-
-          <Panel>
-            <BlueprintProductAttributes
-              categoryName={categoryName ?? "بدون دسته‌بندی"}
-              groups={groups}
-              values={values}
-              onGroupsChange={setGroups}
-              onValuesChange={setValues}
-            />
-          </Panel>
-
-          <div className="bp-frame flex items-center justify-between gap-3 p-4">
-            <span className="bp-muted text-[12px]">
-              {dirty ? "تغییرات ذخیره‌نشده دارید." : `${completedCount.toLocaleString("fa-IR")} ویژگی از ${definitions.length.toLocaleString("fa-IR")} ویژگی تکمیل شده است.`}
-            </span>
-            <BpButton type="button" variant="primary" isPending={saving} disabled={!dirty} onClick={() => void save()}>ذخیره ویژگی‌ها</BpButton>
+  return (
+    <div className="flex flex-col gap-2">
+      <section className="bp-frame relative grid gap-3 p-[18px]">
+        <div className="flex items-center gap-2 border-b border-[var(--bp-divider)] pb-3">
+          <span className="grid h-8 w-8 shrink-0 place-items-center border border-[var(--bp-divider)] text-[var(--bp-muted)]"><SlidersHorizontal size={15} /></span>
+          <div className="min-w-0">
+            <strong className="block truncate text-[13px]">ویژگی‌های «{productName}»</strong>
+            <span className="bp-muted block truncate text-[11px]"><span dir="ltr" className="font-mono">{productSku}</span> · از دستهٔ «{categoryName ?? "بدون دسته‌بندی"}»</span>
           </div>
         </div>
-      )}
-    </>
+        <div className="grid grid-cols-3 gap-2">
+          {[{ label: "کل ویژگی‌ها", value: definitions.length }, { label: "تکمیل‌شده", value: completedCount }, { label: "مهم و تکمیل‌شده", value: importantCount }].map((item) => (
+            <div key={item.label} className="border border-[var(--bp-divider)] p-2.5">
+              <strong className="block text-base font-bold">{item.value.toLocaleString("fa-IR")}</strong>
+              <span className="bp-muted mt-1 block text-[10px]">{item.label}</span>
+            </div>
+          ))}
+        </div>
+        <BlueprintProductAttributes
+          categoryName={categoryName ?? "بدون دسته‌بندی"}
+          groups={groups}
+          values={values}
+          onGroupsChange={setGroups}
+          onValuesChange={setValues}
+        />
+      </section>
+
+      <div className="bp-frame flex items-center justify-between gap-3 p-4">
+        <span className="bp-muted text-[12px]">
+          {dirty ? "تغییرات ذخیره‌نشده دارید." : `${completedCount.toLocaleString("fa-IR")} ویژگی از ${definitions.length.toLocaleString("fa-IR")} ویژگی تکمیل شده است.`}
+        </span>
+        <BpButton type="button" variant="primary" isPending={saving} disabled={!dirty} onClick={() => void save()}>ذخیره ویژگی‌ها</BpButton>
+      </div>
+    </div>
   );
 }

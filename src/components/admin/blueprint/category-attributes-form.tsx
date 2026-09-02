@@ -3,7 +3,7 @@
 import { useState, type DragEvent } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "@heroui/react";
-import { GripVertical, Info, Plus, Trash2 } from "lucide-react";
+import { GripVertical, Info, Plus, SlidersHorizontal, Trash2 } from "lucide-react";
 import { AdminPageHeader } from "@/components/admin-ui";
 import { requestErrorMessage, requestJson } from "@/lib/api-request";
 import { attributeFieldLimits, categoryAttributeSchema, type CategoryAttributeGroup } from "@/modules/products/attributes";
@@ -22,7 +22,32 @@ function move<T>(list: T[], from: number, to: number): T[] {
   return next;
 }
 
-export function BlueprintCategoryAttributesForm({ categoryId, categoryName, initialGroups, usedAttributeIds }: {
+/** Page wrapper for the standalone route `/admin/categories/[id]/attributes`. */
+export function BlueprintCategoryAttributesForm(props: {
+  categoryId: string;
+  categoryName: string;
+  initialGroups: CategoryAttributeGroup[];
+  usedAttributeIds: string[];
+}) {
+  return (
+    <>
+      <AdminPageHeader
+        flush
+        eyebrow="تنوع و ویژگی‌ها"
+        title={`ویژگی‌های «${props.categoryName}»`}
+        description="گروه‌ها و ویژگی‌هایی را تعریف کنید که فقط برای محصولات همین دسته‌بندی قابل تکمیل باشند."
+        backHref="/admin/category-attributes"
+        backLabel="بازگشت به ویژگی‌های دسته‌بندی"
+      />
+      <div className="mt-2">
+        <CategoryAttributeSchemaEditor {...props} />
+      </div>
+    </>
+  );
+}
+
+/** The editor body, usable both on its own route and embedded in the picker page. */
+export function CategoryAttributeSchemaEditor({ categoryId, categoryName, initialGroups, usedAttributeIds }: {
   categoryId: string;
   categoryName: string;
   initialGroups: CategoryAttributeGroup[];
@@ -117,16 +142,14 @@ export function BlueprintCategoryAttributesForm({ categoryId, categoryName, init
 
   return (
     <>
-      <AdminPageHeader
-        flush
-        eyebrow="تنوع و ویژگی‌ها"
-        title={`ویژگی‌های «${categoryName}»`}
-        description="گروه‌ها و ویژگی‌هایی را تعریف کنید که فقط برای محصولات همین دسته‌بندی قابل تکمیل باشند."
-        backHref="/admin/category-attributes"
-        backLabel="بازگشت به ویژگی‌های دسته‌بندی"
-      />
-
-      <section className="bp-frame relative mt-2 grid gap-4 p-[18px]">
+      <section className="bp-frame relative grid gap-4 p-[18px]">
+        <div className="flex items-center gap-2 border-b border-[var(--bp-divider)] pb-3">
+          <span className="grid h-8 w-8 shrink-0 place-items-center border border-[var(--bp-divider)] text-[var(--bp-muted)]"><SlidersHorizontal size={15} /></span>
+          <div className="min-w-0">
+            <strong className="block truncate text-[13px]">ویژگی‌های «{categoryName}»</strong>
+            <span className="bp-muted block text-[11px]">گروه‌ها و ویژگی‌های توصیفی مخصوص محصولات این دسته</span>
+          </div>
+        </div>
         <p className="bp-muted m-0 flex items-start gap-1.5 text-[12px]">
           <Info size={14} className="mt-0.5 shrink-0" aria-hidden />
           ویژگی برای نمایش مشخصات توصیفی محصول است؛ رنگ، سایز، وزن، موجودی و قیمت انتخابی که روی خرید اثر می‌گذارند از «انواع تنوع» مدیریت می‌شوند.

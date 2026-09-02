@@ -1,6 +1,6 @@
 import { AdminPageHeader } from "@/components/admin-ui";
 import { CategoryAttributePicker } from "@/components/category-attribute-picker";
-import { BlueprintCategoryAttributesList } from "@/components/admin/blueprint/category-attributes-list";
+import { BlueprintCategoryAttributesManager } from "@/components/admin/blueprint/category-attributes-manager";
 import { db } from "@/lib/db";
 import { requirePermission } from "@/modules/auth/session";
 import { getBrandSettings } from "@/modules/settings/brand-settings";
@@ -39,7 +39,7 @@ export default async function CategoryAttributesPage() {
   });
 
   if (brandSettings.adminTemplate === "BLUEPRINT") {
-    return <BlueprintCategoryAttributesList categories={rows} />;
+    return <BlueprintCategoryAttributesManager categories={rows} />;
   }
 
   return (
