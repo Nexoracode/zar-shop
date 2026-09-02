@@ -161,7 +161,6 @@ export function CategoryAttributeSchemaEditor({ categoryId, categoryName, initia
             value={newGroupName}
             maxLength={attributeFieldLimits.groupName}
             error={groupError || undefined}
-            reserveMessage={false}
             placeholder="مثلاً مشخصات کلی"
             wrapperClassName="w-[min(100%,240px)]"
             onChange={(event) => { setNewGroupName(event.target.value); setGroupError(""); }}
@@ -199,7 +198,7 @@ export function CategoryAttributeSchemaEditor({ categoryId, categoryName, initia
                   className={`grid gap-2 border px-3 py-2.5 transition ${draggedId === attribute.id ? "border-[var(--bp-accent)] opacity-60" : "border-[var(--bp-divider)]"}`}
                 >
                   <div className="flex flex-wrap items-end gap-2">
-                    <span className="cursor-grab self-center pb-2 text-[var(--bp-muted)] active:cursor-grabbing" aria-hidden="true" onMouseDown={() => setDragHandleId(attribute.id)} onMouseUp={() => setDragHandleId(null)}>
+                    <span className="flex h-9 shrink-0 cursor-grab items-center self-end text-[var(--bp-muted)] active:cursor-grabbing" aria-hidden="true" onMouseDown={() => setDragHandleId(attribute.id)} onMouseUp={() => setDragHandleId(null)}>
                       <GripVertical size={16} />
                     </span>
                     <BpInput
@@ -211,7 +210,7 @@ export function CategoryAttributeSchemaEditor({ categoryId, categoryName, initia
                       wrapperClassName="w-[min(100%,240px)]"
                       onChange={(event) => patchAttribute(attribute.id, { name: event.target.value })}
                     />
-                    <BpButton type="button" isIconOnly variant="ghost" aria-label={`حذف ویژگی ${attribute.name || "بدون نام"}`} title={used.has(attribute.id) ? "این ویژگی روی محصولی استفاده شده؛ ابتدا مقدارش را از محصولات بردارید." : "حذف ویژگی"} className="field-action ms-auto text-[var(--bp-danger)]" onClick={() => removeAttribute(attribute.id)}>
+                    <BpButton type="button" isIconOnly variant="ghost" aria-label={`حذف ویژگی ${attribute.name || "بدون نام"}`} title={used.has(attribute.id) ? "این ویژگی روی محصولی استفاده شده؛ ابتدا مقدارش را از محصولات بردارید." : "حذف ویژگی"} className="ms-auto text-[var(--bp-danger)]" onClick={() => removeAttribute(attribute.id)}>
                       <Trash2 size={15} />
                     </BpButton>
                   </div>
@@ -271,7 +270,7 @@ export function CategoryAttributeSchemaEditor({ categoryId, categoryName, initia
             onDragEnd={() => { setDraggedId(null); setDragHandleId(null); }}
             className={`flex items-end gap-2 border px-3 py-1.5 ${draggedId === group.id ? "border-[var(--bp-accent)] opacity-60" : "border-[var(--bp-divider)]"}`}
           >
-            <span className="cursor-grab self-center pb-2 text-[var(--bp-muted)] active:cursor-grabbing" aria-hidden="true" onMouseDown={() => setDragHandleId(group.id)} onMouseUp={() => setDragHandleId(null)}>
+            <span className="flex h-9 shrink-0 cursor-grab items-center self-end text-[var(--bp-muted)] active:cursor-grabbing" aria-hidden="true" onMouseDown={() => setDragHandleId(group.id)} onMouseUp={() => setDragHandleId(null)}>
               <GripVertical size={16} />
             </span>
             <BpInput
@@ -282,7 +281,7 @@ export function CategoryAttributeSchemaEditor({ categoryId, categoryName, initia
               wrapperClassName="min-w-0 flex-1"
               onChange={(event) => setEditingGroups(editingGroups.map((item) => (item.id === group.id ? { ...item, name: event.target.value } : item)))}
             />
-            <BpButton type="button" isIconOnly variant="ghost" aria-label={`حذف گروه ${group.name || "بدون نام"}`} className="field-action text-[var(--bp-danger)]" onClick={() => setEditingGroups(editingGroups.filter((item) => item.id !== group.id))}>
+            <BpButton type="button" isIconOnly variant="ghost" aria-label={`حذف گروه ${group.name || "بدون نام"}`} className="text-[var(--bp-danger)]" onClick={() => setEditingGroups(editingGroups.filter((item) => item.id !== group.id))}>
               <Trash2 size={15} />
             </BpButton>
           </div>
