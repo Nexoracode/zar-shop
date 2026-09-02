@@ -10,6 +10,7 @@ import { requestErrorMessage, requestJson } from "@/lib/api-request";
 import { useAdminTemplate } from "@/components/admin/template-context";
 import { AdminDialog, AdminDialogButton } from "@/components/admin/admin-dialog";
 import { BpCheckbox } from "@/components/admin/blueprint/ui/checkbox";
+import { BpSelect } from "@/components/admin/blueprint/ui/select";
 
 type BulkContextValue = {
   selected: Set<string>;
@@ -52,6 +53,14 @@ export function AdminBulkEditor({ entity, entityLabel, ids, actions, children, d
     toggleAll: () => setSelected((current) => ids.length > 0 && ids.every((id) => current.has(id)) ? new Set() : new Set(ids)),
   }), [allSelected, ids, partiallySelected, selected]);
 
+  function chooseAction(value: string) {
+    setAction(value);
+    if (!value) return;
+    const selectedAction = actions.find((item) => item.value === value);
+    if (selectedAction?.confirmation) setPendingAction(selectedAction);
+    else void apply(value);
+  }
+
   async function apply(selectedAction: string) {
     if (!selected.size || !selectedAction || loading) return false;
     const selectedIds = [...selected];
@@ -81,6 +90,7 @@ export function AdminBulkEditor({ entity, entityLabel, ids, actions, children, d
               <div className="flex items-center gap-2 border border-[var(--bp-divider)] px-3 py-1.5"><AdminBulkSelectAll /><span>انتخاب همه</span></div>
               <span className="bp-muted flex items-center gap-2">{loading ? <Loader2 size={16} className="animate-spin text-[var(--bp-accent)]" /> : <CheckSquare size={16} className="text-[var(--bp-accent)]" />}{loading ? "در حال اعمال تغییر..." : selected.size ? `${selected.size.toLocaleString("fa-IR")} ${entityLabel} انتخاب شده` : `برای ویرایش سریع، ${entityLabel} را انتخاب کنید`}</span>
             </div>
+            <BpSelect aria-label="ویرایش سریع" value={action} disabled={!selected.size || loading} reserveMessage={false} wrapperClassName="w-full sm:w-auto" className="w-full sm:w-64" onChange={(event) => chooseAction(event.target.value)} options={[{ value: "", label: "انتخاب عملیات؛ اعمال خودکار" }, ...actions]} />
             {extraAction}
             <AdminTableRefreshButton />
           </div>
@@ -90,7 +100,7 @@ export function AdminBulkEditor({ entity, entityLabel, ids, actions, children, d
               <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2"><AdminBulkSelectAll /><span>انتخاب همه</span></div>
               <span className="flex items-center gap-2">{loading ? <Loader2 size={17} className="animate-spin text-[var(--warning)]" /> : <CheckSquare size={17} className="text-[var(--warning)]" />}{loading ? "در حال اعمال تغییر..." : selected.size ? `${selected.size.toLocaleString("fa-IR")} ${entityLabel} انتخاب شده` : `برای ویرایش سریع، ${entityLabel} را انتخاب کنید`}</span>
             </div>
-            <HeroSelectField name={`${entity}-bulk-action`} label="ویرایش سریع" value={action} disabled={!selected.size || loading} onValueChange={(value) => { setAction(value); if (!value) return; const selectedAction = actions.find((item) => item.value === value); if (selectedAction?.confirmation) setPendingAction(selectedAction); else void apply(value); }} options={[{ value: "", label: "انتخاب عملیات؛ اعمال خودکار" }, ...actions]} className="w-72" />
+            <HeroSelectField name={`${entity}-bulk-action`} label="ویرایش سریع" value={action} disabled={!selected.size || loading} onValueChange={chooseAction} options={[{ value: "", label: "انتخاب عملیات؛ اعمال خودکار" }, ...actions]} className="w-72" />
             {extraAction}
             <AdminTableRefreshButton className="mb-0.5" />
           </div>
