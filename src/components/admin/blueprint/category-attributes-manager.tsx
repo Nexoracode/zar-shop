@@ -60,7 +60,7 @@ export function BlueprintCategoryAttributesManager({ categories }: { categories:
 
   return (
     <div className="flex flex-col gap-2">
-      <AdminPageHeader flush eyebrow="تنوع و ویژگی‌ها" title="ویژگی‌های دسته‌بندی" description="دسته‌بندی را از فهرست انتخاب کنید و گروه‌ها و ویژگی‌های توصیفی مخصوص محصولات همان دسته را تعریف کنید." />
+      <AdminPageHeader flush title="ویژگی‌های دسته‌بندی" description="دسته‌بندی را از فهرست انتخاب کنید و گروه‌ها و ویژگی‌های توصیفی مخصوص محصولات همان دسته را تعریف کنید." />
 
       <div className="grid grid-cols-1 items-start gap-2 lg:grid-cols-[340px_minmax(0,1fr)]">
         <aside className="min-w-0 lg:sticky lg:top-20">

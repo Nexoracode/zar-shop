@@ -83,7 +83,7 @@ export function BlueprintProductAttributesManager() {
 
   return (
     <div className="flex flex-col gap-2">
-      <AdminPageHeader flush eyebrow="تنوع و ویژگی‌ها" title="ویژگی‌های محصولات" description="محصول را از کادر جست‌وجو انتخاب کنید و مقادیر ویژگی‌های توصیفی آن را — بر اساس ساختار دسته‌بندی‌اش — تکمیل کنید." />
+      <AdminPageHeader flush title="ویژگی‌های محصولات" description="محصول را از کادر جست‌وجو انتخاب کنید و مقادیر ویژگی‌های توصیفی آن را — بر اساس ساختار دسته‌بندی‌اش — تکمیل کنید." />
 
       <div className="grid grid-cols-1 items-start gap-2 lg:grid-cols-[340px_minmax(0,1fr)]">
         <aside className="min-w-0 lg:sticky lg:top-20">

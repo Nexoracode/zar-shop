@@ -33,7 +33,6 @@ export function BlueprintCategoryAttributesForm(props: {
     <>
       <AdminPageHeader
         flush
-        eyebrow="تنوع و ویژگی‌ها"
         title={`ویژگی‌های «${props.categoryName}»`}
         description="گروه‌ها و ویژگی‌هایی را تعریف کنید که فقط برای محصولات همین دسته‌بندی قابل تکمیل باشند."
         backHref="/admin/category-attributes"

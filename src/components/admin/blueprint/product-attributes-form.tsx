@@ -43,7 +43,6 @@ export function BlueprintProductAttributesForm(props: EditorProps) {
     <>
       <AdminPageHeader
         flush
-        eyebrow={`محصول ${props.productSku}`}
         title={`ویژگی‌های «${props.productName}»`}
         description="مقادیر توصیفی این محصول را بر اساس ساختار ویژگی‌های دسته‌بندی تکمیل کنید."
         backHref="/admin/product-attributes"
