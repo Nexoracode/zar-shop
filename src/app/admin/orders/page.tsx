@@ -14,6 +14,8 @@ import { requirePermission } from "@/modules/auth/session";
 import { AdminBulkCheckbox, AdminBulkEditor } from "@/components/admin-bulk-editor";
 import { AdminOrderStatusSelect } from "@/components/admin-order-status-select";
 import { getOrderSettings } from "@/modules/settings/order-settings";
+import { getBrandSettings } from "@/modules/settings/brand-settings";
+import { BlueprintOrdersView, serializeAdminOrderRow } from "@/components/admin/blueprint/orders-view";
 import {
   Table,
   TableBody,
@@ -54,7 +56,7 @@ export default async function OrdersPage({ searchParams }: { searchParams: Searc
       ],
     } : {}),
   };
-  const [filteredTotal, orderSettings] = await Promise.all([db.order.count({ where }), getOrderSettings()]);
+  const [filteredTotal, orderSettings, brandSettings] = await Promise.all([db.order.count({ where }), getOrderSettings(), getBrandSettings()]);
   const pagination = resolveAdminPagination(filteredTotal, requestedPage, pageSize);
   const orders = await db.order.findMany({
     where,
@@ -63,6 +65,19 @@ export default async function OrdersPage({ searchParams }: { searchParams: Searc
     skip: pagination.skip,
     take: pagination.pageSize,
   });
+
+  if (brandSettings.adminTemplate === "BLUEPRINT") {
+    return <BlueprintOrdersView
+      orders={orders.map(serializeAdminOrderRow)}
+      query={query}
+      status={status ?? ""}
+      statuses={statuses}
+      filteredProduct={filteredProduct}
+      warningMinutes={orderSettings.orderWarningMinutes}
+      pagination={pagination}
+    />;
+  }
+
   const cell = "border-b border-slate-100 px-5 py-4 text-sm text-slate-600";
 
   return (

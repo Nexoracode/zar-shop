@@ -7,6 +7,8 @@ import type { OrderStatus } from "@generated/prisma/enums";
 import { HeroSelectField } from "@/components/hero-select-field";
 import { OrderExpiryCountdown } from "@/components/order-expiry-countdown";
 import { orderStatusLabels } from "@/modules/admin/labels";
+import { useAdminTemplate } from "@/components/admin/template-context";
+import { BpSelect } from "@/components/admin/blueprint/ui/select";
 
 const statuses: OrderStatus[] = ["PENDING_PAYMENT", "EXPIRED", "PAID", "PROCESSING", "SHIPPED", "DELIVERED", "CANCELLED", "REFUNDED"];
 const options = statuses.map((status) => ({ value: status, label: orderStatusLabels[status] }));
@@ -33,8 +35,14 @@ export function AdminOrderStatusSelect({ orderId, initialStatus, expiresAt, warn
     }
   }
 
-  return <div className="relative min-w-48">
-    <HeroSelectField name={`order-status-${orderId}`} ariaLabel="تغییر وضعیت سفارش" value={status} disabled={saving} includeEmptyOption={false} options={options} onValueChange={(value) => void update(value)} controlClassName="!min-h-9 h-9 rounded-lg pr-3 pl-8 text-xs" />
+  const template = useAdminTemplate();
+
+  return <div className="relative min-w-44">
+    {template === "BLUEPRINT" ? (
+      <BpSelect aria-label="تغییر وضعیت سفارش" value={status} disabled={saving} reserveMessage={false} options={options} onChange={(event) => void update(event.target.value)} />
+    ) : (
+      <HeroSelectField name={`order-status-${orderId}`} ariaLabel="تغییر وضعیت سفارش" value={status} disabled={saving} includeEmptyOption={false} options={options} onValueChange={(value) => void update(value)} controlClassName="!min-h-9 h-9 rounded-lg pr-3 pl-8 text-xs" />
+    )}
     {saving ? <Spinner size="sm" className="absolute left-2 top-2.5" aria-label="در حال تغییر وضعیت" /> : null}
     {status === "PENDING_PAYMENT" && expiresAt ? <OrderExpiryCountdown expiresAt={expiresAt} warningMinutes={warningMinutes} className="mt-1.5" /> : null}
   </div>;
