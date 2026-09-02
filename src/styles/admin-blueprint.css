@@ -311,6 +311,10 @@ select.bp-input:focus-visible { border-color: var(--bp-accent); outline: none; }
    utilities cannot do this: `.bp-input` is unlayered and always wins over them. */
 .bp-input-search { padding-inline-start: 34px; padding-inline-end: 36px; }
 
+/* The multi-value field grows down its chip rows instead of clipping to one line, and keeps a
+   gap for the trailing chevron. Same unlayered-rule reason as the search padding above. */
+.bp-input.bp-input-multi { height: auto; min-height: 38px; padding-block: 4px; padding-inline-end: 30px; cursor: pointer; }
+
 /* An invalid field keeps its red hairline, focused or not — including dropdowns, which are
    otherwise borderless. */
 .bp-input[aria-invalid="true"],

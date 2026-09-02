@@ -3,14 +3,14 @@
 import { useRef, useState, type DragEvent, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "@heroui/react";
-import { GripVertical, Info, Pencil, Trash2, X } from "lucide-react";
+import { GripVertical, Info, Pencil, Trash2 } from "lucide-react";
 import { AdminEmptyState, AdminPageHeader, AdminStatusBadge } from "@/components/admin-ui";
 import { AdminBulkCheckbox, AdminBulkEditor } from "@/components/admin-bulk-editor";
 import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
 import { requestErrorMessage, requestJson } from "@/lib/api-request";
 import { normalizeSearchText } from "@/lib/text-search";
 import { optionFieldLimits, optionTypeSchema } from "@/modules/options/schemas";
-import { BpButton, BpFieldMessage, BpInput, BpSelect, BpSwitch, BpTable, BpTd, BpTh } from "./ui";
+import { BpButton, BpInput, BpMultiSelect, BpSelect, BpSwitch, BpTable, BpTd, BpTh } from "./ui";
 
 type OptionValueRow = { id: string; label: string; colorId: string | null; hex: string | null; isActive: boolean };
 export type OptionTypeRow = {
@@ -78,7 +78,6 @@ export function BlueprintOptionTypesView({ types, colors }: { types: OptionTypeR
   const [kind, setKind] = useState<"SELECT" | "COLOR">("SELECT");
   const [isActive, setIsActive] = useState(true);
   const [values, setValues] = useState<ValueDraft[]>([]);
-  const [draft, setDraft] = useState("");
   const [errors, setErrors] = useState<FieldErrors>({});
   const [loading, setLoading] = useState(false);
   const [savingOrder, setSavingOrder] = useState(false);
@@ -98,7 +97,6 @@ export function BlueprintOptionTypesView({ types, colors }: { types: OptionTypeR
     setKind("SELECT");
     setIsActive(true);
     setValues([]);
-    setDraft("");
     setErrors({});
   }
 
@@ -108,7 +106,6 @@ export function BlueprintOptionTypesView({ types, colors }: { types: OptionTypeR
     setKind(type.kind);
     setIsActive(type.isActive);
     setValues(type.values.map((value) => ({ key: value.id, id: value.id, label: value.label, colorId: value.colorId, isActive: value.isActive })));
-    setDraft("");
     setErrors({});
     formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
@@ -116,17 +113,16 @@ export function BlueprintOptionTypesView({ types, colors }: { types: OptionTypeR
   // A colour value's label is the colour's own name; a plain value carries typed text. A row with
   // neither (a colour that was since deleted) is dropped on save.
   const rowLabel = (row: ValueDraft) => (row.colorId ? colorsById.get(row.colorId)?.name ?? "" : row.label);
-  const pickedColorIds = new Set(values.map((row) => row.colorId).filter((id): id is string => Boolean(id)));
-  const availableColors = colors.filter((color) => !pickedColorIds.has(color.id));
+  const clearValuesError = () => setErrors((current) => (current.values ? { ...current, values: undefined as unknown as string } : current));
 
-  /** Splits on either comma, trims, drops blanks/dupes and the over-long, and appends each as a token. */
-  function addTextValues(raw: string) {
-    setErrors((current) => ({ ...current, values: undefined as unknown as string }));
+  /** Appends each already-split, already-trimmed label as a token, skipping blanks, the over-long and dupes. */
+  function addTextValues(labels: string[]) {
+    clearValuesError();
     setValues((current) => {
       const seen = new Set(current.map((row) => normalizeSearchText(row.label)));
       const next = [...current];
-      for (const piece of raw.split(/[,،]/)) {
-        const label = piece.trim();
+      for (const raw of labels) {
+        const label = raw.trim();
         const normalized = normalizeSearchText(label);
         if (!label || label.length > optionFieldLimits.valueLabel || seen.has(normalized)) continue;
         seen.add(normalized);
@@ -138,8 +134,8 @@ export function BlueprintOptionTypesView({ types, colors }: { types: OptionTypeR
 
   function addColorValue(colorId: string) {
     const color = colorsById.get(colorId);
-    if (!color || pickedColorIds.has(colorId)) return;
-    setErrors((current) => ({ ...current, values: undefined as unknown as string }));
+    if (!color || values.some((row) => row.colorId === colorId)) return;
+    clearValuesError();
     setValues((current) => [...current, { key: tokenKey(), label: color.name, colorId, isActive: true }]);
   }
 
@@ -148,13 +144,6 @@ export function BlueprintOptionTypesView({ types, colors }: { types: OptionTypeR
   }
 
   async function submit() {
-    // Whatever is still sitting in the text box counts — the admin should not have to press comma
-    // before saving for it to register.
-    const pendingText = draft.trim()
-      ? draft.split(/[,،]/).map((piece) => piece.trim()).filter((label, index, all) => label && label.length <= optionFieldLimits.valueLabel && all.indexOf(label) === index && !values.some((row) => normalizeSearchText(row.label) === normalizeSearchText(label)))
-      : [];
-    const allValues: ValueDraft[] = [...values, ...pendingText.map((label) => ({ key: tokenKey(), label, colorId: null as string | null, isActive: true }))];
-    if (pendingText.length) { setValues(allValues); setDraft(""); }
     // The form no longer collects an order value — new types are appended, existing ones are
     // reordered from the table — so the position is derived, never typed.
     const nextSortOrder = items.length ? Math.max(...items.map((item) => item.sortOrder)) + 1 : 0;
@@ -163,7 +152,7 @@ export function BlueprintOptionTypesView({ types, colors }: { types: OptionTypeR
       kind,
       isActive,
       sortOrder: editing?.sortOrder ?? nextSortOrder,
-      values: allValues
+      values: values
         .filter((row) => rowLabel(row).trim())
         .map((row) => ({ ...(row.id ? { id: row.id } : {}), label: rowLabel(row), colorId: row.colorId, isActive: row.isActive })),
     };
@@ -278,76 +267,39 @@ export function BlueprintOptionTypesView({ types, colors }: { types: OptionTypeR
             <Panel>
               <div className="grid gap-3">
                 <BpInput name="name" label="نام نوع تنوع" required maxLength={optionFieldLimits.typeName} value={name} error={errors.name} placeholder="مثلاً رنگ یا سایز" onChange={(event) => { setName(event.target.value); clearError("name"); }} />
-                <BpSelect name="kind" label="نوع کنترل" value={kind} onChange={(event) => { const next = event.target.value === "COLOR" ? "COLOR" : "SELECT"; if (next === kind) return; setKind(next); setValues([]); setDraft(""); setErrors((current) => ({ ...current, values: undefined as unknown as string })); }} options={[{ value: "SELECT", label: "انتخابی (متن)" }, { value: "COLOR", label: "رنگ" }]} />
+                <BpSelect name="kind" label="نوع کنترل" value={kind} onChange={(event) => { const next = event.target.value === "COLOR" ? "COLOR" : "SELECT"; if (next === kind) return; setKind(next); setValues([]); clearValuesError(); }} options={[{ value: "SELECT", label: "انتخابی (متن)" }, { value: "COLOR", label: "رنگ" }]} />
 
-                <div>
-                  <span className="bp-muted mb-1.5 flex items-center justify-between text-[12px] font-bold">
-                    <span>مقادیر این نوع</span>
-                    <span className="font-normal">{values.length.toLocaleString("fa-IR")} مقدار</span>
-                  </span>
-                  <div data-field="values" tabIndex={-1} className={`flex min-h-[42px] flex-wrap items-center gap-1.5 border p-1.5 outline-none ${errors.values ? "border-[var(--bp-danger)]" : "border-[var(--bp-divider)]"}`} aria-invalid={errors.values ? true : undefined} aria-describedby={errors.values ? "option-values-message" : undefined}>
-                    {values.map((row) => {
-                      const hex = row.colorId ? colorsById.get(row.colorId)?.hex ?? null : null;
-                      return (
-                        <span key={row.key} className="inline-flex items-center gap-1.5 border border-[var(--bp-divider)] bg-[var(--bp-hover)] ps-2 pe-1 py-1 text-[12px]">
-                          {hex && <span aria-hidden className="h-3 w-3 shrink-0 border border-[var(--bp-divider)]" style={{ background: hex }} />}
-                          <span className="max-w-[150px] truncate">{rowLabel(row) || "—"}</span>
-                          <button type="button" aria-label={`حذف مقدار ${rowLabel(row) || ""}`} onClick={() => removeValue(row.key)} className="grid h-4 w-4 place-items-center text-[var(--bp-muted)] hover:text-[var(--bp-danger)]"><X size={12} aria-hidden /></button>
-                        </span>
-                      );
-                    })}
-                    {kind === "SELECT" && (
-                      <input
-                        aria-label="افزودن مقدار؛ چند مورد را با کاما جدا کنید"
-                        value={draft}
-                        placeholder={values.length ? "" : "مثلاً بزرگ، متوسط، کوچک"}
-                        className="min-w-[110px] flex-1 border-0 bg-transparent p-1 text-[13px] outline-none"
-                        onChange={(event) => {
-                          const raw = event.target.value;
-                          if (/[,،]/.test(raw)) {
-                            const parts = raw.split(/[,،]/);
-                            addTextValues(parts.slice(0, -1).join(","));
-                            setDraft(parts[parts.length - 1].slice(0, optionFieldLimits.valueLabel));
-                          } else {
-                            setDraft(raw.slice(0, optionFieldLimits.valueLabel));
-                          }
-                        }}
-                        onKeyDown={(event) => {
-                          if (event.key === "Enter") { event.preventDefault(); if (draft.trim()) { addTextValues(draft); setDraft(""); } }
-                          else if (event.key === "Backspace" && !draft && values.length) removeValue(values[values.length - 1].key);
-                        }}
-                        onBlur={() => { if (draft.trim()) { addTextValues(draft); setDraft(""); } }}
-                      />
-                    )}
-                    {kind === "COLOR" && !values.length && <span className="bp-muted px-1 py-1 text-[12px]">از فهرست زیر رنگ‌ها را انتخاب کنید.</span>}
-                  </div>
-                  <BpFieldMessage id="option-values-message" error={errors.values} hint={kind === "SELECT" ? "هر مقدار را با کاما یا کلید Enter ثبت کنید." : undefined} reserve />
-
-                  {kind === "COLOR" && (
-                    <div className="mt-2.5">
-                      <span className="bp-muted mb-1.5 block text-[11px] font-bold">انتخاب از رنگ‌های فروشگاه</span>
-                      {colors.length === 0 ? (
-                        <p className="bp-muted m-0 text-[12px]">هنوز رنگی در فروشگاه تعریف نشده است؛ ابتدا از بخش «رنگ‌ها» رنگ اضافه کنید.</p>
-                      ) : availableColors.length === 0 ? (
-                        <p className="bp-muted m-0 text-[12px]">همه رنگ‌های فروشگاه انتخاب شده‌اند.</p>
-                      ) : (
-                        <div className="flex flex-wrap gap-1.5">
-                          {availableColors.map((color) => (
-                            <button
-                              type="button"
-                              key={color.id}
-                              onClick={() => addColorValue(color.id)}
-                              className="inline-flex items-center gap-1.5 border border-[var(--bp-divider)] ps-1.5 pe-2 py-1 text-[12px] hover:border-[var(--bp-accent)] hover:text-[var(--bp-accent)]"
-                            >
-                              <span aria-hidden className="h-3.5 w-3.5 shrink-0 border border-[var(--bp-divider)]" style={{ background: color.hex }} />
-                              {color.name}
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
+                {kind === "COLOR" ? (
+                  <BpMultiSelect
+                    label="مقادیر رنگی"
+                    name="values"
+                    error={errors.values}
+                    tokens={values.map((row) => ({ value: row.key, label: rowLabel(row) || "—", color: row.colorId ? colorsById.get(row.colorId)?.hex ?? null : null, optionValue: row.colorId ?? undefined }))}
+                    options={colors.map((color) => ({ value: color.id, label: color.name, color: color.hex }))}
+                    onAdd={addColorValue}
+                    onRemove={removeValue}
+                    placeholder="برای انتخاب رنگ کلیک کنید"
+                    searchPlaceholder="جستجوی رنگ…"
+                    emptyLabel={colors.length ? "همه رنگ‌های فروشگاه انتخاب شده‌اند." : "هنوز رنگی در فروشگاه تعریف نشده است؛ ابتدا از بخش «رنگ‌ها» رنگ اضافه کنید."}
+                    hint="از میان رنگ‌های فروشگاه انتخاب کنید؛ نام هر مقدار همان نام رنگ است."
+                  />
+                ) : (
+                  <BpMultiSelect
+                    label="مقادیر"
+                    name="values"
+                    error={errors.values}
+                    maxLength={optionFieldLimits.valueLabel}
+                    tokens={values.map((row) => ({ value: row.key, label: row.label }))}
+                    options={[]}
+                    onAdd={() => {}}
+                    onRemove={removeValue}
+                    onCreate={addTextValues}
+                    placeholder="برای افزودن مقدار کلیک کنید"
+                    searchPlaceholder="نام مقدار را بنویسید…"
+                    createHint="چند مقدار را می‌توانید با کاما از هم جدا کنید."
+                    hint="مقدارهای متنی مانند «کوچک»، «متوسط»، «بزرگ»."
+                  />
+                )}
 
                 <BpSwitch isSelected={isActive} onChange={setIsActive}>فعال</BpSwitch>
               </div>

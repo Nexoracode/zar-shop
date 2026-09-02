@@ -7,6 +7,7 @@ export { BpCombobox, type BpComboboxOption } from "./combobox";
 export { BpDialog, type BpDialogSize } from "./dialog";
 export { BpFieldMessage } from "./field-message";
 export { BpInput, BpTextarea } from "./input";
+export { BpMultiSelect, type BpMultiSelectOption, type BpMultiSelectToken } from "./multi-select";
 export { BpNumberInput } from "./number-input";
 export { BpPagination } from "./pagination";
 export { BpPopover } from "./popover";
