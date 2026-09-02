@@ -2,10 +2,10 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useRef, useState, type ReactNode } from "react";
+import { useRef, useState, type DragEvent, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "@heroui/react";
-import { FolderTree, Images, Pencil, Search, SlidersHorizontal, Star, Trash2, X } from "lucide-react";
+import { FolderTree, GripVertical, Images, Pencil, Search, SlidersHorizontal, Star, Trash2, X } from "lucide-react";
 import { AdminEmptyState, AdminPageHeader, AdminStatusBadge } from "@/components/admin-ui";
 import { AdminBulkCheckbox, AdminBulkEditor } from "@/components/admin-bulk-editor";
 import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
@@ -15,7 +15,7 @@ import { requestErrorMessage, requestJson } from "@/lib/api-request";
 import { normalizeSearchText } from "@/lib/text-search";
 import { categoryFieldLimits, categorySchema } from "@/modules/categories/schemas";
 import { wouldCreateCategoryCycle } from "@/modules/categories/category-tree";
-import { BpButton, BpCombobox, BpInput, BpNumberInput, BpSelect, BpSwitch, BpTable, BpTd, BpTextarea, BpTh } from "./ui";
+import { BpButton, BpCombobox, BpInput, BpSelect, BpSwitch, BpTable, BpTd, BpTextarea, BpTh } from "./ui";
 
 export type CategoryRow = {
   id: string;
@@ -34,6 +34,14 @@ export type CategoryRow = {
 type FieldErrors = Record<string, string>;
 
 const emptyForm = { name: "", slug: "", description: "", parentId: "", isActive: true, featured: false };
+
+function move<T>(list: T[], from: number, to: number): T[] {
+  if (from === to || from < 0 || to < 0 || to >= list.length) return list;
+  const next = [...list];
+  const [moved] = next.splice(from, 1);
+  next.splice(to, 0, moved);
+  return next;
+}
 
 function Panel({ children }: { children: ReactNode }) {
   return <section className="bp-frame relative p-[18px]">{children}</section>;
@@ -64,7 +72,6 @@ export function BlueprintCategoriesView({ categories }: { categories: CategoryRo
   const [slug, setSlug] = useState(emptyForm.slug);
   const [description, setDescription] = useState(emptyForm.description);
   const [parentId, setParentId] = useState(emptyForm.parentId);
-  const [sortOrder, setSortOrder] = useState("0");
   const [image, setImage] = useState<MediaChoice | null>(null);
   const [isActive, setIsActive] = useState<boolean>(emptyForm.isActive);
   const [featured, setFeatured] = useState<boolean>(emptyForm.featured);
@@ -74,6 +81,7 @@ export function BlueprintCategoriesView({ categories }: { categories: CategoryRo
   const [deleteTarget, setDeleteTarget] = useState<CategoryRow | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [deleteError, setDeleteError] = useState("");
+  const [savingOrder, setSavingOrder] = useState(false);
 
   // A category cannot become its own descendant's child — offering one here would only fail once
   // submitted, on the server's own check of the exact same rule.
@@ -91,7 +99,6 @@ export function BlueprintCategoriesView({ categories }: { categories: CategoryRo
     setSlug(emptyForm.slug);
     setDescription(emptyForm.description);
     setParentId(emptyForm.parentId);
-    setSortOrder("0");
     setImage(null);
     setIsActive(emptyForm.isActive);
     setFeatured(emptyForm.featured);
@@ -104,7 +111,6 @@ export function BlueprintCategoriesView({ categories }: { categories: CategoryRo
     setSlug(category.slug);
     setDescription(category.description ?? "");
     setParentId(category.parentId ?? "");
-    setSortOrder(String(category.sortOrder));
     setImage(category.image ? { id: category.image.id, title: category.name, url: category.image.url, alt: category.image.alt, type: "IMAGE" } : null);
     setIsActive(category.isActive);
     setFeatured(category.featured);
@@ -113,9 +119,11 @@ export function BlueprintCategoriesView({ categories }: { categories: CategoryRo
   }
 
   async function submit() {
+    // New categories join at the end of the list; an edit never touches the category's place in it.
+    const nextSortOrder = items.length ? Math.max(...items.map((item) => item.sortOrder)) + 1 : 0;
     const body = {
       name, slug, description: description.trim() || null, parentId: parentId || null, imageId: image?.id ?? null,
-      isActive, featured, sortOrder: Number(sortOrder) || 0,
+      isActive, featured, sortOrder: editing?.sortOrder ?? nextSortOrder,
     };
     const validation = categorySchema.safeParse(body);
     if (!validation.success) {
@@ -163,7 +171,63 @@ export function BlueprintCategoriesView({ categories }: { categories: CategoryRo
     }
   }
 
+  /** Renumbers `next` sequentially and pushes only the rows whose position actually moved. */
+  async function persistOrder(next: CategoryRow[], previous: CategoryRow[]) {
+    const numbered = next.map((item, position) => ({ ...item, sortOrder: position }));
+    const changed = numbered.filter((item, position) => previous.find((entry) => entry.id === item.id)?.sortOrder !== position);
+    setItems(numbered);
+    if (!changed.length) return;
+    setSavingOrder(true);
+    try {
+      await Promise.all(changed.map((item) => requestJson(`/api/categories/${item.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sortOrder: item.sortOrder }),
+      }, { fallbackMessage: "ذخیره ترتیب دسته‌بندی‌ها انجام نشد." })));
+      router.refresh();
+    } catch (reason) {
+      setItems(previous);
+      toast.danger("ذخیره ترتیب دسته‌بندی‌ها انجام نشد", { description: requestErrorMessage(reason, "ارتباط با سرور برقرار نشد.") });
+    } finally {
+      setSavingOrder(false);
+    }
+  }
+
+  // Rows reorder live as the pointer passes over them; `dragOrigin` keeps the list from before
+  // the gesture started, so `endDrag` only has to diff the two snapshots once, on release.
+  const [draggedId, setDraggedId] = useState<string | null>(null);
+  const dragOrigin = useRef<CategoryRow[] | null>(null);
+
+  function beginDrag(id: string) {
+    if (savingOrder) return;
+    dragOrigin.current = items;
+    setDraggedId(id);
+  }
+
+  function dragOver(event: DragEvent<HTMLElement>, overId: string) {
+    event.preventDefault();
+    if (!draggedId || draggedId === overId) return;
+    const bounds = event.currentTarget.getBoundingClientRect();
+    const after = event.clientY > bounds.top + bounds.height / 2;
+    setItems((current) => {
+      const from = current.findIndex((item) => item.id === draggedId);
+      const overIndex = current.findIndex((item) => item.id === overId);
+      if (from < 0 || overIndex < 0) return current;
+      let target = after ? overIndex + 1 : overIndex;
+      if (target > from) target -= 1;
+      return move(current, from, target);
+    });
+  }
+
+  function endDrag() {
+    const origin = dragOrigin.current;
+    setDraggedId(null);
+    dragOrigin.current = null;
+    if (origin) void persistOrder(items, origin);
+  }
+
   const normalizedQuery = normalizeSearchText(query);
+  const filtersActive = Boolean(normalizedQuery || statusFilter || featuredFilter || typeFilter || productsFilter);
   const visible = items.filter((category) => {
     if (normalizedQuery && !normalizeSearchText(`${category.name} ${category.slug} ${category.parentName ?? ""}`).includes(normalizedQuery)) return false;
     if (statusFilter === "active" && !category.isActive) return false;
@@ -211,7 +275,6 @@ export function BlueprintCategoriesView({ categories }: { categories: CategoryRo
                   </div>
                 </div>
 
-                <BpNumberInput name="sortOrder" label="ترتیب نمایش" value={sortOrder} error={errors.sortOrder} hint="عدد کوچک‌تر، زودتر نمایش داده می‌شود." onValueChange={(next) => { setSortOrder(next); clearError("sortOrder"); }} />
                 <BpSwitch isSelected={isActive} onChange={setIsActive}>فعال</BpSwitch>
                 <BpSwitch isSelected={featured} onChange={setFeatured}>نمایش در صفحه اصلی</BpSwitch>
               </div>
@@ -253,8 +316,17 @@ export function BlueprintCategoriesView({ categories }: { categories: CategoryRo
                 {visible.map((category) => {
                   const locked = category._count.products > 0 || category._count.children > 0;
                   return (
-                    <article key={category.id} className="flex flex-col gap-3 border-b border-[var(--bp-row-line)] p-4 last:border-b-0">
+                    <article
+                      key={category.id}
+                      draggable={!savingOrder && !filtersActive}
+                      onDragStart={(event) => { event.dataTransfer.effectAllowed = "move"; beginDrag(category.id); }}
+                      onDragOver={(event) => dragOver(event, category.id)}
+                      onDrop={(event) => event.preventDefault()}
+                      onDragEnd={endDrag}
+                      className={`flex flex-col gap-3 border-b border-[var(--bp-row-line)] p-4 last:border-b-0 ${draggedId === category.id ? "opacity-50" : ""}`}
+                    >
                       <div className="flex items-center gap-3">
+                        <span aria-hidden="true" title="برای جابه‌جایی بکشید" className="bp-muted shrink-0 cursor-grab active:cursor-grabbing"><GripVertical size={15} /></span>
                         <CategoryThumb image={category.image} name={category.name} />
                         <div className="min-w-0 flex-1">
                           <strong className="flex items-center gap-1.5 truncate text-sm">{category.name}{category.featured && <Star size={13} className="shrink-0 fill-[var(--bp-accent)] text-[var(--bp-accent)]" />}</strong>
@@ -276,15 +348,16 @@ export function BlueprintCategoriesView({ categories }: { categories: CategoryRo
               </div>
 
               <AdminBulkEditor entity="categories" entityLabel="دسته‌بندی" ids={visible.map((category) => category.id)} actions={[{ value: "featured:on", label: "نمایش در صفحه اصلی" }, { value: "featured:off", label: "حذف از صفحه اصلی" }, { value: "active:on", label: "فعال‌کردن دسته‌بندی‌ها" }, { value: "active:off", label: "غیرفعال‌کردن دسته‌بندی‌ها" }]}>
+                <p className="m-0 flex items-center gap-1.5 border-b border-[var(--bp-divider)] px-4 py-2 text-[12px] text-[var(--bp-info)]">{filtersActive ? "برای تغییر ترتیب نمایش، ابتدا جستجو و فیلترها را پاک کنید." : "با کشیدن ردیف، ترتیب نمایش دسته‌بندی‌ها را تنظیم کنید."}</p>
                 <BpTable ariaLabel="فهرست دسته‌بندی‌ها" minWidth={760}>
                   <thead>
                     <tr>
+                      <BpTh className="w-8 text-center"><span className="sr-only">جابه‌جایی</span></BpTh>
                       <BpTh className="w-10 text-center"><span className="sr-only">انتخاب</span></BpTh>
                       <BpTh>دسته‌بندی</BpTh>
                       <BpTh>والد</BpTh>
                       <BpTh>محصولات</BpTh>
                       <BpTh>زیردسته‌ها</BpTh>
-                      <BpTh>ترتیب</BpTh>
                       <BpTh>وضعیت</BpTh>
                       <BpTh className="text-center">عملیات</BpTh>
                     </tr>
@@ -293,7 +366,16 @@ export function BlueprintCategoriesView({ categories }: { categories: CategoryRo
                     {visible.map((category) => {
                       const locked = category._count.products > 0 || category._count.children > 0;
                       return (
-                        <tr key={category.id}>
+                        <tr
+                          key={category.id}
+                          draggable={!savingOrder && !filtersActive}
+                          onDragStart={(event) => { event.dataTransfer.effectAllowed = "move"; beginDrag(category.id); }}
+                          onDragOver={(event) => dragOver(event, category.id)}
+                          onDrop={(event) => event.preventDefault()}
+                          onDragEnd={endDrag}
+                          className={draggedId === category.id ? "opacity-50" : undefined}
+                        >
+                          <BpTd className="w-8 text-center"><span aria-hidden="true" title="برای جابه‌جایی بکشید" className="bp-muted inline-flex cursor-grab active:cursor-grabbing"><GripVertical size={15} /></span></BpTd>
                           <BpTd className="w-10 text-center"><AdminBulkCheckbox id={category.id} label={`انتخاب دسته‌بندی ${category.name}`} /></BpTd>
                           <BpTd className="max-w-[220px]">
                             <div className="flex min-w-0 items-center gap-2.5">
@@ -307,7 +389,6 @@ export function BlueprintCategoriesView({ categories }: { categories: CategoryRo
                           <BpTd className="bp-muted max-w-[140px] truncate" title={category.parentName ?? "دسته اصلی"}>{category.parentName ?? "دسته اصلی"}</BpTd>
                           <BpTd className="text-[var(--bp-text)]">{category._count.products.toLocaleString("fa-IR")}</BpTd>
                           <BpTd className="text-[var(--bp-text)]">{category._count.children.toLocaleString("fa-IR")}</BpTd>
-                          <BpTd className="text-[var(--bp-text)]">{category.sortOrder.toLocaleString("fa-IR")}</BpTd>
                           <BpTd><AdminStatusBadge tone={category.isActive ? "success" : "neutral"}>{category.isActive ? "فعال" : "غیرفعال"}</AdminStatusBadge></BpTd>
                           <BpTd>
                             <div className="flex items-center justify-center gap-1">
