@@ -5,9 +5,9 @@ import Link from "next/link";
 import { useRef, useState, type DragEvent, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "@heroui/react";
-import { FolderTree, GripVertical, Images, Pencil, Search, SlidersHorizontal, Star, Trash2, X } from "lucide-react";
+import { FolderTree, GripVertical, Images, Pencil, SlidersHorizontal, Star, Trash2 } from "lucide-react";
 import { AdminEmptyState, AdminPageHeader, AdminStatusBadge } from "@/components/admin-ui";
-import { AdminBulkCheckbox, AdminBulkEditor } from "@/components/admin-bulk-editor";
+import { AdminBulkCheckbox, AdminBulkEditor, AdminBulkTr } from "@/components/admin-bulk-editor";
 import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
 import { MediaPickerDialog } from "@/components/media-picker-dialog";
 import type { MediaChoice } from "@/components/media-library";
@@ -15,7 +15,7 @@ import { requestErrorMessage, requestJson } from "@/lib/api-request";
 import { normalizeSearchText } from "@/lib/text-search";
 import { categoryFieldLimits, categorySchema } from "@/modules/categories/schemas";
 import { wouldCreateCategoryCycle } from "@/modules/categories/category-tree";
-import { BpButton, BpCombobox, BpInput, BpSelect, BpSwitch, BpTable, BpTd, BpTextarea, BpTh } from "./ui";
+import { BpButton, BpCombobox, BpInput, BpListFilters, BpSwitch, BpTable, BpTd, BpTextarea, BpTh } from "./ui";
 
 export type CategoryRow = {
   id: string;
@@ -289,27 +289,18 @@ export function BlueprintCategoriesView({ categories }: { categories: CategoryRo
         <Panel>
           {items.length ? (
             <>
-              <div className="flex flex-wrap items-center gap-2 border-b border-[var(--bp-divider)] p-3">
-                <div className="relative w-full min-w-[180px] sm:w-auto sm:min-w-[220px] sm:flex-1">
-                  <Search className="pointer-events-none absolute start-2.5 top-1/2 z-10 -translate-y-1/2 text-[var(--bp-muted)]" size={15} />
-                  <input
-                    type="search"
-                    value={query}
-                    onChange={(event) => setQuery(event.target.value)}
-                    aria-label="جستجوی دسته‌بندی"
-                    placeholder="جستجو بر اساس نام، نشانی یا دسته والد"
-                    className="bp-input bp-input-search"
-                  />
-                  {query ? (
-                    <BpButton isIconOnly size="sm" variant="ghost" aria-label="پاک‌کردن جستجو" onClick={() => setQuery("")} className="absolute end-1 top-1/2 z-20 h-7 min-h-7 w-7 min-w-7 -translate-y-1/2"><X size={14} /></BpButton>
-                  ) : null}
-                </div>
-                <span aria-hidden className="mx-1 hidden h-6 w-px shrink-0 bg-[var(--bp-divider)] sm:block" />
-                <BpSelect aria-label="وضعیت دسته‌بندی" value={statusFilter} reserveMessage={false} wrapperClassName="w-full sm:w-auto" className="w-full sm:w-40" onChange={(event) => setStatusFilter(event.target.value)} options={[{ value: "", label: "همه وضعیت‌ها" }, { value: "active", label: "فعال" }, { value: "inactive", label: "غیرفعال" }]} />
-                <BpSelect aria-label="نوع دسته‌بندی" value={typeFilter} reserveMessage={false} wrapperClassName="w-full sm:w-auto" className="w-full sm:w-40" onChange={(event) => setTypeFilter(event.target.value)} options={[{ value: "", label: "همه دسته‌ها" }, { value: "root", label: "دسته اصلی" }, { value: "child", label: "زیردسته" }]} />
-                <BpSelect aria-label="نمایش در صفحه اصلی" value={featuredFilter} reserveMessage={false} wrapperClassName="w-full sm:w-auto" className="w-full sm:w-44" onChange={(event) => setFeaturedFilter(event.target.value)} options={[{ value: "", label: "صفحه اصلی: همه" }, { value: "yes", label: "در صفحه اصلی" }, { value: "no", label: "خارج از صفحه اصلی" }]} />
-                <BpSelect aria-label="محصولات دسته‌بندی" value={productsFilter} reserveMessage={false} wrapperClassName="w-full sm:w-auto" className="w-full sm:w-40" onChange={(event) => setProductsFilter(event.target.value)} options={[{ value: "", label: "محصولات: همه" }, { value: "has", label: "دارای محصول" }, { value: "none", label: "بدون محصول" }]} />
-              </div>
+              <BpListFilters
+                query={query}
+                onQueryChange={setQuery}
+                searchLabel="جستجوی دسته‌بندی"
+                searchPlaceholder="جستجو بر اساس نام، نشانی یا دسته والد"
+                filters={[
+                  { name: "status", ariaLabel: "وضعیت دسته‌بندی", value: statusFilter, onChange: setStatusFilter, options: [{ value: "", label: "همه وضعیت‌ها" }, { value: "active", label: "فعال" }, { value: "inactive", label: "غیرفعال" }] },
+                  { name: "type", ariaLabel: "نوع دسته‌بندی", value: typeFilter, onChange: setTypeFilter, options: [{ value: "", label: "همه دسته‌ها" }, { value: "root", label: "دسته اصلی" }, { value: "child", label: "زیردسته" }] },
+                  { name: "featured", ariaLabel: "نمایش در صفحه اصلی", value: featuredFilter, onChange: setFeaturedFilter, options: [{ value: "", label: "صفحه اصلی: همه" }, { value: "yes", label: "در صفحه اصلی" }, { value: "no", label: "خارج از صفحه اصلی" }] },
+                  { name: "products", ariaLabel: "محصولات دسته‌بندی", value: productsFilter, onChange: setProductsFilter, options: [{ value: "", label: "محصولات: همه" }, { value: "has", label: "دارای محصول" }, { value: "none", label: "بدون محصول" }] },
+                ]}
+              />
               {visible.length ? (
               <>
               <div className="md:hidden">
@@ -366,8 +357,9 @@ export function BlueprintCategoriesView({ categories }: { categories: CategoryRo
                     {visible.map((category) => {
                       const locked = category._count.products > 0 || category._count.children > 0;
                       return (
-                        <tr
+                        <AdminBulkTr
                           key={category.id}
+                          id={category.id}
                           draggable={!savingOrder && !filtersActive}
                           onDragStart={(event) => { event.dataTransfer.effectAllowed = "move"; beginDrag(category.id); }}
                           onDragOver={(event) => dragOver(event, category.id)}
@@ -397,7 +389,7 @@ export function BlueprintCategoriesView({ categories }: { categories: CategoryRo
                               <BpButton isIconOnly size="sm" variant="ghost" title={locked ? "دسته دارای محصول یا زیردسته قابل حذف نیست" : "حذف دسته‌بندی"} className="text-[var(--bp-danger)]" aria-label={`حذف ${category.name}`} disabled={locked} onClick={() => { setDeleteError(""); setDeleteTarget(category); }}><Trash2 size={14} /></BpButton>
                             </div>
                           </BpTd>
-                        </tr>
+                        </AdminBulkTr>
                       );
                     })}
                   </tbody>

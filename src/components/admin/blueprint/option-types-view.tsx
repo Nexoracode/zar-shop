@@ -5,12 +5,12 @@ import { useRouter } from "next/navigation";
 import { toast } from "@heroui/react";
 import { GripVertical, Info, Pencil, Trash2 } from "lucide-react";
 import { AdminEmptyState, AdminPageHeader, AdminStatusBadge } from "@/components/admin-ui";
-import { AdminBulkCheckbox, AdminBulkEditor } from "@/components/admin-bulk-editor";
+import { AdminBulkCheckbox, AdminBulkEditor, AdminBulkTr } from "@/components/admin-bulk-editor";
 import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
 import { requestErrorMessage, requestJson } from "@/lib/api-request";
 import { normalizeSearchText } from "@/lib/text-search";
 import { optionFieldLimits, optionTypeSchema } from "@/modules/options/schemas";
-import { BpButton, BpInput, BpMultiSelect, BpSelect, BpSwitch, BpTable, BpTd, BpTh } from "./ui";
+import { BpButton, BpInput, BpListFilters, BpMultiSelect, BpSelect, BpSwitch, BpTable, BpTd, BpTh } from "./ui";
 
 type OptionValueRow = { id: string; label: string; colorId: string | null; hex: string | null; isActive: boolean };
 export type OptionTypeRow = {
@@ -73,6 +73,9 @@ export function BlueprintOptionTypesView({ types, colors }: { types: OptionTypeR
     setPrevTypes(types);
     setItems(types);
   }
+  const [query, setQuery] = useState("");
+  const [kindFilter, setKindFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
   const [editing, setEditing] = useState<OptionTypeRow | null>(null);
   const [name, setName] = useState("");
   const [kind, setKind] = useState<"SELECT" | "COLOR">("SELECT");
@@ -257,6 +260,16 @@ export function BlueprintOptionTypesView({ types, colors }: { types: OptionTypeR
     }
   }
 
+  const normalizedQuery = normalizeSearchText(query);
+  const filtersActive = Boolean(normalizedQuery || kindFilter || statusFilter);
+  const visible = items.filter((type) => {
+    if (normalizedQuery && !normalizeSearchText(`${type.name} ${type.values.map((value) => value.label).join(" ")}`).includes(normalizedQuery)) return false;
+    if (kindFilter && type.kind !== kindFilter) return false;
+    if (statusFilter === "active" && !type.isActive) return false;
+    if (statusFilter === "inactive" && type.isActive) return false;
+    return true;
+  });
+
   return (
     <div className="flex flex-col gap-2">
       <AdminPageHeader flush title="انواع تنوع" description="نوع‌هایی مانند رنگ و سایز را یک‌بار با مقادیرشان تعریف کنید تا در فرم هر محصول قابل انتخاب باشند." />
@@ -314,11 +327,23 @@ export function BlueprintOptionTypesView({ types, colors }: { types: OptionTypeR
         <Panel>
           {items.length ? (
             <>
+              <BpListFilters
+                query={query}
+                onQueryChange={setQuery}
+                searchLabel="جستجوی نوع تنوع"
+                searchPlaceholder="جستجو بر اساس نام نوع یا مقادیر آن"
+                filters={[
+                  { name: "kind", ariaLabel: "نوع کنترل", value: kindFilter, onChange: setKindFilter, options: [{ value: "", label: "همه نوع‌ها" }, { value: "SELECT", label: "انتخابی" }, { value: "COLOR", label: "رنگ" }] },
+                  { name: "status", ariaLabel: "وضعیت نوع تنوع", value: statusFilter, onChange: setStatusFilter, options: [{ value: "", label: "همه وضعیت‌ها" }, { value: "active", label: "فعال" }, { value: "inactive", label: "غیرفعال" }] },
+                ]}
+              />
+              {visible.length ? (
+              <>
               <div className="md:hidden">
-                {items.map((type) => (
+                {visible.map((type) => (
                   <article
                     key={type.id}
-                    draggable={!savingOrder}
+                    draggable={!savingOrder && !filtersActive}
                     onDragStart={(event) => { event.dataTransfer.effectAllowed = "move"; beginDrag(type.id); }}
                     onDragOver={(event) => dragOver(event, type.id)}
                     onDrop={(event) => event.preventDefault()}
@@ -345,10 +370,10 @@ export function BlueprintOptionTypesView({ types, colors }: { types: OptionTypeR
                 ))}
               </div>
 
-              <AdminBulkEditor entity="optionTypes" entityLabel="نوع تنوع" ids={items.map((type) => type.id)} actions={[{ value: "active:on", label: "فعال‌کردن نوع‌ها" }, { value: "active:off", label: "غیرفعال‌کردن نوع‌ها" }]}>
+              <AdminBulkEditor entity="optionTypes" entityLabel="نوع تنوع" ids={visible.map((type) => type.id)} actions={[{ value: "active:on", label: "فعال‌کردن نوع‌ها" }, { value: "active:off", label: "غیرفعال‌کردن نوع‌ها" }]}>
                 <p className="m-0 flex items-center gap-1.5 border-b border-[var(--bp-divider)] px-4 py-2 text-[12px] text-[var(--bp-info)]">
                   <Info size={14} className="shrink-0" aria-hidden />
-                  با کشیدن ردیف، ترتیب نمایش نوع‌های تنوع را در فرم محصول تنظیم کنید.
+                  {filtersActive ? "برای تغییر ترتیب نمایش، ابتدا جستجو و فیلترها را پاک کنید." : "با کشیدن ردیف، ترتیب نمایش نوع‌های تنوع را در فرم محصول تنظیم کنید."}
                 </p>
                 <BpTable ariaLabel="فهرست نوع‌های تنوع" minWidth={760}>
                   <thead>
@@ -364,10 +389,11 @@ export function BlueprintOptionTypesView({ types, colors }: { types: OptionTypeR
                     </tr>
                   </thead>
                   <tbody>
-                    {items.map((type) => (
-                      <tr
+                    {visible.map((type) => (
+                      <AdminBulkTr
                         key={type.id}
-                        draggable={!savingOrder}
+                        id={type.id}
+                        draggable={!savingOrder && !filtersActive}
                         onDragStart={(event) => { event.dataTransfer.effectAllowed = "move"; beginDrag(type.id); }}
                         onDragOver={(event) => dragOver(event, type.id)}
                         onDrop={(event) => event.preventDefault()}
@@ -387,11 +413,13 @@ export function BlueprintOptionTypesView({ types, colors }: { types: OptionTypeR
                             <BpButton isIconOnly size="sm" variant="ghost" title={type.productCount > 0 ? "این نوع در محصولی استفاده شده و قابل حذف نیست" : "حذف نوع تنوع"} className="text-[var(--bp-danger)]" aria-label={`حذف ${type.name}`} disabled={type.productCount > 0} onClick={() => { setDeleteError(""); setDeleteTarget(type); }}><Trash2 size={14} /></BpButton>
                           </div>
                         </BpTd>
-                      </tr>
+                      </AdminBulkTr>
                     ))}
                   </tbody>
                 </BpTable>
               </AdminBulkEditor>
+              </>
+              ) : <div className="p-6"><AdminEmptyState title="نوع تنوعی پیدا نشد" description="هیچ نوع تنوعی با جستجو و فیلترهای انتخابی مطابقت ندارد." /></div>}
             </>
           ) : <AdminEmptyState title="نوع تنوعی ثبت نشده" description="اولین نوع تنوع مانند رنگ یا سایز را از فرم کنار جدول با مقادیرش تعریف کنید." />}
         </Panel>

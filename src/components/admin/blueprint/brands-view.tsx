@@ -4,16 +4,16 @@ import Image from "next/image";
 import { useRef, useState, type DragEvent, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "@heroui/react";
-import { GripVertical, Images, Pencil, Search, Tag, Trash2, X } from "lucide-react";
+import { GripVertical, Images, Pencil, Tag, Trash2 } from "lucide-react";
 import { AdminEmptyState, AdminPageHeader, AdminStatusBadge } from "@/components/admin-ui";
-import { AdminBulkCheckbox, AdminBulkEditor } from "@/components/admin-bulk-editor";
+import { AdminBulkCheckbox, AdminBulkEditor, AdminBulkTr } from "@/components/admin-bulk-editor";
 import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
 import { MediaPickerDialog } from "@/components/media-picker-dialog";
 import type { MediaChoice } from "@/components/media-library";
 import { requestErrorMessage, requestJson } from "@/lib/api-request";
 import { normalizeSearchText } from "@/lib/text-search";
 import { brandFieldLimits, brandSchema } from "@/modules/brands/schemas";
-import { BpButton, BpInput, BpSelect, BpSwitch, BpTable, BpTd, BpTh } from "./ui";
+import { BpButton, BpInput, BpListFilters, BpSwitch, BpTable, BpTd, BpTh } from "./ui";
 
 export type BrandRow = {
   id: string;
@@ -259,26 +259,17 @@ export function BlueprintBrandsView({ brands }: { brands: BrandRow[] }) {
         <Panel>
           {items.length ? (
             <>
-              <div className="flex flex-wrap items-center gap-2 border-b border-[var(--bp-divider)] p-3">
-                <div className="relative w-full min-w-[180px] sm:w-auto sm:min-w-[220px] sm:flex-1">
-                  <Search className="pointer-events-none absolute start-2.5 top-1/2 z-10 -translate-y-1/2 text-[var(--bp-muted)]" size={15} />
-                  <input
-                    type="search"
-                    value={query}
-                    onChange={(event) => setQuery(event.target.value)}
-                    aria-label="جستجوی برند"
-                    placeholder="جستجو بر اساس نام یا نشانی برند"
-                    className="bp-input bp-input-search"
-                  />
-                  {query ? (
-                    <BpButton isIconOnly size="sm" variant="ghost" aria-label="پاک‌کردن جستجو" onClick={() => setQuery("")} className="absolute end-1 top-1/2 z-20 h-7 min-h-7 w-7 min-w-7 -translate-y-1/2"><X size={14} /></BpButton>
-                  ) : null}
-                </div>
-                <span aria-hidden className="mx-1 hidden h-6 w-px shrink-0 bg-[var(--bp-divider)] sm:block" />
-                <BpSelect aria-label="وضعیت برند" value={statusFilter} reserveMessage={false} wrapperClassName="w-full sm:w-auto" className="w-full sm:w-40" onChange={(event) => setStatusFilter(event.target.value)} options={[{ value: "", label: "همه وضعیت‌ها" }, { value: "active", label: "فعال" }, { value: "inactive", label: "غیرفعال" }]} />
-                <BpSelect aria-label="نمایش در صفحه اصلی" value={featuredFilter} reserveMessage={false} wrapperClassName="w-full sm:w-auto" className="w-full sm:w-44" onChange={(event) => setFeaturedFilter(event.target.value)} options={[{ value: "", label: "صفحه اصلی: همه" }, { value: "yes", label: "در صفحه اصلی" }, { value: "no", label: "خارج از صفحه اصلی" }]} />
-                <BpSelect aria-label="محصولات برند" value={productsFilter} reserveMessage={false} wrapperClassName="w-full sm:w-auto" className="w-full sm:w-40" onChange={(event) => setProductsFilter(event.target.value)} options={[{ value: "", label: "محصولات: همه" }, { value: "has", label: "دارای محصول" }, { value: "none", label: "بدون محصول" }]} />
-              </div>
+              <BpListFilters
+                query={query}
+                onQueryChange={setQuery}
+                searchLabel="جستجوی برند"
+                searchPlaceholder="جستجو بر اساس نام یا نشانی برند"
+                filters={[
+                  { name: "status", ariaLabel: "وضعیت برند", value: statusFilter, onChange: setStatusFilter, options: [{ value: "", label: "همه وضعیت‌ها" }, { value: "active", label: "فعال" }, { value: "inactive", label: "غیرفعال" }] },
+                  { name: "featured", ariaLabel: "نمایش در صفحه اصلی", value: featuredFilter, onChange: setFeaturedFilter, options: [{ value: "", label: "صفحه اصلی: همه" }, { value: "yes", label: "در صفحه اصلی" }, { value: "no", label: "خارج از صفحه اصلی" }] },
+                  { name: "products", ariaLabel: "محصولات برند", value: productsFilter, onChange: setProductsFilter, options: [{ value: "", label: "محصولات: همه" }, { value: "has", label: "دارای محصول" }, { value: "none", label: "بدون محصول" }] },
+                ]}
+              />
               {visible.length ? (
               <>
               <div className="md:hidden">
@@ -330,8 +321,9 @@ export function BlueprintBrandsView({ brands }: { brands: BrandRow[] }) {
                   </thead>
                   <tbody>
                     {visible.map((brand) => (
-                      <tr
+                      <AdminBulkTr
                         key={brand.id}
+                        id={brand.id}
                         draggable={!savingOrder && !filtersActive}
                         onDragStart={(event) => { event.dataTransfer.effectAllowed = "move"; beginDrag(brand.id); }}
                         onDragOver={(event) => dragOver(event, brand.id)}
@@ -353,7 +345,7 @@ export function BlueprintBrandsView({ brands }: { brands: BrandRow[] }) {
                             <BpButton isIconOnly size="sm" variant="ghost" title={brand._count.products > 0 ? "برند دارای محصول قابل حذف نیست" : "حذف برند"} className="text-[var(--bp-danger)]" aria-label={`حذف ${brand.name}`} disabled={brand._count.products > 0} onClick={() => { setDeleteError(""); setDeleteTarget(brand); }}><Trash2 size={14} /></BpButton>
                           </div>
                         </BpTd>
-                      </tr>
+                      </AdminBulkTr>
                     ))}
                   </tbody>
                 </BpTable>

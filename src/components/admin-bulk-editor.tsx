@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useMemo, useState, type ReactNode } from "react";
+import { createContext, useContext, useMemo, useState, type HTMLAttributes, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { Checkbox, toast } from "@heroui/react";
 import { CheckSquare, Loader2, TriangleAlert } from "lucide-react";
@@ -145,11 +145,15 @@ export function AdminBulkCheckbox({ id, label, disabled = false }: { id: string;
  * A native `<tr>` that also toggles its own row's selection on a click anywhere inside it,
  * except on an interactive control the row already carries (a link, a button, the checkbox
  * itself) — those keep doing their own thing instead of being swallowed by the row.
+ *
+ * Any other `<tr>` attribute passes straight through, so a row that is also drag-reorderable
+ * keeps its `draggable` / `onDrag*` handlers alongside the click-to-select.
  */
-export function AdminBulkTr({ id, className, children }: { id: string; className?: string; children: ReactNode }) {
+export function AdminBulkTr({ id, className, children, ...rest }: { id: string; className?: string; children: ReactNode } & Omit<HTMLAttributes<HTMLTableRowElement>, "id" | "onClick" | "className" | "children">) {
   const { toggle } = useBulkSelection();
   return (
     <tr
+      {...rest}
       className={`cursor-pointer ${className ?? ""}`.trim()}
       onClick={(event) => {
         const target = event.target as HTMLElement;

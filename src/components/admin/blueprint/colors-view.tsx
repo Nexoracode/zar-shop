@@ -5,11 +5,12 @@ import { useRouter } from "next/navigation";
 import { toast } from "@heroui/react";
 import { GripVertical, Info, Pencil, Trash2 } from "lucide-react";
 import { AdminEmptyState, AdminPageHeader, AdminStatusBadge } from "@/components/admin-ui";
-import { AdminBulkCheckbox, AdminBulkEditor } from "@/components/admin-bulk-editor";
+import { AdminBulkCheckbox, AdminBulkEditor, AdminBulkTr } from "@/components/admin-bulk-editor";
 import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
 import { requestErrorMessage, requestJson } from "@/lib/api-request";
+import { normalizeSearchText } from "@/lib/text-search";
 import { colorFieldLimits, colorSchema } from "@/modules/colors/schemas";
-import { BpButton, BpColorField, BpInput, BpSwitch, BpTable, BpTd, BpTh } from "./ui";
+import { BpButton, BpColorField, BpInput, BpListFilters, BpSwitch, BpTable, BpTd, BpTh } from "./ui";
 
 type ColorItem = { id: string; name: string; hex: string; isActive: boolean; sortOrder: number };
 type FieldErrors = Record<string, string>;
@@ -48,6 +49,8 @@ export function BlueprintColorsView({ colors }: { colors: ColorItem[] }) {
     setPrevColors(colors);
     setItems(colors);
   }
+  const [query, setQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
   const [editing, setEditing] = useState<ColorItem | null>(null);
   const [name, setName] = useState(emptyForm.name);
   const [hex, setHex] = useState(emptyForm.hex);
@@ -189,6 +192,15 @@ export function BlueprintColorsView({ colors }: { colors: ColorItem[] }) {
     }
   }
 
+  const normalizedQuery = normalizeSearchText(query);
+  const filtersActive = Boolean(normalizedQuery || statusFilter);
+  const visible = items.filter((color) => {
+    if (normalizedQuery && !normalizeSearchText(`${color.name} ${color.hex}`).includes(normalizedQuery)) return false;
+    if (statusFilter === "active" && !color.isActive) return false;
+    if (statusFilter === "inactive" && color.isActive) return false;
+    return true;
+  });
+
   return (
     <div className="flex flex-col gap-2">
       <AdminPageHeader flush title="رنگ‌ها" description="رنگ‌های قابل انتخاب برای تنوع محصولات را تعریف و مدیریت کنید." />
@@ -213,11 +225,22 @@ export function BlueprintColorsView({ colors }: { colors: ColorItem[] }) {
         <Panel>
           {items.length ? (
             <>
+              <BpListFilters
+                query={query}
+                onQueryChange={setQuery}
+                searchLabel="جستجوی رنگ"
+                searchPlaceholder="جستجو بر اساس نام یا کد رنگ"
+                filters={[
+                  { name: "status", ariaLabel: "وضعیت رنگ", value: statusFilter, onChange: setStatusFilter, options: [{ value: "", label: "همه وضعیت‌ها" }, { value: "active", label: "فعال" }, { value: "inactive", label: "غیرفعال" }] },
+                ]}
+              />
+              {visible.length ? (
+              <>
               <div className="md:hidden">
-                {items.map((color) => (
+                {visible.map((color) => (
                   <article
                     key={color.id}
-                    draggable={!savingOrder}
+                    draggable={!savingOrder && !filtersActive}
                     onDragStart={(event) => { event.dataTransfer.effectAllowed = "move"; beginDrag(color.id); }}
                     onDragOver={(event) => dragOver(event, color.id)}
                     onDrop={(event) => event.preventDefault()}
@@ -241,10 +264,10 @@ export function BlueprintColorsView({ colors }: { colors: ColorItem[] }) {
                 ))}
               </div>
 
-              <AdminBulkEditor entity="colors" entityLabel="رنگ" ids={items.map((color) => color.id)} actions={[{ value: "active:on", label: "فعال‌کردن رنگ‌ها" }, { value: "active:off", label: "غیرفعال‌کردن رنگ‌ها" }]}>
+              <AdminBulkEditor entity="colors" entityLabel="رنگ" ids={visible.map((color) => color.id)} actions={[{ value: "active:on", label: "فعال‌کردن رنگ‌ها" }, { value: "active:off", label: "غیرفعال‌کردن رنگ‌ها" }]}>
                 <p className="m-0 flex items-center gap-1.5 border-b border-[var(--bp-divider)] px-4 py-2 text-[12px] text-[var(--bp-info)]">
                   <Info size={14} className="shrink-0" aria-hidden />
-                  با کشیدن ردیف، ترتیب نمایش رنگ‌ها در فروشگاه را تنظیم کنید.
+                  {filtersActive ? "برای تغییر ترتیب نمایش، ابتدا جستجو و فیلترها را پاک کنید." : "با کشیدن ردیف، ترتیب نمایش رنگ‌ها در فروشگاه را تنظیم کنید."}
                 </p>
                 <BpTable ariaLabel="فهرست رنگ‌ها" minWidth={640}>
                   <thead>
@@ -259,10 +282,11 @@ export function BlueprintColorsView({ colors }: { colors: ColorItem[] }) {
                     </tr>
                   </thead>
                   <tbody>
-                    {items.map((color) => (
-                      <tr
+                    {visible.map((color) => (
+                      <AdminBulkTr
                         key={color.id}
-                        draggable={!savingOrder}
+                        id={color.id}
+                        draggable={!savingOrder && !filtersActive}
                         onDragStart={(event) => { event.dataTransfer.effectAllowed = "move"; beginDrag(color.id); }}
                         onDragOver={(event) => dragOver(event, color.id)}
                         onDrop={(event) => event.preventDefault()}
@@ -281,11 +305,13 @@ export function BlueprintColorsView({ colors }: { colors: ColorItem[] }) {
                             <BpButton isIconOnly size="sm" variant="ghost" className="text-[var(--bp-danger)]" title="حذف رنگ" aria-label={`حذف ${color.name}`} onClick={() => { setDeleteError(""); setDeleteTarget(color); }}><Trash2 size={14} /></BpButton>
                           </div>
                         </BpTd>
-                      </tr>
+                      </AdminBulkTr>
                     ))}
                   </tbody>
                 </BpTable>
               </AdminBulkEditor>
+              </>
+              ) : <div className="p-6"><AdminEmptyState title="رنگی پیدا نشد" description="هیچ رنگی با جستجو و فیلترهای انتخابی مطابقت ندارد." /></div>}
             </>
           ) : <AdminEmptyState title="رنگی ثبت نشده" description="اولین رنگ فروشگاه را از فرم کنار جدول ثبت کنید." />}
         </Panel>
