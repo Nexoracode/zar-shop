@@ -1,21 +1,25 @@
 import { notFound } from "next/navigation";
 import { AdminPromotions } from "@/components/admin-promotions";
+import { BlueprintPromotionForm } from "@/components/admin/blueprint/promotion-form";
 import { AdminPageHeader } from "@/components/admin-ui";
 import { db } from "@/lib/db";
 import { requirePermission } from "@/modules/auth/session";
 import { serializePromotion } from "@/modules/promotions/admin";
+import { getBrandSettings } from "@/modules/settings/brand-settings";
 
 type Context = { params: Promise<{ id: string }> };
 
 export default async function EditPromotionPage({ params }: Context) {
   await requirePermission("orders:manage");
   const { id } = await params;
-  const promotion = await db.promotion.findUnique({
-    where: { id },
-    include: { _count: { select: { redemptions: true, rewards: true } } },
-  });
-
+  const [promotion, brandSettings] = await Promise.all([
+    db.promotion.findUnique({ where: { id }, include: { _count: { select: { redemptions: true, rewards: true } } } }),
+    getBrandSettings(),
+  ]);
   if (!promotion) notFound();
+  const serialized = serializePromotion(promotion);
+
+  if (brandSettings.adminTemplate === "BLUEPRINT") return <BlueprintPromotionForm promotion={serialized} />;
 
   return (
     <>
@@ -26,7 +30,7 @@ export default async function EditPromotionPage({ params }: Context) {
         backHref="/admin/promotions"
         backLabel="بازگشت به پروموشن‌ها"
       />
-      <AdminPromotions mode="form" initialEditing={serializePromotion(promotion)} />
+      <AdminPromotions mode="form" initialEditing={serialized} />
     </>
   );
 }

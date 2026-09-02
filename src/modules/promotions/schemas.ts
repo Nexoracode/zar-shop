@@ -18,8 +18,8 @@ export const promotionSchema = z.object({
   perUserLimit: z.coerce.number().int().positive().max(100).default(1),
   rewardExpiresDays: nullablePositiveInt,
   shippingScope: z.enum(["ALL", "TEHRAN"]).nullable().default(null),
-  startsAt: z.string().date(),
-  endsAt: z.string().date(),
+  startsAt: z.string().datetime(),
+  endsAt: z.string().datetime(),
   isActive: z.boolean().default(true),
 }).superRefine((promotion, context) => {
   const needsDiscount = promotion.type === "COUPON" || promotion.type === "NEXT_PURCHASE" || promotion.type === "FIRST_PURCHASE";

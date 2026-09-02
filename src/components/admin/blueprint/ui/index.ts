@@ -4,6 +4,7 @@ export { BpCheckbox } from "./checkbox";
 export { BpColorField } from "./color-field";
 export { BpColorPicker, type BpColorPickerProps } from "./color-picker";
 export { BpCombobox, type BpComboboxOption } from "./combobox";
+export { BpDateTimeField, formatPersianDateTime } from "./date-time-field";
 export { BpDialog, type BpDialogSize } from "./dialog";
 export { BpFieldMessage } from "./field-message";
 export { BpInput, BpTextarea } from "./input";

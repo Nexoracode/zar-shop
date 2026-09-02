@@ -1,9 +1,13 @@
 import { AdminPromotions } from "@/components/admin-promotions";
+import { BlueprintPromotionForm } from "@/components/admin/blueprint/promotion-form";
 import { AdminPageHeader } from "@/components/admin-ui";
 import { requirePermission } from "@/modules/auth/session";
+import { getBrandSettings } from "@/modules/settings/brand-settings";
 
 export default async function NewPromotionPage() {
   await requirePermission("orders:manage");
+  const brandSettings = await getBrandSettings();
+  if (brandSettings.adminTemplate === "BLUEPRINT") return <BlueprintPromotionForm />;
 
   return (
     <>

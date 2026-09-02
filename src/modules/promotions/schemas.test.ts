@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { promotionSchema } from "./schemas";
 
-const base = { title: "کمپین تست", startsAt: "2026-07-29", endsAt: "2026-08-29", isActive: true };
+const base = { title: "کمپین تست", startsAt: "2026-07-29T00:00:00.000Z", endsAt: "2026-08-29T23:59:00.000Z", isActive: true };
 
 test("accepts a complete coupon campaign", () => {
   const result = promotionSchema.safeParse({ ...base, type: "COUPON", code: "welcome-20", discountType: "PERCENT", discountValue: 20, usageLimit: 100, perUserLimit: 1 });

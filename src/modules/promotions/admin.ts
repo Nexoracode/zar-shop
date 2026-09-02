@@ -1,5 +1,4 @@
 import type { Promotion, Prisma } from "@generated/prisma/client";
-import { formatTehranDateInput, tehranDateEnd, tehranDateStart } from "@/modules/products/discount";
 import type { PromotionInput } from "@/modules/promotions/schemas";
 
 export function promotionData(input: PromotionInput): Prisma.PromotionUncheckedCreateInput {
@@ -15,8 +14,8 @@ export function promotionData(input: PromotionInput): Prisma.PromotionUncheckedC
     perUserLimit: input.perUserLimit,
     rewardExpiresDays: input.rewardExpiresDays,
     shippingScope: input.shippingScope,
-    startsAt: tehranDateStart(input.startsAt)!,
-    endsAt: tehranDateEnd(input.endsAt)!,
+    startsAt: new Date(input.startsAt),
+    endsAt: new Date(input.endsAt),
     isActive: input.isActive,
   };
 }
@@ -35,8 +34,8 @@ export function serializePromotion(promotion: Promotion & { _count?: { redemptio
     perUserLimit: promotion.perUserLimit,
     rewardExpiresDays: promotion.rewardExpiresDays,
     shippingScope: promotion.shippingScope === "TEHRAN" ? "TEHRAN" as const : promotion.shippingScope === "ALL" ? "ALL" as const : null,
-    startsAt: formatTehranDateInput(promotion.startsAt)!,
-    endsAt: formatTehranDateInput(promotion.endsAt)!,
+    startsAt: promotion.startsAt.toISOString(),
+    endsAt: promotion.endsAt.toISOString(),
     isActive: promotion.isActive,
     createdAt: promotion.createdAt.toISOString(),
     updatedAt: promotion.updatedAt.toISOString(),
