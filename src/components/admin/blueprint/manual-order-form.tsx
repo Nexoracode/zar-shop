@@ -7,7 +7,7 @@ import { PackageSearch, Plus, Search, Trash2, UserRound, X } from "lucide-react"
 import { AdminPageHeader } from "@/components/admin-ui";
 import { formatMoney } from "@/lib/format";
 import { requestErrorMessage, requestJson } from "@/lib/api-request";
-import { BpButton, BpInput, BpNumberInput, BpSeg, BpSelect, BpSpinner } from "./ui";
+import { BpButton, BpCombobox, BpInput, BpNumberInput, BpSeg, BpSelect, BpSpinner } from "./ui";
 
 type CustomerHit = { id: string; name: string; phone: string | null; email: string | null; isGuest: boolean; orderCount: number };
 type VariantOption = { selectionKey: string; label: string; stock: number };
@@ -338,8 +338,8 @@ export function BlueprintManualOrderForm({ industry }: { industry: "GOLD" | "GEN
               <div className="grid gap-3 sm:grid-cols-2">
                 <BpInput label="تحویل‌گیرنده" value={address.recipient} maxLength={100} onChange={(event) => setAddress((current) => ({ ...current, recipient: event.target.value }))} />
                 <BpInput label="شمارهٔ تماس" dir="ltr" inputMode="numeric" maxLength={11} value={address.phone} placeholder="09xxxxxxxxx" onChange={(event) => setAddress((current) => ({ ...current, phone: event.target.value.replace(/\D/g, "").slice(0, 11) }))} />
-                <BpSelect label="استان" value={address.provinceId} onChange={(event) => setAddress((current) => ({ ...current, provinceId: event.target.value, cityId: "" }))} placeholder="انتخاب استان" options={provinces.map((province) => ({ value: province.id, label: province.name }))} />
-                <BpSelect label="شهر" value={address.cityId} disabled={!address.provinceId} onChange={(event) => setAddress((current) => ({ ...current, cityId: event.target.value }))} placeholder="انتخاب شهر" options={address.provinceId ? cities.map((city) => ({ value: city.id, label: city.name })) : []} />
+                <BpCombobox label="استان" value={address.provinceId} onChange={(next) => setAddress((current) => ({ ...current, provinceId: next, cityId: "" }))} placeholder="جستجو یا انتخاب استان" emptyLabel="استانی پیدا نشد" options={provinces.map((province) => ({ value: province.id, label: province.name }))} />
+                <BpCombobox label="شهر" value={address.cityId} onChange={(next) => setAddress((current) => ({ ...current, cityId: next }))} placeholder={address.provinceId ? "جستجو یا انتخاب شهر" : "ابتدا استان را انتخاب کنید"} emptyLabel={address.provinceId ? "شهری پیدا نشد" : "ابتدا استان را انتخاب کنید"} options={address.provinceId ? cities.map((city) => ({ value: city.id, label: city.name })) : []} />
                 <BpInput label="کد پستی" dir="ltr" inputMode="numeric" maxLength={10} value={address.postalCode} onChange={(event) => setAddress((current) => ({ ...current, postalCode: event.target.value.replace(/\D/g, "").slice(0, 10) }))} />
                 <BpSelect label="روش ارسال" value={shippingMethodId} onChange={(event) => setShippingMethodId(event.target.value)} placeholder="بدون هزینهٔ ارسال" options={shippingMethods.map((method) => ({ value: method.id, label: method.name }))} />
                 <BpInput label="نشانی" wrapperClassName="sm:col-span-2" value={address.addressLine} maxLength={500} onChange={(event) => setAddress((current) => ({ ...current, addressLine: event.target.value }))} />
