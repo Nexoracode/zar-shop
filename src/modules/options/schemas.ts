@@ -34,6 +34,18 @@ export const optionTypeSchema = z.object({
 
 export const updateOptionTypeSchema = optionTypeSchema;
 
+/**
+ * A lightweight PATCH that touches only a type's own metadata — used by the library page to
+ * drag-reorder types and toggle them active without resending the whole value set. Carries no
+ * defaults, so an absent key is left untouched instead of being reset.
+ */
+export const patchOptionTypeSchema = z.object({
+  name: z.string().trim().min(1, "نام نوع تنوع را وارد کنید.").max(optionFieldLimits.typeName, "نام نوع تنوع نباید بیشتر از ۸۰ نویسه باشد."),
+  kind: z.enum(["SELECT", "COLOR"]),
+  isActive: z.boolean(),
+  sortOrder: z.coerce.number().int().min(0).max(9999),
+}).partial();
+
 /** Adding a single value from inside the product form, without opening the library page. */
 export const quickOptionValueSchema = z.object({
   typeId: z.string().cuid("نوع تنوع انتخاب‌شده معتبر نیست."),

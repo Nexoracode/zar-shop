@@ -3,7 +3,7 @@ import { db } from "@/lib/db";
 import { apiError } from "@/lib/http";
 import { getCurrentUser } from "@/modules/auth/session";
 import { hasPermission } from "@/modules/auth/permissions";
-import { updateOptionTypeSchema } from "@/modules/options/schemas";
+import { patchOptionTypeSchema, updateOptionTypeSchema } from "@/modules/options/schemas";
 import { updateOptionType } from "@/modules/options/option-library";
 import { auditRequestContext } from "@/modules/audit/request-context";
 
@@ -22,6 +22,28 @@ export async function PUT(request: Request, context: Context) {
     const input = updateOptionTypeSchema.parse(await request.json());
     const updated = await updateOptionType(id, input);
     await db.auditLog.create({ data: { actorId: actor.id, action: "OPTION_TYPE_UPDATE", entityType: "OptionType", entityId: id, ...auditRequestContext(request, { name: updated.name, kind: updated.kind, values: updated.values.length }) } });
+    return NextResponse.json(updated);
+  } catch (error) {
+    if (typeof error === "object" && error && "code" in error && error.code === "P2002") {
+      return NextResponse.json({ message: "نوع یا مقداری با این نام قبلاً ثبت شده است." }, { status: 409 });
+    }
+    return apiError(error);
+  }
+}
+
+export async function PATCH(request: Request, context: Context) {
+  try {
+    const actor = await requireCatalogManager();
+    if (!actor) return NextResponse.json({ message: "دسترسی غیرمجاز است." }, { status: 403 });
+    const { id } = await context.params;
+    const input = patchOptionTypeSchema.parse(await request.json());
+    const current = await db.optionType.findUnique({ where: { id }, select: { id: true } });
+    if (!current) return NextResponse.json({ message: "نوع تنوع پیدا نشد." }, { status: 404 });
+    const updated = await db.$transaction(async (tx) => {
+      const type = await tx.optionType.update({ where: { id }, data: input });
+      await tx.auditLog.create({ data: { actorId: actor.id, action: "OPTION_TYPE_UPDATE", entityType: "OptionType", entityId: id, ...auditRequestContext(request, { name: type.name, kind: type.kind, changedFields: Object.keys(input) }) } });
+      return type;
+    });
     return NextResponse.json(updated);
   } catch (error) {
     if (typeof error === "object" && error && "code" in error && error.code === "P2002") {
