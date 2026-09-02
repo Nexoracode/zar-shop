@@ -59,7 +59,7 @@ function Field({ label, value, ltr = false }: { label: string; value: React.Reac
   );
 }
 
-export function BlueprintOrderDetail({ order }: { order: OrderDetail }) {
+export function BlueprintOrderDetail({ order, industry }: { order: OrderDetail; industry: "GOLD" | "GENERAL" }) {
   const customerName = [order.user.firstName, order.user.lastName].filter(Boolean).join(" ") || "کاربر بدون نام";
   const address = readShippingAddress(order.shippingAddress);
   const successfulPayment = order.payments.find((payment) => payment.status === "SUCCESS");
@@ -201,7 +201,7 @@ export function BlueprintOrderDetail({ order }: { order: OrderDetail }) {
                   <dd className="bp-muted mt-0.5">{redemption.promotion.code ? `کد: ${redemption.promotion.code}` : "اعمال خودکار"}</dd>
                 </div>
               ))}
-              <div className="flex justify-between gap-3 border border-[var(--bp-divider)] px-3 py-2 text-[11px] font-bold"><dt>نرخ طلای ثبت‌شده</dt><dd>{formatMoney(order.goldPriceSnapshot.toString())}</dd></div>
+              {industry === "GOLD" && <div className="flex justify-between gap-3 border border-[var(--bp-divider)] px-3 py-2 text-[11px] font-bold"><dt>نرخ طلای ثبت‌شده</dt><dd>{formatMoney(order.goldPriceSnapshot.toString())}</dd></div>}
             </dl>
           </Panel>
 

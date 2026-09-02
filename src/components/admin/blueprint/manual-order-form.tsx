@@ -61,8 +61,9 @@ function useDebounced<T>(value: T, ms: number) {
   return debounced;
 }
 
-export function BlueprintManualOrderForm() {
+export function BlueprintManualOrderForm({ industry }: { industry: "GOLD" | "GENERAL" }) {
   const router = useRouter();
+  const isGold = industry === "GOLD";
 
   const [customerMode, setCustomerMode] = useState<"existing" | "new">("existing");
   const [customerQuery, setCustomerQuery] = useState("");
@@ -238,7 +239,7 @@ export function BlueprintManualOrderForm() {
 
   return (
     <div className="flex flex-col gap-2">
-      <AdminPageHeader flush title="ثبت سفارش دستی" description="یک سفارش را از پنل ثبت کنید؛ قیمت‌ها با همان منطق فروشگاه — شامل نرخ لحظه‌ای طلا — محاسبه می‌شوند." backHref="/admin/orders" backLabel="بازگشت به سفارش‌ها" />
+      <AdminPageHeader flush title="ثبت سفارش دستی" description={isGold ? "یک سفارش را از پنل ثبت کنید؛ قیمت‌ها با همان منطق فروشگاه — شامل نرخ لحظه‌ای طلا — محاسبه می‌شوند." : "یک سفارش را از پنل ثبت کنید؛ قیمت‌ها با همان منطق فروشگاه محاسبه می‌شوند."} backHref="/admin/orders" backLabel="بازگشت به سفارش‌ها" />
 
       <div className="grid items-start gap-2 xl:grid-cols-[minmax(0,1fr)_312px]">
         <div className="flex min-w-0 flex-col gap-2">
@@ -382,7 +383,7 @@ export function BlueprintManualOrderForm() {
                 <div className="bp-muted flex min-w-0 justify-between gap-2"><dt className="truncate">مالیات</dt><dd className="shrink-0 whitespace-nowrap">{formatMoney(String(quote.tax))}</dd></div>
                 <div className="bp-muted flex min-w-0 justify-between gap-2"><dt className="truncate">هزینهٔ ارسال{quote.shippingMethodTitle ? ` (${quote.shippingMethodTitle})` : ""}</dt><dd className="shrink-0 whitespace-nowrap">{formatMoney(String(quote.shipping))}</dd></div>
                 <div className="flex min-w-0 justify-between gap-2 border-t border-[var(--bp-divider)] pt-1.5 font-bold"><dt className="truncate">مبلغ نهایی</dt><dd className="shrink-0 whitespace-nowrap">{formatMoney(String(quote.total))}</dd></div>
-                {Number(quote.goldRate) > 0 && <div className="bp-muted mt-0.5 flex min-w-0 justify-between gap-2 text-[11px]"><dt className="truncate">نرخ طلای لحظه‌ای</dt><dd className="shrink-0 whitespace-nowrap">{formatMoney(quote.goldRate)}</dd></div>}
+                {isGold && Number(quote.goldRate) > 0 && <div className="bp-muted mt-0.5 flex min-w-0 justify-between gap-2 text-[11px]"><dt className="truncate">نرخ طلای لحظه‌ای</dt><dd className="shrink-0 whitespace-nowrap">{formatMoney(quote.goldRate)}</dd></div>}
               </dl>
             )}
           </section>
