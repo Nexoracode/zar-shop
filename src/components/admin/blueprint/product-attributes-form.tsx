@@ -65,10 +65,6 @@ export function ProductAttributeValuesEditor({ productId, productName, productSk
   const [valuesSnapshot, setValuesSnapshot] = useState(() => JSON.stringify(initialAttributes));
   const [saving, setSaving] = useState(false);
 
-  const definitions = groups.flatMap((group) => group.attributes);
-  const completedIds = new Set(values.filter((item) => item.values.some((value) => value.trim())).map((item) => item.attributeId));
-  const completedCount = definitions.filter((attribute) => completedIds.has(attribute.id)).length;
-  const importantCount = definitions.filter((attribute) => attribute.important && completedIds.has(attribute.id)).length;
   const groupsChanged = JSON.stringify(groups) !== groupsSnapshot;
   const dirty = groupsChanged || JSON.stringify(values) !== valuesSnapshot;
 
@@ -126,14 +122,6 @@ export function ProductAttributeValuesEditor({ productId, productName, productSk
             <span className="bp-muted block truncate text-[11px]"><span dir="ltr" className="font-mono">{productSku}</span> · از دستهٔ «{categoryName ?? "بدون دسته‌بندی"}»</span>
           </div>
         </div>
-        <div className="grid grid-cols-3 gap-2">
-          {[{ label: "کل ویژگی‌ها", value: definitions.length }, { label: "تکمیل‌شده", value: completedCount }, { label: "مهم و تکمیل‌شده", value: importantCount }].map((item) => (
-            <div key={item.label} className="border border-[var(--bp-divider)] p-2.5">
-              <strong className="block text-base font-bold">{item.value.toLocaleString("fa-IR")}</strong>
-              <span className="bp-muted mt-1 block text-[10px]">{item.label}</span>
-            </div>
-          ))}
-        </div>
         <BlueprintProductAttributes
           categoryName={categoryName ?? "بدون دسته‌بندی"}
           groups={groups}
@@ -144,9 +132,7 @@ export function ProductAttributeValuesEditor({ productId, productName, productSk
       </section>
 
       <div className="bp-frame flex items-center justify-between gap-3 p-4">
-        <span className="bp-muted text-[12px]">
-          {dirty ? "تغییرات ذخیره‌نشده دارید." : `${completedCount.toLocaleString("fa-IR")} ویژگی از ${definitions.length.toLocaleString("fa-IR")} ویژگی تکمیل شده است.`}
-        </span>
+        <span className="bp-muted text-[12px]">{dirty ? "تغییرات ذخیره‌نشده دارید." : "همهٔ تغییرات ذخیره شده است."}</span>
         <BpButton type="button" variant="primary" isPending={saving} disabled={!dirty} onClick={() => void save()}>ذخیره ویژگی‌ها</BpButton>
       </div>
     </div>

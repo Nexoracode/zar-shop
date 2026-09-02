@@ -14,9 +14,6 @@ export type CategoryAttributeRow = {
   slug: string;
   parentName: string | null;
   isActive: boolean;
-  productCount: number;
-  groupCount: number;
-  attributeCount: number;
 };
 
 type LoadedCategory = { id: string; name: string; groups: CategoryAttributeGroup[]; usedAttributeIds: string[] };
@@ -99,7 +96,6 @@ export function BlueprintCategoryAttributesManager({ categories }: { categories:
                       <span className="shrink-0"><AdminStatusBadge tone={category.isActive ? "success" : "neutral"}>{category.isActive ? "فعال" : "غیرفعال"}</AdminStatusBadge></span>
                     </span>
                     <span className="bp-muted min-w-0 truncate text-[10px]">{category.parentName ?? "دسته اصلی"}</span>
-                    <span className="bp-muted min-w-0 truncate text-[10px]">{category.groupCount.toLocaleString("fa-IR")} گروه · {category.attributeCount.toLocaleString("fa-IR")} ویژگی · {category.productCount.toLocaleString("fa-IR")} محصول</span>
                   </button>
                 );
               }) : <p className="bp-muted m-0 p-4 text-center text-[12px]">دسته‌بندی‌ای پیدا نشد.</p>}
