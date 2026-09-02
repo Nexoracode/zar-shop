@@ -58,6 +58,9 @@
   --bp-info-bg: #eef6ff;
 
   --bp-radius: 10px;
+  /* Shapes nested inside a card round to half the card's radius, so their corners sit cleanly
+     within the parent's. No shape in this template ever has a square corner. */
+  --bp-radius-sm: 5px;
 
   --bp-font: "Vazir", Tahoma, Arial, sans-serif;
 
@@ -757,6 +760,14 @@ select.bp-input:focus-visible { border-color: var(--bp-accent); outline: none; }
 /* One radius for every corner except genuinely circular things (avatars, status dots), so a
    page that still carries Tailwind rounding matches the template instead of its own scale. */
 .bp-root [class*="rounded-"]:not([class~="rounded-full"]) { border-radius: var(--bp-radius) !important; }
+
+/* No shape in this template has a square corner. A card is `--bp-radius`; anything nested in a
+   card — a sub-card, a bare-bordered box (Tailwind's `.border`), a dashed placeholder — rounds
+   to `--bp-radius-sm` so its corners nest inside the parent's. `.bp-btn`, `.bp-tag`, inputs and
+   the segmented control set their own radius and are left alone. */
+.bp-root :where(.bp-frame, .bp-card) :where(.bp-frame, .bp-card):not(.bp-btn),
+.bp-root :where(.bp-frame, .bp-card) .border:not([class*="rounded"]):not(.bp-btn):not(.bp-tag),
+.bp-root .border:not([class*="rounded"]):not(.bp-btn):not(.bp-tag):not(.bp-frame):not(.bp-card) { border-radius: var(--bp-radius-sm); }
 
 /* Soft drop shadows belong to the classic skin; the blueprint separates with hairlines. */
 .bp-root [class*="shadow-["],

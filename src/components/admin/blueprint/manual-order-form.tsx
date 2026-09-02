@@ -241,7 +241,7 @@ export function BlueprintManualOrderForm({ industry }: { industry: "GOLD" | "GEN
     <div className="flex flex-col gap-2">
       <AdminPageHeader flush title="ثبت سفارش دستی" description={isGold ? "یک سفارش را از پنل ثبت کنید؛ قیمت‌ها با همان منطق فروشگاه — شامل نرخ لحظه‌ای طلا — محاسبه می‌شوند." : "یک سفارش را از پنل ثبت کنید؛ قیمت‌ها با همان منطق فروشگاه محاسبه می‌شوند."} backHref="/admin/orders" backLabel="بازگشت به سفارش‌ها" />
 
-      <div className="grid items-start gap-2 xl:grid-cols-[minmax(0,1fr)_312px]">
+      <div className="grid items-start gap-2 xl:grid-cols-[minmax(0,1fr)_324px]">
         <div className="flex min-w-0 flex-col gap-2">
           <Panel title="مشتری" icon={<UserRound size={16} />}>
             <BpSeg
@@ -361,34 +361,47 @@ export function BlueprintManualOrderForm({ industry }: { industry: "GOLD" | "GEN
         </div>
 
         <aside className="flex min-w-0 flex-col gap-2 xl:sticky xl:top-20">
-          <section className="bp-frame relative min-w-0 p-3.5">
-            <div className="mb-2.5 flex items-center gap-2">
+          <section className="bp-frame relative min-w-0">
+            <div className="flex items-center justify-between gap-2 border-b border-[var(--bp-divider)] px-4 py-3">
               <h2 className="m-0 text-[13px] font-bold">خلاصهٔ مبالغ</h2>
-              {quoting && <BpSpinner size={13} />}
+              {quoting ? <BpSpinner size={14} /> : quote ? <span className="bp-muted text-[11px]">{quote.lines.reduce((sum, line) => sum + line.quantity, 0).toLocaleString("fa-IR")} قلم</span> : null}
             </div>
+
             {quoteError ? (
-              <p className="m-0 text-[12px] text-[var(--bp-danger)]">{quoteError}</p>
+              <p className="m-0 p-4 text-[12px] text-[var(--bp-danger)]">{quoteError}</p>
             ) : !quote ? (
-              <p className="bp-muted m-0 text-[12px]">پس از افزودن اقلام، مبلغ محاسبه می‌شود.</p>
+              <p className="bp-muted m-0 p-4 text-center text-[12px] leading-6">پس از افزودن اقلام و انتخاب روش تحویل،<br />مبلغ سفارش این‌جا محاسبه می‌شود.</p>
             ) : (
-              <dl className="grid min-w-0 gap-1.5 text-[12px]">
-                {quote.lines.map((line) => (
-                  <div key={`${line.productId}:${line.selectionKey}`} className="bp-muted flex min-w-0 justify-between gap-2">
-                    <dt className="min-w-0 truncate">{line.name} <span className="whitespace-nowrap">× {line.quantity.toLocaleString("fa-IR")}</span></dt>
-                    <dd className="shrink-0 whitespace-nowrap">{formatMoney(String(line.lineTotal))}</dd>
-                  </div>
-                ))}
-                <div className="bp-muted flex min-w-0 justify-between gap-2 border-t border-[var(--bp-divider)] pt-1.5"><dt className="truncate">جمع کالاها</dt><dd className="shrink-0 whitespace-nowrap">{formatMoney(String(quote.subtotal))}</dd></div>
-                {quote.productDiscount > 0 && <div className="flex min-w-0 justify-between gap-2 text-[var(--bp-danger)]"><dt className="truncate">تخفیف</dt><dd className="shrink-0 whitespace-nowrap">{formatMoney(String(quote.productDiscount))}</dd></div>}
-                <div className="bp-muted flex min-w-0 justify-between gap-2"><dt className="truncate">مالیات</dt><dd className="shrink-0 whitespace-nowrap">{formatMoney(String(quote.tax))}</dd></div>
-                <div className="bp-muted flex min-w-0 justify-between gap-2"><dt className="truncate">هزینهٔ ارسال{quote.shippingMethodTitle ? ` (${quote.shippingMethodTitle})` : ""}</dt><dd className="shrink-0 whitespace-nowrap">{formatMoney(String(quote.shipping))}</dd></div>
-                <div className="flex min-w-0 justify-between gap-2 border-t border-[var(--bp-divider)] pt-1.5 font-bold"><dt className="truncate">مبلغ نهایی</dt><dd className="shrink-0 whitespace-nowrap">{formatMoney(String(quote.total))}</dd></div>
-                {isGold && Number(quote.goldRate) > 0 && <div className="bp-muted mt-0.5 flex min-w-0 justify-between gap-2 text-[11px]"><dt className="truncate">نرخ طلای لحظه‌ای</dt><dd className="shrink-0 whitespace-nowrap">{formatMoney(quote.goldRate)}</dd></div>}
-              </dl>
+              <div className="p-4">
+                <ul className="m-0 grid list-none gap-0 overflow-hidden border border-[var(--bp-divider)] p-0">
+                  {quote.lines.map((line) => (
+                    <li key={`${line.productId}:${line.selectionKey}`} className="flex min-w-0 items-center justify-between gap-2 border-b border-[var(--bp-divider)] px-2.5 py-2 text-[12px] last:border-b-0">
+                      <span className="min-w-0 truncate" title={line.name}>{line.name}<span className="bp-muted whitespace-nowrap"> × {line.quantity.toLocaleString("fa-IR")}</span></span>
+                      <span className="shrink-0 whitespace-nowrap">{formatMoney(String(line.lineTotal))}</span>
+                    </li>
+                  ))}
+                </ul>
+
+                <dl className="mt-3 grid min-w-0 gap-2 text-[12.5px]">
+                  <div className="bp-muted flex min-w-0 justify-between gap-2"><dt className="truncate">جمع کالاها</dt><dd className="shrink-0 whitespace-nowrap">{formatMoney(String(quote.subtotal))}</dd></div>
+                  {quote.productDiscount > 0 && <div className="flex min-w-0 justify-between gap-2 text-[var(--bp-danger)]"><dt className="truncate">تخفیف محصولات</dt><dd className="shrink-0 whitespace-nowrap">−{formatMoney(String(quote.productDiscount))}</dd></div>}
+                  <div className="bp-muted flex min-w-0 justify-between gap-2"><dt className="truncate">مالیات</dt><dd className="shrink-0 whitespace-nowrap">{formatMoney(String(quote.tax))}</dd></div>
+                  <div className="bp-muted flex min-w-0 justify-between gap-2"><dt className="min-w-0 truncate">هزینهٔ ارسال{quote.shippingMethodTitle ? ` · ${quote.shippingMethodTitle}` : ""}</dt><dd className="shrink-0 whitespace-nowrap">{formatMoney(String(quote.shipping))}</dd></div>
+                </dl>
+
+                <div className="mt-3 flex min-w-0 items-baseline justify-between gap-2 border border-[var(--bp-accent)] bg-[var(--bp-accent-100)] px-3 py-2.5">
+                  <span className="text-[12px] font-bold">مبلغ نهایی</span>
+                  <strong className="shrink-0 whitespace-nowrap text-[15px] font-bold">{formatMoney(String(quote.total))}</strong>
+                </div>
+
+                {isGold && Number(quote.goldRate) > 0 && (
+                  <p className="bp-muted m-0 mt-2 flex min-w-0 justify-between gap-2 text-[11px]"><span className="truncate">نرخ طلای لحظه‌ای این محاسبه</span><span className="shrink-0 whitespace-nowrap">{formatMoney(quote.goldRate)}</span></p>
+                )}
+              </div>
             )}
           </section>
 
-          {formError && <p className="m-0 border border-[var(--bp-danger)] bg-[color-mix(in_srgb,var(--bp-danger)_8%,transparent)] p-3 text-[12px] text-[var(--bp-danger)]">{formError}</p>}
+          {formError && <p className="m-0 border border-[var(--bp-danger)] bg-[color-mix(in_srgb,var(--bp-danger)_8%,transparent)] p-3 text-[12px] leading-6 text-[var(--bp-danger)]">{formError}</p>}
 
           <BpButton type="button" variant="primary" fullWidth isPending={submitting} disabled={!quote || Boolean(quoteError)} onClick={() => void submit()}>ثبت سفارش</BpButton>
         </aside>
