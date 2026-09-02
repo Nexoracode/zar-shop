@@ -32,6 +32,26 @@ function Panel({ title, icon, children }: { title: string; icon?: React.ReactNod
   );
 }
 
+function SearchField({ value, onChange, placeholder, ariaLabel, loading, children }: {
+  value: string;
+  onChange: (value: string) => void;
+  placeholder: string;
+  ariaLabel: string;
+  loading: boolean;
+  children?: React.ReactNode;
+}) {
+  return (
+    <div>
+      <div className="relative">
+        <Search className="pointer-events-none absolute start-2.5 top-1/2 z-10 -translate-y-1/2 text-[var(--bp-muted)]" size={15} aria-hidden />
+        <input type="search" value={value} onChange={(event) => onChange(event.target.value)} aria-label={ariaLabel} placeholder={placeholder} className="bp-input bp-input-search" />
+        {loading && <span className="absolute end-2.5 top-1/2 -translate-y-1/2 text-[var(--bp-accent)]"><BpSpinner size={14} /></span>}
+      </div>
+      {children}
+    </div>
+  );
+}
+
 function useDebounced<T>(value: T, ms: number) {
   const [debounced, setDebounced] = useState(value);
   useEffect(() => {
@@ -46,12 +66,12 @@ export function BlueprintManualOrderForm() {
 
   const [customerMode, setCustomerMode] = useState<"existing" | "new">("existing");
   const [customerQuery, setCustomerQuery] = useState("");
-  const [customerResults, setCustomerResults] = useState<CustomerHit[]>([]);
+  const [customerSearch, setCustomerSearch] = useState<{ q: string; results: CustomerHit[] }>({ q: "", results: [] });
   const [customer, setCustomer] = useState<CustomerHit | null>(null);
   const [newCustomer, setNewCustomer] = useState({ firstName: "", lastName: "", phone: "" });
 
   const [productQuery, setProductQuery] = useState("");
-  const [productResults, setProductResults] = useState<ProductHit[]>([]);
+  const [productSearch, setProductSearch] = useState<{ q: string; results: ProductHit[] }>({ q: "", results: [] });
   const [items, setItems] = useState<LineDraft[]>([]);
 
   const [delivery, setDelivery] = useState<"STORE_PICKUP" | "INSURED_SHIPPING">("STORE_PICKUP");
@@ -78,11 +98,13 @@ export function BlueprintManualOrderForm() {
     const controller = new AbortController();
     fetch(`/api/admin/users/search?q=${encodeURIComponent(debouncedCustomerQuery)}`, { signal: controller.signal })
       .then((response) => response.json())
-      .then((data) => { if (Array.isArray(data)) setCustomerResults(data); })
+      .then((data) => setCustomerSearch({ q: debouncedCustomerQuery, results: Array.isArray(data) ? data : [] }))
       .catch(() => {});
     return () => controller.abort();
   }, [debouncedCustomerQuery, customerMode]);
-  const customerResultsShown = customerMode === "existing" && !customer && customerQuery.trim().length >= 3 ? customerResults : [];
+  const trimmedCustomerQuery = customerQuery.trim();
+  const customerSearching = customerMode === "existing" && !customer && trimmedCustomerQuery.length >= 3 && customerSearch.q !== trimmedCustomerQuery;
+  const customerResultsShown = customerMode === "existing" && !customer && customerSearch.q === trimmedCustomerQuery && trimmedCustomerQuery.length >= 3 ? customerSearch.results : [];
 
   // — product search —
   useEffect(() => {
@@ -90,11 +112,13 @@ export function BlueprintManualOrderForm() {
     const controller = new AbortController();
     fetch(`/api/admin/products/search?q=${encodeURIComponent(debouncedProductQuery)}`, { signal: controller.signal })
       .then((response) => response.json())
-      .then((data) => { if (Array.isArray(data)) setProductResults(data); })
+      .then((data) => setProductSearch({ q: debouncedProductQuery, results: Array.isArray(data) ? data : [] }))
       .catch(() => {});
     return () => controller.abort();
   }, [debouncedProductQuery]);
-  const productResultsShown = productQuery.trim().length >= 3 ? productResults : [];
+  const trimmedProductQuery = productQuery.trim();
+  const productSearching = trimmedProductQuery.length >= 3 && productSearch.q !== trimmedProductQuery;
+  const productResultsShown = productSearch.q === trimmedProductQuery && trimmedProductQuery.length >= 3 ? productSearch.results : [];
 
   // — locations & shipping methods —
   useEffect(() => {
@@ -113,7 +137,6 @@ export function BlueprintManualOrderForm() {
 
   async function addProduct(hit: ProductHit) {
     setProductQuery("");
-    setProductResults([]);
     if (items.some((item) => item.productId === hit.id && item.variants.length === 0)) return;
     try {
       const data = await requestJson<{ id: string; name: string; sku: string; storeIndustry: "GOLD" | "GENERAL"; variants: VariantOption[] }>(`/api/admin/orders/product-options?productId=${encodeURIComponent(hit.id)}`, {}, { fallbackMessage: "دریافت تنوع‌های محصول انجام نشد." });
@@ -217,7 +240,7 @@ export function BlueprintManualOrderForm() {
     <div className="flex flex-col gap-2">
       <AdminPageHeader flush title="ثبت سفارش دستی" description="یک سفارش را از پنل ثبت کنید؛ قیمت‌ها با همان منطق فروشگاه — شامل نرخ لحظه‌ای طلا — محاسبه می‌شوند." backHref="/admin/orders" backLabel="بازگشت به سفارش‌ها" />
 
-      <div className="grid items-start gap-2 xl:grid-cols-[minmax(0,1fr)_360px]">
+      <div className="grid items-start gap-2 xl:grid-cols-[minmax(0,1fr)_312px]">
         <div className="flex min-w-0 flex-col gap-2">
           <Panel title="مشتری" icon={<UserRound size={16} />}>
             <BpSeg
@@ -237,9 +260,10 @@ export function BlueprintManualOrderForm() {
                   <BpButton type="button" isIconOnly size="sm" variant="ghost" aria-label="تغییر مشتری" onClick={() => setCustomer(null)}><X size={14} /></BpButton>
                 </div>
               ) : (
-                <div className="relative">
-                  <Search className="pointer-events-none absolute start-2.5 top-1/2 z-10 -translate-y-1/2 text-[var(--bp-muted)]" size={15} />
-                  <input type="search" value={customerQuery} onChange={(event) => setCustomerQuery(event.target.value)} aria-label="جستجوی مشتری" placeholder="نام، موبایل یا ایمیل (حداقل ۳ نویسه)" className="bp-input bp-input-search" />
+                <SearchField value={customerQuery} onChange={setCustomerQuery} loading={customerSearching} ariaLabel="جستجوی مشتری" placeholder="نام، موبایل یا ایمیل (حداقل ۳ نویسه)">
+                  {trimmedCustomerQuery.length >= 3 && !customerSearching && customerResultsShown.length === 0 && (
+                    <p className="bp-muted m-0 mt-1.5 text-[12px]">مشتری‌ای پیدا نشد.</p>
+                  )}
                   {customerResultsShown.length > 0 && (
                     <div className="bp-scroll mt-1.5 grid max-h-56 gap-1 overflow-y-auto">
                       {customerResultsShown.map((hit) => (
@@ -250,7 +274,7 @@ export function BlueprintManualOrderForm() {
                       ))}
                     </div>
                   )}
-                </div>
+                </SearchField>
               )
             ) : (
               <div className="grid gap-3 sm:grid-cols-3">
@@ -262,19 +286,22 @@ export function BlueprintManualOrderForm() {
           </Panel>
 
           <Panel title="اقلام سفارش" icon={<PackageSearch size={16} />}>
-            <div className="relative mb-3">
-              <Search className="pointer-events-none absolute start-2.5 top-1/2 z-10 -translate-y-1/2 text-[var(--bp-muted)]" size={15} />
-              <input type="search" value={productQuery} onChange={(event) => setProductQuery(event.target.value)} aria-label="جستجوی محصول" placeholder="نام یا کد کالای محصول (حداقل ۳ نویسه)" className="bp-input bp-input-search" />
-              {productResultsShown.length > 0 && (
-                <div className="bp-scroll mt-1.5 grid max-h-56 gap-1 overflow-y-auto">
-                  {productResultsShown.map((hit) => (
-                    <button key={hit.id} type="button" onClick={() => void addProduct(hit)} className="flex items-center gap-2 border border-[var(--bp-divider)] p-2 text-start hover:border-[var(--bp-accent)]">
-                      <span className="min-w-0 flex-1"><strong className="block truncate text-[12px]">{hit.name}</strong><span dir="ltr" className="bp-muted block truncate text-right text-[10px]">{hit.sku}</span></span>
-                      <Plus size={14} className="shrink-0 text-[var(--bp-accent)]" aria-hidden />
-                    </button>
-                  ))}
-                </div>
-              )}
+            <div className="mb-3">
+              <SearchField value={productQuery} onChange={setProductQuery} loading={productSearching} ariaLabel="جستجوی محصول" placeholder="نام یا کد کالای محصول (حداقل ۳ نویسه)">
+                {trimmedProductQuery.length >= 3 && !productSearching && productResultsShown.length === 0 && (
+                  <p className="bp-muted m-0 mt-1.5 text-[12px]">محصولی پیدا نشد.</p>
+                )}
+                {productResultsShown.length > 0 && (
+                  <div className="bp-scroll mt-1.5 grid max-h-56 gap-1 overflow-y-auto">
+                    {productResultsShown.map((hit) => (
+                      <button key={hit.id} type="button" onClick={() => void addProduct(hit)} className="flex items-center gap-2 border border-[var(--bp-divider)] p-2 text-start hover:border-[var(--bp-accent)]">
+                        <span className="min-w-0 flex-1"><strong className="block truncate text-[12px]">{hit.name}</strong><span dir="ltr" className="bp-muted block truncate text-right text-[10px]">{hit.sku}</span></span>
+                        <Plus size={14} className="shrink-0 text-[var(--bp-accent)]" aria-hidden />
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </SearchField>
             </div>
 
             {items.length === 0 ? (
@@ -311,7 +338,7 @@ export function BlueprintManualOrderForm() {
                 <BpInput label="تحویل‌گیرنده" value={address.recipient} maxLength={100} onChange={(event) => setAddress((current) => ({ ...current, recipient: event.target.value }))} />
                 <BpInput label="شمارهٔ تماس" dir="ltr" inputMode="numeric" maxLength={11} value={address.phone} placeholder="09xxxxxxxxx" onChange={(event) => setAddress((current) => ({ ...current, phone: event.target.value.replace(/\D/g, "").slice(0, 11) }))} />
                 <BpSelect label="استان" value={address.provinceId} onChange={(event) => setAddress((current) => ({ ...current, provinceId: event.target.value, cityId: "" }))} placeholder="انتخاب استان" options={provinces.map((province) => ({ value: province.id, label: province.name }))} />
-                <BpSelect label="شهر" value={address.cityId} disabled={!address.provinceId} onChange={(event) => setAddress((current) => ({ ...current, cityId: event.target.value }))} placeholder="انتخاب شهر" options={cities.map((city) => ({ value: city.id, label: city.name }))} />
+                <BpSelect label="شهر" value={address.cityId} disabled={!address.provinceId} onChange={(event) => setAddress((current) => ({ ...current, cityId: event.target.value }))} placeholder="انتخاب شهر" options={address.provinceId ? cities.map((city) => ({ value: city.id, label: city.name })) : []} />
                 <BpInput label="کد پستی" dir="ltr" inputMode="numeric" maxLength={10} value={address.postalCode} onChange={(event) => setAddress((current) => ({ ...current, postalCode: event.target.value.replace(/\D/g, "").slice(0, 10) }))} />
                 <BpSelect label="روش ارسال" value={shippingMethodId} onChange={(event) => setShippingMethodId(event.target.value)} placeholder="بدون هزینهٔ ارسال" options={shippingMethods.map((method) => ({ value: method.id, label: method.name }))} />
                 <BpInput label="نشانی" wrapperClassName="sm:col-span-2" value={address.addressLine} maxLength={500} onChange={(event) => setAddress((current) => ({ ...current, addressLine: event.target.value }))} />
@@ -333,33 +360,31 @@ export function BlueprintManualOrderForm() {
         </div>
 
         <aside className="flex min-w-0 flex-col gap-2 xl:sticky xl:top-20">
-          <section className="bp-frame relative">
-            <div className="flex items-center justify-between gap-2 border-b border-[var(--bp-divider)] px-4 py-3">
-              <h2 className="m-0 text-[14px] font-bold">خلاصهٔ مبالغ</h2>
-              {quoting && <BpSpinner size={15} />}
+          <section className="bp-frame relative min-w-0 p-3.5">
+            <div className="mb-2.5 flex items-center gap-2">
+              <h2 className="m-0 text-[13px] font-bold">خلاصهٔ مبالغ</h2>
+              {quoting && <BpSpinner size={13} />}
             </div>
-            <div className="p-4">
-              {quoteError ? (
-                <p className="m-0 text-[12px] text-[var(--bp-danger)]">{quoteError}</p>
-              ) : !quote ? (
-                <p className="bp-muted m-0 text-[12px]">پس از افزودن اقلام، مبلغ محاسبه می‌شود.</p>
-              ) : (
-                <dl className="grid gap-2 text-[13px]">
-                  {quote.lines.map((line) => (
-                    <div key={`${line.productId}:${line.selectionKey}`} className="bp-muted flex justify-between gap-2">
-                      <dt className="min-w-0 truncate">{line.name} × {line.quantity.toLocaleString("fa-IR")}</dt>
-                      <dd className="shrink-0">{formatMoney(String(line.lineTotal))}</dd>
-                    </div>
-                  ))}
-                  <div className="bp-muted flex justify-between gap-2 border-t border-[var(--bp-divider)] pt-2"><dt>جمع کالاها</dt><dd>{formatMoney(String(quote.subtotal))}</dd></div>
-                  {quote.productDiscount > 0 && <div className="flex justify-between gap-2 text-[var(--bp-danger)]"><dt>تخفیف</dt><dd>{formatMoney(String(quote.productDiscount))}</dd></div>}
-                  <div className="bp-muted flex justify-between gap-2"><dt>مالیات</dt><dd>{formatMoney(String(quote.tax))}</dd></div>
-                  <div className="bp-muted flex justify-between gap-2"><dt>هزینهٔ ارسال{quote.shippingMethodTitle ? ` (${quote.shippingMethodTitle})` : ""}</dt><dd>{formatMoney(String(quote.shipping))}</dd></div>
-                  <div className="flex justify-between gap-2 border-t border-[var(--bp-divider)] pt-2 font-bold"><dt>مبلغ نهایی</dt><dd>{formatMoney(String(quote.total))}</dd></div>
-                  {Number(quote.goldRate) > 0 && <div className="flex justify-between gap-2 border border-[var(--bp-divider)] px-2 py-1.5 text-[11px] font-bold"><dt>نرخ طلای لحظه‌ای</dt><dd>{formatMoney(quote.goldRate)}</dd></div>}
-                </dl>
-              )}
-            </div>
+            {quoteError ? (
+              <p className="m-0 text-[12px] text-[var(--bp-danger)]">{quoteError}</p>
+            ) : !quote ? (
+              <p className="bp-muted m-0 text-[12px]">پس از افزودن اقلام، مبلغ محاسبه می‌شود.</p>
+            ) : (
+              <dl className="grid min-w-0 gap-1.5 text-[12px]">
+                {quote.lines.map((line) => (
+                  <div key={`${line.productId}:${line.selectionKey}`} className="bp-muted flex min-w-0 justify-between gap-2">
+                    <dt className="min-w-0 truncate">{line.name} <span className="whitespace-nowrap">× {line.quantity.toLocaleString("fa-IR")}</span></dt>
+                    <dd className="shrink-0 whitespace-nowrap">{formatMoney(String(line.lineTotal))}</dd>
+                  </div>
+                ))}
+                <div className="bp-muted flex min-w-0 justify-between gap-2 border-t border-[var(--bp-divider)] pt-1.5"><dt className="truncate">جمع کالاها</dt><dd className="shrink-0 whitespace-nowrap">{formatMoney(String(quote.subtotal))}</dd></div>
+                {quote.productDiscount > 0 && <div className="flex min-w-0 justify-between gap-2 text-[var(--bp-danger)]"><dt className="truncate">تخفیف</dt><dd className="shrink-0 whitespace-nowrap">{formatMoney(String(quote.productDiscount))}</dd></div>}
+                <div className="bp-muted flex min-w-0 justify-between gap-2"><dt className="truncate">مالیات</dt><dd className="shrink-0 whitespace-nowrap">{formatMoney(String(quote.tax))}</dd></div>
+                <div className="bp-muted flex min-w-0 justify-between gap-2"><dt className="truncate">هزینهٔ ارسال{quote.shippingMethodTitle ? ` (${quote.shippingMethodTitle})` : ""}</dt><dd className="shrink-0 whitespace-nowrap">{formatMoney(String(quote.shipping))}</dd></div>
+                <div className="flex min-w-0 justify-between gap-2 border-t border-[var(--bp-divider)] pt-1.5 font-bold"><dt className="truncate">مبلغ نهایی</dt><dd className="shrink-0 whitespace-nowrap">{formatMoney(String(quote.total))}</dd></div>
+                {Number(quote.goldRate) > 0 && <div className="bp-muted mt-0.5 flex min-w-0 justify-between gap-2 text-[11px]"><dt className="truncate">نرخ طلای لحظه‌ای</dt><dd className="shrink-0 whitespace-nowrap">{formatMoney(quote.goldRate)}</dd></div>}
+              </dl>
+            )}
           </section>
 
           {formError && <p className="m-0 border border-[var(--bp-danger)] bg-[color-mix(in_srgb,var(--bp-danger)_8%,transparent)] p-3 text-[12px] text-[var(--bp-danger)]">{formError}</p>}
