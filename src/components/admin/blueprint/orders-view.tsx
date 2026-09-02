@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { OrderStatus } from "@generated/prisma/enums";
 import { Eye, X } from "lucide-react";
-import { AdminEmptyState, AdminPageHeader, AdminPrimaryLink } from "@/components/admin-ui";
+import { AdminEmptyState, AdminPageHeader } from "@/components/admin-ui";
 import { AdminListFilters } from "@/components/admin-list-filters";
 import { AdminPagination } from "@/components/admin-pagination";
 import { AdminBulkCheckbox, AdminBulkEditor, AdminBulkTr } from "@/components/admin-bulk-editor";
@@ -52,7 +52,6 @@ export function BlueprintOrdersView({ orders, query, status, statuses, filteredP
         flush
         title="سفارش‌ها"
         description="پرداخت‌ها، وضعیت آماده‌سازی و ارسال سفارش‌ها را یک‌جا پیگیری کنید."
-        action={<AdminPrimaryLink href="/admin/orders/new">ثبت سفارش دستی</AdminPrimaryLink>}
       />
 
       {filteredProduct && (
