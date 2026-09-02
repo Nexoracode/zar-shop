@@ -123,6 +123,11 @@ export function BlueprintOptionTypesView({ types, colors }: { types: OptionTypeR
     setValues((current) => (current.length > 1 ? current.filter((row) => row.key !== key) : [newValueDraft()]));
   }
 
+  // A colour value takes its label straight from the colour's name — the admin only picks the
+  // colour — so a row counts as filled once it has that pick; a plain value needs typed text.
+  const rowFilled = (row: ValueDraft) => (kind === "COLOR" ? Boolean(row.colorId) : Boolean(row.label.trim()));
+  const rowLabel = (row: ValueDraft) => (kind === "COLOR" ? colorsById.get(row.colorId ?? "")?.name ?? "" : row.label);
+
   async function submit() {
     // The form no longer collects an order value — new types are appended, existing ones are
     // reordered from the table — so the position is derived, never typed.
@@ -134,14 +139,14 @@ export function BlueprintOptionTypesView({ types, colors }: { types: OptionTypeR
       sortOrder: editing?.sortOrder ?? nextSortOrder,
       // A row the admin left blank is an unfinished thought, not an empty value.
       values: values
-        .filter((row) => row.label.trim())
-        .map((row) => ({ ...(row.id ? { id: row.id } : {}), label: row.label, colorId: row.colorId, isActive: row.isActive })),
+        .filter(rowFilled)
+        .map((row) => ({ ...(row.id ? { id: row.id } : {}), label: rowLabel(row), colorId: row.colorId, isActive: row.isActive })),
     };
     const validation = optionTypeSchema.safeParse(body);
     if (!validation.success) {
       const found: FieldErrors = {};
       const foundValues: Record<string, string> = {};
-      const keptRows = values.filter((row) => row.label.trim());
+      const keptRows = values.filter(rowFilled);
       for (const issue of validation.error.issues) {
         const [head, index] = issue.path;
         if (head === "values" && typeof index === "number") {
@@ -264,38 +269,44 @@ export function BlueprintOptionTypesView({ types, colors }: { types: OptionTypeR
                 <div>
                   <span className="bp-muted mb-1.5 flex items-center justify-between text-[12px] font-bold">
                     <span>مقادیر این نوع</span>
-                    <span className="font-normal">{values.filter((row) => row.label.trim()).length.toLocaleString("fa-IR")} مقدار</span>
+                    <span className="font-normal">{values.filter(rowFilled).length.toLocaleString("fa-IR")} مقدار</span>
                   </span>
                   {errors.values && <p className="m-0 mb-2 border border-[var(--bp-danger)] bg-[color-mix(in_srgb,var(--bp-danger)_8%,transparent)] px-2.5 py-1.5 text-[12px] text-[var(--bp-danger)]">{errors.values}</p>}
+                  {kind === "COLOR" && <p className="bp-muted m-0 mb-2 text-[11px]">برای هر مقدار فقط رنگ را انتخاب کنید؛ نام مقدار از نام همان رنگ برداشته می‌شود.</p>}
                   <div className="grid gap-2">
-                    {values.map((row) => (
+                    {values.map((row) => {
+                      const takenElsewhere = new Set(values.filter((other) => other.key !== row.key).map((other) => other.colorId).filter((id): id is string => Boolean(id)));
+                      return (
                       <div key={row.key} data-value-key={row.key} className="grid gap-2 border border-[var(--bp-divider)] p-2.5">
-                        <BpInput
-                          aria-label="عنوان مقدار"
-                          maxLength={optionFieldLimits.valueLabel}
-                          value={row.label}
-                          error={valueErrors[row.key]}
-                          reserveMessage={false}
-                          placeholder="مثلاً مشکی"
-                          onChange={(event) => updateValue(row.key, { label: event.target.value })}
-                        />
-                        {kind === "COLOR" && (
+                        {kind === "COLOR" ? (
                           <BpCombobox
                             aria-label="رنگ مقدار"
                             value={row.colorId ?? ""}
+                            error={valueErrors[row.key]}
                             reserveMessage={false}
                             placeholder="جستجو یا انتخاب رنگ"
                             emptyLabel="رنگی با این نام پیدا نشد"
-                            options={colors.map((color) => ({ value: color.id, label: color.name, color: color.hex }))}
-                            onChange={(colorId) => updateValue(row.key, { colorId: colorId || null, label: row.label.trim() ? row.label : (colorsById.get(colorId)?.name ?? row.label) })}
+                            options={colors.filter((color) => !takenElsewhere.has(color.id)).map((color) => ({ value: color.id, label: color.name, color: color.hex }))}
+                            onChange={(colorId) => updateValue(row.key, { colorId: colorId || null })}
+                          />
+                        ) : (
+                          <BpInput
+                            aria-label="عنوان مقدار"
+                            maxLength={optionFieldLimits.valueLabel}
+                            value={row.label}
+                            error={valueErrors[row.key]}
+                            reserveMessage={false}
+                            placeholder="مثلاً بزرگ یا M"
+                            onChange={(event) => updateValue(row.key, { label: event.target.value })}
                           />
                         )}
                         <div className="flex items-center justify-between gap-2">
                           <BpCheckbox isSelected={row.isActive} label="فعال بودن این مقدار" onChange={() => updateValue(row.key, { isActive: !row.isActive })} />
-                          <BpButton type="button" isIconOnly size="sm" variant="ghost" className="text-[var(--bp-danger)]" aria-label={`حذف مقدار ${row.label || "بدون عنوان"}`} onClick={() => removeValue(row.key)}><Trash2 size={13} /></BpButton>
+                          <BpButton type="button" isIconOnly size="sm" variant="ghost" className="text-[var(--bp-danger)]" aria-label={`حذف مقدار ${rowLabel(row) || "بدون عنوان"}`} onClick={() => removeValue(row.key)}><Trash2 size={13} /></BpButton>
                         </div>
                       </div>
-                    ))}
+                      );
+                    })}
                   </div>
                   <BpButton type="button" size="sm" className="mt-2 gap-1.5" onClick={() => setValues((current) => [...current, newValueDraft()])}><Plus size={13} />افزودن مقدار</BpButton>
                 </div>
