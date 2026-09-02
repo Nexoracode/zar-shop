@@ -13,7 +13,7 @@ import type { MediaChoice } from "@/components/media-library";
 import { requestErrorMessage, requestJson } from "@/lib/api-request";
 import { normalizeSearchText } from "@/lib/text-search";
 import { brandFieldLimits, brandSchema } from "@/modules/brands/schemas";
-import { BpButton, BpInput, BpSwitch, BpTable, BpTd, BpTh } from "./ui";
+import { BpButton, BpInput, BpSelect, BpSwitch, BpTable, BpTd, BpTh } from "./ui";
 
 export type BrandRow = {
   id: string;
@@ -58,6 +58,9 @@ export function BlueprintBrandsView({ brands }: { brands: BrandRow[] }) {
     setItems(brands);
   }
   const [query, setQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+  const [featuredFilter, setFeaturedFilter] = useState("");
+  const [productsFilter, setProductsFilter] = useState("");
   const [editing, setEditing] = useState<BrandRow | null>(null);
   const [name, setName] = useState(emptyForm.name);
   const [slug, setSlug] = useState(emptyForm.slug);
@@ -207,9 +210,17 @@ export function BlueprintBrandsView({ brands }: { brands: BrandRow[] }) {
   }
 
   const normalizedQuery = normalizeSearchText(query);
-  const visible = normalizedQuery
-    ? items.filter((brand) => normalizeSearchText(`${brand.name} ${brand.slug}`).includes(normalizedQuery))
-    : items;
+  const filtersActive = Boolean(normalizedQuery || statusFilter || featuredFilter || productsFilter);
+  const visible = items.filter((brand) => {
+    if (normalizedQuery && !normalizeSearchText(`${brand.name} ${brand.slug}`).includes(normalizedQuery)) return false;
+    if (statusFilter === "active" && !brand.isActive) return false;
+    if (statusFilter === "inactive" && brand.isActive) return false;
+    if (featuredFilter === "yes" && !brand.featured) return false;
+    if (featuredFilter === "no" && brand.featured) return false;
+    if (productsFilter === "has" && brand._count.products === 0) return false;
+    if (productsFilter === "none" && brand._count.products > 0) return false;
+    return true;
+  });
 
   return (
     <div className="flex flex-col gap-2">
@@ -248,8 +259,8 @@ export function BlueprintBrandsView({ brands }: { brands: BrandRow[] }) {
         <Panel>
           {items.length ? (
             <>
-              <div className="border-b border-[var(--bp-divider)] p-3">
-                <div className="relative">
+              <div className="flex flex-wrap items-center gap-2 border-b border-[var(--bp-divider)] p-3">
+                <div className="relative w-full min-w-[180px] sm:w-auto sm:min-w-[220px] sm:flex-1">
                   <Search className="pointer-events-none absolute start-2.5 top-1/2 z-10 -translate-y-1/2 text-[var(--bp-muted)]" size={15} />
                   <input
                     type="search"
@@ -263,6 +274,10 @@ export function BlueprintBrandsView({ brands }: { brands: BrandRow[] }) {
                     <BpButton isIconOnly size="sm" variant="ghost" aria-label="پاک‌کردن جستجو" onClick={() => setQuery("")} className="absolute end-1 top-1/2 z-20 h-7 min-h-7 w-7 min-w-7 -translate-y-1/2"><X size={14} /></BpButton>
                   ) : null}
                 </div>
+                <span aria-hidden className="mx-1 hidden h-6 w-px shrink-0 bg-[var(--bp-divider)] sm:block" />
+                <BpSelect aria-label="وضعیت برند" value={statusFilter} reserveMessage={false} wrapperClassName="w-full sm:w-auto" className="w-full sm:w-40" onChange={(event) => setStatusFilter(event.target.value)} options={[{ value: "", label: "همه وضعیت‌ها" }, { value: "active", label: "فعال" }, { value: "inactive", label: "غیرفعال" }]} />
+                <BpSelect aria-label="نمایش در صفحه اصلی" value={featuredFilter} reserveMessage={false} wrapperClassName="w-full sm:w-auto" className="w-full sm:w-44" onChange={(event) => setFeaturedFilter(event.target.value)} options={[{ value: "", label: "صفحه اصلی: همه" }, { value: "yes", label: "در صفحه اصلی" }, { value: "no", label: "خارج از صفحه اصلی" }]} />
+                <BpSelect aria-label="محصولات برند" value={productsFilter} reserveMessage={false} wrapperClassName="w-full sm:w-auto" className="w-full sm:w-40" onChange={(event) => setProductsFilter(event.target.value)} options={[{ value: "", label: "محصولات: همه" }, { value: "has", label: "دارای محصول" }, { value: "none", label: "بدون محصول" }]} />
               </div>
               {visible.length ? (
               <>
@@ -270,7 +285,7 @@ export function BlueprintBrandsView({ brands }: { brands: BrandRow[] }) {
                 {visible.map((brand) => (
                   <article
                     key={brand.id}
-                    draggable={!savingOrder && !normalizedQuery}
+                    draggable={!savingOrder && !filtersActive}
                     onDragStart={(event) => { event.dataTransfer.effectAllowed = "move"; beginDrag(brand.id); }}
                     onDragOver={(event) => dragOver(event, brand.id)}
                     onDrop={(event) => event.preventDefault()}
@@ -298,7 +313,7 @@ export function BlueprintBrandsView({ brands }: { brands: BrandRow[] }) {
               </div>
 
               <AdminBulkEditor entity="brands" entityLabel="برند" ids={visible.map((brand) => brand.id)} actions={[{ value: "featured:on", label: "نمایش در صفحه اصلی" }, { value: "featured:off", label: "حذف از صفحه اصلی" }, { value: "active:on", label: "فعال‌کردن برندها" }, { value: "active:off", label: "غیرفعال‌کردن برندها" }]}>
-                <p className="m-0 flex items-center gap-1.5 border-b border-[var(--bp-divider)] px-4 py-2 text-[12px] text-[var(--bp-info)]">{normalizedQuery ? "برای تغییر ترتیب نمایش، ابتدا جستجو را پاک کنید." : "با کشیدن ردیف، ترتیب نمایش برندها را در «محبوب‌ترین برندها» تنظیم کنید."}</p>
+                <p className="m-0 flex items-center gap-1.5 border-b border-[var(--bp-divider)] px-4 py-2 text-[12px] text-[var(--bp-info)]">{filtersActive ? "برای تغییر ترتیب نمایش، ابتدا جستجو و فیلترها را پاک کنید." : "با کشیدن ردیف، ترتیب نمایش برندها را در «محبوب‌ترین برندها» تنظیم کنید."}</p>
                 <BpTable ariaLabel="فهرست برندها" minWidth={640}>
                   <thead>
                     <tr>
@@ -317,7 +332,7 @@ export function BlueprintBrandsView({ brands }: { brands: BrandRow[] }) {
                     {visible.map((brand) => (
                       <tr
                         key={brand.id}
-                        draggable={!savingOrder && !normalizedQuery}
+                        draggable={!savingOrder && !filtersActive}
                         onDragStart={(event) => { event.dataTransfer.effectAllowed = "move"; beginDrag(brand.id); }}
                         onDragOver={(event) => dragOver(event, brand.id)}
                         onDrop={(event) => event.preventDefault()}
@@ -344,7 +359,7 @@ export function BlueprintBrandsView({ brands }: { brands: BrandRow[] }) {
                 </BpTable>
               </AdminBulkEditor>
               </>
-              ) : <div className="p-6"><AdminEmptyState title="برندی پیدا نشد" description="هیچ برندی با عبارت جستجوشده مطابقت ندارد." /></div>}
+              ) : <div className="p-6"><AdminEmptyState title="برندی پیدا نشد" description="هیچ برندی با جستجو و فیلترهای انتخابی مطابقت ندارد." /></div>}
             </>
           ) : <AdminEmptyState title="برندی ثبت نشده" description="اولین برند فروشگاه را از فرم کنار جدول ثبت کنید." />}
         </Panel>

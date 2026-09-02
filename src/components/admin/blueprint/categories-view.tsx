@@ -15,7 +15,7 @@ import { requestErrorMessage, requestJson } from "@/lib/api-request";
 import { normalizeSearchText } from "@/lib/text-search";
 import { categoryFieldLimits, categorySchema } from "@/modules/categories/schemas";
 import { wouldCreateCategoryCycle } from "@/modules/categories/category-tree";
-import { BpButton, BpCombobox, BpInput, BpNumberInput, BpSwitch, BpTable, BpTd, BpTextarea, BpTh } from "./ui";
+import { BpButton, BpCombobox, BpInput, BpNumberInput, BpSelect, BpSwitch, BpTable, BpTd, BpTextarea, BpTh } from "./ui";
 
 export type CategoryRow = {
   id: string;
@@ -55,6 +55,10 @@ export function BlueprintCategoriesView({ categories }: { categories: CategoryRo
     setItems(categories);
   }
   const [query, setQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+  const [featuredFilter, setFeaturedFilter] = useState("");
+  const [typeFilter, setTypeFilter] = useState("");
+  const [productsFilter, setProductsFilter] = useState("");
   const [editing, setEditing] = useState<CategoryRow | null>(null);
   const [name, setName] = useState(emptyForm.name);
   const [slug, setSlug] = useState(emptyForm.slug);
@@ -160,9 +164,18 @@ export function BlueprintCategoriesView({ categories }: { categories: CategoryRo
   }
 
   const normalizedQuery = normalizeSearchText(query);
-  const visible = normalizedQuery
-    ? items.filter((category) => normalizeSearchText(`${category.name} ${category.slug} ${category.parentName ?? ""}`).includes(normalizedQuery))
-    : items;
+  const visible = items.filter((category) => {
+    if (normalizedQuery && !normalizeSearchText(`${category.name} ${category.slug} ${category.parentName ?? ""}`).includes(normalizedQuery)) return false;
+    if (statusFilter === "active" && !category.isActive) return false;
+    if (statusFilter === "inactive" && category.isActive) return false;
+    if (featuredFilter === "yes" && !category.featured) return false;
+    if (featuredFilter === "no" && category.featured) return false;
+    if (typeFilter === "root" && category.parentId) return false;
+    if (typeFilter === "child" && !category.parentId) return false;
+    if (productsFilter === "has" && category._count.products === 0) return false;
+    if (productsFilter === "none" && category._count.products > 0) return false;
+    return true;
+  });
 
   return (
     <div className="flex flex-col gap-2">
@@ -213,8 +226,8 @@ export function BlueprintCategoriesView({ categories }: { categories: CategoryRo
         <Panel>
           {items.length ? (
             <>
-              <div className="border-b border-[var(--bp-divider)] p-3">
-                <div className="relative">
+              <div className="flex flex-wrap items-center gap-2 border-b border-[var(--bp-divider)] p-3">
+                <div className="relative w-full min-w-[180px] sm:w-auto sm:min-w-[220px] sm:flex-1">
                   <Search className="pointer-events-none absolute start-2.5 top-1/2 z-10 -translate-y-1/2 text-[var(--bp-muted)]" size={15} />
                   <input
                     type="search"
@@ -228,6 +241,11 @@ export function BlueprintCategoriesView({ categories }: { categories: CategoryRo
                     <BpButton isIconOnly size="sm" variant="ghost" aria-label="پاک‌کردن جستجو" onClick={() => setQuery("")} className="absolute end-1 top-1/2 z-20 h-7 min-h-7 w-7 min-w-7 -translate-y-1/2"><X size={14} /></BpButton>
                   ) : null}
                 </div>
+                <span aria-hidden className="mx-1 hidden h-6 w-px shrink-0 bg-[var(--bp-divider)] sm:block" />
+                <BpSelect aria-label="وضعیت دسته‌بندی" value={statusFilter} reserveMessage={false} wrapperClassName="w-full sm:w-auto" className="w-full sm:w-40" onChange={(event) => setStatusFilter(event.target.value)} options={[{ value: "", label: "همه وضعیت‌ها" }, { value: "active", label: "فعال" }, { value: "inactive", label: "غیرفعال" }]} />
+                <BpSelect aria-label="نوع دسته‌بندی" value={typeFilter} reserveMessage={false} wrapperClassName="w-full sm:w-auto" className="w-full sm:w-40" onChange={(event) => setTypeFilter(event.target.value)} options={[{ value: "", label: "همه دسته‌ها" }, { value: "root", label: "دسته اصلی" }, { value: "child", label: "زیردسته" }]} />
+                <BpSelect aria-label="نمایش در صفحه اصلی" value={featuredFilter} reserveMessage={false} wrapperClassName="w-full sm:w-auto" className="w-full sm:w-44" onChange={(event) => setFeaturedFilter(event.target.value)} options={[{ value: "", label: "صفحه اصلی: همه" }, { value: "yes", label: "در صفحه اصلی" }, { value: "no", label: "خارج از صفحه اصلی" }]} />
+                <BpSelect aria-label="محصولات دسته‌بندی" value={productsFilter} reserveMessage={false} wrapperClassName="w-full sm:w-auto" className="w-full sm:w-40" onChange={(event) => setProductsFilter(event.target.value)} options={[{ value: "", label: "محصولات: همه" }, { value: "has", label: "دارای محصول" }, { value: "none", label: "بدون محصول" }]} />
               </div>
               {visible.length ? (
               <>
@@ -305,7 +323,7 @@ export function BlueprintCategoriesView({ categories }: { categories: CategoryRo
                 </BpTable>
               </AdminBulkEditor>
               </>
-              ) : <div className="p-6"><AdminEmptyState title="دسته‌بندی‌ای پیدا نشد" description="هیچ دسته‌بندی‌ای با عبارت جستجوشده مطابقت ندارد." /></div>}
+              ) : <div className="p-6"><AdminEmptyState title="دسته‌بندی‌ای پیدا نشد" description="هیچ دسته‌بندی‌ای با جستجو و فیلترهای انتخابی مطابقت ندارد." /></div>}
             </>
           ) : <AdminEmptyState title="دسته‌بندی‌ای ثبت نشده" description="اولین دسته فروشگاه را از فرم کنار جدول ثبت کنید." />}
         </Panel>
