@@ -77,7 +77,9 @@ async function resolveCustomer(input: ManualOrderInput["customer"]) {
   });
 }
 
-export async function createManualOrder(actorId: string, input: ManualOrderInput) {
+/** Prices the lines and shipping the same way `createManualOrder` does, without creating anything —
+ *  used by the create flow itself and by the quote endpoint so the two never drift. */
+export async function priceManualOrder(input: Pick<ManualOrderInput, "items" | "delivery">) {
   const [orderSettings, generalSettings] = await Promise.all([getOrderSettings(), getGeneralStoreSettings()]);
 
   const products = await db.product.findMany({
@@ -145,51 +147,58 @@ export async function createManualOrder(actorId: string, input: ManualOrderInput
   });
 
   const merchandiseAmount = lines.reduce((sum, line) => sum + line.total, 0);
-  if (merchandiseAmount < orderSettings.minimumOrderAmount) throw new ManualOrderError(`حداقل مبلغ سفارش ${orderSettings.minimumOrderAmount.toLocaleString("fa-IR")} ریال است.`);
   const subtotal = lines.reduce((sum, line) => sum + line.originalUnitPrice * line.entry.quantity, 0);
   const productDiscount = lines.reduce((sum, line) => sum + line.discountAmount * line.entry.quantity, 0);
   const tax = lines.reduce((sum, line) => sum + line.parts.tax * line.entry.quantity, 0);
   const preparationDays = Math.max(...lines.map((line) => line.product.preparationDays));
 
-  const customer = await resolveCustomer(input.customer);
-  const customerName = [customer.firstName, customer.lastName].filter(Boolean).join(" ") || "مشتری حضوری";
-
   let shippingFee = 0;
   let shippingMethodId: string | null = null;
   let shippingMethodTitle: string | null = null;
-  let shippingAddress: Prisma.InputJsonObject;
 
-  if (input.delivery.method === "STORE_PICKUP") {
-    shippingAddress = { recipient: customerName, phone: customer.phone ?? "" };
-  } else {
+  if (input.delivery.method === "INSURED_SHIPPING" && input.delivery.shippingMethodId) {
     const { address, shippingMethodId: methodId } = input.delivery;
-    shippingAddress = {
-      recipient: address.recipient, phone: address.phone,
-      province: address.province, city: address.city,
-      postalCode: address.postalCode, addressLine: address.addressLine,
-    };
-    if (methodId) {
-      const quote = await quoteForMethod(methodId, {
-        lines: [],
-        weightGrams: chargeableCartWeight(lines.map((line) => ({
-          shippingWeightGrams: line.product.shippingWeightGrams,
-          packageLengthCm: line.product.packageLengthCm === null ? null : Number(line.product.packageLengthCm),
-          packageWidthCm: line.product.packageWidthCm === null ? null : Number(line.product.packageWidthCm),
-          packageHeightCm: line.product.packageHeightCm === null ? null : Number(line.product.packageHeightCm),
-          quantity: line.entry.quantity,
-        })), 0),
-        declaredValue: merchandiseAmount,
-        destination: { provinceId: address.provinceId, cityId: address.cityId },
-      });
-      if (!quote) throw new ManualOrderError("روش ارسال انتخاب‌شده برای این مقصد در دسترس نیست.");
-      shippingFee = quote.price;
-      shippingMethodId = quote.methodId;
-      shippingMethodTitle = quote.title;
-    }
+    const quote = await quoteForMethod(methodId, {
+      lines: [],
+      weightGrams: chargeableCartWeight(lines.map((line) => ({
+        shippingWeightGrams: line.product.shippingWeightGrams,
+        packageLengthCm: line.product.packageLengthCm === null ? null : Number(line.product.packageLengthCm),
+        packageWidthCm: line.product.packageWidthCm === null ? null : Number(line.product.packageWidthCm),
+        packageHeightCm: line.product.packageHeightCm === null ? null : Number(line.product.packageHeightCm),
+        quantity: line.entry.quantity,
+      })), 0),
+      declaredValue: merchandiseAmount,
+      destination: { provinceId: address.provinceId, cityId: address.cityId },
+    });
+    if (!quote) throw new ManualOrderError("روش ارسال انتخاب‌شده برای این مقصد در دسترس نیست.");
+    shippingFee = quote.price;
+    shippingMethodId = quote.methodId;
+    shippingMethodTitle = quote.title;
   }
 
   const total = merchandiseAmount + shippingFee;
   if (total <= 0) throw new ManualOrderError("مبلغ نهایی سفارش معتبر نیست.");
+
+  return { lines, rate, subtotal, productDiscount, tax, merchandiseAmount, shippingFee, shippingMethodId, shippingMethodTitle, total, preparationDays, orderSettings };
+}
+
+export const manualOrderQuoteSchema = manualOrderSchema.pick({ items: true, delivery: true });
+
+export async function createManualOrder(actorId: string, input: ManualOrderInput) {
+  const priced = await priceManualOrder(input);
+  const { lines, rate, subtotal, productDiscount, tax, merchandiseAmount, shippingFee, shippingMethodId, shippingMethodTitle, total, preparationDays, orderSettings } = priced;
+  if (merchandiseAmount < orderSettings.minimumOrderAmount) throw new ManualOrderError(`حداقل مبلغ سفارش ${orderSettings.minimumOrderAmount.toLocaleString("fa-IR")} ریال است.`);
+
+  const customer = await resolveCustomer(input.customer);
+  const customerName = [customer.firstName, customer.lastName].filter(Boolean).join(" ") || "مشتری حضوری";
+
+  const shippingAddress: Prisma.InputJsonObject = input.delivery.method === "STORE_PICKUP"
+    ? { recipient: customerName, phone: customer.phone ?? "" }
+    : {
+      recipient: input.delivery.address.recipient, phone: input.delivery.address.phone,
+      province: input.delivery.address.province, city: input.delivery.address.city,
+      postalCode: input.delivery.address.postalCode, addressLine: input.delivery.address.addressLine,
+    };
 
   const deliveryMethod = input.delivery.method;
   const isPaid = input.payment === "PAID";
