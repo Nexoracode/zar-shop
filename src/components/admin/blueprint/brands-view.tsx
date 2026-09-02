@@ -4,13 +4,14 @@ import Image from "next/image";
 import { useRef, useState, type DragEvent, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "@heroui/react";
-import { GripVertical, Images, Pencil, Tag, Trash2 } from "lucide-react";
+import { GripVertical, Images, Pencil, Search, Tag, Trash2, X } from "lucide-react";
 import { AdminEmptyState, AdminPageHeader, AdminStatusBadge } from "@/components/admin-ui";
 import { AdminBulkCheckbox, AdminBulkEditor } from "@/components/admin-bulk-editor";
 import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
 import { MediaPickerDialog } from "@/components/media-picker-dialog";
 import type { MediaChoice } from "@/components/media-library";
 import { requestErrorMessage, requestJson } from "@/lib/api-request";
+import { normalizeSearchText } from "@/lib/text-search";
 import { brandFieldLimits, brandSchema } from "@/modules/brands/schemas";
 import { BpButton, BpInput, BpSwitch, BpTable, BpTd, BpTh } from "./ui";
 
@@ -56,6 +57,7 @@ export function BlueprintBrandsView({ brands }: { brands: BrandRow[] }) {
     setPrevBrands(brands);
     setItems(brands);
   }
+  const [query, setQuery] = useState("");
   const [editing, setEditing] = useState<BrandRow | null>(null);
   const [name, setName] = useState(emptyForm.name);
   const [slug, setSlug] = useState(emptyForm.slug);
@@ -204,6 +206,11 @@ export function BlueprintBrandsView({ brands }: { brands: BrandRow[] }) {
     }
   }
 
+  const normalizedQuery = normalizeSearchText(query);
+  const visible = normalizedQuery
+    ? items.filter((brand) => normalizeSearchText(`${brand.name} ${brand.slug}`).includes(normalizedQuery))
+    : items;
+
   return (
     <div className="flex flex-col gap-2">
       <AdminPageHeader flush title="برندها" description="برندهای قابل انتخاب برای محصولات و «محبوب‌ترین برندها»ی صفحه اصلی را مدیریت کنید." />
@@ -241,11 +248,29 @@ export function BlueprintBrandsView({ brands }: { brands: BrandRow[] }) {
         <Panel>
           {items.length ? (
             <>
+              <div className="border-b border-[var(--bp-divider)] p-3">
+                <div className="relative">
+                  <Search className="pointer-events-none absolute start-2.5 top-1/2 z-10 -translate-y-1/2 text-[var(--bp-muted)]" size={15} />
+                  <input
+                    type="search"
+                    value={query}
+                    onChange={(event) => setQuery(event.target.value)}
+                    aria-label="جستجوی برند"
+                    placeholder="جستجو بر اساس نام یا نشانی برند"
+                    className="bp-input bp-input-search"
+                  />
+                  {query ? (
+                    <BpButton isIconOnly size="sm" variant="ghost" aria-label="پاک‌کردن جستجو" onClick={() => setQuery("")} className="absolute end-1 top-1/2 z-20 h-7 min-h-7 w-7 min-w-7 -translate-y-1/2"><X size={14} /></BpButton>
+                  ) : null}
+                </div>
+              </div>
+              {visible.length ? (
+              <>
               <div className="md:hidden">
-                {items.map((brand) => (
+                {visible.map((brand) => (
                   <article
                     key={brand.id}
-                    draggable={!savingOrder}
+                    draggable={!savingOrder && !normalizedQuery}
                     onDragStart={(event) => { event.dataTransfer.effectAllowed = "move"; beginDrag(brand.id); }}
                     onDragOver={(event) => dragOver(event, brand.id)}
                     onDrop={(event) => event.preventDefault()}
@@ -272,8 +297,8 @@ export function BlueprintBrandsView({ brands }: { brands: BrandRow[] }) {
                 ))}
               </div>
 
-              <AdminBulkEditor entity="brands" entityLabel="برند" ids={items.map((brand) => brand.id)} actions={[{ value: "featured:on", label: "نمایش در صفحه اصلی" }, { value: "featured:off", label: "حذف از صفحه اصلی" }, { value: "active:on", label: "فعال‌کردن برندها" }, { value: "active:off", label: "غیرفعال‌کردن برندها" }]}>
-                <p className="m-0 flex items-center gap-1.5 border-b border-[var(--bp-divider)] px-4 py-2 text-[12px] text-[var(--bp-info)]">با کشیدن ردیف، ترتیب نمایش برندها را در «محبوب‌ترین برندها» تنظیم کنید.</p>
+              <AdminBulkEditor entity="brands" entityLabel="برند" ids={visible.map((brand) => brand.id)} actions={[{ value: "featured:on", label: "نمایش در صفحه اصلی" }, { value: "featured:off", label: "حذف از صفحه اصلی" }, { value: "active:on", label: "فعال‌کردن برندها" }, { value: "active:off", label: "غیرفعال‌کردن برندها" }]}>
+                <p className="m-0 flex items-center gap-1.5 border-b border-[var(--bp-divider)] px-4 py-2 text-[12px] text-[var(--bp-info)]">{normalizedQuery ? "برای تغییر ترتیب نمایش، ابتدا جستجو را پاک کنید." : "با کشیدن ردیف، ترتیب نمایش برندها را در «محبوب‌ترین برندها» تنظیم کنید."}</p>
                 <BpTable ariaLabel="فهرست برندها" minWidth={640}>
                   <thead>
                     <tr>
@@ -289,10 +314,10 @@ export function BlueprintBrandsView({ brands }: { brands: BrandRow[] }) {
                     </tr>
                   </thead>
                   <tbody>
-                    {items.map((brand) => (
+                    {visible.map((brand) => (
                       <tr
                         key={brand.id}
-                        draggable={!savingOrder}
+                        draggable={!savingOrder && !normalizedQuery}
                         onDragStart={(event) => { event.dataTransfer.effectAllowed = "move"; beginDrag(brand.id); }}
                         onDragOver={(event) => dragOver(event, brand.id)}
                         onDrop={(event) => event.preventDefault()}
@@ -318,6 +343,8 @@ export function BlueprintBrandsView({ brands }: { brands: BrandRow[] }) {
                   </tbody>
                 </BpTable>
               </AdminBulkEditor>
+              </>
+              ) : <div className="p-6"><AdminEmptyState title="برندی پیدا نشد" description="هیچ برندی با عبارت جستجوشده مطابقت ندارد." /></div>}
             </>
           ) : <AdminEmptyState title="برندی ثبت نشده" description="اولین برند فروشگاه را از فرم کنار جدول ثبت کنید." />}
         </Panel>

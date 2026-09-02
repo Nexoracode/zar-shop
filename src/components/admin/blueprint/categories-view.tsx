@@ -5,13 +5,14 @@ import Link from "next/link";
 import { useRef, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "@heroui/react";
-import { FolderTree, Images, Pencil, SlidersHorizontal, Star, Trash2 } from "lucide-react";
+import { FolderTree, Images, Pencil, Search, SlidersHorizontal, Star, Trash2, X } from "lucide-react";
 import { AdminEmptyState, AdminPageHeader, AdminStatusBadge } from "@/components/admin-ui";
 import { AdminBulkCheckbox, AdminBulkEditor } from "@/components/admin-bulk-editor";
 import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
 import { MediaPickerDialog } from "@/components/media-picker-dialog";
 import type { MediaChoice } from "@/components/media-library";
 import { requestErrorMessage, requestJson } from "@/lib/api-request";
+import { normalizeSearchText } from "@/lib/text-search";
 import { categoryFieldLimits, categorySchema } from "@/modules/categories/schemas";
 import { wouldCreateCategoryCycle } from "@/modules/categories/category-tree";
 import { BpButton, BpCombobox, BpInput, BpNumberInput, BpSwitch, BpTable, BpTd, BpTextarea, BpTh } from "./ui";
@@ -53,6 +54,7 @@ export function BlueprintCategoriesView({ categories }: { categories: CategoryRo
     setPrevCategories(categories);
     setItems(categories);
   }
+  const [query, setQuery] = useState("");
   const [editing, setEditing] = useState<CategoryRow | null>(null);
   const [name, setName] = useState(emptyForm.name);
   const [slug, setSlug] = useState(emptyForm.slug);
@@ -157,6 +159,11 @@ export function BlueprintCategoriesView({ categories }: { categories: CategoryRo
     }
   }
 
+  const normalizedQuery = normalizeSearchText(query);
+  const visible = normalizedQuery
+    ? items.filter((category) => normalizeSearchText(`${category.name} ${category.slug} ${category.parentName ?? ""}`).includes(normalizedQuery))
+    : items;
+
   return (
     <div className="flex flex-col gap-2">
       <AdminPageHeader flush title="دسته‌بندی‌ها" description="دسته‌های اصلی، زیردسته‌ها، ترتیب نمایش و تصویر شاخص را مدیریت کنید." />
@@ -206,8 +213,26 @@ export function BlueprintCategoriesView({ categories }: { categories: CategoryRo
         <Panel>
           {items.length ? (
             <>
+              <div className="border-b border-[var(--bp-divider)] p-3">
+                <div className="relative">
+                  <Search className="pointer-events-none absolute start-2.5 top-1/2 z-10 -translate-y-1/2 text-[var(--bp-muted)]" size={15} />
+                  <input
+                    type="search"
+                    value={query}
+                    onChange={(event) => setQuery(event.target.value)}
+                    aria-label="جستجوی دسته‌بندی"
+                    placeholder="جستجو بر اساس نام، نشانی یا دسته والد"
+                    className="bp-input bp-input-search"
+                  />
+                  {query ? (
+                    <BpButton isIconOnly size="sm" variant="ghost" aria-label="پاک‌کردن جستجو" onClick={() => setQuery("")} className="absolute end-1 top-1/2 z-20 h-7 min-h-7 w-7 min-w-7 -translate-y-1/2"><X size={14} /></BpButton>
+                  ) : null}
+                </div>
+              </div>
+              {visible.length ? (
+              <>
               <div className="md:hidden">
-                {items.map((category) => {
+                {visible.map((category) => {
                   const locked = category._count.products > 0 || category._count.children > 0;
                   return (
                     <article key={category.id} className="flex flex-col gap-3 border-b border-[var(--bp-row-line)] p-4 last:border-b-0">
@@ -232,7 +257,7 @@ export function BlueprintCategoriesView({ categories }: { categories: CategoryRo
                 })}
               </div>
 
-              <AdminBulkEditor entity="categories" entityLabel="دسته‌بندی" ids={items.map((category) => category.id)} actions={[{ value: "featured:on", label: "نمایش در صفحه اصلی" }, { value: "featured:off", label: "حذف از صفحه اصلی" }, { value: "active:on", label: "فعال‌کردن دسته‌بندی‌ها" }, { value: "active:off", label: "غیرفعال‌کردن دسته‌بندی‌ها" }]}>
+              <AdminBulkEditor entity="categories" entityLabel="دسته‌بندی" ids={visible.map((category) => category.id)} actions={[{ value: "featured:on", label: "نمایش در صفحه اصلی" }, { value: "featured:off", label: "حذف از صفحه اصلی" }, { value: "active:on", label: "فعال‌کردن دسته‌بندی‌ها" }, { value: "active:off", label: "غیرفعال‌کردن دسته‌بندی‌ها" }]}>
                 <BpTable ariaLabel="فهرست دسته‌بندی‌ها" minWidth={760}>
                   <thead>
                     <tr>
@@ -247,7 +272,7 @@ export function BlueprintCategoriesView({ categories }: { categories: CategoryRo
                     </tr>
                   </thead>
                   <tbody>
-                    {items.map((category) => {
+                    {visible.map((category) => {
                       const locked = category._count.products > 0 || category._count.children > 0;
                       return (
                         <tr key={category.id}>
@@ -279,6 +304,8 @@ export function BlueprintCategoriesView({ categories }: { categories: CategoryRo
                   </tbody>
                 </BpTable>
               </AdminBulkEditor>
+              </>
+              ) : <div className="p-6"><AdminEmptyState title="دسته‌بندی‌ای پیدا نشد" description="هیچ دسته‌بندی‌ای با عبارت جستجوشده مطابقت ندارد." /></div>}
             </>
           ) : <AdminEmptyState title="دسته‌بندی‌ای ثبت نشده" description="اولین دسته فروشگاه را از فرم کنار جدول ثبت کنید." />}
         </Panel>
