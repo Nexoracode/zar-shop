@@ -15,6 +15,8 @@ import {
 } from "@/modules/admin/labels";
 import { requirePermission } from "@/modules/auth/session";
 import { optionEntries } from "@/modules/products/options";
+import { getBrandSettings } from "@/modules/settings/brand-settings";
+import { BlueprintOrderDetail } from "@/components/admin/blueprint/order-detail";
 import { AlertDescription, AlertRoot } from "@/components/hero";
 
 type PageParams = Promise<{ id: string }>;
@@ -79,6 +81,9 @@ export default async function OrderDetailsPage({ params }: { params: PageParams 
   });
 
   if (!order) notFound();
+
+  const brandSettings = await getBrandSettings();
+  if (brandSettings.adminTemplate === "BLUEPRINT") return <BlueprintOrderDetail order={order} />;
 
   const customerName = [order.user.firstName, order.user.lastName].filter(Boolean).join(" ") || "کاربر بدون نام";
   const address = readShippingAddress(order.shippingAddress);

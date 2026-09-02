@@ -7,6 +7,9 @@ import { Truck } from "lucide-react";
 import { AdminSaveButton } from "@/components/admin-save-button";
 import { adminFieldClass, adminLabelClass } from "@/components/admin-ui";
 import { trackingNumberMaxLength } from "@/modules/orders/tracking";
+import { useAdminTemplate } from "@/components/admin/template-context";
+import { BpButton } from "@/components/admin/blueprint/ui/button";
+import { BpInput } from "@/components/admin/blueprint/ui/input";
 
 export function AdminOrderTrackingField({ orderId, initialTrackingNumber }: { orderId: string; initialTrackingNumber: string | null }) {
   const router = useRouter();
@@ -27,6 +30,20 @@ export function AdminOrderTrackingField({ orderId, initialTrackingNumber }: { or
     } finally {
       setSaving(false);
     }
+  }
+
+  const template = useAdminTemplate();
+
+  if (template === "BLUEPRINT") {
+    return (
+      <form onSubmit={submit} className="bp-frame grid gap-2 p-3">
+        <span className="bp-muted flex items-center gap-1.5 text-[12px] font-bold"><Truck size={14} />کد رهگیری مرسوله</span>
+        <div className="flex items-end gap-2">
+          <BpInput aria-label="کد رهگیری مرسوله" value={value} maxLength={trackingNumberMaxLength} onChange={(event) => setValue(event.target.value)} dir="ltr" placeholder="در انتظار ثبت فروشگاه" disabled={saving} reserveMessage={false} wrapperClassName="flex-1" />
+          <BpButton type="submit" variant="primary" isPending={saving}>ثبت</BpButton>
+        </div>
+      </form>
+    );
   }
 
   return (
