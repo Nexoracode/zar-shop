@@ -158,7 +158,11 @@
 /* Anchors reset to the inherited colour — except the ones styled as buttons, which would
    otherwise outrank `.bp-btn*` on specificity and lose their own foreground. */
 .bp-root a:not(.bp-btn) { color: inherit; text-decoration: none; }
-.bp-root p { margin: 0 0 var(--bp-space-3); }
+/* Prose paragraphs get the reading rhythm. A `<p>` that carries utility classes — every helper
+   line, caption and hint in the components — is spaced by those classes instead; without this
+   `:not([class])`, the unlayered rule below outranks Tailwind's layered `mt-*` and every such
+   line ends up flush against the control above it. */
+.bp-root p:not([class]) { margin: 0 0 var(--bp-space-3); }
 .bp-root img { display: block; max-width: 100%; }
 
 /* Headings: Vazir has no condensed cut, so the upstream Barlow Condensed look is approximated

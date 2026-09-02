@@ -354,7 +354,7 @@ export function BlueprintManualOrderForm({ industry }: { industry: "GOLD" | "GEN
               onChange={setPayment}
               options={[{ value: "PAID", label: "پرداخت‌شده (نقدی/POS)" }, { value: "PENDING", label: "در انتظار پرداخت" }]}
             />
-            <p className="bp-muted m-0 mt-2 text-[11px]">
+            <p className="bp-muted m-0 mt-2.5 text-[11px] leading-5">
               {payment === "PAID" ? "سفارش با وضعیت «پرداخت‌شده» و یک تراکنش دستی موفق ثبت می‌شود." : "سفارش با وضعیت «در انتظار پرداخت» ثبت می‌شود و طبق تنظیمات منقضی خواهد شد."}
             </p>
           </Panel>
