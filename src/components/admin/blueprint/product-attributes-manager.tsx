@@ -85,8 +85,8 @@ export function BlueprintProductAttributesManager() {
     <div className="flex flex-col gap-2">
       <AdminPageHeader flush eyebrow="تنوع و ویژگی‌ها" title="ویژگی‌های محصولات" description="محصول را از کادر جست‌وجو انتخاب کنید و مقادیر ویژگی‌های توصیفی آن را — بر اساس ساختار دسته‌بندی‌اش — تکمیل کنید." />
 
-      <div className="grid items-start gap-2 lg:grid-cols-[340px_minmax(0,1fr)]">
-        <aside className="lg:sticky lg:top-20">
+      <div className="grid grid-cols-1 items-start gap-2 lg:grid-cols-[340px_minmax(0,1fr)]">
+        <aside className="min-w-0 lg:sticky lg:top-20">
           <Panel>
             <div className="mb-3 flex items-center gap-2 border-b border-[var(--bp-divider)] pb-3">
               <span className="grid h-8 w-8 shrink-0 place-items-center border border-[var(--bp-divider)] text-[var(--bp-muted)]"><PackageSearch size={16} /></span>
@@ -115,7 +115,7 @@ export function BlueprintProductAttributesManager() {
             {searchError && <p className="m-0 mt-3 border border-[var(--bp-danger)] bg-[color-mix(in_srgb,var(--bp-danger)_8%,transparent)] px-3 py-2 text-[12px] text-[var(--bp-danger)]">{searchError}</p>}
 
             {settled && normalizedQuery.length >= 3 && !searchError && (
-              <div className="bp-scroll mt-3 grid max-h-[min(520px,calc(100dvh-260px))] content-start gap-1.5 overflow-y-auto">
+              <div className="bp-scroll mt-3 grid max-h-[min(520px,calc(100dvh-260px))] grid-cols-1 content-start gap-1.5 overflow-y-auto">
                 {results.length ? results.map((product) => {
                   const active = selectedId === product.id;
                   return (
@@ -124,14 +124,14 @@ export function BlueprintProductAttributesManager() {
                       type="button"
                       aria-pressed={active}
                       onClick={() => void select(product.id)}
-                      className={`grid gap-1 border p-2.5 text-start transition ${active ? "border-[var(--bp-accent)] bg-[var(--bp-accent-100)]" : "border-[var(--bp-divider)] hover:border-[var(--bp-accent)]"}`}
+                      className={`grid min-w-0 gap-1 border p-2.5 text-start transition ${active ? "border-[var(--bp-accent)] bg-[var(--bp-accent-100)]" : "border-[var(--bp-divider)] hover:border-[var(--bp-accent)]"}`}
                     >
-                      <span className="flex items-center gap-1.5">
+                      <span className="flex min-w-0 items-center gap-1.5">
                         <SlidersHorizontal size={13} className="shrink-0 text-[var(--bp-muted)]" aria-hidden />
                         <span className="min-w-0 flex-1 truncate text-[12px] font-bold">{product.name}</span>
-                        <AdminStatusBadge tone={productStatusTones[product.status]}>{productStatusLabels[product.status]}</AdminStatusBadge>
+                        <span className="shrink-0"><AdminStatusBadge tone={productStatusTones[product.status]}>{productStatusLabels[product.status]}</AdminStatusBadge></span>
                       </span>
-                      <span className="bp-muted truncate text-[10px]"><span dir="ltr" className="font-mono">{product.sku}</span> · {product.category?.name ?? "بدون دسته‌بندی"}</span>
+                      <span className="bp-muted min-w-0 truncate text-[10px]"><span dir="ltr" className="font-mono">{product.sku}</span> · {product.category?.name ?? "بدون دسته‌بندی"}</span>
                     </button>
                   );
                 }) : <p className="bp-muted m-0 p-4 text-center text-[12px]">محصولی پیدا نشد.</p>}

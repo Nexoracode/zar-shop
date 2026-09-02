@@ -65,8 +65,8 @@ export function BlueprintCategoryAttributesManager({ categories }: { categories:
     <div className="flex flex-col gap-2">
       <AdminPageHeader flush eyebrow="تنوع و ویژگی‌ها" title="ویژگی‌های دسته‌بندی" description="دسته‌بندی را از فهرست انتخاب کنید و گروه‌ها و ویژگی‌های توصیفی مخصوص محصولات همان دسته را تعریف کنید." />
 
-      <div className="grid items-start gap-2 lg:grid-cols-[340px_minmax(0,1fr)]">
-        <aside className="lg:sticky lg:top-20">
+      <div className="grid grid-cols-1 items-start gap-2 lg:grid-cols-[340px_minmax(0,1fr)]">
+        <aside className="min-w-0 lg:sticky lg:top-20">
           <Panel>
             <div className="mb-3 flex items-center gap-2 border-b border-[var(--bp-divider)] pb-3">
               <span className="grid h-8 w-8 shrink-0 place-items-center border border-[var(--bp-divider)] text-[var(--bp-muted)]"><FolderSearch size={16} /></span>
@@ -82,7 +82,7 @@ export function BlueprintCategoryAttributesManager({ categories }: { categories:
               {query ? <BpButton isIconOnly size="sm" variant="ghost" aria-label="پاک‌کردن جستجو" onClick={() => setQuery("")} className="absolute end-1 top-1/2 z-20 h-7 min-h-7 w-7 min-w-7 -translate-y-1/2"><X size={14} /></BpButton> : null}
             </div>
 
-            <div className="bp-scroll mt-2 grid max-h-[min(560px,calc(100dvh-220px))] content-start gap-1.5 overflow-y-auto">
+            <div className="bp-scroll mt-2 grid max-h-[min(560px,calc(100dvh-220px))] grid-cols-1 content-start gap-1.5 overflow-y-auto">
               {results.length ? results.map((category) => {
                 const active = selectedId === category.id;
                 return (
@@ -91,15 +91,15 @@ export function BlueprintCategoryAttributesManager({ categories }: { categories:
                     type="button"
                     aria-pressed={active}
                     onClick={() => void select(category.id)}
-                    className={`grid gap-1 border p-2.5 text-start transition ${active ? "border-[var(--bp-accent)] bg-[var(--bp-accent-100)]" : "border-[var(--bp-divider)] hover:border-[var(--bp-accent)]"}`}
+                    className={`grid min-w-0 gap-1 border p-2.5 text-start transition ${active ? "border-[var(--bp-accent)] bg-[var(--bp-accent-100)]" : "border-[var(--bp-divider)] hover:border-[var(--bp-accent)]"}`}
                   >
-                    <span className="flex items-center gap-1.5">
+                    <span className="flex min-w-0 items-center gap-1.5">
                       <SlidersHorizontal size={13} className="shrink-0 text-[var(--bp-muted)]" aria-hidden />
                       <span className="min-w-0 flex-1 truncate text-[12px] font-bold">{category.name}</span>
-                      <AdminStatusBadge tone={category.isActive ? "success" : "neutral"}>{category.isActive ? "فعال" : "غیرفعال"}</AdminStatusBadge>
+                      <span className="shrink-0"><AdminStatusBadge tone={category.isActive ? "success" : "neutral"}>{category.isActive ? "فعال" : "غیرفعال"}</AdminStatusBadge></span>
                     </span>
-                    <span className="bp-muted truncate text-[10px]">{category.parentName ?? "دسته اصلی"}</span>
-                    <span className="bp-muted text-[10px]">{category.groupCount.toLocaleString("fa-IR")} گروه · {category.attributeCount.toLocaleString("fa-IR")} ویژگی · {category.productCount.toLocaleString("fa-IR")} محصول</span>
+                    <span className="bp-muted min-w-0 truncate text-[10px]">{category.parentName ?? "دسته اصلی"}</span>
+                    <span className="bp-muted min-w-0 truncate text-[10px]">{category.groupCount.toLocaleString("fa-IR")} گروه · {category.attributeCount.toLocaleString("fa-IR")} ویژگی · {category.productCount.toLocaleString("fa-IR")} محصول</span>
                   </button>
                 );
               }) : <p className="bp-muted m-0 p-4 text-center text-[12px]">دسته‌بندی‌ای پیدا نشد.</p>}
