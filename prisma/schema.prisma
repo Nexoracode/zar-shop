@@ -169,6 +169,8 @@ model User {
   resolvedReviewReports ProductReviewReport[] @relation("ProductReviewReportResolver")
   productFavorites      ProductFavorite[]
   productVisits         ProductVisit[]
+  notifications         Notification[]
+  notificationReads     NotificationRead[]
 }
 
 model Session {
@@ -688,6 +690,7 @@ model Promotion {
   targetCategoryIds Json?
   audienceScope     String                 @default("ALL") @db.VarChar(20)
   targetUserIds     Json?
+  announceInApp     Boolean                @default(false)
   startsAt          DateTime
   endsAt            DateTime
   isActive          Boolean                @default(true)
@@ -695,6 +698,7 @@ model Promotion {
   updatedAt         DateTime               @updatedAt
   redemptions       PromotionRedemption[]
   rewards           PromotionReward[]
+  notifications     Notification[]
 
   @@index([type, isActive, startsAt, endsAt])
   @@index([isActive, endsAt])
@@ -741,6 +745,40 @@ model PromotionReward {
   @@unique([promotionId, sourceOrderId])
   @@index([userId, redeemedAt, expiresAt])
   @@index([redeemedOrderId])
+}
+
+model Notification {
+  id          String            @id @default(cuid())
+  userId      String?
+  type        String            @db.VarChar(40)
+  title       String            @db.VarChar(191)
+  body        String            @db.VarChar(500)
+  ctaHref     String?           @db.VarChar(500)
+  promotionId String?
+  dedupeKey   String?           @db.VarChar(191)
+  expiresAt   DateTime?
+  createdAt   DateTime          @default(now())
+  user        User?             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  promotion   Promotion?        @relation(fields: [promotionId], references: [id], onDelete: Cascade)
+  reads       NotificationRead[]
+
+  @@unique([userId, dedupeKey])
+  @@index([userId, createdAt])
+  @@index([promotionId, type])
+  @@index([createdAt])
+  @@index([expiresAt])
+}
+
+model NotificationRead {
+  notificationId String
+  userId         String
+  readAt         DateTime     @default(now())
+  dismissedAt    DateTime?
+  notification   Notification @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([notificationId, userId])
+  @@index([userId])
 }
 
 model MediaAsset {
