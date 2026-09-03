@@ -92,7 +92,7 @@ export default async function CheckoutPage() {
   const prices = items.map((item) => {
     const product = item.product;
     const pricing = lineUnitPrice(product, item.selectionKey, rate);
-    return { quantity: item.quantity, original: pricing?.originalPrice ?? 0, final: pricing?.finalPrice ?? 0 };
+    return { quantity: item.quantity, original: pricing?.originalPrice ?? 0, final: pricing?.finalPrice ?? 0, productId: product.id, categoryId: product.categoryId };
   });
   const subtotal = prices.reduce((sum, item) => sum + item.original * item.quantity, 0);
   const merchandiseAmount = prices.reduce((sum, item) => sum + item.final * item.quantity, 0);
@@ -100,7 +100,10 @@ export default async function CheckoutPage() {
   const deliveryMethod = defaultDeliveryMethod(commerceSettings);
   const shippingFee = baseShippingFee(commerceSettings, merchandiseAmount, deliveryMethod);
   const defaultAddress = addresses.find((address) => address.isDefault) ?? addresses[0];
-  const promotions = await resolveCheckoutPromotions(db, { userId: user.id, merchandiseAmount, shippingFee, city: defaultAddress?.cityRef?.name ?? defaultAddress?.city ?? "" });
+  const promotions = await resolveCheckoutPromotions(db, {
+    userId: user.id, merchandiseAmount, shippingFee, city: defaultAddress?.cityRef?.name ?? defaultAddress?.city ?? "",
+    lines: prices.map((line) => ({ productId: line.productId, categoryId: line.categoryId, lineTotal: line.final * line.quantity })),
+  });
   const shipping = Math.max(0, shippingFee - promotions.shippingDiscount);
   const initialQuote = { subtotal, productDiscount, merchandiseAmount, promotionDiscount: promotions.promotionDiscount, shipping, shippingDiscount: promotions.shippingDiscount, total: merchandiseAmount - promotions.promotionDiscount + shipping, applications: promotions.applications.map((item) => ({ title: item.title, code: item.code, discountAmount: item.discountAmount, shippingDiscount: item.shippingDiscount })) };
   const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);

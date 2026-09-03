@@ -17,7 +17,24 @@ export function promotionData(input: PromotionInput): Prisma.PromotionUncheckedC
     startsAt: new Date(input.startsAt),
     endsAt: new Date(input.endsAt),
     isActive: input.isActive,
+    ...(input.itemScope !== undefined
+      ? {
+          itemScope: input.itemScope,
+          targetProductIds: input.itemScope === "PRODUCTS" ? (input.targetProductIds ?? []) : [],
+          targetCategoryIds: input.itemScope === "CATEGORIES" ? (input.targetCategoryIds ?? []) : [],
+        }
+      : {}),
+    ...(input.audienceScope !== undefined
+      ? {
+          audienceScope: input.audienceScope,
+          targetUserIds: input.audienceScope === "SPECIFIC_USERS" ? (input.targetUserIds ?? []) : [],
+        }
+      : {}),
   };
+}
+
+function stringArray(value: unknown): string[] {
+  return Array.isArray(value) ? value.filter((entry): entry is string => typeof entry === "string") : [];
 }
 
 export function serializePromotion(promotion: Promotion & { _count?: { redemptions: number; rewards: number } }) {
@@ -34,6 +51,11 @@ export function serializePromotion(promotion: Promotion & { _count?: { redemptio
     perUserLimit: promotion.perUserLimit,
     rewardExpiresDays: promotion.rewardExpiresDays,
     shippingScope: promotion.shippingScope === "TEHRAN" ? "TEHRAN" as const : promotion.shippingScope === "ALL" ? "ALL" as const : null,
+    itemScope: promotion.itemScope === "PRODUCTS" || promotion.itemScope === "CATEGORIES" ? promotion.itemScope : "ALL" as const,
+    targetProductIds: stringArray(promotion.targetProductIds),
+    targetCategoryIds: stringArray(promotion.targetCategoryIds),
+    audienceScope: promotion.audienceScope === "SPECIFIC_USERS" ? "SPECIFIC_USERS" as const : "ALL" as const,
+    targetUserIds: stringArray(promotion.targetUserIds),
     startsAt: promotion.startsAt.toISOString(),
     endsAt: promotion.endsAt.toISOString(),
     isActive: promotion.isActive,

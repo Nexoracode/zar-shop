@@ -25,3 +25,19 @@ test("accepts free shipping without a monetary discount", () => {
   assert.equal(result.success, true);
 });
 
+const coupon = { ...base, type: "COUPON", code: "SCOPED", discountType: "PERCENT", discountValue: 15 } as const;
+
+test("product-scoped coupon needs at least one product", () => {
+  assert.equal(promotionSchema.safeParse({ ...coupon, itemScope: "PRODUCTS", targetProductIds: [] }).success, false);
+  assert.equal(promotionSchema.safeParse({ ...coupon, itemScope: "PRODUCTS", targetProductIds: ["ckq111111111111111111111a"] }).success, true);
+});
+
+test("free shipping cannot be item-scoped", () => {
+  assert.equal(promotionSchema.safeParse({ ...base, type: "FREE_SHIPPING", shippingScope: "ALL", itemScope: "PRODUCTS", targetProductIds: ["ckq111111111111111111111a"] }).success, false);
+});
+
+test("specific-user audience needs at least one user", () => {
+  assert.equal(promotionSchema.safeParse({ ...coupon, audienceScope: "SPECIFIC_USERS", targetUserIds: [] }).success, false);
+  assert.equal(promotionSchema.safeParse({ ...coupon, audienceScope: "SPECIFIC_USERS", targetUserIds: ["ckq111111111111111111111a"] }).success, true);
+});
+

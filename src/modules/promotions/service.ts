@@ -1,5 +1,6 @@
 import type { Prisma, PrismaClient } from "@generated/prisma/client";
-import { calculatePromotionDiscount, matchesShippingScope, meetsMinimumOrder } from "@/modules/promotions/rules";
+import { calculatePromotionDiscount, eligibleAmountForScope, matchesShippingScope, meetsMinimumOrder, type PromotionScopeLine } from "@/modules/promotions/rules";
+import { collectCategoryAndDescendantIds } from "@/modules/categories/category-tree";
 
 type DbLike = PrismaClient | Prisma.TransactionClient;
 
@@ -30,10 +31,29 @@ export type CheckoutPromotionResult = {
 
 const paidOrderStatuses = ["PAID", "PROCESSING", "SHIPPED", "DELIVERED"] as const;
 
+function asStringArray(value: unknown): string[] {
+  return Array.isArray(value) ? value.filter((entry): entry is string => typeof entry === "string") : [];
+}
+
+/** Whether a promotion targeted at specific users may be used by `userId`. */
+function audienceAllows(promotion: { audienceScope: string; targetUserIds: unknown }, userId: string) {
+  if (promotion.audienceScope !== "SPECIFIC_USERS") return true;
+  return asStringArray(promotion.targetUserIds).includes(userId);
+}
+
+type AppliedScope = {
+  itemScope: string;
+  targetProductIds: string[];
+  targetCategoryIds: string[];
+  audienceScope: string;
+  targetUserIds: string[];
+  discountBase: number | null;
+};
+
 function promotionSnapshot(promotion: {
   id: string; title: string; type: string; code: string | null; discountType: string | null; discountValue: unknown;
   minOrderAmount: unknown; maxDiscountAmount: unknown; startsAt: Date; endsAt: Date;
-}) {
+}, applied?: Partial<AppliedScope>) {
   return {
     id: promotion.id,
     title: promotion.title,
@@ -45,6 +65,12 @@ function promotionSnapshot(promotion: {
     maxDiscountAmount: promotion.maxDiscountAmount === null ? null : Number(promotion.maxDiscountAmount),
     startsAt: promotion.startsAt.toISOString(),
     endsAt: promotion.endsAt.toISOString(),
+    itemScope: applied?.itemScope ?? "ALL",
+    targetProductIds: applied?.targetProductIds ?? [],
+    targetCategoryIds: applied?.targetCategoryIds ?? [],
+    audienceScope: applied?.audienceScope ?? "ALL",
+    targetUserIds: applied?.targetUserIds ?? [],
+    discountBase: applied?.discountBase ?? null,
   } satisfies Prisma.InputJsonObject;
 }
 
@@ -63,6 +89,7 @@ export async function resolveCheckoutPromotions(db: DbLike, input: {
   merchandiseAmount: number;
   shippingFee: number;
   city: string;
+  lines?: PromotionScopeLine[];
   now?: Date;
 }): Promise<CheckoutPromotionResult> {
   const now = input.now ?? new Date();
@@ -70,37 +97,71 @@ export async function resolveCheckoutPromotions(db: DbLike, input: {
   let rewardId: string | null = null;
   const activeWhere = { isActive: true, startsAt: { lte: now }, endsAt: { gte: now } } as const;
 
+  let categoryParents: { id: string; parentId: string | null }[] | null = null;
+  async function expandCategories(ids: string[]): Promise<Set<string>> {
+    if (ids.length === 0) return new Set();
+    categoryParents ??= await db.category.findMany({ select: { id: true, parentId: true } });
+    const parents = categoryParents;
+    const out = new Set<string>();
+    for (const id of ids) for (const descendant of collectCategoryAndDescendantIds(id, parents)) out.add(descendant);
+    return out;
+  }
+
+  /** The amount a scoped promotion's percent/fixed discount runs against, plus the resolved id lists. */
+  async function resolveItemBase(row: { itemScope: string; targetProductIds: unknown; targetCategoryIds: unknown }) {
+    const targetProductIds = asStringArray(row.targetProductIds);
+    const targetCategoryIds = asStringArray(row.targetCategoryIds);
+    const expanded = row.itemScope === "CATEGORIES" ? await expandCategories(targetCategoryIds) : new Set<string>();
+    const base = eligibleAmountForScope(input.merchandiseAmount, input.lines, { itemScope: row.itemScope, targetProductIds }, expanded);
+    return { targetProductIds, targetCategoryIds, base };
+  }
+
   let discountPromotion: Awaited<ReturnType<typeof db.promotion.findFirst>> | null = null;
   let discountValue: { discountType: "PERCENT" | "FIXED"; discountValue: number; maxDiscountAmount: number | null } | null = null;
+  let discountBase = input.merchandiseAmount;
+  let discountScope: Partial<AppliedScope> | undefined;
   const normalizedCode = input.couponCode?.trim().toUpperCase() || null;
 
   if (normalizedCode) {
     const coupon = await db.promotion.findFirst({ where: { ...activeWhere, type: "COUPON", code: normalizedCode } });
     if (!coupon) throw new PromotionValidationError("کد تخفیف معتبر یا فعال نیست.");
+    if (!audienceAllows(coupon, input.userId)) throw new PromotionValidationError("کد تخفیف معتبر یا فعال نیست.");
     if (!meetsMinimumOrder(input.merchandiseAmount, coupon.minOrderAmount)) throw new PromotionValidationError("حداقل مبلغ لازم برای استفاده از این کد تخفیف تأمین نشده است.");
     if (!(await ensureUsageAvailable(db, coupon, input.userId))) throw new PromotionValidationError("ظرفیت استفاده از این کد تخفیف به پایان رسیده است.");
     if (!coupon.discountType || coupon.discountValue === null) throw new PromotionValidationError("تنظیمات کد تخفیف کامل نیست.");
+    const scoped = await resolveItemBase(coupon);
+    if (scoped.base <= 0) throw new PromotionValidationError("این کد تخفیف برای اقلام سبد شما فعال نیست.");
     discountPromotion = coupon;
     discountValue = { discountType: coupon.discountType, discountValue: Number(coupon.discountValue), maxDiscountAmount: coupon.maxDiscountAmount === null ? null : Number(coupon.maxDiscountAmount) };
+    discountBase = scoped.base;
+    discountScope = { itemScope: coupon.itemScope, targetProductIds: scoped.targetProductIds, targetCategoryIds: scoped.targetCategoryIds, audienceScope: coupon.audienceScope, targetUserIds: asStringArray(coupon.targetUserIds), discountBase: scoped.base };
   } else {
     const reward = await db.promotionReward.findFirst({
       where: { userId: input.userId, redeemedOrderId: null, expiresAt: { gte: now } },
       include: { promotion: true },
       orderBy: { expiresAt: "asc" },
     });
-    if (reward && meetsMinimumOrder(input.merchandiseAmount, reward.promotion.minOrderAmount)) {
+    const rewardScoped = reward ? await resolveItemBase(reward) : null;
+    if (reward && rewardScoped && rewardScoped.base > 0 && meetsMinimumOrder(input.merchandiseAmount, reward.promotion.minOrderAmount)) {
       discountPromotion = reward.promotion;
       discountValue = { discountType: reward.discountType, discountValue: Number(reward.discountValue), maxDiscountAmount: reward.maxDiscountAmount === null ? null : Number(reward.maxDiscountAmount) };
       rewardId = reward.id;
+      discountBase = rewardScoped.base;
+      discountScope = { itemScope: reward.itemScope, targetProductIds: rewardScoped.targetProductIds, targetCategoryIds: rewardScoped.targetCategoryIds, audienceScope: "ALL", targetUserIds: [], discountBase: rewardScoped.base };
     } else {
       const hasPaidOrder = await db.order.findFirst({ where: { userId: input.userId, status: { in: [...paidOrderStatuses] } }, select: { id: true } });
       if (!hasPaidOrder) {
         const firstPurchasePromotions = await db.promotion.findMany({ where: { ...activeWhere, type: "FIRST_PURCHASE" }, orderBy: { createdAt: "asc" } });
         for (const promotion of firstPurchasePromotions) {
+          if (!audienceAllows(promotion, input.userId)) continue;
           if (!meetsMinimumOrder(input.merchandiseAmount, promotion.minOrderAmount) || !(await ensureUsageAvailable(db, promotion, input.userId))) continue;
           if (!promotion.discountType || promotion.discountValue === null) continue;
+          const scoped = await resolveItemBase(promotion);
+          if (scoped.base <= 0) continue;
           discountPromotion = promotion;
           discountValue = { discountType: promotion.discountType, discountValue: Number(promotion.discountValue), maxDiscountAmount: promotion.maxDiscountAmount === null ? null : Number(promotion.maxDiscountAmount) };
+          discountBase = scoped.base;
+          discountScope = { itemScope: promotion.itemScope, targetProductIds: scoped.targetProductIds, targetCategoryIds: scoped.targetCategoryIds, audienceScope: promotion.audienceScope, targetUserIds: asStringArray(promotion.targetUserIds), discountBase: scoped.base };
           break;
         }
       }
@@ -108,7 +169,7 @@ export async function resolveCheckoutPromotions(db: DbLike, input: {
   }
 
   if (discountPromotion && discountValue) {
-    const discountAmount = calculatePromotionDiscount(input.merchandiseAmount, discountValue);
+    const discountAmount = calculatePromotionDiscount(discountBase, discountValue);
     if (discountAmount > 0) applications.push({
       promotionId: discountPromotion.id,
       title: discountPromotion.title,
@@ -117,16 +178,17 @@ export async function resolveCheckoutPromotions(db: DbLike, input: {
       discountAmount,
       shippingDiscount: 0,
       ...(rewardId ? { rewardId } : {}),
-      snapshot: promotionSnapshot(discountPromotion),
+      snapshot: promotionSnapshot(discountPromotion, discountScope),
     });
   }
 
   const shippingPromotions = await db.promotion.findMany({ where: { ...activeWhere, type: "FREE_SHIPPING" }, orderBy: { createdAt: "asc" } });
   for (const promotion of shippingPromotions) {
+    if (!audienceAllows(promotion, input.userId)) continue;
     if (!meetsMinimumOrder(input.merchandiseAmount, promotion.minOrderAmount) || !matchesShippingScope(promotion.shippingScope, input.city) || !(await ensureUsageAvailable(db, promotion, input.userId))) continue;
     const shippingDiscount = Math.max(0, Math.round(input.shippingFee));
     if (shippingDiscount === 0) break;
-    applications.push({ promotionId: promotion.id, title: promotion.title, type: promotion.type, code: null, discountAmount: 0, shippingDiscount, snapshot: promotionSnapshot(promotion) });
+    applications.push({ promotionId: promotion.id, title: promotion.title, type: promotion.type, code: null, discountAmount: 0, shippingDiscount, snapshot: promotionSnapshot(promotion, { audienceScope: promotion.audienceScope, targetUserIds: asStringArray(promotion.targetUserIds) }) });
     break;
   }
 
@@ -146,6 +208,7 @@ export async function issueNextPurchaseRewards(db: DbLike, input: { orderId: str
   });
   for (const promotion of promotions) {
     if (!promotion.discountType || promotion.discountValue === null || !promotion.rewardExpiresDays || !meetsMinimumOrder(input.merchandiseAmount, promotion.minOrderAmount)) continue;
+    if (!audienceAllows(promotion, input.userId)) continue;
     const issuedCount = await db.promotionReward.count({ where: { promotionId: promotion.id, userId: input.userId } });
     if (issuedCount >= promotion.perUserLimit) continue;
     const expiresAt = new Date(paidAt.getTime() + promotion.rewardExpiresDays * 86_400_000);
@@ -153,6 +216,9 @@ export async function issueNextPurchaseRewards(db: DbLike, input: { orderId: str
       where: { promotionId_sourceOrderId: { promotionId: promotion.id, sourceOrderId: input.orderId } },
       update: {},
       create: {
+        itemScope: promotion.itemScope,
+        targetProductIds: asStringArray(promotion.targetProductIds),
+        targetCategoryIds: asStringArray(promotion.targetCategoryIds),
         promotionId: promotion.id,
         userId: input.userId,
         sourceOrderId: input.orderId,

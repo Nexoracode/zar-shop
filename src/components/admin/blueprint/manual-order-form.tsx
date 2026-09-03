@@ -7,7 +7,7 @@ import { PackageSearch, Plus, Search, Trash2, UserRound, X } from "lucide-react"
 import { AdminPageHeader } from "@/components/admin-ui";
 import { formatMoney } from "@/lib/format";
 import { requestErrorMessage, requestJson } from "@/lib/api-request";
-import { BpButton, BpCombobox, BpInput, BpNumberInput, BpSeg, BpSelect, BpSpinner } from "./ui";
+import { BpButton, BpCombobox, BpInput, BpNumberInput, BpSeg, BpSelect, BpSpinner, useDebounced } from "./ui";
 
 type CustomerHit = { id: string; name: string; phone: string | null; email: string | null; isGuest: boolean; orderCount: number };
 type VariantOption = { selectionKey: string; label: string; stock: number };
@@ -50,15 +50,6 @@ function SearchField({ value, onChange, placeholder, ariaLabel, loading, childre
       {children}
     </div>
   );
-}
-
-function useDebounced<T>(value: T, ms: number) {
-  const [debounced, setDebounced] = useState(value);
-  useEffect(() => {
-    const timer = window.setTimeout(() => setDebounced(value), ms);
-    return () => window.clearTimeout(timer);
-  }, [value, ms]);
-  return debounced;
 }
 
 export function BlueprintManualOrderForm({ industry }: { industry: "GOLD" | "GENERAL" }) {

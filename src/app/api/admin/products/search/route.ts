@@ -7,7 +7,8 @@ import { hasPermission } from "@/modules/auth/permissions";
 export async function GET(request: Request) {
   try {
     const actor = await getCurrentUser();
-    if (!actor || !hasPermission(actor.role, "catalog:manage")) {
+    // Promotion targeting also picks products, and its editors hold `orders:manage`.
+    if (!actor || !(hasPermission(actor.role, "catalog:manage") || hasPermission(actor.role, "orders:manage"))) {
       return NextResponse.json({ message: "دسترسی غیرمجاز است." }, { status: 403 });
     }
 

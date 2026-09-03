@@ -39,7 +39,7 @@ export async function POST(request: Request) {
     const prices = cart.items.map((item) => {
       const product = item.product;
       const pricing = lineUnitPrice(product, item.selectionKey, rate);
-      return { quantity: item.quantity, original: pricing?.originalPrice ?? 0, final: pricing?.finalPrice ?? 0 };
+      return { quantity: item.quantity, original: pricing?.originalPrice ?? 0, final: pricing?.finalPrice ?? 0, productId: product.id, categoryId: product.categoryId };
     });
     const subtotal = prices.reduce((sum, item) => sum + item.original * item.quantity, 0);
     const merchandiseAmount = prices.reduce((sum, item) => sum + item.final * item.quantity, 0);
@@ -61,7 +61,10 @@ export async function POST(request: Request) {
       })
       : null;
     const shippingFee = chosen ? chosen.price : baseShippingFee(commerceSettings, merchandiseAmount, defaultDeliveryMethod(commerceSettings));
-    const promotions = await resolveCheckoutPromotions(db, { userId: user.id, couponCode: input.couponCode, merchandiseAmount, shippingFee, city: address.cityRef?.name ?? address.city });
+    const promotions = await resolveCheckoutPromotions(db, {
+      userId: user.id, couponCode: input.couponCode, merchandiseAmount, shippingFee, city: address.cityRef?.name ?? address.city,
+      lines: prices.map((line) => ({ productId: line.productId, categoryId: line.categoryId, lineTotal: line.final * line.quantity })),
+    });
     const shipping = Math.max(0, shippingFee - promotions.shippingDiscount);
     return NextResponse.json({
       subtotal,

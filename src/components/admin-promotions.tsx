@@ -34,6 +34,11 @@ export type PromotionItem = {
   perUserLimit: number;
   rewardExpiresDays: number | null;
   shippingScope: "ALL" | "TEHRAN" | null;
+  itemScope: "ALL" | "PRODUCTS" | "CATEGORIES";
+  targetProductIds: string[];
+  targetCategoryIds: string[];
+  audienceScope: "ALL" | "SPECIFIC_USERS";
+  targetUserIds: string[];
   startsAt: string;
   endsAt: string;
   isActive: boolean;

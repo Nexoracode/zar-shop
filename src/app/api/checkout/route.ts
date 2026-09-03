@@ -142,7 +142,10 @@ export async function POST(request: Request) {
         throw new Error("روش ارسال انتخاب‌شده برای این سفارش در دسترس نیست.");
       }
       const shippingFee = chosen ? chosen.price : baseShippingFee(commerceSettings, merchandiseAmount, deliveryMethod);
-      const promotions = await resolveCheckoutPromotions(tx, { userId: user.id, couponCode, merchandiseAmount, shippingFee, city: address.city });
+      const promotions = await resolveCheckoutPromotions(tx, {
+        userId: user.id, couponCode, merchandiseAmount, shippingFee, city: address.city,
+        lines: lines.map((line: CheckoutLine) => ({ productId: line.p.id, categoryId: line.p.categoryId, lineTotal: line.total })),
+      });
       const shipping = Math.max(0, shippingFee - promotions.shippingDiscount);
       const total = merchandiseAmount - promotions.promotionDiscount + shipping;
       if (total <= 0) throw new Error("مبلغ نهایی سفارش معتبر نیست.");

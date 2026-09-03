@@ -12,7 +12,15 @@ import { AdminBulkCheckbox, AdminBulkEditor, AdminBulkTr } from "@/components/ad
 import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
 import { requestErrorMessage, requestJson } from "@/lib/api-request";
 import type { PromotionItem } from "@/components/admin-promotions";
-import { BpButton, BpTable, BpTd, BpTh, formatPersianDateTime } from "./ui";
+import { BpButton, BpTable, BpTag, BpTd, BpTh, formatPersianDateTime } from "./ui";
+
+function scopeLabel(item: PromotionItem): string | null {
+  const parts: string[] = [];
+  if (item.itemScope === "PRODUCTS") parts.push(`${item.targetProductIds.length.toLocaleString("fa-IR")} محصول`);
+  if (item.itemScope === "CATEGORIES") parts.push(`${item.targetCategoryIds.length.toLocaleString("fa-IR")} دسته`);
+  if (item.audienceScope === "SPECIFIC_USERS") parts.push("کاربران خاص");
+  return parts.length ? parts.join(" · ") : null;
+}
 
 const typeMeta: Record<PromotionItem["type"], { label: string; icon: React.ReactNode }> = {
   COUPON: { label: "کد تخفیف", icon: <BadgePercent size={15} /> },
@@ -114,6 +122,7 @@ export function BlueprintPromotionsView({ initialItems, query, status, type, pag
                     <AdminStatusBadge tone={item.isActive ? "success" : "neutral"}>{item.isActive ? "فعال" : "غیرفعال"}</AdminStatusBadge>
                   </div>
                   <span className="bp-muted text-[11px]">{typeMeta[item.type].label}{item.code ? ` · ${item.code}` : ""}</span>
+                  {scopeLabel(item) ? <BpTag tone="accent" className="self-start">{scopeLabel(item)}</BpTag> : null}
                   <span className="bp-muted text-[11px]">{formatPersianDateTime(item.startsAt)} تا {formatPersianDateTime(item.endsAt)}</span>
                   <div className="flex items-center justify-between gap-2">
                     <span className="bp-muted text-[11px]">{item.usageCount.toLocaleString("fa-IR")} استفاده{item.rewardCount ? ` · ${item.rewardCount.toLocaleString("fa-IR")} پاداش` : ""}</span>
@@ -155,6 +164,7 @@ export function BlueprintPromotionsView({ initialItems, query, status, type, pag
                           <div className="min-w-0">
                             <span className="block truncate font-bold" title={item.title}>{item.title}</span>
                             <span className="bp-muted block truncate text-[11px]">{typeMeta[item.type].label}{item.code ? <span dir="ltr" className="ms-1.5 font-mono">{item.code}</span> : null}</span>
+                            {scopeLabel(item) ? <BpTag tone="accent" className="mt-1">{scopeLabel(item)}</BpTag> : null}
                           </div>
                         </div>
                       </BpTd>

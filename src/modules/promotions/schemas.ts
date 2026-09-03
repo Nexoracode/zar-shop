@@ -18,11 +18,17 @@ export const promotionSchema = z.object({
   perUserLimit: z.coerce.number().int().positive().max(100).default(1),
   rewardExpiresDays: nullablePositiveInt,
   shippingScope: z.enum(["ALL", "TEHRAN"]).nullable().default(null),
+  itemScope: z.enum(["ALL", "PRODUCTS", "CATEGORIES"]).optional(),
+  targetProductIds: z.array(z.string().cuid()).max(200).optional(),
+  targetCategoryIds: z.array(z.string().cuid()).max(200).optional(),
+  audienceScope: z.enum(["ALL", "SPECIFIC_USERS"]).optional(),
+  targetUserIds: z.array(z.string().cuid()).max(500).optional(),
   startsAt: z.string().datetime(),
   endsAt: z.string().datetime(),
   isActive: z.boolean().default(true),
 }).superRefine((promotion, context) => {
   const needsDiscount = promotion.type === "COUPON" || promotion.type === "NEXT_PURCHASE" || promotion.type === "FIRST_PURCHASE";
+  const itemScopeableTypes = promotion.type === "COUPON" || promotion.type === "FIRST_PURCHASE" || promotion.type === "NEXT_PURCHASE";
   if (promotion.type === "COUPON" && !promotion.code) context.addIssue({ code: "custom", path: ["code"], message: "کد تخفیف الزامی است." });
   if (promotion.type !== "COUPON" && promotion.code) context.addIssue({ code: "custom", path: ["code"], message: "کد فقط برای پروموشن کد تخفیف قابل ثبت است." });
   if (needsDiscount && (!promotion.discountType || promotion.discountValue === null)) context.addIssue({ code: "custom", path: ["discountValue"], message: "نوع و مقدار تخفیف الزامی است." });
@@ -33,6 +39,11 @@ export const promotionSchema = z.object({
   if (promotion.type === "FREE_SHIPPING" && !promotion.shippingScope) context.addIssue({ code: "custom", path: ["shippingScope"], message: "محدوده ارسال الزامی است." });
   if (promotion.type !== "FREE_SHIPPING" && promotion.shippingScope) context.addIssue({ code: "custom", path: ["shippingScope"], message: "محدوده ارسال فقط برای ارسال رایگان قابل ثبت است." });
   if (promotion.endsAt < promotion.startsAt) context.addIssue({ code: "custom", path: ["endsAt"], message: "پایان اعتبار باید بعد از شروع آن باشد." });
+
+  if (promotion.itemScope && promotion.itemScope !== "ALL" && !itemScopeableTypes) context.addIssue({ code: "custom", path: ["itemScope"], message: "این نوع پروموشن هدف‌گیری کالا ندارد." });
+  if (promotion.itemScope === "PRODUCTS" && !(promotion.targetProductIds && promotion.targetProductIds.length >= 1)) context.addIssue({ code: "custom", path: ["targetProductIds"], message: "دست‌کم یک محصول برای هدف‌گیری انتخاب کنید." });
+  if (promotion.itemScope === "CATEGORIES" && !(promotion.targetCategoryIds && promotion.targetCategoryIds.length >= 1)) context.addIssue({ code: "custom", path: ["targetCategoryIds"], message: "دست‌کم یک دسته برای هدف‌گیری انتخاب کنید." });
+  if (promotion.audienceScope === "SPECIFIC_USERS" && !(promotion.targetUserIds && promotion.targetUserIds.length >= 1)) context.addIssue({ code: "custom", path: ["targetUserIds"], message: "دست‌کم یک کاربر برای هدف‌گیری انتخاب کنید." });
 });
 
 export const updatePromotionSchema = promotionSchema;

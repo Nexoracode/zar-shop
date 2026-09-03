@@ -683,6 +683,11 @@ model Promotion {
   perUserLimit      Int                    @default(1)
   rewardExpiresDays Int?
   shippingScope     String?                @db.VarChar(30)
+  itemScope         String                 @default("ALL") @db.VarChar(20)
+  targetProductIds  Json?
+  targetCategoryIds Json?
+  audienceScope     String                 @default("ALL") @db.VarChar(20)
+  targetUserIds     Json?
   startsAt          DateTime
   endsAt            DateTime
   isActive          Boolean                @default(true)
@@ -722,6 +727,9 @@ model PromotionReward {
   discountType      PromotionDiscountType
   discountValue     Decimal               @db.Decimal(18, 3)
   maxDiscountAmount Decimal?              @db.Decimal(18, 0)
+  itemScope         String                @default("ALL") @db.VarChar(20)
+  targetProductIds  Json?
+  targetCategoryIds Json?
   expiresAt         DateTime
   redeemedAt        DateTime?
   createdAt         DateTime              @default(now())

@@ -10,19 +10,21 @@ const dateFields = {
   updatedAt: new Date("2026-07-01T00:00:00.000Z"),
 };
 
+const scopeFields = { itemScope: "ALL", targetProductIds: null, targetCategoryIds: null, audienceScope: "ALL", targetUserIds: null };
+
 const coupon = {
   id: "coupon-1", title: "کد تابستان", type: "COUPON", code: "SUMMER", discountType: "PERCENT", discountValue: 20,
   minOrderAmount: 500_000, maxDiscountAmount: 150_000, usageLimit: 100, perUserLimit: 1, rewardExpiresDays: null,
-  shippingScope: null, isActive: true, ...dateFields,
+  shippingScope: null, isActive: true, ...scopeFields, ...dateFields,
 };
 
 const freeShipping = {
   id: "shipping-1", title: "ارسال تهران", type: "FREE_SHIPPING", code: null, discountType: null, discountValue: null,
   minOrderAmount: 500_000, maxDiscountAmount: null, usageLimit: null, perUserLimit: 10, rewardExpiresDays: null,
-  shippingScope: "TEHRAN", isActive: true, ...dateFields,
+  shippingScope: "TEHRAN", isActive: true, ...scopeFields, ...dateFields,
 };
 
-function checkoutDb(options?: { coupon?: typeof coupon | null }) {
+function checkoutDb(options?: { coupon?: (typeof coupon & Record<string, unknown>) | null }) {
   return {
     promotion: {
       findFirst: async () => options?.coupon === undefined ? coupon : options.coupon,
@@ -31,8 +33,14 @@ function checkoutDb(options?: { coupon?: typeof coupon | null }) {
     promotionRedemption: { count: async () => 0 },
     promotionReward: { findFirst: async () => null },
     order: { findFirst: async () => null },
+    category: { findMany: async () => [] as { id: string; parentId: string | null }[] },
   } as unknown as PrismaClient;
 }
+
+const cartLines = [
+  { productId: "p-target", categoryId: "c1", lineTotal: 400_000 },
+  { productId: "p-other", categoryId: "c2", lineTotal: 600_000 },
+];
 
 test("applies coupon and free shipping together", async () => {
   const result = await resolveCheckoutPromotions(checkoutDb(), {
@@ -47,6 +55,37 @@ test("applies coupon and free shipping together", async () => {
 test("rejects an unknown coupon instead of silently ignoring it", async () => {
   await assert.rejects(
     resolveCheckoutPromotions(checkoutDb({ coupon: null }), { userId: "user-1", couponCode: "INVALID", merchandiseAmount: 1_000_000, shippingFee: 0, city: "تهران" }),
+    PromotionValidationError,
+  );
+});
+
+test("product-scoped coupon discounts only the matching lines", async () => {
+  const scoped = { ...coupon, maxDiscountAmount: null, itemScope: "PRODUCTS", targetProductIds: ["p-target"] };
+  const result = await resolveCheckoutPromotions(checkoutDb({ coupon: scoped }), {
+    userId: "user-1", couponCode: "summer", merchandiseAmount: 1_000_000, shippingFee: 0, city: "تهران",
+    lines: cartLines, now: new Date("2026-07-29T12:00:00.000Z"),
+  });
+  assert.equal(result.promotionDiscount, 80_000); // 20% of the 400,000 matching line only
+});
+
+test("rejects a coupon whose targeted products are not in the cart", async () => {
+  const scoped = { ...coupon, itemScope: "PRODUCTS", targetProductIds: ["p-missing"] };
+  await assert.rejects(
+    resolveCheckoutPromotions(checkoutDb({ coupon: scoped }), {
+      userId: "user-1", couponCode: "summer", merchandiseAmount: 1_000_000, shippingFee: 0, city: "تهران",
+      lines: cartLines, now: new Date("2026-07-29T12:00:00.000Z"),
+    }),
+    PromotionValidationError,
+  );
+});
+
+test("rejects a coupon targeted at other users", async () => {
+  const scoped = { ...coupon, audienceScope: "SPECIFIC_USERS", targetUserIds: ["someone-else"] };
+  await assert.rejects(
+    resolveCheckoutPromotions(checkoutDb({ coupon: scoped }), {
+      userId: "user-1", couponCode: "summer", merchandiseAmount: 1_000_000, shippingFee: 0, city: "تهران",
+      now: new Date("2026-07-29T12:00:00.000Z"),
+    }),
     PromotionValidationError,
   );
 });
