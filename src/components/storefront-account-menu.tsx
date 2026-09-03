@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button, Popover } from "@heroui/react";
-import { ChevronDown, ChevronLeft, Clock3, Heart, LogOut, MapPin, MessageCircle, ShoppingBag, Sparkles, UserRound } from "lucide-react";
+import { Bell, ChevronDown, ChevronLeft, Clock3, Heart, LogOut, MapPin, MessageCircle, ShoppingBag, Sparkles, UserRound } from "lucide-react";
 
 type AccountUser = { firstName: string | null; lastName: string | null; email: string | null; phone: string | null; isGuest: boolean };
 
@@ -30,6 +30,7 @@ export function StorefrontAccountMenu({ user, className = "" }: { user: AccountU
 
   const name = `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim() || user.phone || user.email || "کاربر زرشاپ";
   const items = [
+    { href: "/account/notifications", label: "اعلان‌ها", icon: Bell },
     { href: "/account/orders", label: "سفارش‌ها", icon: ShoppingBag },
     { href: "/account/addresses", label: "آدرس‌ها", icon: MapPin },
     { href: "/account/favorites", label: "لیست‌های من", icon: Heart },

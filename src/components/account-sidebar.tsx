@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Button } from "@heroui/react";
-import { CircleUserRound, Clock3, Heart, LogOut, MapPin, MessageCircle, Pencil, ShoppingBag, Sparkles, UserRound, WalletCards, type LucideIcon } from "lucide-react";
+import { Bell, CircleUserRound, Clock3, Heart, LogOut, MapPin, MessageCircle, Pencil, ShoppingBag, Sparkles, UserRound, WalletCards, type LucideIcon } from "lucide-react";
 
 type Item = { href: string; label: string; icon: LucideIcon };
 
@@ -11,6 +11,7 @@ export function AccountSidebar({ user }: { user: { name: string; phone: string }
   const pathname = usePathname();
   const items: Item[] = [
     { href: "/account", label: "خلاصه فعالیت‌ها", icon: CircleUserRound },
+    { href: "/account/notifications", label: "اعلان‌ها", icon: Bell },
     { href: "/account/orders", label: "سفارش‌ها", icon: ShoppingBag },
     { href: "/account/favorites", label: "لیست‌های من", icon: Heart },
     { href: "/account/reviews", label: "دیدگاه‌ها و پرسش‌ها", icon: MessageCircle },
