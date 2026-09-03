@@ -2,10 +2,11 @@
 
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { Input, toast } from "@heroui/react";
+import { toast } from "@heroui/react";
 import { Truck } from "lucide-react";
 import { AdminSaveButton } from "@/components/admin-save-button";
-import { adminFieldClass, adminLabelClass } from "@/components/admin-ui";
+import { TextField } from "@/components/form-field";
+import { adminLabelClass } from "@/components/admin-ui";
 import { trackingNumberMaxLength } from "@/modules/orders/tracking";
 import { useAdminTemplate } from "@/components/admin/template-context";
 import { BpButton } from "@/components/admin/blueprint/ui/button";
@@ -55,12 +56,21 @@ export function AdminOrderTrackingField({ orderId, initialTrackingNumber }: { or
 
   return (
     <form onSubmit={submit} className="grid gap-2 rounded-xl bg-slate-50 px-4 py-3">
-      <label className={`${adminLabelClass} flex items-center gap-1.5 text-xs text-slate-400`}><Truck size={14} />کد رهگیری مرسوله</label>
-      <div className="flex items-center gap-2">
-        <Input value={value} maxLength={trackingNumberMaxLength} onChange={(event) => { setValue(event.target.value); setError(""); }} dir="ltr" placeholder="کد رهگیری را وارد کنید" disabled={saving} isInvalid={Boolean(error)} fullWidth variant="secondary" className={`${adminFieldClass} !min-h-9 h-9 text-xs`} />
-        <AdminSaveButton isSaving={saving} label="ثبت" isDisabled={!canSubmit} className="min-h-9 !h-9 px-3 text-xs" />
+      <span className={`${adminLabelClass} flex items-center gap-1.5 text-xs text-slate-400`}><Truck size={14} />کد رهگیری مرسوله</span>
+      <div className="flex items-start gap-2">
+        <TextField
+          aria-label="کد رهگیری مرسوله"
+          value={value}
+          maxLength={trackingNumberMaxLength}
+          error={error || undefined}
+          onChange={(event) => { setValue(event.target.value); setError(""); }}
+          dir="ltr"
+          placeholder="کد رهگیری را وارد کنید"
+          disabled={saving}
+          wrapperClassName="flex-1"
+        />
+        <AdminSaveButton isSaving={saving} label="ثبت" isDisabled={!canSubmit} className="field-action min-h-9 !h-9 px-3 text-xs" />
       </div>
-      {error && <span className="text-xs text-[var(--danger)]">{error}</span>}
     </form>
   );
 }
