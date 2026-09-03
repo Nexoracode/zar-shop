@@ -243,16 +243,20 @@ export function BlueprintPromotionForm({ promotion, categories = [], initialTarg
       </Panel>
 
       <Panel title="هدف‌گیری" description="پیش‌فرض روی همهٔ سبد و همهٔ کاربران اعمال می‌شود؛ در صورت نیاز آن را به محصول، دسته یا گروهی از کاربران محدود کنید.">
-        <div className="grid gap-4">
+        <div className="grid gap-5 sm:max-w-md">
           {canScopeItems && (
-            <div className="grid gap-2">
-              <BpSeg
-                label="دامنهٔ کالا"
-                value={itemScope}
-                onChange={(next) => { setItemScope(next); clear("itemScope"); clear("targetProductIds"); clear("targetCategoryIds"); }}
-                options={[{ value: "ALL", label: "همهٔ محصولات" }, { value: "PRODUCTS", label: "محصولات خاص" }, { value: "CATEGORIES", label: "دسته‌های خاص" }]}
-              />
-              <p className="bp-muted m-0 mt-1 text-[11px] leading-5">تخفیف فقط روی جمع اقلام مشمول در سبد اعمال می‌شود؛ حداقل مبلغ سفارش روی کل سبد بررسی می‌شود.</p>
+            <div className="grid gap-3">
+              <div className="bp-field">
+                <label>دامنهٔ کالا</label>
+                <BpSeg
+                  label="دامنهٔ کالا"
+                  fullWidth
+                  value={itemScope}
+                  onChange={(next) => { setItemScope(next); clear("itemScope"); clear("targetProductIds"); clear("targetCategoryIds"); }}
+                  options={[{ value: "ALL", label: "همه" }, { value: "PRODUCTS", label: "محصول خاص" }, { value: "CATEGORIES", label: "دستهٔ خاص" }]}
+                />
+                <p className="bp-muted m-0 mt-2 text-[11px] leading-5">تخفیف فقط روی جمع اقلام مشمول در سبد اعمال می‌شود؛ حداقل مبلغ سفارش روی کل سبد بررسی می‌شود.</p>
+              </div>
               {itemScope === "PRODUCTS" && (
                 <BpAsyncMultiSelect<ProductRef>
                   label="محصولات هدف"
@@ -281,13 +285,17 @@ export function BlueprintPromotionForm({ promotion, categories = [], initialTarg
             </div>
           )}
 
-          <div className="grid gap-2">
-            <BpSeg
-              label="مخاطب"
-              value={audienceScope}
-              onChange={(next) => { setAudienceScope(next); clear("targetUserIds"); }}
-              options={[{ value: "ALL", label: "همهٔ کاربران" }, { value: "SPECIFIC_USERS", label: "کاربران خاص" }]}
-            />
+          <div className="grid gap-3">
+            <div className="bp-field">
+              <label>مخاطب</label>
+              <BpSeg
+                label="مخاطب"
+                fullWidth
+                value={audienceScope}
+                onChange={(next) => { setAudienceScope(next); clear("targetUserIds"); }}
+                options={[{ value: "ALL", label: "همهٔ کاربران" }, { value: "SPECIFIC_USERS", label: "کاربران خاص" }]}
+              />
+            </div>
             {audienceScope === "SPECIFIC_USERS" && (
               <BpAsyncMultiSelect<UserRef>
                 label="کاربران هدف"
