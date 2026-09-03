@@ -13,6 +13,8 @@ type PromotionType = PromotionItem["type"];
 type ItemScope = PromotionItem["itemScope"];
 type AudienceScope = PromotionItem["audienceScope"];
 
+const announceByDefault = (type: PromotionType) => type === "FIRST_PURCHASE" || type === "NEXT_PURCHASE";
+
 type CategoryOption = { id: string; name: string; parentId: string | null };
 type ProductRef = { id: string; name: string; sku: string };
 type UserRef = { id: string; name: string; phone: string | null };
@@ -80,6 +82,7 @@ export function BlueprintPromotionForm({ promotion, categories = [], initialTarg
 
   const [itemScope, setItemScope] = useState<ItemScope>(promotion?.itemScope ?? "ALL");
   const [audienceScope, setAudienceScope] = useState<AudienceScope>(promotion?.audienceScope ?? "ALL");
+  const [announceInApp, setAnnounceInApp] = useState(promotion?.announceInApp ?? announceByDefault(promotion?.type ?? "COUPON"));
   const [targetProducts, setTargetProducts] = useState<ProductRef[]>(initialTargetProducts);
   const [targetCategoryIds, setTargetCategoryIds] = useState<string[]>(promotion?.targetCategoryIds ?? []);
   const [targetUsers, setTargetUsers] = useState<UserRef[]>(initialTargetUsers);
@@ -136,6 +139,7 @@ export function BlueprintPromotionForm({ promotion, categories = [], initialTarg
       targetCategoryIds: effectiveItemScope === "CATEGORIES" ? targetCategoryIds : [],
       audienceScope,
       targetUserIds: audienceScope === "SPECIFIC_USERS" ? targetUsers.map((user) => user.id) : [],
+      announceInApp,
       startsAt,
       endsAt,
       isActive,
@@ -188,7 +192,7 @@ export function BlueprintPromotionForm({ promotion, categories = [], initialTarg
                 key={entry.id}
                 type="button"
                 aria-pressed={active}
-                onClick={() => setType(entry.id)}
+                onClick={() => { setType(entry.id); if (!editing) setAnnounceInApp(announceByDefault(entry.id)); }}
                 className={`grid content-start gap-2 border p-3 text-start transition ${active ? "border-[var(--bp-accent)] bg-[var(--bp-accent-100)]" : "border-[var(--bp-divider)] hover:border-[var(--bp-accent)]"}`}
               >
                 <span className="flex items-center justify-between">
@@ -206,7 +210,10 @@ export function BlueprintPromotionForm({ promotion, categories = [], initialTarg
       <Panel title="اطلاعات پایه">
         <div className="grid gap-3 lg:grid-cols-2">
           <BpInput name="title" label="عنوان داخلی پروموشن" required maxLength={promotionFieldLimits.title} value={title} error={errors.title} placeholder="مثلاً کمپین پایان تابستان" onChange={(event) => { setTitle(event.target.value); clear("title"); }} />
-          <BpSwitch isSelected={isActive} onChange={setIsActive}>پروموشن فعال باشد</BpSwitch>
+          <div className="grid content-start gap-2">
+            <BpSwitch isSelected={isActive} onChange={setIsActive}>پروموشن فعال باشد</BpSwitch>
+            <BpSwitch isSelected={announceInApp} onChange={setAnnounceInApp}>در اعلانات کاربران نمایش داده شود</BpSwitch>
+          </div>
           <BpDateTimeField label="شروع اعتبار" value={startsAt} error={errors.startsAt} onChange={(next) => { setStartsAt(next); clear("startsAt"); }} />
           <BpDateTimeField label="پایان اعتبار" value={endsAt} error={errors.endsAt} onChange={(next) => { setEndsAt(next); clear("endsAt"); }} />
         </div>

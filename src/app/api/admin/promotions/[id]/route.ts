@@ -6,6 +6,7 @@ import { getCurrentUser } from "@/modules/auth/session";
 import { promotionData, serializePromotion } from "@/modules/promotions/admin";
 import { updatePromotionSchema } from "@/modules/promotions/schemas";
 import { auditRequestContext } from "@/modules/audit/request-context";
+import { notifyPromotionAudience } from "@/modules/notifications/promotion-notifications";
 
 type Context = { params: Promise<{ id: string }> };
 
@@ -25,6 +26,9 @@ export async function PATCH(request: Request, context: Context) {
       await tx.auditLog.create({ data: { actorId: actor.id, action: "PROMOTION_UPDATE", entityType: "Promotion", entityId: id, ...auditRequestContext(request, { title: updated.title, type: updated.type, isActive: updated.isActive, changedFields: Object.keys(input) }) } });
       return updated;
     });
+    if (promotion.isActive && promotion.announceInApp) {
+      try { await notifyPromotionAudience(db, promotion); } catch (notifyError) { console.error("[notifications] Promotion announcement failed.", notifyError); }
+    }
     return NextResponse.json(serializePromotion(promotion));
   } catch (error) {
     if (typeof error === "object" && error && "code" in error && error.code === "P2002") return NextResponse.json({ message: "این کد تخفیف قبلاً ثبت شده است." }, { status: 409 });

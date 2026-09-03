@@ -23,6 +23,7 @@ export const promotionSchema = z.object({
   targetCategoryIds: z.array(z.string().cuid()).max(200).optional(),
   audienceScope: z.enum(["ALL", "SPECIFIC_USERS"]).optional(),
   targetUserIds: z.array(z.string().cuid()).max(500).optional(),
+  announceInApp: z.boolean().optional(),
   startsAt: z.string().datetime(),
   endsAt: z.string().datetime(),
   isActive: z.boolean().default(true),

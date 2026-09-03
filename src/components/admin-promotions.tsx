@@ -39,6 +39,7 @@ export type PromotionItem = {
   targetCategoryIds: string[];
   audienceScope: "ALL" | "SPECIFIC_USERS";
   targetUserIds: string[];
+  announceInApp: boolean;
   startsAt: string;
   endsAt: string;
   isActive: boolean;

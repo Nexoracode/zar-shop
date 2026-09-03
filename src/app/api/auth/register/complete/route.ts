@@ -8,6 +8,7 @@ import { consumeRegistrationAttempt, rateLimitResponse } from "@/modules/auth/ra
 import { hasVerifiedRegistrationOtp, invalidateVerifiedRegistrationOtp } from "@/modules/auth/phone-otp";
 import { mergeGuestCartIntoUser } from "@/modules/cart/guest-cart-merge";
 import { getOrderSettings } from "@/modules/settings/order-settings";
+import { notifyFirstPurchaseEligible } from "@/modules/notifications/promotion-notifications";
 
 // Final step of the phone-first registration flow: the phone must already have a
 // consumed REGISTER-purpose OTP (see /api/auth/otp/verify) proving it was actually
@@ -39,6 +40,11 @@ export async function POST(request: Request) {
     });
     await invalidateVerifiedRegistrationOtp(input.phone);
     await createSession(user.id);
+    try {
+      await notifyFirstPurchaseEligible(db, { userId: user.id });
+    } catch (error) {
+      console.error("[notifications] first-purchase welcome notification failed.", error);
+    }
     return NextResponse.json({ user: { id: user.id, phone: user.phone } }, { status: 201 });
   } catch (error) { return apiError(error); }
 }

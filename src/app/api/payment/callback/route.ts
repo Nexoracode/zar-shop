@@ -5,6 +5,7 @@ import { getStorefrontPaymentProvider } from "@/modules/payments/storefront-meth
 import { PaymentProviderError } from "@/modules/payments/payment-provider";
 import { finalizeVerifiedPayment } from "@/modules/payments/payment-finalization";
 import { sendAutomatedSms } from "@/modules/communications/sms-service";
+import { notifyNextPurchaseRewards } from "@/modules/notifications/promotion-notifications";
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
@@ -51,6 +52,7 @@ export async function GET(request: Request) {
     const result = await db.$transaction((transaction) => finalizeVerifiedPayment(transaction, payment.id, referenceId));
     if (!result.alreadyCompleted) {
       try { await sendAutomatedSms("paymentSuccess", result.phone, { orderNumber: result.orderNumber }); } catch (smsError) { console.error("[sms] Payment-success notification failed.", smsError); }
+      try { await notifyNextPurchaseRewards(db, { userId: result.userId, isGuest: result.userIsGuest, rewards: result.rewards }); } catch (notifyError) { console.error("[notifications] Next-purchase reward notification failed.", notifyError); }
     }
     return NextResponse.redirect(`${env.APP_URL}/invoices/${result.orderId}`);
   } catch (error) {

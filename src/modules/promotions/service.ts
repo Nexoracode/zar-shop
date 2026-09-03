@@ -31,6 +31,15 @@ export type CheckoutPromotionResult = {
 
 const paidOrderStatuses = ["PAID", "PROCESSING", "SHIPPED", "DELIVERED"] as const;
 
+/** `isActive` and within the validity window — the base filter for every active-promotion query. */
+function activeWindow(now: Date) {
+  return { isActive: true, startsAt: { lte: now }, endsAt: { gte: now } } as const;
+}
+
+function isUniqueViolation(error: unknown) {
+  return typeof error === "object" && error !== null && "code" in error && (error as { code?: string }).code === "P2002";
+}
+
 function asStringArray(value: unknown): string[] {
   return Array.isArray(value) ? value.filter((entry): entry is string => typeof entry === "string") : [];
 }
@@ -95,7 +104,7 @@ export async function resolveCheckoutPromotions(db: DbLike, input: {
   const now = input.now ?? new Date();
   const applications: CheckoutPromotion[] = [];
   let rewardId: string | null = null;
-  const activeWhere = { isActive: true, startsAt: { lte: now }, endsAt: { gte: now } } as const;
+  const activeWhere = activeWindow(now);
 
   let categoryParents: { id: string; parentId: string | null }[] | null = null;
   async function expandCategories(ids: string[]): Promise<Set<string>> {
@@ -200,33 +209,82 @@ export async function resolveCheckoutPromotions(db: DbLike, input: {
   };
 }
 
-export async function issueNextPurchaseRewards(db: DbLike, input: { orderId: string; userId: string; merchandiseAmount: number; paidAt?: Date }) {
+/**
+ * Active promotions of `type` that `userId` currently qualifies for, ignoring cart-dependent
+ * checks (minimum order, item scope) that can't be evaluated outside checkout. Used to tell a
+ * fresh account which FIRST_PURCHASE offers are waiting for them.
+ */
+export async function listQualifyingPromotions(db: DbLike, input: { userId: string; type: "FIRST_PURCHASE"; now?: Date }) {
+  const now = input.now ?? new Date();
+  const hasPaidOrder = await db.order.findFirst({ where: { userId: input.userId, status: { in: [...paidOrderStatuses] } }, select: { id: true } });
+  if (hasPaidOrder) return [];
+  const candidates = await db.promotion.findMany({ where: { ...activeWindow(now), type: input.type }, orderBy: { createdAt: "asc" } });
+  const qualifying: typeof candidates = [];
+  for (const promotion of candidates) {
+    if (!audienceAllows(promotion, input.userId)) continue;
+    if (!promotion.discountType || promotion.discountValue === null) continue;
+    if (!(await ensureUsageAvailable(db, promotion, input.userId))) continue;
+    qualifying.push(promotion);
+  }
+  return qualifying;
+}
+
+export type IssuedReward = {
+  rewardId: string;
+  promotionId: string;
+  promotionTitle: string;
+  discountType: "PERCENT" | "FIXED";
+  discountValue: number;
+  maxDiscountAmount: number | null;
+  expiresAt: Date;
+};
+
+export async function issueNextPurchaseRewards(db: DbLike, input: { orderId: string; userId: string; merchandiseAmount: number; paidAt?: Date }): Promise<IssuedReward[]> {
   const paidAt = input.paidAt ?? new Date();
   const promotions = await db.promotion.findMany({
     where: { type: "NEXT_PURCHASE", isActive: true, startsAt: { lte: paidAt }, endsAt: { gte: paidAt } },
     orderBy: { createdAt: "asc" },
   });
+  if (promotions.length === 0) return [];
+  const alreadyIssued = new Set(
+    (await db.promotionReward.findMany({ where: { sourceOrderId: input.orderId }, select: { promotionId: true } })).map((row) => row.promotionId),
+  );
+  const issued: IssuedReward[] = [];
   for (const promotion of promotions) {
     if (!promotion.discountType || promotion.discountValue === null || !promotion.rewardExpiresDays || !meetsMinimumOrder(input.merchandiseAmount, promotion.minOrderAmount)) continue;
     if (!audienceAllows(promotion, input.userId)) continue;
+    if (alreadyIssued.has(promotion.id)) continue;
     const issuedCount = await db.promotionReward.count({ where: { promotionId: promotion.id, userId: input.userId } });
     if (issuedCount >= promotion.perUserLimit) continue;
     const expiresAt = new Date(paidAt.getTime() + promotion.rewardExpiresDays * 86_400_000);
-    await db.promotionReward.upsert({
-      where: { promotionId_sourceOrderId: { promotionId: promotion.id, sourceOrderId: input.orderId } },
-      update: {},
-      create: {
-        itemScope: promotion.itemScope,
-        targetProductIds: asStringArray(promotion.targetProductIds),
-        targetCategoryIds: asStringArray(promotion.targetCategoryIds),
+    try {
+      const reward = await db.promotionReward.create({
+        data: {
+          itemScope: promotion.itemScope,
+          targetProductIds: asStringArray(promotion.targetProductIds),
+          targetCategoryIds: asStringArray(promotion.targetCategoryIds),
+          promotionId: promotion.id,
+          userId: input.userId,
+          sourceOrderId: input.orderId,
+          discountType: promotion.discountType,
+          discountValue: promotion.discountValue,
+          maxDiscountAmount: promotion.maxDiscountAmount,
+          expiresAt,
+        },
+      });
+      issued.push({
+        rewardId: reward.id,
         promotionId: promotion.id,
-        userId: input.userId,
-        sourceOrderId: input.orderId,
+        promotionTitle: promotion.title,
         discountType: promotion.discountType,
-        discountValue: promotion.discountValue,
-        maxDiscountAmount: promotion.maxDiscountAmount,
+        discountValue: Number(promotion.discountValue),
+        maxDiscountAmount: promotion.maxDiscountAmount === null ? null : Number(promotion.maxDiscountAmount),
         expiresAt,
-      },
-    });
+      });
+    } catch (error) {
+      // A concurrent finalization already created the row for this [promotionId, sourceOrderId].
+      if (!isUniqueViolation(error)) throw error;
+    }
   }
+  return issued;
 }

@@ -1,12 +1,15 @@
 import type { Prisma } from "@generated/prisma/client";
 import { generalStoreSettingsDefaults } from "@/modules/settings/general-settings";
 import { InventoryUnavailableError, reserveInventory } from "@/modules/orders/inventory";
-import { issueNextPurchaseRewards } from "@/modules/promotions/service";
+import { issueNextPurchaseRewards, type IssuedReward } from "@/modules/promotions/service";
 
 export type PaymentFinalizationResult = {
   orderId: string;
   orderNumber: string;
   phone: string | undefined;
+  userId: string;
+  userIsGuest: boolean;
+  rewards: IssuedReward[];
   alreadyCompleted: boolean;
   inventoryWarning: boolean;
 };
@@ -29,8 +32,9 @@ export async function finalizeVerifiedPayment(
   });
   if (!payment) throw new Error("Payment not found");
   const phone = (payment.order.shippingAddress as { phone?: string } | null)?.phone;
+  const identity = { userId: payment.order.userId, userIsGuest: payment.order.user.isGuest, rewards: [] as IssuedReward[] };
   if (payment.status === "SUCCESS") {
-    return { orderId: payment.orderId, orderNumber: payment.order.orderNumber, phone, alreadyCompleted: true, inventoryWarning: !payment.order.inventoryReserved };
+    return { orderId: payment.orderId, orderNumber: payment.order.orderNumber, phone, ...identity, alreadyCompleted: true, inventoryWarning: !payment.order.inventoryReserved };
   }
   if (!payment.amount.equals(payment.order.total)) throw new PaymentAmountMismatchError();
 
@@ -41,7 +45,7 @@ export async function finalizeVerifiedPayment(
   if (claimed.count !== 1) {
     const completed = await transaction.payment.findUnique({ where: { id: payment.id }, select: { status: true } });
     if (completed?.status === "SUCCESS") {
-      return { orderId: payment.orderId, orderNumber: payment.order.orderNumber, phone, alreadyCompleted: true, inventoryWarning: !payment.order.inventoryReserved };
+      return { orderId: payment.orderId, orderNumber: payment.order.orderNumber, phone, ...identity, alreadyCompleted: true, inventoryWarning: !payment.order.inventoryReserved };
     }
     throw new Error("Payment can no longer be finalized");
   }
@@ -93,7 +97,7 @@ export async function finalizeVerifiedPayment(
       },
     },
   });
-  await issueNextPurchaseRewards(transaction, {
+  const rewards = await issueNextPurchaseRewards(transaction, {
     orderId: payment.orderId,
     userId: payment.order.userId,
     merchandiseAmount: Number(payment.order.subtotal) - Number(payment.order.productDiscount),
@@ -108,5 +112,5 @@ export async function finalizeVerifiedPayment(
       },
     });
   }
-  return { orderId: payment.orderId, orderNumber: payment.order.orderNumber, phone, alreadyCompleted: false, inventoryWarning };
+  return { orderId: payment.orderId, orderNumber: payment.order.orderNumber, phone, ...identity, rewards, alreadyCompleted: false, inventoryWarning };
 }

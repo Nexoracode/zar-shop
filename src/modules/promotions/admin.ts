@@ -30,6 +30,7 @@ export function promotionData(input: PromotionInput): Prisma.PromotionUncheckedC
           targetUserIds: input.audienceScope === "SPECIFIC_USERS" ? (input.targetUserIds ?? []) : [],
         }
       : {}),
+    ...(input.announceInApp !== undefined ? { announceInApp: input.announceInApp } : {}),
   };
 }
 
@@ -56,6 +57,7 @@ export function serializePromotion(promotion: Promotion & { _count?: { redemptio
     targetCategoryIds: stringArray(promotion.targetCategoryIds),
     audienceScope: promotion.audienceScope === "SPECIFIC_USERS" ? "SPECIFIC_USERS" as const : "ALL" as const,
     targetUserIds: stringArray(promotion.targetUserIds),
+    announceInApp: promotion.announceInApp,
     startsAt: promotion.startsAt.toISOString(),
     endsAt: promotion.endsAt.toISOString(),
     isActive: promotion.isActive,
