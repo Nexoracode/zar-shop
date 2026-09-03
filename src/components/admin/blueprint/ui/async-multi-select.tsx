@@ -59,32 +59,29 @@ export function BpAsyncMultiSelect<Hit extends BpAsyncMultiSelectHit>({
   const boxRef = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
-  const [results, setResults] = useState<Hit[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [results, setResults] = useState<{ query: string; hits: Hit[] }>({ query: "", hits: [] });
   const trimmed = query.trim();
   const debounced = useDebounced(trimmed, 350);
   const ready = debounced.length >= minChars;
 
   useEffect(() => {
-    if (!open || !ready) {
-      setResults([]);
-      setLoading(false);
-      return;
-    }
+    if (!open || !ready) return;
     const controller = new AbortController();
-    setLoading(true);
     search(debounced, controller.signal)
-      .then((hits) => { if (!controller.signal.aborted) { setResults(hits); setLoading(false); } })
-      .catch(() => { if (!controller.signal.aborted) { setResults([]); setLoading(false); } });
+      .then((hits) => { if (!controller.signal.aborted) setResults({ query: debounced, hits }); })
+      .catch(() => { if (!controller.signal.aborted) setResults({ query: debounced, hits: [] }); });
     return () => controller.abort();
   }, [open, ready, debounced, search]);
 
   const picked = new Set(tokens.map((token) => token.value));
-  const matches = results.filter((hit) => !picked.has(hit.id));
+  const settled = ready && results.query === debounced;
+  const loading = ready && results.query !== debounced;
+  // Only trust results that belong to the query currently in the box.
+  const matches = settled ? results.hits.filter((hit) => !picked.has(hit.id)) : [];
 
   function close() {
     setQuery("");
-    setResults([]);
+    setResults({ query: "", hits: [] });
     setOpen(false);
   }
 
@@ -155,7 +152,7 @@ export function BpAsyncMultiSelect<Hit extends BpAsyncMultiSelectHit>({
               </li>
             );
           })}
-          {!loading && ready && matches.length === 0 ? (
+          {settled && matches.length === 0 ? (
             <li><span className="bp-muted block px-3 py-4 text-center text-[12px]">{emptyLabel}</span></li>
           ) : null}
           {!ready ? (

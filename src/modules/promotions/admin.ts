@@ -51,7 +51,7 @@ export function serializePromotion(promotion: Promotion & { _count?: { redemptio
     perUserLimit: promotion.perUserLimit,
     rewardExpiresDays: promotion.rewardExpiresDays,
     shippingScope: promotion.shippingScope === "TEHRAN" ? "TEHRAN" as const : promotion.shippingScope === "ALL" ? "ALL" as const : null,
-    itemScope: promotion.itemScope === "PRODUCTS" || promotion.itemScope === "CATEGORIES" ? promotion.itemScope : "ALL" as const,
+    itemScope: promotion.itemScope === "PRODUCTS" ? "PRODUCTS" as const : promotion.itemScope === "CATEGORIES" ? "CATEGORIES" as const : "ALL" as const,
     targetProductIds: stringArray(promotion.targetProductIds),
     targetCategoryIds: stringArray(promotion.targetCategoryIds),
     audienceScope: promotion.audienceScope === "SPECIFIC_USERS" ? "SPECIFIC_USERS" as const : "ALL" as const,
