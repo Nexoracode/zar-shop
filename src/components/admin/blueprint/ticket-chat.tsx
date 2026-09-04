@@ -279,7 +279,7 @@ export function BlueprintTicketChat({ ticket: initialTicket }: { ticket: TicketD
                   className="max-h-32 resize-none"
                   onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); void send(); } }}
                 />
-                <div className="mt-2 flex items-center justify-end gap-2">
+                <div className="mt-2 flex items-center justify-start gap-2">
                   <BpButton size="sm" onClick={() => fileInputRef.current?.click()} disabled={files.length >= TICKET_MAX_ATTACHMENTS} className="gap-1.5"><Paperclip size={14} />پیوست فایل</BpButton>
                   <BpButton size="sm" variant="primary" isPending={sending} disabled={!body.trim() && files.length === 0} onClick={() => void send()} className="gap-1.5">ارسال<Send size={14} /></BpButton>
                 </div>
