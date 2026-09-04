@@ -212,12 +212,9 @@ export function BlueprintTicketChat({ ticket: initialTicket }: { ticket: TicketD
   const closed = ticket.status === "CLOSED";
 
   return (
-    <div className="-mx-4 -my-6 sm:-mx-7">
-      <section
-        className="bp-frame sticky flex overflow-hidden"
-        style={{ top: "var(--admin-sticky-top, 0px)", height: "calc(100dvh - var(--admin-sticky-top, 0px))" }}
-      >
-        <div className="flex min-w-0 flex-1 flex-col">
+    <div className="-mx-4 -my-6 overflow-hidden sm:-mx-7" style={{ height: "calc(100dvh - var(--admin-sticky-top, 0px))" }}>
+      <section className="bp-frame flex h-full overflow-hidden">
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col">
           <div className="flex items-center gap-3 border-b border-[var(--bp-divider)] px-4 py-3">
             <Link href="/admin/tickets" aria-label="بازگشت به تیکت‌ها" className="grid size-9 shrink-0 place-items-center text-[var(--bp-muted)] hover:bg-[var(--bp-hover)]"><ArrowRight size={17} /></Link>
             <span className="grid size-9 shrink-0 place-items-center rounded-full bg-[var(--bp-accent-100)] text-[var(--bp-accent)]"><Headset size={16} /></span>
