@@ -6,7 +6,7 @@ import { toast } from "@heroui/react";
 import { Check, Undo2 } from "lucide-react";
 import { BpButton } from "./ui/button";
 
-export function BlueprintContactMessageResolveToggle({ id, isResolved }: { id: string; isResolved: boolean }) {
+export function BlueprintContactMessageResolveToggle({ id, isResolved, fullWidth = false }: { id: string; isResolved: boolean; fullWidth?: boolean }) {
   const router = useRouter();
   const [saving, setSaving] = useState(false);
 
@@ -28,7 +28,7 @@ export function BlueprintContactMessageResolveToggle({ id, isResolved }: { id: s
   }
 
   return (
-    <BpButton size="sm" variant={isResolved ? "secondary" : "primary"} isPending={saving} onClick={() => void toggle()} className="gap-1.5">
+    <BpButton size="sm" fullWidth={fullWidth} variant={isResolved ? "secondary" : "primary"} isPending={saving} onClick={() => void toggle()} className="gap-1.5">
       {isResolved ? <Undo2 size={14} /> : <Check size={14} />}{saving ? "در حال ثبت..." : isResolved ? "بازگشایی" : "بررسی‌شد"}
     </BpButton>
   );

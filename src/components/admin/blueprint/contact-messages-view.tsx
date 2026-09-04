@@ -1,12 +1,12 @@
 import type { ContactMessage } from "@generated/prisma/client";
-import { CalendarDays, Mail, MessageCircle, Phone, User } from "lucide-react";
+import Link from "next/link";
+import { CalendarDays, Eye, Mail, MessageCircle, Phone, User } from "lucide-react";
 import { AdminStatusBadge } from "@/components/admin-ui";
 import { AdminBulkCheckbox, AdminBulkEditor, AdminBulkTr } from "@/components/admin-bulk-editor";
 import { AdminPagination } from "@/components/admin-pagination";
 import type { resolveAdminPagination } from "@/lib/admin-pagination";
 import { formatDateTime } from "@/lib/format";
-import { BpTable, BpTd, BpTh } from "./ui";
-import { BlueprintContactMessageResolveToggle } from "./contact-message-resolve-toggle";
+import { BpLinkButton, BpTable, BpTd, BpTh } from "./ui";
 
 export function BlueprintContactMessagesView({ messages, pagination }: { messages: ContactMessage[]; pagination: ReturnType<typeof resolveAdminPagination> }) {
   return (
@@ -27,7 +27,7 @@ export function BlueprintContactMessagesView({ messages, pagination }: { message
               {item.phone && <span dir="ltr" className="flex items-center gap-1"><Phone size={12} />{item.phone}</span>}
               <span className="flex items-center gap-1"><CalendarDays size={12} />{formatDateTime(item.createdAt)}</span>
             </div>
-            <div className="mt-3"><BlueprintContactMessageResolveToggle id={item.id} isResolved={item.isResolved} /></div>
+            <div className="mt-3"><BpLinkButton href={`/admin/contact-messages/${item.id}`} size="sm" className="gap-1.5"><Eye size={14} />بررسی پیام</BpLinkButton></div>
           </article>
         ))}
       </div>
@@ -63,7 +63,7 @@ export function BlueprintContactMessagesView({ messages, pagination }: { message
                 </BpTd>
                 <BpTd className="text-[12px]">{formatDateTime(item.createdAt)}</BpTd>
                 <BpTd><AdminStatusBadge tone={item.isResolved ? "success" : "warning"}>{item.isResolved ? "بررسی‌شده" : "بررسی‌نشده"}</AdminStatusBadge></BpTd>
-                <BpTd className="text-center"><BlueprintContactMessageResolveToggle id={item.id} isResolved={item.isResolved} /></BpTd>
+                <BpTd className="text-center"><Link href={`/admin/contact-messages/${item.id}`} title="بررسی پیام" aria-label="مشاهده و مدیریت پیام" className="bp-btn bp-btn-ghost bp-btn-icon bp-btn-sm"><Eye size={15} /></Link></BpTd>
               </AdminBulkTr>
             ))}
           </tbody>
