@@ -3,8 +3,9 @@ import type { ticketInclude } from "@/modules/tickets/service";
 
 type TicketWithRelations = Prisma.SupportTicketGetPayload<{ include: typeof ticketInclude }>;
 type MemberRow = { id: string; firstName: string | null; lastName: string | null; role: string };
+type MemberNameFields = { firstName: string | null; lastName: string | null };
 
-function memberName(member: MemberRow | null) {
+function memberName(member: MemberNameFields | null) {
   if (!member) return null;
   return `${member.firstName ?? ""} ${member.lastName ?? ""}`.trim() || "کاربر بدون نام";
 }

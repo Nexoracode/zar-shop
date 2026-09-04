@@ -49,7 +49,7 @@ test("the settings hub is hidden from roles that own no section", () => {
 });
 
 test("admin roles stay separate from customers", () => {
-  assert.deepEqual(adminRoles, ["ADMIN", "CATALOG_MANAGER", "USER_MANAGER", "ORDER_MANAGER"]);
+  assert.deepEqual(adminRoles, ["ADMIN", "CATALOG_MANAGER", "USER_MANAGER", "ORDER_MANAGER", "SUPPORT_MANAGER"]);
   assert.equal(isAdminRole("CUSTOMER"), false);
   for (const role of adminRoles) assert.equal(isAdminRole(role), true);
 });
