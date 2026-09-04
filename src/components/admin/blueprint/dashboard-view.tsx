@@ -9,7 +9,7 @@ import { BpTable, BpTd, BpTh } from "./ui/table";
 import { BpTag } from "./ui/tag";
 
 function Panel({ children, className = "" }: { children: React.ReactNode; className?: string }) {
-  return <section className={`bp-frame relative ${className}`}>{children}</section>;
+  return <section className={`bp-frame relative overflow-hidden ${className}`}>{children}</section>;
 }
 
 function Empty({ title, description }: { title: string; description: string }) {
