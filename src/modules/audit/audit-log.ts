@@ -26,6 +26,7 @@ const actionLabels: Record<string, string> = {
   PROMOTION_CREATE: "ثبت پروموشن",
   PROMOTION_UPDATE: "ویرایش پروموشن",
   PROMOTION_DELETE: "حذف پروموشن",
+  USER_CREATE: "ثبت کاربر",
   USER_ROLE_UPDATE: "تغییر نقش کاربر",
   BULK_UPDATE: "ویرایش گروهی",
   GENERAL_SETTINGS_UPDATE: "ویرایش تنظیمات عمومی",

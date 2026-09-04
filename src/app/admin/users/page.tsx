@@ -1,6 +1,7 @@
 import type { Prisma } from "@generated/prisma/client";
 import { UserRole, UserStatus } from "@generated/prisma/enums";
-import { AdminEmptyState, AdminPageHeader, AdminPanel, AdminStatusBadge } from "@/components/admin-ui";
+import { Plus } from "lucide-react";
+import { AdminEmptyState, AdminPageHeader, AdminPanel, AdminPrimaryLink, AdminStatusBadge } from "@/components/admin-ui";
 import { db } from "@/lib/db";
 import { formatDate } from "@/lib/format";
 import { userRoleLabels, userStatusLabels, userStatusTones } from "@/modules/admin/labels";
@@ -9,7 +10,9 @@ import { AdminPagination } from "@/components/admin-pagination";
 import { resolveAdminPagination } from "@/lib/admin-pagination";
 import { parseAdminPaginationRequest } from "@/lib/admin-pagination-server";
 import { requirePermission } from "@/modules/auth/session";
+import { getBrandSettings } from "@/modules/settings/brand-settings";
 import { UserRoleSelect } from "@/components/user-role-select";
+import { BlueprintUsersView } from "@/components/admin/blueprint/users-view";
 import { AdminBulkCheckbox, AdminBulkEditor } from "@/components/admin-bulk-editor";
 import {
   Table,
@@ -48,7 +51,7 @@ export default async function UsersPage({ searchParams }: { searchParams: Search
       { phone: { contains: query } },
     ] } : {}),
   };
-  const filteredTotal = await db.user.count({ where });
+  const [filteredTotal, brandSettings] = await Promise.all([db.user.count({ where }), getBrandSettings()]);
   const pagination = resolveAdminPagination(filteredTotal, requestedPage, pageSize);
   const users = await db.user.findMany({
     where,
@@ -58,10 +61,16 @@ export default async function UsersPage({ searchParams }: { searchParams: Search
     take: pagination.pageSize,
   });
   const cell = "border-b border-slate-100 px-5 py-4 text-sm text-slate-600";
+  const isBlueprint = brandSettings.adminTemplate === "BLUEPRINT";
 
   return (
     <>
-      <AdminPageHeader eyebrow="مدیریت مشتریان" title="کاربران" description="اطلاعات تماس، نقش، وضعیت حساب و سابقه سفارش کاربران را بررسی کنید." />
+      <AdminPageHeader
+        eyebrow="مدیریت مشتریان"
+        title="کاربران"
+        description="اطلاعات تماس، نقش، وضعیت حساب و سابقه سفارش کاربران را بررسی کنید."
+        action={isBlueprint ? <AdminPrimaryLink href="/admin/users/new"><Plus size={17} />کاربر جدید</AdminPrimaryLink> : undefined}
+      />
 
       <AdminPanel className="mb-5 p-4 sm:p-5">
         <AdminListFilters path="/admin/users" query={query} queryLabel="جستجوی کاربر" queryPlaceholder="نام، ایمیل یا شماره موبایل" filters={[{ name: "role", label: "نقش کاربر", value: role ?? "", options: [{ value: "", label: "همه نقش‌ها" }, ...roles.map((item) => ({ value: item, label: userRoleLabels[item] }))] }, { name: "status", label: "وضعیت حساب", value: status ?? "", options: [{ value: "", label: "همه وضعیت‌ها" }, ...statuses.map((item) => ({ value: item, label: userStatusLabels[item] }))] }]} />
@@ -70,6 +79,8 @@ export default async function UsersPage({ searchParams }: { searchParams: Search
       <AdminPanel>
         {!users.length ? (
           <AdminEmptyState title="کاربری پیدا نشد" description={query || role || status ? "فیلترها را تغییر دهید و دوباره جستجو کنید." : "هنوز کاربری در فروشگاه ثبت نشده است."} />
+        ) : isBlueprint ? (
+          <BlueprintUsersView users={users} pagination={pagination} actorId={actor.id} actorRole={actor.role} assignableRoles={assignableRoles} />
         ) : (
           <>
             <div className="divide-y divide-slate-100 md:hidden">

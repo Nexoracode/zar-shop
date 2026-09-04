@@ -143,8 +143,8 @@ export function AdminBulkCheckbox({ id, label, disabled = false }: { id: string;
 
 /**
  * A native `<tr>` that also toggles its own row's selection on a click anywhere inside it,
- * except on an interactive control the row already carries (a link, a button, the checkbox
- * itself) — those keep doing their own thing instead of being swallowed by the row.
+ * except on an interactive control the row already carries (a link, a button, a select, the
+ * checkbox itself) — those keep doing their own thing instead of being swallowed by the row.
  *
  * Any other `<tr>` attribute passes straight through, so a row that is also drag-reorderable
  * keeps its `draggable` / `onDrag*` handlers alongside the click-to-select.
@@ -157,7 +157,7 @@ export function AdminBulkTr({ id, className, children, ...rest }: { id: string; 
       className={`cursor-pointer ${className ?? ""}`.trim()}
       onClick={(event) => {
         const target = event.target as HTMLElement;
-        if (target.closest("a, button, input, label, [role='menu'], [role='menuitem'], [role='menuitemradio']")) return;
+        if (target.closest("a, button, input, select, label, [role='menu'], [role='menuitem'], [role='menuitemradio']")) return;
         toggle(id);
       }}
     >
