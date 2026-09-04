@@ -116,7 +116,7 @@ export async function notifyPromotionAudience(db: DbLike, promotion: PromotionRo
       userIds,
       {
         type: "PROMOTION_COUPON",
-        title: "کد تخفیف ویژهٔ شما",
+        title: promotion.title,
         body: couponBody(promotion),
         ctaHref: "/products",
         promotionId: promotion.id,
@@ -130,7 +130,7 @@ export async function notifyPromotionAudience(db: DbLike, promotion: PromotionRo
   if (promotion.type === "COUPON" && promotion.audienceScope === "ALL" && promotion.itemScope === "ALL") {
     await createBroadcast(db, {
       type: "PROMOTION_COUPON",
-      title: "کد تخفیف جدید",
+      title: promotion.title,
       body: couponBody(promotion),
       ctaHref: "/products",
       promotionId: promotion.id,
