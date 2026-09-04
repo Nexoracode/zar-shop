@@ -32,9 +32,9 @@ function autoResize(el: HTMLTextAreaElement) {
 function AttachmentView({ attachment, onOpen }: { attachment: Attachment; onOpen: (attachment: Attachment) => void }) {
   if (attachment.mimeType.startsWith("image/")) {
     return (
-      <button type="button" onClick={() => onOpen(attachment)} aria-label={`مشاهده تصویر ${attachment.originalName}`} className="mt-2 block w-52 max-w-full overflow-hidden border border-[var(--bp-divider)]">
+      <button type="button" onClick={() => onOpen(attachment)} aria-label={`مشاهده تصویر ${attachment.originalName}`} className="relative mt-2 block size-40 min-h-40 min-w-40 overflow-hidden border border-[var(--bp-divider)]">
         {/* eslint-disable-next-line @next/next/no-img-element -- arbitrary user upload, not an optimizable local/remote asset */}
-        <img src={attachment.url} alt={attachment.originalName} className="block max-h-52 w-full object-cover" />
+        <img src={attachment.url} alt={attachment.originalName} className="absolute inset-0 h-full w-full object-cover" />
       </button>
     );
   }

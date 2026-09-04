@@ -38,9 +38,9 @@ function autoResize(el: HTMLTextAreaElement) {
 function ImageAttachment({ attachment }: { attachment: Attachment }) {
   return (
     <Modal>
-      <Button type="button" variant="ghost" aria-label={`مشاهده تصویر ${attachment.originalName}`} className="mt-2 block h-auto min-h-0 w-52 min-w-0 max-w-full overflow-hidden rounded-lg border border-black/10 p-0">
+      <Button type="button" variant="ghost" aria-label={`مشاهده تصویر ${attachment.originalName}`} className="relative mt-2 block size-40 min-h-40 min-w-40 overflow-hidden rounded-lg border border-black/10 p-0">
         {/* eslint-disable-next-line @next/next/no-img-element -- arbitrary user upload, not an optimizable local/remote asset */}
-        <img src={attachment.url} alt={attachment.originalName} className="block max-h-52 w-full object-cover" />
+        <img src={attachment.url} alt={attachment.originalName} className="absolute inset-0 h-full w-full object-cover" />
       </Button>
       <Modal.Backdrop className="z-[130] !bg-black/90">
         <Modal.Container size="full" placement="center" className="h-dvh w-screen max-w-none p-0">
@@ -311,22 +311,24 @@ export function AccountTicketChat({ ticket: initialTicket }: { ticket: TicketDet
               ))}
             </ul>
           )}
-          <div ref={composerRef} className="flex items-end gap-2">
+          <div ref={composerRef}>
             {/* HeroUI has no file-upload primitive; a hidden native input triggered by the styled button is the documented exception. */}
             <input ref={fileInputRef} type="file" multiple hidden accept="image/jpeg,image/png,image/webp,application/pdf" onChange={(event) => addFiles(event.target.files)} />
-            <Button type="button" isIconOnly variant="ghost" onPress={() => fileInputRef.current?.click()} isDisabled={files.length >= TICKET_MAX_ATTACHMENTS} aria-label="پیوست فایل" className="shrink-0"><Paperclip size={17} /></Button>
             <TextArea
               aria-label="پیام خود را بنویسید"
               value={body}
               onChange={(event) => { setBody(event.target.value.slice(0, ticketFieldLimits.message)); autoResize(event.target); }}
               maxLength={ticketFieldLimits.message}
               placeholder="پیام خود را بنویسید…"
-              rows={1}
+              rows={2}
               variant="secondary"
-              className="field-control max-h-32 min-h-11 flex-1 resize-none"
+              className="field-control max-h-32 resize-none"
               onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); void send(); } }}
             />
-            <Button type="button" isIconOnly isPending={sending} isDisabled={!body.trim() && files.length === 0} onPress={() => void send()} aria-label="ارسال پیام" className="shrink-0 bg-[var(--brand-primary)] text-[var(--brand-primary-foreground)]"><Send size={17} /></Button>
+            <div className="mt-2 flex items-center justify-start gap-2">
+              <Button type="button" variant="ghost" size="sm" onPress={() => fileInputRef.current?.click()} isDisabled={files.length >= TICKET_MAX_ATTACHMENTS} className="gap-1.5 text-xs"><Paperclip size={15} />پیوست فایل</Button>
+              <Button type="button" size="sm" isPending={sending} isDisabled={!body.trim() && files.length === 0} onPress={() => void send()} className="gap-1.5 bg-[var(--brand-primary)] text-[var(--brand-primary-foreground)]">{!sending && <Send size={15} />}ارسال</Button>
+            </div>
           </div>
         </div>
       )}
