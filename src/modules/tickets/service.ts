@@ -84,10 +84,10 @@ export async function createTicket(db: DbLike, input: {
 }
 
 /**
- * Posts a reply and moves the ticket through its state machine: a customer message always
- * reopens to OPEN (support owes a reply), an agent message always answers to ANSWERED. Neither
- * side can post on a CLOSED ticket — it must be explicitly reopened first. The first agent reply
- * auto-assigns the ticket to that agent.
+ * Posts a reply and moves the ticket through its state machine: a customer message reopens an
+ * ANSWERED ticket back to OPEN (support owes a reply), an agent message answers to ANSWERED.
+ * CLOSED is terminal — neither side can post on it, and there is no way back to OPEN once a
+ * ticket is closed. The first agent reply auto-assigns the ticket to that agent.
  */
 export async function postMessage(db: DbLike, input: {
   ticketId: string;
@@ -100,7 +100,7 @@ export async function postMessage(db: DbLike, input: {
   const ticket = await db.supportTicket.findUnique({ where: { id: input.ticketId }, select: { id: true, status: true, assignedAgentId: true, userId: true } });
   if (!ticket) throw new TicketValidationError("تیکت پیدا نشد.");
   if (!input.isAgent && ticket.userId !== input.senderId) throw new TicketValidationError("دسترسی به این تیکت مجاز نیست.");
-  if (ticket.status === "CLOSED") throw new TicketValidationError("این تیکت بسته شده است؛ برای ادامه ابتدا آن را دوباره باز کنید.");
+  if (ticket.status === "CLOSED") throw new TicketValidationError("این تیکت بسته شده است و دیگر قابل ادامه نیست.");
 
   const message = await db.supportTicketMessage.create({
     data: {
@@ -130,14 +130,6 @@ export async function closeTicket(db: DbLike, input: { ticketId: string; actorId
   if (!input.isAgent && ticket.userId !== input.actorId) throw new TicketValidationError("دسترسی به این تیکت مجاز نیست.");
   if (ticket.status === "CLOSED") return ticket;
   return db.supportTicket.update({ where: { id: ticket.id }, data: { status: "CLOSED", closedAt: new Date() } });
-}
-
-export async function reopenTicket(db: DbLike, input: { ticketId: string; actorId: string; isAgent: boolean }) {
-  const ticket = await db.supportTicket.findUnique({ where: { id: input.ticketId }, select: { id: true, userId: true, status: true } });
-  if (!ticket) throw new TicketValidationError("تیکت پیدا نشد.");
-  if (!input.isAgent && ticket.userId !== input.actorId) throw new TicketValidationError("دسترسی به این تیکت مجاز نیست.");
-  if (ticket.status !== "CLOSED") return ticket;
-  return db.supportTicket.update({ where: { id: ticket.id }, data: { status: "OPEN", closedAt: null } });
 }
 
 export async function rateTicket(db: DbLike, input: { ticketId: string; userId: string; rating: number; reason?: string | null }) {

@@ -3,8 +3,8 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Button, Modal, TextArea, toast } from "@heroui/react";
-import { ArrowDown, ArrowRight, FileText, Headset, Lock, Paperclip, RotateCcw, Send, Star, X } from "lucide-react";
+import { Alert, Button, Modal, TextArea, toast } from "@heroui/react";
+import { ArrowDown, ArrowRight, FileText, Headset, Lock, Paperclip, Send, Star, X } from "lucide-react";
 import { formatDayLabel, formatTimeFa } from "@/lib/format";
 import { ticketFieldLimits, TICKET_MAX_ATTACHMENTS } from "@/modules/tickets/limits";
 import { ticketStatusLabels, ticketStatusTones } from "@/modules/admin/labels";
@@ -112,6 +112,7 @@ export function AccountTicketChat({ ticket: initialTicket }: { ticket: TicketDet
   const [ratingReason, setRatingReason] = useState("");
   const [ratingSaving, setRatingSaving] = useState(false);
   const [showJumpButton, setShowJumpButton] = useState(false);
+  const [confirmClose, setConfirmClose] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const composerRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
@@ -201,16 +202,7 @@ export function AccountTicketChat({ ticket: initialTicket }: { ticket: TicketDet
       setTicket((current) => ({ ...current, status: "CLOSED" }));
     } finally {
       setStatusBusy(false);
-    }
-  }
-
-  async function reopenTicket() {
-    setStatusBusy(true);
-    try {
-      await fetch(`/api/account/tickets/${ticket.id}/reopen`, { method: "POST" });
-      setTicket((current) => ({ ...current, status: "OPEN" }));
-    } finally {
-      setStatusBusy(false);
+      setConfirmClose(false);
     }
   }
 
@@ -241,6 +233,7 @@ export function AccountTicketChat({ ticket: initialTicket }: { ticket: TicketDet
   const closed = ticket.status === "CLOSED";
 
   return (
+    <>
     <section className="flex h-[calc(100dvh-9rem)] flex-col overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-sm" dir="rtl">
       <div className="flex items-center gap-3 border-b border-[var(--border)] px-5 py-3">
         <Link href="/account/tickets" aria-label="بازگشت به تیکت‌ها" className="grid size-9 shrink-0 place-items-center rounded-lg text-[var(--muted)] hover:bg-[var(--surface-secondary)]"><ArrowRight size={18} /></Link>
@@ -252,9 +245,9 @@ export function AccountTicketChat({ ticket: initialTicket }: { ticket: TicketDet
             {ticketStatusLabels[ticket.status]}{ticket.agentName ? ` · پشتیبان: ${ticket.agentName}` : ""}
           </span>
         </div>
-        {closed
-          ? <Button type="button" variant="ghost" size="sm" isPending={statusBusy} onPress={() => void reopenTicket()} className="gap-1.5 text-xs"><RotateCcw size={14} />بازکردن دوباره</Button>
-          : <Button type="button" variant="ghost" size="sm" isPending={statusBusy} onPress={() => void closeTicket()} className="gap-1.5 text-xs">بستن تیکت</Button>}
+        {!closed && (
+          <Button type="button" variant="ghost" size="sm" onPress={() => setConfirmClose(true)} className="gap-1.5 text-xs">بستن تیکت</Button>
+        )}
       </div>
 
       <div className="relative min-h-0 flex-1">
@@ -333,5 +326,26 @@ export function AccountTicketChat({ ticket: initialTicket }: { ticket: TicketDet
         </div>
       )}
     </section>
+
+    <Modal.Backdrop isOpen={confirmClose} onOpenChange={(next) => { if (!statusBusy) setConfirmClose(next); }} variant="blur">
+      <Modal.Container size="sm" placement="center">
+        <Modal.Dialog aria-label="تأیید بستن تیکت" dir="rtl" className="mx-4 max-w-md bg-[var(--surface)] text-right">
+          <Modal.Header className="flex-row items-center justify-between border-b border-[var(--border)] p-5">
+            <Modal.Heading className="text-base font-bold">بستن تیکت</Modal.Heading>
+            <Modal.CloseTrigger aria-label="بستن" className="grid size-9 place-items-center rounded-lg"><X size={18} /></Modal.CloseTrigger>
+          </Modal.Header>
+          <Modal.Body className="p-5 text-sm leading-7 text-[var(--muted)]">
+            <Alert status="warning"><Alert.Description>این تیکت پس از بسته شدن دیگر قابل بازکردن نیست و گفت‌وگو در همین‌جا پایان می‌یابد. آیا مطمئن هستید؟</Alert.Description></Alert>
+          </Modal.Body>
+          <Modal.Footer className="gap-2 border-t border-[var(--border)] p-4">
+            <Button type="button" variant="danger" isPending={statusBusy} onPress={() => void closeTicket()}>
+              {({ isPending }) => <>{isPending ? "در حال بستن..." : "بله، بسته شود"}</>}
+            </Button>
+            <Button type="button" variant="secondary" isDisabled={statusBusy} onPress={() => setConfirmClose(false)}>انصراف</Button>
+          </Modal.Footer>
+        </Modal.Dialog>
+      </Modal.Container>
+    </Modal.Backdrop>
+    </>
   );
 }

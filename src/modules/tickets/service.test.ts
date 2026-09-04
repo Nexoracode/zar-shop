@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import type { PrismaClient } from "@generated/prisma/client";
-import { closeTicket, createTicket, postMessage, rateTicket, reopenTicket, TicketValidationError } from "./service";
+import { closeTicket, createTicket, postMessage, rateTicket, TicketValidationError } from "./service";
 
 function ticketDb(overrides: Partial<{ ticket: Record<string, unknown>; category: Record<string, unknown> | null; product: Record<string, unknown> | null }> = {}) {
   const state = {
@@ -49,18 +49,12 @@ test("an agent message answers an OPEN ticket and auto-assigns the agent", async
   assert.equal(state.ticket.assignedAgentId, "agent-1");
 });
 
-test("a closed ticket rejects new messages until reopened", async () => {
+test("a closed ticket rejects new messages — CLOSED is terminal", async () => {
   const { db } = ticketDb({ ticket: { status: "CLOSED" } });
   await assert.rejects(
-    postMessage(db, { ticketId: "t1", senderId: "user-1", isAgent: false, body: "دوباره باز کنید", attachments: [] }),
+    postMessage(db, { ticketId: "t1", senderId: "user-1", isAgent: false, body: "پیام جدید", attachments: [] }),
     TicketValidationError,
   );
-});
-
-test("closing never happens implicitly — reopen only via the explicit action", async () => {
-  const { db, state } = ticketDb({ ticket: { status: "CLOSED" } });
-  await reopenTicket(db, { ticketId: "t1", actorId: "user-1", isAgent: false });
-  assert.equal(state.ticket.status, "OPEN");
 });
 
 test("rating is only allowed once, after the ticket is closed", async () => {

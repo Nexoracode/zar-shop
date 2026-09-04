@@ -20,7 +20,5 @@ export async function notifyTicketClosedByAgent(db: DbLike, input: { ticketUserI
     title: "تیکت شما بسته شد",
     body: input.subject,
     ctaHref: `/account/tickets/${input.ticketId}`,
-    // No dedupeKey: a ticket can be closed more than once (close -> reopen -> close), and each
-    // closure is its own notification-worthy event, so nothing should collapse them together.
   });
 }

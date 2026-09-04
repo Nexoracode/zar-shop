@@ -4,12 +4,13 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { toast } from "@heroui/react";
-import { ArrowDown, ArrowRight, Calendar, FileText, Headset, Info, Lock, Package, Paperclip, Phone, RotateCcw, Send, Star, Tag, User, X } from "lucide-react";
+import { AlertTriangle, ArrowDown, ArrowRight, Calendar, FileText, Headset, Info, Lock, Package, Paperclip, Phone, Send, Star, Tag, User, X } from "lucide-react";
 import { AdminStatusBadge } from "@/components/admin-ui";
 import { ticketStatusLabels, ticketStatusTones } from "@/modules/admin/labels";
 import { ticketFieldLimits, TICKET_MAX_ATTACHMENTS } from "@/modules/tickets/limits";
 import { formatDate, formatDayLabel, formatTimeFa } from "@/lib/format";
 import { BpButton, BpTag, BpTextarea } from "./ui";
+import { BpDialog } from "./ui/dialog";
 
 type Attachment = { id: string; url: string; mimeType: string; sizeBytes: number; originalName: string };
 type Message = { id: string; ticketId: string; body: string; createdAt: string; isOwnerMessage: boolean; senderName: string; attachments: Attachment[] };
@@ -99,6 +100,7 @@ export function BlueprintTicketChat({ ticket: initialTicket }: { ticket: TicketD
   const [showInfo, setShowInfo] = useState(false);
   const [showJumpButton, setShowJumpButton] = useState(false);
   const [lightbox, setLightbox] = useState<Attachment | null>(null);
+  const [confirmClose, setConfirmClose] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const composerRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
@@ -220,16 +222,7 @@ export function BlueprintTicketChat({ ticket: initialTicket }: { ticket: TicketD
       toast.success("تیکت بسته شد.");
     } finally {
       setStatusBusy(false);
-    }
-  }
-
-  async function reopenTicket() {
-    setStatusBusy(true);
-    try {
-      await fetch(`/api/admin/tickets/${ticket.id}/reopen`, { method: "POST" });
-      setTicket((current) => ({ ...current, status: "OPEN" }));
-    } finally {
-      setStatusBusy(false);
+      setConfirmClose(false);
     }
   }
 
@@ -260,9 +253,9 @@ export function BlueprintTicketChat({ ticket: initialTicket }: { ticket: TicketD
             )}
             <AdminStatusBadge tone={ticketStatusTones[ticket.status]}>{ticketStatusLabels[ticket.status]}</AdminStatusBadge>
             <BpButton isIconOnly size="sm" variant={showInfo ? "primary" : "ghost"} aria-label="اطلاعات تیکت" aria-pressed={showInfo} onClick={() => setShowInfo((current) => !current)}><Info size={15} /></BpButton>
-            {closed
-              ? <BpButton size="sm" variant="ghost" isPending={statusBusy} onClick={() => void reopenTicket()} className="gap-1.5"><RotateCcw size={13} />بازکردن دوباره</BpButton>
-              : <BpButton size="sm" variant="ghost" isPending={statusBusy} onClick={() => void closeTicket()}>بستن تیکت</BpButton>}
+            {!closed && (
+              <BpButton size="sm" variant="ghost" onClick={() => setConfirmClose(true)}>بستن تیکت</BpButton>
+            )}
           </div>
 
           <div className="relative min-h-0 flex-1">
@@ -356,6 +349,22 @@ export function BlueprintTicketChat({ ticket: initialTicket }: { ticket: TicketD
           <img src={lightbox.url} alt={lightbox.originalName} className="max-h-full max-w-full object-contain" onClick={(event) => event.stopPropagation()} />
         </div>
       )}
+
+      <BpDialog
+        open={confirmClose}
+        labelledBy="ticket-close-confirm-title"
+        title="بستن تیکت"
+        onClose={() => { if (!statusBusy) setConfirmClose(false); }}
+        actions={<>
+          <BpButton variant="primary" isPending={statusBusy} onClick={() => void closeTicket()}>بله، بسته شود</BpButton>
+          <BpButton variant="ghost" disabled={statusBusy} onClick={() => setConfirmClose(false)}>انصراف</BpButton>
+        </>}
+      >
+        <div className="flex items-start gap-2.5 border border-[var(--bp-warning)] bg-[var(--bp-warning-bg)] p-3 text-[var(--bp-warning)]">
+          <AlertTriangle size={15} className="mt-0.5 shrink-0" />
+          <p className="m-0 text-[12px] leading-6">این تیکت پس از بسته شدن دیگر قابل بازکردن نیست و گفت‌وگو در همین‌جا پایان می‌یابد. آیا مطمئن هستید؟</p>
+        </div>
+      </BpDialog>
     </div>
   );
 }
