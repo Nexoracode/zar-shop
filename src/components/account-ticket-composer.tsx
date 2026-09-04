@@ -65,7 +65,7 @@ export function NewTicketComposer({ product, categories }: { product: Product | 
         </div>
       </div>
 
-      <div className="grid gap-4 p-5">
+      <div className="grid gap-3 p-5">
         {!product && (
           <HeroSelectField
             name="categoryId"
