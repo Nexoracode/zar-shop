@@ -39,7 +39,7 @@ export function ChangePasswordForm() {
 
   return (
     <>
-      <section className="mt-5 rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-sm">
+      <section className="mt-3 rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-sm">
         <header className="flex items-center justify-between gap-3 p-5">
           <div><h2 className="m-0 text-base font-bold">رمز عبور</h2><p className="mb-0 mt-1 text-xs text-[var(--muted)]">برای ورود امن به حساب کاربری خود، رمز عبور را دوره‌ای تغییر دهید.</p></div>
           <Button type="button" variant="ghost" onPress={() => { setError(""); setOpen(true); }} className="shrink-0 gap-2 text-[var(--brand-primary)]"><KeyRound size={16} />تغییر رمز عبور</Button>
