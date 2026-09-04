@@ -61,7 +61,7 @@ export function AccountNotificationsPanel({ items: initialItems }: { items: Item
         {items.map((item) => (
           <li
             key={item.id}
-            className={`relative border-b border-[var(--border)] px-5 py-4 last:border-b-0 ${item.read ? "" : "after:absolute after:inset-y-0 after:right-0 after:w-[3px] after:bg-[var(--brand-primary)]"}`}
+            className={`relative border-b border-[var(--border)] px-5 py-4 last:border-b-0 after:absolute after:inset-y-0 after:right-0 after:w-[3px] after:transition-colors ${item.read ? "after:bg-transparent" : "after:bg-[var(--brand-primary)]"}`}
           >
             <strong className="block text-sm font-bold leading-6">{item.title}</strong>
             <p className="m-0 mt-1 text-xs leading-6 text-[var(--muted)]">{item.body}</p>
