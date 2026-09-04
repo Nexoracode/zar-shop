@@ -65,7 +65,7 @@ export function NewTicketComposer({ product, categories }: { product: Product | 
         </div>
       </div>
 
-      <div className="grid gap-3 p-5">
+      <div className="grid gap-2 p-5">
         {!product && (
           <HeroSelectField
             name="categoryId"
@@ -93,11 +93,8 @@ export function NewTicketComposer({ product, categories }: { product: Product | 
         <div>
           {/* HeroUI has no file-upload primitive; a hidden native input triggered by the styled button is the documented exception. */}
           <input ref={fileInputRef} type="file" multiple hidden accept="image/jpeg,image/png,image/webp,application/pdf" onChange={(event) => addFiles(event.target.files)} />
-          <Button type="button" variant="ghost" size="sm" onPress={() => fileInputRef.current?.click()} isDisabled={files.length >= TICKET_MAX_ATTACHMENTS} className="gap-1.5 text-xs">
-            <Paperclip size={15} />پیوست فایل
-          </Button>
           {files.length > 0 && (
-            <ul className="m-0 mt-2 flex flex-wrap gap-2 p-0">
+            <ul className="m-0 mb-2 flex flex-wrap gap-2 p-0">
               {files.map((file, index) => (
                 <li key={`${file.name}-${index}`} className="flex items-center gap-1.5 rounded-full border border-[var(--border)] bg-[var(--surface-secondary)] px-3 py-1 text-[11px]">
                   <span className="max-w-40 truncate">{file.name}</span>
@@ -108,11 +105,15 @@ export function NewTicketComposer({ product, categories }: { product: Product | 
               ))}
             </ul>
           )}
+          <div className="flex items-center justify-start gap-2">
+            <Button type="button" variant="ghost" size="sm" onPress={() => fileInputRef.current?.click()} isDisabled={files.length >= TICKET_MAX_ATTACHMENTS} className="gap-1.5 text-xs">
+              <Paperclip size={15} />پیوست فایل
+            </Button>
+            <Button type="button" size="sm" isPending={saving} onPress={() => void submit()} className="gap-1.5 bg-[var(--brand-primary)] text-[var(--brand-primary-foreground)]">
+              {!saving && <Send size={15} />}ارسال تیکت
+            </Button>
+          </div>
         </div>
-
-        <Button type="button" isPending={saving} onPress={() => void submit()} className="justify-center gap-2 bg-[var(--brand-primary)] text-[var(--brand-primary-foreground)]">
-          {!saving && <Send size={16} />}ارسال تیکت
-        </Button>
       </div>
     </section>
   );
