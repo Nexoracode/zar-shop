@@ -1,4 +1,4 @@
-import type { OrderStatus, PaymentStatus, ProductStatus, TicketStatus, UserRole, UserStatus } from "@generated/prisma/enums";
+import type { OrderStatus, PaymentStatus, ProductReviewReportStatus, ProductReviewStatus, ProductStatus, TicketStatus, UserRole, UserStatus } from "@generated/prisma/enums";
 
 export const productStatusLabels: Record<ProductStatus, string> = {
   DRAFT: "پیش‌نویس",
@@ -46,6 +46,26 @@ export const ticketStatusLabels: Record<TicketStatus, string> = {
   CLOSED: "بسته‌شده",
 };
 
+export const reviewStatusLabels: Record<ProductReviewStatus, string> = {
+  PENDING: "در انتظار بررسی",
+  APPROVED: "تأییدشده",
+  REJECTED: "ردشده",
+};
+
+export const reviewReportStatusLabels: Record<ProductReviewReportStatus, string> = {
+  PENDING: "در انتظار رسیدگی",
+  RESOLVED: "رسیدگی‌شده",
+  DISMISSED: "ردشده",
+};
+
+export const reviewReportReasonLabels: Record<string, string> = {
+  SPAM: "هرزنامه",
+  ABUSE: "توهین‌آمیز",
+  MISINFORMATION: "اطلاعات نادرست",
+  IRRELEVANT: "نامرتبط",
+  OTHER: "سایر موارد",
+};
+
 export type AdminTone = "neutral" | "info" | "success" | "warning" | "danger" | "gold";
 
 export const productStatusTones: Record<ProductStatus, AdminTone> = {
@@ -83,4 +103,16 @@ export const ticketStatusTones: Record<TicketStatus, AdminTone> = {
   OPEN: "warning",
   ANSWERED: "info",
   CLOSED: "neutral",
+};
+
+export const reviewStatusTones: Record<ProductReviewStatus, AdminTone> = {
+  PENDING: "warning",
+  APPROVED: "success",
+  REJECTED: "danger",
+};
+
+export const reviewReportStatusTones: Record<ProductReviewReportStatus, AdminTone> = {
+  PENDING: "warning",
+  RESOLVED: "success",
+  DISMISSED: "neutral",
 };

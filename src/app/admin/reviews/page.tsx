@@ -11,6 +11,8 @@ import { parseAdminPaginationRequest } from "@/lib/admin-pagination-server";
 import { db } from "@/lib/db";
 import { formatDate, formatDateTime } from "@/lib/format";
 import { requirePermission } from "@/modules/auth/session";
+import { getBrandSettings } from "@/modules/settings/brand-settings";
+import { BlueprintReviewsView } from "@/components/admin/blueprint/reviews-view";
 
 type SearchParams = Promise<{ q?: string; status?: string; page?: string; pageSize?: string }>;
 const statuses = ["PENDING", "APPROVED", "REJECTED"] as const;
@@ -98,12 +100,13 @@ export default async function AdminReviewsPage({ searchParams }: { searchParams:
       { user: { is: { OR: [{ firstName: { contains: q } }, { lastName: { contains: q } }, { phone: { contains: q } }] } } },
     ] } : {}),
   };
-  const [filteredTotal, pendingCount, approvedCount, rejectedCount, ratingAggregate] = await Promise.all([
+  const [filteredTotal, pendingCount, approvedCount, rejectedCount, ratingAggregate, brandSettings] = await Promise.all([
     db.productReview.count({ where }),
     db.productReview.count({ where: { status: "PENDING" } }),
     db.productReview.count({ where: { status: "APPROVED" } }),
     db.productReview.count({ where: { status: "REJECTED" } }),
     db.productReview.aggregate({ where: { status: "APPROVED", rating: { not: null } }, _avg: { rating: true } }),
+    getBrandSettings(),
   ]);
   const pagination = resolveAdminPagination(filteredTotal, requestedPage, pageSize);
   const reviews = await db.productReview.findMany({
@@ -130,7 +133,11 @@ export default async function AdminReviewsPage({ searchParams }: { searchParams:
       <AdminPanel className="mb-5 p-4 sm:p-5"><AdminListFilters path="/admin/reviews" query={q} queryLabel="جستجوی دیدگاه" queryPlaceholder="محصول، کاربر یا متن دیدگاه" filters={[{ name: "status", label: "وضعیت", value: status ?? "", options: [{ value: "", label: "همه وضعیت‌ها" }, ...statuses.map((item) => ({ value: item, label: labels[item] }))] }]} /></AdminPanel>
 
       <AdminPanel>
-        {!reviews.length ? <AdminEmptyState title="دیدگاهی پیدا نشد" description="هنوز دیدگاهی ثبت نشده یا فیلترهای انتخاب‌شده نتیجه‌ای ندارند." /> : (
+        {!reviews.length ? (
+          <AdminEmptyState title="دیدگاهی پیدا نشد" description="هنوز دیدگاهی ثبت نشده یا فیلترهای انتخاب‌شده نتیجه‌ای ندارند." />
+        ) : brandSettings.adminTemplate === "BLUEPRINT" ? (
+          <BlueprintReviewsView reviews={reviews} pagination={pagination} />
+        ) : (
           <>
             <div className="divide-y divide-slate-100 xl:hidden">{reviews.map((review) => <ReviewCard key={review.id} review={review} />)}</div>
             <AdminBulkEditor entity="reviews" entityLabel="دیدگاه" ids={reviews.map((review) => review.id)} actions={[{ value: "status:APPROVED", label: "تأیید و انتشار دیدگاه‌ها" }, { value: "status:REJECTED", label: "رد دیدگاه‌ها" }]} desktopClassName="hidden xl:block">

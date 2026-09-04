@@ -4,9 +4,11 @@ import { notFound } from "next/navigation";
 import { BadgeCheck, Flag, MessageCircleReply, ShieldCheck, Star, ThumbsDown, ThumbsUp } from "lucide-react";
 import { AdminPageHeader, AdminPanel, AdminStatusBadge } from "@/components/admin-ui";
 import { AdminReviewManager } from "@/components/admin-review-manager";
+import { BlueprintReviewDetailView } from "@/components/admin/blueprint/review-detail-view";
 import { db } from "@/lib/db";
 import { formatDateTime } from "@/lib/format";
 import { requirePermission } from "@/modules/auth/session";
+import { getBrandSettings } from "@/modules/settings/brand-settings";
 
 const statusLabel = { PENDING: "در انتظار بررسی", APPROVED: "تأییدشده", REJECTED: "ردشده" } as const;
 const statusTone = { PENDING: "warning", APPROVED: "success", REJECTED: "danger" } as const;
@@ -39,18 +41,21 @@ function MetricCard({ icon, label, children, tone = "text-slate-700" }: { icon: 
 export default async function AdminReviewPage({ params }: { params: Promise<{ id: string }> }) {
   await requirePermission("catalog:manage");
   const { id } = await params;
-  const review = await db.productReview.findUnique({
-    where: { id },
-    include: {
-      product: { select: { id: true, name: true, sku: true, slug: true } },
-      user: { select: { firstName: true, lastName: true, phone: true } },
-      moderatedBy: { select: { firstName: true, lastName: true } },
-      parent: { select: { id: true, title: true, body: true } },
-      replies: { include: { user: { select: { firstName: true, lastName: true, role: true } } }, orderBy: { createdAt: "asc" } },
-      reports: { include: { user: { select: { firstName: true, lastName: true, phone: true } }, resolvedBy: { select: { firstName: true, lastName: true } } }, orderBy: { createdAt: "desc" } },
-      votes: { select: { value: true } },
-    },
-  });
+  const [review, brandSettings] = await Promise.all([
+    db.productReview.findUnique({
+      where: { id },
+      include: {
+        product: { select: { id: true, name: true, sku: true, slug: true } },
+        user: { select: { firstName: true, lastName: true, phone: true } },
+        moderatedBy: { select: { firstName: true, lastName: true } },
+        parent: { select: { id: true, title: true, body: true } },
+        replies: { include: { user: { select: { firstName: true, lastName: true, role: true } } }, orderBy: { createdAt: "asc" } },
+        reports: { include: { user: { select: { firstName: true, lastName: true, phone: true } }, resolvedBy: { select: { firstName: true, lastName: true } } }, orderBy: { createdAt: "desc" } },
+        votes: { select: { value: true } },
+      },
+    }),
+    getBrandSettings(),
+  ]);
   if (!review) notFound();
 
   const author = `${review.user.firstName ?? ""} ${review.user.lastName ?? ""}`.trim() || review.user.phone || "کاربر";
@@ -77,6 +82,9 @@ export default async function AdminReviewPage({ params }: { params: Promise<{ id
         <MetricCard icon={<Flag size={16} />} label="گزارش نیازمند رسیدگی" tone={pendingReports ? "text-rose-700" : "text-slate-700"}>{pendingReports.toLocaleString("fa-IR")}</MetricCard>
       </section>
 
+      {brandSettings.adminTemplate === "BLUEPRINT" ? (
+        <BlueprintReviewDetailView review={review} />
+      ) : (
       <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
         <main className="grid min-w-0 gap-5">
           <AdminPanel>
@@ -125,6 +133,7 @@ export default async function AdminReviewPage({ params }: { params: Promise<{ id
 
         <aside><AdminReviewManager mode="review" reviewId={review.id} status={review.status} title={review.title || review.body.slice(0, 80)} initialNote={review.moderationNote ?? ""} canReply={!review.parentId && review.status === "APPROVED"} /></aside>
       </div>
+      )}
     </>
   );
 }
