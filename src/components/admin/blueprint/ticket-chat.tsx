@@ -32,7 +32,7 @@ function autoResize(el: HTMLTextAreaElement) {
 function AttachmentView({ attachment, onOpen }: { attachment: Attachment; onOpen: (attachment: Attachment) => void }) {
   if (attachment.mimeType.startsWith("image/")) {
     return (
-      <button type="button" onClick={() => onOpen(attachment)} aria-label={`مشاهده تصویر ${attachment.originalName}`} className="mt-2 block max-w-52 overflow-hidden border border-[var(--bp-divider)]">
+      <button type="button" onClick={() => onOpen(attachment)} aria-label={`مشاهده تصویر ${attachment.originalName}`} className="mt-2 block w-52 max-w-full overflow-hidden border border-[var(--bp-divider)]">
         {/* eslint-disable-next-line @next/next/no-img-element -- arbitrary user upload, not an optimizable local/remote asset */}
         <img src={attachment.url} alt={attachment.originalName} className="block max-h-52 w-full object-cover" />
       </button>
@@ -269,21 +269,23 @@ export function BlueprintTicketChat({ ticket: initialTicket }: { ticket: TicketD
                   ))}
                 </ul>
               )}
-              <div ref={composerRef} className="flex items-end gap-2">
+              <div ref={composerRef}>
                 <input ref={fileInputRef} type="file" multiple hidden accept="image/jpeg,image/png,image/webp,application/pdf" onChange={(event) => addFiles(event.target.files)} />
-                <BpButton isIconOnly variant="ghost" onClick={() => fileInputRef.current?.click()} disabled={files.length >= TICKET_MAX_ATTACHMENTS} aria-label="پیوست فایل" className="shrink-0"><Paperclip size={16} /></BpButton>
                 <BpTextarea
                   aria-label="پاسخ خود را بنویسید"
                   value={body}
                   onChange={(event) => { setBody(event.target.value.slice(0, ticketFieldLimits.message)); autoResize(event.target); }}
                   maxLength={ticketFieldLimits.message}
                   placeholder="پاسخ خود را بنویسید…"
-                  rows={1}
-                  wrapperClassName="flex-1"
+                  rows={2}
+                  reserveMessage={false}
                   className="max-h-32 resize-none"
                   onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); void send(); } }}
                 />
-                <BpButton isIconOnly variant="primary" isPending={sending} disabled={!body.trim() && files.length === 0} onClick={() => void send()} aria-label="ارسال پیام" className="shrink-0"><Send size={16} /></BpButton>
+                <div className="mt-2 flex items-center justify-between gap-2">
+                  <BpButton isIconOnly size="sm" variant="ghost" onClick={() => fileInputRef.current?.click()} disabled={files.length >= TICKET_MAX_ATTACHMENTS} aria-label="پیوست فایل"><Paperclip size={15} /></BpButton>
+                  <BpButton size="sm" variant="primary" isPending={sending} disabled={!body.trim() && files.length === 0} onClick={() => void send()} className="gap-1.5">ارسال<Send size={14} /></BpButton>
+                </div>
               </div>
             </div>
           )}
