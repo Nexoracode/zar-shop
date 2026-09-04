@@ -61,7 +61,9 @@ export function BlueprintShippingMethodForm({ provinces, method }: { provinces: 
   const [orderType, setOrderType] = useState(String(method?.orderType ?? 1));
   const [estimatedDays, setEstimatedDays] = useState(String(method?.estimatedDays ?? 3));
   const [isActive, setIsActive] = useState(method?.isActive ?? true);
-  const [sortOrder, setSortOrder] = useState(String(method?.sortOrder ?? 0));
+  // Display order is set by dragging rows in the list, not edited here — the form only carries
+  // the method's current value through to the save request unchanged.
+  const sortOrder = method?.sortOrder ?? 0;
   const [zones, setZones] = useState<ZoneDraft[]>(method?.zones ?? []);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
@@ -77,7 +79,7 @@ export function BlueprintShippingMethodForm({ provinces, method }: { provinces: 
       orderType: Number(orderType),
       estimatedDays: Number(estimatedDays),
       isActive,
-      sortOrder: Number(sortOrder),
+      sortOrder,
       zones,
     };
   }
@@ -149,7 +151,6 @@ export function BlueprintShippingMethodForm({ provinces, method }: { provinces: 
             />
           )}
           <BpNumberInput label="زمان تحویل (روز کاری)" value={estimatedDays} onValueChange={setEstimatedDays} />
-          <BpNumberInput label="ترتیب نمایش" value={sortOrder} onValueChange={setSortOrder} />
         </div>
         <div className="mt-3">
           <BpSwitch isSelected={isActive} onChange={setIsActive}>نمایش در تسویه حساب</BpSwitch>
