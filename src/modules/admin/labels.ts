@@ -1,4 +1,4 @@
-import type { OrderStatus, PaymentStatus, ProductStatus, UserRole, UserStatus } from "@generated/prisma/enums";
+import type { OrderStatus, PaymentStatus, ProductStatus, TicketStatus, UserRole, UserStatus } from "@generated/prisma/enums";
 
 export const productStatusLabels: Record<ProductStatus, string> = {
   DRAFT: "پیش‌نویس",
@@ -32,11 +32,18 @@ export const userRoleLabels: Record<UserRole, string> = {
   CATALOG_MANAGER: "مدیر کاتالوگ",
   USER_MANAGER: "مدیر کاربران",
   ORDER_MANAGER: "مدیر سفارش‌ها",
+  SUPPORT_MANAGER: "مدیر پشتیبانی",
 };
 
 export const userStatusLabels: Record<UserStatus, string> = {
   ACTIVE: "فعال",
   SUSPENDED: "تعلیق‌شده",
+};
+
+export const ticketStatusLabels: Record<TicketStatus, string> = {
+  OPEN: "باز",
+  ANSWERED: "پاسخ داده‌شده",
+  CLOSED: "بسته‌شده",
 };
 
 export type AdminTone = "neutral" | "info" | "success" | "warning" | "danger" | "gold";
@@ -70,4 +77,10 @@ export const paymentStatusTones: Record<PaymentStatus, AdminTone> = {
 export const userStatusTones: Record<UserStatus, AdminTone> = {
   ACTIVE: "success",
   SUSPENDED: "danger",
+};
+
+export const ticketStatusTones: Record<TicketStatus, AdminTone> = {
+  OPEN: "warning",
+  ANSWERED: "info",
+  CLOSED: "neutral",
 };

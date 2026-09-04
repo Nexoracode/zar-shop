@@ -1,5 +1,5 @@
 import type { LucideIcon } from "lucide-react";
-import { BadgePercent, Boxes, ChartNoAxesCombined, FolderTree, Images, ListChecks, ListTree, Mail, MessageSquareText, PackageCheck, Palette, ScrollText, Settings, SlidersHorizontal, Tag, Truck, Users } from "lucide-react";
+import { BadgePercent, Boxes, ChartNoAxesCombined, FolderTree, Headset, Images, ListChecks, ListTree, Mail, MessageSquareText, PackageCheck, Palette, ScrollText, Settings, SlidersHorizontal, Tag, Truck, Users } from "lucide-react";
 import type { UserRole } from "@generated/prisma/enums";
 import { canOpenAnySettingsSection, hasPermission, type AdminPermission } from "@/modules/auth/permissions";
 
@@ -46,6 +46,14 @@ export const adminNavGroups: AdminNavGroup[] = [
       { href: "/admin/users", label: "کاربران", icon: Users, permission: "users:manage" },
       { href: "/admin/reviews", label: "دیدگاه‌ها و امتیازها", icon: MessageSquareText, permission: "catalog:manage" },
       { href: "/admin/contact-messages", label: "پیام‌های تماس", icon: Mail, permission: "orders:manage" },
+    ],
+  },
+  {
+    title: "پشتیبانی",
+    icon: Headset,
+    items: [
+      { href: "/admin/tickets", label: "تیکت‌های پشتیبانی", icon: Headset, permission: "tickets:manage" },
+      { href: "/admin/support-ticket-categories", label: "موضوعات تیکت", icon: Tag, permission: "tickets:manage" },
     ],
   },
   {

@@ -54,6 +54,13 @@ const actionLabels: Record<string, string> = {
   PAID_ORDER_INVENTORY_SHORTAGE: "کسری موجودی سفارش پرداخت‌شده",
   ADMIN_LOGIN: "ورود به پنل مدیریت",
   ADMIN_LOGOUT: "خروج از پنل مدیریت",
+  TICKET_CREATE: "ثبت تیکت پشتیبانی",
+  TICKET_MESSAGE_SEND: "ارسال پیام تیکت",
+  TICKET_STATUS_UPDATE: "تغییر وضعیت تیکت",
+  TICKET_RATING_SUBMIT: "ثبت امتیاز تیکت",
+  TICKET_CATEGORY_CREATE: "ثبت موضوع تیکت",
+  TICKET_CATEGORY_UPDATE: "ویرایش موضوع تیکت",
+  TICKET_CATEGORY_DELETE: "حذف موضوع تیکت",
 };
 
 const entityLabels: Record<string, string> = {
@@ -77,6 +84,9 @@ const entityLabels: Record<string, string> = {
   categories: "دسته‌بندی‌ها",
   orders: "سفارش‌ها",
   users: "کاربران",
+  SupportTicket: "تیکت پشتیبانی",
+  SupportTicketMessage: "پیام تیکت",
+  SupportTicketCategory: "موضوع تیکت",
 };
 
 const sensitiveKey = /password|secret|token|credential|api[-_]?key|authorization|cookie/i;

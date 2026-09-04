@@ -13,6 +13,7 @@ enum UserRole {
   CATALOG_MANAGER
   USER_MANAGER
   ORDER_MANAGER
+  SUPPORT_MANAGER
 }
 
 enum UserStatus {
@@ -171,6 +172,9 @@ model User {
   productVisits         ProductVisit[]
   notifications         Notification[]
   notificationReads     NotificationRead[]
+  supportTickets         SupportTicket[]        @relation("SupportTicketCustomer")
+  assignedSupportTickets SupportTicket[]        @relation("SupportTicketAgent")
+  supportTicketMessages  SupportTicketMessage[] @relation("SupportTicketMessageSender")
 }
 
 model Session {
@@ -449,6 +453,7 @@ model Product {
   reviews             ProductReview[]
   favorites           ProductFavorite[]
   visits              ProductVisit[]
+  supportTickets      SupportTicket[]
 
   @@index([categoryId, status])
   @@index([brandId, status])
@@ -779,6 +784,79 @@ model NotificationRead {
 
   @@id([notificationId, userId])
   @@index([userId])
+}
+
+enum TicketStatus {
+  OPEN
+  ANSWERED
+  CLOSED
+}
+
+model SupportTicketCategory {
+  id        String          @id @default(cuid())
+  name      String          @db.VarChar(120)
+  isActive  Boolean         @default(true)
+  sortOrder Int             @default(0)
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+  tickets   SupportTicket[]
+
+  @@index([isActive, sortOrder])
+}
+
+model SupportTicket {
+  id              String       @id @default(cuid())
+  userId          String
+  categoryId      String?
+  productId       String?
+  assignedAgentId String?
+  subject         String       @db.VarChar(191)
+  status          TicketStatus @default(OPEN)
+  rating          Int?
+  ratingReason    String?      @db.VarChar(500)
+  ratedAt         DateTime?
+  closedAt        DateTime?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  user            User                   @relation("SupportTicketCustomer", fields: [userId], references: [id], onDelete: Cascade)
+  category        SupportTicketCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  product         Product?               @relation(fields: [productId], references: [id], onDelete: SetNull)
+  assignedAgent   User?                  @relation("SupportTicketAgent", fields: [assignedAgentId], references: [id], onDelete: SetNull)
+  messages        SupportTicketMessage[]
+
+  @@index([status, updatedAt])
+  @@index([userId, createdAt])
+  @@index([assignedAgentId])
+  @@index([categoryId])
+  @@index([productId])
+}
+
+model SupportTicketMessage {
+  id          String             @id @default(cuid())
+  ticketId    String
+  senderId    String
+  body        String             @db.Text
+  createdAt   DateTime           @default(now())
+  ticket      SupportTicket      @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  sender      User               @relation("SupportTicketMessageSender", fields: [senderId], references: [id], onDelete: Cascade)
+  attachments TicketAttachment[]
+
+  @@index([ticketId, createdAt])
+  @@index([senderId])
+}
+
+model TicketAttachment {
+  id           String               @id @default(cuid())
+  messageId    String
+  url          String               @db.Text
+  storageKey   String               @unique @db.VarChar(191)
+  mimeType     String               @db.VarChar(100)
+  sizeBytes    Int
+  originalName String               @db.VarChar(191)
+  createdAt    DateTime             @default(now())
+  message      SupportTicketMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@index([messageId])
 }
 
 model MediaAsset {

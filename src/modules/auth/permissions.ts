@@ -3,16 +3,17 @@ import type { UserRole } from "@generated/prisma/enums";
 // `settings:manage` covers store-wide configuration (branding, homepage, content,
 // payment gateways, SMS providers). It is intentionally granted to ADMIN only so the
 // specialised manager roles stay scoped to their own domain.
-export type AdminPermission = "dashboard:view" | "catalog:manage" | "users:manage" | "orders:manage" | "audit:view" | "settings:manage";
+export type AdminPermission = "dashboard:view" | "catalog:manage" | "users:manage" | "orders:manage" | "tickets:manage" | "audit:view" | "settings:manage";
 
-export const adminRoles: UserRole[] = ["ADMIN", "CATALOG_MANAGER", "USER_MANAGER", "ORDER_MANAGER"];
+export const adminRoles: UserRole[] = ["ADMIN", "CATALOG_MANAGER", "USER_MANAGER", "ORDER_MANAGER", "SUPPORT_MANAGER"];
 
 const rolePermissions: Record<UserRole, AdminPermission[]> = {
   CUSTOMER: [],
-  ADMIN: ["dashboard:view", "catalog:manage", "users:manage", "orders:manage", "audit:view", "settings:manage"],
+  ADMIN: ["dashboard:view", "catalog:manage", "users:manage", "orders:manage", "tickets:manage", "audit:view", "settings:manage"],
   CATALOG_MANAGER: ["catalog:manage"],
   USER_MANAGER: ["users:manage"],
   ORDER_MANAGER: ["dashboard:view", "orders:manage"],
+  SUPPORT_MANAGER: ["dashboard:view", "tickets:manage"],
 };
 
 export function hasPermission(role: UserRole, permission: AdminPermission) {
@@ -50,5 +51,6 @@ export function adminStartPath(role: UserRole) {
   if (hasPermission(role, "catalog:manage")) return "/admin/products";
   if (hasPermission(role, "users:manage")) return "/admin/users";
   if (hasPermission(role, "orders:manage")) return "/admin/orders";
+  if (hasPermission(role, "tickets:manage")) return "/admin/tickets";
   return "/";
 }
