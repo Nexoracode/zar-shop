@@ -27,8 +27,8 @@ function discountPhrase(promotion: { discountType: string | null; discountValue:
 const until = (endsAt: Date) => `تا ${formatDate(endsAt)}`;
 
 function couponBody(promotion: PromotionRow): string {
-  const code = promotion.code ? `کد «${promotion.code}» — ` : "";
-  return `${code}${discountPhrase(promotion)} ${until(promotion.endsAt)}.`;
+  const code = promotion.code ? `با کد «${promotion.code}»، ` : "";
+  return `${code}${discountPhrase(promotion)} ${until(promotion.endsAt)} معتبر است.`;
 }
 
 async function inAppEnabled() {
