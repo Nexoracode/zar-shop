@@ -48,7 +48,13 @@ function LastMessagePreview({ lastMessage }: { lastMessage: LastMessage | null }
   if (!lastMessage.body.trim()) {
     return <span className="bp-muted inline-flex items-center gap-1"><Paperclip size={11} />{prefix}پیوست فایل</span>;
   }
-  return <span className="bp-muted truncate">{prefix}{lastMessage.body}</span>;
+  // `min-w-0` on the flex item is what lets it shrink below its (unwrapped, nowrap) text width —
+  // without it, table-layout: auto sizes the column to fit the full message and the table blows out.
+  return (
+    <div className="flex min-w-0">
+      <span className="bp-muted min-w-0 truncate">{prefix}{lastMessage.body}</span>
+    </div>
+  );
 }
 
 export function BlueprintTicketsView({ tickets, categories, query, status, mine, pagination }: Props) {
