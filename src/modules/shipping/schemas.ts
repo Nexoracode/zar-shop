@@ -41,3 +41,13 @@ export const shippingMethodSchema = z.object({
 });
 
 export type ShippingMethodInput = z.infer<typeof shippingMethodSchema>;
+
+/**
+ * Drag-reorder sends nothing but the new position — never the full form — so it gets its own
+ * schema instead of `shippingMethodSchema.partial()`. That schema's other fields carry `.default()`,
+ * which zod still applies to an absent key even under `.partial()`; reusing it here would silently
+ * reset every dragged method's source, active flag and rate table back to their defaults.
+ */
+export const shippingMethodSortOrderSchema = z.object({
+  sortOrder: z.coerce.number("ترتیب نمایش را وارد کنید.").int("ترتیب نمایش باید عدد صحیح باشد.").min(0, "ترتیب نمایش نمی‌تواند منفی باشد.").max(1000, "ترتیب نمایش بیش از حد مجاز است."),
+});

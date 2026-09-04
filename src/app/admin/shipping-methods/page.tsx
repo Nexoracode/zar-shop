@@ -24,6 +24,7 @@ export default async function ShippingMethodsPage() {
     isActive: method.isActive,
     zoneCount: method._count.zones,
     orderCount: method._count.orders,
+    sortOrder: method.sortOrder,
   }));
   return <>
     <AdminPageHeader
