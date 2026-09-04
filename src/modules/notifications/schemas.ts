@@ -10,6 +10,8 @@ export const NOTIFICATION_TYPES = [
   "PROMOTION_NEXT_PURCHASE",
   "PROMOTION_COUPON",
   "PROMOTION_PRODUCT",
+  "TICKET_MESSAGE",
+  "TICKET_STATUS",
 ] as const;
 
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
