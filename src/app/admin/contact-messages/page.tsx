@@ -11,6 +11,8 @@ import { parseAdminPaginationRequest } from "@/lib/admin-pagination-server";
 import { db } from "@/lib/db";
 import { formatDateTime } from "@/lib/format";
 import { requirePermission } from "@/modules/auth/session";
+import { getBrandSettings } from "@/modules/settings/brand-settings";
+import { BlueprintContactMessagesView } from "@/components/admin/blueprint/contact-messages-view";
 
 type SearchParams = Promise<{ q?: string; status?: string; page?: string; pageSize?: string }>;
 
@@ -24,9 +26,10 @@ export default async function AdminContactMessagesPage({ searchParams }: { searc
     ...(status ? { isResolved: status === "resolved" } : {}),
     ...(q ? { OR: [{ name: { contains: q } }, { email: { contains: q } }, { subject: { contains: q } }, { message: { contains: q } }] } : {}),
   };
-  const [filteredTotal, openCount] = await Promise.all([
+  const [filteredTotal, openCount, brandSettings] = await Promise.all([
     db.contactMessage.count({ where }),
     db.contactMessage.count({ where: { isResolved: false } }),
+    getBrandSettings(),
   ]);
   const pagination = resolveAdminPagination(filteredTotal, requestedPage, pageSize);
   const messages = await db.contactMessage.findMany({ where, orderBy: [{ isResolved: "asc" }, { createdAt: "desc" }], skip: pagination.skip, take: pagination.pageSize });
@@ -43,7 +46,11 @@ export default async function AdminContactMessagesPage({ searchParams }: { searc
       </AdminPanel>
 
       <AdminPanel>
-        {!messages.length ? <AdminEmptyState title="پیامی پیدا نشد" description="هنوز پیامی از فرم تماس با ما ثبت نشده یا فیلترهای انتخاب‌شده نتیجه‌ای ندارند." /> : (
+        {!messages.length ? (
+          <AdminEmptyState title="پیامی پیدا نشد" description="هنوز پیامی از فرم تماس با ما ثبت نشده یا فیلترهای انتخاب‌شده نتیجه‌ای ندارند." />
+        ) : brandSettings.adminTemplate === "BLUEPRINT" ? (
+          <BlueprintContactMessagesView messages={messages} pagination={pagination} />
+        ) : (
           <>
             <div className="divide-y divide-slate-100 lg:hidden">{messages.map((item) => (
               <article key={item.id} className="p-4">
