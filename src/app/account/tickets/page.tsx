@@ -41,11 +41,17 @@ export default async function AccountTicketsPage() {
           {items.map((ticket) => (
             <li key={ticket.id} className="border-b border-[var(--border)] last:border-b-0">
               <Link href={`/account/tickets/${ticket.id}`} className="flex items-center gap-3 px-5 py-4 transition hover:bg-[var(--surface-secondary)]">
+                <span className="grid size-9 shrink-0 place-items-center rounded-full bg-[var(--brand-primary)]/10 text-[13px] font-bold text-[var(--brand-primary)]">
+                  <Headset size={16} />
+                </span>
                 <div className="min-w-0 flex-1">
-                  <strong className="block truncate text-sm font-bold">{ticket.subject}</strong>
-                  <span className="mt-1 block text-[11px] text-[var(--muted)]">
-                    {ticket.messageCount.toLocaleString("fa-IR")} پیام · {formatRelativeFa(ticket.updatedAt)}
+                  <strong className={`block truncate text-sm ${ticket.status === "ANSWERED" ? "font-extrabold" : "font-bold"}`}>{ticket.subject}</strong>
+                  <span className="mt-1 block truncate text-[11px] text-[var(--muted)]">
+                    {ticket.lastMessage
+                      ? `${ticket.lastMessage.fromCustomer ? "" : "پشتیبانی: "}${ticket.lastMessage.body.trim() || "پیوست فایل"}`
+                      : "بدون پیام"}
                   </span>
+                  <span className="mt-0.5 block text-[10px] text-[var(--muted)]">{formatRelativeFa(ticket.updatedAt)}</span>
                 </div>
                 <span className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-bold ${toneClass[ticketStatusTones[ticket.status as keyof typeof ticketStatusTones]]}`}>
                   {ticketStatusLabels[ticket.status as keyof typeof ticketStatusLabels]}

@@ -1,13 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { Eye, Headset } from "lucide-react";
+import { Eye, Paperclip } from "lucide-react";
 import { AdminEmptyState, AdminPageHeader, AdminStatusBadge } from "@/components/admin-ui";
 import { AdminListFilters } from "@/components/admin-list-filters";
 import { AdminPagination } from "@/components/admin-pagination";
 import { AdminBulkCheckbox, AdminBulkEditor, AdminBulkTr } from "@/components/admin-bulk-editor";
 import { ticketStatusLabels, ticketStatusTones, userRoleLabels } from "@/modules/admin/labels";
 import { formatPersianDateTime, BpTable, BpTd, BpTh } from "./ui";
+
+type LastMessage = { body: string; createdAt: string; fromCustomer: boolean; hasAttachment: boolean };
 
 type TicketSummary = {
   id: string;
@@ -20,6 +22,7 @@ type TicketSummary = {
   agentRole: string | null;
   messageCount: number;
   updatedAt: string;
+  lastMessage: LastMessage | null;
 };
 
 type Props = {
@@ -30,6 +33,23 @@ type Props = {
   mine: boolean;
   pagination: { page: number; pageSize: number; totalItems: number; totalPages: number };
 };
+
+function Avatar({ name }: { name: string }) {
+  return (
+    <span className="grid size-8 shrink-0 place-items-center rounded-full bg-[var(--bp-accent-100)] text-[11px] font-bold text-[var(--bp-accent-800)]">
+      {name.slice(0, 1)}
+    </span>
+  );
+}
+
+function LastMessagePreview({ lastMessage }: { lastMessage: LastMessage | null }) {
+  if (!lastMessage) return <span className="bp-muted italic">بدون پیام</span>;
+  const prefix = lastMessage.fromCustomer ? "" : "شما: ";
+  if (!lastMessage.body.trim()) {
+    return <span className="bp-muted inline-flex items-center gap-1"><Paperclip size={11} />{prefix}پیوست فایل</span>;
+  }
+  return <span className="bp-muted truncate">{prefix}{lastMessage.body}</span>;
+}
 
 export function BlueprintTicketsView({ tickets, categories, query, status, mine, pagination }: Props) {
   return (
@@ -57,27 +77,29 @@ export function BlueprintTicketsView({ tickets, categories, query, status, mine,
           <>
             <div className="md:hidden">
               {tickets.map((ticket) => (
-                <Link key={ticket.id} href={`/admin/tickets/${ticket.id}`} className="flex flex-col gap-2.5 border-b border-[var(--bp-row-line)] p-4 last:border-b-0">
-                  <div className="flex items-center gap-2">
-                    <Headset size={15} className="text-[var(--bp-muted)]" />
-                    <strong className="min-w-0 flex-1 truncate text-sm">{ticket.subject}</strong>
-                    <AdminStatusBadge tone={ticketStatusTones[ticket.status]}>{ticketStatusLabels[ticket.status]}</AdminStatusBadge>
+                <Link key={ticket.id} href={`/admin/tickets/${ticket.id}`} className="flex items-start gap-3 border-b border-[var(--bp-row-line)] p-4 last:border-b-0">
+                  <Avatar name={ticket.customerName} />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <strong className={`min-w-0 flex-1 truncate text-sm ${ticket.status === "OPEN" ? "font-extrabold" : ""}`}>{ticket.subject}</strong>
+                      <AdminStatusBadge tone={ticketStatusTones[ticket.status]}>{ticketStatusLabels[ticket.status]}</AdminStatusBadge>
+                    </div>
+                    <div className="mt-1 flex items-center gap-1 text-[11px]"><LastMessagePreview lastMessage={ticket.lastMessage} /></div>
+                    <span className="bp-muted mt-1 block text-[11px]">{ticket.customerName}{ticket.category ? ` · ${ticket.category.name}` : ""} · {ticket.agentName ? `پشتیبان: ${ticket.agentName}` : "بدون پشتیبان"} · {formatPersianDateTime(ticket.updatedAt)}</span>
                   </div>
-                  <span className="bp-muted text-[11px]">{ticket.customerName}{ticket.category ? ` · ${ticket.category.name}` : ""}</span>
-                  <span className="bp-muted text-[11px]">{ticket.agentName ? `پشتیبان: ${ticket.agentName}` : "بدون پشتیبان"} · {formatPersianDateTime(ticket.updatedAt)}</span>
                 </Link>
               ))}
             </div>
 
             <AdminBulkEditor entity="tickets" entityLabel="تیکت" ids={tickets.map((ticket) => ticket.id)} actions={[{ value: "status:CLOSED", label: "بستن تیکت‌های انتخاب‌شده" }]}>
-              <BpTable ariaLabel="فهرست تیکت‌ها" minWidth={900}>
+              <BpTable ariaLabel="فهرست تیکت‌ها" minWidth={980}>
                 <thead>
                   <tr>
                     <BpTh className="w-10 text-center"><span className="sr-only">انتخاب</span></BpTh>
                     <BpTh>موضوع و کاربر</BpTh>
+                    <BpTh>آخرین پیام</BpTh>
                     <BpTh>دسته</BpTh>
                     <BpTh>پشتیبان</BpTh>
-                    <BpTh>پیام‌ها</BpTh>
                     <BpTh>وضعیت</BpTh>
                     <BpTh>آخرین بروزرسانی</BpTh>
                     <BpTh className="text-center">عملیات</BpTh>
@@ -87,12 +109,16 @@ export function BlueprintTicketsView({ tickets, categories, query, status, mine,
                   {tickets.map((ticket) => (
                     <AdminBulkTr key={ticket.id} id={ticket.id}>
                       <BpTd className="w-10 text-center"><AdminBulkCheckbox id={ticket.id} label={`انتخاب تیکت ${ticket.subject}`} /></BpTd>
-                      <BpTd className="max-w-[260px]">
-                        <div className="min-w-0">
-                          <span className="block truncate font-bold" title={ticket.subject}>{ticket.subject}</span>
-                          <span className="bp-muted block truncate text-[11px]">{ticket.customerName}</span>
+                      <BpTd className="max-w-[220px]">
+                        <div className="flex min-w-0 items-center gap-2.5">
+                          <Avatar name={ticket.customerName} />
+                          <div className="min-w-0">
+                            <span className={`block truncate ${ticket.status === "OPEN" ? "font-extrabold" : "font-bold"}`} title={ticket.subject}>{ticket.subject}</span>
+                            <span className="bp-muted block truncate text-[11px]">{ticket.customerName}</span>
+                          </div>
                         </div>
                       </BpTd>
+                      <BpTd className="max-w-[220px] text-[12px]"><LastMessagePreview lastMessage={ticket.lastMessage} /></BpTd>
                       <BpTd className="text-[12px]">{ticket.category?.name ?? "—"}</BpTd>
                       <BpTd className="text-[12px]">
                         {ticket.agentName ? (
@@ -102,7 +128,6 @@ export function BlueprintTicketsView({ tickets, categories, query, status, mine,
                           </>
                         ) : <span className="bp-muted">بدون پشتیبان</span>}
                       </BpTd>
-                      <BpTd className="text-[12px]">{ticket.messageCount.toLocaleString("fa-IR")}</BpTd>
                       <BpTd><AdminStatusBadge tone={ticketStatusTones[ticket.status]}>{ticketStatusLabels[ticket.status]}</AdminStatusBadge></BpTd>
                       <BpTd className="bp-muted whitespace-nowrap text-[12px]">{formatPersianDateTime(ticket.updatedAt)}</BpTd>
                       <BpTd>

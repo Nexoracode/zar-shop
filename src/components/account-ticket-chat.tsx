@@ -1,12 +1,13 @@
 "use client";
 
 import Link from "next/link";
+import type { ReactNode } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Button, TextArea, toast } from "@heroui/react";
-import { ArrowRight, FileText, Headset, Lock, Paperclip, RotateCcw, Send, Star, X } from "lucide-react";
-import { formatRelativeFa } from "@/lib/format";
+import { Button, Modal, TextArea, toast } from "@heroui/react";
+import { ArrowDown, ArrowRight, FileText, Headset, Lock, Paperclip, RotateCcw, Send, Star, X } from "lucide-react";
+import { formatDayLabel, formatTimeFa } from "@/lib/format";
 import { ticketFieldLimits, TICKET_MAX_ATTACHMENTS } from "@/modules/tickets/limits";
-import { ticketStatusLabels } from "@/modules/admin/labels";
+import { ticketStatusLabels, ticketStatusTones } from "@/modules/admin/labels";
 
 type Attachment = { id: string; url: string; mimeType: string; sizeBytes: number; originalName: string };
 type Message = { id: string; ticketId: string; body: string; createdAt: string; isOwnerMessage: boolean; senderName: string; attachments: Attachment[] };
@@ -17,22 +18,87 @@ type TicketDetail = {
 };
 
 const POLL_MS = 5_000;
+const NEAR_BOTTOM_PX = 80;
+const AUTO_RESIZE_MAX_PX = 128;
 
-function AttachmentView({ attachment }: { attachment: Attachment }) {
-  if (attachment.mimeType.startsWith("image/")) {
-    return (
-      <a href={attachment.url} target="_blank" rel="noreferrer" className="mt-2 block max-w-52 overflow-hidden rounded-lg border border-black/10">
+const dotToneClass: Record<string, string> = {
+  neutral: "bg-slate-400",
+  info: "bg-sky-500",
+  success: "bg-emerald-500",
+  warning: "bg-amber-500",
+  danger: "bg-rose-500",
+  gold: "bg-amber-600",
+};
+
+function autoResize(el: HTMLTextAreaElement) {
+  el.style.height = "auto";
+  el.style.height = `${Math.min(el.scrollHeight, AUTO_RESIZE_MAX_PX)}px`;
+}
+
+function ImageAttachment({ attachment }: { attachment: Attachment }) {
+  return (
+    <Modal>
+      <Button type="button" variant="ghost" aria-label={`مشاهده تصویر ${attachment.originalName}`} className="mt-2 block h-auto min-h-0 w-52 min-w-0 max-w-full overflow-hidden rounded-lg border border-black/10 p-0">
         {/* eslint-disable-next-line @next/next/no-img-element -- arbitrary user upload, not an optimizable local/remote asset */}
         <img src={attachment.url} alt={attachment.originalName} className="block max-h-52 w-full object-cover" />
-      </a>
-    );
-  }
+      </Button>
+      <Modal.Backdrop className="z-[130] !bg-black/90">
+        <Modal.Container size="full" placement="center" className="h-dvh w-screen max-w-none p-0">
+          <Modal.Dialog aria-label={attachment.originalName} className="h-dvh w-screen max-w-none overflow-hidden rounded-none bg-transparent shadow-none" dir="rtl">
+            <Modal.Header className="absolute inset-x-0 top-0 z-20 flex-row items-center justify-between bg-gradient-to-b from-black/70 to-transparent p-4">
+              <span className="truncate text-xs text-white/80">{attachment.originalName}</span>
+              <Modal.CloseTrigger aria-label="بستن تصویر" className="grid size-10 place-items-center rounded-full text-white transition hover:bg-white/15"><X size={22} /></Modal.CloseTrigger>
+            </Modal.Header>
+            <Modal.Body className="grid h-dvh place-items-center overflow-hidden p-6">
+              {/* eslint-disable-next-line @next/next/no-img-element -- full-screen preview of the same arbitrary upload */}
+              <img src={attachment.url} alt={attachment.originalName} className="max-h-full max-w-full object-contain" />
+            </Modal.Body>
+          </Modal.Dialog>
+        </Modal.Container>
+      </Modal.Backdrop>
+    </Modal>
+  );
+}
+
+function AttachmentView({ attachment }: { attachment: Attachment }) {
+  if (attachment.mimeType.startsWith("image/")) return <ImageAttachment attachment={attachment} />;
   return (
     <a href={attachment.url} target="_blank" rel="noreferrer" className="mt-2 flex max-w-52 items-center gap-2 rounded-lg border border-black/10 bg-white/60 px-2.5 py-2 text-[11px]">
       <FileText size={16} className="shrink-0" />
       <span className="min-w-0 truncate">{attachment.originalName}</span>
     </a>
   );
+}
+
+function MessageBubble({ message }: { message: Message }) {
+  return (
+    <div className={`flex ${message.isOwnerMessage ? "justify-end" : "justify-start"}`}>
+      <div className={`max-w-[80%] rounded-2xl px-3.5 py-2.5 text-sm ${message.isOwnerMessage ? "rounded-tl-sm bg-[var(--brand-primary)] text-[var(--brand-primary-foreground)]" : "rounded-tr-sm border border-[var(--border)] bg-[var(--surface)]"}`}>
+        {!message.isOwnerMessage && <strong className="mb-1 block text-[10px] opacity-70">{message.senderName}</strong>}
+        {message.body && <p className="m-0 whitespace-pre-wrap leading-6">{message.body}</p>}
+        {message.attachments.map((attachment) => <AttachmentView key={attachment.id} attachment={attachment} />)}
+        <span className={`mt-1.5 block text-[10px] ${message.isOwnerMessage ? "opacity-70" : "text-[var(--muted)]"}`}>{formatTimeFa(message.createdAt)}</span>
+      </div>
+    </div>
+  );
+}
+
+function groupedMessageNodes(messages: Message[]) {
+  const nodes: ReactNode[] = [];
+  let lastDay: string | null = null;
+  for (const message of messages) {
+    const day = formatDayLabel(message.createdAt);
+    if (day !== lastDay) {
+      nodes.push(
+        <div key={`day-${message.id}`} className="my-1 flex justify-center">
+          <span className="rounded-full bg-black/5 px-3 py-1 text-[11px] font-bold text-[var(--muted)]">{day}</span>
+        </div>,
+      );
+      lastDay = day;
+    }
+    nodes.push(<MessageBubble key={message.id} message={message} />);
+  }
+  return nodes;
 }
 
 export function AccountTicketChat({ ticket: initialTicket }: { ticket: TicketDetail }) {
@@ -45,8 +111,11 @@ export function AccountTicketChat({ ticket: initialTicket }: { ticket: TicketDet
   const [rating, setRating] = useState(0);
   const [ratingReason, setRatingReason] = useState("");
   const [ratingSaving, setRatingSaving] = useState(false);
+  const [showJumpButton, setShowJumpButton] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const composerRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
+  const atBottomRef = useRef(true);
 
   const poll = useCallback(async () => {
     const last = messages.at(-1);
@@ -76,8 +145,25 @@ export function AccountTicketChat({ ticket: initialTicket }: { ticket: TicketDet
   }, [poll]);
 
   useEffect(() => {
-    listRef.current?.scrollTo({ top: listRef.current.scrollHeight });
+    const el = listRef.current;
+    if (!el) return;
+    const onScroll = () => {
+      const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < NEAR_BOTTOM_PX;
+      atBottomRef.current = atBottom;
+      setShowJumpButton(!atBottom);
+    };
+    el.addEventListener("scroll", onScroll);
+    return () => el.removeEventListener("scroll", onScroll);
+  }, []);
+
+  useEffect(() => {
+    if (atBottomRef.current) listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: "smooth" });
   }, [messages.length]);
+
+  function scrollToBottom() {
+    listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: "smooth" });
+    setShowJumpButton(false);
+  }
 
   function addFiles(list: FileList | null) {
     if (!list) return;
@@ -99,6 +185,8 @@ export function AccountTicketChat({ ticket: initialTicket }: { ticket: TicketDet
       setBody("");
       setFiles([]);
       setTicket((current) => ({ ...current, status: "OPEN" }));
+      const textarea = composerRef.current?.querySelector<HTMLTextAreaElement>("textarea");
+      if (textarea) textarea.style.height = "auto";
     } catch (reason) {
       toast.danger("ارسال پیام انجام نشد", { description: reason instanceof Error ? reason.message : "خطای ناشناخته" });
     } finally {
@@ -156,10 +244,11 @@ export function AccountTicketChat({ ticket: initialTicket }: { ticket: TicketDet
     <section className="flex h-[calc(100dvh-9rem)] flex-col overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-sm" dir="rtl">
       <div className="flex items-center gap-3 border-b border-[var(--border)] px-5 py-3">
         <Link href="/account/tickets" aria-label="بازگشت به تیکت‌ها" className="grid size-9 shrink-0 place-items-center rounded-lg text-[var(--muted)] hover:bg-[var(--surface-secondary)]"><ArrowRight size={18} /></Link>
-        <Headset size={18} className="shrink-0 text-[var(--brand-primary)]" />
+        <span className="grid size-9 shrink-0 place-items-center rounded-full bg-[var(--brand-primary)]/10 text-[var(--brand-primary)]"><Headset size={17} /></span>
         <div className="min-w-0 flex-1">
           <strong className="block truncate text-sm font-bold">{ticket.subject}</strong>
-          <span className="mt-0.5 block text-[11px] text-[var(--muted)]">
+          <span className="mt-0.5 flex items-center gap-1.5 text-[11px] text-[var(--muted)]">
+            <i aria-hidden className={`block size-1.5 rounded-full ${dotToneClass[ticketStatusTones[ticket.status]]}`} />
             {ticketStatusLabels[ticket.status]}{ticket.agentName ? ` · پشتیبان: ${ticket.agentName}` : ""}
           </span>
         </div>
@@ -168,17 +257,15 @@ export function AccountTicketChat({ ticket: initialTicket }: { ticket: TicketDet
           : <Button type="button" variant="ghost" size="sm" isPending={statusBusy} onPress={() => void closeTicket()} className="gap-1.5 text-xs">بستن تیکت</Button>}
       </div>
 
-      <div ref={listRef} className="flex-1 space-y-3 overflow-y-auto bg-[var(--surface-secondary)]/40 px-4 py-4">
-        {messages.map((message) => (
-          <div key={message.id} className={`flex ${message.isOwnerMessage ? "justify-end" : "justify-start"}`}>
-            <div className={`max-w-[80%] rounded-2xl px-3.5 py-2.5 text-sm ${message.isOwnerMessage ? "rounded-tl-sm bg-[var(--brand-primary)] text-[var(--brand-primary-foreground)]" : "rounded-tr-sm border border-[var(--border)] bg-[var(--surface)]"}`}>
-              {!message.isOwnerMessage && <strong className="mb-1 block text-[10px] opacity-70">{message.senderName}</strong>}
-              {message.body && <p className="m-0 whitespace-pre-wrap leading-6">{message.body}</p>}
-              {message.attachments.map((attachment) => <AttachmentView key={attachment.id} attachment={attachment} />)}
-              <span className={`mt-1.5 block text-[10px] ${message.isOwnerMessage ? "opacity-70" : "text-[var(--muted)]"}`}>{formatRelativeFa(message.createdAt)}</span>
-            </div>
-          </div>
-        ))}
+      <div className="relative min-h-0 flex-1">
+        <div ref={listRef} className="h-full space-y-1.5 overflow-y-auto bg-[var(--surface-secondary)]/40 px-4 py-4">
+          {groupedMessageNodes(messages)}
+        </div>
+        {showJumpButton && (
+          <Button type="button" isIconOnly variant="secondary" aria-label="رفتن به آخرین پیام" onPress={scrollToBottom} className="absolute bottom-3 left-1/2 size-10 min-h-10 min-w-10 -translate-x-1/2 rounded-full shadow-lg">
+            <ArrowDown size={17} />
+          </Button>
+        )}
       </div>
 
       {closed && ticket.rating === null ? (
@@ -224,14 +311,14 @@ export function AccountTicketChat({ ticket: initialTicket }: { ticket: TicketDet
               ))}
             </ul>
           )}
-          <div className="flex items-end gap-2">
+          <div ref={composerRef} className="flex items-end gap-2">
             {/* HeroUI has no file-upload primitive; a hidden native input triggered by the styled button is the documented exception. */}
             <input ref={fileInputRef} type="file" multiple hidden accept="image/jpeg,image/png,image/webp,application/pdf" onChange={(event) => addFiles(event.target.files)} />
             <Button type="button" isIconOnly variant="ghost" onPress={() => fileInputRef.current?.click()} isDisabled={files.length >= TICKET_MAX_ATTACHMENTS} aria-label="پیوست فایل" className="shrink-0"><Paperclip size={17} /></Button>
             <TextArea
               aria-label="پیام خود را بنویسید"
               value={body}
-              onChange={(event) => setBody(event.target.value.slice(0, ticketFieldLimits.message))}
+              onChange={(event) => { setBody(event.target.value.slice(0, ticketFieldLimits.message)); autoResize(event.target); }}
               maxLength={ticketFieldLimits.message}
               placeholder="پیام خود را بنویسید…"
               rows={1}

@@ -148,8 +148,36 @@ export async function rateTicket(db: DbLike, input: { ticketId: string; userId: 
   return db.supportTicket.update({ where: { id: ticket.id }, data: { rating: input.rating, ratingReason: input.reason ?? null, ratedAt: new Date() } });
 }
 
+export type LastMessagePreview = { body: string; createdAt: Date; fromCustomer: boolean; hasAttachment: boolean };
+
+/**
+ * One extra query instead of embedding `messages` in `ticketInclude`, so the preview never
+ * collides with the full-thread `messages` override that `getTicketForUser`/`getTicketForAgent`
+ * apply on the same include object.
+ */
+async function lastMessagesByTicket(db: DbLike, ticketIds: string[]): Promise<Map<string, LastMessagePreview>> {
+  if (!ticketIds.length) return new Map();
+  const rows = await db.supportTicketMessage.findMany({
+    where: { ticketId: { in: ticketIds } },
+    orderBy: { createdAt: "desc" },
+    distinct: ["ticketId"],
+    select: { ticketId: true, body: true, createdAt: true, senderId: true, ticket: { select: { userId: true } }, attachments: { select: { id: true }, take: 1 } },
+  });
+  const map = new Map<string, LastMessagePreview>();
+  for (const row of rows) {
+    map.set(row.ticketId, { body: row.body, createdAt: row.createdAt, fromCustomer: row.senderId === row.ticket.userId, hasAttachment: row.attachments.length > 0 });
+  }
+  return map;
+}
+
+async function withLastMessages<T extends { id: string }>(db: DbLike, tickets: T[]) {
+  const lastMessages = await lastMessagesByTicket(db, tickets.map((ticket) => ticket.id));
+  return tickets.map((ticket) => ({ ...ticket, lastMessage: lastMessages.get(ticket.id) ?? null }));
+}
+
 export async function listForUser(db: DbLike, userId: string) {
-  return db.supportTicket.findMany({ where: { userId }, include: ticketInclude, orderBy: { updatedAt: "desc" } });
+  const tickets = await db.supportTicket.findMany({ where: { userId }, include: ticketInclude, orderBy: { updatedAt: "desc" } });
+  return withLastMessages(db, tickets);
 }
 
 export async function getTicketForUser(db: DbLike, ticketId: string, userId: string) {
@@ -193,5 +221,6 @@ export function buildTicketAdminWhere(filters: { status?: TicketStatus; category
 }
 
 export async function listForAdmin(db: DbLike, where: Prisma.SupportTicketWhereInput, pagination: { skip: number; take: number }) {
-  return db.supportTicket.findMany({ where, include: ticketInclude, orderBy: { updatedAt: "desc" }, skip: pagination.skip, take: pagination.take });
+  const tickets = await db.supportTicket.findMany({ where, include: ticketInclude, orderBy: { updatedAt: "desc" }, skip: pagination.skip, take: pagination.take });
+  return withLastMessages(db, tickets);
 }

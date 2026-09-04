@@ -1,7 +1,7 @@
 import type { Prisma } from "@generated/prisma/client";
-import type { ticketInclude } from "@/modules/tickets/service";
+import type { LastMessagePreview, ticketInclude } from "@/modules/tickets/service";
 
-type TicketWithRelations = Prisma.SupportTicketGetPayload<{ include: typeof ticketInclude }>;
+type TicketWithRelations = Prisma.SupportTicketGetPayload<{ include: typeof ticketInclude }> & { lastMessage?: LastMessagePreview | null };
 type MemberRow = { id: string; firstName: string | null; lastName: string | null; role: string };
 type MemberNameFields = { firstName: string | null; lastName: string | null };
 
@@ -18,6 +18,7 @@ export function serializeTicketSummary(ticket: TicketWithRelations) {
     category: ticket.category ? { id: ticket.category.id, name: ticket.category.name } : null,
     product: ticket.product ? { id: ticket.product.id, name: ticket.product.name, slug: ticket.product.slug } : null,
     customerName: memberName(ticket.user) ?? ticket.user.phone ?? "کاربر بدون نام",
+    customerPhone: ticket.user.phone,
     agentName: memberName(ticket.assignedAgent),
     agentRole: ticket.assignedAgent?.role ?? null,
     messageCount: ticket._count.messages,
@@ -25,6 +26,9 @@ export function serializeTicketSummary(ticket: TicketWithRelations) {
     createdAt: ticket.createdAt.toISOString(),
     updatedAt: ticket.updatedAt.toISOString(),
     closedAt: ticket.closedAt ? ticket.closedAt.toISOString() : null,
+    lastMessage: ticket.lastMessage
+      ? { body: ticket.lastMessage.body, createdAt: ticket.lastMessage.createdAt.toISOString(), fromCustomer: ticket.lastMessage.fromCustomer, hasAttachment: ticket.lastMessage.hasAttachment }
+      : null,
   };
 }
 
