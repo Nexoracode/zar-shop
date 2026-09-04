@@ -23,6 +23,7 @@ export function serializeTicketSummary(ticket: TicketWithRelations) {
     agentRole: ticket.assignedAgent?.role ?? null,
     messageCount: ticket._count.messages,
     rating: ticket.rating,
+    ratingReason: ticket.ratingReason,
     createdAt: ticket.createdAt.toISOString(),
     updatedAt: ticket.updatedAt.toISOString(),
     closedAt: ticket.closedAt ? ticket.closedAt.toISOString() : null,

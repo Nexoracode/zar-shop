@@ -16,7 +16,7 @@ type Message = { id: string; ticketId: string; body: string; createdAt: string; 
 type TicketDetail = {
   id: string; subject: string; status: "OPEN" | "ANSWERED" | "CLOSED";
   category: { id: string; name: string } | null; product: { id: string; name: string; slug: string } | null;
-  customerName: string; customerPhone: string | null; agentName: string | null; rating: number | null;
+  customerName: string; customerPhone: string | null; agentName: string | null; rating: number | null; ratingReason: string | null;
   createdAt: string; messages: Message[];
 };
 
@@ -336,6 +336,12 @@ export function BlueprintTicketChat({ ticket: initialTicket }: { ticket: TicketD
                 label="امتیاز کاربر"
                 value={<span className="flex items-center gap-1"><Star size={13} className="fill-amber-400 text-amber-400" />{ticket.rating.toLocaleString("fa-IR")} از ۵</span>}
               />
+            )}
+            {ticket.ratingReason && (
+              <div className="border-b border-[var(--bp-divider)] py-3 last:border-b-0">
+                <span className="bp-muted block text-[10px]">دلیل امتیاز پایین</span>
+                <p className="m-0 mt-1 whitespace-pre-wrap break-words text-[12px] leading-6">{ticket.ratingReason}</p>
+              </div>
             )}
             <div className="mt-3"><BpTag tone={ticketStatusTones[ticket.status]}>{ticketStatusLabels[ticket.status]}</BpTag></div>
           </aside>
