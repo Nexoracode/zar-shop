@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { toast } from "@heroui/react";
 import { ArrowDown, ArrowRight, Calendar, FileText, Headset, Info, Lock, Package, Paperclip, Phone, RotateCcw, Send, Star, Tag, User, X } from "lucide-react";
 import { AdminStatusBadge } from "@/components/admin-ui";
@@ -103,6 +103,30 @@ export function BlueprintTicketChat({ ticket: initialTicket }: { ticket: TicketD
   const composerRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const atBottomRef = useRef(true);
+  const anchorRef = useRef<HTMLDivElement>(null);
+  const [panelBounds, setPanelBounds] = useState<{ top: number; left: number; width: number; height: number } | null>(null);
+
+  /**
+   * The panel is `position: fixed`, sized from the admin `<main>` element's own measured rect —
+   * not from cancelling `<main>`'s padding with a matching negative margin. That padding-cancel
+   * approach silently left slack (main is a flex item with no `min-height: 0`, so any leftover
+   * mismatch just grew `<main>` instead of being clipped), which is what let the whole admin page
+   * scroll instead of only the message list. Measuring `<main>` directly removes the arithmetic
+   * entirely: a fixed element cannot contribute to document height no matter what.
+   */
+  useLayoutEffect(() => {
+    const main = anchorRef.current?.closest("main");
+    if (!main) return;
+    const publish = () => {
+      const rect = main.getBoundingClientRect();
+      setPanelBounds({ top: rect.top, left: rect.left, width: rect.width, height: rect.height });
+    };
+    publish();
+    const observer = new ResizeObserver(publish);
+    observer.observe(main);
+    window.addEventListener("resize", publish);
+    return () => { observer.disconnect(); window.removeEventListener("resize", publish); };
+  }, []);
 
   const poll = useCallback(async () => {
     const last = messages.at(-1);
@@ -212,8 +236,12 @@ export function BlueprintTicketChat({ ticket: initialTicket }: { ticket: TicketD
   const closed = ticket.status === "CLOSED";
 
   return (
-    <div className="-mx-4 -my-6 overflow-hidden sm:-mx-7" style={{ height: "calc(100dvh - var(--admin-sticky-top, 0px))" }}>
-      <section className="bp-frame flex h-full overflow-hidden">
+    <div ref={anchorRef}>
+      {panelBounds && (
+      <section
+        className="bp-frame z-10 flex overflow-hidden"
+        style={{ position: "fixed", top: panelBounds.top, left: panelBounds.left, width: panelBounds.width, height: panelBounds.height }}
+      >
         <div className="flex min-h-0 min-w-0 flex-1 flex-col">
           <div className="flex items-center gap-3 border-b border-[var(--bp-divider)] px-4 py-3">
             <Link href="/admin/tickets" aria-label="بازگشت به تیکت‌ها" className="grid size-9 shrink-0 place-items-center text-[var(--bp-muted)] hover:bg-[var(--bp-hover)]"><ArrowRight size={17} /></Link>
@@ -313,6 +341,7 @@ export function BlueprintTicketChat({ ticket: initialTicket }: { ticket: TicketD
           </aside>
         )}
       </section>
+      )}
 
       {lightbox && (
         <div role="dialog" aria-modal aria-label={lightbox.originalName} className="fixed inset-0 z-[130] grid place-items-center bg-black/90 p-6" onClick={() => setLightbox(null)}>
