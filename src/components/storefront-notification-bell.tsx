@@ -161,7 +161,7 @@ export function StorefrontNotificationBell({ initialUnread }: { initialUnread: n
   }
 
   const badge = unread > 0 && (
-    <span className="absolute -right-1 -top-0.5 grid h-[18px] min-w-[18px] place-items-center rounded-[5px] border-2 border-white bg-[var(--brand-primary)] px-0.5 text-[9px] font-bold leading-none text-[var(--brand-primary-foreground)]">
+    <span className="absolute -bottom-0.5 -right-1 grid h-[18px] min-w-[18px] place-items-center rounded-[5px] border-2 border-white bg-[var(--brand-primary)] px-0.5 text-[9px] font-bold leading-none text-[var(--brand-primary-foreground)]">
       {Math.min(unread, 99).toLocaleString("fa-IR")}{unread > 99 ? "+" : ""}
     </span>
   );
