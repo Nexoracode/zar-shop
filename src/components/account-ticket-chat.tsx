@@ -1,0 +1,248 @@
+"use client";
+
+import Link from "next/link";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Button, TextArea, toast } from "@heroui/react";
+import { ArrowRight, FileText, Headset, Lock, Paperclip, RotateCcw, Send, Star, X } from "lucide-react";
+import { formatRelativeFa } from "@/lib/format";
+import { ticketFieldLimits, TICKET_MAX_ATTACHMENTS } from "@/modules/tickets/limits";
+import { ticketStatusLabels } from "@/modules/admin/labels";
+
+type Attachment = { id: string; url: string; mimeType: string; sizeBytes: number; originalName: string };
+type Message = { id: string; ticketId: string; body: string; createdAt: string; isOwnerMessage: boolean; senderName: string; attachments: Attachment[] };
+type TicketDetail = {
+  id: string; subject: string; status: "OPEN" | "ANSWERED" | "CLOSED";
+  category: { id: string; name: string } | null; product: { id: string; name: string; slug: string } | null;
+  agentName: string | null; rating: number | null; messages: Message[];
+};
+
+const POLL_MS = 5_000;
+
+function AttachmentView({ attachment }: { attachment: Attachment }) {
+  if (attachment.mimeType.startsWith("image/")) {
+    return (
+      <a href={attachment.url} target="_blank" rel="noreferrer" className="mt-2 block max-w-52 overflow-hidden rounded-lg border border-black/10">
+        {/* eslint-disable-next-line @next/next/no-img-element -- arbitrary user upload, not an optimizable local/remote asset */}
+        <img src={attachment.url} alt={attachment.originalName} className="block max-h-52 w-full object-cover" />
+      </a>
+    );
+  }
+  return (
+    <a href={attachment.url} target="_blank" rel="noreferrer" className="mt-2 flex max-w-52 items-center gap-2 rounded-lg border border-black/10 bg-white/60 px-2.5 py-2 text-[11px]">
+      <FileText size={16} className="shrink-0" />
+      <span className="min-w-0 truncate">{attachment.originalName}</span>
+    </a>
+  );
+}
+
+export function AccountTicketChat({ ticket: initialTicket }: { ticket: TicketDetail }) {
+  const [ticket, setTicket] = useState(initialTicket);
+  const [messages, setMessages] = useState(initialTicket.messages);
+  const [body, setBody] = useState("");
+  const [files, setFiles] = useState<File[]>([]);
+  const [sending, setSending] = useState(false);
+  const [statusBusy, setStatusBusy] = useState(false);
+  const [rating, setRating] = useState(0);
+  const [ratingReason, setRatingReason] = useState("");
+  const [ratingSaving, setRatingSaving] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
+
+  const poll = useCallback(async () => {
+    const last = messages.at(-1);
+    const url = last ? `/api/account/tickets/${ticket.id}/messages?after=${encodeURIComponent(last.createdAt)}` : `/api/account/tickets/${ticket.id}/messages`;
+    try {
+      const response = await fetch(url, { cache: "no-store" });
+      if (!response.ok) return;
+      const data = (await response.json()) as { items?: Message[] };
+      if (data.items?.length) {
+        setMessages((current) => [...current, ...data.items!.filter((item) => !current.some((row) => row.id === item.id))]);
+        const statusResponse = await fetch(`/api/account/tickets/${ticket.id}`, { cache: "no-store" });
+        if (statusResponse.ok) {
+          const fresh = (await statusResponse.json()) as TicketDetail;
+          setTicket((current) => ({ ...current, status: fresh.status, agentName: fresh.agentName }));
+        }
+      }
+    } catch {
+      /* offline — try again next tick */
+    }
+  }, [messages, ticket.id]);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => void poll(), POLL_MS);
+    const onFocus = () => void poll();
+    window.addEventListener("focus", onFocus);
+    return () => { window.clearInterval(timer); window.removeEventListener("focus", onFocus); };
+  }, [poll]);
+
+  useEffect(() => {
+    listRef.current?.scrollTo({ top: listRef.current.scrollHeight });
+  }, [messages.length]);
+
+  function addFiles(list: FileList | null) {
+    if (!list) return;
+    setFiles((current) => [...current, ...Array.from(list)].slice(0, TICKET_MAX_ATTACHMENTS));
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  }
+
+  async function send() {
+    if (!body.trim() && files.length === 0) return;
+    setSending(true);
+    try {
+      const form = new FormData();
+      form.set("body", body.trim());
+      for (const file of files) form.append("file", file);
+      const response = await fetch(`/api/account/tickets/${ticket.id}/messages`, { method: "POST", body: form });
+      const data = await response.json().catch(() => null) as (Message & { message?: string }) | null;
+      if (!response.ok || !data) throw new Error(data?.message ?? "ارسال پیام انجام نشد.");
+      setMessages((current) => [...current, data]);
+      setBody("");
+      setFiles([]);
+      setTicket((current) => ({ ...current, status: "OPEN" }));
+    } catch (reason) {
+      toast.danger("ارسال پیام انجام نشد", { description: reason instanceof Error ? reason.message : "خطای ناشناخته" });
+    } finally {
+      setSending(false);
+    }
+  }
+
+  async function closeTicket() {
+    setStatusBusy(true);
+    try {
+      await fetch(`/api/account/tickets/${ticket.id}/close`, { method: "POST" });
+      setTicket((current) => ({ ...current, status: "CLOSED" }));
+    } finally {
+      setStatusBusy(false);
+    }
+  }
+
+  async function reopenTicket() {
+    setStatusBusy(true);
+    try {
+      await fetch(`/api/account/tickets/${ticket.id}/reopen`, { method: "POST" });
+      setTicket((current) => ({ ...current, status: "OPEN" }));
+    } finally {
+      setStatusBusy(false);
+    }
+  }
+
+  async function submitRating() {
+    if (rating === 0) return;
+    if (rating <= 3 && !ratingReason.trim()) {
+      toast.danger("لطفاً دلیل امتیاز پایین را بنویسید.");
+      return;
+    }
+    setRatingSaving(true);
+    try {
+      const response = await fetch(`/api/account/tickets/${ticket.id}/rating`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ rating, reason: ratingReason.trim() || null }),
+      });
+      const data = await response.json().catch(() => null) as { rating?: number; message?: string } | null;
+      if (!response.ok) throw new Error(data?.message ?? "ثبت امتیاز انجام نشد.");
+      setTicket((current) => ({ ...current, rating: data?.rating ?? rating }));
+      toast.success("امتیاز شما ثبت شد.");
+    } catch (reason) {
+      toast.danger("ثبت امتیاز انجام نشد", { description: reason instanceof Error ? reason.message : "خطای ناشناخته" });
+    } finally {
+      setRatingSaving(false);
+    }
+  }
+
+  const closed = ticket.status === "CLOSED";
+
+  return (
+    <section className="flex h-[calc(100dvh-9rem)] flex-col overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-sm" dir="rtl">
+      <div className="flex items-center gap-3 border-b border-[var(--border)] px-5 py-3">
+        <Link href="/account/tickets" aria-label="بازگشت به تیکت‌ها" className="grid size-9 shrink-0 place-items-center rounded-lg text-[var(--muted)] hover:bg-[var(--surface-secondary)]"><ArrowRight size={18} /></Link>
+        <Headset size={18} className="shrink-0 text-[var(--brand-primary)]" />
+        <div className="min-w-0 flex-1">
+          <strong className="block truncate text-sm font-bold">{ticket.subject}</strong>
+          <span className="mt-0.5 block text-[11px] text-[var(--muted)]">
+            {ticketStatusLabels[ticket.status]}{ticket.agentName ? ` · پشتیبان: ${ticket.agentName}` : ""}
+          </span>
+        </div>
+        {closed
+          ? <Button type="button" variant="ghost" size="sm" isPending={statusBusy} onPress={() => void reopenTicket()} className="gap-1.5 text-xs"><RotateCcw size={14} />بازکردن دوباره</Button>
+          : <Button type="button" variant="ghost" size="sm" isPending={statusBusy} onPress={() => void closeTicket()} className="gap-1.5 text-xs">بستن تیکت</Button>}
+      </div>
+
+      <div ref={listRef} className="flex-1 space-y-3 overflow-y-auto bg-[var(--surface-secondary)]/40 px-4 py-4">
+        {messages.map((message) => (
+          <div key={message.id} className={`flex ${message.isOwnerMessage ? "justify-end" : "justify-start"}`}>
+            <div className={`max-w-[80%] rounded-2xl px-3.5 py-2.5 text-sm ${message.isOwnerMessage ? "rounded-tl-sm bg-[var(--brand-primary)] text-[var(--brand-primary-foreground)]" : "rounded-tr-sm border border-[var(--border)] bg-[var(--surface)]"}`}>
+              {!message.isOwnerMessage && <strong className="mb-1 block text-[10px] opacity-70">{message.senderName}</strong>}
+              {message.body && <p className="m-0 whitespace-pre-wrap leading-6">{message.body}</p>}
+              {message.attachments.map((attachment) => <AttachmentView key={attachment.id} attachment={attachment} />)}
+              <span className={`mt-1.5 block text-[10px] ${message.isOwnerMessage ? "opacity-70" : "text-[var(--muted)]"}`}>{formatRelativeFa(message.createdAt)}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {closed && ticket.rating === null ? (
+        <div className="border-t border-[var(--border)] px-5 py-4">
+          <strong className="block text-sm font-bold">به این تیکت چه امتیازی می‌دهید؟</strong>
+          <div className="mt-2 flex items-center gap-1">
+            {[1, 2, 3, 4, 5].map((value) => (
+              <Button key={value} type="button" isIconOnly variant="ghost" aria-label={`امتیاز ${value.toLocaleString("fa-IR")}`} onPress={() => setRating(value)} className="min-w-9">
+                <Star size={22} className={value <= rating ? "fill-amber-400 text-amber-400" : "text-slate-300"} />
+              </Button>
+            ))}
+          </div>
+          {rating > 0 && rating <= 3 && (
+            <TextArea
+              aria-label="دلیل امتیاز پایین"
+              value={ratingReason}
+              onChange={(event) => setRatingReason(event.target.value.slice(0, ticketFieldLimits.ratingReason))}
+              maxLength={ticketFieldLimits.ratingReason}
+              placeholder="لطفاً دلیل امتیاز پایین را بنویسید…"
+              variant="secondary"
+              className="field-control mt-3 min-h-20 w-full"
+            />
+          )}
+          <Button type="button" isPending={ratingSaving} isDisabled={rating === 0} onPress={() => void submitRating()} className="mt-3 gap-2 bg-[var(--brand-primary)] text-[var(--brand-primary-foreground)]">
+            ثبت امتیاز
+          </Button>
+        </div>
+      ) : closed ? (
+        <div className="flex items-center justify-center gap-2 border-t border-[var(--border)] px-5 py-4 text-xs text-[var(--muted)]">
+          <Lock size={14} />این تیکت بسته شده است.
+        </div>
+      ) : (
+        <div className="border-t border-[var(--border)] p-3">
+          {files.length > 0 && (
+            <ul className="m-0 mb-2 flex flex-wrap gap-2 p-0">
+              {files.map((file, index) => (
+                <li key={`${file.name}-${index}`} className="flex items-center gap-1.5 rounded-full border border-[var(--border)] bg-[var(--surface-secondary)] px-3 py-1 text-[11px]">
+                  <span className="max-w-40 truncate">{file.name}</span>
+                  <Button type="button" isIconOnly size="sm" variant="ghost" aria-label={`حذف ${file.name}`} onPress={() => setFiles((current) => current.filter((_, itemIndex) => itemIndex !== index))} className="min-h-5 min-w-5 text-[var(--muted)] hover:text-[var(--danger)]">
+                    <X size={12} />
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          )}
+          <div className="flex items-end gap-2">
+            {/* HeroUI has no file-upload primitive; a hidden native input triggered by the styled button is the documented exception. */}
+            <input ref={fileInputRef} type="file" multiple hidden accept="image/jpeg,image/png,image/webp,application/pdf" onChange={(event) => addFiles(event.target.files)} />
+            <Button type="button" isIconOnly variant="ghost" onPress={() => fileInputRef.current?.click()} isDisabled={files.length >= TICKET_MAX_ATTACHMENTS} aria-label="پیوست فایل" className="shrink-0"><Paperclip size={17} /></Button>
+            <TextArea
+              aria-label="پیام خود را بنویسید"
+              value={body}
+              onChange={(event) => setBody(event.target.value.slice(0, ticketFieldLimits.message))}
+              maxLength={ticketFieldLimits.message}
+              placeholder="پیام خود را بنویسید…"
+              rows={1}
+              variant="secondary"
+              className="field-control max-h-32 min-h-11 flex-1 resize-none"
+              onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); void send(); } }}
+            />
+            <Button type="button" isIconOnly isPending={sending} isDisabled={!body.trim() && files.length === 0} onPress={() => void send()} aria-label="ارسال پیام" className="shrink-0 bg-[var(--brand-primary)] text-[var(--brand-primary-foreground)]"><Send size={17} /></Button>
+          </div>
+        </div>
+      )}
+    </section>
+  );
+}

@@ -40,7 +40,7 @@ export function useSelectedProductOptions(): Record<string, string> {
   return useContext(ProductPurchaseContext)?.selectedOptions ?? {};
 }
 
-export function AddToCart({ productId, options = [], variants = [], optionGuide, disabled, disabledLabel = "ناموجود", currency = "IRR", layout = "default", purchaseSummary, purchaseMeta, purchasePrice = null, purchaseOriginalPrice = null, preparationDays = 0, showOptionFields = true, showPurchaseCard = true, purchaseCardClassName, purchaseCardStickyTop = "6rem" }: { productId: string; options?: ProductOption[]; variants?: PurchasableVariant[]; optionGuide?: OptionGuide | null; disabled: boolean; disabledLabel?: string; currency?: "IRR" | "IRT"; layout?: "default" | "product-detail"; purchaseSummary?: ReactNode; purchaseMeta?: ReactNode; purchasePrice?: number | null; purchaseOriginalPrice?: number | null; preparationDays?: number; showOptionFields?: boolean; showPurchaseCard?: boolean; purchaseCardClassName?: string; purchaseCardStickyTop?: string }) {
+export function AddToCart({ productId, options = [], variants = [], optionGuide, disabled, disabledLabel = "ناموجود", currency = "IRR", layout = "default", purchaseSummary, purchaseMeta, purchaseFooter, purchasePrice = null, purchaseOriginalPrice = null, preparationDays = 0, showOptionFields = true, showPurchaseCard = true, purchaseCardClassName, purchaseCardStickyTop = "6rem" }: { productId: string; options?: ProductOption[]; variants?: PurchasableVariant[]; optionGuide?: OptionGuide | null; disabled: boolean; disabledLabel?: string; currency?: "IRR" | "IRT"; layout?: "default" | "product-detail"; purchaseSummary?: ReactNode; purchaseMeta?: ReactNode; /** Rendered under the trust badges, once per card instance — e.g. a "chat with support" link. */ purchaseFooter?: ReactNode; purchasePrice?: number | null; purchaseOriginalPrice?: number | null; preparationDays?: number; showOptionFields?: boolean; showPurchaseCard?: boolean; purchaseCardClassName?: string; purchaseCardStickyTop?: string }) {
   const router = useRouter();
   const sharedState = useContext(ProductPurchaseContext);
   const [localMessage, setLocalMessage] = useState("");
@@ -133,6 +133,7 @@ export function AddToCart({ productId, options = [], variants = [], optionGuide,
           <span className="flex items-center justify-between gap-3"><span>ضمانت اصالت و سلامت کالا</span><ShieldCheck size={18} className="text-slate-500" /></span>
           <span className="flex items-center justify-between gap-3"><span>{preparationDays > 0 ? `آماده‌سازی و ارسال تا ${preparationDays.toLocaleString("fa-IR")} روز کاری` : "ارسال قابل پیگیری"}</span><PackageCheck size={18} className="text-slate-500" /></span>
         </div>
+        {purchaseFooter}
       </div>
     </aside>}
     {showOptionFields && guideModal}

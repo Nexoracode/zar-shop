@@ -2,7 +2,7 @@ import Link from "next/link";
 import { cache } from "react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { CheckCircle2, PackageCheck, ShieldCheck, Star, Truck } from "lucide-react";
+import { CheckCircle2, Headset, PackageCheck, ShieldCheck, Star, Truck } from "lucide-react";
 import { AddToCart, ProductPurchaseProvider } from "@/components/add-to-cart";
 import { PriceTooltip } from "@/components/price-tooltip";
 import { ProductDetailGallery } from "@/components/product-detail-gallery";
@@ -180,6 +180,15 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
         ? `🔥 تنها ${product.stock.toLocaleString("fa-IR")} عدد در انبار باقی مانده`
         : `${product.stock.toLocaleString("fa-IR")} عدد موجود در انبار`;
   const purchaseMeta = <span className={`text-xs font-bold ${product.stock < 1 || lowStock ? "text-[var(--danger)]" : "text-[var(--success)]"}`}>{stockLabel}</span>;
+  const ticketHref = `/account/tickets/new?productId=${product.id}`;
+  const purchaseFooter = (
+    <Link
+      href={currentUser && !currentUser.isGuest ? ticketHref : `/login?redirect=${encodeURIComponent(ticketHref)}`}
+      className="flex min-h-10 items-center justify-center gap-2 rounded-lg border border-slate-200 text-xs font-bold text-slate-600 transition hover:border-[var(--brand-primary)] hover:text-[var(--brand-primary)]"
+    >
+      <Headset size={16} />گفتگو با پشتیبان
+    </Link>
+  );
   const cartProps = {
     productId: product.id,
     currency: settings.currency,
@@ -191,6 +200,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
     disabledLabel: product.stock < 1 ? "ناموجود" : "قیمت موقتاً نامشخص",
     purchaseSummary,
     purchaseMeta,
+    purchaseFooter,
     purchasePrice: total,
     purchaseOriginalPrice: discounted?.isActive ? discounted.originalPrice : null,
   };
