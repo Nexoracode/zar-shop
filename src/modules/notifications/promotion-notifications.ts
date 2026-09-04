@@ -26,8 +26,17 @@ function discountPhrase(promotion: { discountType: string | null; discountValue:
 
 const until = (endsAt: Date) => `تا ${formatDate(endsAt)}`;
 
+// Notification bodies are plain text (no `dir="ltr"` span available), so an LTR token like a
+// coupon code needs Unicode bidi isolates to keep the surrounding Persian punctuation in place.
+const LEFT_TO_RIGHT_ISOLATE = "⁦";
+const POP_DIRECTIONAL_ISOLATE = "⁩";
+
+function isolateLtr(value: string): string {
+  return `${LEFT_TO_RIGHT_ISOLATE}${value}${POP_DIRECTIONAL_ISOLATE}`;
+}
+
 function couponBody(promotion: PromotionRow): string {
-  const code = promotion.code ? `با کد «${promotion.code}»، ` : "";
+  const code = promotion.code ? `با کد «${isolateLtr(promotion.code)}»، ` : "";
   return `${code}${discountPhrase(promotion)} ${until(promotion.endsAt)} معتبر است.`;
 }
 
