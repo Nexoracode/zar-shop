@@ -8,7 +8,7 @@ import { auditRequestContext } from "@/modules/audit/request-context";
 import { releaseInventory } from "@/modules/orders/inventory";
 
 const bodySchema = z.object({
-  entity: z.enum(["products", "categories", "brands", "orders", "users", "reviews", "colors", "optionTypes", "promotions", "contactMessages", "paymentGateways", "smsProviders", "smsCampaigns"]),
+  entity: z.enum(["products", "categories", "brands", "orders", "users", "reviews", "colors", "optionTypes", "promotions", "contactMessages", "paymentGateways", "smsProviders", "smsCampaigns", "supportTicketCategories", "tickets"]),
   action: z.string().min(1).max(191),
   ids: z.array(z.string().min(1)).min(1).max(100),
 });
@@ -27,7 +27,7 @@ export async function PATCH(request: Request) {
   const uniqueIds = [...new Set(ids)];
   const adminOnlyEntities = new Set(["paymentGateways", "smsProviders", "smsCampaigns"]);
   if (adminOnlyEntities.has(entity) && !hasPermission(actor.role, "settings:manage")) return NextResponse.json({ message: "این عملیات فقط برای مدیر اصلی مجاز است." }, { status: 403 });
-  const permission = entity === "orders" || entity === "promotions" || entity === "contactMessages" ? "orders:manage" : entity === "users" ? "users:manage" : "catalog:manage";
+  const permission = entity === "orders" || entity === "promotions" || entity === "contactMessages" ? "orders:manage" : entity === "users" ? "users:manage" : entity === "supportTicketCategories" || entity === "tickets" ? "tickets:manage" : "catalog:manage";
   if (!adminOnlyEntities.has(entity) && !hasPermission(actor.role, permission)) return NextResponse.json({ message: "برای این عملیات دسترسی کافی ندارید." }, { status: 403 });
 
   let updated = 0;
@@ -100,6 +100,12 @@ export async function PATCH(request: Request) {
   } else if (entity === "promotions") {
     if (action !== "active:on" && action !== "active:off") return NextResponse.json({ message: "عملیات پروموشن معتبر نیست." }, { status: 422 });
     updated = (await db.promotion.updateMany({ where: { id: { in: uniqueIds } }, data: { isActive: action === "active:on" } })).count;
+  } else if (entity === "supportTicketCategories") {
+    if (action !== "active:on" && action !== "active:off") return NextResponse.json({ message: "عملیات موضوع تیکت معتبر نیست." }, { status: 422 });
+    updated = (await db.supportTicketCategory.updateMany({ where: { id: { in: uniqueIds } }, data: { isActive: action === "active:on" } })).count;
+  } else if (entity === "tickets") {
+    if (action !== "status:CLOSED") return NextResponse.json({ message: "عملیات تیکت معتبر نیست." }, { status: 422 });
+    updated = (await db.supportTicket.updateMany({ where: { id: { in: uniqueIds }, status: { not: "CLOSED" } }, data: { status: "CLOSED", closedAt: new Date() } })).count;
   } else if (entity === "contactMessages") {
     if (action !== "resolved:on" && action !== "resolved:off") return NextResponse.json({ message: "عملیات پیام تماس معتبر نیست." }, { status: 422 });
     updated = (await db.contactMessage.updateMany({ where: { id: { in: uniqueIds } }, data: { isResolved: action === "resolved:on", resolvedAt: action === "resolved:on" ? new Date() : null } })).count;
