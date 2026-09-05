@@ -117,7 +117,7 @@ export function BlueprintContentSettings({ initialSettings }: { initialSettings:
             ))}
           </div>
           <div className="grid min-w-0 gap-3 border border-[var(--bp-divider)] p-3">
-            <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_220px]">
+            <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_280px]">
               <BpInput label="عنوان صفحه" maxLength={contentFieldLimits.pageTitle} value={selectedPage.title} onChange={(event) => updatePage(selectedPage.id, { title: event.target.value })} />
               <BpCheckbox isSelected={selectedPage.published} onChange={() => updatePage(selectedPage.id, { published: !selectedPage.published })} className="w-full items-center gap-3 border border-[var(--bp-divider)] bg-[var(--bp-bg)] p-3">
                 <span><strong className="block text-[13px] font-bold">انتشار صفحه</strong><span className="bp-muted mt-0.5 block text-[11px] leading-5">صفحه در سایت و فوتر قابل مشاهده باشد</span></span>
