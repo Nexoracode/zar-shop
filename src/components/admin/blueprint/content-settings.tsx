@@ -102,17 +102,17 @@ export function BlueprintContentSettings({ initialSettings }: { initialSettings:
       <section className="bp-frame relative p-[16px]">
         <BpKicker>صفحات و قوانین</BpKicker>
         <p className="bp-muted m-0 mt-1 text-[12px] leading-6">محتوای حقوقی و راهنمای خرید</p>
-        <div className="mt-3 grid items-start gap-[12px] lg:grid-cols-[220px_minmax(0,1fr)]">
-          <div className="grid gap-2 border border-[var(--bp-divider)] p-2">
+        <div className="mt-3 grid items-start gap-[24px] lg:grid-cols-[220px_minmax(0,1fr)]">
+          <div className="grid min-w-0 gap-2">
             {pages.map((page) => (
               <button
                 key={page.id}
                 type="button"
                 onClick={() => setSelectedPageId(page.id)}
-                className={`flex min-h-11 items-center justify-between gap-3 border px-3 py-2 text-right ${page.id === selectedPage.id ? "border-[var(--bp-accent)] bg-[var(--bp-accent-100)]" : "border-[var(--bp-divider)] bg-[var(--bp-bg)]"}`}
+                className={`flex min-w-0 min-h-11 w-full items-center justify-between gap-3 border px-3 py-2 text-right ${page.id === selectedPage.id ? "border-[var(--bp-accent)] bg-[var(--bp-accent-100)]" : "border-[var(--bp-divider)] bg-[var(--bp-bg)]"}`}
               >
                 <span className="flex min-w-0 items-center gap-2"><FileText size={15} className="shrink-0" /><span className="truncate text-[13px]">{page.title}</span></span>
-                <BpTag tone={page.published ? "success" : "warning"}>{page.published ? "منتشر" : "پیش‌نویس"}</BpTag>
+                <BpTag className="shrink-0" tone={page.published ? "success" : "warning"}>{page.published ? "منتشر" : "پیش‌نویس"}</BpTag>
               </button>
             ))}
           </div>
