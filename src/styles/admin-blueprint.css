@@ -322,6 +322,12 @@ select.bp-input:focus-visible { border-color: var(--bp-accent); outline: none; }
    gap for the trailing chevron. Same unlayered-rule reason as the search padding above. */
 .bp-input.bp-input-multi { height: auto; min-height: 38px; padding-block: 4px; padding-inline-end: 30px; cursor: pointer; }
 
+/* A secret field (API key, credential) with a show/hide toggle stacked over it, always at its own
+   `dir="ltr"` regardless of the surrounding RTL page — so "start" here means the field's own
+   left, exactly where the toggle button sits. Same unlayered-rule reason as the search padding
+   above: a plain Tailwind padding utility on the input loses to `.bp-input`. */
+.bp-input-secret { padding-inline-start: 34px; }
+
 /* An invalid field keeps its red hairline, focused or not — including dropdowns, which are
    otherwise borderless. */
 .bp-input[aria-invalid="true"],

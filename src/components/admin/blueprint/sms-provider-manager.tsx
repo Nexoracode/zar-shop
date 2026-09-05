@@ -186,7 +186,7 @@ export function BlueprintSmsProviderManager({ mode, initialConfigs }: { mode: "l
           <div className="mt-3 grid gap-3">
             {selectedId === "FARAZ_SMS" ? (
               <div className="relative">
-                <BpInput label="API Key" required type={showSecret ? "text" : "password"} maxLength={smsProviderFieldLimits.apiKey} value={apiKey} onChange={(event) => setApiKey(event.target.value)} dir="ltr" className="pl-11" />
+                <BpInput label="API Key" required type={showSecret ? "text" : "password"} maxLength={smsProviderFieldLimits.apiKey} value={apiKey} onChange={(event) => setApiKey(event.target.value)} dir="ltr" className="bp-input-secret" />
                 <button type="button" aria-label="نمایش یا پنهان‌کردن کلید" onClick={() => setShowSecret((value) => !value)} className="bp-btn bp-btn-ghost bp-btn-icon bp-btn-sm absolute left-2 top-[26px]">{showSecret ? <EyeOff size={15} /> : <Eye size={15} />}</button>
               </div>
             ) : (

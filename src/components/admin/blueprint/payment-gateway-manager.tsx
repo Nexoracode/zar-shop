@@ -183,7 +183,7 @@ export function BlueprintPaymentGatewayManager({ mode, initialConfigs }: { mode:
               onChange={(event) => setCredential(event.target.value)}
               placeholder={selected.credentialPlaceholder}
               dir="ltr"
-              className="pl-11"
+              className="bp-input-secret"
             />
             <button type="button" aria-label={showCredential ? "پنهان‌کردن شناسه" : "نمایش شناسه"} onClick={() => setShowCredential((value) => !value)} className="bp-btn bp-btn-ghost bp-btn-icon bp-btn-sm absolute left-2 top-[26px]">{showCredential ? <EyeOff size={15} /> : <Eye size={15} />}</button>
           </div>
