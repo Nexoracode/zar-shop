@@ -33,7 +33,10 @@ export function BpInput({ label, hint, error, reserveMessage = true, className =
   return (
     <div className={`bp-field ${wrapperClassName}`.trim()}>
       {label && <label htmlFor={inputId}>{label}{required && <BpRequiredMark />}</label>}
-      <div className={secret ? "bp-select-wrap" : undefined}>
+      {/* A secret value (API key, credential) is always latin/technical, so the wrapper is
+          pinned `ltr` regardless of the surrounding RTL page — otherwise `inset-inline-start`
+          below would resolve off the page's inherited `rtl` and land the toggle on the right. */}
+      <div dir={secret ? "ltr" : undefined} className={secret ? "bp-select-wrap" : undefined}>
         <input
           id={inputId}
           type={secret ? (visible ? "text" : "password") : type}
