@@ -31,6 +31,7 @@ export default async function AdminTicketsPage({ searchParams }: { searchParams:
       categories={categories}
       query={query}
       status={status ?? ""}
+      categoryId={categoryId ?? ""}
       mine={mine}
       pagination={pagination}
     />

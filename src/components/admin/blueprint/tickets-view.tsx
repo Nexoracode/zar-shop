@@ -30,6 +30,7 @@ type Props = {
   categories: { id: string; name: string }[];
   query: string;
   status: string;
+  categoryId: string;
   mine: boolean;
   pagination: { page: number; pageSize: number; totalItems: number; totalPages: number };
 };
@@ -57,7 +58,7 @@ function LastMessagePreview({ lastMessage }: { lastMessage: LastMessage | null }
   );
 }
 
-export function BlueprintTicketsView({ tickets, categories, query, status, mine, pagination }: Props) {
+export function BlueprintTicketsView({ tickets, categories, query, status, categoryId, mine, pagination }: Props) {
   return (
     <div className="flex flex-col gap-2">
       <AdminPageHeader flush title="تیکت‌های پشتیبانی" description="پرسش‌ها و مشکلات مطرح‌شدهٔ کاربران را پاسخ دهید و وضعیت آن‌ها را مدیریت کنید." />
@@ -70,7 +71,7 @@ export function BlueprintTicketsView({ tickets, categories, query, status, mine,
           queryPlaceholder="موضوع، نام یا شمارهٔ تماس کاربر"
           filters={[
             { name: "status", label: "وضعیت", value: status, options: [{ value: "", label: "همه وضعیت‌ها" }, ...Object.entries(ticketStatusLabels).map(([value, label]) => ({ value, label }))] },
-            { name: "categoryId", label: "موضوع", value: "", options: [{ value: "", label: "همه موضوعات" }, ...categories.map((category) => ({ value: category.id, label: category.name }))] },
+            { name: "categoryId", label: "موضوع", value: categoryId, options: [{ value: "", label: "همه موضوعات" }, ...categories.map((category) => ({ value: category.id, label: category.name }))] },
             { name: "mine", label: "صف", value: mine ? "true" : "", options: [{ value: "", label: "همهٔ تیکت‌ها" }, { value: "true", label: "فقط تیکت‌های من" }] },
           ]}
         />
@@ -78,7 +79,7 @@ export function BlueprintTicketsView({ tickets, categories, query, status, mine,
 
       <section className="bp-frame relative">
         {!tickets.length ? (
-          <AdminEmptyState title="تیکتی پیدا نشد" description={query || status || mine ? "فیلترها را تغییر دهید و دوباره جستجو کنید." : "هنوز تیکتی از سمت کاربران ثبت نشده است."} />
+          <AdminEmptyState title="تیکتی پیدا نشد" description={query || status || categoryId || mine ? "فیلترها را تغییر دهید و دوباره جستجو کنید." : "هنوز تیکتی از سمت کاربران ثبت نشده است."} />
         ) : (
           <>
             <div className="md:hidden">
