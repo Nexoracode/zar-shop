@@ -326,7 +326,24 @@ select.bp-input:focus-visible { border-color: var(--bp-accent); outline: none; }
    `dir="ltr"` regardless of the surrounding RTL page — so "start" here means the field's own
    left, exactly where the toggle button sits. Same unlayered-rule reason as the search padding
    above: a plain Tailwind padding utility on the input loses to `.bp-input`. */
-.bp-input-secret { padding-inline-start: 34px; }
+.bp-input-secret { padding-inline-start: 30px; }
+/* The toggle itself: centred on the field's own height regardless of the label above it, since
+   `.bp-select-wrap` wraps only the input — not an icon-button style, just the icon, so it never
+   grows a hover background. */
+.bp-input-secret-toggle {
+  position: absolute;
+  top: 50%;
+  inset-inline-start: 8px;
+  transform: translateY(-50%);
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--bp-muted);
+  cursor: pointer;
+}
+.bp-input-secret-toggle:hover { color: var(--bp-accent); }
 
 /* An invalid field keeps its red hairline, focused or not — including dropdowns, which are
    otherwise borderless. */

@@ -1,6 +1,7 @@
 "use client";
 
-import { useId, type InputHTMLAttributes, type ReactNode, type TextareaHTMLAttributes } from "react";
+import { useId, useState, type InputHTMLAttributes, type ReactNode, type TextareaHTMLAttributes } from "react";
+import { Eye, EyeOff } from "lucide-react";
 import { BpFieldMessage, BpRequiredMark, describedBy } from "./field-message";
 
 type SharedFieldProps = {
@@ -14,23 +15,46 @@ type SharedFieldProps = {
   wrapperClassName?: string;
 };
 
-type BpInputProps = Omit<InputHTMLAttributes<HTMLInputElement>, "className"> & SharedFieldProps;
+type BpInputProps = Omit<InputHTMLAttributes<HTMLInputElement>, "className" | "type"> & SharedFieldProps & {
+  /**
+   * Renders as a password field with its own show/hide toggle instead of the caller wiring one
+   * up by hand — every credential field (API key, gateway id) needs the exact same control, so
+   * the visibility state and the toggle button live here once instead of being copy-pasted.
+   */
+  secret?: boolean;
+  type?: InputHTMLAttributes<HTMLInputElement>["type"];
+};
 
-export function BpInput({ label, hint, error, reserveMessage = true, className = "", wrapperClassName = "", id, required, ...rest }: BpInputProps) {
+export function BpInput({ label, hint, error, reserveMessage = true, className = "", wrapperClassName = "", id, required, secret = false, type, ...rest }: BpInputProps) {
   const generated = useId();
   const inputId = id ?? generated;
   const messageId = `${inputId}-message`;
+  const [visible, setVisible] = useState(false);
   return (
     <div className={`bp-field ${wrapperClassName}`.trim()}>
       {label && <label htmlFor={inputId}>{label}{required && <BpRequiredMark />}</label>}
-      <input
-        id={inputId}
-        required={required}
-        aria-invalid={error ? true : undefined}
-        aria-describedby={describedBy(messageId, error, hint)}
-        className={`bp-input ${className}`.trim()}
-        {...rest}
-      />
+      <div className={secret ? "bp-select-wrap" : undefined}>
+        <input
+          id={inputId}
+          type={secret ? (visible ? "text" : "password") : type}
+          required={required}
+          aria-invalid={error ? true : undefined}
+          aria-describedby={describedBy(messageId, error, hint)}
+          className={`bp-input ${secret ? "bp-input-secret" : ""} ${className}`.trim()}
+          {...rest}
+        />
+        {secret && (
+          <button
+            type="button"
+            tabIndex={-1}
+            onClick={() => setVisible((current) => !current)}
+            aria-label={visible ? "پنهان‌کردن مقدار" : "نمایش مقدار"}
+            className="bp-input-secret-toggle"
+          >
+            {visible ? <EyeOff size={15} /> : <Eye size={15} />}
+          </button>
+        )}
+      </div>
       <BpFieldMessage id={messageId} error={error} hint={hint} reserve={reserveMessage} />
     </div>
   );

@@ -3,7 +3,7 @@
 import { useMemo, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "@heroui/react";
-import { CheckCircle2, CreditCard, ExternalLink, Eye, EyeOff, Plus, ShieldCheck, Trash2 } from "lucide-react";
+import { CheckCircle2, CreditCard, ExternalLink, Plus, ShieldCheck, Trash2 } from "lucide-react";
 import { AdminBulkCheckbox, AdminBulkEditor } from "@/components/admin-bulk-editor";
 import { AdminEmptyState, AdminPanel } from "@/components/admin-ui";
 import { gatewayProviders, type GatewayProviderId } from "@/modules/payments/gateway-providers";
@@ -17,7 +17,6 @@ export function BlueprintPaymentGatewayManager({ mode, initialConfigs }: { mode:
   const [selectedId, setSelectedId] = useState<GatewayProviderId>("ZARINPAL");
   const [credential, setCredential] = useState("");
   const [isSandbox, setIsSandbox] = useState(false);
-  const [showCredential, setShowCredential] = useState(false);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState<GatewayProviderId | null>(null);
   const selected = useMemo(() => gatewayProviders.find((provider) => provider.id === selectedId)!, [selectedId]);
@@ -31,7 +30,6 @@ export function BlueprintPaymentGatewayManager({ mode, initialConfigs }: { mode:
       if (!response.ok) throw new Error(result?.message ?? "ثبت درگاه انجام نشد.");
       setConfigs(result as PublicGatewayConfig[]);
       setCredential("");
-      setShowCredential(false);
       toast.success(`${selected.name} ثبت شد`, { description: "اطلاعات اتصال به‌صورت رمزنگاری‌شده ذخیره شد." });
       router.push("/admin/settings/payment-gateways");
       router.refresh();
@@ -172,21 +170,18 @@ export function BlueprintPaymentGatewayManager({ mode, initialConfigs }: { mode:
         <section className="bp-frame relative p-[16px]">
           <BpKicker>افزودن {selected.name}</BpKicker>
           <p className="bp-muted m-0 mt-1 text-[12px]">شناسه فقط هنگام ثبت دریافت می‌شود و بعداً به‌صورت کامل نمایش داده نخواهد شد.</p>
-          <div className="relative mt-3">
-            <BpInput
-              label={selected.credentialLabel}
-              required
-              minLength={4}
-              maxLength={gatewayFieldLimits.credential}
-              type={showCredential ? "text" : "password"}
-              value={credential}
-              onChange={(event) => setCredential(event.target.value)}
-              placeholder={selected.credentialPlaceholder}
-              dir="ltr"
-              className="bp-input-secret"
-            />
-            <button type="button" aria-label={showCredential ? "پنهان‌کردن شناسه" : "نمایش شناسه"} onClick={() => setShowCredential((value) => !value)} className="bp-btn bp-btn-ghost bp-btn-icon bp-btn-sm absolute left-2 top-[26px]">{showCredential ? <EyeOff size={15} /> : <Eye size={15} />}</button>
-          </div>
+          <BpInput
+            label={selected.credentialLabel}
+            secret
+            required
+            minLength={4}
+            maxLength={gatewayFieldLimits.credential}
+            value={credential}
+            onChange={(event) => setCredential(event.target.value)}
+            placeholder={selected.credentialPlaceholder}
+            dir="ltr"
+            wrapperClassName="mt-3"
+          />
           {(selected.id === "ZARINPAL" || selected.id === "ZIBAL") && (
             <BpCheckbox isSelected={isSandbox} onChange={() => setIsSandbox((value) => !value)} className="mt-1 w-full items-center gap-3 border border-[var(--bp-divider)] bg-[var(--bp-bg)] p-3">
               <span><strong className="block text-[13px] font-bold">حالت آزمایشی</strong><span className="bp-muted mt-0.5 block text-[11px] leading-5">فقط برای بررسی اتصال و تراکنش آزمایشی استفاده شود</span></span>

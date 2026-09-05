@@ -3,7 +3,7 @@
 import { useMemo, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "@heroui/react";
-import { AlertTriangle, ExternalLink, Eye, EyeOff, MessageSquareText, Power, ShieldCheck, Trash2 } from "lucide-react";
+import { AlertTriangle, ExternalLink, MessageSquareText, Power, ShieldCheck, Trash2 } from "lucide-react";
 import { AdminBulkCheckbox, AdminBulkEditor } from "@/components/admin-bulk-editor";
 import { AdminEmptyState, AdminPanel } from "@/components/admin-ui";
 import { smsProviders, type SmsProviderId } from "@/modules/communications/sms-providers";
@@ -26,7 +26,6 @@ export function BlueprintSmsProviderManager({ mode, initialConfigs }: { mode: "l
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [senderNumber, setSenderNumber] = useState("");
-  const [showSecret, setShowSecret] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
   const selected = useMemo(() => smsProviders.find((item) => item.id === selectedId)!, [selectedId]);
 
@@ -185,10 +184,7 @@ export function BlueprintSmsProviderManager({ mode, initialConfigs }: { mode: "l
           <p className="bp-muted m-0 mt-1 text-[12px]">اعتبارنامه رمزنگاری می‌شود و بعداً کامل نمایش داده نخواهد شد.</p>
           <div className="mt-3 grid gap-3">
             {selectedId === "FARAZ_SMS" ? (
-              <div className="relative">
-                <BpInput label="API Key" required type={showSecret ? "text" : "password"} maxLength={smsProviderFieldLimits.apiKey} value={apiKey} onChange={(event) => setApiKey(event.target.value)} dir="ltr" className="bp-input-secret" />
-                <button type="button" aria-label="نمایش یا پنهان‌کردن کلید" onClick={() => setShowSecret((value) => !value)} className="bp-btn bp-btn-ghost bp-btn-icon bp-btn-sm absolute left-2 top-[26px]">{showSecret ? <EyeOff size={15} /> : <Eye size={15} />}</button>
-              </div>
+              <BpInput label="API Key" secret required maxLength={smsProviderFieldLimits.apiKey} value={apiKey} onChange={(event) => setApiKey(event.target.value)} dir="ltr" />
             ) : (
               <>
                 <BpInput label="نام کاربری" required dir="ltr" maxLength={smsProviderFieldLimits.username} value={username} onChange={(event) => setUsername(event.target.value)} />
