@@ -102,7 +102,7 @@ export function BlueprintContentSettings({ initialSettings }: { initialSettings:
       <section className="bp-frame relative p-[16px]">
         <BpKicker>صفحات و قوانین</BpKicker>
         <p className="bp-muted m-0 mt-1 text-[12px] leading-6">محتوای حقوقی و راهنمای خرید</p>
-        <div className="mt-3 grid items-start gap-[8px] lg:grid-cols-[220px_minmax(0,1fr)]">
+        <div className="mt-3 grid items-start gap-[12px] lg:grid-cols-[220px_minmax(0,1fr)]">
           <div className="grid gap-2">
             {pages.map((page) => (
               <button
