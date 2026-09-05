@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
 import {
   Bell,
   Boxes,
@@ -17,6 +18,7 @@ import {
 } from "lucide-react";
 import type { StoreIndustry, UserRole } from "@generated/prisma/enums";
 import { canOpenSettingsSection } from "@/modules/auth/permissions";
+import { BpTabs } from "./ui";
 
 type SettingsItem = {
   href: string;
@@ -67,25 +69,33 @@ export function BlueprintAdminSettingsNavigation({ industry, role }: { industry:
     .map((group) => ({ ...group, items: group.items.filter((item) => canOpenSettingsSection(role, sectionOf(item.href))) }))
     .filter((group) => group.items.length > 0);
 
+  const [activeId, setActiveId] = useState(groups[0]?.id);
+  const active = groups.find((group) => group.id === activeId) ?? groups[0];
+
+  if (!active) return null;
+
   return (
-    <div className="grid gap-5">
-      {groups.map((group) => (
-        <section key={group.id} aria-labelledby={`settings-${group.id}`} className="grid gap-2.5">
-          <div>
-            <h2 id={`settings-${group.id}`} className="m-0 text-[13px] font-bold">{group.title}</h2>
-            <p className="bp-muted m-0 mt-1 text-[12px]">{group.description}</p>
-          </div>
-          <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
-            {group.items.map(({ href, title, description, icon: Icon }) => (
-              <Link key={href} href={href} className="bp-frame group relative flex items-center gap-3 p-[14px] transition hover:border-[var(--bp-accent)]">
-                <span className="grid size-9 shrink-0 place-items-center border border-[var(--bp-divider)] text-[var(--bp-accent)]"><Icon size={17} /></span>
-                <div className="min-w-0 flex-1"><strong className="block text-[13px]">{title}</strong><span className="bp-muted mt-0.5 block truncate text-[11px]">{description}</span></div>
-                <ChevronLeft size={16} className="bp-muted shrink-0 transition group-hover:-translate-x-0.5 group-hover:text-[var(--bp-accent)]" />
-              </Link>
-            ))}
-          </div>
-        </section>
-      ))}
-    </div>
+    <section className="bp-frame relative overflow-hidden">
+      <BpTabs label="بخش‌های تنظیمات">
+        {groups.map((group) => (
+          <button key={group.id} type="button" role="tab" aria-selected={active.id === group.id} className="bp-tab" onClick={() => setActiveId(group.id)}>
+            {group.title}
+          </button>
+        ))}
+      </BpTabs>
+
+      <div className="p-[16px]">
+        <p className="bp-muted m-0 mb-3 text-[12px]">{active.description}</p>
+        <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+          {active.items.map(({ href, title, description, icon: Icon }) => (
+            <Link key={href} href={href} className="bp-frame group relative flex items-center gap-3 p-[14px] transition hover:border-[var(--bp-accent)]">
+              <span className="grid size-9 shrink-0 place-items-center border border-[var(--bp-divider)] text-[var(--bp-accent)]"><Icon size={17} /></span>
+              <div className="min-w-0 flex-1"><strong className="block text-[13px]">{title}</strong><span className="bp-muted mt-0.5 block truncate text-[11px]">{description}</span></div>
+              <ChevronLeft size={16} className="bp-muted shrink-0 transition group-hover:-translate-x-0.5 group-hover:text-[var(--bp-accent)]" />
+            </Link>
+          ))}
+        </div>
+      </div>
+    </section>
   );
 }
