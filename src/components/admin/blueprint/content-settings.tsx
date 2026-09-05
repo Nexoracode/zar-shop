@@ -89,7 +89,7 @@ export function BlueprintContentSettings({ initialSettings }: { initialSettings:
                   <BpButton type="button" variant="danger" isIconOnly size="sm" aria-label="حذف سوال" onClick={() => setFaqs((current) => current.filter((item) => item.id !== faq.id))}><Trash2 size={14} /></BpButton>
                 </div>
               </div>
-              <div className="grid gap-[12px]">
+              <div className="grid gap-[8px]">
                 <BpInput label="سوال" maxLength={contentFieldLimits.faqQuestion} value={faq.question} onChange={(event) => updateFaq(faq.id, { question: event.target.value })} />
                 <BpTextarea label="پاسخ" rows={2} maxLength={contentFieldLimits.faqAnswer} value={faq.answer} onChange={(event) => updateFaq(faq.id, { answer: event.target.value })} />
               </div>
