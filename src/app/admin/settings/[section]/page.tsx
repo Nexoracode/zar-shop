@@ -11,6 +11,9 @@ import {
 } from "@/components/admin-settings";
 import { BlueprintGeneralSettings } from "@/components/admin/blueprint/general-settings";
 import { BlueprintBrandingSettings } from "@/components/admin/blueprint/branding-settings";
+import { BlueprintOrderSettings } from "@/components/admin/blueprint/order-settings";
+import { BlueprintCatalogSettings } from "@/components/admin/blueprint/catalog-settings";
+import { BlueprintCommerceSettings } from "@/components/admin/blueprint/commerce-settings";
 import { AdminPageHeader } from "@/components/admin-ui";
 import { settingsSectionPermission } from "@/modules/auth/permissions";
 import { requirePermission } from "@/modules/auth/session";
@@ -70,11 +73,21 @@ export default async function AdminSettingSectionPage({ params }: Context) {
       content = brandSettings.adminTemplate === "BLUEPRINT" ? <BlueprintBrandingSettings initialSettings={brandSettings} industry={industry} /> : <BrandSettings initialSettings={brandSettings} industry={industry} />;
       break;
     }
-    case "orders": content = <OrderSettings initialSettings={await getOrderSettings()} />; break;
-    case "catalog": content = <CatalogSettings initialSettings={await getCatalogSettings()} />; break;
+    case "orders": {
+      const [settings, brandSettings] = await Promise.all([getOrderSettings(), getBrandSettings()]);
+      content = brandSettings.adminTemplate === "BLUEPRINT" ? <BlueprintOrderSettings initialSettings={settings} /> : <OrderSettings initialSettings={settings} />;
+      break;
+    }
+    case "catalog": {
+      const [settings, brandSettings] = await Promise.all([getCatalogSettings(), getBrandSettings()]);
+      content = brandSettings.adminTemplate === "BLUEPRINT" ? <BlueprintCatalogSettings initialSettings={settings} /> : <CatalogSettings initialSettings={settings} />;
+      break;
+    }
     case "commerce": {
-      const [settings, gateways] = await Promise.all([getCommerceSettings(), getPublicGatewayConfigs()]);
-      content = <CommerceSettings initialSettings={settings} configuredGatewayCount={gateways.length} />;
+      const [settings, gateways, brandSettings] = await Promise.all([getCommerceSettings(), getPublicGatewayConfigs(), getBrandSettings()]);
+      content = brandSettings.adminTemplate === "BLUEPRINT"
+        ? <BlueprintCommerceSettings initialSettings={settings} configuredGatewayCount={gateways.length} />
+        : <CommerceSettings initialSettings={settings} configuredGatewayCount={gateways.length} />;
       break;
     }
     case "content": content = <ContentSettings initialSettings={await getContentSettings()} />; break;
