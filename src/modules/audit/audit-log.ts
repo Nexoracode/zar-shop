@@ -3,6 +3,10 @@ export type AuditActionKind = "CREATE" | "UPDATE" | "DELETE" | "ACCESS" | "SYSTE
 const actionLabels: Record<string, string> = {
   PRODUCT_CREATE: "ثبت محصول",
   PRODUCT_UPDATE: "ویرایش محصول",
+  PRODUCT_DELETE: "حذف محصول",
+  PRODUCT_DUPLICATE: "تکثیر محصول",
+  PRODUCT_STATUS_UPDATE: "تغییر وضعیت محصول",
+  PRODUCT_BULK_EDIT: "ویرایش گروهی محصولات",
   PRODUCT_REVIEW_APPROVE: "تأیید دیدگاه محصول",
   PRODUCT_REVIEW_REJECT: "رد دیدگاه محصول",
   PRODUCT_REVIEW_DELETE: "حذف دیدگاه محصول",
@@ -15,13 +19,18 @@ const actionLabels: Record<string, string> = {
   OPTION_TYPE_CREATE: "ثبت نوع تنوع",
   OPTION_TYPE_UPDATE: "ویرایش نوع تنوع",
   OPTION_TYPE_DELETE: "حذف نوع تنوع",
+  OPTION_VALUE_DELETE: "حذف مقدار تنوع",
   COLOR_CREATE: "ثبت رنگ",
   COLOR_UPDATE: "ویرایش رنگ",
   COLOR_DELETE: "حذف رنگ",
+  BRAND_CREATE: "ثبت برند",
+  BRAND_UPDATE: "ویرایش برند",
+  BRAND_DELETE: "حذف برند",
   SHIPPING_METHOD_CREATE: "ثبت روش ارسال",
   SHIPPING_METHOD_UPDATE: "ویرایش روش ارسال",
   SHIPPING_METHOD_DELETE: "حذف روش ارسال",
   MEDIA_UPLOAD: "بارگذاری رسانه",
+  MEDIA_UPDATE: "ویرایش رسانه",
   MEDIA_DELETE: "حذف رسانه",
   PROMOTION_CREATE: "ثبت پروموشن",
   PROMOTION_UPDATE: "ویرایش پروموشن",
@@ -39,6 +48,7 @@ const actionLabels: Record<string, string> = {
   HOMEPAGE_TILES_SETTINGS_UPDATE: "ویرایش تایل‌های صفحه اصلی",
   HOMEPAGE_LAYOUT_SETTINGS_UPDATE: "ویرایش چینش صفحه اصلی",
   HOMEPAGE_PROMO_SETTINGS_UPDATE: "ویرایش پروموبنر صفحه اصلی",
+  HOMEPAGE_MENU_SETTINGS_UPDATE: "ویرایش منوی صفحه اصلی",
   CONTENT_SETTINGS_UPDATE: "ویرایش محتوا و FAQ",
   COMMUNICATION_SETTINGS_UPDATE: "ویرایش تنظیمات پیامک",
   PAYMENT_GATEWAY_CONFIG_UPSERT: "ثبت یا ویرایش درگاه پرداخت",
@@ -52,6 +62,7 @@ const actionLabels: Record<string, string> = {
   ORDER_EXPIRATION_NOTIFICATION: "هشدار انقضای سفارش",
   ORDER_STATUS_UPDATE: "تغییر وضعیت سفارش",
   ORDER_MANUAL_CREATE: "ثبت دستی سفارش",
+  ORDER_TRACKING_UPDATE: "ثبت کد رهگیری سفارش",
   PAID_ORDER_INVENTORY_SHORTAGE: "کسری موجودی سفارش پرداخت‌شده",
   ADMIN_LOGIN: "ورود به پنل مدیریت",
   ADMIN_LOGOUT: "خروج از پنل مدیریت",
@@ -62,6 +73,7 @@ const actionLabels: Record<string, string> = {
   TICKET_CATEGORY_CREATE: "ثبت موضوع تیکت",
   TICKET_CATEGORY_UPDATE: "ویرایش موضوع تیکت",
   TICKET_CATEGORY_DELETE: "حذف موضوع تیکت",
+  CONTACT_MESSAGE_UPDATE: "تغییر وضعیت پیام تماس",
 };
 
 const entityLabels: Record<string, string> = {
@@ -70,11 +82,15 @@ const entityLabels: Record<string, string> = {
   ProductReviewReport: "گزارش دیدگاه",
   Category: "دسته‌بندی",
   Color: "رنگ",
+  Brand: "برند",
   OptionType: "نوع تنوع",
+  OptionValue: "مقدار تنوع",
   MediaAsset: "رسانه",
   Promotion: "پروموشن",
   User: "کاربر",
   Order: "سفارش",
+  ShippingMethod: "روش ارسال",
+  ContactMessage: "پیام تماس",
   StoreSetting: "تنظیمات فروشگاه",
   CommunicationSetting: "تنظیمات ارتباطی",
   PaymentGatewayConfig: "درگاه پرداخت",
@@ -83,8 +99,20 @@ const entityLabels: Record<string, string> = {
   Session: "نشست مدیریتی",
   products: "محصولات",
   categories: "دسته‌بندی‌ها",
+  brands: "برندها",
+  colors: "رنگ‌ها",
+  optionTypes: "انواع تنوع",
   orders: "سفارش‌ها",
   users: "کاربران",
+  reviews: "دیدگاه‌ها",
+  promotions: "پروموشن‌ها",
+  contactMessages: "پیام‌های تماس",
+  paymentGateways: "درگاه‌های پرداخت",
+  smsProviders: "سامانه‌های پیامک",
+  smsCampaigns: "پیامک‌های دستی",
+  shippingMethods: "روش‌های ارسال",
+  supportTicketCategories: "موضوعات تیکت",
+  tickets: "تیکت‌ها",
   SupportTicket: "تیکت پشتیبانی",
   SupportTicketMessage: "پیام تیکت",
   SupportTicketCategory: "موضوع تیکت",
@@ -103,7 +131,7 @@ export function auditEntityLabel(entityType: string) {
 export function auditActionKind(action: string): AuditActionKind {
   if (action === "ADMIN_LOGIN" || action === "ADMIN_LOGOUT") return "ACCESS";
   if (action.includes("DELETE")) return "DELETE";
-  if (action.includes("CREATE") || action.includes("UPLOAD") || action.includes("SEND")) return "CREATE";
+  if (action.includes("CREATE") || action.includes("UPLOAD") || action.includes("SEND") || action.includes("DUPLICATE")) return "CREATE";
   if (action.includes("AUTO_") || action.includes("NOTIFICATION") || action === "PAID_ORDER_INVENTORY_SHORTAGE") return "SYSTEM";
   return "UPDATE";
 }

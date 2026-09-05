@@ -104,9 +104,25 @@ function displayValue(value: unknown) {
   return String(value);
 }
 
+const metadataLabels: Record<string, string> = {
+  name: "نام", sku: "کد محصول", status: "وضعیت", categoryId: "شناسه دسته‌بندی", changedFields: "فیلدهای تغییرکرده",
+  previousRole: "نقش قبلی", nextRole: "نقش جدید", provider: "ارائه‌دهنده", title: "عنوان", code: "کد", scope: "محدوده",
+  requestedIds: "شناسه‌های درخواستی", updated: "تعداد به‌روزرسانی", hex: "کد رنگ", slug: "نشانی", parentId: "شناسه والد",
+  kind: "نوع", values: "تعداد مقادیر", phone: "شماره موبایل", role: "نقش", label: "برچسب", typeId: "شناسه نوع تنوع",
+  storageKey: "کلید ذخیره‌سازی", mimeType: "نوع فایل", messageId: "شناسه پیام", senderNumber: "شماره فرستنده",
+  audience: "مخاطب", recipientCount: "تعداد گیرندگان", sortOrder: "ترتیب نمایش", carrier: "شرکت حمل", source: "منبع نرخ",
+  zoneCount: "تعداد ردیف نرخ", industry: "صنف فروشگاه", tileGroups: "گروه‌های تایل", treasureMediaIds: "رسانه‌های گنجینه",
+  licenseMediaIds: "رسانه‌های مجوز", orderNumber: "شماره سفارش", previousTrackingNumber: "کد رهگیری قبلی",
+  trackingNumber: "کد رهگیری", productId: "شناسه محصول", previousStatus: "وضعیت قبلی", nextStatus: "وضعیت جدید",
+  note: "یادداشت", reviewId: "شناسه دیدگاه", menuItems: "آیتم‌های منو", sectionOrder: "ترتیب بخش‌ها",
+  enabledSections: "بخش‌های فعال", heroSlideCount: "تعداد اسلاید", type: "نوع", isActive: "فعال بودن",
+  isResolved: "بررسی‌شده", subject: "موضوع", action: "عملیات", isSandbox: "حالت آزمایشی", from: "از وضعیت",
+  to: "به وضعیت", rating: "امتیاز", faqCount: "تعداد سؤالات متداول", publishedPages: "صفحات منتشرشده",
+  groupCount: "تعداد گروه ویژگی", attributeCount: "تعداد ویژگی", cancelledByCustomer: "لغو توسط مشتری", reason: "دلیل",
+};
+
 function metadataLabel(key: string) {
-  const labels: Record<string, string> = { name: "نام", sku: "کد محصول", status: "وضعیت", categoryId: "شناسه دسته‌بندی", changedFields: "فیلدهای تغییرکرده", previousRole: "نقش قبلی", nextRole: "نقش جدید", provider: "ارائه‌دهنده", title: "عنوان", code: "کد", scope: "محدوده", requestedIds: "شناسه‌های درخواستی", updated: "تعداد به‌روزرسانی" };
-  return labels[key] ?? key;
+  return metadataLabels[key] ?? key;
 }
 
 function DetailItem({ label, value, ltr = false }: { label: string; value: string; ltr?: boolean }) {
