@@ -70,25 +70,28 @@ export function BlueprintContentSettings({ initialSettings }: { initialSettings:
               key={faq.id}
               onDragOver={(event) => event.preventDefault()}
               onDrop={() => dropFaq(faq.id)}
-              className={`grid gap-3 border bg-[var(--bp-bg)] p-3 transition sm:grid-cols-[auto_auto_minmax(0,1fr)_auto] ${draggedFaqId === faq.id ? "border-[var(--bp-accent)] opacity-50" : "border-[var(--bp-divider)]"}`}
+              className={`border bg-[var(--bp-bg)] p-3 transition ${draggedFaqId === faq.id ? "border-[var(--bp-accent)] opacity-50" : "border-[var(--bp-divider)]"}`}
             >
-              <span
-                draggable
-                onDragStart={(event) => { event.dataTransfer.effectAllowed = "move"; event.dataTransfer.setData("text/plain", faq.id); setDraggedFaqId(faq.id); }}
-                onDragEnd={() => setDraggedFaqId(null)}
-                title="برای جابه‌جایی بکشید"
-                className="bp-muted mt-1 shrink-0 cursor-grab active:cursor-grabbing"
-              >
-                <GripVertical size={16} />
-              </span>
-              <span className="bp-muted mt-1 grid size-8 shrink-0 place-items-center border border-[var(--bp-divider)] text-[11px] font-bold">{(index + 1).toLocaleString("fa-IR")}</span>
-              <div className="grid min-w-0 gap-2.5">
+              <div className="mb-2.5 flex items-center gap-2">
+                <span
+                  draggable
+                  onDragStart={(event) => { event.dataTransfer.effectAllowed = "move"; event.dataTransfer.setData("text/plain", faq.id); setDraggedFaqId(faq.id); }}
+                  onDragEnd={() => setDraggedFaqId(null)}
+                  title="برای جابه‌جایی بکشید"
+                  className="bp-muted shrink-0 cursor-grab active:cursor-grabbing"
+                >
+                  <GripVertical size={16} />
+                </span>
+                <span className="bp-muted grid size-7 shrink-0 place-items-center border border-[var(--bp-divider)] text-[11px] font-bold">{(index + 1).toLocaleString("fa-IR")}</span>
+                <BpTag tone={faq.enabled ? "success" : "neutral"}>{faq.enabled ? "فعال" : "غیرفعال"}</BpTag>
+                <div className="ms-auto flex items-center gap-1">
+                  <BpButton type="button" variant="ghost" isIconOnly size="sm" aria-label={`${faq.enabled ? "غیرفعال‌کردن" : "فعال‌کردن"} سوال`} onClick={() => updateFaq(faq.id, { enabled: !faq.enabled })}>{faq.enabled ? <Eye size={15} className="text-[var(--bp-success)]" /> : <EyeOff size={15} className="bp-muted" />}</BpButton>
+                  <BpButton type="button" variant="danger" isIconOnly size="sm" aria-label="حذف سوال" onClick={() => setFaqs((current) => current.filter((item) => item.id !== faq.id))}><Trash2 size={14} /></BpButton>
+                </div>
+              </div>
+              <div className="grid gap-2.5 sm:grid-cols-2">
                 <BpInput label="سوال" maxLength={contentFieldLimits.faqQuestion} value={faq.question} onChange={(event) => updateFaq(faq.id, { question: event.target.value })} />
                 <BpTextarea label="پاسخ" rows={2} maxLength={contentFieldLimits.faqAnswer} value={faq.answer} onChange={(event) => updateFaq(faq.id, { answer: event.target.value })} />
-              </div>
-              <div className="mt-6 flex items-start gap-1 sm:flex-col">
-                <BpButton type="button" variant="ghost" isIconOnly size="sm" aria-label={`${faq.enabled ? "غیرفعال‌کردن" : "فعال‌کردن"} سوال`} onClick={() => updateFaq(faq.id, { enabled: !faq.enabled })}>{faq.enabled ? <Eye size={16} className="text-[var(--bp-success)]" /> : <EyeOff size={16} className="bp-muted" />}</BpButton>
-                <BpButton type="button" variant="danger" isIconOnly size="sm" aria-label="حذف سوال" onClick={() => setFaqs((current) => current.filter((item) => item.id !== faq.id))}><Trash2 size={15} /></BpButton>
               </div>
             </div>
           ))}
