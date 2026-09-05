@@ -84,7 +84,7 @@ export function BlueprintDashboardView({ isFullAdmin, activeProducts, customers,
                 <BpLineChart
                   ariaLabel="نمودار روند فروش ۱۴ روز اخیر"
                   data={salesTrend.map((point) => ({ label: point.label, value: Number(point.total) }))}
-                  valueFormatter={(value) => formatMoney(value)}
+                  money
                 />
               ) : <Empty title="هنوز فروشی ثبت نشده است" description="روند فروش پس از اولین سفارش موفق نمایش داده می‌شود." />}
             </div>

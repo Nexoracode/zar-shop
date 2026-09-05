@@ -1,6 +1,7 @@
 "use client";
 
 import { useId } from "react";
+import { formatMoney } from "@/lib/format";
 
 export type BpLineChartPoint = { label: string; value: number };
 
@@ -19,9 +20,11 @@ const PLOT_HEIGHT = HEIGHT - PADDING_TOP - PADDING_BOTTOM;
  * dot markers get a hair of horizontal-only distortion at very narrow widths — imperceptible at
  * the radius used here.
  */
-export function BpLineChart({ data, valueFormatter, ariaLabel }: { data: BpLineChartPoint[]; valueFormatter?: (value: number) => string; ariaLabel: string }) {
+export function BpLineChart({ data, money = false, ariaLabel }: { data: BpLineChartPoint[]; /** Format each point's tooltip value as money instead of a plain number. */ money?: boolean; ariaLabel: string }) {
   const gradientId = useId();
-  const format = valueFormatter ?? ((value: number) => value.toLocaleString("fa-IR"));
+  // A plain callback prop cannot cross from the server-rendered dashboard into this client
+  // component, so the formatting choice travels as a flag instead.
+  const format = money ? (value: number) => formatMoney(value) : (value: number) => value.toLocaleString("fa-IR");
   const values = data.map((point) => point.value);
   const max = Math.max(1, ...values);
   const min = Math.min(0, ...values);
