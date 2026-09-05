@@ -56,7 +56,7 @@ export function BlueprintReviewsView({ reviews, pagination }: { reviews: ReviewR
                   <div className="flex flex-wrap items-center gap-2">
                     <strong className="truncate text-[13px]">{name}</strong>
                     {review.isVerifiedPurchase && <BpTag tone="success">خریدار محصول</BpTag>}
-                    <span className="me-auto"><AdminStatusBadge tone={reviewStatusTones[review.status]}>{reviewStatusLabels[review.status]}</AdminStatusBadge></span>
+                    <span className="ms-auto"><AdminStatusBadge tone={reviewStatusTones[review.status]}>{reviewStatusLabels[review.status]}</AdminStatusBadge></span>
                   </div>
                   <span className="bp-muted mt-0.5 block truncate text-[11px]">{review.product.name}</span>
                 </div>

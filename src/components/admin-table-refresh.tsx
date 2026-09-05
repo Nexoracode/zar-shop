@@ -46,7 +46,7 @@ export function AdminReadOnlyTableToolbar({ label = "جدول فقط‌خوان�
       <div className="hidden items-center gap-3 border-b border-[var(--bp-divider)] px-4 py-3 md:flex">
         <span className="grid size-9 shrink-0 place-items-center border border-[var(--bp-divider)] text-[var(--bp-muted)]"><LockKeyhole size={16} /></span>
         <div className="min-w-0"><strong className="block text-[13px]">{label}</strong><span className="bp-muted block truncate text-[11px]">{description}</span></div>
-        <AdminTableRefreshButton className="me-auto" />
+        <AdminTableRefreshButton className="ms-auto" />
       </div>
     );
   }
