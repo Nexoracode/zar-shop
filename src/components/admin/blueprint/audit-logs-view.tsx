@@ -15,7 +15,7 @@ const kindLabels = { CREATE: "ایجاد", UPDATE: "ویرایش", DELETE: "حذ
 const kindTones = { CREATE: "success", UPDATE: "info", DELETE: "danger", ACCESS: "gold", SYSTEM: "neutral" } as const;
 
 function DetailLink({ id, label }: { id: string; label: string }) {
-  return <Link href={`/admin/audit-logs/${id}`} aria-label={`مشاهده جزئیات ${label}`} title="مشاهده جزئیات" className="bp-btn bp-btn-ghost bp-btn-icon bp-btn-sm"><Eye size={15} /></Link>;
+  return <Link href={`/admin/audit-logs/${id}`} aria-label={`مشاهده جزئیات ${label}`} title="مشاهده جزئیات" className="bp-btn bp-btn-ghost bp-btn-icon bp-btn-sm"><Eye size={15} strokeWidth={1.5} /></Link>;
 }
 
 export function BlueprintAuditLogsView({ logs, pagination }: { logs: AuditRow[]; pagination: ReturnType<typeof resolveAdminPagination> }) {

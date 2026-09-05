@@ -162,7 +162,7 @@ export function BlueprintShippingMethodsView({ methods }: { methods: ShippingMet
                     <div className="flex items-center justify-between gap-2">
                       <span className="bp-muted text-[11px]">{method.estimatedDays.toLocaleString("fa-IR")} روز کاری</span>
                       <div className="flex items-center gap-1">
-                        <Link href={`/admin/shipping-methods/${method.id}/edit`} aria-label={`ویرایش ${method.title}`} className="bp-btn bp-btn-ghost bp-btn-icon bp-btn-sm"><Pencil size={14} /></Link>
+                        <Link href={`/admin/shipping-methods/${method.id}/edit`} aria-label={`ویرایش ${method.title}`} className="bp-btn bp-btn-ghost bp-btn-icon bp-btn-sm"><Pencil size={15} strokeWidth={1.5} /></Link>
                         <ShippingMethodDeleteButton id={method.id} title={method.title} orderCount={method.orderCount} />
                       </div>
                     </div>
@@ -205,7 +205,7 @@ export function BlueprintShippingMethodsView({ methods }: { methods: ShippingMet
                         <BpTd><AdminStatusBadge tone={method.isActive ? "success" : "neutral"}>{method.isActive ? "فعال" : "غیرفعال"}</AdminStatusBadge></BpTd>
                         <BpTd>
                           <div className="flex items-center justify-center gap-1">
-                            <Link href={`/admin/shipping-methods/${method.id}/edit`} title="ویرایش روش ارسال" aria-label={`ویرایش ${method.title}`} className="bp-btn bp-btn-ghost bp-btn-icon bp-btn-sm"><Pencil size={14} /></Link>
+                            <Link href={`/admin/shipping-methods/${method.id}/edit`} title="ویرایش روش ارسال" aria-label={`ویرایش ${method.title}`} className="bp-btn bp-btn-ghost bp-btn-icon bp-btn-sm"><Pencil size={15} strokeWidth={1.5} /></Link>
                             <ShippingMethodDeleteButton id={method.id} title={method.title} orderCount={method.orderCount} />
                           </div>
                         </BpTd>

@@ -113,7 +113,7 @@ export function BlueprintReviewsView({ reviews, pagination }: { reviews: ReviewR
                     <AdminStatusBadge tone={reviewStatusTones[review.status]}>{reviewStatusLabels[review.status]}</AdminStatusBadge>
                     <span className="bp-muted mt-1 block text-[10px]">{formatDateTime(review.createdAt)}</span>
                   </BpTd>
-                  <BpTd className="text-center"><Link href={`/admin/reviews/${review.id}`} title="بررسی دیدگاه" aria-label="مشاهده و مدیریت دیدگاه" className="bp-btn bp-btn-ghost bp-btn-icon bp-btn-sm"><Eye size={15} /></Link></BpTd>
+                  <BpTd className="text-center"><Link href={`/admin/reviews/${review.id}`} title="بررسی دیدگاه" aria-label="مشاهده و مدیریت دیدگاه" className="bp-btn bp-btn-ghost bp-btn-icon bp-btn-sm"><Eye size={15} strokeWidth={1.5} /></Link></BpTd>
                 </AdminBulkTr>
               );
             })}

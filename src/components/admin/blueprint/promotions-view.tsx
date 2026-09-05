@@ -127,9 +127,9 @@ export function BlueprintPromotionsView({ initialItems, query, status, type, pag
                   <div className="flex items-center justify-between gap-2">
                     <span className="bp-muted text-[11px]">{item.usageCount.toLocaleString("fa-IR")} استفاده{item.rewardCount ? ` · ${item.rewardCount.toLocaleString("fa-IR")} پاداش` : ""}</span>
                     <div className="flex items-center gap-1">
-                      <BpButton isIconOnly size="sm" variant="ghost" isPending={togglingId === item.id} aria-label={item.isActive ? `غیرفعال‌کردن ${item.title}` : `فعال‌کردن ${item.title}`} onClick={() => void toggle(item)}>{item.isActive ? <Eye size={14} /> : <EyeOff size={14} />}</BpButton>
-                      <Link href={`/admin/promotions/${item.id}/edit`} aria-label={`ویرایش ${item.title}`} className="bp-btn bp-btn-ghost bp-btn-icon bp-btn-sm"><Pencil size={13} /></Link>
-                      <BpButton isIconOnly size="sm" variant="ghost" className="text-[var(--bp-danger)]" aria-label={`حذف ${item.title}`} onClick={() => { setDeleteError(""); setDeleting(item); }}><Trash2 size={13} /></BpButton>
+                      <BpButton isIconOnly size="sm" variant="ghost" isPending={togglingId === item.id} aria-label={item.isActive ? `غیرفعال‌کردن ${item.title}` : `فعال‌کردن ${item.title}`} onClick={() => void toggle(item)}>{item.isActive ? <Eye size={15} strokeWidth={1.5} /> : <EyeOff size={15} strokeWidth={1.5} />}</BpButton>
+                      <Link href={`/admin/promotions/${item.id}/edit`} aria-label={`ویرایش ${item.title}`} className="bp-btn bp-btn-ghost bp-btn-icon bp-btn-sm"><Pencil size={15} strokeWidth={1.5} /></Link>
+                      <BpButton isIconOnly size="sm" variant="ghost" className="text-[var(--bp-danger)]" aria-label={`حذف ${item.title}`} onClick={() => { setDeleteError(""); setDeleting(item); }}><Trash2 size={15} strokeWidth={1.5} /></BpButton>
                     </div>
                   </div>
                 </article>
@@ -176,9 +176,9 @@ export function BlueprintPromotionsView({ initialItems, query, status, type, pag
                       <BpTd><AdminStatusBadge tone={item.isActive ? "success" : "neutral"}>{item.isActive ? "فعال" : "غیرفعال"}</AdminStatusBadge></BpTd>
                       <BpTd>
                         <div className="flex items-center justify-center gap-1">
-                          <BpButton isIconOnly size="sm" variant="ghost" isPending={togglingId === item.id} title={item.isActive ? "غیرفعال‌کردن" : "فعال‌کردن"} aria-label={item.isActive ? `غیرفعال‌کردن ${item.title}` : `فعال‌کردن ${item.title}`} onClick={() => void toggle(item)}>{item.isActive ? <Eye size={15} /> : <EyeOff size={15} />}</BpButton>
-                          <Link href={`/admin/promotions/${item.id}/edit`} aria-label={`ویرایش ${item.title}`} title="ویرایش" className="bp-btn bp-btn-ghost bp-btn-icon bp-btn-sm"><Pencil size={14} /></Link>
-                          <BpButton isIconOnly size="sm" variant="ghost" className="text-[var(--bp-danger)]" title="حذف" aria-label={`حذف ${item.title}`} onClick={() => { setDeleteError(""); setDeleting(item); }}><Trash2 size={14} /></BpButton>
+                          <BpButton isIconOnly size="sm" variant="ghost" isPending={togglingId === item.id} title={item.isActive ? "غیرفعال‌کردن" : "فعال‌کردن"} aria-label={item.isActive ? `غیرفعال‌کردن ${item.title}` : `فعال‌کردن ${item.title}`} onClick={() => void toggle(item)}>{item.isActive ? <Eye size={15} strokeWidth={1.5} /> : <EyeOff size={15} strokeWidth={1.5} />}</BpButton>
+                          <Link href={`/admin/promotions/${item.id}/edit`} aria-label={`ویرایش ${item.title}`} title="ویرایش" className="bp-btn bp-btn-ghost bp-btn-icon bp-btn-sm"><Pencil size={15} strokeWidth={1.5} /></Link>
+                          <BpButton isIconOnly size="sm" variant="ghost" className="text-[var(--bp-danger)]" title="حذف" aria-label={`حذف ${item.title}`} onClick={() => { setDeleteError(""); setDeleting(item); }}><Trash2 size={15} strokeWidth={1.5} /></BpButton>
                         </div>
                       </BpTd>
                     </AdminBulkTr>

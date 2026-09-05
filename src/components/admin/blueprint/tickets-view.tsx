@@ -139,7 +139,7 @@ export function BlueprintTicketsView({ tickets, categories, query, status, categ
                       <BpTd className="bp-muted whitespace-nowrap text-[12px]">{formatPersianDateTime(ticket.updatedAt)}</BpTd>
                       <BpTd>
                         <div className="flex items-center justify-center">
-                          <Link href={`/admin/tickets/${ticket.id}`} aria-label={`مشاهده تیکت ${ticket.subject}`} title="مشاهده گفتگو" className="bp-btn bp-btn-ghost bp-btn-icon bp-btn-sm"><Eye size={14} /></Link>
+                          <Link href={`/admin/tickets/${ticket.id}`} aria-label={`مشاهده تیکت ${ticket.subject}`} title="مشاهده گفتگو" className="bp-btn bp-btn-ghost bp-btn-icon bp-btn-sm"><Eye size={15} strokeWidth={1.5} /></Link>
                         </div>
                       </BpTd>
                     </AdminBulkTr>

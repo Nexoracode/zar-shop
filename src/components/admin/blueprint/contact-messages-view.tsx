@@ -63,7 +63,7 @@ export function BlueprintContactMessagesView({ messages, pagination }: { message
                 </BpTd>
                 <BpTd className="text-[12px]">{formatDateTime(item.createdAt)}</BpTd>
                 <BpTd><AdminStatusBadge tone={item.isResolved ? "success" : "warning"}>{item.isResolved ? "بررسی‌شده" : "بررسی‌نشده"}</AdminStatusBadge></BpTd>
-                <BpTd className="text-center"><Link href={`/admin/contact-messages/${item.id}`} title="بررسی پیام" aria-label="مشاهده و مدیریت پیام" className="bp-btn bp-btn-ghost bp-btn-icon bp-btn-sm"><Eye size={15} /></Link></BpTd>
+                <BpTd className="text-center"><Link href={`/admin/contact-messages/${item.id}`} title="بررسی پیام" aria-label="مشاهده و مدیریت پیام" className="bp-btn bp-btn-ghost bp-btn-icon bp-btn-sm"><Eye size={15} strokeWidth={1.5} /></Link></BpTd>
               </AdminBulkTr>
             ))}
           </tbody>

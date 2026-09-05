@@ -328,9 +328,9 @@ export function BlueprintCategoriesView({ categories }: { categories: CategoryRo
                       <div className="flex items-center justify-between gap-2 text-[11px]">
                         <span className="bp-muted">{category._count.products.toLocaleString("fa-IR")} محصول · {category._count.children.toLocaleString("fa-IR")} زیردسته</span>
                         <div className="flex items-center gap-1">
-                          <Link href={`/admin/categories/${category.id}/attributes`} aria-label={`ویژگی‌های دسته‌بندی ${category.name}`} className="bp-btn bp-btn-secondary bp-btn-icon bp-btn-sm"><SlidersHorizontal size={13} /></Link>
-                          <BpButton isIconOnly size="sm" variant="ghost" aria-label={`ویرایش ${category.name}`} onClick={() => startEdit(category)}><Pencil size={14} /></BpButton>
-                          <BpButton isIconOnly size="sm" variant="ghost" className="text-[var(--bp-danger)]" aria-label={`حذف ${category.name}`} disabled={locked} onClick={() => { setDeleteError(""); setDeleteTarget(category); }}><Trash2 size={14} /></BpButton>
+                          <Link href={`/admin/categories/${category.id}/attributes`} aria-label={`ویژگی‌های دسته‌بندی ${category.name}`} className="bp-btn bp-btn-ghost bp-btn-icon bp-btn-sm"><SlidersHorizontal size={15} strokeWidth={1.5} /></Link>
+                          <BpButton isIconOnly size="sm" variant="ghost" aria-label={`ویرایش ${category.name}`} onClick={() => startEdit(category)}><Pencil size={15} strokeWidth={1.5} /></BpButton>
+                          <BpButton isIconOnly size="sm" variant="ghost" className="text-[var(--bp-danger)]" aria-label={`حذف ${category.name}`} disabled={locked} onClick={() => { setDeleteError(""); setDeleteTarget(category); }}><Trash2 size={15} strokeWidth={1.5} /></BpButton>
                         </div>
                       </div>
                     </article>
@@ -384,9 +384,9 @@ export function BlueprintCategoriesView({ categories }: { categories: CategoryRo
                           <BpTd><AdminStatusBadge tone={category.isActive ? "success" : "neutral"}>{category.isActive ? "فعال" : "غیرفعال"}</AdminStatusBadge></BpTd>
                           <BpTd>
                             <div className="flex items-center justify-center gap-1">
-                              <Link href={`/admin/categories/${category.id}/attributes`} aria-label={`ویژگی‌های دسته‌بندی ${category.name}`} title="ویژگی‌های دسته‌بندی" className="bp-btn bp-btn-secondary bp-btn-icon bp-btn-sm"><SlidersHorizontal size={14} /></Link>
-                              <BpButton isIconOnly size="sm" variant="ghost" title="ویرایش دسته‌بندی" aria-label={`ویرایش ${category.name}`} onClick={() => startEdit(category)}><Pencil size={14} /></BpButton>
-                              <BpButton isIconOnly size="sm" variant="ghost" title={locked ? "دسته دارای محصول یا زیردسته قابل حذف نیست" : "حذف دسته‌بندی"} className="text-[var(--bp-danger)]" aria-label={`حذف ${category.name}`} disabled={locked} onClick={() => { setDeleteError(""); setDeleteTarget(category); }}><Trash2 size={14} /></BpButton>
+                              <Link href={`/admin/categories/${category.id}/attributes`} aria-label={`ویژگی‌های دسته‌بندی ${category.name}`} title="ویژگی‌های دسته‌بندی" className="bp-btn bp-btn-ghost bp-btn-icon bp-btn-sm"><SlidersHorizontal size={15} strokeWidth={1.5} /></Link>
+                              <BpButton isIconOnly size="sm" variant="ghost" title="ویرایش دسته‌بندی" aria-label={`ویرایش ${category.name}`} onClick={() => startEdit(category)}><Pencil size={15} strokeWidth={1.5} /></BpButton>
+                              <BpButton isIconOnly size="sm" variant="ghost" title={locked ? "دسته دارای محصول یا زیردسته قابل حذف نیست" : "حذف دسته‌بندی"} className="text-[var(--bp-danger)]" aria-label={`حذف ${category.name}`} disabled={locked} onClick={() => { setDeleteError(""); setDeleteTarget(category); }}><Trash2 size={15} strokeWidth={1.5} /></BpButton>
                             </div>
                           </BpTd>
                         </AdminBulkTr>

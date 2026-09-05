@@ -48,7 +48,7 @@ export function ShippingMethodDeleteButton({ id, title, orderCount }: {
         aria-label={`حذف ${title}`}
         onClick={() => { setError(""); setOpen(true); }}
       >
-        <Trash2 size={14} />
+        <Trash2 size={15} strokeWidth={1.5} />
       </BpButton>
       <DeleteConfirmDialog
         open={open}

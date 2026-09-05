@@ -110,7 +110,7 @@ export function BlueprintPaymentGatewayManager({ mode, initialConfigs }: { mode:
                       <BpTd className="bp-muted font-mono" dir="ltr">{config.credentialMasked}</BpTd>
                       <BpTd><BpTag tone={config.isSandbox ? "warning" : "success"}>{config.isSandbox ? "آزمایشی" : "اصلی"}</BpTag></BpTd>
                       <BpTd className="text-center">
-                        <BpButton type="button" variant="danger" isIconOnly size="sm" isPending={deleting === config.provider} aria-label={`حذف ${config.displayName}`} onClick={() => void remove(config.provider)}><Trash2 size={14} /></BpButton>
+                        <BpButton type="button" variant="ghost" className="text-[var(--bp-danger)]" isIconOnly size="sm" isPending={deleting === config.provider} aria-label={`حذف ${config.displayName}`} onClick={() => void remove(config.provider)}><Trash2 size={15} strokeWidth={1.5} /></BpButton>
                       </BpTd>
                     </tr>
                   ))}

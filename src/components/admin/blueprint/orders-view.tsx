@@ -132,7 +132,7 @@ export function BlueprintOrdersView({ orders, query, status, statuses, filteredP
                       <BpTd className="bp-muted whitespace-nowrap">{order.createdAt}</BpTd>
                       <BpTd>
                         <div className="flex items-center justify-center">
-                          <Link href={`/admin/orders/${order.id}`} aria-label={`مشاهده جزئیات سفارش ${order.orderNumber}`} title="مشاهده جزئیات" className="bp-btn bp-btn-secondary bp-btn-icon bp-btn-sm"><Eye size={15} /></Link>
+                          <Link href={`/admin/orders/${order.id}`} aria-label={`مشاهده جزئیات سفارش ${order.orderNumber}`} title="مشاهده جزئیات" className="bp-btn bp-btn-ghost bp-btn-icon bp-btn-sm"><Eye size={15} strokeWidth={1.5} /></Link>
                         </div>
                       </BpTd>
                     </AdminBulkTr>

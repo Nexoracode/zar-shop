@@ -295,8 +295,8 @@ export function BlueprintBrandsView({ brands }: { brands: BrandRow[] }) {
                     <div className="flex items-center justify-between gap-2">
                       <span className="bp-muted text-[11px]">{brand._count.products.toLocaleString("fa-IR")} محصول</span>
                       <div className="flex items-center gap-1">
-                        <BpButton isIconOnly size="sm" variant="ghost" aria-label={`ویرایش ${brand.name}`} onClick={() => startEdit(brand)}><Pencil size={14} /></BpButton>
-                        <BpButton isIconOnly size="sm" variant="ghost" className="text-[var(--bp-danger)]" aria-label={`حذف ${brand.name}`} disabled={brand._count.products > 0} onClick={() => { setDeleteError(""); setDeleteTarget(brand); }}><Trash2 size={14} /></BpButton>
+                        <BpButton isIconOnly size="sm" variant="ghost" aria-label={`ویرایش ${brand.name}`} onClick={() => startEdit(brand)}><Pencil size={15} strokeWidth={1.5} /></BpButton>
+                        <BpButton isIconOnly size="sm" variant="ghost" className="text-[var(--bp-danger)]" aria-label={`حذف ${brand.name}`} disabled={brand._count.products > 0} onClick={() => { setDeleteError(""); setDeleteTarget(brand); }}><Trash2 size={15} strokeWidth={1.5} /></BpButton>
                       </div>
                     </div>
                   </article>
@@ -341,8 +341,8 @@ export function BlueprintBrandsView({ brands }: { brands: BrandRow[] }) {
                         <BpTd><AdminStatusBadge tone={brand.isActive ? "success" : "neutral"}>{brand.isActive ? "فعال" : "غیرفعال"}</AdminStatusBadge></BpTd>
                         <BpTd>
                           <div className="flex items-center justify-center gap-1">
-                            <BpButton isIconOnly size="sm" variant="ghost" title="ویرایش برند" aria-label={`ویرایش ${brand.name}`} onClick={() => startEdit(brand)}><Pencil size={14} /></BpButton>
-                            <BpButton isIconOnly size="sm" variant="ghost" title={brand._count.products > 0 ? "برند دارای محصول قابل حذف نیست" : "حذف برند"} className="text-[var(--bp-danger)]" aria-label={`حذف ${brand.name}`} disabled={brand._count.products > 0} onClick={() => { setDeleteError(""); setDeleteTarget(brand); }}><Trash2 size={14} /></BpButton>
+                            <BpButton isIconOnly size="sm" variant="ghost" title="ویرایش برند" aria-label={`ویرایش ${brand.name}`} onClick={() => startEdit(brand)}><Pencil size={15} strokeWidth={1.5} /></BpButton>
+                            <BpButton isIconOnly size="sm" variant="ghost" title={brand._count.products > 0 ? "برند دارای محصول قابل حذف نیست" : "حذف برند"} className="text-[var(--bp-danger)]" aria-label={`حذف ${brand.name}`} disabled={brand._count.products > 0} onClick={() => { setDeleteError(""); setDeleteTarget(brand); }}><Trash2 size={15} strokeWidth={1.5} /></BpButton>
                           </div>
                         </BpTd>
                       </AdminBulkTr>
