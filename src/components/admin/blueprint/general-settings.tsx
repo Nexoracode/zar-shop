@@ -1,10 +1,29 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useState, type FormEvent, type ReactNode } from "react";
 import { toast } from "@heroui/react";
+import { Globe2, ShieldCheck, Users } from "lucide-react";
 import type { GeneralStoreSettingsInput } from "@/modules/settings/general-settings";
 import { generalSettingsFieldLimits } from "@/modules/settings/settings-limits";
-import { BpButton, BpInput, BpKicker, BpSelect, BpSwitch, BpTextarea } from "./ui";
+import { BpButton, BpCheckbox, BpInput, BpKicker, BpSelect, BpTextarea } from "./ui";
+
+function OptionCheckbox({ icon, title, description, isSelected, onChange }: { icon: ReactNode; title: string; description: string; isSelected: boolean; onChange: (value: boolean) => void }) {
+  return (
+    <BpCheckbox
+      isSelected={isSelected}
+      onChange={() => onChange(!isSelected)}
+      className={`w-full items-center gap-3 border p-3 transition hover:border-[var(--bp-accent)] ${isSelected ? "border-[var(--bp-accent)] bg-[var(--bp-accent-100)]/20" : "border-[var(--bp-divider)] bg-[var(--bp-card)]"}`}
+    >
+      <span className="flex min-w-0 flex-1 items-center gap-2">
+        <span className="shrink-0 text-[var(--bp-warning)]">{icon}</span>
+        <span className="min-w-0">
+          <strong className="block text-[13px] font-bold">{title}</strong>
+          <span className="bp-muted mt-0.5 block text-[11px] leading-5">{description}</span>
+        </span>
+      </span>
+    </BpCheckbox>
+  );
+}
 
 export function BlueprintGeneralSettings({ initialSettings }: { initialSettings: GeneralStoreSettingsInput }) {
   const [saving, setSaving] = useState(false);
@@ -72,18 +91,9 @@ export function BlueprintGeneralSettings({ initialSettings }: { initialSettings:
         <BpKicker>وضعیت و دسترسی فروشگاه</BpKicker>
         <p className="bp-muted m-0 mt-1 text-[12px] leading-6">کنترل نمایش عمومی و تجربه حساب کاربری</p>
         <div className="mt-3 grid gap-3 md:grid-cols-3">
-          <div>
-            <BpSwitch isSelected={isStoreActive} onChange={setIsStoreActive}>فروشگاه فعال</BpSwitch>
-            <p className="bp-muted m-0 mt-1.5 text-[12px]">فروشگاه برای کاربران قابل مشاهده باشد.</p>
-          </div>
-          <div>
-            <BpSwitch isSelected={guestCheckout} onChange={setGuestCheckout}>خرید مهمان</BpSwitch>
-            <p className="bp-muted m-0 mt-1.5 text-[12px]">خرید بدون ساخت حساب امکان‌پذیر باشد.</p>
-          </div>
-          <div>
-            <BpSwitch isSelected={maintenanceMode} onChange={setMaintenanceMode}>حالت تعمیر و نگهداری</BpSwitch>
-            <p className="bp-muted m-0 mt-1.5 text-[12px]">نمایش صفحه در حال بروزرسانی به بازدیدکنندگان.</p>
-          </div>
+          <OptionCheckbox icon={<Globe2 size={17} />} title="فروشگاه فعال" description="فروشگاه برای کاربران قابل مشاهده باشد." isSelected={isStoreActive} onChange={setIsStoreActive} />
+          <OptionCheckbox icon={<Users size={17} />} title="خرید مهمان" description="خرید بدون ساخت حساب امکان‌پذیر باشد." isSelected={guestCheckout} onChange={setGuestCheckout} />
+          <OptionCheckbox icon={<ShieldCheck size={17} />} title="حالت تعمیر و نگهداری" description="نمایش صفحه در حال بروزرسانی به بازدیدکنندگان." isSelected={maintenanceMode} onChange={setMaintenanceMode} />
         </div>
       </section>
 
