@@ -15,6 +15,7 @@ import { BlueprintOrderSettings } from "@/components/admin/blueprint/order-setti
 import { BlueprintCatalogSettings } from "@/components/admin/blueprint/catalog-settings";
 import { BlueprintCommerceSettings } from "@/components/admin/blueprint/commerce-settings";
 import { BlueprintContentSettings } from "@/components/admin/blueprint/content-settings";
+import { BlueprintSeoSettings } from "@/components/admin/blueprint/seo-settings";
 import { AdminPageHeader } from "@/components/admin-ui";
 import { settingsSectionPermission } from "@/modules/auth/permissions";
 import { requirePermission } from "@/modules/auth/session";
@@ -96,7 +97,11 @@ export default async function AdminSettingSectionPage({ params }: Context) {
       content = brandSettings.adminTemplate === "BLUEPRINT" ? <BlueprintContentSettings initialSettings={settings} /> : <ContentSettings initialSettings={settings} />;
       break;
     }
-    case "seo": content = <SeoSettings />; break;
+    case "seo": {
+      const brandSettings = await getBrandSettings();
+      content = brandSettings.adminTemplate === "BLUEPRINT" ? <BlueprintSeoSettings /> : <SeoSettings />;
+      break;
+    }
     default: notFound();
   }
 
