@@ -9,6 +9,7 @@ import {
   OrderSettings,
   SeoSettings,
 } from "@/components/admin-settings";
+import { BlueprintGeneralSettings } from "@/components/admin/blueprint/general-settings";
 import { AdminPageHeader } from "@/components/admin-ui";
 import { settingsSectionPermission } from "@/modules/auth/permissions";
 import { requirePermission } from "@/modules/auth/session";
@@ -58,7 +59,11 @@ export default async function AdminSettingSectionPage({ params }: Context) {
 
   let content;
   switch (section) {
-    case "general": content = <GeneralSettings initialSettings={await getGeneralStoreSettings()} />; break;
+    case "general": {
+      const [settings, brandSettings] = await Promise.all([getGeneralStoreSettings(), getBrandSettings()]);
+      content = brandSettings.adminTemplate === "BLUEPRINT" ? <BlueprintGeneralSettings initialSettings={settings} /> : <GeneralSettings initialSettings={settings} />;
+      break;
+    }
     case "branding": {
       const [brandSettings, industry] = await Promise.all([getBrandSettings(), getStoreIndustry()]);
       content = <BrandSettings initialSettings={brandSettings} industry={industry} />;
