@@ -4,7 +4,8 @@ import { useState, type FormEvent } from "react";
 import { toast } from "@heroui/react";
 import { Eye, EyeOff, FileText, GripVertical, Plus, Trash2 } from "lucide-react";
 import { RichTextEditor } from "@/components/rich-text-editor";
-import { contentFieldLimits, type ContentPageId, type ContentSettings as ContentSettingsData } from "@/modules/settings/content-settings";
+import type { ContentPageId, ContentSettings as ContentSettingsData } from "@/modules/settings/content-settings";
+import { contentFieldLimits } from "@/modules/settings/settings-limits";
 import { BpButton, BpCheckbox, BpInput, BpKicker, BpTag, BpTextarea } from "./ui";
 
 export function BlueprintContentSettings({ initialSettings }: { initialSettings: ContentSettingsData }) {

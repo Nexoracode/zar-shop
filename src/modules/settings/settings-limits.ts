@@ -24,3 +24,9 @@ export const homepageFieldLimits = {
   heroDescription: 500,
   heroButtonLabel: 80,
 } as const;
+
+export const contentFieldLimits = {
+  faqQuestion: 300,
+  faqAnswer: 3000,
+  pageTitle: 191,
+} as const;
