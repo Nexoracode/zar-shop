@@ -1,14 +1,14 @@
 "use client";
 
-import Image from "next/image";
 import { useState, type DragEvent, type FormEvent } from "react";
 import { toast } from "@heroui/react";
-import { GripVertical, Images, Plus, Trash2 } from "lucide-react";
+import { GripVertical, Plus, Trash2 } from "lucide-react";
 import type { MediaChoice } from "@/components/media-library";
 import { MediaPickerDialog } from "@/components/media-picker-dialog";
 import type { HomepageSettings, HomepageTileLayout } from "@/modules/settings/homepage-settings";
 import { homepageFieldLimits } from "@/modules/settings/settings-limits";
-import { BpButton, BpInput, BpKicker, BpSelect, BpTag } from "./ui";
+import { BpButton, BpInput, BpKicker, BpSelect } from "./ui";
+import { BpHomepageMediaField } from "./homepage-media-field";
 
 type TileEditor = { id: string; href: string; media: MediaChoice | null };
 type TileGroupEditor = { id: string; layout: HomepageTileLayout; tiles: TileEditor[] };
@@ -20,6 +20,21 @@ const layoutOptions = [
   { value: "FOUR_COLUMNS", label: "چهار تایی کنار هم" },
   { value: "TWO_BY_TWO", label: "چهار تایی، دو در دو" },
 ];
+
+/** The site renders exactly this many tiles per layout — the editor no longer lets an admin
+ * add/remove tiles one by one, it just resizes to match whichever layout is picked. */
+const layoutTileCount: Record<HomepageTileLayout, number> = {
+  TWO_COLUMNS: 2,
+  THREE_COLUMNS: 3,
+  FOUR_COLUMNS: 4,
+  TWO_BY_TWO: 4,
+};
+
+function resizeTiles(tiles: TileEditor[], count: number): TileEditor[] {
+  if (tiles.length === count) return tiles;
+  if (tiles.length > count) return tiles.slice(0, count);
+  return [...tiles, ...Array.from({ length: count - tiles.length }, () => ({ id: createId("tile"), href: "/products", media: null }))];
+}
 
 function toMediaChoice(media: HomepageSettings["heroDesktopMedia"]): MediaChoice | null {
   return media ? { id: media.id, title: media.title || media.alt || "تصویر تایل", url: media.url, type: "IMAGE", mimeType: media.mimeType } : null;
@@ -39,8 +54,12 @@ export function BlueprintHomepageTileSettings({ initialSettings }: { initialSett
 
   function addGroup() {
     const id = createId("tile-group");
-    setGroups((current) => [...current, { id, layout: "TWO_COLUMNS", tiles: Array.from({ length: 2 }, () => ({ id: createId("tile"), href: "/products", media: null })) }]);
+    setGroups((current) => [...current, { id, layout: "TWO_COLUMNS", tiles: resizeTiles([], layoutTileCount.TWO_COLUMNS) }]);
     setSections((current) => [...current, { id: `TILE_GROUP:${id}`, enabled: true }]);
+  }
+
+  function changeLayout(groupId: string, layout: HomepageTileLayout) {
+    setGroups((current) => current.map((item) => item.id === groupId ? { ...item, layout, tiles: resizeTiles(item.tiles, layoutTileCount[layout]) } : item));
   }
 
   function moveTile(groupId: string, targetId: string) {
@@ -91,46 +110,29 @@ export function BlueprintHomepageTileSettings({ initialSettings }: { initialSett
             <p className="bp-muted m-0 border border-dashed border-[var(--bp-divider)] p-4 text-center text-[12px]">هنوز ردیف تایل ساخته نشده است.</p>
           ) : (
             <div className="grid gap-3">
-              {groups.map((group, groupIndex) => {
-                const gridClass = group.layout === "THREE_COLUMNS" ? "lg:grid-cols-3" : group.layout === "FOUR_COLUMNS" ? "lg:grid-cols-4" : "sm:grid-cols-2";
-                return (
-                  <div key={group.id} className="border border-[var(--bp-divider)] bg-[var(--bp-bg)] p-2.5 sm:p-3">
-                    <div className="mb-3 flex flex-wrap items-center gap-2.5">
-                      <span className="bp-muted grid size-7 shrink-0 place-items-center bg-[var(--bp-card)] text-[11px] font-bold">{(groupIndex + 1).toLocaleString("fa-IR")}</span>
-                      <BpSelect aria-label={`چیدمان ردیف ${groupIndex + 1}`} value={group.layout} options={layoutOptions} onChange={(event) => setGroups((current) => current.map((item) => item.id === group.id ? { ...item, layout: event.target.value as HomepageTileLayout } : item))} reserveMessage={false} wrapperClassName="min-w-[170px] flex-1 sm:max-w-[260px]" />
-                      <BpTag>{group.tiles.length.toLocaleString("fa-IR")} تایل</BpTag>
-                      <BpButton type="button" size="sm" disabled={group.tiles.length >= 24} onClick={() => setGroups((current) => current.map((item) => item.id === group.id ? { ...item, tiles: [...item.tiles, { id: createId("tile"), href: "/products", media: null }] } : item))} className="gap-1"><Plus size={13} />افزودن تایل</BpButton>
-                      <BpButton type="button" size="sm" isIconOnly variant="ghost" className="text-[var(--bp-danger)]" aria-label={`حذف ردیف ${groupIndex + 1}`} onClick={() => { setGroups((current) => current.filter((item) => item.id !== group.id)); setSections((current) => current.filter((section) => section.id !== `TILE_GROUP:${group.id}`)); }}><Trash2 size={14} /></BpButton>
-                    </div>
-                    {group.tiles.length === 0 ? (
-                      <p className="bp-muted m-0 border border-dashed border-[var(--bp-divider)] p-3 text-center text-[12px]">این ردیف خالی است؛ حداقل یک تایل اضافه کنید.</p>
-                    ) : (
-                      <div className={`grid gap-2.5 ${gridClass}`}>
-                        {group.tiles.map((tile, tileIndex) => (
-                          <div
-                            key={tile.id}
-                            onDragOver={(event) => { if (!draggedTile || draggedTile.groupId !== group.id) return; event.preventDefault(); setDropTarget({ groupId: group.id, tileId: tile.id }); }}
-                            onDrop={(event) => { event.preventDefault(); moveTile(group.id, tile.id); setDraggedTile(null); setDropTarget(null); }}
-                            className={`overflow-hidden border bg-[var(--bp-card)] transition ${draggedTile?.tileId === tile.id ? "opacity-45" : dropTarget?.tileId === tile.id ? "border-[var(--bp-accent)]" : "border-[var(--bp-divider)]"}`}
-                          >
-                            <div className="relative aspect-[16/9] bg-[var(--bp-bg)]">
-                              {tile.media ? <Image src={tile.media.url} alt={tile.media.title} fill unoptimized={tile.media.mimeType === "image/gif"} sizes="(max-width: 1024px) 50vw, 25vw" className="object-cover" /> : <span className="bp-muted grid h-full place-items-center"><Images size={20} /></span>}
-                              <span draggable onDragStart={(event: DragEvent<HTMLSpanElement>) => { event.dataTransfer.effectAllowed = "move"; event.dataTransfer.setData("text/plain", tile.id); setDraggedTile({ groupId: group.id, tileId: tile.id }); }} onDragEnd={() => { setDraggedTile(null); setDropTarget(null); }} className="absolute end-1.5 top-1.5 grid size-6 cursor-grab place-items-center bg-black/60 text-white"><GripVertical size={14} /></span>
-                            </div>
-                            <div className="grid gap-1.5 p-2">
-                              <BpInput aria-label={`لینک تایل ${tileIndex + 1}`} dir="ltr" maxLength={homepageFieldLimits.href} value={tile.href} onChange={(event) => setGroups((current) => current.map((item) => item.id === group.id ? { ...item, tiles: item.tiles.map((entry) => entry.id === tile.id ? { ...entry, href: event.target.value } : entry) } : item))} placeholder="/products یا https://example.com" reserveMessage={false} />
-                              <div className="flex gap-1.5">
-                                <BpButton type="button" size="sm" onClick={() => setPickerTarget(`tile:${group.id}:${tile.id}`)} className="flex-1 gap-1">{tile.media ? "تغییر عکس" : "انتخاب عکس"}</BpButton>
-                                <BpButton type="button" size="sm" isIconOnly variant="ghost" className="text-[var(--bp-danger)]" aria-label={`حذف تایل ${tileIndex + 1}`} onClick={() => setGroups((current) => current.map((item) => item.id === group.id ? { ...item, tiles: item.tiles.filter((entry) => entry.id !== tile.id) } : item))}><Trash2 size={13} /></BpButton>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
+              {groups.map((group, groupIndex) => (
+                <div key={group.id} className="border border-[var(--bp-divider)] bg-[var(--bp-bg)] p-2.5 sm:p-3">
+                  <div className="mb-3 flex flex-wrap items-center gap-2.5">
+                    <span className="bp-muted grid size-7 shrink-0 place-items-center bg-[var(--bp-card)] text-[11px] font-bold">{(groupIndex + 1).toLocaleString("fa-IR")}</span>
+                    <BpSelect aria-label={`چیدمان ردیف ${groupIndex + 1}`} value={group.layout} options={layoutOptions} onChange={(event) => changeLayout(group.id, event.target.value as HomepageTileLayout)} reserveMessage={false} wrapperClassName="min-w-[170px] flex-1 sm:max-w-[260px]" />
+                    <BpButton type="button" size="sm" isIconOnly variant="ghost" className="text-[var(--bp-danger)]" aria-label={`حذف ردیف ${groupIndex + 1}`} onClick={() => { setGroups((current) => current.filter((item) => item.id !== group.id)); setSections((current) => current.filter((section) => section.id !== `TILE_GROUP:${group.id}`)); }}><Trash2 size={14} /></BpButton>
                   </div>
-                );
-              })}
+                  <div className="flex flex-wrap gap-2">
+                    {group.tiles.map((tile, tileIndex) => (
+                      <div
+                        key={tile.id}
+                        onDragOver={(event) => { if (!draggedTile || draggedTile.groupId !== group.id) return; event.preventDefault(); setDropTarget({ groupId: group.id, tileId: tile.id }); }}
+                        onDrop={(event) => { event.preventDefault(); moveTile(group.id, tile.id); setDraggedTile(null); setDropTarget(null); }}
+                        className={`relative w-[132px] shrink-0 transition ${draggedTile?.tileId === tile.id ? "opacity-45" : ""} ${dropTarget?.tileId === tile.id ? "outline outline-2 outline-[var(--bp-accent)]" : ""}`}
+                      >
+                        <span draggable onDragStart={(event: DragEvent<HTMLSpanElement>) => { event.dataTransfer.effectAllowed = "move"; event.dataTransfer.setData("text/plain", tile.id); setDraggedTile({ groupId: group.id, tileId: tile.id }); }} onDragEnd={() => { setDraggedTile(null); setDropTarget(null); }} className="absolute end-1 top-1 z-10 grid size-5 cursor-grab place-items-center bg-black/60 text-white"><GripVertical size={12} /></span>
+                        <BpHomepageMediaField label={`تایل ${(tileIndex + 1).toLocaleString("fa-IR")}`} hint="—" media={tile.media} aspectClass="aspect-[16/9]" onSelect={() => setPickerTarget(`tile:${group.id}:${tile.id}`)} onClear={() => setGroups((current) => current.map((item) => item.id === group.id ? { ...item, tiles: item.tiles.map((entry) => entry.id === tile.id ? { ...entry, media: null } : entry) } : item))} />
+                        <BpInput aria-label={`لینک تایل ${tileIndex + 1}`} dir="ltr" maxLength={homepageFieldLimits.href} value={tile.href} onChange={(event) => setGroups((current) => current.map((item) => item.id === group.id ? { ...item, tiles: item.tiles.map((entry) => entry.id === tile.id ? { ...entry, href: event.target.value } : entry) } : item))} placeholder="/products" reserveMessage={false} wrapperClassName="mt-1.5" />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
             </div>
           )}
         </div>
