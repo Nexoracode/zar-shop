@@ -12,6 +12,8 @@ import { resolveAdminPagination } from "@/lib/admin-pagination";
 import { parseAdminPaginationRequest } from "@/lib/admin-pagination-server";
 import { auditActionKind, auditActionLabel, auditActorName, auditEntityLabel } from "@/modules/audit/audit-log";
 import { requirePermission } from "@/modules/auth/session";
+import { getBrandSettings } from "@/modules/settings/brand-settings";
+import { BlueprintAuditLogsView } from "@/components/admin/blueprint/audit-logs-view";
 
 type AuditRow = Prisma.AuditLogGetPayload<{ include: { actor: { select: { firstName: true; lastName: true; phone: true; role: true } } } }>;
 type SearchParams = Promise<{ q?: string; action?: string; page?: string; pageSize?: string }>;
@@ -34,9 +36,10 @@ export default async function AuditLogsPage({ searchParams }: { searchParams: Se
       { actor: { is: { OR: [{ firstName: { contains: query } }, { lastName: { contains: query } }, { phone: { contains: query } }] } } },
     ] } : {}),
   };
-  const [totalItems, actionRows] = await Promise.all([
+  const [totalItems, actionRows, brandSettings] = await Promise.all([
     db.auditLog.count({ where }),
     db.auditLog.findMany({ select: { action: true }, distinct: ["action"], orderBy: { action: "asc" } }),
+    getBrandSettings(),
   ]);
   const pagination = resolveAdminPagination(totalItems, requestedPage, pageSize);
   const logs = await db.auditLog.findMany({
@@ -52,7 +55,11 @@ export default async function AuditLogsPage({ searchParams }: { searchParams: Se
     <AdminPageHeader eyebrow="نظارت و امنیت" title="تاریخچه فعالیت‌ها" description="تمام عملیات ثبت، ویرایش، حذف و دسترسی کاربران پنل را با جزئیات بررسی کنید." />
     <AdminPanel className="mb-5 p-4 sm:p-5"><AdminListFilters path="/admin/audit-logs" query={query} queryLabel="جستجوی فعالیت" queryPlaceholder="نام مدیر، عملیات، موجودیت یا شناسه" filters={[{ name: "action", label: "نوع فعالیت", value: action, options: [{ value: "", label: "همه فعالیت‌ها" }, ...actionRows.map((item) => ({ value: item.action, label: auditActionLabel(item.action) }))] }]} /></AdminPanel>
     <AdminPanel>
-      {!logs.length ? <AdminEmptyState title="فعالیتی پیدا نشد" description={query || action ? "فیلترها را تغییر دهید و دوباره جستجو کنید." : "هنوز فعالیت مدیریتی ثبت نشده است."} /> : <>
+      {!logs.length ? (
+        <AdminEmptyState title="فعالیتی پیدا نشد" description={query || action ? "فیلترها را تغییر دهید و دوباره جستجو کنید." : "هنوز فعالیت مدیریتی ثبت نشده است."} />
+      ) : brandSettings.adminTemplate === "BLUEPRINT" ? (
+        <BlueprintAuditLogsView logs={logs} pagination={pagination} />
+      ) : <>
         <AdminReadOnlyTableToolbar label="تاریخچه غیرقابل‌ویرایش" description="برای حفظ زنجیره نظارتی، رویدادها فقط قابل مشاهده و بروزرسانی هستند." />
         <div className="divide-y divide-slate-100 md:hidden">{logs.map((log) => <AuditMobileCard key={log.id} log={log} />)}</div>
         <Table className="hidden md:block"><TableScrollContainer><TableContent aria-label="تاریخچه فعالیت کاربران پنل" className="w-full min-w-[920px]"><TableHeader>{["ردیف", "کاربر پنل", "فعالیت", "نوع", "موجودیت", "زمان", "جزئیات"].map((head, index) => <TableColumn id={head} key={head} isRowHeader={index === 2} className="bg-slate-50/70 px-5 py-3.5 text-right text-xs font-bold text-slate-500">{head}</TableColumn>)}</TableHeader><TableBody>{logs.map((log: AuditRow, index) => {

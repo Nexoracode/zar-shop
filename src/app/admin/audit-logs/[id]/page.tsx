@@ -5,6 +5,8 @@ import { db } from "@/lib/db";
 import { formatDateTime } from "@/lib/format";
 import { auditActionKind, auditActionLabel, auditActorName, auditEntityLabel, sanitizeAuditMetadata } from "@/modules/audit/audit-log";
 import { requirePermission } from "@/modules/auth/session";
+import { getBrandSettings } from "@/modules/settings/brand-settings";
+import { BlueprintAuditLogDetailView } from "@/components/admin/blueprint/audit-log-detail-view";
 
 type Context = { params: Promise<{ id: string }> };
 const kindLabels = { CREATE: "ایجاد", UPDATE: "ویرایش", DELETE: "حذف", ACCESS: "دسترسی", SYSTEM: "سیستمی" } as const;
@@ -13,8 +15,17 @@ const kindTones = { CREATE: "success", UPDATE: "info", DELETE: "danger", ACCESS:
 export default async function AuditLogDetailPage({ params }: Context) {
   await requirePermission("audit:view");
   const { id } = await params;
-  const log = await db.auditLog.findUnique({ where: { id }, include: { actor: { select: { firstName: true, lastName: true, phone: true, role: true } } } });
+  const [log, brandSettings] = await Promise.all([
+    db.auditLog.findUnique({ where: { id }, include: { actor: { select: { firstName: true, lastName: true, phone: true, role: true } } } }),
+    getBrandSettings(),
+  ]);
   if (!log) notFound();
+  if (brandSettings.adminTemplate === "BLUEPRINT") {
+    return <>
+      <AdminPageHeader eyebrow="جزئیات رویداد" title={auditActionLabel(log.action)} description="اطلاعات کامل عامل، زمان، موجودیت هدف و داده‌های همراه این فعالیت." backHref="/admin/audit-logs" backLabel="بازگشت به تاریخچه فعالیت‌ها" />
+      <BlueprintAuditLogDetailView log={log} />
+    </>;
+  }
   const kind = auditActionKind(log.action);
   const metadata = sanitizeAuditMetadata(log.metadata);
   const metadataRecord = isRecord(metadata) ? metadata : null;
