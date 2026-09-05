@@ -1,12 +1,23 @@
 import Link from "next/link";
 import { ArrowLeft, Boxes, CircleDollarSign, FolderTree, Images, PackagePlus, ShoppingBag, TriangleAlert, Users } from "lucide-react";
 import { formatDate, formatMoney } from "@/lib/format";
-import { orderStatusLabels, orderStatusTones } from "@/modules/admin/labels";
+import { orderStatusLabels, orderStatusTones, type AdminTone } from "@/modules/admin/labels";
 import { AdminBulkCheckbox, AdminBulkEditor } from "@/components/admin-bulk-editor";
 import type { AdminDashboardData } from "@/components/admin/dashboard-data";
 import { BpKicker } from "./ui/card";
+import { BpDonutChart } from "./ui/donut-chart";
+import { BpLineChart } from "./ui/line-chart";
 import { BpTable, BpTd, BpTh } from "./ui/table";
 import { BpTag } from "./ui/tag";
+
+const toneColor: Record<AdminTone, string> = {
+  neutral: "var(--bp-muted)",
+  info: "var(--bp-info)",
+  success: "var(--bp-success)",
+  warning: "var(--bp-warning)",
+  danger: "var(--bp-danger)",
+  gold: "var(--bp-warning)",
+};
 
 function Panel({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return <section className={`bp-frame relative overflow-hidden ${className}`}>{children}</section>;
@@ -21,7 +32,7 @@ function Empty({ title, description }: { title: string; description: string }) {
   );
 }
 
-export function BlueprintDashboardView({ isFullAdmin, activeProducts, customers, actionableOrders, revenueTotal, lowStockThreshold, recentOrders, lowStockProducts }: AdminDashboardData) {
+export function BlueprintDashboardView({ isFullAdmin, activeProducts, customers, actionableOrders, revenueTotal, lowStockThreshold, recentOrders, lowStockProducts, salesTrend, orderStatusBreakdown }: AdminDashboardData) {
   const kpis = [
     { label: "مجموع فروش موفق", value: formatMoney(revenueTotal), hint: "سفارش‌های پرداخت‌شده و تکمیل‌شده", icon: CircleDollarSign, compact: true },
     { label: "سفارش نیازمند رسیدگی", value: actionableOrders.toLocaleString("fa-IR"), hint: "پرداخت‌شده یا در حال آماده‌سازی", icon: ShoppingBag },
@@ -58,6 +69,41 @@ export function BlueprintDashboardView({ isFullAdmin, activeProducts, customers,
           </Panel>
         ))}
       </div>
+
+      {isFullAdmin && (
+        <div className="grid gap-2 xl:grid-cols-[minmax(0,1.55fr)_minmax(280px,0.75fr)]">
+          <Panel className="p-[18px]">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <BpKicker>روند فروش</BpKicker>
+                <div className="bp-card-title mt-0.5">مجموع فروش موفق در ۱۴ روز اخیر</div>
+              </div>
+            </div>
+            <div className="mt-4">
+              {salesTrend.some((point) => Number(point.total) > 0) ? (
+                <BpLineChart
+                  ariaLabel="نمودار روند فروش ۱۴ روز اخیر"
+                  data={salesTrend.map((point) => ({ label: point.label, value: Number(point.total) }))}
+                  valueFormatter={(value) => formatMoney(value)}
+                />
+              ) : <Empty title="هنوز فروشی ثبت نشده است" description="روند فروش پس از اولین سفارش موفق نمایش داده می‌شود." />}
+            </div>
+          </Panel>
+
+          <Panel className="p-[18px]">
+            <BpKicker>توزیع وضعیت سفارش‌ها</BpKicker>
+            <div className="bp-card-title mt-0.5">سهم هر وضعیت از کل سفارش‌ها</div>
+            <div className="mt-4">
+              {orderStatusBreakdown.length ? (
+                <BpDonutChart
+                  ariaLabel="نمودار توزیع وضعیت سفارش‌ها"
+                  data={orderStatusBreakdown.map((group) => ({ label: orderStatusLabels[group.status], value: group.count, color: toneColor[orderStatusTones[group.status]] }))}
+                />
+              ) : <Empty title="هنوز سفارشی ثبت نشده است" description="توزیع وضعیت پس از ثبت اولین سفارش نمایش داده می‌شود." />}
+            </div>
+          </Panel>
+        </div>
+      )}
 
       <div className={`grid gap-2 ${isFullAdmin ? "xl:grid-cols-[minmax(0,1.55fr)_minmax(280px,0.75fr)]" : "grid-cols-1"}`}>
         <Panel>

@@ -18,4 +18,8 @@ export type AdminDashboardData = {
     createdAt: Date;
   }>;
   lowStockProducts: Array<{ id: string; name: string; sku: string; stock: number }>;
+  /** Daily revenue for the trailing 14 days, oldest first — empty when not a full admin. */
+  salesTrend: Array<{ date: string; label: string; total: string }>;
+  /** Order counts by status across the whole store — empty when not a full admin. */
+  orderStatusBreakdown: Array<{ status: OrderStatus; count: number }>;
 };
