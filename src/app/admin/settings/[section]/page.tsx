@@ -14,6 +14,7 @@ import { BlueprintBrandingSettings } from "@/components/admin/blueprint/branding
 import { BlueprintOrderSettings } from "@/components/admin/blueprint/order-settings";
 import { BlueprintCatalogSettings } from "@/components/admin/blueprint/catalog-settings";
 import { BlueprintCommerceSettings } from "@/components/admin/blueprint/commerce-settings";
+import { BlueprintContentSettings } from "@/components/admin/blueprint/content-settings";
 import { AdminPageHeader } from "@/components/admin-ui";
 import { settingsSectionPermission } from "@/modules/auth/permissions";
 import { requirePermission } from "@/modules/auth/session";
@@ -90,7 +91,11 @@ export default async function AdminSettingSectionPage({ params }: Context) {
         : <CommerceSettings initialSettings={settings} configuredGatewayCount={gateways.length} />;
       break;
     }
-    case "content": content = <ContentSettings initialSettings={await getContentSettings()} />; break;
+    case "content": {
+      const [settings, brandSettings] = await Promise.all([getContentSettings(), getBrandSettings()]);
+      content = brandSettings.adminTemplate === "BLUEPRINT" ? <BlueprintContentSettings initialSettings={settings} /> : <ContentSettings initialSettings={settings} />;
+      break;
+    }
     case "seo": content = <SeoSettings />; break;
     default: notFound();
   }

@@ -15,6 +15,13 @@ export const contentPageMeta: Record<ContentPageId, { slug: string; defaultTitle
   SHIPPING: { slug: "shipping", defaultTitle: "شیوه ارسال و تحویل" },
 };
 
+/** Mirrors the inline limits below so a form control can cap input at the same length the server validates. */
+export const contentFieldLimits = {
+  faqQuestion: 300,
+  faqAnswer: 3000,
+  pageTitle: 191,
+} as const;
+
 const faqSchema = z.object({
   id: z.string().trim().min(1).max(80),
   question: z.string().trim().min(3).max(300),
