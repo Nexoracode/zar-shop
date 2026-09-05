@@ -31,11 +31,11 @@ function toMediaChoice(media: HomepageSettingsData["heroDesktopMedia"]): MediaCh
 
 function LinkCard({ icon, title, description, href }: { icon: ReactNode; title: string; description: string; href: string }) {
   return (
-    <section className="bp-frame relative flex items-center gap-3 p-[14px]">
-      <span className="grid size-10 shrink-0 place-items-center border border-[var(--bp-divider)] text-[var(--bp-accent)]">{icon}</span>
+    <Link href={href} className="bp-frame group relative flex items-center gap-3 p-[14px] transition hover:border-[var(--bp-accent)]">
+      <span className="grid size-9 shrink-0 place-items-center border border-[var(--bp-divider)] text-[var(--bp-accent)]">{icon}</span>
       <div className="min-w-0 flex-1"><strong className="block text-[13px]">{title}</strong><span className="bp-muted mt-0.5 block truncate text-[11px]">{description}</span></div>
-      <Link href={href} className="bp-btn bp-btn-primary bp-btn-sm shrink-0 gap-1">مدیریت<ChevronLeft size={13} /></Link>
-    </section>
+      <ChevronLeft size={16} className="bp-muted shrink-0 transition group-hover:-translate-x-0.5 group-hover:text-[var(--bp-accent)]" />
+    </Link>
   );
 }
 
