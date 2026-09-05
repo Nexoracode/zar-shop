@@ -6,7 +6,6 @@ import {
   CommerceSettings,
   ContentSettings,
   GeneralSettings,
-  HomepageSettings,
   OrderSettings,
   SeoSettings,
 } from "@/components/admin-settings";
@@ -18,7 +17,6 @@ import { getCatalogSettings } from "@/modules/settings/catalog-settings";
 import { getCommerceSettings } from "@/modules/settings/commerce-settings";
 import { getContentSettings } from "@/modules/settings/content-settings";
 import { getGeneralStoreSettings } from "@/modules/settings/general-settings";
-import { getHomepageSettings } from "@/modules/settings/homepage-settings";
 import { getOrderSettings } from "@/modules/settings/order-settings";
 import { getStoreIndustry } from "@/modules/settings/store-settings";
 import { getPublicGatewayConfigs } from "@/modules/payments/gateway-config";
@@ -27,7 +25,6 @@ type Context = { params: Promise<{ section: string }> };
 
 const sectionMeta = {
   general: { title: "تنظیمات عمومی", description: "اطلاعات اصلی، راه‌های تماس و وضعیت فعالیت فروشگاه" },
-  homepage: { title: "تنظیمات صفحه اصلی", description: "اسلایدر، بنر تبلیغاتی و ترتیب نمایش بخش‌های صفحه اصلی" },
   branding: { title: "تنظیمات ظاهر و برند", description: "رنگ‌ها، لوگوها و رفتار نمایشی فروشگاه" },
   orders: { title: "تنظیمات سفارش و انقضا", description: "مهلت پرداخت، شماره‌گذاری و قواعد ثبت سفارش" },
   commerce: { title: "تنظیمات ارسال و پرداخت", description: "روش‌های تحویل سفارش و وضعیت درگاه پرداخت" },
@@ -62,11 +59,6 @@ export default async function AdminSettingSectionPage({ params }: Context) {
   let content;
   switch (section) {
     case "general": content = <GeneralSettings initialSettings={await getGeneralStoreSettings()} />; break;
-    case "homepage": {
-      const [homepageSettings, industry] = await Promise.all([getHomepageSettings(), getStoreIndustry()]);
-      content = <HomepageSettings initialSettings={homepageSettings} industry={industry} />;
-      break;
-    }
     case "branding": {
       const [brandSettings, industry] = await Promise.all([getBrandSettings(), getStoreIndustry()]);
       content = <BrandSettings initialSettings={brandSettings} industry={industry} />;
