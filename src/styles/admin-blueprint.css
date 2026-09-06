@@ -896,3 +896,16 @@ select.bp-input:focus-visible { border-color: var(--bp-accent); outline: none; }
 .bp-datetime-popover .rmdp-time-picker .rmdp-am { color: var(--bp-muted); }
 .bp-datetime-popover .rmdp-up i,
 .bp-datetime-popover .rmdp-down i { border-color: var(--bp-muted); }
+
+/* `BpDateTimeField` renders `<Calendar>` inside its own `.bp-frame` portal, so the reskin above
+   strips the wrapper's surface to avoid a frame-on-frame look. A bare `<DatePicker>` (the reports
+   date-range bar) has no such wrapper — its popup floats on its own and needs a surface, or it is
+   an unreadable, transparent overlay. This matches only when `.bp-datetime-popover` sits on the
+   `.rmdp-container` element, which is the standalone picker; the field's portal is a plain div. */
+.bp-datetime-popover.rmdp-container .rmdp-wrapper,
+.bp-datetime-popover .rmdp-calendar-container-mobile .rmdp-wrapper {
+  background: var(--bp-bg);
+  border: 1px solid var(--bp-divider);
+  border-radius: var(--bp-radius);
+  box-shadow: var(--bp-shadow-lg);
+}
