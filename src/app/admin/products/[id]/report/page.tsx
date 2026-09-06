@@ -21,12 +21,14 @@ export default async function ProductReportPage({ params }: Context) {
   });
   if (!product) notFound();
 
-  const soldItems = await db.orderItem.findMany({
+  // Summed in the database rather than by loading every sold line into memory — a best-seller
+  // could have tens of thousands of them.
+  const sold = await db.orderItem.aggregate({
     where: { productId: id, order: { status: { in: [...SOLD_STATUSES] } } },
-    select: { quantity: true, total: true },
+    _sum: { quantity: true, total: true },
   });
-  const salesCount = soldItems.reduce((sum, item) => sum + item.quantity, 0);
-  const revenue = soldItems.reduce((sum, item) => sum + Number(item.total), 0);
+  const salesCount = sold._sum.quantity ?? 0;
+  const revenue = Number(sold._sum.total ?? 0);
   const remainingStock = product.variants.length
     ? product.variants.reduce((sum, variant) => sum + variant.stock, 0)
     : product.stock;
