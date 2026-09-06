@@ -1,7 +1,7 @@
 import type { LucideIcon } from "lucide-react";
 import {
   Bell, BellRing, Boxes, CreditCard, FileQuestion, LayoutDashboard, Images, ListTree, MessageSquarePlus,
-  Megaphone, Palette, Search, Settings2, Store, Truck,
+  Megaphone, Palette, Plus, Search, Settings2, Store, Truck,
 } from "lucide-react";
 import type { UserRole } from "@generated/prisma/enums";
 import { canOpenAnySettingsSection, canOpenSettingsSection, hasPermission, type AdminPermission } from "@/modules/auth/permissions";
@@ -27,24 +27,49 @@ export type AdminSearchEntry = {
  * shared nav list (`adminNavGroups`) so the two never drift on label, href or icon. */
 const navKeywords: Record<string, string[]> = {
   "/admin": ["خانه", "آمار", "گزارش", "نمودار", "فروش امروز"],
-  "/admin/products": ["کالا", "انبار", "موجودی", "قیمت", "کاتالوگ"],
-  "/admin/categories": ["دسته", "زیردسته", "طبقه‌بندی"],
-  "/admin/brands": ["برند", "سازنده", "کمپانی"],
+  "/admin/products": ["کالا", "انبار", "موجودی", "قیمت", "کاتالوگ", "ویرایش محصول", "تغییر قیمت محصول"],
+  "/admin/categories": ["دسته", "زیردسته", "طبقه‌بندی", "ویرایش دسته‌بندی"],
+  "/admin/brands": ["برند", "سازنده", "کمپانی", "ویرایش برند"],
   "/admin/media": ["تصویر", "عکس", "ویدیو", "گالری"],
-  "/admin/option-types": ["تنوع", "سایز", "عیار", "ویژگی محصول"],
+  "/admin/option-types": ["تنوع", "سایز", "عیار", "ویژگی محصول", "ویرایش نوع تنوع"],
   "/admin/product-attributes": ["ویژگی", "مشخصات فنی محصول"],
-  "/admin/colors": ["رنگ", "پالت"],
+  "/admin/colors": ["رنگ", "پالت", "ویرایش رنگ"],
   "/admin/category-attributes": ["ویژگی دسته", "فیلتر دسته‌بندی"],
-  "/admin/orders": ["فاکتور", "خرید", "سفارش مشتری", "پرداخت"],
-  "/admin/promotions": ["تخفیف", "کد تخفیف", "کمپین", "جشنواره"],
-  "/admin/shipping-methods": ["ارسال", "پست", "باربری", "هزینه ارسال", "نرخ ارسال"],
-  "/admin/users": ["مشتری", "حساب کاربری", "اکانت", "کاربر"],
-  "/admin/reviews": ["نظر", "امتیاز", "کامنت محصول"],
-  "/admin/contact-messages": ["تماس با ما", "پیام مشتری"],
-  "/admin/tickets": ["پشتیبانی", "درخواست پشتیبانی", "گفتگو"],
-  "/admin/support-ticket-categories": ["موضوع تیکت", "دسته پشتیبانی"],
+  "/admin/orders": ["فاکتور", "خرید", "سفارش مشتری", "پرداخت", "ویرایش سفارش", "تغییر وضعیت سفارش", "پیگیری مرسوله"],
+  "/admin/promotions": ["تخفیف", "کد تخفیف", "کمپین", "جشنواره", "ویرایش پروموشن", "غیرفعال‌کردن تخفیف"],
+  "/admin/shipping-methods": ["ارسال", "پست", "باربری", "هزینه ارسال", "نرخ ارسال", "ویرایش روش ارسال"],
+  "/admin/users": ["مشتری", "حساب کاربری", "اکانت", "کاربر", "ویرایش کاربر", "تغییر نقش کاربر", "مسدودکردن کاربر"],
+  "/admin/reviews": ["نظر", "امتیاز", "کامنت محصول", "تایید دیدگاه", "رد دیدگاه"],
+  "/admin/contact-messages": ["تماس با ما", "پیام مشتری", "پاسخ پیام"],
+  "/admin/tickets": ["پشتیبانی", "درخواست پشتیبانی", "گفتگو", "پاسخ تیکت"],
+  "/admin/support-ticket-categories": ["موضوع تیکت", "دسته پشتیبانی", "ویرایش موضوع"],
   "/admin/audit-logs": ["لاگ", "فعالیت مدیران", "گزارش عملیات"],
 };
+
+/** Search terms someone would type for "create new" regardless of which verb the title itself
+ * uses ("افزودن" vs "ثبت"), so any of them surfaces every create action at once. */
+const addSynonyms = ["اضافه کردن", "افزودن", "ایجاد", "ثبت", "جدید"];
+
+/** Direct links to every "create new X" action — a list page alone would bury these a click
+ * deeper, and searching "افزودن" should surface all of them side by side. Points at the
+ * dedicated /new route where one exists, or the list page itself where creation happens inline
+ * (categories, brands, colors, option types, support ticket categories all add through their own
+ * list per the small-bounded-list pattern, not a separate route). */
+const createEntries: AdminSearchEntry[] = [
+  { id: "create-product", title: "افزودن محصول جدید", description: "ثبت محصول تازه در کاتالوگ", href: "/admin/products/new", group: "کاتالوگ و محصولات", icon: Plus, keywords: [...addSynonyms, "محصول", "کالا"], permission: "catalog:manage" },
+  { id: "create-category", title: "افزودن دسته‌بندی", description: "ثبت دسته یا زیردسته تازه", href: "/admin/categories", group: "کاتالوگ و محصولات", icon: Plus, keywords: [...addSynonyms, "دسته", "زیردسته"], permission: "catalog:manage" },
+  { id: "create-brand", title: "افزودن برند", description: "ثبت برند تازه", href: "/admin/brands", group: "کاتالوگ و محصولات", icon: Plus, keywords: [...addSynonyms, "برند"], permission: "catalog:manage" },
+  { id: "create-color", title: "افزودن رنگ", description: "ثبت رنگ تازه برای تنوع محصول", href: "/admin/colors", group: "تنوع و ویژگی‌ها", icon: Plus, keywords: [...addSynonyms, "رنگ"], permission: "catalog:manage" },
+  { id: "create-option-type", title: "افزودن نوع تنوع", description: "ثبت نوع تنوع تازه", href: "/admin/option-types", group: "تنوع و ویژگی‌ها", icon: Plus, keywords: [...addSynonyms, "تنوع", "سایز", "عیار"], permission: "catalog:manage" },
+  { id: "create-order", title: "ثبت سفارش دستی", description: "ایجاد سفارش تازه برای مشتری", href: "/admin/orders/new", group: "فروش و مشتریان", icon: Plus, keywords: [...addSynonyms, "سفارش", "فاکتور دستی"], permission: "orders:manage" },
+  { id: "create-promotion", title: "افزودن پروموشن", description: "ثبت کد تخفیف یا کمپین تازه", href: "/admin/promotions/new", group: "فروش و مشتریان", icon: Plus, keywords: [...addSynonyms, "تخفیف", "کد تخفیف", "کمپین"], permission: "orders:manage" },
+  { id: "create-shipping-method", title: "افزودن روش ارسال", description: "ثبت روش ارسال تازه", href: "/admin/shipping-methods/new", group: "فروش و مشتریان", icon: Plus, keywords: [...addSynonyms, "ارسال", "پست", "باربری"], permission: "orders:manage" },
+  { id: "create-user", title: "افزودن کاربر", description: "ثبت حساب کاربری تازه", href: "/admin/users/new", group: "فروش و مشتریان", icon: Plus, keywords: [...addSynonyms, "کاربر", "حساب", "مدیر جدید"], permission: "users:manage" },
+  { id: "create-support-ticket-category", title: "افزودن موضوع تیکت", description: "ثبت موضوع تازه برای تیکت‌های پشتیبانی", href: "/admin/support-ticket-categories", group: "پشتیبانی", icon: Plus, keywords: [...addSynonyms, "موضوع", "تیکت"], permission: "tickets:manage" },
+  { id: "create-payment-gateway", title: "افزودن درگاه پرداخت", description: "ثبت شناسه درگاه پرداخت تازه", href: "/admin/settings/payment-gateways/new", group: "فروش و عملیات", icon: Plus, keywords: [...addSynonyms, "درگاه", "زرین‌پال", "زیبال"], settingsSection: "payment-gateways" },
+  { id: "create-sms-provider", title: "افزودن ارائه‌دهنده پیامک", description: "ثبت پیکربندی ارائه‌دهنده پیامک تازه", href: "/admin/settings/notifications/providers/new", group: "محتوا و دیده‌شدن", icon: Plus, keywords: [...addSynonyms, "پیامک", "فراز", "ایران اس ام اس"], settingsSection: "notifications" },
+  { id: "create-manual-sms", title: "ارسال پیامک جدید", description: "ارسال دستی پیامک به مخاطبان", href: "/admin/settings/notifications/manual/new", group: "محتوا و دیده‌شدن", icon: Plus, keywords: [...addSynonyms, "پیامک گروهی", "ارسال دستی"], settingsSection: "notifications" },
+];
 
 const navEntries: AdminSearchEntry[] = adminNavGroups.flatMap((group) =>
   group.items
@@ -84,7 +109,7 @@ const settingsEntries: AdminSearchEntry[] = [
   { id: "settings-notifications-manual", title: "ارسال دستی پیامک", description: "انتخاب مخاطبان هدف و مشاهده تاریخچه ارسال", href: "/admin/settings/notifications/manual", group: "محتوا و دیده‌شدن", icon: MessageSquarePlus, keywords: ["پیامک گروهی", "ارسال پیامک تبلیغاتی"], settingsSection: "notifications" },
 ];
 
-export const adminSearchIndex: AdminSearchEntry[] = [...navEntries, ...settingsEntries];
+export const adminSearchIndex: AdminSearchEntry[] = [...navEntries, ...settingsEntries, ...createEntries];
 
 export function isAdminSearchEntryVisible(entry: AdminSearchEntry, role: UserRole) {
   if (entry.isSettingsHub) return canOpenAnySettingsSection(role);
