@@ -15,6 +15,7 @@ export const orderSettingsSchema = z.object({
   orderNumberPrefix: z.string().trim().toUpperCase().regex(/^[A-Z0-9]{1,10}$/),
   maxOrderItemQuantity: z.coerce.number().int().min(1).max(100),
   revalidateGoldAtCheckout: z.boolean(),
+  returnWindowDays: z.coerce.number().int().min(1).max(365),
 }).superRefine((settings, context) => {
   if (settings.orderWarningMinutes >= settings.orderExpirationMinutes) {
     context.addIssue({ code: "custom", path: ["orderWarningMinutes"], message: "زمان هشدار باید کمتر از زمان انقضا باشد." });
@@ -36,6 +37,7 @@ export const orderSettingsDefaults: OrderSettings = {
   orderNumberPrefix: "ZG",
   maxOrderItemQuantity: 5,
   revalidateGoldAtCheckout: true,
+  returnWindowDays: 7,
 };
 
 const select = {
@@ -51,6 +53,7 @@ const select = {
   orderNumberPrefix: true,
   maxOrderItemQuantity: true,
   revalidateGoldAtCheckout: true,
+  returnWindowDays: true,
 } as const;
 
 export async function getOrderSettings(): Promise<OrderSettings> {

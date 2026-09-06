@@ -659,6 +659,7 @@ model StoreSetting {
   orderNumberPrefix             String                @default("ZG") @db.VarChar(10)
   maxOrderItemQuantity          Int                   @default(5)
   revalidateGoldAtCheckout      Boolean               @default(true)
+  returnWindowDays              Int                   @default(7)
   onlinePaymentEnabled          Boolean               @default(true)
   freeShippingThreshold         Decimal?              @default(100000000) @db.Decimal(18, 0)
   preparationDays               Int                   @default(2)
@@ -1092,6 +1093,7 @@ model Order {
   deliveryMethod           DeliveryMethod        @default(INSURED_SHIPPING)
   shippingMethod           ShippingMethod?       @relation(fields: [shippingMethodId], references: [id], onDelete: SetNull)
   trackingNumber           String?               @db.VarChar(100)
+  deliveredAt              DateTime?
   preparationDaysSnapshot  Int                   @default(2)
   estimatedReadyAt         DateTime?
   inventoryReserved        Boolean               @default(false)
@@ -1135,6 +1137,7 @@ model OrderItem {
   total             Decimal       @db.Decimal(18, 0)
   order             Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
   product           Product?      @relation(fields: [productId], references: [id], onDelete: SetNull)
+  returnItems       ReturnItem[]
 
   @@index([orderId])
 }
@@ -1167,9 +1170,9 @@ model Invoice {
   order         Order         @relation(fields: [orderId], references: [id])
 }
 
-/// A customer's request to return a delivered order. Created from the account area; an admin
-/// moves it through the `ReturnStatus` states from the admin panel. `resolvedBy` stores the
-/// actor id as a plain string (same shape as `AuditLog.actorId`) rather than a relation.
+/// A customer's request to return specific items of a delivered order. Created from the account
+/// area; an admin moves it through the `ReturnStatus` states from the admin panel. `resolvedBy`
+/// stores the actor id as a plain string (same shape as `AuditLog.actorId`) rather than a relation.
 model Return {
   id         String       @id @default(cuid())
   orderId    String
@@ -1183,11 +1186,27 @@ model Return {
   resolvedBy String?
   createdAt  DateTime     @default(now())
   updatedAt  DateTime     @updatedAt
+  items      ReturnItem[]
 
   @@index([orderId])
   @@index([userId])
   @@index([status])
   @@index([createdAt])
+}
+
+/// One order line the customer asked to return, with the quantity requested (≤ the ordered
+/// quantity). The order-line snapshot fields (name, sku, price) stay on `OrderItem`.
+model ReturnItem {
+  id          String    @id @default(cuid())
+  returnId    String
+  return      Return    @relation(fields: [returnId], references: [id], onDelete: Cascade)
+  orderItemId String
+  orderItem   OrderItem @relation(fields: [orderItemId], references: [id])
+  quantity    Int
+  createdAt   DateTime  @default(now())
+
+  @@index([returnId])
+  @@index([orderItemId])
 }
 
 model AuditLog {

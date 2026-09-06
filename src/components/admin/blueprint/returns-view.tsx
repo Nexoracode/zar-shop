@@ -16,6 +16,7 @@ export type AdminReturnRow = {
   customerName: string;
   contact: string;
   reason: string;
+  itemCount: number;
   status: ReturnStatus;
   createdAt: string;
 };
@@ -32,6 +33,7 @@ export function serializeAdminReturnRow(row: {
   createdAt: Date;
   order: { id: string; orderNumber: string; total: { toString(): string } };
   user: { firstName: string | null; lastName: string | null; phone: string | null };
+  _count: { items: number };
 }): AdminReturnRow {
   return {
     id: row.id,
@@ -41,6 +43,7 @@ export function serializeAdminReturnRow(row: {
     customerName: `${row.user.firstName ?? ""} ${row.user.lastName ?? ""}`.trim() || "کاربر بدون نام",
     contact: row.user.phone ?? "—",
     reason: row.reason,
+    itemCount: row._count.items,
     status: row.status,
     createdAt: formatDate(row.createdAt),
   };
@@ -65,7 +68,7 @@ export function BlueprintReturnsView({ returns, pagination }: { returns: AdminRe
             </div>
             <p className="bp-muted m-0 line-clamp-2 text-[12px] leading-6">{row.reason}</p>
             <div className="flex items-center justify-between gap-2 text-[11px]">
-              <span className="bp-muted">{row.createdAt}</span>
+              <span className="bp-muted">{row.createdAt} · {row.itemCount.toLocaleString("fa-IR")} قلم</span>
               <strong className="text-[13px]">{formatMoney(row.orderTotal)}</strong>
             </div>
             <Link href={`/admin/returns/${row.id}`} className="bp-btn bp-btn-secondary bp-btn-sm w-full gap-2"><Eye size={15} />بررسی درخواست</Link>
@@ -81,6 +84,7 @@ export function BlueprintReturnsView({ returns, pagination }: { returns: AdminRe
               <BpTh className="w-12">ردیف</BpTh>
               <BpTh>شماره سفارش</BpTh>
               <BpTh>مشتری</BpTh>
+              <BpTh>اقلام</BpTh>
               <BpTh>دلیل مرجوعی</BpTh>
               <BpTh>وضعیت</BpTh>
               <BpTh>تاریخ ثبت</BpTh>
@@ -99,6 +103,7 @@ export function BlueprintReturnsView({ returns, pagination }: { returns: AdminRe
                   <span className="block truncate font-bold" title={row.customerName}>{row.customerName}</span>
                   <span dir="ltr" className="bp-muted block truncate text-right text-[11px]">{row.contact}</span>
                 </BpTd>
+                <BpTd className="text-[13px]">{row.itemCount.toLocaleString("fa-IR")}</BpTd>
                 <BpTd className="max-w-[280px]"><span className="bp-muted block truncate text-[12px]" title={row.reason}>{row.reason}</span></BpTd>
                 <BpTd><BpTag tone={returnStatusTones[row.status]} withDot>{returnStatusLabels[row.status]}</BpTag></BpTd>
                 <BpTd className="bp-muted whitespace-nowrap">{row.createdAt}</BpTd>

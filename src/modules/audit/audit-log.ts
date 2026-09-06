@@ -74,6 +74,7 @@ const actionLabels: Record<string, string> = {
   TICKET_CATEGORY_UPDATE: "ویرایش موضوع تیکت",
   TICKET_CATEGORY_DELETE: "حذف موضوع تیکت",
   CONTACT_MESSAGE_UPDATE: "تغییر وضعیت پیام تماس",
+  RETURN_CREATE: "ثبت درخواست مرجوعی",
   RETURN_STATUS_UPDATE: "تغییر وضعیت درخواست مرجوعی",
   GOLD_PRICE_REFRESH: "بروزرسانی دستی نرخ طلا",
 };

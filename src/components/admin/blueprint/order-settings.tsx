@@ -81,6 +81,14 @@ export function BlueprintOrderSettings({ initialSettings }: { initialSettings: O
         </div>
       </section>
 
+      <section className="bp-frame relative p-[16px]">
+        <BpKicker>قواعد مرجوعی</BpKicker>
+        <p className="bp-muted m-0 mt-1 text-[12px] leading-6">مشتری فقط برای سفارش‌های تحویل‌شده و داخل این مهلت می‌تواند درخواست مرجوعی ثبت کند</p>
+        <div className="mt-3 grid gap-3 sm:grid-cols-2">
+          <BpNumberInput label="مهلت ثبت مرجوعی پس از تحویل (روز)" value={String(settings.returnWindowDays)} onValueChange={(value) => set("returnWindowDays", Number(value || 0))} />
+        </div>
+      </section>
+
       <section className="bp-frame relative flex flex-col gap-3 p-[16px] sm:flex-row sm:items-center sm:justify-between">
         <p className="bp-muted m-0 text-[12px]">تمام قواعد این بخش با هم ذخیره و روی سفارش‌های جدید اعمال می‌شوند.</p>
         <BpButton type="submit" variant="primary" isPending={saving}>ذخیره تنظیمات</BpButton>

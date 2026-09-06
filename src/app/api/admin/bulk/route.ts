@@ -76,7 +76,10 @@ export async function PATCH(request: Request) {
         return count;
       });
     } else {
-      updated = (await db.order.updateMany({ where: { id: { in: uniqueIds }, status: { in: allowed } }, data: { status } })).count;
+      updated = (await db.order.updateMany({
+        where: { id: { in: uniqueIds }, status: { in: allowed } },
+        data: { status, ...(status === "DELIVERED" ? { deliveredAt: new Date() } : {}) },
+      })).count;
     }
   } else if (entity === "users") {
     if (!action.startsWith("status:")) return NextResponse.json({ message: "عملیات کاربر معتبر نیست." }, { status: 422 });

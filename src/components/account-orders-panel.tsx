@@ -20,6 +20,7 @@ export type AccountOrderSummary = {
   itemCount: number;
   expiresAt: string | null;
   hasInvoice: boolean;
+  returnStatusLabel: string | null;
   images: Array<{ id: string; url: string; alt: string }>;
 };
 
@@ -70,7 +71,7 @@ export function AccountOrdersPanel({ orders, showCountdown, warningMinutes }: { 
             <div className="flex items-center gap-3"><span className={`grid size-5 shrink-0 place-items-center rounded-full ${status.className}`}><StatusIcon size={13} strokeWidth={2.5} /></span><strong className="text-sm">{order.statusLabel}</strong><ChevronLeft size={20} className="mr-auto text-slate-600" /></div>
             <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-2 text-xs text-[var(--muted)]"><span>{order.date}</span><span className="text-slate-300">•</span><span>کد سفارش <b className="text-[var(--foreground)]" dir="ltr">{order.orderNumber}</b></span><span className="text-slate-300">•</span><span>مبلغ <b className="text-[var(--foreground)]">{order.total}</b></span>{showCountdown && order.status === "PENDING_PAYMENT" && order.expiresAt ? <OrderExpiryCountdown expiresAt={order.expiresAt} warningMinutes={warningMinutes} /> : null}</div>
           </Link>
-          <div className="flex min-h-24 items-center gap-3 border-t border-[var(--border)] px-4 py-3 sm:px-5">{order.images.length ? order.images.map((image) => <span key={image.id} className="relative size-16 shrink-0 overflow-hidden rounded-lg bg-white"><Image src={image.url} alt={image.alt} fill sizes="64px" className="object-contain p-1" /></span>) : <span className="grid size-16 place-items-center rounded-lg bg-[var(--surface-secondary)] text-slate-300"><ShoppingBag size={25} /></span>}<span className="mr-auto text-xs text-[var(--muted)]">{order.itemCount.toLocaleString("fa-IR")} کالا</span></div>
+          <div className="flex min-h-24 items-center gap-3 border-t border-[var(--border)] px-4 py-3 sm:px-5">{order.images.length ? order.images.map((image) => <span key={image.id} className="relative size-16 shrink-0 overflow-hidden rounded-lg bg-white"><Image src={image.url} alt={image.alt} fill sizes="64px" className="object-contain p-1" /></span>) : <span className="grid size-16 place-items-center rounded-lg bg-[var(--surface-secondary)] text-slate-300"><ShoppingBag size={25} /></span>}<span className="mr-auto text-xs text-[var(--muted)]">{order.itemCount.toLocaleString("fa-IR")} کالا</span>{order.returnStatusLabel ? <span className="inline-flex items-center gap-1 rounded-full bg-[var(--surface-secondary)] px-2.5 py-1 text-[11px] font-bold text-[var(--muted)]"><RotateCcw size={13} />مرجوعی: {order.returnStatusLabel}</span> : null}</div>
           {order.hasInvoice ? (
             <div className="border-t border-[var(--border)] px-4 py-3 sm:px-5"><Link href={`/invoices/${order.id}`} className="inline-flex min-h-9 items-center gap-2 text-xs font-bold text-[var(--brand-primary)]"><FileText size={17} />مشاهده فاکتور</Link></div>
           ) : order.status === "PENDING_PAYMENT" ? (

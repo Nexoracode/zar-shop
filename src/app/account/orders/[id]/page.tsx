@@ -2,17 +2,20 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Prisma } from "@generated/prisma/client";
-import { ArrowRight, FileCheck2, FileText, ImageIcon, ShieldCheck, Truck } from "lucide-react";
+import { ArrowRight, FileCheck2, FileText, ImageIcon, RotateCcw, ShieldCheck, Truck } from "lucide-react";
 import { AccountPaymentHistory, type AccountPaymentHistoryItem } from "@/components/account-payment-history";
+import { AccountReturnRequestForm } from "@/components/account-return-request-form";
 import { OrderCancelButton } from "@/components/order-cancel-button";
 import { OrderItemReviewAction } from "@/components/order-item-review-action";
 import { db } from "@/lib/db";
 import { formatDate, formatMoney } from "@/lib/format";
-import { orderStatusLabels, paymentStatusLabels } from "@/modules/admin/labels";
+import { orderStatusLabels, paymentStatusLabels, returnStatusLabels, returnStatusTones } from "@/modules/admin/labels";
 import { requireUser } from "@/modules/auth/session";
 import { expirePendingOrders } from "@/modules/orders/expiration";
+import { activeReturnStatuses, evaluateReturnEligibility } from "@/modules/orders/returns";
 import { optionEntries } from "@/modules/products/options";
 import { getGeneralStoreSettings } from "@/modules/settings/general-settings";
+import { getOrderSettings } from "@/modules/settings/order-settings";
 
 export const dynamic = "force-dynamic";
 
@@ -48,7 +51,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
   const user = await requireUser();
   await expirePendingOrders();
   const { id } = await params;
-  const [order, settings] = await Promise.all([
+  const [order, settings, orderSettings] = await Promise.all([
     db.order.findFirst({
       where: { id, userId: user.id },
       include: {
@@ -65,11 +68,28 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
             },
           },
         },
+        returns: {
+          where: { status: { not: "REJECTED" } },
+          orderBy: { createdAt: "desc" },
+          select: { id: true, status: true, createdAt: true, items: { select: { orderItemId: true, quantity: true } } },
+        },
       },
     }),
     getGeneralStoreSettings(),
+    getOrderSettings(),
   ]);
   if (!order) notFound();
+
+  const activeReturn = order.returns.find((request) => activeReturnStatuses.includes(request.status));
+  const returnedByItem = new Map<string, number>();
+  for (const request of order.returns) {
+    for (const line of request.items) returnedByItem.set(line.orderItemId, (returnedByItem.get(line.orderItemId) ?? 0) + line.quantity);
+  }
+  const returnableItems = order.items
+    .map((item) => ({ id: item.id, name: item.name, returnable: item.quantity - (returnedByItem.get(item.id) ?? 0) }))
+    .filter((item) => item.returnable > 0);
+  const returnEligibility = evaluateReturnEligibility(order, orderSettings.returnWindowDays);
+  const showReturnSection = order.status === "DELIVERED" || order.returns.length > 0;
 
   const address = asRecord(order.shippingAddress);
   const recipient = value(address, "recipient") || "—";
@@ -125,5 +145,38 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
         })}</div>
       </div>
     </section>
+
+    {showReturnSection && (
+      <section className="border-t border-[var(--border)] p-4 sm:p-6">
+        {activeReturn ? (
+          <div className="rounded-xl border border-[var(--border)] p-4 sm:p-5">
+            <div className="flex flex-wrap items-center gap-2">
+              <RotateCcw size={18} className="text-[var(--brand-primary)]" />
+              <strong className="text-sm">درخواست مرجوعی</strong>
+              <span className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${returnBadgeClass[returnStatusTones[activeReturn.status]]}`}>{returnStatusLabels[activeReturn.status]}</span>
+            </div>
+            <p className="m-0 mt-2 text-xs leading-6 text-[var(--muted)]">
+              درخواست شما برای {activeReturn.items.reduce((sum, line) => sum + line.quantity, 0).toLocaleString("fa-IR")} کالا ثبت شده و در حال بررسی است.
+              وضعیت را از <Link href="/account/returns" className="font-bold text-[var(--brand-primary)] hover:underline">مرجوعی‌ها</Link> پیگیری کنید.
+            </p>
+          </div>
+        ) : returnEligibility.eligible && returnableItems.length > 0 ? (
+          <AccountReturnRequestForm orderId={order.id} items={returnableItems} deadlineLabel={formatDate(returnEligibility.deadline)} />
+        ) : returnEligibility.eligible ? (
+          <p className="m-0 rounded-xl border border-dashed border-[var(--border)] p-4 text-xs leading-6 text-[var(--muted)]">همهٔ کالاهای این سفارش قبلاً برای مرجوعی ثبت شده‌اند.</p>
+        ) : order.status === "DELIVERED" ? (
+          <p className="m-0 rounded-xl border border-dashed border-[var(--border)] p-4 text-xs leading-6 text-[var(--muted)]">{returnEligibility.reason}</p>
+        ) : null}
+      </section>
+    )}
   </article>;
 }
+
+const returnBadgeClass: Record<string, string> = {
+  neutral: "bg-slate-100 text-slate-600",
+  info: "bg-sky-50 text-sky-700",
+  success: "bg-emerald-50 text-emerald-700",
+  warning: "bg-amber-50 text-amber-700",
+  danger: "bg-rose-50 text-rose-700",
+  gold: "bg-amber-50 text-amber-800",
+};

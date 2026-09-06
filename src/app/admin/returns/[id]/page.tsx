@@ -28,10 +28,10 @@ export default async function AdminReturnDetailPage({ params }: Context) {
     where: { id },
     include: {
       order: {
-        include: {
-          items: { select: { id: true, name: true, sku: true, quantity: true, total: true } },
-          user: { select: { firstName: true, lastName: true, phone: true } },
-        },
+        select: { id: true, orderNumber: true, total: true, createdAt: true },
+      },
+      items: {
+        include: { orderItem: { select: { name: true, sku: true, quantity: true, total: true } } },
       },
       user: { select: { firstName: true, lastName: true, phone: true, email: true } },
     },
@@ -85,34 +85,34 @@ export default async function AdminReturnDetailPage({ params }: Context) {
           <section className="bp-frame relative overflow-hidden">
             <div className="flex items-center gap-2 border-b border-[var(--bp-divider)] px-[18px] py-4">
               <ListChecks size={16} className="text-[var(--bp-accent)]" />
-              <h2 className="m-0 text-[13px] font-bold">اقلام سفارش</h2>
-              <span className="bp-muted text-[11px]">{order.items.length.toLocaleString("fa-IR")} قلم</span>
+              <h2 className="m-0 text-[13px] font-bold">اقلام درخواست‌شده برای مرجوعی</h2>
+              <span className="bp-muted text-[11px]">{returnRequest.items.length.toLocaleString("fa-IR")} قلم</span>
             </div>
-            {order.items.length ? (
-              <BpTable ariaLabel="اقلام سفارش مرجوعی" minWidth={480}>
+            {returnRequest.items.length ? (
+              <BpTable ariaLabel="اقلام درخواست مرجوعی" minWidth={520}>
                 <thead>
                   <tr>
                     <BpTh className="w-10">#</BpTh>
                     <BpTh>نام کالا</BpTh>
                     <BpTh>SKU</BpTh>
-                    <BpTh>تعداد</BpTh>
-                    <BpTh>جمع</BpTh>
+                    <BpTh>تعداد مرجوعی</BpTh>
+                    <BpTh>تعداد در سفارش</BpTh>
                   </tr>
                 </thead>
                 <tbody>
-                  {order.items.map((item, index) => (
+                  {returnRequest.items.map((item, index) => (
                     <tr key={item.id}>
                       <BpTd className="bp-muted">{(index + 1).toLocaleString("fa-IR")}</BpTd>
-                      <BpTd className="max-w-[220px] truncate text-[13px]">{item.name}</BpTd>
-                      <BpTd className="text-[13px]"><span dir="ltr">{item.sku}</span></BpTd>
-                      <BpTd className="text-[13px]">{item.quantity.toLocaleString("fa-IR")}</BpTd>
-                      <BpTd className="whitespace-nowrap text-[13px] font-bold">{formatMoney(item.total.toString())}</BpTd>
+                      <BpTd className="max-w-[220px] truncate text-[13px]">{item.orderItem.name}</BpTd>
+                      <BpTd className="text-[13px]"><span dir="ltr">{item.orderItem.sku}</span></BpTd>
+                      <BpTd className="text-[13px] font-bold">{item.quantity.toLocaleString("fa-IR")}</BpTd>
+                      <BpTd className="bp-muted text-[13px]">{item.orderItem.quantity.toLocaleString("fa-IR")}</BpTd>
                     </tr>
                   ))}
                 </tbody>
               </BpTable>
             ) : (
-              <p className="bp-muted m-0 px-[18px] py-8 text-center text-[13px]">این سفارش قلمی ندارد.</p>
+              <p className="bp-muted m-0 px-[18px] py-8 text-center text-[13px]">قلمی برای این درخواست ثبت نشده است.</p>
             )}
           </section>
         </div>

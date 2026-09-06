@@ -21,6 +21,10 @@ export function adminOrderStatusTiming(status: OrderStatus, settings: OrderSetti
     expiresAt: isPending ? orderExpiresAt(settings, now) : null,
     expiredAt: isExpired ? now : null,
     expirationHandledAt: isExpired || status === "CANCELLED" ? now : null,
+    // Stamped once, when the order first reaches DELIVERED — it's the clock the customer's
+    // return window runs from. Left untouched (`undefined`) on every other transition so a
+    // later status change never wipes the delivery date.
+    deliveredAt: status === "DELIVERED" ? now : undefined,
   };
 }
 

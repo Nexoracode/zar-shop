@@ -49,6 +49,7 @@ export default async function AdminReturnsPage({ searchParams }: { searchParams:
     include: {
       order: { select: { id: true, orderNumber: true, total: true } },
       user: { select: { firstName: true, lastName: true, phone: true } },
+      _count: { select: { items: true } },
     },
     orderBy: { createdAt: "desc" },
     skip: pagination.skip,

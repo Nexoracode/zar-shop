@@ -2,7 +2,7 @@ import { AccountOrdersPanel, type AccountOrderSummary } from "@/components/accou
 import { db } from "@/lib/db";
 import { formatDate, formatMoney } from "@/lib/format";
 import { requireUser } from "@/modules/auth/session";
-import { orderStatusLabels } from "@/modules/admin/labels";
+import { orderStatusLabels, returnStatusLabels } from "@/modules/admin/labels";
 import { expirePendingOrders } from "@/modules/orders/expiration";
 import { getGeneralStoreSettings } from "@/modules/settings/general-settings";
 import { getOrderSettings } from "@/modules/settings/order-settings";
@@ -19,6 +19,7 @@ export default async function OrdersPage() {
       take: 50,
       include: {
         invoice: { select: { id: true } },
+        returns: { orderBy: { createdAt: "desc" }, take: 1, select: { status: true } },
         items: {
           include: {
             product: {
@@ -45,6 +46,7 @@ export default async function OrdersPage() {
     itemCount: order.items.reduce((sum, item) => sum + item.quantity, 0),
     expiresAt: order.expiresAt?.toISOString() ?? null,
     hasInvoice: Boolean(order.invoice),
+    returnStatusLabel: order.returns[0] ? returnStatusLabels[order.returns[0].status] : null,
     images: order.items.flatMap((item) => {
       const media = item.product?.media[0]?.media;
       return media ? [{ id: item.id, url: media.url, alt: media.alt ?? item.name }] : [];
