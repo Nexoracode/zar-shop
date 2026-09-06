@@ -72,10 +72,10 @@ export function BpLineChart({ data, money = false, ariaLabel }: { data: BpLineCh
           ))}
         </div>
       </div>
-      {/* The plot runs left→right by index (oldest → newest); force the label row LTR too so each
-          label sits under its own point. Without this the surrounding RTL context lays the labels
-          out right→left and every one ends up under the wrong point. */}
-      <div dir="ltr" className="mt-1.5 flex justify-between">
+      {/* The plot runs left→right by index (oldest → newest). `flex-row-reverse` cancels the RTL
+          row direction so DOM order 0..N also lays out left→right and each label sits under its own
+          point — while every label's own text stays RTL, so "۱۷ مرداد" reads the right way round. */}
+      <div className="mt-1.5 flex flex-row-reverse justify-between">
         {points.map((point, index) => {
           const isEdge = index === 0 || index === points.length - 1;
           if (!isEdge && index % labelStep !== 0) return <span key={point.label} aria-hidden />;
