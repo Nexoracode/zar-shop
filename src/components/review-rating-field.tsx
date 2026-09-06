@@ -44,7 +44,7 @@ export function ReviewRatingField({ rating, onChange, error, label = "امتیا
             aria-label={`${score.toLocaleString("fa-IR")} ستاره`}
             aria-pressed={rating === score}
             onPress={() => onChange(score)}
-            className={`${size === "sm" ? "size-9 min-h-9 min-w-9" : "size-11 min-h-11 min-w-11"} text-amber-400`}
+            className={`${size === "sm" ? "size-9 min-h-9 min-w-9" : "size-11 min-h-11 min-w-11"} text-[var(--warning)]`}
           >
             <Star size={starSize} fill={score <= rating ? "currentColor" : "none"} />
           </Button>

@@ -146,7 +146,7 @@ function InitialSearchContent({ recent, popularTerms, loading, onClearRecent, on
 
 function SearchResults({ query, recent, products, categories, loading, error, onSearchAll, onRemember, onClose }: { query: string; recent: string[]; products: ProductSearchItem[]; categories: SearchItem[]; loading: boolean; error: string; onSearchAll: (value?: string) => void; onRemember: (value: string) => void; onClose: () => void }) {
   if (loading) return <div className="grid min-h-72 place-items-center"><div className="text-center"><Spinner size="md" /><span className="mt-3 block text-xs text-slate-400">در حال جستجو...</span></div></div>;
-  if (error) return <div className="grid min-h-64 place-items-center px-6 text-center text-sm text-rose-600">{error}</div>;
+  if (error) return <div className="grid min-h-64 place-items-center px-6 text-center text-sm text-[var(--danger)]">{error}</div>;
   return <div className="divide-y divide-slate-100">
     {recent.includes(query) && <Button type="button" variant="ghost" onPress={() => onSearchAll(query)} className="flex min-h-[50px] w-full justify-start gap-3 rounded-none bg-white px-5 text-right text-sm font-normal text-slate-700 transition hover:bg-slate-50"><History size={19} className="shrink-0 text-slate-500" /><strong className="font-medium">{query}</strong></Button>}
     <Button type="button" variant="ghost" onPress={() => onSearchAll(query)} className="flex min-h-[50px] w-full justify-start gap-3 rounded-none bg-white px-5 text-right text-sm font-normal text-slate-700 transition hover:bg-slate-50"><Search size={18} className="shrink-0 text-slate-500" /><span>جستجوی <strong>{query}</strong> در همه کالاها</span></Button>

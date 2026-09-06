@@ -41,6 +41,6 @@ export function OrderExpiryCountdown({ expiresAt, warningMinutes, className = ""
     onExpired?.();
   }, [onExpired, remaining]);
   const urgent = hydrated && remaining <= warningMinutes * 60_000;
-  if (variant === "sentence") return <span className={`inline-flex items-center gap-1.5 text-xs font-bold text-amber-700 ${className}`}><TriangleAlert size={15} className="shrink-0 text-amber-600" />{hydrated ? remainingSentence(remaining) : " "}</span>;
+  if (variant === "sentence") return <span className={`inline-flex items-center gap-1.5 text-xs font-bold text-[var(--warning)] ${className}`}><TriangleAlert size={15} className="shrink-0 text-[var(--warning)]" />{hydrated ? remainingSentence(remaining) : " "}</span>;
   return <Chip size="sm" variant="soft" className={`${className} ${urgent ? "text-[var(--danger)]" : "text-[var(--brand-accent)]"}`}><Chip.Label>{hydrated ? remainingLabel(remaining) : " "}</Chip.Label></Chip>;
 }

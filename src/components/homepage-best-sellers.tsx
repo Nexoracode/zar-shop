@@ -25,7 +25,7 @@ export function HomepageBestSellers({ products }: { products: StorefrontProductC
             <span className="relative block aspect-square overflow-hidden rounded-xl bg-[#f3f4f6]">
               {product.image ? <Image src={product.image.src} alt={product.image.alt} fill sizes="76px" className="object-cover transition duration-300 group-hover:scale-105" /> : <span className="grid h-full place-items-center text-slate-300"><ShoppingBag size={25} strokeWidth={1.4} /></span>}
             </span>
-            <span className="grid size-7 place-items-center rounded-full bg-rose-500 text-[11px] font-bold text-white shadow-[0_5px_14px_rgba(244,63,94,.22)]">{rank.toLocaleString("fa-IR")}</span>
+            <span className="grid size-7 place-items-center rounded-full bg-[var(--danger)] text-[11px] font-bold text-white shadow-[0_5px_14px_rgba(244,63,94,.22)]">{rank.toLocaleString("fa-IR")}</span>
             <span className="min-w-0"><strong className="line-clamp-2 block text-xs leading-6 text-[#42495a] transition group-hover:text-[var(--brand-primary)]">{product.name}</strong><small className="mt-1 block truncate text-[10px] text-[#9298a2]">{product.category} · {product.price}</small></span>
           </Link>;
         })}

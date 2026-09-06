@@ -2,7 +2,7 @@
 
 import { useState, type FormEvent } from "react";
 import { toast } from "@heroui/react";
-import { GripVertical, Plus, Trash2 } from "lucide-react";
+import { GripVertical, Trash2 } from "lucide-react";
 import type { HomepageMenuLinkOption, HomepageSettings } from "@/modules/settings/homepage-settings";
 import { homepageFieldLimits } from "@/modules/settings/settings-limits";
 import { BpButton, BpInput, BpKicker, BpSelect, BpTag } from "./ui";

@@ -7,6 +7,7 @@ import { AccountPaymentHistory, type AccountPaymentHistoryItem } from "@/compone
 import { AccountReturnRequestForm } from "@/components/account-return-request-form";
 import { OrderCancelButton } from "@/components/order-cancel-button";
 import { OrderItemReviewAction } from "@/components/order-item-review-action";
+import { StatusBadge } from "@/components/status-badge";
 import { db } from "@/lib/db";
 import { formatDate, formatMoney } from "@/lib/format";
 import { orderStatusLabels, paymentStatusLabels, returnStatusLabels, returnStatusTones } from "@/modules/admin/labels";
@@ -31,20 +32,20 @@ function value(record: JsonRecord, key: string) {
 }
 
 const paymentStatusClasses: Record<string, string> = {
-  SUCCESS: "font-bold text-emerald-700",
-  PENDING: "font-bold text-amber-700",
-  INITIATED: "font-bold text-sky-700",
-  FAILED: "font-bold text-rose-600",
-  CANCELLED: "font-bold text-slate-500",
-  REFUNDED: "font-bold text-slate-600",
+  SUCCESS: "font-bold text-[var(--success)]",
+  PENDING: "font-bold text-[var(--warning)]",
+  INITIATED: "font-bold text-[var(--info)]",
+  FAILED: "font-bold text-[var(--danger)]",
+  CANCELLED: "font-bold text-[var(--muted)]",
+  REFUNDED: "font-bold text-[var(--muted)]",
 };
 
 function deliveryState(status: string) {
-  if (status === "DELIVERED") return { label: "تحویل مرسوله به مشتری", progress: 100, className: "bg-emerald-500 text-emerald-700" };
-  if (status === "SHIPPED") return { label: "مرسوله در مسیر ارسال است", progress: 82, className: "bg-sky-500 text-sky-700" };
-  if (status === "PROCESSING") return { label: "در حال آماده‌سازی مرسوله", progress: 58, className: "bg-amber-500 text-amber-700" };
-  if (status === "PAID") return { label: "پرداخت تأیید و سفارش ثبت شد", progress: 34, className: "bg-sky-500 text-sky-700" };
-  return { label: orderStatusLabels[status as keyof typeof orderStatusLabels] ?? "در انتظار بررسی", progress: 12, className: "bg-slate-400 text-slate-600" };
+  if (status === "DELIVERED") return { label: "تحویل مرسوله به مشتری", progress: 100, className: "bg-[var(--success)] text-[var(--success)]" };
+  if (status === "SHIPPED") return { label: "مرسوله در مسیر ارسال است", progress: 82, className: "bg-[var(--info)] text-[var(--info)]" };
+  if (status === "PROCESSING") return { label: "در حال آماده‌سازی مرسوله", progress: 58, className: "bg-[var(--warning)] text-[var(--warning)]" };
+  if (status === "PAID") return { label: "پرداخت تأیید و سفارش ثبت شد", progress: 34, className: "bg-[var(--info)] text-[var(--info)]" };
+  return { label: orderStatusLabels[status as keyof typeof orderStatusLabels] ?? "در انتظار بررسی", progress: 12, className: "bg-[var(--muted)] text-[var(--muted)]" };
 }
 
 export default async function OrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -153,7 +154,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
             <div className="flex flex-wrap items-center gap-2">
               <RotateCcw size={18} className="text-[var(--brand-primary)]" />
               <strong className="text-sm">درخواست مرجوعی</strong>
-              <span className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${returnBadgeClass[returnStatusTones[activeReturn.status]]}`}>{returnStatusLabels[activeReturn.status]}</span>
+              <StatusBadge tone={returnStatusTones[activeReturn.status]}>{returnStatusLabels[activeReturn.status]}</StatusBadge>
             </div>
             <p className="m-0 mt-2 text-xs leading-6 text-[var(--muted)]">
               درخواست شما برای {activeReturn.items.reduce((sum, line) => sum + line.quantity, 0).toLocaleString("fa-IR")} کالا ثبت شده و در حال بررسی است.
@@ -171,12 +172,3 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
     )}
   </article>;
 }
-
-const returnBadgeClass: Record<string, string> = {
-  neutral: "bg-slate-100 text-slate-600",
-  info: "bg-sky-50 text-sky-700",
-  success: "bg-emerald-50 text-emerald-700",
-  warning: "bg-amber-50 text-amber-700",
-  danger: "bg-rose-50 text-rose-700",
-  gold: "bg-amber-50 text-amber-800",
-};

@@ -6,18 +6,10 @@ import { requireUser } from "@/modules/auth/session";
 import { listForUser } from "@/modules/tickets/service";
 import { serializeTicketSummary } from "@/modules/tickets/admin";
 import { ticketStatusLabels, ticketStatusTones } from "@/modules/admin/labels";
+import { StatusBadge } from "@/components/status-badge";
 import { formatRelativeFa } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
-
-const toneClass: Record<string, string> = {
-  neutral: "bg-slate-100 text-slate-600",
-  info: "bg-sky-50 text-sky-700",
-  success: "bg-emerald-50 text-emerald-700",
-  warning: "bg-amber-50 text-amber-700",
-  danger: "bg-rose-50 text-rose-700",
-  gold: "bg-amber-50 text-amber-800",
-};
 
 export default async function AccountTicketsPage() {
   const user = await requireUser();
@@ -53,9 +45,9 @@ export default async function AccountTicketsPage() {
                   </span>
                   <span className="mt-0.5 block text-[10px] text-[var(--muted)]">{formatRelativeFa(ticket.updatedAt)}</span>
                 </div>
-                <span className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-bold ${toneClass[ticketStatusTones[ticket.status as keyof typeof ticketStatusTones]]}`}>
+                <StatusBadge tone={ticketStatusTones[ticket.status as keyof typeof ticketStatusTones]} className="shrink-0">
                   {ticketStatusLabels[ticket.status as keyof typeof ticketStatusLabels]}
-                </span>
+                </StatusBadge>
               </Link>
             </li>
           ))}

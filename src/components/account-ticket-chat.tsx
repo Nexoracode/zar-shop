@@ -23,11 +23,11 @@ const AUTO_RESIZE_MAX_PX = 128;
 
 const dotToneClass: Record<string, string> = {
   neutral: "bg-slate-400",
-  info: "bg-sky-500",
-  success: "bg-emerald-500",
-  warning: "bg-amber-500",
-  danger: "bg-rose-500",
-  gold: "bg-amber-600",
+  info: "bg-[var(--info)]",
+  success: "bg-[var(--success)]",
+  warning: "bg-[var(--warning)]",
+  danger: "bg-[var(--danger)]",
+  gold: "bg-[var(--warning)]",
 };
 
 function autoResize(el: HTMLTextAreaElement) {
@@ -267,7 +267,7 @@ export function AccountTicketChat({ ticket: initialTicket }: { ticket: TicketDet
           <div className="mt-2 flex items-center gap-1">
             {[1, 2, 3, 4, 5].map((value) => (
               <Button key={value} type="button" isIconOnly variant="ghost" aria-label={`امتیاز ${value.toLocaleString("fa-IR")}`} onPress={() => setRating(value)} className="min-w-9">
-                <Star size={22} className={value <= rating ? "fill-amber-400 text-amber-400" : "text-slate-300"} />
+                <Star size={22} className={value <= rating ? "fill-[var(--warning)] text-[var(--warning)]" : "text-slate-300"} />
               </Button>
             ))}
           </div>

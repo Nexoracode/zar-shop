@@ -4,18 +4,10 @@ import { AccountEmptyState } from "@/components/account-page-ui";
 import { formatDate, formatRelativeFa } from "@/lib/format";
 import { requireUser } from "@/modules/auth/session";
 import { returnStatusLabels, returnStatusTones } from "@/modules/admin/labels";
+import { StatusBadge } from "@/components/status-badge";
 import { listUserReturns } from "@/modules/orders/returns";
 
 export const dynamic = "force-dynamic";
-
-const toneClass: Record<string, string> = {
-  neutral: "bg-slate-100 text-slate-600",
-  info: "bg-sky-50 text-sky-700",
-  success: "bg-emerald-50 text-emerald-700",
-  warning: "bg-amber-50 text-amber-700",
-  danger: "bg-rose-50 text-rose-700",
-  gold: "bg-amber-50 text-amber-800",
-};
 
 export default async function AccountReturnsPage() {
   const user = await requireUser();
@@ -44,9 +36,7 @@ export default async function AccountReturnsPage() {
                 <Link href={`/account/orders/${request.order.id}`} className="text-sm font-bold text-[var(--brand-primary)] hover:underline">
                   سفارش <span dir="ltr">{request.order.orderNumber}</span>
                 </Link>
-                <span className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${toneClass[returnStatusTones[request.status]]}`}>
-                  {returnStatusLabels[request.status]}
-                </span>
+                <StatusBadge tone={returnStatusTones[request.status]}>{returnStatusLabels[request.status]}</StatusBadge>
                 <span className="mr-auto text-[11px] text-[var(--muted)]">ثبت {formatRelativeFa(request.createdAt)}</span>
               </div>
 

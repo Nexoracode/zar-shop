@@ -32,11 +32,11 @@ const tabs: Array<{ id: OrderTab; label: string; statuses: OrderStatus[] }> = [
 ];
 
 const statusStyles: Record<OrderStatus, { icon: typeof Check; className: string }> = {
-  PENDING_PAYMENT: { icon: ShoppingBag, className: "bg-amber-500 text-white" },
-  PAID: { icon: Check, className: "bg-sky-600 text-white" },
-  PROCESSING: { icon: PackageCheck, className: "bg-amber-500 text-white" },
-  SHIPPED: { icon: PackageCheck, className: "bg-sky-600 text-white" },
-  DELIVERED: { icon: Check, className: "bg-emerald-500 text-white" },
+  PENDING_PAYMENT: { icon: ShoppingBag, className: "bg-[var(--warning)] text-white" },
+  PAID: { icon: Check, className: "bg-[var(--info)] text-white" },
+  PROCESSING: { icon: PackageCheck, className: "bg-[var(--warning)] text-white" },
+  SHIPPED: { icon: PackageCheck, className: "bg-[var(--info)] text-white" },
+  DELIVERED: { icon: Check, className: "bg-[var(--success)] text-white" },
   CANCELLED: { icon: X, className: "bg-slate-400 text-white" },
   EXPIRED: { icon: X, className: "bg-slate-400 text-white" },
   REFUNDED: { icon: RotateCcw, className: "bg-slate-400 text-white" },

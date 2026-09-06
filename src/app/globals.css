@@ -56,6 +56,13 @@
   --color-gold-soft: color-mix(in srgb, var(--warning) 18%, var(--surface));
   --color-peach: #dca477;
   --color-danger: var(--danger);
+  --color-danger-foreground: var(--danger-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
 }
 
 * {
@@ -150,6 +157,8 @@ html[dir="rtl"] [data-slot="modal-header"]:has([data-slot="modal-close-trigger"]
     --danger-foreground: #ffffff;
     --success: #2f855a;
     --success-foreground: #ffffff;
+    --info: #2b6cb0;
+    --info-foreground: #ffffff;
   }
 
   [data-theme="zar-dark"] {
@@ -187,6 +196,8 @@ html[dir="rtl"] [data-slot="modal-header"]:has([data-slot="modal-close-trigger"]
     --danger-foreground: #ffffff;
     --success: #48bb78;
     --success-foreground: #07130c;
+    --info: #63b3ed;
+    --info-foreground: #07131f;
   }
 
   a {
