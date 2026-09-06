@@ -2,9 +2,11 @@
 
 import { useCallback, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { X } from "lucide-react";
 import DatePicker, { DateObject } from "react-multi-date-picker";
 import persian from "react-date-object/calendars/persian";
 import persian_fa from "react-date-object/locales/persian_fa";
+import { BpButton } from "@/components/admin/blueprint/ui/button";
 import { BpSeg } from "@/components/admin/blueprint/ui/seg";
 import { DEFAULT_REPORT_RANGE, REPORT_RANGES, REPORT_RANGE_LABELS, type ReportRange } from "@/modules/reports/report-range";
 
@@ -49,43 +51,66 @@ export function ReportsFilterBar({ range, from, to }: Props) {
       <span aria-hidden className="mx-1 hidden h-9 w-px shrink-0 self-end bg-[var(--bp-divider)] sm:block" />
 
       <div className="flex flex-wrap items-end gap-2">
-        <div className="w-full min-w-0 sm:w-40">
-          <span className="bp-label">از تاریخ</span>
-          <DatePicker
-            value={toDateObject(from)}
-            onChange={(value) => apply({ from: toGregorianKey(value), to })}
-            calendar={persian}
-            locale={persian_fa}
-            calendarPosition="bottom-start"
-            format="YYYY/MM/DD"
-            editable={false}
-            portal={false}
-            inputClass="bp-input"
-            containerClassName="bp-datetime-popover"
-            containerStyle={{ width: "100%" }}
-            placeholder="انتخاب تاریخ"
-          />
-        </div>
-        <div className="w-full min-w-0 sm:w-40">
-          <span className="bp-label">تا تاریخ</span>
-          <DatePicker
-            value={toDateObject(to)}
-            onChange={(value) => apply({ from, to: toGregorianKey(value) })}
-            calendar={persian}
-            locale={persian_fa}
-            calendarPosition="bottom-start"
-            format="YYYY/MM/DD"
-            editable={false}
-            portal={false}
-            inputClass="bp-input"
-            containerClassName="bp-datetime-popover"
-            containerStyle={{ width: "100%" }}
-            placeholder="انتخاب تاریخ"
-          />
-        </div>
-        {custom && (
-          <button type="button" onClick={() => apply({ range: DEFAULT_REPORT_RANGE })} className="bp-btn bp-btn-ghost bp-btn-sm">
-            حذف بازه دلخواه
+        <DateField
+          label="از تاریخ"
+          value={toDateObject(from)}
+          maxDate={toDateObject(to)}
+          onChange={(value) => apply({ from: toGregorianKey(value), to })}
+          onClear={from ? () => apply({ to }) : undefined}
+        />
+        <DateField
+          label="تا تاریخ"
+          value={toDateObject(to)}
+          minDate={toDateObject(from)}
+          onChange={(value) => apply({ from, to: toGregorianKey(value) })}
+          onClear={to ? () => apply({ from }) : undefined}
+        />
+        {(from || to) && (
+          <BpButton size="sm" variant="ghost" onClick={() => apply({ range: DEFAULT_REPORT_RANGE })}>
+            <X size={14} />حذف بازهٔ دلخواه
+          </BpButton>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function DateField({ label, value, minDate, maxDate, onChange, onClear }: {
+  label: string;
+  value: DateObject | undefined;
+  minDate?: DateObject;
+  maxDate?: DateObject;
+  onChange: (value: DateObject | DateObject[] | null) => void;
+  onClear?: () => void;
+}) {
+  return (
+    <div className="w-full min-w-0 sm:w-40">
+      <span className="bp-label">{label}</span>
+      <div className="relative">
+        <DatePicker
+          value={value}
+          minDate={minDate}
+          maxDate={maxDate}
+          onChange={onChange}
+          calendar={persian}
+          locale={persian_fa}
+          calendarPosition="bottom-start"
+          format="YYYY/MM/DD"
+          editable={false}
+          portal={false}
+          inputClass="bp-input"
+          containerClassName="bp-datetime-popover"
+          containerStyle={{ width: "100%" }}
+          placeholder="انتخاب تاریخ"
+        />
+        {onClear && (
+          <button
+            type="button"
+            aria-label={`حذف ${label}`}
+            onClick={(event) => { event.stopPropagation(); onClear(); }}
+            className="absolute end-1 top-1/2 z-10 grid h-6 w-6 -translate-y-1/2 place-items-center rounded-full bg-[var(--bp-surface)] text-[var(--bp-muted)] hover:text-[var(--bp-accent)]"
+          >
+            <X size={13} />
           </button>
         )}
       </div>

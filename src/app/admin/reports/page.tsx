@@ -22,10 +22,12 @@ export default async function ReportsPage({ searchParams }: { searchParams: Sear
   const params = await searchParams;
   const period = resolveReportPeriod(params);
   const activeRange = period.range ?? DEFAULT_REPORT_RANGE;
-  const customFrom = period.custom ? params.from ?? null : null;
-  const customTo = period.custom ? params.to ?? null : null;
+  // Passed to the filter bar as-is so a half-entered custom range (only «from», or an invalid
+  // order) survives the round-trip and stays visible with its clear control.
+  const rawFrom = params.from ?? null;
+  const rawTo = params.to ?? null;
   const exportParams = period.custom
-    ? { from: customFrom as string, to: customTo as string }
+    ? { from: rawFrom as string, to: rawTo as string }
     : { range: activeRange };
 
   return (
@@ -38,10 +40,10 @@ export default async function ReportsPage({ searchParams }: { searchParams: Sear
       />
 
       <section className="bp-frame relative mb-2">
-        <ReportsFilterBar range={activeRange} from={customFrom} to={customTo} />
+        <ReportsFilterBar range={activeRange} from={rawFrom} to={rawTo} />
       </section>
 
-      <Suspense key={period.custom ? `${customFrom}:${customTo}` : activeRange} fallback={<ReportSkeleton />}>
+      <Suspense key={period.custom ? `${rawFrom}:${rawTo}` : activeRange} fallback={<ReportSkeleton />}>
         <ReportContent period={period} />
       </Suspense>
     </>
