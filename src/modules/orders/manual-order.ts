@@ -13,6 +13,7 @@ import { estimatedReadyAt } from "@/modules/settings/commerce-settings";
 import { getGeneralStoreSettings } from "@/modules/settings/general-settings";
 import { chargeableCartWeight, quoteForMethod } from "@/modules/shipping/quote";
 import { phoneSchema } from "@/modules/auth/schemas";
+import { manualOrderFieldLimits } from "@/modules/orders/manual-order-fields";
 
 /*
  * Creating an order from the admin panel instead of the storefront checkout.
@@ -26,7 +27,9 @@ import { phoneSchema } from "@/modules/auth/schemas";
 
 export class ManualOrderError extends Error {}
 
-const nameField = z.string().trim().min(2, "نام باید حداقل ۲ نویسه باشد.").max(100);
+export { manualOrderFieldLimits } from "@/modules/orders/manual-order-fields";
+
+const nameField = z.string().trim().min(2, "نام باید حداقل ۲ نویسه باشد.").max(manualOrderFieldLimits.name);
 
 export const manualOrderSchema = z.object({
   customer: z.union([
@@ -50,13 +53,13 @@ export const manualOrderSchema = z.object({
         cityId: z.union([z.null(), z.string().cuid()]).default(null),
         province: z.string().trim().min(1).max(100),
         city: z.string().trim().min(1).max(100),
-        postalCode: z.string().trim().regex(/^\d{10}$/, "کد پستی باید ۱۰ رقم باشد."),
-        addressLine: z.string().trim().min(5, "نشانی را کامل وارد کنید.").max(500),
+        postalCode: z.string().trim().regex(new RegExp(`^\\d{${manualOrderFieldLimits.postalCode}}$`), "کد پستی باید ۱۰ رقم باشد."),
+        addressLine: z.string().trim().min(5, "نشانی را کامل وارد کنید.").max(manualOrderFieldLimits.addressLine),
       }),
     }),
   ]),
   payment: z.enum(["PAID", "PENDING"]),
-  notes: z.string().trim().max(2000).optional(),
+  notes: z.string().trim().max(manualOrderFieldLimits.notes).optional(),
 });
 
 export type ManualOrderInput = z.infer<typeof manualOrderSchema>;

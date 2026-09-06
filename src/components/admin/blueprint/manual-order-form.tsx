@@ -6,6 +6,8 @@ import { toast } from "@heroui/react";
 import { PackageSearch, Plus, Search, Trash2, UserRound, X } from "lucide-react";
 import { AdminPageHeader } from "@/components/admin-ui";
 import { formatMoney } from "@/lib/format";
+import { normalizeNumericValue } from "@/lib/persian-numbers";
+import { manualOrderFieldLimits } from "@/modules/orders/manual-order-fields";
 import { requestErrorMessage, requestJson } from "@/lib/api-request";
 import { BpButton, BpCombobox, BpInput, BpNumberInput, BpSeg, BpSelect, BpSpinner, useDebounced } from "./ui";
 
@@ -270,9 +272,9 @@ export function BlueprintManualOrderForm({ industry }: { industry: "GOLD" | "GEN
               )
             ) : (
               <div className="grid gap-3 sm:grid-cols-3">
-                <BpInput label="نام" value={newCustomer.firstName} maxLength={100} onChange={(event) => setNewCustomer((current) => ({ ...current, firstName: event.target.value }))} />
-                <BpInput label="نام خانوادگی" value={newCustomer.lastName} maxLength={100} onChange={(event) => setNewCustomer((current) => ({ ...current, lastName: event.target.value }))} />
-                <BpInput label="موبایل" dir="ltr" inputMode="numeric" maxLength={11} value={newCustomer.phone} placeholder="09xxxxxxxxx" onChange={(event) => setNewCustomer((current) => ({ ...current, phone: event.target.value.replace(/\D/g, "").slice(0, 11) }))} />
+                <BpInput label="نام" value={newCustomer.firstName} maxLength={manualOrderFieldLimits.name} onChange={(event) => setNewCustomer((current) => ({ ...current, firstName: event.target.value }))} />
+                <BpInput label="نام خانوادگی" value={newCustomer.lastName} maxLength={manualOrderFieldLimits.name} onChange={(event) => setNewCustomer((current) => ({ ...current, lastName: event.target.value }))} />
+                <BpInput label="موبایل" dir="ltr" inputMode="numeric" maxLength={manualOrderFieldLimits.phone} value={newCustomer.phone} placeholder="09xxxxxxxxx" onChange={(event) => setNewCustomer((current) => ({ ...current, phone: normalizeNumericValue(event.target.value, false).slice(0, manualOrderFieldLimits.phone) }))} />
               </div>
             )}
           </Panel>
@@ -327,13 +329,13 @@ export function BlueprintManualOrderForm({ industry }: { industry: "GOLD" | "GEN
             />
             {delivery === "INSURED_SHIPPING" && (
               <div className="grid gap-3 sm:grid-cols-2">
-                <BpInput label="تحویل‌گیرنده" value={address.recipient} maxLength={100} onChange={(event) => setAddress((current) => ({ ...current, recipient: event.target.value }))} />
-                <BpInput label="شمارهٔ تماس" dir="ltr" inputMode="numeric" maxLength={11} value={address.phone} placeholder="09xxxxxxxxx" onChange={(event) => setAddress((current) => ({ ...current, phone: event.target.value.replace(/\D/g, "").slice(0, 11) }))} />
+                <BpInput label="تحویل‌گیرنده" value={address.recipient} maxLength={manualOrderFieldLimits.name} onChange={(event) => setAddress((current) => ({ ...current, recipient: event.target.value }))} />
+                <BpInput label="شمارهٔ تماس" dir="ltr" inputMode="numeric" maxLength={manualOrderFieldLimits.phone} value={address.phone} placeholder="09xxxxxxxxx" onChange={(event) => setAddress((current) => ({ ...current, phone: normalizeNumericValue(event.target.value, false).slice(0, manualOrderFieldLimits.phone) }))} />
                 <BpCombobox label="استان" value={address.provinceId} onChange={(next) => setAddress((current) => ({ ...current, provinceId: next, cityId: "" }))} placeholder="جستجو یا انتخاب استان" emptyLabel="استانی پیدا نشد" options={provinces.map((province) => ({ value: province.id, label: province.name }))} />
                 <BpCombobox label="شهر" value={address.cityId} onChange={(next) => setAddress((current) => ({ ...current, cityId: next }))} placeholder={address.provinceId ? "جستجو یا انتخاب شهر" : "ابتدا استان را انتخاب کنید"} emptyLabel={address.provinceId ? "شهری پیدا نشد" : "ابتدا استان را انتخاب کنید"} options={address.provinceId ? cities.map((city) => ({ value: city.id, label: city.name })) : []} />
-                <BpInput label="کد پستی" dir="ltr" inputMode="numeric" maxLength={10} value={address.postalCode} onChange={(event) => setAddress((current) => ({ ...current, postalCode: event.target.value.replace(/\D/g, "").slice(0, 10) }))} />
+                <BpInput label="کد پستی" dir="ltr" inputMode="numeric" maxLength={manualOrderFieldLimits.postalCode} value={address.postalCode} onChange={(event) => setAddress((current) => ({ ...current, postalCode: normalizeNumericValue(event.target.value, false).slice(0, manualOrderFieldLimits.postalCode) }))} />
                 <BpSelect label="روش ارسال" value={shippingMethodId} onChange={(event) => setShippingMethodId(event.target.value)} placeholder="بدون هزینهٔ ارسال" options={shippingMethods.map((method) => ({ value: method.id, label: method.name }))} />
-                <BpInput label="نشانی" wrapperClassName="sm:col-span-2" value={address.addressLine} maxLength={500} onChange={(event) => setAddress((current) => ({ ...current, addressLine: event.target.value }))} />
+                <BpInput label="نشانی" wrapperClassName="sm:col-span-2" value={address.addressLine} maxLength={manualOrderFieldLimits.addressLine} onChange={(event) => setAddress((current) => ({ ...current, addressLine: event.target.value }))} />
               </div>
             )}
           </Panel>
