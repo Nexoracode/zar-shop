@@ -4,7 +4,7 @@ import Image from "next/image";
 import { useRef, useState, type DragEvent, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "@heroui/react";
-import { GripVertical, Images, Pencil, Tag, Trash2 } from "lucide-react";
+import { GripVertical, Images, SquarePen, Tag, Trash2 } from "lucide-react";
 import { AdminEmptyState, AdminPageHeader, AdminStatusBadge } from "@/components/admin-ui";
 import { AdminBulkCheckbox, AdminBulkEditor, AdminBulkTr } from "@/components/admin-bulk-editor";
 import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
@@ -295,7 +295,7 @@ export function BlueprintBrandsView({ brands }: { brands: BrandRow[] }) {
                     <div className="flex items-center justify-between gap-2">
                       <span className="bp-muted text-[11px]">{brand._count.products.toLocaleString("fa-IR")} محصول</span>
                       <div className="flex items-center gap-1">
-                        <BpButton isIconOnly size="sm" variant="ghost" aria-label={`ویرایش ${brand.name}`} onClick={() => startEdit(brand)}><Pencil size={15} strokeWidth={1.5} /></BpButton>
+                        <BpButton isIconOnly size="sm" variant="ghost" aria-label={`ویرایش ${brand.name}`} onClick={() => startEdit(brand)}><SquarePen size={15} strokeWidth={1.5} /></BpButton>
                         <BpButton isIconOnly size="sm" variant="ghost" className="bp-btn-danger-icon" aria-label={`حذف ${brand.name}`} disabled={brand._count.products > 0} onClick={() => { setDeleteError(""); setDeleteTarget(brand); }}><Trash2 size={15} strokeWidth={1.5} /></BpButton>
                       </div>
                     </div>
@@ -341,7 +341,7 @@ export function BlueprintBrandsView({ brands }: { brands: BrandRow[] }) {
                         <BpTd><AdminStatusBadge tone={brand.isActive ? "success" : "neutral"}>{brand.isActive ? "فعال" : "غیرفعال"}</AdminStatusBadge></BpTd>
                         <BpTd>
                           <div className="flex items-center justify-center gap-1">
-                            <BpButton isIconOnly size="sm" variant="ghost" title="ویرایش برند" aria-label={`ویرایش ${brand.name}`} onClick={() => startEdit(brand)}><Pencil size={15} strokeWidth={1.5} /></BpButton>
+                            <BpButton isIconOnly size="sm" variant="ghost" title="ویرایش برند" aria-label={`ویرایش ${brand.name}`} onClick={() => startEdit(brand)}><SquarePen size={15} strokeWidth={1.5} /></BpButton>
                             <BpButton isIconOnly size="sm" variant="ghost" title={brand._count.products > 0 ? "برند دارای محصول قابل حذف نیست" : "حذف برند"} className="bp-btn-danger-icon" aria-label={`حذف ${brand.name}`} disabled={brand._count.products > 0} onClick={() => { setDeleteError(""); setDeleteTarget(brand); }}><Trash2 size={15} strokeWidth={1.5} /></BpButton>
                           </div>
                         </BpTd>

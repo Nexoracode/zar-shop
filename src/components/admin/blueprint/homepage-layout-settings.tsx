@@ -2,7 +2,7 @@
 
 import { useState, type DragEvent, type FormEvent } from "react";
 import { toast } from "@heroui/react";
-import { Eye, EyeOff, GripVertical } from "lucide-react";
+import { GripVertical, ToggleLeft, ToggleRight } from "lucide-react";
 import type { HomepageLayoutItemId, HomepageSectionId, HomepageSettings } from "@/modules/settings/homepage-settings";
 import { BpButton, BpKicker, BpTag } from "./ui";
 import { BlueprintHomepageLayoutPreview } from "./homepage-layout-preview";
@@ -107,7 +107,7 @@ export function BlueprintHomepageLayoutSettings({ initialSettings }: { initialSe
                   <span className="bp-muted grid size-7 shrink-0 place-items-center bg-[var(--bp-card)] text-[11px] font-bold">{(index + 1).toLocaleString("fa-IR")}</span>
                   <div className="min-w-0 flex-1"><strong className="block text-[13px]">{meta.title}</strong><span className="bp-muted mt-0.5 block truncate text-[11px]">{meta.description}</span></div>
                   <BpTag tone={section.enabled ? "success" : "neutral"}>{section.enabled ? "فعال" : "غیرفعال"}</BpTag>
-                  <BpButton type="button" isIconOnly size="sm" variant="ghost" aria-label={`${section.enabled ? "غیرفعال کردن" : "فعال کردن"} ${meta.title}`} onClick={() => setSections((current) => current.map((item) => item.id === section.id ? { ...item, enabled: !item.enabled } : item))}>{section.enabled ? <Eye size={15} /> : <EyeOff size={15} />}</BpButton>
+                  <BpButton type="button" isIconOnly size="sm" variant="ghost" aria-label={`${section.enabled ? "غیرفعال کردن" : "فعال کردن"} ${meta.title}`} onClick={() => setSections((current) => current.map((item) => item.id === section.id ? { ...item, enabled: !item.enabled } : item))}>{section.enabled ? <ToggleRight size={15} strokeWidth={1.5} className="text-[var(--bp-success)]" /> : <ToggleLeft size={15} strokeWidth={1.5} className="bp-muted" />}</BpButton>
                 </div>
               );
             })}

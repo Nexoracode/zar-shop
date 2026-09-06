@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRef, useState, type DragEvent } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "@heroui/react";
-import { GripVertical, Pencil } from "lucide-react";
+import { GripVertical, SquarePen } from "lucide-react";
 import { AdminEmptyState, AdminPanel, AdminStatusBadge } from "@/components/admin-ui";
 import { AdminBulkCheckbox, AdminBulkEditor, AdminBulkTr } from "@/components/admin-bulk-editor";
 import { requestErrorMessage, requestJson } from "@/lib/api-request";
@@ -162,7 +162,7 @@ export function BlueprintShippingMethodsView({ methods }: { methods: ShippingMet
                     <div className="flex items-center justify-between gap-2">
                       <span className="bp-muted text-[11px]">{method.estimatedDays.toLocaleString("fa-IR")} روز کاری</span>
                       <div className="flex items-center gap-1">
-                        <Link href={`/admin/shipping-methods/${method.id}/edit`} aria-label={`ویرایش ${method.title}`} className="bp-btn bp-btn-ghost bp-btn-icon bp-btn-sm"><Pencil size={15} strokeWidth={1.5} /></Link>
+                        <Link href={`/admin/shipping-methods/${method.id}/edit`} aria-label={`ویرایش ${method.title}`} className="bp-btn bp-btn-ghost bp-btn-icon bp-btn-sm"><SquarePen size={15} strokeWidth={1.5} /></Link>
                         <ShippingMethodDeleteButton id={method.id} title={method.title} orderCount={method.orderCount} />
                       </div>
                     </div>
@@ -205,7 +205,7 @@ export function BlueprintShippingMethodsView({ methods }: { methods: ShippingMet
                         <BpTd><AdminStatusBadge tone={method.isActive ? "success" : "neutral"}>{method.isActive ? "فعال" : "غیرفعال"}</AdminStatusBadge></BpTd>
                         <BpTd>
                           <div className="flex items-center justify-center gap-1">
-                            <Link href={`/admin/shipping-methods/${method.id}/edit`} title="ویرایش روش ارسال" aria-label={`ویرایش ${method.title}`} className="bp-btn bp-btn-ghost bp-btn-icon bp-btn-sm"><Pencil size={15} strokeWidth={1.5} /></Link>
+                            <Link href={`/admin/shipping-methods/${method.id}/edit`} title="ویرایش روش ارسال" aria-label={`ویرایش ${method.title}`} className="bp-btn bp-btn-ghost bp-btn-icon bp-btn-sm"><SquarePen size={15} strokeWidth={1.5} /></Link>
                             <ShippingMethodDeleteButton id={method.id} title={method.title} orderCount={method.orderCount} />
                           </div>
                         </BpTd>

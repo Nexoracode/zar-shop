@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "@heroui/react";
-import { BadgePercent, Eye, EyeOff, Gift, Pencil, ShoppingBag, Trash2, Truck } from "lucide-react";
+import { BadgePercent, Gift, ShoppingBag, SquarePen, ToggleLeft, ToggleRight, Trash2, Truck } from "lucide-react";
 import { AdminEmptyState, AdminPageHeader, AdminPrimaryLink, AdminStatusBadge } from "@/components/admin-ui";
 import { AdminListFilters } from "@/components/admin-list-filters";
 import { AdminPagination } from "@/components/admin-pagination";
@@ -127,8 +127,8 @@ export function BlueprintPromotionsView({ initialItems, query, status, type, pag
                   <div className="flex items-center justify-between gap-2">
                     <span className="bp-muted text-[11px]">{item.usageCount.toLocaleString("fa-IR")} استفاده{item.rewardCount ? ` · ${item.rewardCount.toLocaleString("fa-IR")} پاداش` : ""}</span>
                     <div className="flex items-center gap-1">
-                      <BpButton isIconOnly size="sm" variant="ghost" isPending={togglingId === item.id} aria-label={item.isActive ? `غیرفعال‌کردن ${item.title}` : `فعال‌کردن ${item.title}`} onClick={() => void toggle(item)}>{item.isActive ? <Eye size={15} strokeWidth={1.5} /> : <EyeOff size={15} strokeWidth={1.5} />}</BpButton>
-                      <Link href={`/admin/promotions/${item.id}/edit`} aria-label={`ویرایش ${item.title}`} className="bp-btn bp-btn-ghost bp-btn-icon bp-btn-sm"><Pencil size={15} strokeWidth={1.5} /></Link>
+                      <BpButton isIconOnly size="sm" variant="ghost" isPending={togglingId === item.id} aria-label={item.isActive ? `غیرفعال‌کردن ${item.title}` : `فعال‌کردن ${item.title}`} onClick={() => void toggle(item)}>{item.isActive ? <ToggleRight size={15} strokeWidth={1.5} className="text-[var(--bp-success)]" /> : <ToggleLeft size={15} strokeWidth={1.5} className="bp-muted" />}</BpButton>
+                      <Link href={`/admin/promotions/${item.id}/edit`} aria-label={`ویرایش ${item.title}`} className="bp-btn bp-btn-ghost bp-btn-icon bp-btn-sm"><SquarePen size={15} strokeWidth={1.5} /></Link>
                       <BpButton isIconOnly size="sm" variant="ghost" className="bp-btn-danger-icon" aria-label={`حذف ${item.title}`} onClick={() => { setDeleteError(""); setDeleting(item); }}><Trash2 size={15} strokeWidth={1.5} /></BpButton>
                     </div>
                   </div>
@@ -176,8 +176,8 @@ export function BlueprintPromotionsView({ initialItems, query, status, type, pag
                       <BpTd><AdminStatusBadge tone={item.isActive ? "success" : "neutral"}>{item.isActive ? "فعال" : "غیرفعال"}</AdminStatusBadge></BpTd>
                       <BpTd>
                         <div className="flex items-center justify-center gap-1">
-                          <BpButton isIconOnly size="sm" variant="ghost" isPending={togglingId === item.id} title={item.isActive ? "غیرفعال‌کردن" : "فعال‌کردن"} aria-label={item.isActive ? `غیرفعال‌کردن ${item.title}` : `فعال‌کردن ${item.title}`} onClick={() => void toggle(item)}>{item.isActive ? <Eye size={15} strokeWidth={1.5} /> : <EyeOff size={15} strokeWidth={1.5} />}</BpButton>
-                          <Link href={`/admin/promotions/${item.id}/edit`} aria-label={`ویرایش ${item.title}`} title="ویرایش" className="bp-btn bp-btn-ghost bp-btn-icon bp-btn-sm"><Pencil size={15} strokeWidth={1.5} /></Link>
+                          <BpButton isIconOnly size="sm" variant="ghost" isPending={togglingId === item.id} title={item.isActive ? "غیرفعال‌کردن" : "فعال‌کردن"} aria-label={item.isActive ? `غیرفعال‌کردن ${item.title}` : `فعال‌کردن ${item.title}`} onClick={() => void toggle(item)}>{item.isActive ? <ToggleRight size={15} strokeWidth={1.5} className="text-[var(--bp-success)]" /> : <ToggleLeft size={15} strokeWidth={1.5} className="bp-muted" />}</BpButton>
+                          <Link href={`/admin/promotions/${item.id}/edit`} aria-label={`ویرایش ${item.title}`} title="ویرایش" className="bp-btn bp-btn-ghost bp-btn-icon bp-btn-sm"><SquarePen size={15} strokeWidth={1.5} /></Link>
                           <BpButton isIconOnly size="sm" variant="ghost" className="bp-btn-danger-icon" title="حذف" aria-label={`حذف ${item.title}`} onClick={() => { setDeleteError(""); setDeleting(item); }}><Trash2 size={15} strokeWidth={1.5} /></BpButton>
                         </div>
                       </BpTd>

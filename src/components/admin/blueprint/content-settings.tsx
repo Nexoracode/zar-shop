@@ -2,7 +2,7 @@
 
 import { useState, type FormEvent } from "react";
 import { toast } from "@heroui/react";
-import { Eye, EyeOff, FileText, GripVertical, Plus, Trash2 } from "lucide-react";
+import { FileText, GripVertical, Plus, ToggleLeft, ToggleRight, Trash2 } from "lucide-react";
 import { RichTextEditor } from "@/components/rich-text-editor";
 import type { ContentPageId, ContentSettings as ContentSettingsData } from "@/modules/settings/content-settings";
 import { contentFieldLimits } from "@/modules/settings/settings-limits";
@@ -85,7 +85,7 @@ export function BlueprintContentSettings({ initialSettings }: { initialSettings:
                 <span className="bp-muted grid size-7 shrink-0 place-items-center border border-[var(--bp-divider)] text-[11px] font-bold">{(index + 1).toLocaleString("fa-IR")}</span>
                 <BpTag tone={faq.enabled ? "success" : "neutral"}>{faq.enabled ? "فعال" : "غیرفعال"}</BpTag>
                 <div className="ms-auto flex items-center gap-1">
-                  <BpButton type="button" variant="ghost" isIconOnly size="sm" aria-label={`${faq.enabled ? "غیرفعال‌کردن" : "فعال‌کردن"} سوال`} onClick={() => updateFaq(faq.id, { enabled: !faq.enabled })}>{faq.enabled ? <Eye size={15} strokeWidth={1.5} className="text-[var(--bp-success)]" /> : <EyeOff size={15} strokeWidth={1.5} className="bp-muted" />}</BpButton>
+                  <BpButton type="button" variant="ghost" isIconOnly size="sm" aria-label={`${faq.enabled ? "غیرفعال‌کردن" : "فعال‌کردن"} سوال`} onClick={() => updateFaq(faq.id, { enabled: !faq.enabled })}>{faq.enabled ? <ToggleRight size={15} strokeWidth={1.5} className="text-[var(--bp-success)]" /> : <ToggleLeft size={15} strokeWidth={1.5} className="bp-muted" />}</BpButton>
                   <BpButton type="button" variant="ghost" className="bp-btn-danger-icon" isIconOnly size="sm" aria-label="حذف سوال" onClick={() => setFaqs((current) => current.filter((item) => item.id !== faq.id))}><Trash2 size={15} strokeWidth={1.5} /></BpButton>
                 </div>
               </div>
