@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import type { UserRole } from "@generated/prisma/enums";
@@ -62,11 +63,13 @@ const generalSelect = {
   maintenanceMode: true,
 } as const;
 
-export async function getGeneralStoreSettings(): Promise<GeneralStoreSettingsInput> {
+// `cache` dedupes this within a request — the root layout, `generateMetadata` and most pages
+// each read the general store settings, and they all want the same one row.
+export const getGeneralStoreSettings = cache(async (): Promise<GeneralStoreSettingsInput> => {
   const existing = await db.storeSetting.findUnique({ where: { id: STORE_SETTING_ID }, select: generalSelect });
   const settings = existing ?? await db.storeSetting.upsert({ where: { id: STORE_SETTING_ID }, create: { id: STORE_SETTING_ID, ...generalStoreSettingsDefaults }, update: {}, select: generalSelect });
   return generalStoreSettingsSchema.parse(settings);
-}
+});
 
 export function isStorefrontAvailable(settings: Pick<GeneralStoreSettingsInput, "isStoreActive" | "maintenanceMode">, role?: UserRole | null) {
   return Boolean(role && adminRoles.includes(role)) || (settings.isStoreActive && !settings.maintenanceMode);

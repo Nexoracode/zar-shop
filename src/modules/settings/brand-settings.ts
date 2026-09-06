@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { STORE_SETTING_ID } from "@/modules/settings/store-settings";
@@ -49,11 +50,14 @@ const select = {
   socialImageMedia: { select: { id: true, title: true, alt: true, url: true, type: true, mimeType: true } },
 } as const;
 
-export async function getBrandSettings(): Promise<BrandSettings> {
+// `cache` dedupes this within a request — the root layout and the admin layout both read the
+// brand settings, and so does nearly every admin page (to pick the template), all wanting the
+// same one row.
+export const getBrandSettings = cache(async (): Promise<BrandSettings> => {
   const existing = await db.storeSetting.findUnique({ where: { id: STORE_SETTING_ID }, select });
   const settings = existing ?? await db.storeSetting.upsert({ where: { id: STORE_SETTING_ID }, create: { id: STORE_SETTING_ID, ...brandSettingsDefaults }, update: {}, select });
   return brandSettingsSchema.parse(settings);
-}
+});
 
 function foregroundFor(hex: string) {
   const values = [1, 3, 5].map((start) => Number.parseInt(hex.slice(start, start + 2), 16) / 255).map((value) => value <= 0.03928 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4);

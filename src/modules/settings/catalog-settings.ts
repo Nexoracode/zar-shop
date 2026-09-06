@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { z } from "zod";
 import type { StoreIndustry } from "@generated/prisma/enums";
 import { db } from "@/lib/db";
@@ -45,7 +46,9 @@ const select = {
   goldPriceFallbackMinutes: true,
 } as const;
 
-export async function getCatalogSettings(): Promise<CatalogSettings> {
+// `cache` dedupes this within a request — the catalogue page, its metadata and the storefront
+// catalog module all read these settings for the same one row.
+export const getCatalogSettings = cache(async (): Promise<CatalogSettings> => {
   const existing = await db.storeSetting.findUnique({ where: { id: STORE_SETTING_ID }, select });
   const settings = existing ?? await db.storeSetting.upsert({
     where: { id: STORE_SETTING_ID },
@@ -54,7 +57,7 @@ export async function getCatalogSettings(): Promise<CatalogSettings> {
     select,
   });
   return catalogSettingsSchema.parse(settings);
-}
+});
 
 export function parseCatalogSettingsUpdate(industry: StoreIndustry, input: unknown) {
   return industry === "GOLD"

@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { STORE_SETTING_ID } from "@/modules/settings/store-settings";
@@ -56,7 +57,9 @@ const select = {
   returnWindowDays: true,
 } as const;
 
-export async function getOrderSettings(): Promise<OrderSettings> {
+// `cache` dedupes this within a request — the admin layout, order pages and the expiration
+// sweep all read the order settings for the same one row.
+export const getOrderSettings = cache(async (): Promise<OrderSettings> => {
   const existing = await db.storeSetting.findUnique({ where: { id: STORE_SETTING_ID }, select });
   const settings = existing ?? await db.storeSetting.upsert({
     where: { id: STORE_SETTING_ID },
@@ -65,7 +68,7 @@ export async function getOrderSettings(): Promise<OrderSettings> {
     select,
   });
   return orderSettingsSchema.parse(settings);
-}
+});
 
 export function orderExpiresAt(settings: OrderSettings, startedAt: Date) {
   if (!settings.orderExpirationEnabled) return null;

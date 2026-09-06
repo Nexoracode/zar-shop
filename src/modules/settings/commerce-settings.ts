@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { STORE_SETTING_ID } from "@/modules/settings/store-settings";
@@ -50,11 +51,13 @@ const select = {
   defaultParcelWeightGrams: true,
 } as const;
 
-export async function getCommerceSettings(): Promise<CommerceSettings> {
+// `cache` dedupes this within a request — checkout, its preview and the shipping quote all read
+// the commerce settings for the same one row.
+export const getCommerceSettings = cache(async (): Promise<CommerceSettings> => {
   const existing = await db.storeSetting.findUnique({ where: { id: STORE_SETTING_ID }, select });
   const settings = existing ?? await db.storeSetting.upsert({ where: { id: STORE_SETTING_ID }, create: { id: STORE_SETTING_ID, ...commerceSettingsDefaults }, update: {}, select });
   return commerceSettingsSchema.parse(settings);
-}
+});
 
 export function defaultDeliveryMethod(settings: CommerceSettings): "INSURED_SHIPPING" | "STORE_PICKUP" {
   return settings.insuredShippingEnabled ? "INSURED_SHIPPING" : "STORE_PICKUP";
