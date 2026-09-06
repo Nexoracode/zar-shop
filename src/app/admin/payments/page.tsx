@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Eye } from "lucide-react";
 import { AdminEmptyState, AdminPageHeader } from "@/components/admin-ui";
 import { AdminListFilters } from "@/components/admin-list-filters";
 import { AdminPagination } from "@/components/admin-pagination";
@@ -69,7 +70,7 @@ export default async function PaymentsPage({ searchParams }: { searchParams: Sea
             </div>
 
             <div className="hidden md:block">
-              <BpTable ariaLabel="فهرست پرداخت‌ها" minWidth={900}>
+              <BpTable ariaLabel="فهرست پرداخت‌ها" minWidth={960}>
                 <thead>
                   <tr>
                     <BpTh className="w-10">#</BpTh>
@@ -79,6 +80,7 @@ export default async function PaymentsPage({ searchParams }: { searchParams: Sea
                     <BpTh>درگاه</BpTh>
                     <BpTh>وضعیت</BpTh>
                     <BpTh>تاریخ پرداخت</BpTh>
+                    <BpTh className="text-center">جزئیات</BpTh>
                   </tr>
                 </thead>
                 <tbody>
@@ -96,6 +98,11 @@ export default async function PaymentsPage({ searchParams }: { searchParams: Sea
                       <BpTd>{paymentProviderLabel(payment.provider)}</BpTd>
                       <BpTd><BpTag tone={paymentStatusTones[payment.status]} withDot>{paymentStatusLabels[payment.status]}</BpTag></BpTd>
                       <BpTd className="bp-muted whitespace-nowrap text-[12px]">{payment.paidAt ? formatDateTime(payment.paidAt) : "—"}</BpTd>
+                      <BpTd>
+                        <div className="flex items-center justify-center">
+                          <Link href={`/admin/payments/${payment.id}`} aria-label={`مشاهده جزئیات پرداخت سفارش ${payment.order.orderNumber}`} title="مشاهده جزئیات" className="bp-btn bp-btn-ghost bp-btn-icon bp-btn-sm"><Eye size={15} strokeWidth={1.5} /></Link>
+                        </div>
+                      </BpTd>
                     </tr>
                   ))}
                 </tbody>
@@ -128,6 +135,7 @@ function PaymentCard({ payment }: { payment: AdminPaymentRow }) {
         <span className="bp-muted">{paymentProviderLabel(payment.provider)} · {payment.paidAt ? formatDateTime(payment.paidAt) : "—"}</span>
         <strong className="text-[13px]">{formatMoney(payment.amount)}</strong>
       </div>
+      <Link href={`/admin/payments/${payment.id}`} className="bp-btn bp-btn-secondary bp-btn-sm w-full gap-2"><Eye size={15} />مشاهده جزئیات پرداخت</Link>
     </article>
   );
 }
