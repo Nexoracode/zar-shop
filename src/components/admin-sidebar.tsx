@@ -5,12 +5,12 @@ import { Button } from "@heroui/react";
 import { usePathname, useRouter } from "next/navigation";
 import { LogOut, Menu, Store, X } from "lucide-react";
 import { useState } from "react";
-import type { UserRole } from "@generated/prisma/enums";
+import type { StoreIndustry, UserRole } from "@generated/prisma/enums";
 import { isAdminNavItemActive, visibleAdminNavGroups } from "@/modules/admin/navigation";
 
-type Props = { user: { firstName: string | null; lastName: string | null; email: string | null; role: UserRole } };
+type Props = { user: { firstName: string | null; lastName: string | null; email: string | null; role: UserRole }; industry: StoreIndustry };
 
-export function AdminSidebar({ user }: Props) {
+export function AdminSidebar({ user, industry }: Props) {
   const pathname = usePathname();
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -28,7 +28,7 @@ export function AdminSidebar({ user }: Props) {
     }
   }
 
-  const visibleGroups = visibleAdminNavGroups(user.role);
+  const visibleGroups = visibleAdminNavGroups(user.role, industry);
 
   const navigation = (
     <nav aria-label="منوی اصلی مدیریت" className="admin-sidebar-scroll grid min-h-0 flex-1 content-start overflow-y-auto pl-1">

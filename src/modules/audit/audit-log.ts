@@ -74,6 +74,8 @@ const actionLabels: Record<string, string> = {
   TICKET_CATEGORY_UPDATE: "ویرایش موضوع تیکت",
   TICKET_CATEGORY_DELETE: "حذف موضوع تیکت",
   CONTACT_MESSAGE_UPDATE: "تغییر وضعیت پیام تماس",
+  RETURN_STATUS_UPDATE: "تغییر وضعیت درخواست مرجوعی",
+  GOLD_PRICE_REFRESH: "بروزرسانی دستی نرخ طلا",
 };
 
 const entityLabels: Record<string, string> = {
@@ -91,6 +93,8 @@ const entityLabels: Record<string, string> = {
   Order: "سفارش",
   ShippingMethod: "روش ارسال",
   ContactMessage: "پیام تماس",
+  Return: "درخواست مرجوعی",
+  GoldPrice: "نرخ طلا",
   StoreSetting: "تنظیمات فروشگاه",
   CommunicationSetting: "تنظیمات ارتباطی",
   PaymentGatewayConfig: "درگاه پرداخت",
@@ -107,6 +111,7 @@ const entityLabels: Record<string, string> = {
   reviews: "دیدگاه‌ها",
   promotions: "پروموشن‌ها",
   contactMessages: "پیام‌های تماس",
+  returns: "درخواست‌های مرجوعی",
   paymentGateways: "درگاه‌های پرداخت",
   smsProviders: "سامانه‌های پیامک",
   smsCampaigns: "پیامک‌های دستی",

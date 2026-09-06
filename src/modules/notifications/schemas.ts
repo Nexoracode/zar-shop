@@ -16,6 +16,16 @@ export const NOTIFICATION_TYPES = [
 
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
 
+/** Persian labels for the admin notification-history view. */
+export const notificationTypeLabels: Record<NotificationType, string> = {
+  PROMOTION_FIRST_PURCHASE: "پروموشن خرید اول",
+  PROMOTION_NEXT_PURCHASE: "پروموشن خرید بعدی",
+  PROMOTION_COUPON: "کد تخفیف",
+  PROMOTION_PRODUCT: "پروموشن محصول",
+  TICKET_MESSAGE: "پیام تیکت",
+  TICKET_STATUS: "تغییر وضعیت تیکت",
+};
+
 export const notificationPatchSchema = z
   .object({
     read: z.boolean().optional(),

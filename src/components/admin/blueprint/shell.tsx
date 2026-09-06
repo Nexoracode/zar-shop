@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { Bell, Globe, LogOut, Menu, Moon, PanelRight, Sun, UserRound } from "lucide-react";
-import type { UserRole } from "@generated/prisma/enums";
+import type { StoreIndustry, UserRole } from "@generated/prisma/enums";
 import { formatDateTime, formatMoney } from "@/lib/format";
 import { userRoleLabels } from "@/modules/admin/labels";
 import { getResolvedAdminTheme, setAdminThemePreference, subscribeToAdminTheme } from "@/lib/admin-theme";
@@ -25,11 +25,12 @@ type Props = {
   goldPrice: string | null;
   goldFetchedAt: string | null;
   notificationCount: number;
+  industry: StoreIndustry;
   sidebarCollapsed: boolean;
   children: ReactNode;
 };
 
-export function BlueprintShell({ user, showGoldPrice, goldPrice, goldFetchedAt, notificationCount, sidebarCollapsed, children }: Props) {
+export function BlueprintShell({ user, showGoldPrice, goldPrice, goldFetchedAt, notificationCount, industry, sidebarCollapsed, children }: Props) {
   const router = useRouter();
   const [loggingOut, setLoggingOut] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -179,6 +180,7 @@ export function BlueprintShell({ user, showGoldPrice, goldPrice, goldFetchedAt, 
       <div className="flex min-h-0 flex-1">
         <BlueprintSidebar
           role={user.role}
+          industry={industry}
           mobileOpen={mobileOpen}
           onCloseMobile={() => setMobileOpen(false)}
           initialCollapsed={sidebarCollapsed}

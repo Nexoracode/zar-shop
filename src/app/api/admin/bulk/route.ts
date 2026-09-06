@@ -6,9 +6,10 @@ import { getCurrentUser } from "@/modules/auth/session";
 import { hasPermission } from "@/modules/auth/permissions";
 import { auditRequestContext } from "@/modules/audit/request-context";
 import { releaseInventory } from "@/modules/orders/inventory";
+import { bulkUpdateReturnStatus } from "@/modules/orders/returns";
 
 const bodySchema = z.object({
-  entity: z.enum(["products", "categories", "brands", "orders", "users", "reviews", "colors", "optionTypes", "promotions", "contactMessages", "paymentGateways", "smsProviders", "smsCampaigns", "supportTicketCategories", "tickets", "shippingMethods"]),
+  entity: z.enum(["products", "categories", "brands", "orders", "users", "reviews", "colors", "optionTypes", "promotions", "contactMessages", "paymentGateways", "smsProviders", "smsCampaigns", "supportTicketCategories", "tickets", "shippingMethods", "returns"]),
   action: z.string().min(1).max(191),
   ids: z.array(z.string().min(1)).min(1).max(100),
 });
@@ -27,7 +28,7 @@ export async function PATCH(request: Request) {
   const uniqueIds = [...new Set(ids)];
   const adminOnlyEntities = new Set(["paymentGateways", "smsProviders", "smsCampaigns"]);
   if (adminOnlyEntities.has(entity) && !hasPermission(actor.role, "settings:manage")) return NextResponse.json({ message: "این عملیات فقط برای مدیر اصلی مجاز است." }, { status: 403 });
-  const permission = entity === "orders" || entity === "promotions" || entity === "contactMessages" || entity === "shippingMethods" ? "orders:manage" : entity === "users" ? "users:manage" : entity === "supportTicketCategories" || entity === "tickets" ? "tickets:manage" : "catalog:manage";
+  const permission = entity === "orders" || entity === "promotions" || entity === "contactMessages" || entity === "shippingMethods" || entity === "returns" ? "orders:manage" : entity === "users" ? "users:manage" : entity === "supportTicketCategories" || entity === "tickets" ? "tickets:manage" : "catalog:manage";
   if (!adminOnlyEntities.has(entity) && !hasPermission(actor.role, permission)) return NextResponse.json({ message: "برای این عملیات دسترسی کافی ندارید." }, { status: 403 });
 
   let updated = 0;
@@ -112,6 +113,9 @@ export async function PATCH(request: Request) {
   } else if (entity === "contactMessages") {
     if (action !== "resolved:on" && action !== "resolved:off") return NextResponse.json({ message: "عملیات پیام تماس معتبر نیست." }, { status: 422 });
     updated = (await db.contactMessage.updateMany({ where: { id: { in: uniqueIds } }, data: { isResolved: action === "resolved:on", resolvedAt: action === "resolved:on" ? new Date() : null } })).count;
+  } else if (entity === "returns") {
+    if (action !== "status:APPROVED" && action !== "status:REJECTED") return NextResponse.json({ message: "عملیات مرجوعی معتبر نیست." }, { status: 422 });
+    updated = await bulkUpdateReturnStatus(uniqueIds, action.slice(7) as "APPROVED" | "REJECTED", actor.id);
   } else if (entity === "paymentGateways") {
     if (action !== "delete") return NextResponse.json({ message: "عملیات درگاه پرداخت معتبر نیست." }, { status: 422 });
     updated = (await db.paymentGatewayConfig.deleteMany({ where: { id: { in: uniqueIds } } })).count;

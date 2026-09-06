@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCallback, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { ChevronDown, X } from "lucide-react";
-import type { UserRole } from "@generated/prisma/enums";
+import type { StoreIndustry, UserRole } from "@generated/prisma/enums";
 import { isAdminNavItemActive, visibleAdminNavGroups } from "@/modules/admin/navigation";
 import { getSidebarCollapsed, subscribeToSidebarCollapsed } from "@/lib/admin-sidebar-state";
 import { BpButton } from "./ui/button";
@@ -12,6 +12,7 @@ import { BpPopover } from "./ui/popover";
 
 type Props = {
   role: UserRole;
+  industry: StoreIndustry;
   /** Mobile drawer control — the shell owns the open state so the topbar can toggle it. */
   mobileOpen: boolean;
   onCloseMobile: () => void;
@@ -42,9 +43,9 @@ function shortLabel(text: string) {
   return shortLabels[text] ?? text;
 }
 
-export function BlueprintSidebar({ role, mobileOpen, onCloseMobile, initialCollapsed }: Props) {
+export function BlueprintSidebar({ role, industry, mobileOpen, onCloseMobile, initialCollapsed }: Props) {
   const pathname = usePathname();
-  const groups = useMemo(() => visibleAdminNavGroups(role), [role]);
+  const groups = useMemo(() => visibleAdminNavGroups(role, industry), [role, industry]);
   /*
    * One accordion at a time: opening a group closes whichever was open. `undefined` means the
    * reader has not chosen yet, so the group holding the current route opens on its own and a

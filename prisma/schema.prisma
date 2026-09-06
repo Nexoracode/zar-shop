@@ -130,6 +130,13 @@ enum InvoiceStatus {
   VOID
 }
 
+enum ReturnStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  COMPLETED
+}
+
 enum AddressType {
   SHIPPING
   BILLING
@@ -168,6 +175,7 @@ model User {
   productReviewVotes    ProductReviewVote[]
   productReviewReports  ProductReviewReport[] @relation("ProductReviewReporter")
   resolvedReviewReports ProductReviewReport[] @relation("ProductReviewReportResolver")
+  returns               Return[]
   productFavorites      ProductFavorite[]
   productVisits         ProductVisit[]
   notifications         Notification[]
@@ -1096,6 +1104,7 @@ model Order {
   promotionRedemptions     PromotionRedemption[]
   issuedPromotionRewards   PromotionReward[]     @relation("PromotionRewardSource")
   redeemedPromotionRewards PromotionReward[]     @relation("PromotionRewardRedemption")
+  returns                  Return[]
 
   @@index([userId, createdAt])
   @@index([status, createdAt])
@@ -1156,6 +1165,29 @@ model Invoice {
   buyerData     Json
   issuedAt      DateTime      @default(now())
   order         Order         @relation(fields: [orderId], references: [id])
+}
+
+/// A customer's request to return a delivered order. Created from the account area; an admin
+/// moves it through the `ReturnStatus` states from the admin panel. `resolvedBy` stores the
+/// actor id as a plain string (same shape as `AuditLog.actorId`) rather than a relation.
+model Return {
+  id         String       @id @default(cuid())
+  orderId    String
+  order      Order        @relation(fields: [orderId], references: [id])
+  userId     String
+  user       User         @relation(fields: [userId], references: [id])
+  reason     String       @db.Text
+  status     ReturnStatus @default(PENDING)
+  adminNote  String?      @db.Text
+  resolvedAt DateTime?
+  resolvedBy String?
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+
+  @@index([orderId])
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
 }
 
 model AuditLog {

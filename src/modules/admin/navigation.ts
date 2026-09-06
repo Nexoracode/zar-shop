@@ -1,9 +1,10 @@
 import type { LucideIcon } from "lucide-react";
-import { BadgePercent, BarChart3, Boxes, ChartNoAxesCombined, CreditCard, FolderTree, Headset, Images, ListChecks, ListTree, Mail, MessageSquareText, PackageCheck, Palette, ScrollText, Settings, SlidersHorizontal, Tag, Truck, Users } from "lucide-react";
-import type { UserRole } from "@generated/prisma/enums";
+import { BadgePercent, BarChart3, Bell, Boxes, ChartNoAxesCombined, CreditCard, FolderTree, Gem, Headset, Images, ListChecks, ListTree, Mail, MessageSquareText, PackageCheck, Palette, ScrollText, Settings, SlidersHorizontal, Tag, Truck, Undo2, Users } from "lucide-react";
+import type { StoreIndustry, UserRole } from "@generated/prisma/enums";
 import { canOpenAnySettingsSection, hasPermission, type AdminPermission } from "@/modules/auth/permissions";
 
-export type AdminNavItem = { href: string; label: string; icon: LucideIcon; permission?: AdminPermission };
+/** `goldOnly` items are hidden unless the store industry is `GOLD` (mirrors the gold-only UI rule). */
+export type AdminNavItem = { href: string; label: string; icon: LucideIcon; permission?: AdminPermission; goldOnly?: boolean };
 export type AdminNavGroup = { title: string; icon: LucideIcon; items: AdminNavItem[] };
 
 /**
@@ -27,6 +28,7 @@ export const adminNavGroups: AdminNavGroup[] = [
       { href: "/admin/categories", label: "دسته‌بندی‌ها", icon: FolderTree, permission: "catalog:manage" },
       { href: "/admin/brands", label: "برندها", icon: Tag, permission: "catalog:manage" },
       { href: "/admin/media", label: "گالری رسانه", icon: Images, permission: "catalog:manage" },
+      { href: "/admin/gold", label: "نرخ طلا", icon: Gem, permission: "catalog:manage", goldOnly: true },
     ],
   },
   {
@@ -44,6 +46,7 @@ export const adminNavGroups: AdminNavGroup[] = [
     icon: PackageCheck,
     items: [
       { href: "/admin/orders", label: "سفارش‌ها", icon: PackageCheck, permission: "orders:manage" },
+      { href: "/admin/returns", label: "درخواست‌های مرجوعی", icon: Undo2, permission: "orders:manage" },
       { href: "/admin/payments", label: "پرداخت‌ها", icon: CreditCard, permission: "orders:manage" },
       { href: "/admin/promotions", label: "پروموشن‌ها", icon: BadgePercent, permission: "orders:manage" },
       { href: "/admin/shipping-methods", label: "روش‌های ارسال", icon: Truck, permission: "orders:manage" },
@@ -64,6 +67,7 @@ export const adminNavGroups: AdminNavGroup[] = [
     title: "تنظیمات سیستم",
     icon: Settings,
     items: [
+      { href: "/admin/notifications", label: "اعلان‌های کاربران", icon: Bell, permission: "settings:manage" },
       { href: "/admin/audit-logs", label: "تاریخچه فعالیت‌ها", icon: ScrollText, permission: "audit:view" },
       { href: "/admin/settings", label: "تنظیمات", icon: Settings },
     ],
@@ -75,13 +79,16 @@ export const adminNavGroups: AdminNavGroup[] = [
  * single permission of its own: it is visible when the role can open at least one section
  * inside it.
  */
-export function visibleAdminNavGroups(role: UserRole): AdminNavGroup[] {
+export function visibleAdminNavGroups(role: UserRole, industry: StoreIndustry = "GOLD"): AdminNavGroup[] {
   return adminNavGroups
     .map((group) => ({
       ...group,
-      items: group.items.filter((item) => item.href === "/admin/settings"
-        ? canOpenAnySettingsSection(role)
-        : !item.permission || hasPermission(role, item.permission)),
+      items: group.items.filter((item) => {
+        if (item.goldOnly && industry !== "GOLD") return false;
+        return item.href === "/admin/settings"
+          ? canOpenAnySettingsSection(role)
+          : !item.permission || hasPermission(role, item.permission);
+      }),
     }))
     .filter((group) => group.items.length > 0);
 }

@@ -30,10 +30,10 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   if (brandSettings.adminTemplate === "BLUEPRINT") {
     // Read here rather than in the rail: the server has to know the width to paint it right.
     const sidebarCollapsed = (await cookies()).get(sidebarCollapsedCookie)?.value === "1";
-    return <BlueprintShell {...shellProps} sidebarCollapsed={sidebarCollapsed}>{children}</BlueprintShell>;
+    return <BlueprintShell {...shellProps} industry={storeIndustry} sidebarCollapsed={sidebarCollapsed}>{children}</BlueprintShell>;
   }
   return (
-    <AdminShell {...shellProps} sidebar={<AdminSidebar user={adminUser} />}>
+    <AdminShell {...shellProps} sidebar={<AdminSidebar user={adminUser} industry={storeIndustry} />}>
       {children}
     </AdminShell>
   );
