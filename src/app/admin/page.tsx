@@ -43,7 +43,7 @@ export default async function AdminPage() {
       take: 6,
     }),
     isFullAdmin
-      ? db.order.findMany({ where: { createdAt: { gte: trendStart }, status: { in: SUCCESSFUL_ORDER_STATUSES } }, select: { createdAt: true, total: true } })
+      ? db.order.findMany({ where: { createdAt: { gte: trendStart }, status: { in: [...SUCCESSFUL_ORDER_STATUSES] } }, select: { createdAt: true, total: true } })
       : Promise.resolve([]),
     isFullAdmin ? db.order.groupBy({ by: ["status"], _count: { _all: true } }) : Promise.resolve([]),
   ]);
