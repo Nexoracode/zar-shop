@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ClipboardList, ListChecks, ShoppingBag, UserRound } from "lucide-react";
+import { ClipboardList, ListChecks, Paperclip, ShoppingBag, UserRound } from "lucide-react";
 import { AdminPageHeader } from "@/components/admin-ui";
 import { ReturnStatusPanel } from "@/components/admin/blueprint/return-status-panel";
 import { BpTable, BpTd, BpTh } from "@/components/admin/blueprint/ui/table";
@@ -33,6 +33,7 @@ export default async function AdminReturnDetailPage({ params }: Context) {
       items: {
         include: { orderItem: { select: { name: true, sku: true, quantity: true, total: true } } },
       },
+      attachments: { select: { id: true, url: true, mimeType: true, originalName: true }, orderBy: { createdAt: "asc" } },
       user: { select: { firstName: true, lastName: true, phone: true, email: true } },
     },
   });
@@ -81,6 +82,28 @@ export default async function AdminReturnDetailPage({ params }: Context) {
             <div className="mb-3 flex items-center gap-2"><ClipboardList size={16} className="text-[var(--bp-accent)]" /><h2 className="m-0 text-[13px] font-bold">دلیل مرجوعی</h2></div>
             <p className="m-0 whitespace-pre-wrap break-words text-[13px] leading-8">{returnRequest.reason}</p>
           </section>
+
+          {returnRequest.attachments.length > 0 && (
+            <section className="bp-frame relative p-[18px]">
+              <div className="mb-3 flex items-center gap-2">
+                <Paperclip size={16} className="text-[var(--bp-accent)]" />
+                <h2 className="m-0 text-[13px] font-bold">عکس و فیلم پیوست مشتری</h2>
+                <span className="bp-muted text-[11px]">{returnRequest.attachments.length.toLocaleString("fa-IR")} فایل</span>
+              </div>
+              <div className="flex flex-wrap gap-3">
+                {returnRequest.attachments.map((file) => (
+                  file.mimeType.startsWith("video/") ? (
+                    <video key={file.id} src={file.url} controls preload="metadata" className="h-40 w-40 rounded border border-[var(--bp-divider)] bg-black object-cover" />
+                  ) : (
+                    <a key={file.id} href={file.url} target="_blank" rel="noreferrer" title={file.originalName} className="block h-40 w-40 overflow-hidden rounded border border-[var(--bp-divider)]">
+                      {/* eslint-disable-next-line @next/next/no-img-element -- arbitrary user upload */}
+                      <img src={file.url} alt={file.originalName} className="h-full w-full object-cover" />
+                    </a>
+                  )
+                ))}
+              </div>
+            </section>
+          )}
 
           <section className="bp-frame relative overflow-hidden">
             <div className="flex items-center gap-2 border-b border-[var(--bp-divider)] px-[18px] py-4">

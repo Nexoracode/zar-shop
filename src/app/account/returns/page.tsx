@@ -63,6 +63,21 @@ export default async function AccountReturnsPage() {
                 <span className="font-bold text-[var(--foreground)]">دلیل شما: </span>{request.reason}
               </p>
 
+              {request.attachments.length > 0 && (
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {request.attachments.map((file) => (
+                    file.mimeType.startsWith("video/") ? (
+                      <video key={file.id} src={file.url} controls preload="metadata" className="h-28 w-28 rounded-lg border border-[var(--border)] bg-black object-cover" />
+                    ) : (
+                      <a key={file.id} href={file.url} target="_blank" rel="noreferrer" className="block h-28 w-28 overflow-hidden rounded-lg border border-[var(--border)]">
+                        {/* eslint-disable-next-line @next/next/no-img-element -- arbitrary user upload */}
+                        <img src={file.url} alt={file.originalName} className="h-full w-full object-cover" />
+                      </a>
+                    )
+                  ))}
+                </div>
+              )}
+
               {request.adminNote && (
                 <p className="m-0 mt-2 whitespace-pre-wrap break-words rounded-lg border border-[var(--border)] p-3 text-xs leading-6">
                   <span className="font-bold">پاسخ فروشگاه: </span>{request.adminNote}

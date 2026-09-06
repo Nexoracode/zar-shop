@@ -1187,11 +1187,28 @@ model Return {
   createdAt  DateTime     @default(now())
   updatedAt  DateTime     @updatedAt
   items      ReturnItem[]
+  attachments ReturnAttachment[]
 
   @@index([orderId])
   @@index([userId])
   @@index([status])
   @@index([createdAt])
+}
+
+/// Photo/video evidence the customer attached to a return request. Stored on the same FTP-backed
+/// media store the catalog gallery and ticket attachments use, under its own `returns/` folder.
+model ReturnAttachment {
+  id           String   @id @default(cuid())
+  returnId     String
+  return       Return   @relation(fields: [returnId], references: [id], onDelete: Cascade)
+  url          String   @db.Text
+  storageKey   String   @unique @db.VarChar(191)
+  mimeType     String   @db.VarChar(100)
+  sizeBytes    Int
+  originalName String   @db.VarChar(191)
+  createdAt    DateTime @default(now())
+
+  @@index([returnId])
 }
 
 /// One order line the customer asked to return, with the quantity requested (≤ the ordered

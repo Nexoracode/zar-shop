@@ -2,6 +2,7 @@ import { z } from "zod";
 import type { Prisma } from "@generated/prisma/client";
 import type { OrderStatus, ReturnStatus } from "@generated/prisma/enums";
 import { db } from "@/lib/db";
+import type { UploadedReturnFile } from "@/modules/orders/return-attachments";
 import { returnLimits } from "@/modules/orders/return-limits";
 import { getOrderSettings } from "@/modules/settings/order-settings";
 
@@ -84,7 +85,7 @@ export function evaluateReturnEligibility(
  * order is re-read under the session's `userId`, eligibility and per-line quantities are checked
  * server-side, and a duplicate active request is rejected.
  */
-export async function createReturnRequest(input: ReturnRequestInput, userId: string) {
+export async function createReturnRequest(input: ReturnRequestInput, userId: string, attachments: UploadedReturnFile[] = []) {
   const settings = await getOrderSettings();
 
   return db.$transaction(async (tx) => {
@@ -129,6 +130,9 @@ export async function createReturnRequest(input: ReturnRequestInput, userId: str
         userId,
         reason: input.reason,
         items: { create: [...merged].map(([orderItemId, quantity]) => ({ orderItemId, quantity })) },
+        attachments: attachments.length
+          ? { create: attachments.map((file) => ({ url: file.url, storageKey: file.storageKey, mimeType: file.mimeType, sizeBytes: file.sizeBytes, originalName: file.originalName })) }
+          : undefined,
       },
       select: { id: true },
     });
@@ -138,7 +142,7 @@ export async function createReturnRequest(input: ReturnRequestInput, userId: str
         action: "RETURN_CREATE",
         entityType: "Return",
         entityId: created.id,
-        metadata: { orderId: order.id, lineCount: merged.size } as Prisma.InputJsonObject,
+        metadata: { orderId: order.id, lineCount: merged.size, attachmentCount: attachments.length } as Prisma.InputJsonObject,
       },
     });
     return created;
@@ -152,6 +156,7 @@ export function listUserReturns(userId: string) {
     include: {
       order: { select: { id: true, orderNumber: true } },
       items: { include: { orderItem: { select: { name: true, sku: true, quantity: true } } } },
+      attachments: { select: { id: true, url: true, mimeType: true, originalName: true }, orderBy: { createdAt: "asc" } },
     },
     orderBy: { createdAt: "desc" },
     take: 50,
