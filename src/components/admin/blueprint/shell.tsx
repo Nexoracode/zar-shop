@@ -11,6 +11,7 @@ import { getResolvedAdminTheme, setAdminThemePreference, subscribeToAdminTheme }
 import { getSidebarCollapsed, setSidebarCollapsed, subscribeToSidebarCollapsed } from "@/lib/admin-sidebar-state";
 import { AdminTemplateProvider } from "@/components/admin/template-context";
 import { useStickyHeaderOffset } from "@/components/admin/use-sticky-offset";
+import { AdminGlobalSearch } from "./global-search";
 import { BlueprintSidebar } from "./sidebar";
 import { BpButton } from "./ui/button";
 import { BpPopover } from "./ui/popover";
@@ -95,6 +96,8 @@ export function BlueprintShell({ user, showGoldPrice, goldPrice, goldFetchedAt, 
         </div>
 
         <div className="flex min-w-0 items-center gap-1.5 sm:gap-2">
+          <AdminGlobalSearch role={user.role} />
+
           {showGoldPrice && (
             <span className="hidden items-center gap-1.5 whitespace-nowrap border border-[var(--bp-sidebar-border)] px-2 py-1 text-[11px] sm:flex" title={goldFetchedAt ? `آخرین بروزرسانی: ${formatDateTime(goldFetchedAt)}` : undefined}>
               <span className="bp-muted">طلای ۱۸</span>
