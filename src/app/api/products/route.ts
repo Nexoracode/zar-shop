@@ -22,6 +22,9 @@ export async function GET() {
     where: { status: "ACTIVE", storeIndustry: settings.industry, ...(catalogSettings.hideOutOfStockProducts ? { stock: { gt: 0 } } : {}) },
     include: { media: { include: { media: true }, orderBy: { position: "asc" } }, category: true, variants: { orderBy: { createdAt: "asc" } }, optionTypes: productOptionTypeInclude, optionGuide: true },
     orderBy: { createdAt: "desc" },
+    // Bounded: this endpoint feeds a picker, never a full catalogue render (which goes through
+    // getStorefrontCatalog with its own pagination).
+    take: 200,
   });
   const colorIds = [...new Set(products.flatMap((product) => productColorIds(product.optionTypes)))];
   const colors = colorIds.length ? await db.color.findMany({ where: { id: { in: colorIds }, isActive: true }, select: { id: true, name: true, hex: true } }) : [];

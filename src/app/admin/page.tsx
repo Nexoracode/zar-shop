@@ -23,9 +23,11 @@ export default async function AdminPage() {
   trendStart.setHours(0, 0, 0, 0);
   trendStart.setDate(trendStart.getDate() - (SALES_TREND_DAYS - 1));
 
+  // The catalogue and customer figures are only rendered for a full admin, so a scoped
+  // manager (e.g. ORDER_MANAGER) does not pay for those queries either.
   const [activeProducts, customers, actionableOrders, revenue, recentOrders, lowStockProducts, trendOrders, statusGroups] = await Promise.all([
-    db.product.count({ where: { status: "ACTIVE" } }),
-    db.user.count({ where: { role: "CUSTOMER" } }),
+    isFullAdmin ? db.product.count({ where: { status: "ACTIVE" } }) : Promise.resolve(0),
+    isFullAdmin ? db.user.count({ where: { role: "CUSTOMER" } }) : Promise.resolve(0),
     db.order.count({ where: { status: { in: ["PAID", "PROCESSING"] } } }),
     db.order.aggregate({
       _sum: { total: true },
@@ -36,12 +38,14 @@ export default async function AdminPage() {
       orderBy: { createdAt: "desc" },
       take: 6,
     }),
-    db.product.findMany({
-      where: { status: "ACTIVE", stock: { lte: catalogSettings.catalogLowStockThreshold } },
-      select: { id: true, name: true, sku: true, stock: true },
-      orderBy: [{ stock: "asc" }, { updatedAt: "desc" }],
-      take: 6,
-    }),
+    isFullAdmin
+      ? db.product.findMany({
+        where: { status: "ACTIVE", stock: { lte: catalogSettings.catalogLowStockThreshold } },
+        select: { id: true, name: true, sku: true, stock: true },
+        orderBy: [{ stock: "asc" }, { updatedAt: "desc" }],
+        take: 6,
+      })
+      : Promise.resolve([]),
     isFullAdmin
       ? db.order.findMany({ where: { createdAt: { gte: trendStart }, status: { in: [...SUCCESSFUL_ORDER_STATUSES] } }, select: { createdAt: true, total: true } })
       : Promise.resolve([]),

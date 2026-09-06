@@ -4,7 +4,7 @@ import { BadgeCheck, Flag, MessageCircleReply, ShieldCheck, Star } from "lucide-
 import { AdminStatusBadge } from "@/components/admin-ui";
 import { formatDateTime } from "@/lib/format";
 import { reviewReportReasonLabels, reviewReportStatusLabels, reviewReportStatusTones, reviewStatusLabels, reviewStatusTones } from "@/modules/admin/labels";
-import { BpKicker, BpTag } from "./ui";
+import { BpTag } from "./ui";
 import { BlueprintReviewManager } from "./review-manager";
 
 type ReviewDetail = {

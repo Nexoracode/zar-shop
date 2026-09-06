@@ -46,7 +46,7 @@ export function ProductCard({ href, name, category, industry, weight, purity, ma
         {colors.slice(0, 5).map((color) => <span key={color.id} title={color.name} className="size-2.5 rounded-full border border-black/15 ring-1 ring-white" style={{ backgroundColor: color.hex }} />)}
       </span>}
       <div className="relative mx-auto aspect-square w-full max-w-[245px] overflow-hidden">
-        {image ? <Image src={image.src} alt={image.alt} width={500} height={500} className="h-full w-full object-contain transition-transform duration-300 group-hover:scale-[1.025]" /> : <GeneralProductPlaceholder />}
+        {image ? <Image src={image.src} alt={image.alt} width={500} height={500} sizes="(min-width: 1280px) 245px, (min-width: 640px) 33vw, 50vw" className="h-full w-full object-contain transition-transform duration-300 group-hover:scale-[1.025]" /> : <GeneralProductPlaceholder />}
       </div>
       <div className="flex min-h-0 flex-1 flex-col pt-3 text-right">
         <h3 className="m-0 line-clamp-2 min-h-12 text-[0.78rem] font-bold leading-6 text-slate-800">{name}</h3>
@@ -79,6 +79,7 @@ export function ProductCard({ href, name, category, industry, weight, purity, ma
             alt={image.alt}
             width={560}
             height={560}
+            sizes="(min-width: 1024px) 224px, (min-width: 640px) 220px, 45vw"
             className="w-full h-full object-cover transition-transform duration-400 ease-out group-hover:scale-[1.025]"
           />
         ) : industry === "GENERAL" ? <GeneralProductPlaceholder /> : (

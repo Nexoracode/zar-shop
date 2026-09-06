@@ -19,6 +19,8 @@ export async function GET() {
   const promotions = await db.promotion.findMany({
     include: { _count: { select: { redemptions: true, rewards: true } } },
     orderBy: [{ createdAt: "desc" }],
+    // Bounded — the admin list page runs its own paginated query; this feed is a convenience.
+    take: 500,
   });
   return NextResponse.json({ items: promotions.map(serializePromotion) });
 }
