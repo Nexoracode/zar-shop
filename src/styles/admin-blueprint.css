@@ -748,6 +748,15 @@ select.bp-input:focus-visible { border-color: var(--bp-accent); outline: none; }
 .bp-dark-bar .bp-nav-item { color: var(--bp-sidebar-text); }
 .bp-dark-bar .bp-nav-item:hover { background: var(--bp-sidebar-hover); }
 .bp-dark-bar .bp-nav-item[data-active="true"] { background: var(--bp-sidebar-active-bg); color: var(--bp-sidebar-active-text) !important; }
+/* The header's own search field: no fill of its own, just a border that reads against the bar —
+   a filled field here would look like a separate surface floating on it. Compound selector to
+   beat .bp-input's own background/color/border-color on specificity, same trick as
+   .bp-input.bp-input-multi above. */
+.bp-dark-bar .bp-input-header-search { background: transparent; border-color: var(--bp-sidebar-border); color: var(--bp-sidebar-text); }
+.bp-dark-bar .bp-input-header-search::placeholder { color: var(--bp-sidebar-muted); }
+.bp-dark-bar .bp-input-header-search:hover { border-color: color-mix(in srgb, var(--bp-sidebar-text) 35%, transparent); }
+.bp-dark-bar .bp-input-header-search:focus,
+.bp-dark-bar .bp-input-header-search:focus-visible { border-color: var(--bp-accent); }
 
 /* ── Compatibility layer ────────────────────────────────────────────────────────────────────
    Admin pages that have not been migrated off HeroUI yet still render inside the blueprint

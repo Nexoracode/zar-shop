@@ -110,7 +110,7 @@ export function AdminGlobalSearch({ role }: { role: UserRole }) {
           onChange={(event) => { setQuery(event.target.value); setActiveIndex(0); setOpen(true); }}
           onKeyDown={onInputKeyDown}
           placeholder="جستجو در پنل مدیریت... (Ctrl+K)"
-          className="bp-input bp-input-search w-full"
+          className="bp-input bp-input-search bp-input-header-search w-full"
           aria-label="جستجو در پنل مدیریت"
           role="combobox"
           aria-expanded={open}
