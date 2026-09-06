@@ -1,5 +1,6 @@
 import { deleteStoredMedia, uploadMediaToFtp } from "@/modules/media/ftp-storage";
 import { mediaFileSlug } from "@/modules/media/filename";
+import { bufferMatchesMimeType } from "@/modules/media/file-signature";
 import { TICKET_ATTACHMENT_EXTENSIONS, TICKET_MAX_ATTACHMENTS, TICKET_MAX_ATTACHMENT_SIZE, TICKET_MAX_TOTAL_ATTACHMENT_SIZE } from "@/modules/tickets/limits";
 
 export class TicketAttachmentValidationError extends Error {
@@ -27,8 +28,12 @@ export async function uploadTicketFiles(files: File[]): Promise<UploadedTicketFi
   const uploaded: UploadedTicketFile[] = [];
   try {
     for (const file of files) {
+      const buffer = Buffer.from(await file.arrayBuffer());
+      if (!bufferMatchesMimeType(buffer, file.type)) {
+        throw new TicketAttachmentValidationError("محتوای یکی از فایل‌ها با نوع اعلام‌شده‌اش هم‌خوان نیست.");
+      }
       const storageKey = `zar-shop/tickets/${mediaFileSlug(file.name, TICKET_ATTACHMENT_EXTENSIONS[file.type])}`;
-      const url = await uploadMediaToFtp(Buffer.from(await file.arrayBuffer()), storageKey);
+      const url = await uploadMediaToFtp(buffer, storageKey);
       uploaded.push({ originalName: file.name, storageKey, url, mimeType: file.type, sizeBytes: file.size });
     }
     return uploaded;

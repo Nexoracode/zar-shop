@@ -1,5 +1,6 @@
 import { deleteStoredMedia, uploadMediaToFtp } from "@/modules/media/ftp-storage";
 import { mediaFileSlug } from "@/modules/media/filename";
+import { bufferMatchesMimeType } from "@/modules/media/file-signature";
 import { returnAttachmentExtensions, returnLimits } from "@/modules/orders/return-limits";
 
 export class ReturnAttachmentValidationError extends Error {
@@ -29,8 +30,12 @@ export async function uploadReturnFiles(files: File[]): Promise<UploadedReturnFi
   const uploaded: UploadedReturnFile[] = [];
   try {
     for (const file of files) {
+      const buffer = Buffer.from(await file.arrayBuffer());
+      if (!bufferMatchesMimeType(buffer, file.type)) {
+        throw new ReturnAttachmentValidationError("محتوای یکی از فایل‌ها با نوع اعلام‌شده‌اش هم‌خوان نیست.");
+      }
       const storageKey = `zar-shop/returns/${mediaFileSlug(file.name, returnAttachmentExtensions[file.type])}`;
-      const url = await uploadMediaToFtp(Buffer.from(await file.arrayBuffer()), storageKey);
+      const url = await uploadMediaToFtp(buffer, storageKey);
       uploaded.push({ originalName: file.name, storageKey, url, mimeType: file.type, sizeBytes: file.size });
     }
     return uploaded;

@@ -8,6 +8,7 @@ import { getCurrentUser } from "@/modules/auth/session";
 import { hasPermission } from "@/modules/auth/permissions";
 import { deleteStoredMedia, MediaStorageUnavailableError, uploadMediaToFtp } from "@/modules/media/ftp-storage";
 import { mediaFileSlug } from "@/modules/media/filename";
+import { bufferMatchesMimeType } from "@/modules/media/file-signature";
 import { mediaUsageSelect } from "@/modules/media/usage";
 import { auditRequestContext } from "@/modules/audit/request-context";
 import { normalizeSearchText } from "@/lib/text-search";
@@ -126,11 +127,17 @@ export async function POST(request: Request) {
     const sharedAlt = typeof form.get("alt") === "string" && String(form.get("alt")).trim() ? String(form.get("alt")).trim() : null;
 
     const folder = scope === "CATEGORY" ? "categories" : scope === "HOMEPAGE" ? "homepage" : scope === "BRAND" ? "brand" : scope === "PRODUCT_BRAND" ? "product-brands" : "products";
+    // Read every buffer up front so its real signature can be checked before anything is stored —
+    // `file.type` is client-supplied and a renamed executable would otherwise pass the checks above.
+    const buffers = await Promise.all(files.map(async (file) => Buffer.from(await file.arrayBuffer())));
+    if (files.some((file, index) => !bufferMatchesMimeType(buffers[index], file.type))) {
+      return NextResponse.json({ message: "محتوای یک یا چند فایل با نوع اعلام‌شده‌اش هم‌خوان نیست." }, { status: 422 });
+    }
     const uploaded: Array<{ file: File; storageKey: string; url: string }> = [];
     try {
-      for (const file of files) {
+      for (const [index, file] of files.entries()) {
         const storageKey = `zar-shop/${folder}/${mediaFileSlug(file.name, EXTENSIONS[file.type])}`;
-        const url = await uploadMediaToFtp(Buffer.from(await file.arrayBuffer()), storageKey);
+        const url = await uploadMediaToFtp(buffers[index], storageKey);
         uploaded.push({ file, storageKey, url });
       }
       const media = await db.$transaction(async (tx) => {
