@@ -43,25 +43,35 @@ export function BpLineChart({ data, money = false, ariaLabel }: { data: BpLineCh
 
   return (
     <div className="w-full">
-      <svg viewBox={`0 0 ${WIDTH} ${HEIGHT}`} width="100%" height={HEIGHT} preserveAspectRatio="none" role="img" aria-label={ariaLabel}>
-        <defs>
-          <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="var(--bp-accent)" stopOpacity="0.25" />
-            <stop offset="100%" stopColor="var(--bp-accent)" stopOpacity="0" />
-          </linearGradient>
-        </defs>
-        {[0, 0.5, 1].map((ratio) => {
-          const y = PADDING_TOP + PLOT_HEIGHT * ratio;
-          return <line key={ratio} x1={PADDING_X} x2={WIDTH - PADDING_X} y1={y} y2={y} stroke="var(--bp-divider)" strokeWidth={1} />;
-        })}
-        {points.length > 1 && <path d={areaPath} fill={`url(#${gradientId})`} stroke="none" />}
-        {points.length > 1 && <path d={linePath} fill="none" stroke="var(--bp-accent)" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />}
-        {points.map((point) => (
-          <circle key={point.label} cx={point.x} cy={point.y} r={3} fill="var(--bp-card)" stroke="var(--bp-accent)" strokeWidth={2}>
-            <title>{`${point.label}: ${format(point.value)}`}</title>
-          </circle>
-        ))}
-      </svg>
+      <div className="relative w-full" style={{ height: HEIGHT }}>
+        <svg viewBox={`0 0 ${WIDTH} ${HEIGHT}`} width="100%" height={HEIGHT} preserveAspectRatio="none" role="img" aria-label={ariaLabel} className="block">
+          <defs>
+            <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="var(--bp-accent)" stopOpacity="0.25" />
+              <stop offset="100%" stopColor="var(--bp-accent)" stopOpacity="0" />
+            </linearGradient>
+          </defs>
+          {[0, 0.5, 1].map((ratio) => {
+            const y = PADDING_TOP + PLOT_HEIGHT * ratio;
+            return <line key={ratio} x1={PADDING_X} x2={WIDTH - PADDING_X} y1={y} y2={y} stroke="var(--bp-divider)" strokeWidth={1} />;
+          })}
+          {points.length > 1 && <path d={areaPath} fill={`url(#${gradientId})`} stroke="none" />}
+          {points.length > 1 && <path d={linePath} fill="none" stroke="var(--bp-accent)" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />}
+        </svg>
+        {/* Dot markers as HTML, not SVG <circle>: the viewBox is stretched to the container width
+            with `preserveAspectRatio="none"`, so an SVG circle renders as a horizontal ellipse at
+            any width past the logical 600. A CSS circle keeps its shape whatever the scale. */}
+        <div className="pointer-events-none absolute inset-0">
+          {points.map((point) => (
+            <span
+              key={point.label}
+              title={`${point.label}: ${format(point.value)}`}
+              style={{ left: `${(point.x / WIDTH) * 100}%`, top: `${(point.y / HEIGHT) * 100}%` }}
+              className="pointer-events-auto absolute h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-[var(--bp-accent)] bg-[var(--bp-card)]"
+            />
+          ))}
+        </div>
+      </div>
       {/* The plot runs left→right by index (oldest → newest); force the label row LTR too so each
           label sits under its own point. Without this the surrounding RTL context lays the labels
           out right→left and every one ends up under the wrong point. */}
