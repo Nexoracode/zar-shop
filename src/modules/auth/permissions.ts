@@ -2,14 +2,15 @@ import type { UserRole } from "@generated/prisma/enums";
 
 // `settings:manage` covers store-wide configuration (branding, homepage, content,
 // payment gateways, SMS providers). It is intentionally granted to ADMIN only so the
-// specialised manager roles stay scoped to their own domain.
-export type AdminPermission = "dashboard:view" | "catalog:manage" | "users:manage" | "orders:manage" | "tickets:manage" | "audit:view" | "settings:manage";
+// specialised manager roles stay scoped to their own domain. `reports:view` (the
+// store-wide financial and sales report) is ADMIN-only for the same reason.
+export type AdminPermission = "dashboard:view" | "catalog:manage" | "users:manage" | "orders:manage" | "tickets:manage" | "audit:view" | "settings:manage" | "reports:view";
 
 export const adminRoles: UserRole[] = ["ADMIN", "CATALOG_MANAGER", "USER_MANAGER", "ORDER_MANAGER", "SUPPORT_MANAGER"];
 
 const rolePermissions: Record<UserRole, AdminPermission[]> = {
   CUSTOMER: [],
-  ADMIN: ["dashboard:view", "catalog:manage", "users:manage", "orders:manage", "tickets:manage", "audit:view", "settings:manage"],
+  ADMIN: ["dashboard:view", "catalog:manage", "users:manage", "orders:manage", "tickets:manage", "audit:view", "settings:manage", "reports:view"],
   CATALOG_MANAGER: ["catalog:manage"],
   USER_MANAGER: ["users:manage"],
   ORDER_MANAGER: ["dashboard:view", "orders:manage"],
