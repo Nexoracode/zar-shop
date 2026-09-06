@@ -209,7 +209,7 @@ export function CategoryAttributeSchemaEditor({ categoryId, categoryName, initia
                       wrapperClassName="w-[min(100%,240px)]"
                       onChange={(event) => patchAttribute(attribute.id, { name: event.target.value })}
                     />
-                    <BpButton type="button" isIconOnly variant="ghost" aria-label={`حذف ویژگی ${attribute.name || "بدون نام"}`} title={used.has(attribute.id) ? "این ویژگی روی محصولی استفاده شده؛ ابتدا مقدارش را از محصولات بردارید." : "حذف ویژگی"} className="ms-auto text-[var(--bp-danger)]" onClick={() => removeAttribute(attribute.id)}>
+                    <BpButton type="button" isIconOnly variant="ghost" aria-label={`حذف ویژگی ${attribute.name || "بدون نام"}`} title={used.has(attribute.id) ? "این ویژگی روی محصولی استفاده شده؛ ابتدا مقدارش را از محصولات بردارید." : "حذف ویژگی"} className="ms-auto bp-btn-danger-icon" onClick={() => removeAttribute(attribute.id)}>
                       <Trash2 size={15} />
                     </BpButton>
                   </div>
@@ -280,7 +280,7 @@ export function CategoryAttributeSchemaEditor({ categoryId, categoryName, initia
               wrapperClassName="min-w-0 flex-1"
               onChange={(event) => setEditingGroups(editingGroups.map((item) => (item.id === group.id ? { ...item, name: event.target.value } : item)))}
             />
-            <BpButton type="button" isIconOnly variant="ghost" aria-label={`حذف گروه ${group.name || "بدون نام"}`} className="text-[var(--bp-danger)]" onClick={() => setEditingGroups(editingGroups.filter((item) => item.id !== group.id))}>
+            <BpButton type="button" isIconOnly variant="ghost" aria-label={`حذف گروه ${group.name || "بدون نام"}`} className="bp-btn-danger-icon" onClick={() => setEditingGroups(editingGroups.filter((item) => item.id !== group.id))}>
               <Trash2 size={15} />
             </BpButton>
           </div>

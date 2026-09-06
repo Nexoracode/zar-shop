@@ -84,7 +84,7 @@ export function BlueprintHomepageMenuSettings({ initialSettings, linkOptions }: 
                   <span draggable onDragStart={(event) => { event.dataTransfer.effectAllowed = "move"; setDraggedId(item.id); }} onDragEnd={() => setDraggedId(null)} className="bp-muted mb-1.5 grid cursor-grab place-items-center self-center"><GripVertical size={15} /></span>
                   <BpInput label={`عنوان ${(index + 1).toLocaleString("fa-IR")}`} value={item.label} maxLength={homepageFieldLimits.menuLabel} onChange={(event) => setItems((current) => current.map((currentItem) => currentItem.id === item.id ? { ...currentItem, label: event.target.value } : currentItem))} reserveMessage={false} />
                   <BpInput label="لینک" value={item.href} maxLength={homepageFieldLimits.href} onChange={(event) => setItems((current) => current.map((currentItem) => currentItem.id === item.id ? { ...currentItem, href: event.target.value } : currentItem))} dir="ltr" reserveMessage={false} />
-                  <BpButton type="button" isIconOnly variant="ghost" className="mb-0.5 text-[var(--bp-danger)]" aria-label={`حذف ${item.label}`} onClick={() => setItems((current) => current.filter((currentItem) => currentItem.id !== item.id))}><Trash2 size={14} /></BpButton>
+                  <BpButton type="button" isIconOnly variant="ghost" className="mb-0.5 bp-btn-danger-icon" aria-label={`حذف ${item.label}`} onClick={() => setItems((current) => current.filter((currentItem) => currentItem.id !== item.id))}><Trash2 size={14} /></BpButton>
                 </div>
               ))}
             </div>

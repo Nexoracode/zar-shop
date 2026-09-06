@@ -291,7 +291,7 @@ export function BlueprintProductForm({ storeIndustry, categories = [], brands = 
                     : <video src={media.url} muted className="pointer-events-none h-full w-full bg-black object-cover" />}
                   <span className={`absolute right-1 top-1 px-1.5 py-0.5 text-[10px] ${index === 0 ? "bg-[var(--bp-accent)] text-[var(--bp-bg)]" : "bg-[var(--bp-surface)] text-[var(--bp-text)]"}`}>{index === 0 ? "شاخص" : (index + 1).toLocaleString("fa-IR")}</span>
                   <span className="absolute left-1 top-1 text-[var(--bp-muted)]" title="برای تغییر ترتیب بکشید"><GripVertical size={14} /></span>
-                  <BpButton isIconOnly size="sm" variant="ghost" aria-label={`حذف رسانه ${(index + 1).toLocaleString("fa-IR")}`} onClick={() => setSelectedMedia((current) => current.filter((item) => item.id !== media.id))} className="absolute bottom-1 left-1 bg-[var(--bp-bg)] text-[var(--bp-danger)]"><Trash2 size={13} /></BpButton>
+                  <BpButton isIconOnly size="sm" variant="ghost" aria-label={`حذف رسانه ${(index + 1).toLocaleString("fa-IR")}`} onClick={() => setSelectedMedia((current) => current.filter((item) => item.id !== media.id))} className="absolute bottom-1 left-1 bg-[var(--bp-bg)] bp-btn-danger-icon"><Trash2 size={13} /></BpButton>
                 </div>
               ))}
             </div>
@@ -453,7 +453,7 @@ export function BlueprintProductForm({ storeIndustry, categories = [], brands = 
               : <span className="bp-muted text-[11px]">فایلی انتخاب نشده است.</span>}
             {optionGuide && <span className="bp-muted min-w-0 truncate text-[11px]">{optionGuide.title}</span>}
             <BpButton size="sm" className="ms-auto gap-2" onClick={() => setOptionGuidePickerOpen(true)}><Images size={14} />{optionGuide ? "تغییر فایل" : "انتخاب از گالری"}</BpButton>
-            {optionGuide && <BpButton isIconOnly size="sm" variant="ghost" aria-label="حذف راهنمای انتخاب" className="text-[var(--bp-danger)]" onClick={() => setOptionGuide(null)}><Trash2 size={14} /></BpButton>}
+            {optionGuide && <BpButton isIconOnly size="sm" variant="ghost" aria-label="حذف راهنمای انتخاب" className="bp-btn-danger-icon" onClick={() => setOptionGuide(null)}><Trash2 size={14} /></BpButton>}
           </div>
         </Panel>
       </div>

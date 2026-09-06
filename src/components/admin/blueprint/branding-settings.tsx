@@ -21,7 +21,7 @@ function AssetRow({ title, hint, media, onSelect, onClear }: { title: string; hi
       </span>
       <div className="min-w-0 flex-1"><strong className="block text-[13px]">{title}</strong><span className="bp-muted mt-0.5 block truncate text-[11px]">{media?.title ?? hint}</span></div>
       <BpButton type="button" size="sm" onClick={onSelect} className="gap-1.5"><Upload size={13} />{media ? "تغییر" : "انتخاب فایل"}</BpButton>
-      {media && <BpButton type="button" isIconOnly size="sm" variant="ghost" className="text-[var(--bp-danger)]" aria-label={`حذف ${title}`} onClick={onClear}><Trash2 size={13} /></BpButton>}
+      {media && <BpButton type="button" isIconOnly size="sm" variant="ghost" className="bp-btn-danger-icon" aria-label={`حذف ${title}`} onClick={onClear}><Trash2 size={13} /></BpButton>}
     </div>
   );
 }

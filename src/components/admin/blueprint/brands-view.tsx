@@ -241,7 +241,7 @@ export function BlueprintBrandsView({ brands }: { brands: BrandRow[] }) {
                       ? <span className="relative h-12 w-12 shrink-0 overflow-hidden border border-[var(--bp-divider)] bg-white"><Image src={logo.url} alt={logo.title} fill sizes="48px" className="object-contain p-1" /></span>
                       : <span className="grid h-12 w-12 shrink-0 place-items-center border border-[var(--bp-divider)] text-[var(--bp-muted)]"><Tag size={18} /></span>}
                     <BpButton type="button" size="sm" className="gap-2" onClick={() => setPickerOpen(true)}><Images size={13} />{logo ? "تغییر" : "انتخاب از گالری"}</BpButton>
-                    {logo && <BpButton type="button" isIconOnly size="sm" variant="ghost" aria-label="حذف لوگو" className="text-[var(--bp-danger)]" onClick={() => setLogo(null)}><Trash2 size={13} /></BpButton>}
+                    {logo && <BpButton type="button" isIconOnly size="sm" variant="ghost" aria-label="حذف لوگو" className="bp-btn-danger-icon" onClick={() => setLogo(null)}><Trash2 size={13} /></BpButton>}
                   </div>
                 </div>
 
@@ -296,7 +296,7 @@ export function BlueprintBrandsView({ brands }: { brands: BrandRow[] }) {
                       <span className="bp-muted text-[11px]">{brand._count.products.toLocaleString("fa-IR")} محصول</span>
                       <div className="flex items-center gap-1">
                         <BpButton isIconOnly size="sm" variant="ghost" aria-label={`ویرایش ${brand.name}`} onClick={() => startEdit(brand)}><Pencil size={15} strokeWidth={1.5} /></BpButton>
-                        <BpButton isIconOnly size="sm" variant="ghost" className="text-[var(--bp-danger)]" aria-label={`حذف ${brand.name}`} disabled={brand._count.products > 0} onClick={() => { setDeleteError(""); setDeleteTarget(brand); }}><Trash2 size={15} strokeWidth={1.5} /></BpButton>
+                        <BpButton isIconOnly size="sm" variant="ghost" className="bp-btn-danger-icon" aria-label={`حذف ${brand.name}`} disabled={brand._count.products > 0} onClick={() => { setDeleteError(""); setDeleteTarget(brand); }}><Trash2 size={15} strokeWidth={1.5} /></BpButton>
                       </div>
                     </div>
                   </article>
@@ -342,7 +342,7 @@ export function BlueprintBrandsView({ brands }: { brands: BrandRow[] }) {
                         <BpTd>
                           <div className="flex items-center justify-center gap-1">
                             <BpButton isIconOnly size="sm" variant="ghost" title="ویرایش برند" aria-label={`ویرایش ${brand.name}`} onClick={() => startEdit(brand)}><Pencil size={15} strokeWidth={1.5} /></BpButton>
-                            <BpButton isIconOnly size="sm" variant="ghost" title={brand._count.products > 0 ? "برند دارای محصول قابل حذف نیست" : "حذف برند"} className="text-[var(--bp-danger)]" aria-label={`حذف ${brand.name}`} disabled={brand._count.products > 0} onClick={() => { setDeleteError(""); setDeleteTarget(brand); }}><Trash2 size={15} strokeWidth={1.5} /></BpButton>
+                            <BpButton isIconOnly size="sm" variant="ghost" title={brand._count.products > 0 ? "برند دارای محصول قابل حذف نیست" : "حذف برند"} className="bp-btn-danger-icon" aria-label={`حذف ${brand.name}`} disabled={brand._count.products > 0} onClick={() => { setDeleteError(""); setDeleteTarget(brand); }}><Trash2 size={15} strokeWidth={1.5} /></BpButton>
                           </div>
                         </BpTd>
                       </AdminBulkTr>

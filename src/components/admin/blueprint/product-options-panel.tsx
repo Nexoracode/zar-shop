@@ -339,7 +339,7 @@ export function BlueprintProductOptions({ storeIndustry, colors, library, option
                   <strong className="text-[13px]">{type.name}</strong>
                   <span className="bp-tag bp-tag-neutral">{type.kind === "COLOR" ? "رنگ" : "فهرست ساده"}</span>
                   <span className="bp-muted text-[11px]">{chosen.valueIds.length.toLocaleString("fa-IR")} مقدار انتخاب‌شده</span>
-                  <BpButton isIconOnly variant="ghost" aria-label={`حذف نوع ${type.name}`} className="ms-auto text-[var(--bp-danger)]" onClick={() => applyTypes(optionTypes.filter((item) => item.typeId !== chosen.typeId))}>
+                  <BpButton isIconOnly variant="ghost" aria-label={`حذف نوع ${type.name}`} className="ms-auto bp-btn-danger-icon" onClick={() => applyTypes(optionTypes.filter((item) => item.typeId !== chosen.typeId))}>
                     <Trash2 size={15} />
                   </BpButton>
                 </div>
@@ -545,7 +545,7 @@ export function BlueprintProductOptions({ storeIndustry, colors, library, option
                     isIconOnly
                     variant="ghost"
                     aria-label={`حذف ترکیب ${label}`}
-                    className="text-[var(--bp-danger)]"
+                    className="bp-btn-danger-icon"
                     onClick={() => removeVariant(signature)}
                   >
                     <Trash2 size={15} />

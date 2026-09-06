@@ -271,7 +271,7 @@ export function BlueprintCategoriesView({ categories }: { categories: CategoryRo
                       ? <span className="relative h-12 w-12 shrink-0 overflow-hidden border border-[var(--bp-divider)] bg-white"><Image src={image.url} alt={image.title} fill sizes="48px" className="object-cover" /></span>
                       : <span className="grid h-12 w-12 shrink-0 place-items-center border border-[var(--bp-divider)] text-[var(--bp-muted)]"><FolderTree size={18} /></span>}
                     <BpButton type="button" size="sm" className="gap-2" onClick={() => setPickerOpen(true)}><Images size={13} />{image ? "تغییر" : "انتخاب از گالری"}</BpButton>
-                    {image && <BpButton type="button" isIconOnly size="sm" variant="ghost" aria-label="حذف تصویر" className="text-[var(--bp-danger)]" onClick={() => setImage(null)}><Trash2 size={13} /></BpButton>}
+                    {image && <BpButton type="button" isIconOnly size="sm" variant="ghost" aria-label="حذف تصویر" className="bp-btn-danger-icon" onClick={() => setImage(null)}><Trash2 size={13} /></BpButton>}
                   </div>
                 </div>
 
@@ -330,7 +330,7 @@ export function BlueprintCategoriesView({ categories }: { categories: CategoryRo
                         <div className="flex items-center gap-1">
                           <Link href={`/admin/categories/${category.id}/attributes`} aria-label={`ویژگی‌های دسته‌بندی ${category.name}`} className="bp-btn bp-btn-ghost bp-btn-icon bp-btn-sm"><SlidersHorizontal size={15} strokeWidth={1.5} /></Link>
                           <BpButton isIconOnly size="sm" variant="ghost" aria-label={`ویرایش ${category.name}`} onClick={() => startEdit(category)}><Pencil size={15} strokeWidth={1.5} /></BpButton>
-                          <BpButton isIconOnly size="sm" variant="ghost" className="text-[var(--bp-danger)]" aria-label={`حذف ${category.name}`} disabled={locked} onClick={() => { setDeleteError(""); setDeleteTarget(category); }}><Trash2 size={15} strokeWidth={1.5} /></BpButton>
+                          <BpButton isIconOnly size="sm" variant="ghost" className="bp-btn-danger-icon" aria-label={`حذف ${category.name}`} disabled={locked} onClick={() => { setDeleteError(""); setDeleteTarget(category); }}><Trash2 size={15} strokeWidth={1.5} /></BpButton>
                         </div>
                       </div>
                     </article>
@@ -386,7 +386,7 @@ export function BlueprintCategoriesView({ categories }: { categories: CategoryRo
                             <div className="flex items-center justify-center gap-1">
                               <Link href={`/admin/categories/${category.id}/attributes`} aria-label={`ویژگی‌های دسته‌بندی ${category.name}`} title="ویژگی‌های دسته‌بندی" className="bp-btn bp-btn-ghost bp-btn-icon bp-btn-sm"><SlidersHorizontal size={15} strokeWidth={1.5} /></Link>
                               <BpButton isIconOnly size="sm" variant="ghost" title="ویرایش دسته‌بندی" aria-label={`ویرایش ${category.name}`} onClick={() => startEdit(category)}><Pencil size={15} strokeWidth={1.5} /></BpButton>
-                              <BpButton isIconOnly size="sm" variant="ghost" title={locked ? "دسته دارای محصول یا زیردسته قابل حذف نیست" : "حذف دسته‌بندی"} className="text-[var(--bp-danger)]" aria-label={`حذف ${category.name}`} disabled={locked} onClick={() => { setDeleteError(""); setDeleteTarget(category); }}><Trash2 size={15} strokeWidth={1.5} /></BpButton>
+                              <BpButton isIconOnly size="sm" variant="ghost" title={locked ? "دسته دارای محصول یا زیردسته قابل حذف نیست" : "حذف دسته‌بندی"} className="bp-btn-danger-icon" aria-label={`حذف ${category.name}`} disabled={locked} onClick={() => { setDeleteError(""); setDeleteTarget(category); }}><Trash2 size={15} strokeWidth={1.5} /></BpButton>
                             </div>
                           </BpTd>
                         </AdminBulkTr>

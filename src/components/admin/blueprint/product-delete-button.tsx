@@ -37,7 +37,7 @@ export function ProductDeleteButton({ id, name, disabled }: { id: string; name: 
         isIconOnly
         size="sm"
         variant="ghost"
-        className="text-[var(--bp-danger)]"
+        className="bp-btn-danger-icon"
         disabled={disabled}
         title={disabled ? "محصولی که فروش داشته قابل حذف نیست؛ به‌جای آن بایگانی کنید." : "حذف محصول"}
         aria-label={`حذف محصول ${name}`}

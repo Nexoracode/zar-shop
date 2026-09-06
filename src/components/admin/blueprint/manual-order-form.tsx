@@ -310,7 +310,7 @@ export function BlueprintManualOrderForm({ industry }: { industry: "GOLD" | "GEN
                       <BpSelect aria-label={`تنوع ${item.name}`} value={item.selectionKey} reserveMessage={false} placeholder="انتخاب تنوع" onChange={(event) => updateItem(item.key, { selectionKey: event.target.value })} options={item.variants.map((variant) => ({ value: variant.selectionKey, label: `${variant.label}${variant.stock > 0 ? "" : " (ناموجود)"}`, disabled: variant.stock <= 0 }))} />
                     ) : <span className="bp-muted text-[11px] sm:pb-2">بدون تنوع</span>}
                     <BpNumberInput aria-label={`تعداد ${item.name}`} value={item.quantity} reserveMessage={false} onValueChange={(value) => updateItem(item.key, { quantity: value.replace(/\D/g, "") || "1" })} />
-                    <BpButton type="button" isIconOnly size="sm" variant="ghost" className="text-[var(--bp-danger)] sm:mb-0.5" aria-label={`حذف ${item.name}`} onClick={() => setItems((current) => current.filter((entry) => entry.key !== item.key))}><Trash2 size={14} /></BpButton>
+                    <BpButton type="button" isIconOnly size="sm" variant="ghost" className="bp-btn-danger-icon sm:mb-0.5" aria-label={`حذف ${item.name}`} onClick={() => setItems((current) => current.filter((entry) => entry.key !== item.key))}><Trash2 size={14} /></BpButton>
                   </div>
                 ))}
               </div>

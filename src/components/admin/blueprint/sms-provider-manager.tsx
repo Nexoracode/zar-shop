@@ -120,7 +120,7 @@ export function BlueprintSmsProviderManager({ mode, initialConfigs }: { mode: "l
                       <BpTd className="text-center">
                         <div className="flex items-center justify-center gap-1">
                           <BpButton type="button" variant="ghost" isIconOnly size="sm" disabled={!item.sendSupported || item.isActive} isPending={busy === `PATCH-${item.provider}`} aria-label={`فعال‌سازی ${item.displayName}`} onClick={() => void mutate(item.provider, "PATCH")}><Power size={15} strokeWidth={1.5} /></BpButton>
-                          <BpButton type="button" variant="ghost" className="text-[var(--bp-danger)]" isIconOnly size="sm" isPending={busy === `DELETE-${item.provider}`} aria-label={`حذف ${item.displayName}`} onClick={() => void mutate(item.provider, "DELETE")}><Trash2 size={15} strokeWidth={1.5} /></BpButton>
+                          <BpButton type="button" variant="ghost" className="bp-btn-danger-icon" isIconOnly size="sm" isPending={busy === `DELETE-${item.provider}`} aria-label={`حذف ${item.displayName}`} onClick={() => void mutate(item.provider, "DELETE")}><Trash2 size={15} strokeWidth={1.5} /></BpButton>
                         </div>
                       </BpTd>
                     </tr>

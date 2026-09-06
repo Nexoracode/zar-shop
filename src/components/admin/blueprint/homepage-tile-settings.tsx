@@ -115,7 +115,7 @@ export function BlueprintHomepageTileSettings({ initialSettings }: { initialSett
                   <div className="mb-3 flex flex-wrap items-center gap-2.5">
                     <span className="bp-muted grid size-7 shrink-0 place-items-center bg-[var(--bp-card)] text-[11px] font-bold">{(groupIndex + 1).toLocaleString("fa-IR")}</span>
                     <BpSelect aria-label={`چیدمان ردیف ${groupIndex + 1}`} value={group.layout} options={layoutOptions} onChange={(event) => changeLayout(group.id, event.target.value as HomepageTileLayout)} reserveMessage={false} wrapperClassName="min-w-[170px] flex-1 sm:max-w-[260px]" />
-                    <BpButton type="button" size="sm" isIconOnly variant="ghost" className="text-[var(--bp-danger)]" aria-label={`حذف ردیف ${groupIndex + 1}`} onClick={() => { setGroups((current) => current.filter((item) => item.id !== group.id)); setSections((current) => current.filter((section) => section.id !== `TILE_GROUP:${group.id}`)); }}><Trash2 size={14} /></BpButton>
+                    <BpButton type="button" size="sm" isIconOnly variant="ghost" className="bp-btn-danger-icon" aria-label={`حذف ردیف ${groupIndex + 1}`} onClick={() => { setGroups((current) => current.filter((item) => item.id !== group.id)); setSections((current) => current.filter((section) => section.id !== `TILE_GROUP:${group.id}`)); }}><Trash2 size={14} /></BpButton>
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {group.tiles.map((tile, tileIndex) => (

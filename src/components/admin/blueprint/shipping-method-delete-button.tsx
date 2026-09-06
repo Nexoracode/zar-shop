@@ -42,7 +42,7 @@ export function ShippingMethodDeleteButton({ id, title, orderCount }: {
         isIconOnly
         size="sm"
         variant="ghost"
-        className="text-[var(--bp-danger)]"
+        className="bp-btn-danger-icon"
         disabled={loading}
         title="حذف روش ارسال"
         aria-label={`حذف ${title}`}

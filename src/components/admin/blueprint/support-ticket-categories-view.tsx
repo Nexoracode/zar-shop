@@ -242,7 +242,7 @@ export function BlueprintSupportTicketCategoriesView({ categories }: { categorie
                       <span className="bp-muted text-[11px]">{category._count.tickets.toLocaleString("fa-IR")} تیکت</span>
                       <div className="flex items-center gap-1">
                         <BpButton isIconOnly size="sm" variant="ghost" aria-label={`ویرایش ${category.name}`} onClick={() => startEdit(category)}><Pencil size={15} strokeWidth={1.5} /></BpButton>
-                        <BpButton isIconOnly size="sm" variant="ghost" className="text-[var(--bp-danger)]" aria-label={`حذف ${category.name}`} disabled={category._count.tickets > 0} onClick={() => { setDeleteError(""); setDeleteTarget(category); }}><Trash2 size={15} strokeWidth={1.5} /></BpButton>
+                        <BpButton isIconOnly size="sm" variant="ghost" className="bp-btn-danger-icon" aria-label={`حذف ${category.name}`} disabled={category._count.tickets > 0} onClick={() => { setDeleteError(""); setDeleteTarget(category); }}><Trash2 size={15} strokeWidth={1.5} /></BpButton>
                       </div>
                     </div>
                   </article>
@@ -282,7 +282,7 @@ export function BlueprintSupportTicketCategoriesView({ categories }: { categorie
                         <BpTd>
                           <div className="flex items-center justify-center gap-1">
                             <BpButton isIconOnly size="sm" variant="ghost" title="ویرایش موضوع" aria-label={`ویرایش ${category.name}`} onClick={() => startEdit(category)}><Pencil size={15} strokeWidth={1.5} /></BpButton>
-                            <BpButton isIconOnly size="sm" variant="ghost" title={category._count.tickets > 0 ? "موضوع دارای تیکت قابل حذف نیست" : "حذف موضوع"} className="text-[var(--bp-danger)]" aria-label={`حذف ${category.name}`} disabled={category._count.tickets > 0} onClick={() => { setDeleteError(""); setDeleteTarget(category); }}><Trash2 size={15} strokeWidth={1.5} /></BpButton>
+                            <BpButton isIconOnly size="sm" variant="ghost" title={category._count.tickets > 0 ? "موضوع دارای تیکت قابل حذف نیست" : "حذف موضوع"} className="bp-btn-danger-icon" aria-label={`حذف ${category.name}`} disabled={category._count.tickets > 0} onClick={() => { setDeleteError(""); setDeleteTarget(category); }}><Trash2 size={15} strokeWidth={1.5} /></BpButton>
                           </div>
                         </BpTd>
                       </AdminBulkTr>

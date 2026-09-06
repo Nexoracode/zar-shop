@@ -16,6 +16,16 @@ const statusIcons: Record<ProductStatus, typeof CircleCheck> = {
   ARCHIVED: Archive,
 };
 
+/** Direct on the icon, not the trigger button's own className: `.bp-btn-ghost` sets its own
+ * `color` and, being unlayered, always wins over a Tailwind color utility on the same button —
+ * see `.bp-btn-danger-icon` in admin-blueprint.css. Setting it on the icon itself sidesteps that
+ * entirely, since nothing else targets the icon element for `color`. */
+const statusIconColor: Record<ProductStatus, string> = {
+  ACTIVE: "text-[var(--bp-success)]",
+  DRAFT: "text-[var(--bp-warning)]",
+  ARCHIVED: "text-[var(--bp-info)]",
+};
+
 const statusOrder: ProductStatus[] = ["ACTIVE", "DRAFT", "ARCHIVED"];
 
 /**
@@ -63,7 +73,7 @@ export function ProductStatusMenu({ id, name, status }: { id: string; name: stri
         aria-expanded={open}
         onClick={() => setOpen((current) => !current)}
       >
-        {!pending && <Icon size={15} strokeWidth={1.5} />}
+        {!pending && <Icon size={15} strokeWidth={1.5} className={statusIconColor[status]} />}
       </BpButton>
       <BpPopover open={open} anchorRef={triggerRef} onClose={() => setOpen(false)} label={`وضعیت انتشار محصول ${name}`} width={180}>
         <ul role="menu" className="m-0 list-none p-0">
@@ -78,7 +88,7 @@ export function ProductStatusMenu({ id, name, status }: { id: string; name: stri
                   onClick={() => void change(value)}
                   className={`flex w-full items-center gap-2 border border-transparent px-3 py-2 text-start text-[13px] hover:bg-[var(--bp-hover)] ${value === status ? "font-bold text-[var(--bp-accent)]" : ""}`}
                 >
-                  <OptionIcon size={14} strokeWidth={1.7} />
+                  <OptionIcon size={14} strokeWidth={1.7} className={statusIconColor[value]} />
                   {productStatusLabels[value]}
                 </button>
               </li>

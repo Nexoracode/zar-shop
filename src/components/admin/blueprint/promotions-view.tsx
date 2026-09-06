@@ -129,7 +129,7 @@ export function BlueprintPromotionsView({ initialItems, query, status, type, pag
                     <div className="flex items-center gap-1">
                       <BpButton isIconOnly size="sm" variant="ghost" isPending={togglingId === item.id} aria-label={item.isActive ? `غیرفعال‌کردن ${item.title}` : `فعال‌کردن ${item.title}`} onClick={() => void toggle(item)}>{item.isActive ? <Eye size={15} strokeWidth={1.5} /> : <EyeOff size={15} strokeWidth={1.5} />}</BpButton>
                       <Link href={`/admin/promotions/${item.id}/edit`} aria-label={`ویرایش ${item.title}`} className="bp-btn bp-btn-ghost bp-btn-icon bp-btn-sm"><Pencil size={15} strokeWidth={1.5} /></Link>
-                      <BpButton isIconOnly size="sm" variant="ghost" className="text-[var(--bp-danger)]" aria-label={`حذف ${item.title}`} onClick={() => { setDeleteError(""); setDeleting(item); }}><Trash2 size={15} strokeWidth={1.5} /></BpButton>
+                      <BpButton isIconOnly size="sm" variant="ghost" className="bp-btn-danger-icon" aria-label={`حذف ${item.title}`} onClick={() => { setDeleteError(""); setDeleting(item); }}><Trash2 size={15} strokeWidth={1.5} /></BpButton>
                     </div>
                   </div>
                 </article>
@@ -178,7 +178,7 @@ export function BlueprintPromotionsView({ initialItems, query, status, type, pag
                         <div className="flex items-center justify-center gap-1">
                           <BpButton isIconOnly size="sm" variant="ghost" isPending={togglingId === item.id} title={item.isActive ? "غیرفعال‌کردن" : "فعال‌کردن"} aria-label={item.isActive ? `غیرفعال‌کردن ${item.title}` : `فعال‌کردن ${item.title}`} onClick={() => void toggle(item)}>{item.isActive ? <Eye size={15} strokeWidth={1.5} /> : <EyeOff size={15} strokeWidth={1.5} />}</BpButton>
                           <Link href={`/admin/promotions/${item.id}/edit`} aria-label={`ویرایش ${item.title}`} title="ویرایش" className="bp-btn bp-btn-ghost bp-btn-icon bp-btn-sm"><Pencil size={15} strokeWidth={1.5} /></Link>
-                          <BpButton isIconOnly size="sm" variant="ghost" className="text-[var(--bp-danger)]" title="حذف" aria-label={`حذف ${item.title}`} onClick={() => { setDeleteError(""); setDeleting(item); }}><Trash2 size={15} strokeWidth={1.5} /></BpButton>
+                          <BpButton isIconOnly size="sm" variant="ghost" className="bp-btn-danger-icon" title="حذف" aria-label={`حذف ${item.title}`} onClick={() => { setDeleteError(""); setDeleting(item); }}><Trash2 size={15} strokeWidth={1.5} /></BpButton>
                         </div>
                       </BpTd>
                     </AdminBulkTr>

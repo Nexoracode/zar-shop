@@ -187,7 +187,7 @@ export function BlueprintProductAttributes({ categoryName, groups, values, onGro
                   wrapperClassName="w-[min(100%,220px)]"
                   onChange={(event) => setValue(attribute.id, event.target.value)}
                 />
-                <BpButton isIconOnly variant="ghost" aria-label={`حذف ویژگی ${attribute.name || "بدون نام"}`} className="field-action ms-auto text-[var(--bp-danger)]" onClick={() => removeAttribute(attribute.id)}>
+                <BpButton isIconOnly variant="ghost" aria-label={`حذف ویژگی ${attribute.name || "بدون نام"}`} className="field-action ms-auto bp-btn-danger-icon" onClick={() => removeAttribute(attribute.id)}>
                   <Trash2 size={15} />
                 </BpButton>
               </div>
@@ -242,7 +242,7 @@ export function BlueprintProductAttributes({ categoryName, groups, values, onGro
               wrapperClassName="min-w-0 flex-1 max-w-[280px]"
               onChange={(event) => setEditingGroups(editingGroups.map((item) => (item.id === group.id ? { ...item, name: event.target.value } : item)))}
             />
-            <BpButton isIconOnly variant="ghost" aria-label={`حذف گروه ${group.name || "بدون نام"}`} className="field-action text-[var(--bp-danger)]" onClick={() => setEditingGroups(editingGroups.filter((item) => item.id !== group.id))}>
+            <BpButton isIconOnly variant="ghost" aria-label={`حذف گروه ${group.name || "بدون نام"}`} className="field-action bp-btn-danger-icon" onClick={() => setEditingGroups(editingGroups.filter((item) => item.id !== group.id))}>
               <Trash2 size={15} />
             </BpButton>
           </div>

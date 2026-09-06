@@ -182,7 +182,7 @@ export function BlueprintShippingMethodForm({ provinces, method }: { provinces: 
                 />
                 <BpNumberInput label="تا وزن (گرم)" value={String(zone.maxWeightGrams)} onValueChange={(value) => setZones((current) => current.map((item, position) => (position === index ? { ...item, maxWeightGrams: Number(value || 0) } : item)))} />
                 <BpNumberInput label="هزینه (ریال)" isPrice value={String(zone.price)} onValueChange={(value) => setZones((current) => current.map((item, position) => (position === index ? { ...item, price: Number(value || 0) } : item)))} />
-                <BpButton type="button" isIconOnly variant="ghost" aria-label={`حذف ردیف ${(index + 1).toLocaleString("fa-IR")}`} className="mb-[3px] text-[var(--bp-danger)]" onClick={() => setZones((current) => current.filter((_, position) => position !== index))}>
+                <BpButton type="button" isIconOnly variant="ghost" aria-label={`حذف ردیف ${(index + 1).toLocaleString("fa-IR")}`} className="mb-[3px] bp-btn-danger-icon" onClick={() => setZones((current) => current.filter((_, position) => position !== index))}>
                   <Trash2 size={15} />
                 </BpButton>
               </div>

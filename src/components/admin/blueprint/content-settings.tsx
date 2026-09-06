@@ -86,7 +86,7 @@ export function BlueprintContentSettings({ initialSettings }: { initialSettings:
                 <BpTag tone={faq.enabled ? "success" : "neutral"}>{faq.enabled ? "فعال" : "غیرفعال"}</BpTag>
                 <div className="ms-auto flex items-center gap-1">
                   <BpButton type="button" variant="ghost" isIconOnly size="sm" aria-label={`${faq.enabled ? "غیرفعال‌کردن" : "فعال‌کردن"} سوال`} onClick={() => updateFaq(faq.id, { enabled: !faq.enabled })}>{faq.enabled ? <Eye size={15} strokeWidth={1.5} className="text-[var(--bp-success)]" /> : <EyeOff size={15} strokeWidth={1.5} className="bp-muted" />}</BpButton>
-                  <BpButton type="button" variant="ghost" className="text-[var(--bp-danger)]" isIconOnly size="sm" aria-label="حذف سوال" onClick={() => setFaqs((current) => current.filter((item) => item.id !== faq.id))}><Trash2 size={15} strokeWidth={1.5} /></BpButton>
+                  <BpButton type="button" variant="ghost" className="bp-btn-danger-icon" isIconOnly size="sm" aria-label="حذف سوال" onClick={() => setFaqs((current) => current.filter((item) => item.id !== faq.id))}><Trash2 size={15} strokeWidth={1.5} /></BpButton>
                 </div>
               </div>
               <div className="grid gap-[8px]">

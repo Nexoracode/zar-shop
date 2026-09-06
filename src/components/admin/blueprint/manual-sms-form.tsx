@@ -149,7 +149,7 @@ export function BlueprintSmsCampaignList({ items }: { items: SmsCampaignListItem
                   </div>
                   <div className="mt-3 flex items-center justify-between">
                     <span className="bp-muted text-[10px]">{new Date(item.createdAt).toLocaleString("fa-IR")}</span>
-                    <BpButton type="button" variant="ghost" className="text-[var(--bp-danger)]" isIconOnly size="sm" aria-label="حذف پیام از تاریخچه" onClick={() => { setDeleteError(""); setPendingDelete(item); }}><Trash2 size={15} strokeWidth={1.5} /></BpButton>
+                    <BpButton type="button" variant="ghost" className="bp-btn-danger-icon" isIconOnly size="sm" aria-label="حذف پیام از تاریخچه" onClick={() => { setDeleteError(""); setPendingDelete(item); }}><Trash2 size={15} strokeWidth={1.5} /></BpButton>
                   </div>
                 </article>
               ))}
@@ -182,10 +182,10 @@ export function BlueprintSmsCampaignList({ items }: { items: SmsCampaignListItem
                       <BpTd className="max-w-[280px] truncate font-bold" title={item.message}>{item.message}</BpTd>
                       <BpTd>{item.recipientCount.toLocaleString("fa-IR")}</BpTd>
                       <BpTd className="text-[var(--bp-success)]">{item.successfulCount.toLocaleString("fa-IR")}</BpTd>
-                      <BpTd className="text-[var(--bp-danger)]">{item.failedCount.toLocaleString("fa-IR")}</BpTd>
+                      <BpTd className="bp-btn-danger-icon">{item.failedCount.toLocaleString("fa-IR")}</BpTd>
                       <BpTd><BpTag>{statusLabel(item.status)}</BpTag></BpTd>
                       <BpTd className="bp-muted">{new Date(item.createdAt).toLocaleString("fa-IR")}</BpTd>
-                      <BpTd className="text-center"><BpButton type="button" variant="ghost" className="text-[var(--bp-danger)]" isIconOnly size="sm" aria-label="حذف پیام از تاریخچه" onClick={() => { setDeleteError(""); setPendingDelete(item); }}><Trash2 size={15} strokeWidth={1.5} /></BpButton></BpTd>
+                      <BpTd className="text-center"><BpButton type="button" variant="ghost" className="bp-btn-danger-icon" isIconOnly size="sm" aria-label="حذف پیام از تاریخچه" onClick={() => { setDeleteError(""); setPendingDelete(item); }}><Trash2 size={15} strokeWidth={1.5} /></BpButton></BpTd>
                     </tr>
                   ))}
                 </tbody>

@@ -249,6 +249,14 @@
 .bp-btn-ghost:not(:disabled):active { background: color-mix(in srgb, var(--bp-accent) 18%, transparent); }
 .bp-btn-danger { color: var(--bp-danger); border-color: color-mix(in srgb, var(--bp-danger) 45%, transparent); }
 .bp-btn-danger:not(:disabled):hover { background: var(--bp-danger-bg); }
+/* A ghost icon button for a destructive row action (delete). `.bp-btn-ghost` sets its own
+   `color`, and a plain Tailwind color utility on the same button always loses to it regardless of
+   source order — this file has no `@layer`, so every rule in it is unlayered and automatically
+   outranks any layered Tailwind utility. The fix is the same compound-selector trick as
+   `.admin-field`/`.bp-input-sm` below: two classes beat one on specificity alone. */
+.bp-btn-ghost.bp-btn-danger-icon { color: var(--bp-danger); }
+.bp-btn-ghost.bp-btn-danger-icon:not(:disabled):hover { background: var(--bp-danger-bg); }
+.bp-btn-ghost.bp-btn-danger-icon:not(:disabled):active { background: color-mix(in srgb, var(--bp-danger) 18%, transparent); }
 .bp-btn-icon { width: 36px; min-width: 36px; height: 36px; padding: 0; }
 .bp-btn-sm { min-height: 30px; font-size: 13px; padding: 4px 10px; }
 .bp-btn-block { width: 100%; }

@@ -171,7 +171,7 @@ export function BlueprintHomepageHeroSettings({ initialSettings }: { initialSett
                       <span draggable onDragStart={(event: DragEvent<HTMLSpanElement>) => { event.dataTransfer.effectAllowed = "move"; event.dataTransfer.setData("text/plain", slide.id); setDraggedCardSlideId(slide.id); }} onDragEnd={() => { setDraggedCardSlideId(null); setCardDropTarget(null); }} className="bp-muted cursor-grab active:cursor-grabbing"><GripVertical size={15} /></span>
                       <strong className="text-[12px]">اسلاید {(index + 1).toLocaleString("fa-IR")}</strong>
                     </div>
-                    <BpButton type="button" isIconOnly size="sm" variant="ghost" className="text-[var(--bp-danger)]" aria-label={`حذف اسلاید ${index + 1}`} onClick={() => setSlides((current) => current.filter((item) => item.id !== slide.id))}><Trash2 size={14} /></BpButton>
+                    <BpButton type="button" isIconOnly size="sm" variant="ghost" className="bp-btn-danger-icon" aria-label={`حذف اسلاید ${index + 1}`} onClick={() => setSlides((current) => current.filter((item) => item.id !== slide.id))}><Trash2 size={14} /></BpButton>
                   </div>
                   <div className="grid gap-2.5 sm:grid-cols-2">
                     <BpHomepageMediaField label="تصویر دسکتاپ" hint="پیشنهاد: ۱۹۲۰×۹۰۰" media={slide.desktopMedia} onSelect={() => setPickerTarget(`desktop:${slide.id}`)} onClear={() => setSlides((current) => current.map((item) => item.id === slide.id ? { ...item, desktopMedia: null } : item))} />

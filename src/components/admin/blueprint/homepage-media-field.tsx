@@ -28,7 +28,7 @@ export function BpHomepageMediaField({ label, hint, media, onSelect, onClear, as
         </div>
         <div className="flex gap-1.5">
           <BpButton type="button" size="sm" onClick={onSelect} className="flex-1 gap-1"><Upload size={12} />{media ? "تغییر" : "انتخاب"}</BpButton>
-          {media && <BpButton type="button" size="sm" isIconOnly variant="ghost" className="text-[var(--bp-danger)]" aria-label={`حذف ${label}`} onClick={onClear}><Trash2 size={12} /></BpButton>}
+          {media && <BpButton type="button" size="sm" isIconOnly variant="ghost" className="bp-btn-danger-icon" aria-label={`حذف ${label}`} onClick={onClear}><Trash2 size={12} /></BpButton>}
         </div>
       </div>
     </div>

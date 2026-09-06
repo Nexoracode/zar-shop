@@ -258,7 +258,7 @@ export function BlueprintColorsView({ colors }: { colors: ColorItem[] }) {
                     </div>
                     <div className="flex items-center justify-end gap-1">
                       <BpButton isIconOnly size="sm" variant="ghost" aria-label={`ویرایش ${color.name}`} onClick={() => startEdit(color)}><Pencil size={15} strokeWidth={1.5} /></BpButton>
-                      <BpButton isIconOnly size="sm" variant="ghost" className="text-[var(--bp-danger)]" aria-label={`حذف ${color.name}`} onClick={() => { setDeleteError(""); setDeleteTarget(color); }}><Trash2 size={15} strokeWidth={1.5} /></BpButton>
+                      <BpButton isIconOnly size="sm" variant="ghost" className="bp-btn-danger-icon" aria-label={`حذف ${color.name}`} onClick={() => { setDeleteError(""); setDeleteTarget(color); }}><Trash2 size={15} strokeWidth={1.5} /></BpButton>
                     </div>
                   </article>
                 ))}
@@ -302,7 +302,7 @@ export function BlueprintColorsView({ colors }: { colors: ColorItem[] }) {
                         <BpTd>
                           <div className="flex items-center justify-center gap-1">
                             <BpButton isIconOnly size="sm" variant="ghost" title="ویرایش رنگ" aria-label={`ویرایش ${color.name}`} onClick={() => startEdit(color)}><Pencil size={15} strokeWidth={1.5} /></BpButton>
-                            <BpButton isIconOnly size="sm" variant="ghost" className="text-[var(--bp-danger)]" title="حذف رنگ" aria-label={`حذف ${color.name}`} onClick={() => { setDeleteError(""); setDeleteTarget(color); }}><Trash2 size={15} strokeWidth={1.5} /></BpButton>
+                            <BpButton isIconOnly size="sm" variant="ghost" className="bp-btn-danger-icon" title="حذف رنگ" aria-label={`حذف ${color.name}`} onClick={() => { setDeleteError(""); setDeleteTarget(color); }}><Trash2 size={15} strokeWidth={1.5} /></BpButton>
                           </div>
                         </BpTd>
                       </AdminBulkTr>

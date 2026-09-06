@@ -363,7 +363,7 @@ export function BlueprintOptionTypesView({ types, colors }: { types: OptionTypeR
                       <span className="bp-muted text-[11px]">{type.productCount.toLocaleString("fa-IR")} محصول</span>
                       <div className="flex items-center gap-1">
                         <BpButton isIconOnly size="sm" variant="ghost" aria-label={`ویرایش ${type.name}`} onClick={() => startEdit(type)}><Pencil size={15} strokeWidth={1.5} /></BpButton>
-                        <BpButton isIconOnly size="sm" variant="ghost" className="text-[var(--bp-danger)]" aria-label={`حذف ${type.name}`} disabled={type.productCount > 0} onClick={() => { setDeleteError(""); setDeleteTarget(type); }}><Trash2 size={15} strokeWidth={1.5} /></BpButton>
+                        <BpButton isIconOnly size="sm" variant="ghost" className="bp-btn-danger-icon" aria-label={`حذف ${type.name}`} disabled={type.productCount > 0} onClick={() => { setDeleteError(""); setDeleteTarget(type); }}><Trash2 size={15} strokeWidth={1.5} /></BpButton>
                       </div>
                     </div>
                   </article>
@@ -410,7 +410,7 @@ export function BlueprintOptionTypesView({ types, colors }: { types: OptionTypeR
                         <BpTd>
                           <div className="flex items-center justify-center gap-1">
                             <BpButton isIconOnly size="sm" variant="ghost" title="ویرایش نوع تنوع" aria-label={`ویرایش ${type.name}`} onClick={() => startEdit(type)}><Pencil size={15} strokeWidth={1.5} /></BpButton>
-                            <BpButton isIconOnly size="sm" variant="ghost" title={type.productCount > 0 ? "این نوع در محصولی استفاده شده و قابل حذف نیست" : "حذف نوع تنوع"} className="text-[var(--bp-danger)]" aria-label={`حذف ${type.name}`} disabled={type.productCount > 0} onClick={() => { setDeleteError(""); setDeleteTarget(type); }}><Trash2 size={15} strokeWidth={1.5} /></BpButton>
+                            <BpButton isIconOnly size="sm" variant="ghost" title={type.productCount > 0 ? "این نوع در محصولی استفاده شده و قابل حذف نیست" : "حذف نوع تنوع"} className="bp-btn-danger-icon" aria-label={`حذف ${type.name}`} disabled={type.productCount > 0} onClick={() => { setDeleteError(""); setDeleteTarget(type); }}><Trash2 size={15} strokeWidth={1.5} /></BpButton>
                           </div>
                         </BpTd>
                       </AdminBulkTr>
