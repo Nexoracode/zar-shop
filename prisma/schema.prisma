@@ -468,6 +468,8 @@ model Product {
   @@index([optionGuideId])
   @@index([featured, status])
   @@index([discountEndsAt])
+  // The storefront catalogue always filters on both at once (`status: ACTIVE`, `storeIndustry`).
+  @@index([status, storeIndustry])
 }
 
 /// A product's manufacturer — Samsung, Xiaomi, … — shown as its own logo strip on the homepage
@@ -1140,6 +1142,8 @@ model OrderItem {
   returnItems       ReturnItem[]
 
   @@index([orderId])
+  // FK to Product — needed by the per-product sales report and `_count: { orderItems }`.
+  @@index([productId])
 }
 
 model Payment {
