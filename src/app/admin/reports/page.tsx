@@ -26,7 +26,7 @@ export default async function ReportsPage({ searchParams }: { searchParams: Sear
   // order) survives the round-trip and stays visible with its clear control.
   const rawFrom = params.from ?? null;
   const rawTo = params.to ?? null;
-  const exportParams = period.custom
+  const exportParams: Record<string, string> = period.custom
     ? { from: rawFrom as string, to: rawTo as string }
     : { range: activeRange };
 
