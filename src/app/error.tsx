@@ -15,7 +15,7 @@ export default function GlobalErrorBoundary({ error, retry }: { error: Error & {
   return (
     <main className="grid min-h-[65vh] place-items-center px-4 py-16">
       <Card variant="secondary" className="w-full max-w-md rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-8 text-center shadow-sm">
-        <span className="mx-auto mb-5 grid size-14 place-items-center rounded-full bg-rose-50 text-rose-600"><AlertTriangle size={26} /></span>
+        <span className="mx-auto mb-5 grid size-14 place-items-center rounded-full bg-[color-mix(in_srgb,var(--danger)_12%,transparent)] text-[var(--danger)]"><AlertTriangle size={26} /></span>
         <h1 className="m-0 text-lg font-bold text-[var(--foreground)]">خطایی پیش آمد</h1>
         <p className="mb-0 mt-2 text-sm leading-7 text-[var(--muted)]">مشکلی در نمایش این صفحه رخ داد. می‌توانید دوباره تلاش کنید یا به صفحه اصلی بازگردید.</p>
         <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:justify-center">

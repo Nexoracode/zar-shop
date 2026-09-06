@@ -64,7 +64,7 @@ export function AdminShell({ user, showGoldPrice, goldPrice, goldFetchedAt, noti
               <Popover>
                 <Popover.Trigger aria-label="نمایش پروفایل مدیر" className="relative grid h-10 w-10 cursor-pointer place-items-center rounded-full border border-[var(--border)] bg-[var(--surface-secondary)] p-0 outline-none transition hover:bg-[var(--surface-tertiary)] focus-visible:ring-2 focus-visible:ring-[var(--focus)]">
                   <span className="grid h-8 w-8 place-items-center rounded-full bg-[var(--accent)] text-[11px] font-bold text-[var(--accent-foreground)]">{fullName.slice(0, 1)}</span>
-                  <span className="absolute bottom-0 left-0 h-3 w-3 rounded-full border-2 border-[var(--surface)] bg-emerald-500" aria-label="آنلاین" />
+                  <span className="absolute bottom-0 left-0 h-3 w-3 rounded-full border-2 border-[var(--surface)] bg-[var(--success)]" aria-label="آنلاین" />
                 </Popover.Trigger>
                 <Popover.Content dir="rtl" placement="bottom right" className="w-[min(90vw,300px)] rounded-[5px] border border-[var(--border)] bg-[var(--overlay)] p-0 text-right text-[var(--overlay-foreground)] shadow-xl">
                   <Popover.Dialog dir="rtl" className="p-0 text-right">

@@ -131,5 +131,5 @@ function LoadingPanel({ categoryName }: { categoryName: string }) {
 }
 
 function ErrorPanel({ message, onRetry }: { message: string; onRetry: () => void }) {
-  return <Card variant="secondary" className="rounded-xl border border-rose-200 bg-white shadow-sm"><Card.Content className="grid min-h-[320px] place-items-center p-6"><div className="w-full max-w-md text-center"><Alert status="danger"><Alert.Description>{message}</Alert.Description></Alert><Button type="button" variant="secondary" onPress={onRetry} className="mt-4">تلاش دوباره</Button></div></Card.Content></Card>;
+  return <Card variant="secondary" className="rounded-xl border border-[color-mix(in_srgb,var(--danger)_30%,transparent)] bg-white shadow-sm"><Card.Content className="grid min-h-[320px] place-items-center p-6"><div className="w-full max-w-md text-center"><Alert status="danger"><Alert.Description>{message}</Alert.Description></Alert><Button type="button" variant="secondary" onPress={onRetry} className="mt-4">تلاش دوباره</Button></div></Card.Content></Card>;
 }

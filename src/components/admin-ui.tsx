@@ -10,10 +10,10 @@ import { BpTag } from "@/components/admin/blueprint/ui/tag";
 
 const tones: Record<AdminTone, string> = {
   neutral: "bg-[var(--surface-tertiary)] text-[var(--muted)] ring-[var(--border)]",
-  info: "bg-blue-50 text-blue-700 ring-blue-100",
-  success: "bg-emerald-50 text-emerald-700 ring-emerald-100",
-  warning: "bg-amber-50 text-amber-700 ring-amber-100",
-  danger: "bg-rose-50 text-rose-700 ring-rose-100",
+  info: "bg-[color-mix(in_srgb,var(--info)_12%,transparent)] text-[var(--info)] ring-[color-mix(in_srgb,var(--info)_25%,transparent)]",
+  success: "bg-[color-mix(in_srgb,var(--success)_12%,transparent)] text-[var(--success)] ring-[color-mix(in_srgb,var(--success)_25%,transparent)]",
+  warning: "bg-[color-mix(in_srgb,var(--warning)_16%,transparent)] text-[var(--warning)] ring-[color-mix(in_srgb,var(--warning)_25%,transparent)]",
+  danger: "bg-[color-mix(in_srgb,var(--danger)_12%,transparent)] text-[var(--danger)] ring-[color-mix(in_srgb,var(--danger)_25%,transparent)]",
   gold: "bg-[var(--warning)]/15 text-[var(--warning)] ring-[var(--warning)]/25",
 };
 

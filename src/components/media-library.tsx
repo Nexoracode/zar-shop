@@ -206,7 +206,7 @@ export function MediaLibrary() {
                   : item.type === "VIDEO"
                     ? <><video src={item.url} muted className="h-full w-full bg-black object-cover" /><span className="absolute left-1.5 top-1.5 grid h-6 w-6 place-items-center bg-black/60 text-white"><Film size={13} /></span></>
                     : <span className="grid h-full place-items-center text-[var(--muted)]"><FileText size={30} /></span>}
-                {noAlt && <span title="متن جایگزین ندارد" className="absolute right-1.5 top-1.5 grid h-6 w-6 place-items-center bg-amber-500 text-white"><TriangleAlert size={13} /></span>}
+                {noAlt && <span title="متن جایگزین ندارد" className="absolute right-1.5 top-1.5 grid h-6 w-6 place-items-center bg-[var(--warning)] text-white"><TriangleAlert size={13} /></span>}
               </span>
               <span className="block truncate px-2.5 py-2 text-[12px]">{item.title}</span>
             </button>

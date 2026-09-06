@@ -52,7 +52,7 @@ export function ProductCard({ href, name, category, industry, weight, purity, ma
         <h3 className="m-0 line-clamp-2 min-h-12 text-[0.78rem] font-bold leading-6 text-slate-800">{name}</h3>
         <div className="mt-2 flex min-h-6 items-center justify-between gap-3">
           {stock !== undefined && stock > 0 && stock < 5 ? <span className="text-[0.66rem] font-bold text-[var(--danger)]">تنها {stock.toLocaleString("fa-IR")} عدد در انبار باقی مانده</span> : <span />}
-          {rating !== undefined && <span className="mr-auto inline-flex shrink-0 items-center gap-1 text-[0.7rem] font-bold text-slate-700"><Star size={13} className="fill-amber-400 text-amber-400" />{rating.toLocaleString("fa-IR", { maximumFractionDigits: 1 })}</span>}
+          {rating !== undefined && <span className="mr-auto inline-flex shrink-0 items-center gap-1 text-[0.7rem] font-bold text-slate-700"><Star size={13} className="fill-[var(--warning)] text-[var(--warning)]" />{rating.toLocaleString("fa-IR", { maximumFractionDigits: 1 })}</span>}
         </div>
         <div className="mt-auto grid min-h-[58px] content-end gap-1 pt-3">
           <div className="flex items-center justify-end gap-2">
