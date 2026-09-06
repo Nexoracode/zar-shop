@@ -6,6 +6,7 @@ import { Button } from "@heroui/react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { HeroSelectField } from "@/components/hero-select-field";
 import { adminPageSizeCookieMaxAge, adminPageSizeCookieName, adminPageSizes } from "@/lib/admin-pagination";
+import { paginationWindow } from "@/lib/pagination-window";
 import { useAdminTemplate } from "@/components/admin/template-context";
 import { BpButton } from "@/components/admin/blueprint/ui/button";
 import { BpSelect } from "@/components/admin/blueprint/ui/select";
@@ -82,11 +83,4 @@ export function AdminPagination({ page, pageSize, totalItems, totalPages }: Prop
       </div>
     </footer>
   );
-}
-
-function paginationWindow(page: number, totalPages: number): Array<number | "ellipsis"> {
-  if (totalPages <= 5) return Array.from({ length: totalPages }, (_, index) => index + 1);
-  if (page <= 3) return [1, 2, 3, 4, "ellipsis", totalPages];
-  if (page >= totalPages - 2) return [1, "ellipsis", totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
-  return [1, "ellipsis", page - 1, page, page + 1, "ellipsis", totalPages];
 }

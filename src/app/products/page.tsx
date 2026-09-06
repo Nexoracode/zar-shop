@@ -8,6 +8,7 @@ import { StorefrontCatalogFilters } from "@/components/storefront-catalog-filter
 import { db } from "@/lib/db";
 import { collectCategoryAndDescendantIds } from "@/modules/categories/category-tree";
 import { getStorefrontCatalog } from "@/modules/products/storefront-catalog";
+import { paginationWindow } from "@/lib/pagination-window";
 import { storefrontCatalogQuerySchema } from "@/modules/products/storefront-catalog-contract";
 import { getGeneralStoreSettings } from "@/modules/settings/general-settings";
 import type { Metadata } from "next";
@@ -159,7 +160,9 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
           </div>
 
           {pageCount > 1 && <nav aria-label="صفحه‌بندی محصولات" className="mt-10 flex flex-wrap items-center justify-center gap-2">
-            {Array.from({ length: pageCount }, (_, index) => index + 1).map((number) => <Link key={number} href={productsHref({ page: number.toString() })} aria-current={number === page ? "page" : undefined} className={`grid size-10 place-items-center rounded-lg border text-sm transition ${number === page ? "border-[var(--brand-primary)] bg-[var(--brand-primary)] text-[var(--brand-primary-foreground)]" : "border-slate-200 bg-white text-slate-600 hover:border-[var(--brand-primary)] hover:text-[var(--brand-primary)]"}`}>{number.toLocaleString("fa-IR")}</Link>)}
+            {paginationWindow(page, pageCount).map((item, index) => item === "ellipsis"
+              ? <span key={`gap-${index}`} className="grid size-10 place-items-center text-sm text-slate-400">…</span>
+              : <Link key={item} href={productsHref({ page: item.toString() })} aria-current={item === page ? "page" : undefined} className={`grid size-10 place-items-center rounded-lg border text-sm transition ${item === page ? "border-[var(--brand-primary)] bg-[var(--brand-primary)] text-[var(--brand-primary-foreground)]" : "border-slate-200 bg-white text-slate-600 hover:border-[var(--brand-primary)] hover:text-[var(--brand-primary)]"}`}>{item.toLocaleString("fa-IR")}</Link>)}
           </nav>}
         </section>
       </div>
