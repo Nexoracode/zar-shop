@@ -7,8 +7,8 @@ import { Search, X } from "lucide-react";
 import type { UserRole } from "@generated/prisma/enums";
 import { includesNormalizedText } from "@/lib/text-search";
 import { visibleAdminSearchIndex, type AdminSearchEntry } from "@/modules/admin/search-index";
-import { lockBodyScroll, unlockBodyScroll } from "./ui/dialog";
 import { BpButton } from "./ui/button";
+import { BpPopover } from "./ui/popover";
 
 function matches(entry: AdminSearchEntry, query: string) {
   return includesNormalizedText(entry.title, query)
@@ -38,9 +38,10 @@ function ResultRow({ entry, active, onHover, onSelect }: { entry: AdminSearchEnt
 }
 
 /**
- * Panel-wide "settings search" for the admin — one box that reaches every page and settings
- * sub-page the reader has permission for, not just the top-level nav items. Opens from the header
- * icon or Ctrl/Cmd+K from anywhere in the admin.
+ * Panel-wide "settings search" pinned in the header, centred like a real search field rather than
+ * hidden behind an icon. Its results drop down anchored directly under the field itself (via
+ * `BpPopover`, so outside-click/Escape are already handled) while a dim backdrop below the header
+ * pushes focus onto it — the header row itself stays undimmed and interactive.
  */
 export function AdminGlobalSearch({ role }: { role: UserRole }) {
   const router = useRouter();
@@ -48,6 +49,10 @@ export function AdminGlobalSearch({ role }: { role: UserRole }) {
   const [query, setQuery] = useState("");
   const [activeIndex, setActiveIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
+  // The popover anchors to the whole field wrapper, not just the input — otherwise the clear
+  // button beside it (a sibling, not a descendant of the input) would read as an "outside" click
+  // to BpPopover's own detection and close the results before its own onClick ever fires.
+  const wrapperRef = useRef<HTMLDivElement>(null);
   const entries = useMemo(() => visibleAdminSearchIndex(role), [role]);
 
   const results = useMemo(() => {
@@ -61,91 +66,80 @@ export function AdminGlobalSearch({ role }: { role: UserRole }) {
     return [...map.entries()];
   }, [results]);
 
-  function close() {
+  function go(entry: AdminSearchEntry) {
     setOpen(false);
     setQuery("");
-    setActiveIndex(0);
-  }
-
-  function go(entry: AdminSearchEntry) {
-    close();
     router.push(entry.href);
   }
 
+  // Ctrl/Cmd+K focuses the field from anywhere in the admin — focus itself opens the popover.
   useEffect(() => {
     function onGlobalKeyDown(event: globalThis.KeyboardEvent) {
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") {
         event.preventDefault();
-        setOpen(true);
+        inputRef.current?.focus();
       }
     }
     document.addEventListener("keydown", onGlobalKeyDown);
     return () => document.removeEventListener("keydown", onGlobalKeyDown);
   }, []);
 
-  useEffect(() => {
-    if (!open) return;
-    lockBodyScroll();
-    const frame = requestAnimationFrame(() => inputRef.current?.focus());
-    return () => { unlockBodyScroll(); cancelAnimationFrame(frame); };
-  }, [open]);
-
   function onInputKeyDown(event: KeyboardEvent<HTMLInputElement>) {
-    if (event.key === "Escape") { close(); return; }
+    if (event.key === "Escape") { setOpen(false); return; }
     if (event.key === "ArrowDown") { event.preventDefault(); setActiveIndex((current) => Math.min(current + 1, results.length - 1)); }
     if (event.key === "ArrowUp") { event.preventDefault(); setActiveIndex((current) => Math.max(current - 1, 0)); }
     if (event.key === "Enter") { event.preventDefault(); const entry = results[activeIndex]; if (entry) go(entry); }
   }
 
   return (
-    <>
-      <BpButton isIconOnly size="sm" aria-label="جستجو در پنل مدیریت" title="جستجو (Ctrl+K)" onClick={() => setOpen(true)}>
-        <Search size={15} />
-      </BpButton>
-
+    <div className="min-w-0 flex-1">
+      {/* Dims everything below the header so the field and its dropdown read as the focused
+          layer — the header row itself is never covered, so it stays fully usable. */}
       {open && typeof document !== "undefined" && createPortal(
-        <div
-          dir="rtl"
-          className="bp-root fixed inset-0 z-[130] flex items-start justify-center bg-[color-mix(in_srgb,#0b0c0d_55%,transparent)] p-4 pt-[12vh]"
-          onMouseDown={(event) => { if (event.target === event.currentTarget) close(); }}
-        >
-          <div className="bp-frame flex max-h-[70vh] w-full max-w-[560px] flex-col overflow-hidden">
-            <div className="flex items-center gap-2.5 border-b border-[var(--bp-divider)] p-3">
-              <Search size={17} className="bp-muted shrink-0" />
-              <input
-                ref={inputRef}
-                type="text"
-                value={query}
-                onChange={(event) => { setQuery(event.target.value); setActiveIndex(0); }}
-                onKeyDown={onInputKeyDown}
-                placeholder="جستجو در محصولات، سفارش‌ها، تنظیمات..."
-                className="min-w-0 flex-1 border-none bg-transparent text-[14px] text-[var(--bp-text)] outline-none placeholder:text-[var(--bp-muted)]"
-                aria-label="جستجو در پنل مدیریت"
-                role="combobox"
-                aria-expanded="true"
-                aria-controls="admin-search-results"
-              />
-              <BpButton isIconOnly size="sm" variant="ghost" aria-label="بستن جستجو" onClick={close}><X size={15} strokeWidth={1.5} /></BpButton>
-            </div>
-            <div id="admin-search-results" role="listbox" aria-label="نتایج جستجو" className="bp-scroll flex-1 overflow-y-auto p-2">
-              {grouped.length ? grouped.map(([group, items]) => (
-                <div key={group} className="mb-2 last:mb-0">
-                  <div className="bp-kicker px-2.5 py-1">{group}</div>
-                  {items.map((entry) => (
-                    <ResultRow key={entry.id} entry={entry} active={results.indexOf(entry) === activeIndex} onHover={() => setActiveIndex(results.indexOf(entry))} onSelect={() => go(entry)} />
-                  ))}
-                </div>
-              )) : (
-                <div className="grid place-items-center px-5 py-10 text-center">
-                  <strong className="text-[13px]">چیزی پیدا نشد</strong>
-                  <span className="bp-muted mt-1 text-[11px]">عبارت دیگری را امتحان کنید.</span>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>,
+        <div className="fixed inset-x-0 bottom-0 top-12 z-[135] bg-[color-mix(in_srgb,#0b0c0d_70%,transparent)]" aria-hidden />,
         document.body,
       )}
-    </>
+
+      <div ref={wrapperRef} className="relative mx-auto w-full max-w-[420px]">
+        <Search size={15} className="bp-muted pointer-events-none absolute start-2.5 top-1/2 z-10 -translate-y-1/2" />
+        <input
+          ref={inputRef}
+          type="search"
+          value={query}
+          onFocus={() => setOpen(true)}
+          onChange={(event) => { setQuery(event.target.value); setActiveIndex(0); setOpen(true); }}
+          onKeyDown={onInputKeyDown}
+          placeholder="جستجو در پنل مدیریت... (Ctrl+K)"
+          className="bp-input bp-input-search w-full"
+          aria-label="جستجو در پنل مدیریت"
+          role="combobox"
+          aria-expanded={open}
+          aria-controls="admin-search-results"
+        />
+        {query ? (
+          <BpButton isIconOnly size="sm" variant="ghost" aria-label="پاک‌کردن جستجو" onClick={() => { setQuery(""); inputRef.current?.focus(); }} className="absolute end-1 top-1/2 z-10 h-7 min-h-7 w-7 min-w-7 -translate-y-1/2">
+            <X size={14} />
+          </BpButton>
+        ) : null}
+
+        <BpPopover open={open} anchorRef={wrapperRef} onClose={() => setOpen(false)} label="نتایج جستجو" width={420}>
+          <div id="admin-search-results" role="listbox" aria-label="نتایج جستجو" className="bp-scroll max-h-[60vh] overflow-y-auto">
+            {grouped.length ? grouped.map(([group, items]) => (
+              <div key={group} className="mb-2 last:mb-0">
+                <div className="bp-kicker px-2.5 py-1">{group}</div>
+                {items.map((entry) => (
+                  <ResultRow key={entry.id} entry={entry} active={results.indexOf(entry) === activeIndex} onHover={() => setActiveIndex(results.indexOf(entry))} onSelect={() => go(entry)} />
+                ))}
+              </div>
+            )) : (
+              <div className="grid place-items-center px-5 py-10 text-center">
+                <strong className="text-[13px]">چیزی پیدا نشد</strong>
+                <span className="bp-muted mt-1 text-[11px]">عبارت دیگری را امتحان کنید.</span>
+              </div>
+            )}
+          </div>
+        </BpPopover>
+      </div>
+    </div>
   );
 }

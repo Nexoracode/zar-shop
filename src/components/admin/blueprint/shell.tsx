@@ -67,7 +67,7 @@ export function BlueprintShell({ user, showGoldPrice, goldPrice, goldFetchedAt, 
     <div ref={shellRef} dir="rtl" className="bp-root flex min-h-dvh flex-col">
       {/* Full-width, above the rail too — like WordPress's own admin bar, not scoped to the
           content column the way it used to be. */}
-      <header ref={headerRef} className="bp-dark-bar sticky top-0 z-40 flex h-12 flex-none items-center justify-between gap-3 border-b border-[var(--bp-sidebar-border)] px-3 sm:px-4">
+      <header ref={headerRef} className="bp-dark-bar sticky top-0 z-40 grid h-12 flex-none grid-cols-[auto_1fr_auto] items-center gap-3 border-b border-[var(--bp-sidebar-border)] px-3 sm:px-4">
         <div className="flex min-w-0 items-center gap-2">
           <span className="flex h-7 w-7 flex-none items-center justify-center border border-[var(--bp-sidebar-border)] text-xs font-bold">ز</span>
           <strong className="hidden truncate text-[13px] font-bold sm:block">زر گالری</strong>
@@ -95,9 +95,9 @@ export function BlueprintShell({ user, showGoldPrice, goldPrice, goldFetchedAt, 
           </div>
         </div>
 
-        <div className="flex min-w-0 items-center gap-1.5 sm:gap-2">
-          <AdminGlobalSearch role={user.role} />
+        <AdminGlobalSearch role={user.role} />
 
+        <div className="flex min-w-0 items-center justify-self-end gap-1.5 sm:gap-2">
           {showGoldPrice && (
             <span className="hidden items-center gap-1.5 whitespace-nowrap border border-[var(--bp-sidebar-border)] px-2 py-1 text-[11px] sm:flex" title={goldFetchedAt ? `آخرین بروزرسانی: ${formatDateTime(goldFetchedAt)}` : undefined}>
               <span className="bp-muted">طلای ۱۸</span>
