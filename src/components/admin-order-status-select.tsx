@@ -7,16 +7,16 @@ import type { OrderStatus } from "@generated/prisma/enums";
 import { HeroSelectField } from "@/components/hero-select-field";
 import { OrderExpiryCountdown } from "@/components/order-expiry-countdown";
 import { orderStatusLabels } from "@/modules/admin/labels";
+import { adminOrderStatusOptions } from "@/modules/orders/order-status-transitions";
 import { useAdminTemplate } from "@/components/admin/template-context";
 import { BpSelect } from "@/components/admin/blueprint/ui/select";
-
-const statuses: OrderStatus[] = ["PENDING_PAYMENT", "EXPIRED", "PAID", "PROCESSING", "SHIPPED", "DELIVERED", "CANCELLED", "REFUNDED"];
-const options = statuses.map((status) => ({ value: status, label: orderStatusLabels[status] }));
 
 export function AdminOrderStatusSelect({ orderId, initialStatus, expiresAt, warningMinutes }: { orderId: string; initialStatus: OrderStatus; expiresAt: string | null; warningMinutes: number }) {
   const router = useRouter();
   const [status, setStatus] = useState(initialStatus);
   const [saving, setSaving] = useState(false);
+  // Only the moves the server will actually accept from the order's current status.
+  const options = adminOrderStatusOptions(status).map((value) => ({ value, label: orderStatusLabels[value] }));
 
   async function update(nextStatus: string) {
     if (!nextStatus || nextStatus === status || saving) return;

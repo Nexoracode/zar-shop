@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import type { auditRequestContext } from "@/modules/audit/request-context";
 import { sendAutomatedSms } from "@/modules/communications/sms-service";
 import { InventoryUnavailableError, releaseInventory, reserveInventory } from "@/modules/orders/inventory";
+import { canAdminMoveOrder } from "@/modules/orders/order-status-transitions";
 import { getOrderSettings, orderExpiresAt, type OrderSettings } from "@/modules/settings/order-settings";
 
 type AuditContext = ReturnType<typeof auditRequestContext>;
@@ -50,6 +51,9 @@ export async function updateOrderStatusByAdmin(input: {
       });
       if (!order) throw new AdminOrderStatusError("سفارش پیدا نشد.", 404);
       if (order.status === input.status) return { status: order.status, expiresAt: order.expiresAt, inventoryAction: "NONE" as const, orderNumber: order.orderNumber, customerPhone: order.user.phone, changed: false };
+      if (!canAdminMoveOrder(order.status, input.status)) {
+        throw new AdminOrderStatusError("این تغییر وضعیت برای سفارش مجاز نیست.", 409);
+      }
 
       const shouldHoldInventory = orderStatusHoldsInventory(input.status);
       let inventoryReserved = order.inventoryReserved;
