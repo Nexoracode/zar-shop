@@ -148,38 +148,38 @@ enum AddressRecipientType {
 }
 
 model User {
-  id                    String                @id @default(cuid())
-  email                 String?               @unique @db.VarChar(191)
-  phone                 String?               @unique @db.VarChar(20)
-  passwordHash          String                @db.VarChar(191)
-  firstName             String?               @db.VarChar(100)
-  lastName              String?               @db.VarChar(100)
-  nationalId            String?               @unique @db.VarChar(20)
-  role                  UserRole              @default(CUSTOMER)
-  status                UserStatus            @default(ACTIVE)
-  emailVerifiedAt       DateTime?
-  lastLoginAt           DateTime?
-  isGuest               Boolean               @default(false)
-  smsMarketingConsent   Boolean               @default(false)
-  createdAt             DateTime              @default(now())
-  updatedAt             DateTime              @updatedAt
-  addresses             Address[]
-  orders                Order[]
-  cart                  Cart?
-  sessions              Session[]
-  auditLogs             AuditLog[]            @relation("AuditActor")
-  promotionRedemptions  PromotionRedemption[]
-  promotionRewards      PromotionReward[]
-  productReviews        ProductReview[]       @relation("ProductReviewAuthor")
-  moderatedReviews      ProductReview[]       @relation("ProductReviewModerator")
-  productReviewVotes    ProductReviewVote[]
-  productReviewReports  ProductReviewReport[] @relation("ProductReviewReporter")
-  resolvedReviewReports ProductReviewReport[] @relation("ProductReviewReportResolver")
-  returns               Return[]
-  productFavorites      ProductFavorite[]
-  productVisits         ProductVisit[]
-  notifications         Notification[]
-  notificationReads     NotificationRead[]
+  id                     String                 @id @default(cuid())
+  email                  String?                @unique @db.VarChar(191)
+  phone                  String?                @unique @db.VarChar(20)
+  passwordHash           String                 @db.VarChar(191)
+  firstName              String?                @db.VarChar(100)
+  lastName               String?                @db.VarChar(100)
+  nationalId             String?                @unique @db.VarChar(20)
+  role                   UserRole               @default(CUSTOMER)
+  status                 UserStatus             @default(ACTIVE)
+  emailVerifiedAt        DateTime?
+  lastLoginAt            DateTime?
+  isGuest                Boolean                @default(false)
+  smsMarketingConsent    Boolean                @default(false)
+  createdAt              DateTime               @default(now())
+  updatedAt              DateTime               @updatedAt
+  addresses              Address[]
+  orders                 Order[]
+  cart                   Cart?
+  sessions               Session[]
+  auditLogs              AuditLog[]             @relation("AuditActor")
+  promotionRedemptions   PromotionRedemption[]
+  promotionRewards       PromotionReward[]
+  productReviews         ProductReview[]        @relation("ProductReviewAuthor")
+  moderatedReviews       ProductReview[]        @relation("ProductReviewModerator")
+  productReviewVotes     ProductReviewVote[]
+  productReviewReports   ProductReviewReport[]  @relation("ProductReviewReporter")
+  resolvedReviewReports  ProductReviewReport[]  @relation("ProductReviewReportResolver")
+  returns                Return[]
+  productFavorites       ProductFavorite[]
+  productVisits          ProductVisit[]
+  notifications          Notification[]
+  notificationReads      NotificationRead[]
   supportTickets         SupportTicket[]        @relation("SupportTicketCustomer")
   assignedSupportTickets SupportTicket[]        @relation("SupportTicketAgent")
   supportTicketMessages  SupportTicketMessage[] @relation("SupportTicketMessageSender")
@@ -761,18 +761,18 @@ model PromotionReward {
 }
 
 model Notification {
-  id          String            @id @default(cuid())
+  id          String             @id @default(cuid())
   userId      String?
-  type        String            @db.VarChar(40)
-  title       String            @db.VarChar(191)
-  body        String            @db.VarChar(500)
-  ctaHref     String?           @db.VarChar(500)
+  type        String             @db.VarChar(40)
+  title       String             @db.VarChar(191)
+  body        String             @db.VarChar(500)
+  ctaHref     String?            @db.VarChar(500)
   promotionId String?
-  dedupeKey   String?           @db.VarChar(191)
+  dedupeKey   String?            @db.VarChar(191)
   expiresAt   DateTime?
-  createdAt   DateTime          @default(now())
-  user        User?             @relation(fields: [userId], references: [id], onDelete: Cascade)
-  promotion   Promotion?        @relation(fields: [promotionId], references: [id], onDelete: Cascade)
+  createdAt   DateTime           @default(now())
+  user        User?              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  promotion   Promotion?         @relation(fields: [promotionId], references: [id], onDelete: Cascade)
   reads       NotificationRead[]
 
   @@unique([userId, dedupeKey])
@@ -813,19 +813,19 @@ model SupportTicketCategory {
 }
 
 model SupportTicket {
-  id              String       @id @default(cuid())
+  id              String                 @id @default(cuid())
   userId          String
   categoryId      String?
   productId       String?
   assignedAgentId String?
-  subject         String       @db.VarChar(191)
-  status          TicketStatus @default(OPEN)
+  subject         String                 @db.VarChar(191)
+  status          TicketStatus           @default(OPEN)
   rating          Int?
-  ratingReason    String?      @db.VarChar(500)
+  ratingReason    String?                @db.VarChar(500)
   ratedAt         DateTime?
   closedAt        DateTime?
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
+  createdAt       DateTime               @default(now())
+  updatedAt       DateTime               @updatedAt
   user            User                   @relation("SupportTicketCustomer", fields: [userId], references: [id], onDelete: Cascade)
   category        SupportTicketCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   product         Product?               @relation(fields: [productId], references: [id], onDelete: SetNull)
