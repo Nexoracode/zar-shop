@@ -8,7 +8,7 @@ import { ChevronDown, ChevronLeft, Heart, LogOut, MapPin, MessageCircle, Shoppin
 
 type AccountUser = { firstName: string | null; lastName: string | null; email: string | null; phone: string | null; isGuest: boolean };
 
-export function StorefrontAccountMenu({ user, className = "" }: { user: AccountUser | null; className?: string }) {
+export function StorefrontAccountMenu({ user, walletBalance = null, className = "" }: { user: AccountUser | null; walletBalance?: string | null; className?: string }) {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
@@ -47,7 +47,7 @@ export function StorefrontAccountMenu({ user, className = "" }: { user: AccountU
         <Popover.Dialog dir="rtl" className="p-0 text-right">
           <Link href="/account/profile" onClick={() => setIsOpen(false)} className="flex min-h-16 items-center gap-3 border-b border-[var(--border)] px-5 font-bold"><span className="min-w-0 flex-1 truncate text-sm">{name}</span><ChevronLeft size={18} className="text-[var(--muted)]" /></Link>
           <nav aria-label="دسترسی‌های حساب کاربری" className="px-4">
-            {items.map(({ href, label, icon: Icon }) => <Link key={href} href={href} onClick={() => setIsOpen(false)} className="flex min-h-12 items-center gap-3 border-b border-[var(--border)] px-1 text-sm font-bold text-slate-700 transition last:border-b-0 hover:text-[var(--brand-primary)]"><Icon size={20} strokeWidth={1.7} className="text-slate-600" /><span className="flex-1">{label}</span></Link>)}
+            {items.map(({ href, label, icon: Icon }) => <Link key={href} href={href} onClick={() => setIsOpen(false)} className="flex min-h-12 items-center gap-3 border-b border-[var(--border)] px-1 text-sm font-bold text-slate-700 transition last:border-b-0 hover:text-[var(--brand-primary)]"><Icon size={20} strokeWidth={1.7} className="text-slate-600" /><span className="flex-1">{label}</span>{href === "/account/wallet" && walletBalance && <span className="text-xs font-bold text-[var(--foreground)]">{walletBalance}</span>}</Link>)}
           </nav>
           <div className="border-t border-[var(--border)] p-2"><Button type="button" variant="ghost" fullWidth isPending={loggingOut} onPress={() => void logout()} className="min-h-11 justify-start gap-3 px-3 text-sm font-bold text-slate-700"><LogOut size={20} strokeWidth={1.7} />خروج از حساب کاربری</Button></div>
         </Popover.Dialog>

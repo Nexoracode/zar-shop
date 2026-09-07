@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import type { User } from "@generated/prisma/client";
 import { StorefrontGoldPrice } from "@/components/storefront-gold-price";
+import { formatMoney } from "@/lib/format";
 import { normalizeNumericValue } from "@/lib/persian-numbers";
 import { getGoldPriceForDisplay } from "@/modules/gold/gold-price.service";
 import type { BrandSettings } from "@/modules/settings/brand-settings";
@@ -25,15 +26,21 @@ import { StorefrontAccountMenu } from "@/components/storefront-account-menu";
 import { StorefrontNotificationBell } from "@/components/storefront-notification-bell";
 import { getCartProductCount } from "@/modules/cart/cart-summary";
 import { unreadCount } from "@/modules/notifications/service";
+import { getWalletSettings } from "@/modules/settings/wallet-settings";
+import { ensureWallet } from "@/modules/wallet/wallet";
 
 export async function GoldHeader({ settings, brand, user, menuItems }: { settings: GeneralStoreSettingsInput; brand: BrandSettings; user: User | null; menuItems: HomepageMenuItem[] }) {
-  const [gold, catalogSettings, cartCount, addresses, notifUnread] = await Promise.all([
+  const [gold, catalogSettings, cartCount, addresses, notifUnread, walletSettings] = await Promise.all([
     settings.industry === "GOLD" ? getGoldPriceForDisplay() : Promise.resolve(null),
     getCatalogSettings(),
     user ? getCartProductCount(user.id, settings.industry) : Promise.resolve(0),
     user ? db.address.findMany({ where: { userId: user.id, type: "SHIPPING" }, include: { provinceRef: true, cityRef: true }, orderBy: [{ isDefault: "desc" }, { lastUsedAt: "desc" }, { createdAt: "desc" }] }).then((items) => items.map(serializeAddress)) : Promise.resolve([]),
     user && !user.isGuest ? unreadCount(db, user.id, user.createdAt) : Promise.resolve(0),
+    user && !user.isGuest ? getWalletSettings() : Promise.resolve(null),
   ]);
+  const walletBalance = user && !user.isGuest && walletSettings?.walletEnabled
+    ? formatMoney((await ensureWallet(db, user.id)).balance.toString(), settings.currency)
+    : null;
   const accountHref = user ? (user.isGuest ? "/cart" : "/account") : "/login";
   const goldPrice = settings.industry === "GOLD" ? <StorefrontGoldPrice initialPrice={gold ? Number(gold.pricePerGram18) : null} currency={settings.currency} live={brand.liveGoldPrice} refreshSeconds={catalogSettings.goldPriceRefreshSeconds} showLabel={false} /> : null;
 
@@ -71,7 +78,7 @@ export async function GoldHeader({ settings, brand, user, menuItems }: { setting
         <nav className="mr-10 flex h-full min-w-0 items-center gap-9 overflow-hidden text-sm" aria-label="منوی اصلی فروشگاه">
           {menuItems.map((item) => <Link key={item.id} href={item.href} className="flex h-full shrink-0 items-center border-b-2 border-transparent transition hover:border-[var(--success)] hover:text-[var(--success)]">{item.label}</Link>)}
         </nav>
-        <div className="mr-auto flex items-center gap-5 text-[#555]"><StorefrontSearch /><span className="h-7 w-px bg-[#ddd]" />{user && !user.isGuest && <StorefrontNotificationBell initialUnread={notifUnread} />}<StorefrontAccountMenu user={user ? { firstName: user.firstName, lastName: user.lastName, email: user.email, phone: user.phone, isGuest: user.isGuest } : null} /><StorefrontCartLink initialCount={cartCount} iconSize={22} />{user?.role !== "CUSTOMER" && user && <Link href="/admin" aria-label="پنل مدیریت"><LayoutDashboard size={20} /></Link>}</div>
+        <div className="mr-auto flex items-center gap-5 text-[#555]"><StorefrontSearch /><span className="h-7 w-px bg-[#ddd]" />{user && !user.isGuest && <StorefrontNotificationBell initialUnread={notifUnread} />}<StorefrontAccountMenu user={user ? { firstName: user.firstName, lastName: user.lastName, email: user.email, phone: user.phone, isGuest: user.isGuest } : null} walletBalance={walletBalance} /><StorefrontCartLink initialCount={cartCount} iconSize={22} />{user?.role !== "CUSTOMER" && user && <Link href="/admin" aria-label="پنل مدیریت"><LayoutDashboard size={20} /></Link>}</div>
       </div>
 
       <div className="flex h-8 items-center justify-between bg-[#fdf9f2] px-4 text-[0.64rem] lg:hidden">

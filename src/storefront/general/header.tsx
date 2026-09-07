@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Bell, Headphones, Home, LayoutDashboard, Menu, UserRound } from "lucide-react";
 import type { User } from "@generated/prisma/client";
 import { db } from "@/lib/db";
+import { formatMoney } from "@/lib/format";
 import { normalizeNumericValue } from "@/lib/persian-numbers";
 import type { BrandSettings } from "@/modules/settings/brand-settings";
 import type { GeneralStoreSettingsInput } from "@/modules/settings/general-settings";
@@ -16,11 +17,13 @@ import { StorefrontAccountMenu } from "@/components/storefront-account-menu";
 import { StorefrontNotificationBell } from "@/components/storefront-notification-bell";
 import { getCartProductCount } from "@/modules/cart/cart-summary";
 import { unreadCount } from "@/modules/notifications/service";
+import { getWalletSettings } from "@/modules/settings/wallet-settings";
+import { ensureWallet } from "@/modules/wallet/wallet";
 
 type Props = { settings: GeneralStoreSettingsInput; brand: BrandSettings; user: User | null; menuItems: HomepageMenuItem[] };
 
 export async function GeneralHeader({ settings, brand, user, menuItems }: Props) {
-  const [categories, cartCount, addresses, notifUnread] = await Promise.all([
+  const [categories, cartCount, addresses, notifUnread, walletSettings] = await Promise.all([
     db.category.findMany({
       where: { isActive: true, parentId: null },
       include: {
@@ -36,7 +39,11 @@ export async function GeneralHeader({ settings, brand, user, menuItems }: Props)
     user ? getCartProductCount(user.id, settings.industry) : Promise.resolve(0),
     user ? db.address.findMany({ where: { userId: user.id, type: "SHIPPING" }, include: { provinceRef: true, cityRef: true }, orderBy: [{ isDefault: "desc" }, { lastUsedAt: "desc" }, { createdAt: "desc" }] }).then((items) => items.map(serializeAddress)) : Promise.resolve([]),
     user && !user.isGuest ? unreadCount(db, user.id, user.createdAt) : Promise.resolve(0),
+    user && !user.isGuest ? getWalletSettings() : Promise.resolve(null),
   ]);
+  const walletBalance = user && !user.isGuest && walletSettings?.walletEnabled
+    ? formatMoney((await ensureWallet(db, user.id)).balance.toString(), settings.currency)
+    : null;
   const accountHref = user ? (user.isGuest ? "/cart" : "/account") : "/login";
   const logo = brand.mainLogoMedia
     ? <span className="relative block h-10 w-28"><Image src={brand.mainLogoMedia.url} alt={brand.mainLogoMedia.alt ?? settings.storeName} fill sizes="112px" className="object-contain" /></span>
@@ -57,7 +64,7 @@ export async function GeneralHeader({ settings, brand, user, menuItems }: Props)
           {user && !user.isGuest
             ? <StorefrontNotificationBell initialUnread={notifUnread} />
             : <Link href="/login" aria-label="اعلان‌ها" className="grid size-10 place-items-center rounded-lg transition hover:bg-slate-100"><Bell size={20} strokeWidth={1.7} /></Link>}
-          <StorefrontAccountMenu user={user ? { firstName: user.firstName, lastName: user.lastName, email: user.email, phone: user.phone, isGuest: user.isGuest } : null} />
+          <StorefrontAccountMenu user={user ? { firstName: user.firstName, lastName: user.lastName, email: user.email, phone: user.phone, isGuest: user.isGuest } : null} walletBalance={walletBalance} />
           <span className="mx-2 h-6 w-px bg-slate-200" />
           <StorefrontCartLink initialCount={cartCount} className="grid size-10 place-items-center rounded-lg transition hover:bg-[var(--brand-primary)]/8" />
           {user?.role !== "CUSTOMER" && user && <Link href="/admin" aria-label="پنل مدیریت"><LayoutDashboard size={20} /></Link>}
