@@ -7,6 +7,7 @@ import { AddToCart, ProductPurchaseProvider } from "@/components/add-to-cart";
 import { PriceTooltip } from "@/components/price-tooltip";
 import { ProductDetailGallery } from "@/components/product-detail-gallery";
 import { ProductDetailSectionNav } from "@/components/product-detail-section-nav";
+import { DragScrollRow } from "@/components/drag-scroll-row";
 import { ProductCard } from "@/components/product-card";
 import { ProductSpecifications } from "@/components/product-specifications";
 import { ProductReviews } from "@/components/product-reviews";
@@ -260,12 +261,12 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
       <DiscountExpiryRefresh at={earliestDiscountExpiry([...relatedProducts, ...recentlyViewed])} />
       {product.category && relatedProducts.length > 0 && <section className="mt-12 border-t border-slate-200 py-8" aria-labelledby="related-products-title">
         <div className="mb-6 flex items-center justify-between gap-4"><h2 id="related-products-title" className="relative w-fit pb-3 text-lg font-bold text-slate-900 after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 after:rounded-full after:bg-[var(--brand-primary)]">کالاهای مرتبط</h2><Link href={`/products?category=${encodeURIComponent(product.category.slug)}`} className="shrink-0 text-xs font-bold text-[var(--brand-accent)] transition-colors hover:text-[var(--brand-primary)]">مشاهده همه</Link></div>
-        <div className="flex snap-x gap-4 overflow-x-auto pb-3">{relatedProducts.map((item, index) => <div key={item.id} className="w-[176px] min-w-[176px] snap-start sm:w-[210px] sm:min-w-[210px]"><ProductCard {...item} storefrontVariant="gallery" imageTone={index} /></div>)}</div>
+        <DragScrollRow ariaLabel="کالاهای مرتبط" showNavigation className="flex gap-4 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">{relatedProducts.map((item, index) => <div key={item.id} className="w-[176px] min-w-[176px] sm:w-[210px] sm:min-w-[210px]"><ProductCard {...item} storefrontVariant="gallery" imageTone={index} /></div>)}</DragScrollRow>
       </section>}
 
       {recentlyViewed.length > 0 && <section className="mt-12 border-t border-slate-200 py-8" aria-labelledby="recently-viewed-title">
         <div className="mb-6 flex items-center justify-between gap-4"><h2 id="recently-viewed-title" className="relative w-fit pb-3 text-lg font-bold text-slate-900 after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 after:rounded-full after:bg-[var(--brand-primary)]">بازدیدهای اخیر شما</h2><Link href="/account/recent-visits" className="shrink-0 text-xs font-bold text-[var(--brand-accent)] transition-colors hover:text-[var(--brand-primary)]">مشاهده همه</Link></div>
-        <div className="flex snap-x gap-4 overflow-x-auto pb-3">{recentlyViewed.map((item, index) => <div key={item.id} className="w-[176px] min-w-[176px] snap-start sm:w-[210px] sm:min-w-[210px]"><ProductCard {...item} storefrontVariant="gallery" imageTone={index} /></div>)}</div>
+        <DragScrollRow ariaLabel="بازدیدهای اخیر شما" showNavigation className="flex gap-4 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">{recentlyViewed.map((item, index) => <div key={item.id} className="w-[176px] min-w-[176px] sm:w-[210px] sm:min-w-[210px]"><ProductCard {...item} storefrontVariant="gallery" imageTone={index} /></div>)}</DragScrollRow>
       </section>}
 
       <ProductDetailSectionNav />
