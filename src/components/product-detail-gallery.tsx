@@ -6,6 +6,8 @@ import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { Button, Modal, ProgressBar, toast } from "@heroui/react";
 import { Bell, ChartNoAxesCombined, ChevronLeft, ChevronRight, Ellipsis, Heart, ImageIcon, Info, List, Play, Scale, Share2, X } from "lucide-react";
 import { useSelectedProductOptions } from "@/components/add-to-cart";
+import { useCompare } from "@/components/compare-provider";
+import type { CompareItem } from "@/modules/compare/compare";
 import { selectionSignature } from "@/modules/products/variant-combinations";
 
 type ProductGalleryMedia = {
@@ -29,6 +31,7 @@ type ProductDetailGalleryProps = {
   soldPercent?: number;
   authenticated?: boolean;
   initialFavorite?: boolean;
+  compareItem?: CompareItem;
 };
 
 const noopSubscribe = () => () => undefined;
@@ -76,9 +79,11 @@ function renderFullscreenGallery({ media, selected, selectedIndex, productName, 
   </Modal.Backdrop>;
 }
 
-export function ProductDetailGallery({ productId, media, productName, productCode, discountBySelection = [], soldPercent = 0, authenticated = false, initialFavorite = false }: ProductDetailGalleryProps) {
+export function ProductDetailGallery({ productId, media, productName, productCode, discountBySelection = [], soldPercent = 0, authenticated = false, initialFavorite = false, compareItem }: ProductDetailGalleryProps) {
   const router = useRouter();
   const selectedOptions = useSelectedProductOptions();
+  const compare = useCompare();
+  const inCompare = compareItem ? compare.has(compareItem.id) : false;
   // The entry matching whatever is currently picked — the base product's own entry has an empty
   // `selection`, which is also what a product with no combinations, or no pick made yet, reads as.
   const activeDiscount = useMemo(() => {
@@ -171,7 +176,12 @@ export function ProductDetailGallery({ productId, media, productName, productCod
     { label: "اشتراک‌گذاری محصول", icon: <Share2 size={22} />, onPress: () => void shareProduct() },
     { label: priceAlert ? "غیرفعال‌کردن اطلاع‌رسانی" : "اطلاع‌رسانی تغییرات محصول", icon: <Bell size={22} className={priceAlert ? "fill-[var(--brand-accent)] text-[var(--brand-accent)]" : ""} />, onPress: () => setPriceAlert((value) => !value) },
     { label: "نمودار قیمت", icon: <ChartNoAxesCombined size={22} />, onPress: () => toast.success("نمودار قیمت در مرحله اتصال API فعال می‌شود") },
-    { label: "مقایسه محصول", icon: <Scale size={21} />, onPress: () => toast.success("مقایسه محصول در مرحله اتصال API فعال می‌شود") },
+    { label: inCompare ? "حذف از مقایسه" : "افزودن به مقایسه", icon: <Scale size={21} className={inCompare ? "text-[var(--brand-primary)]" : ""} />, onPress: () => {
+      if (!compareItem) return;
+      const nowIn = compare.toggle(compareItem);
+      if (nowIn) toast.success("به فهرست مقایسه اضافه شد");
+      else if (inCompare) toast.success("از فهرست مقایسه حذف شد");
+    } },
     { label: "مشخصات محصول", icon: <List size={22} />, onPress: () => document.getElementById("specifications")?.scrollIntoView({ behavior: "smooth" }) },
   ];
 
