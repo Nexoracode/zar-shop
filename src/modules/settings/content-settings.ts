@@ -15,10 +15,26 @@ export const contentPageMeta: Record<ContentPageId, { slug: string; defaultTitle
   SHIPPING: { slug: "shipping", defaultTitle: "شیوه ارسال و تحویل" },
 };
 
+/** FAQ topics — the left-hand list on the storefront FAQ page. Fixed, like Digikala's. */
+export const faqCategories = ["GETTING_STARTED", "ORDER", "PAYMENT", "SHIPPING", "RETURNS", "ACCOUNT", "PRODUCTS", "GENERAL"] as const;
+export type FaqCategory = (typeof faqCategories)[number];
+
+export const faqCategoryMeta: Record<FaqCategory, { label: string; description: string }> = {
+  GETTING_STARTED: { label: "شروع کار و راهنمای خرید", description: "ثبت‌نام، ورود و اولین خرید" },
+  ORDER: { label: "ثبت سفارش و پیگیری", description: "مراحل خرید، وضعیت و تغییر سفارش" },
+  PAYMENT: { label: "پرداخت و کیف پول", description: "روش‌های پرداخت، فاکتور و اعتبار" },
+  SHIPPING: { label: "ارسال و تحویل", description: "زمان و هزینهٔ ارسال، رهگیری مرسوله" },
+  RETURNS: { label: "مرجوعی و بازگشت وجه", description: "شرایط مرجوعی و بازگرداندن مبلغ" },
+  ACCOUNT: { label: "حساب کاربری", description: "پروفایل، نشانی‌ها و امنیت حساب" },
+  PRODUCTS: { label: "کالاها و قیمت‌گذاری", description: "اصالت کالا، موجودی و نحوهٔ قیمت‌گذاری" },
+  GENERAL: { label: "سایر پرسش‌ها", description: "موارد عمومی و پشتیبانی" },
+};
+
 const faqSchema = z.object({
   id: z.string().trim().min(1).max(80),
   question: z.string().trim().min(3).max(300),
   answer: z.string().trim().min(3).max(3000),
+  category: z.enum(faqCategories).default("GENERAL"),
   enabled: z.boolean(),
 });
 
@@ -48,9 +64,22 @@ export type ContentSettings = z.infer<typeof contentSettingsSchema>;
 
 export const contentSettingsDefaults: ContentSettings = {
   faqs: [
-    { id: "faq-pricing", question: "قیمت محصولات چگونه محاسبه می‌شود؟", answer: "قیمت نهایی براساس مشخصات محصول و قواعد قیمت‌گذاری فروشگاه محاسبه می‌شود.", enabled: true },
-    { id: "faq-invoice", question: "آیا محصولات فاکتور رسمی دارند؟", answer: "تمام سفارش‌های پرداخت‌شده همراه فاکتور فروشگاه ثبت و در حساب کاربری قابل مشاهده هستند.", enabled: true },
-    { id: "faq-shipping", question: "مدت زمان ارسال سفارش چقدر است؟", answer: "زمان آماده‌سازی هر محصول مشخص است و زمان تحویل با توجه به روش ارسال و نشانی مشتری تعیین می‌شود.", enabled: true },
+    { id: "faq-register", question: "چطور در سایت ثبت‌نام کنم؟", answer: "با شمارهٔ موبایل خود وارد صفحهٔ ورود شوید؛ کد تأییدی پیامک می‌شود و پس از وارد کردن آن، حساب شما ساخته و وارد می‌شوید.", category: "GETTING_STARTED", enabled: true },
+    { id: "faq-guest", question: "بدون ثبت‌نام هم می‌توانم خرید کنم؟", answer: "برای پیگیری سفارش، مشاهدهٔ فاکتور و استفاده از کیف پول بهتر است حساب دائمی بسازید؛ اما امکان خرید مهمان نیز در دسترس است.", category: "GETTING_STARTED", enabled: true },
+    { id: "faq-order-steps", question: "مراحل ثبت سفارش چگونه است؟", answer: "کالا را به سبد خرید اضافه کنید، در صفحهٔ تسویه‌حساب نشانی و روش ارسال را انتخاب کنید و پرداخت را انجام دهید. وضعیت سفارش در «حساب کاربری ← سفارش‌ها» نمایش داده می‌شود.", category: "ORDER", enabled: true },
+    { id: "faq-order-track", question: "سفارشم را چطور پیگیری کنم؟", answer: "از بخش «سفارش‌ها» در حساب کاربری، وضعیت هر سفارش و کد رهگیری مرسوله (پس از ارسال) قابل مشاهده است.", category: "ORDER", enabled: true },
+    { id: "faq-order-cancel", question: "امکان لغو سفارش وجود دارد؟", answer: "تا پیش از پرداخت می‌توانید سفارش را لغو کنید. پس از پرداخت، لغو یا تغییر سفارش را از طریق پشتیبانی پیگیری کنید.", category: "ORDER", enabled: true },
+    { id: "faq-pay-methods", question: "روش‌های پرداخت چیست؟", answer: "پرداخت اینترنتی از طریق درگاه امن بانکی انجام می‌شود. در صورت داشتن اعتبار کیف پول، می‌توانید بخشی یا تمام مبلغ را با کیف پول بپردازید.", category: "PAYMENT", enabled: true },
+    { id: "faq-invoice", question: "آیا سفارش‌ها فاکتور رسمی دارند؟", answer: "تمام سفارش‌های پرداخت‌شده همراه فاکتور فروشگاه ثبت می‌شوند و در حساب کاربری قابل مشاهده و دریافت هستند.", category: "PAYMENT", enabled: true },
+    { id: "faq-wallet", question: "کیف پول چطور کار می‌کند؟", answer: "اعتبار کیف پول فقط برای خرید در همین فروشگاه استفاده می‌شود و قابل برداشت به حساب بانکی نیست. می‌توانید کیف پول را از درگاه پرداخت شارژ کنید.", category: "PAYMENT", enabled: true },
+    { id: "faq-ship-time", question: "زمان ارسال سفارش چقدر است؟", answer: "زمان آماده‌سازی هر کالا در صفحهٔ محصول مشخص است و زمان تحویل با توجه به روش ارسال و نشانی مشتری تعیین می‌شود.", category: "SHIPPING", enabled: true },
+    { id: "faq-ship-cost", question: "هزینهٔ ارسال چگونه محاسبه می‌شود؟", answer: "هزینهٔ ارسال بر اساس وزن سفارش، مقصد و روش ارسال انتخابی در صفحهٔ تسویه‌حساب محاسبه و نمایش داده می‌شود.", category: "SHIPPING", enabled: true },
+    { id: "faq-return-window", question: "شرایط مرجوع کردن کالا چیست؟", answer: "برای سفارش‌های تحویل‌شده و داخل مهلت مرجوعی، از صفحهٔ جزئیات همان سفارش می‌توانید درخواست مرجوعی ثبت کنید و دلیل و تصویر کالا را پیوست کنید.", category: "RETURNS", enabled: true },
+    { id: "faq-refund", question: "مبلغ مرجوعی چطور بازگردانده می‌شود؟", answer: "روش بازگرداندن وجه را در «حساب کاربری ← اطلاعات حساب» انتخاب می‌کنید: افزودن به کیف پول یا واریز به کارت بانکی ثبت‌شده.", category: "RETURNS", enabled: true },
+    { id: "faq-account-address", question: "چطور نشانی جدید اضافه کنم؟", answer: "از بخش «نشانی‌ها» در حساب کاربری می‌توانید نشانی‌های تحویل را اضافه، ویرایش یا حذف کنید و نشانی پیش‌فرض را تعیین کنید.", category: "ACCOUNT", enabled: true },
+    { id: "faq-authenticity", question: "اصالت کالاها تضمین می‌شود؟", answer: "همهٔ کالاها با تضمین اصالت و سلامت فیزیکی عرضه می‌شوند و در صورت مغایرت، امکان ثبت مرجوعی وجود دارد.", category: "PRODUCTS", enabled: true },
+    { id: "faq-pricing", question: "قیمت کالاها چگونه تعیین می‌شود؟", answer: "قیمت نهایی بر اساس مشخصات کالا و قواعد قیمت‌گذاری فروشگاه محاسبه می‌شود. تخفیف‌ها و کد تخفیف در صفحهٔ سبد خرید و تسویه‌حساب اعمال می‌شوند.", category: "PRODUCTS", enabled: true },
+    { id: "faq-support", question: "چطور با پشتیبانی در ارتباط باشم؟", answer: "از بخش «تیکت‌های پشتیبانی» در حساب کاربری می‌توانید پرسش خود را ثبت کنید؛ همچنین راه‌های ارتباطی در صفحهٔ «تماس با ما» آمده است.", category: "GENERAL", enabled: true },
   ],
   pages: contentPageIds.map((id) => ({
     id,

@@ -4,9 +4,11 @@ import { useState, type FormEvent } from "react";
 import { toast } from "@heroui/react";
 import { FileText, GripVertical, Plus, ToggleLeft, ToggleRight, Trash2 } from "lucide-react";
 import { RichTextEditor } from "@/components/rich-text-editor";
-import type { ContentPageId, ContentSettings as ContentSettingsData } from "@/modules/settings/content-settings";
+import { faqCategories, faqCategoryMeta, type ContentPageId, type ContentSettings as ContentSettingsData } from "@/modules/settings/content-settings";
 import { contentFieldLimits } from "@/modules/settings/settings-limits";
-import { BpButton, BpCheckbox, BpInput, BpKicker, BpTag, BpTextarea } from "./ui";
+import { BpButton, BpCheckbox, BpInput, BpKicker, BpSelect, BpTag, BpTextarea } from "./ui";
+
+const faqCategoryOptions = faqCategories.map((id) => ({ value: id, label: faqCategoryMeta[id].label }));
 
 export function BlueprintContentSettings({ initialSettings }: { initialSettings: ContentSettingsData }) {
   const [faqs, setFaqs] = useState(initialSettings.faqs);
@@ -84,19 +86,23 @@ export function BlueprintContentSettings({ initialSettings }: { initialSettings:
                 </span>
                 <span className="bp-muted grid size-7 shrink-0 place-items-center border border-[var(--bp-divider)] text-[11px] font-bold">{(index + 1).toLocaleString("fa-IR")}</span>
                 <BpTag tone={faq.enabled ? "success" : "neutral"}>{faq.enabled ? "فعال" : "غیرفعال"}</BpTag>
+                <BpTag tone="accent">{faqCategoryMeta[faq.category].label}</BpTag>
                 <div className="ms-auto flex items-center gap-1">
                   <BpButton type="button" variant="ghost" isIconOnly size="sm" aria-label={`${faq.enabled ? "غیرفعال‌کردن" : "فعال‌کردن"} سوال`} onClick={() => updateFaq(faq.id, { enabled: !faq.enabled })}>{faq.enabled ? <ToggleRight size={15} strokeWidth={1.5} className="text-[var(--bp-success)]" /> : <ToggleLeft size={15} strokeWidth={1.5} className="bp-muted" />}</BpButton>
                   <BpButton type="button" variant="ghost" className="bp-btn-danger-icon" isIconOnly size="sm" aria-label="حذف سوال" onClick={() => setFaqs((current) => current.filter((item) => item.id !== faq.id))}><Trash2 size={15} strokeWidth={1.5} /></BpButton>
                 </div>
               </div>
               <div className="grid gap-[8px]">
-                <BpInput label="سوال" maxLength={contentFieldLimits.faqQuestion} value={faq.question} onChange={(event) => updateFaq(faq.id, { question: event.target.value })} />
+                <div className="grid gap-[8px] sm:grid-cols-[minmax(0,1fr)_220px]">
+                  <BpInput label="سوال" maxLength={contentFieldLimits.faqQuestion} value={faq.question} onChange={(event) => updateFaq(faq.id, { question: event.target.value })} />
+                  <BpSelect label="دسته‌بندی" value={faq.category} options={faqCategoryOptions} onChange={(event) => updateFaq(faq.id, { category: event.target.value as ContentSettingsData["faqs"][number]["category"] })} />
+                </div>
                 <BpTextarea label="پاسخ" rows={2} maxLength={contentFieldLimits.faqAnswer} value={faq.answer} onChange={(event) => updateFaq(faq.id, { answer: event.target.value })} />
               </div>
             </div>
           ))}
         </div>
-        <BpButton type="button" variant="secondary" className="mt-3 w-fit gap-2" onClick={() => setFaqs((current) => [...current, { id: crypto.randomUUID(), question: "", answer: "", enabled: true }])}><Plus size={16} />افزودن سوال جدید</BpButton>
+        <BpButton type="button" variant="secondary" className="mt-3 w-fit gap-2" onClick={() => setFaqs((current) => [...current, { id: crypto.randomUUID(), question: "", answer: "", category: "GENERAL", enabled: true }])}><Plus size={16} />افزودن سوال جدید</BpButton>
       </section>
 
       <section className="bp-frame relative p-[16px]">
