@@ -106,6 +106,36 @@ export async function getStorefrontProductFeed(input: { sort: StorefrontProductS
 }
 
 /**
+ * The homepage "پیشنهاد شگفت‌انگیز" strip: active products whose discount is on a real schedule
+ * (`discountStartsAt`/`discountEndsAt` both set) and running right now, ordered so the one ending
+ * soonest leads. The caller hands the earliest `discountEndsAt` among these to the section timer;
+ * a discount with no window is a plain "فروش ویژه" and is left out, since it has no clock.
+ */
+export async function getStorefrontFlashDeals(limit = 12): Promise<StorefrontProductFeed["items"]> {
+  const [settings, catalogSettings] = await Promise.all([getGeneralStoreSettings(), getCatalogSettings()]);
+  const now = new Date();
+  const where: Prisma.ProductWhereInput = {
+    status: "ACTIVE",
+    storeIndustry: settings.industry,
+    discountType: { not: null },
+    discountValue: { gt: 0 },
+    discountStartsAt: { lte: now },
+    discountEndsAt: { gt: now },
+    ...(catalogSettings.hideOutOfStockProducts ? { stock: { gt: 0 } } : {}),
+  };
+
+  const [gold, products] = await Promise.all([
+    settings.industry === "GOLD" ? getGoldPriceForDisplay() : Promise.resolve(null),
+    db.product.findMany({ where, select: productSelect, orderBy: [{ discountEndsAt: "asc" }, { createdAt: "desc" }], take: limit }),
+  ]);
+  const goldPrice = gold?.pricePerGram18 ?? null;
+
+  // A card can still come back without an active cut (e.g. a gold item whose live rate is
+  // unavailable), so keep only the ones actually showing a discount — the timer must match.
+  return products.map((product) => serializeProductCard(product, goldPrice, settings.currency)).filter((card) => card.originalPrice);
+}
+
+/**
  * Products a signed-in customer looked at recently, newest visit first. Visits to
  * inactive/removed products or ones outside the store's current industry are skipped
  * rather than surfaced as broken cards.

@@ -2,7 +2,9 @@ import Image from "next/image";
 import Link from "next/link";
 import type { LucideIcon } from "lucide-react";
 import { ChevronLeft, Dumbbell, HeartPulse, House, Laptop, Shirt, ShoppingBag, Smartphone, Sparkles } from "lucide-react";
+import { DiscountExpiryRefresh } from "@/components/discount-expiry-refresh";
 import { DragScrollRow } from "@/components/drag-scroll-row";
+import { FlashSaleCountdown } from "@/components/flash-sale-countdown";
 import { HomepageBrands } from "@/components/homepage-brands";
 import { HomepageProductFeed } from "@/components/homepage-product-feed";
 import { HomepageBestSellers } from "@/components/homepage-best-sellers";
@@ -11,7 +13,8 @@ import { StorefrontHeroSlider } from "@/components/storefront-hero-slider";
 import { StorefrontImageTiles } from "@/components/storefront-image-tiles";
 import { ViewAllProductCard } from "@/components/view-all-product-card";
 import { db } from "@/lib/db";
-import { getStorefrontProductFeed } from "@/modules/products/storefront-feed";
+import { earliestDiscountExpiry } from "@/modules/products/discount-window";
+import { getStorefrontFlashDeals, getStorefrontProductFeed } from "@/modules/products/storefront-feed";
 import type { StorefrontProductCardItem } from "@/modules/products/storefront-feed-contract";
 import { getHomepageSettings, type HomepageLayoutItemId } from "@/modules/settings/homepage-settings";
 import { buildStorefrontHeroSlides } from "@/storefront/shared/hero";
@@ -41,10 +44,11 @@ function ProductRail({ title, description, products, href }: { title: string; de
 }
 
 export async function GeneralHome() {
-  const [homepage, latestFeed, popularFeed, categories, brands] = await Promise.all([
+  const [homepage, latestFeed, popularFeed, flashDeals, categories, brands] = await Promise.all([
     getHomepageSettings(),
     getStorefrontProductFeed({ sort: "LATEST", page: 1 }),
     getStorefrontProductFeed({ sort: "POPULAR", page: 1, pageSize: 12 }),
+    getStorefrontFlashDeals(),
     db.category.findMany({
       where: { parentId: null, isActive: true, products: { some: { status: "ACTIVE", storeIndustry: "GENERAL" } } },
       include: { image: true, _count: { select: { products: { where: { status: "ACTIVE", storeIndustry: "GENERAL" } } } } },
@@ -63,7 +67,7 @@ export async function GeneralHome() {
   const sectionState = new Map(homepage.sections.map((section) => [section.id, section.enabled]));
   const sectionOrder = new Map(homepage.sections.map((section, index) => [section.id, index]));
   const sectionProps = (id: HomepageLayoutItemId) => ({ hidden: sectionState.get(id) === false, style: { order: sectionOrder.get(id) ?? homepage.sections.length } });
-  const discountedProducts = latestFeed.items.filter((product) => product.originalPrice);
+  const flashDealsExpiry = earliestDiscountExpiry(flashDeals);
 
   return <main className="flex flex-col gap-4 overflow-hidden bg-[#f4f5f7] pb-[78px] pt-3 lg:gap-6 lg:pb-8">
     <section {...sectionProps("HERO")} className="bg-white"><StorefrontHeroSlider slides={heroSlides} contentMode={homepage.heroContentMode} title={homepage.heroTitle} description={homepage.heroDescription} buttonLabel={homepage.heroButtonLabel} /></section>
@@ -80,14 +84,15 @@ export async function GeneralHome() {
 
     {brands.length > 0 && <div {...sectionProps("BRANDS")} className={container}><HomepageBrands brands={brands} /></div>}
 
-    {discountedProducts.length > 0 && <section {...sectionProps("FEATURED_PRODUCTS")} className={`${container} overflow-hidden rounded-2xl bg-[var(--brand-primary)] p-3 text-[var(--brand-primary-foreground)] sm:p-4 lg:p-5`} aria-label="پیشنهادهای ویژه">
-      <div className="grid min-w-0 gap-4 lg:grid-cols-[170px_minmax(0,1fr)] lg:items-center">
-        <div className="grid justify-items-center gap-3 px-3 py-3 text-center text-white"><Sparkles size={42} strokeWidth={1.4} /><strong className="text-2xl font-bold leading-9">پیشنهاد<br />شگفت‌انگیز</strong><Link href="/products" className="inline-flex items-center gap-1 text-xs font-bold">مشاهده همه<ChevronLeft size={15} /></Link></div>
+    {flashDeals.length > 0 && <section {...sectionProps("FEATURED_PRODUCTS")} className={`${container} overflow-hidden rounded-2xl bg-[var(--brand-primary)] p-3 text-[var(--brand-primary-foreground)] sm:p-4 lg:p-5`} aria-label="پیشنهادهای ویژه">
+      <div className="grid min-w-0 gap-4 lg:grid-cols-[190px_minmax(0,1fr)] lg:items-center">
+        <div className="grid justify-items-center gap-3 px-3 py-3 text-center text-white"><Sparkles size={42} strokeWidth={1.4} /><strong className="text-2xl font-bold leading-9">پیشنهاد<br />شگفت‌انگیز</strong>{flashDealsExpiry && <FlashSaleCountdown endsAt={flashDealsExpiry} />}<Link href="/products" className="inline-flex items-center gap-1 text-xs font-bold">مشاهده همه<ChevronLeft size={15} /></Link></div>
         <DragScrollRow ariaLabel="پیشنهادهای شگفت‌انگیز" showNavigation className="flex w-full min-w-0 max-w-full gap-1 overflow-x-auto pb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          {discountedProducts.map((product, index) => <div key={product.id} className="w-[calc(50%-2px)] min-w-[calc(50%-2px)] snap-start sm:w-[220px] sm:min-w-[220px] lg:w-[224px] lg:min-w-[224px]"><ProductCard {...product} storefrontVariant="gallery" imageTone={index % 4} /></div>)}
+          {flashDeals.map((product, index) => <div key={product.id} className="w-[calc(50%-2px)] min-w-[calc(50%-2px)] snap-start sm:w-[220px] sm:min-w-[220px] lg:w-[224px] lg:min-w-[224px]"><ProductCard {...product} storefrontVariant="gallery" imageTone={index % 4} /></div>)}
           <div className="w-[calc(50%-2px)] min-w-[calc(50%-2px)] snap-start sm:w-[220px] sm:min-w-[220px] lg:w-[224px] lg:min-w-[224px]"><ViewAllProductCard href="/products" /></div>
         </DragScrollRow>
       </div>
+      <DiscountExpiryRefresh at={flashDealsExpiry} />
     </section>}
 
     {popularFeed.items.length > 0 && <div {...sectionProps("POPULAR_PRODUCTS")} className={container}><ProductRail title="محبوب‌ترین کالاها" description="محصولاتی که بیشتر مورد توجه مشتریان قرار گرفته‌اند" products={popularFeed.items} href="/products?sortby=popular" /></div>}
