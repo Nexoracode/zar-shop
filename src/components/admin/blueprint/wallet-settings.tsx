@@ -46,6 +46,18 @@ export function BlueprintWalletSettings({ initialSettings }: { initialSettings: 
       </section>
 
       <section className="bp-frame relative p-[16px]">
+        <BpKicker>افزایش اعتبار توسط مشتری</BpKicker>
+        <p className="bp-muted m-0 mt-1 text-[12px] leading-6">مشتری می‌تواند از صفحهٔ کیف پول با پرداخت به درگاه، اعتبار خود را افزایش دهد</p>
+        <div className="mt-3 grid gap-3">
+          <OptionCheckbox title="فعال‌بودن افزایش اعتبار" description="دکمهٔ «افزایش اعتبار» در صفحهٔ کیف پول مشتری نمایش داده شود." isSelected={settings.walletTopupEnabled} onChange={(value) => set("walletTopupEnabled", value)} />
+          <div className="grid gap-3 sm:grid-cols-2">
+            <BpNumberInput label="حداقل مبلغ هر افزایش اعتبار (ریال)" isPrice value={String(settings.walletMinTopup)} onValueChange={(value) => set("walletMinTopup", Number(value || 0))} />
+            <BpNumberInput label="حداکثر مبلغ هر افزایش اعتبار (ریال)" isPrice value={String(settings.walletMaxTopup)} onValueChange={(value) => set("walletMaxTopup", Number(value || 0))} />
+          </div>
+        </div>
+      </section>
+
+      <section className="bp-frame relative p-[16px]">
         <BpKicker>دعوت دوستان</BpKicker>
         <p className="bp-muted m-0 mt-1 text-[12px] leading-6">اگر کاربر جدید با کد معرف ثبت‌نام کند، پس از اولین خرید موفقِ او هر دو طرف پاداش می‌گیرند</p>
         <div className="mt-3 grid gap-3">

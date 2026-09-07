@@ -36,6 +36,8 @@ export const walletSettingsLimits = {
   // against a fat-fingered extra zero.
   maxRewardAmount: 100_000_000,
   maxMinOrderAmount: 999_999_999_999,
+  // Ceiling for a single self-service wallet top-up.
+  maxTopupAmount: 500_000_000,
 } as const;
 
 export const walletFieldLimits = {

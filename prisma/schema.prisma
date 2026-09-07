@@ -160,6 +160,7 @@ model User {
   createdAt              DateTime               @default(now())
   updatedAt              DateTime               @updatedAt
   wallet                 Wallet?
+  walletTopups           WalletTopup[]
   referralsMade          Referral[]             @relation("ReferralsMade")
   referralReceived       Referral?              @relation("ReferralReceived")
   addresses              Address[]
@@ -679,6 +680,9 @@ model StoreSetting {
   referralReferrerReward        Decimal               @default(500000) @db.Decimal(18, 0)
   referralRefereeReward         Decimal               @default(300000) @db.Decimal(18, 0)
   referralRewardMinOrderAmount  Decimal               @default(0) @db.Decimal(18, 0)
+  walletTopupEnabled            Boolean               @default(true)
+  walletMinTopup                Decimal               @default(50000) @db.Decimal(18, 0)
+  walletMaxTopup                Decimal               @default(50000000) @db.Decimal(18, 0)
   faqItems                      Json?
   contentPages                  Json?
 
@@ -1287,6 +1291,7 @@ enum WalletTransactionType {
   ORDER_REFUND
   ADMIN_CREDIT
   ADMIN_DEBIT
+  TOPUP
 }
 
 /// One movement of wallet credit. `amount` is signed (+ credit, − debit) and `balanceAfter`
@@ -1307,6 +1312,26 @@ model WalletTransaction {
 
   @@index([walletId, createdAt])
   @@index([orderId])
+}
+
+/// A customer topping up their own wallet through the payment gateway. Its own lifecycle rather
+/// than a `Payment` row, because `Payment` is tied to an `Order` and a top-up has none. On a
+/// verified `SUCCESS` the callback credits the wallet with a `TOPUP` ledger row.
+model WalletTopup {
+  id           String        @id @default(cuid())
+  userId       String
+  amount       Decimal       @db.Decimal(18, 0)
+  provider     String        @db.VarChar(50)
+  authority    String?       @unique @db.VarChar(191)
+  referenceId  String?       @unique @db.VarChar(191)
+  status       PaymentStatus @default(INITIATED)
+  providerData Json?
+  paidAt       DateTime?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
 }
 
 enum ReferralStatus {

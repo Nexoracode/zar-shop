@@ -2,6 +2,10 @@ import { z } from "zod";
 import { normalizeNumericValue } from "@/lib/persian-numbers";
 import { walletFieldLimits } from "@/modules/settings/settings-limits";
 
+// Inlined rather than imported from `storefront-methods` (which pulls in Prisma) so this schema
+// stays safe to import from client form components. Kept in sync with `storefrontPaymentMethodSchema`.
+const storefrontPaymentMethodSchema = z.enum(["mock", "zarinpal"]);
+
 const amount = z
   .union([z.string(), z.number()])
   .transform((value) => Number(normalizeNumericValue(String(value), false)))
@@ -14,3 +18,10 @@ export const walletAdjustmentSchema = z.object({
 });
 
 export type WalletAdjustmentInput = z.infer<typeof walletAdjustmentSchema>;
+
+export const walletTopupSchema = z.object({
+  amount,
+  paymentProvider: storefrontPaymentMethodSchema,
+});
+
+export type WalletTopupInput = z.infer<typeof walletTopupSchema>;

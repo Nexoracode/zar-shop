@@ -1,8 +1,11 @@
 import { Wallet } from "lucide-react";
 import { AccountEmptyState } from "@/components/account-page-ui";
+import { AlertDescription, AlertRoot } from "@/components/hero";
+import { WalletTopupForm } from "@/components/wallet-topup-form";
 import { db } from "@/lib/db";
 import { formatDateTime, formatMoney } from "@/lib/format";
 import { requireUser } from "@/modules/auth/session";
+import { getStorefrontPaymentMethods } from "@/modules/payments/storefront-methods";
 import { getGeneralStoreSettings } from "@/modules/settings/general-settings";
 import { getWalletSettings } from "@/modules/settings/wallet-settings";
 import { ensureWallet } from "@/modules/wallet/wallet";
@@ -15,16 +18,27 @@ const typeLabels: Record<WalletTransactionType, string> = {
   ORDER_REFUND: "بازگشت اعتبار سفارش",
   ADMIN_CREDIT: "افزایش اعتبار توسط پشتیبانی",
   ADMIN_DEBIT: "کاهش اعتبار توسط پشتیبانی",
+  TOPUP: "افزایش اعتبار از درگاه پرداخت",
 };
 
-export default async function AccountWalletPage() {
+const topupMessages = {
+  success: { status: "success" as const, text: "پرداخت موفق بود و اعتبار به کیف پول شما اضافه شد." },
+  cancelled: { status: "warning" as const, text: "پرداخت لغو شد؛ مبلغی از حساب شما کسر نشده است." },
+  missing: { status: "danger" as const, text: "اطلاعات پرداخت پیدا نشد." },
+  review: { status: "warning" as const, text: "پرداخت در درگاه تأیید شده و ثبت نهایی آن در حال بررسی خودکار است؛ کمی بعد موجودی به‌روزرسانی می‌شود." },
+};
+
+export default async function AccountWalletPage({ searchParams }: { searchParams: Promise<{ topup?: string }> }) {
   const user = await requireUser();
-  const [wallet, generalSettings, walletSettings] = await Promise.all([
+  const [wallet, generalSettings, walletSettings, paymentMethods] = await Promise.all([
     ensureWallet(db, user.id),
     getGeneralStoreSettings(),
     getWalletSettings(),
+    getStorefrontPaymentMethods(),
   ]);
   const currency = generalSettings.currency;
+  const topupMessage = topupMessages[(await searchParams).topup as keyof typeof topupMessages];
+  const canTopup = walletSettings.walletEnabled && walletSettings.walletTopupEnabled && paymentMethods.length > 0;
   const transactions = await db.walletTransaction.findMany({
     where: { walletId: wallet.id },
     orderBy: { createdAt: "desc" },
@@ -33,6 +47,8 @@ export default async function AccountWalletPage() {
 
   return (
     <>
+      {topupMessage && <AlertRoot status={topupMessage.status}><AlertDescription>{topupMessage.text}</AlertDescription></AlertRoot>}
+
       <section className="overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-sm">
         <div className="flex items-center gap-4 p-5 sm:p-6">
           <span className="grid size-12 shrink-0 place-items-center rounded-full bg-[var(--brand-primary)]/10 text-[var(--brand-primary)]">
@@ -48,6 +64,18 @@ export default async function AccountWalletPage() {
           {walletSettings.walletCheckoutEnabled ? " هنگام تسویه‌حساب می‌توانید از این اعتبار استفاده کنید." : ""}
         </p>
       </section>
+
+      {canTopup && (
+        <section aria-labelledby="wallet-topup" className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 shadow-sm sm:p-6">
+          <h2 id="wallet-topup" className="m-0 mb-4 text-base font-bold">افزایش اعتبار</h2>
+          <WalletTopupForm
+            min={walletSettings.walletMinTopup}
+            max={walletSettings.walletMaxTopup}
+            currency={currency}
+            methods={paymentMethods.map((method) => ({ id: method.id, name: method.name }))}
+          />
+        </section>
+      )}
 
       <section aria-labelledby="wallet-history">
         <h2 id="wallet-history" className="mb-3 mt-2 text-base font-bold">تاریخچهٔ تراکنش‌ها</h2>

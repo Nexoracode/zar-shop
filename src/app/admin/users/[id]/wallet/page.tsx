@@ -20,6 +20,7 @@ const typeLabels: Record<WalletTransactionType, string> = {
   ORDER_REFUND: "بازگشت اعتبار سفارش",
   ADMIN_CREDIT: "افزایش دستی (پشتیبانی)",
   ADMIN_DEBIT: "کاهش دستی (پشتیبانی)",
+  TOPUP: "افزایش اعتبار از درگاه",
 };
 
 type Context = { params: Promise<{ id: string }> };
