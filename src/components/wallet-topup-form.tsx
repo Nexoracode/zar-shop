@@ -5,7 +5,7 @@ import { Alert, Button, Spinner } from "@heroui/react";
 import { Plus } from "lucide-react";
 import { TextField } from "@/components/form-field";
 import { formatMoney } from "@/lib/format";
-import { normalizeNumericValue, toPersianDigits } from "@/lib/persian-numbers";
+import { formatPersianNumber, normalizeNumericValue, priceToPersianWords, rialPriceToTomanWords } from "@/lib/persian-numbers";
 
 type Method = { id: string; name: string };
 
@@ -17,7 +17,13 @@ export function WalletTopupForm({ min, max, currency, methods }: { min: number; 
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const numeric = useMemo(() => Number(normalizeNumericValue(amount, false) || 0), [amount]);
+  // `amount` holds the plain digits; the box shows them grouped in threes and the amount is
+  // spelled out underneath — same treatment as the admin panel's price fields.
+  const raw = useMemo(() => normalizeNumericValue(amount, false), [amount]);
+  const numeric = Number(raw || 0);
+  const words = raw && numeric > 0
+    ? currency === "IRT" ? priceToPersianWords(raw, "تومان") : rialPriceToTomanWords(raw)
+    : "";
   const presets = PRESETS.filter((value) => value >= min && value <= max);
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
@@ -41,10 +47,9 @@ export function WalletTopupForm({ min, max, currency, methods }: { min: number; 
         id="topup-amount"
         inputMode="numeric"
         dir="ltr"
-        value={amount ? toPersianDigits(normalizeNumericValue(amount, false)) : ""}
-        onChange={(event) => { setAmount(event.target.value); setError(""); }}
-        hint={`بین ${formatMoney(min, currency)} تا ${formatMoney(max, currency)}`}
-        reserveMessage={false}
+        value={formatPersianNumber(raw, true)}
+        onChange={(event) => { setAmount(normalizeNumericValue(event.target.value, false)); setError(""); }}
+        hint={words || `بین ${formatMoney(min, currency)} تا ${formatMoney(max, currency)}`}
       />
       <div className="flex flex-wrap gap-2">
         {presets.map((value) => (
