@@ -23,8 +23,12 @@ export async function GET(request: Request) {
   try {
     referenceId = (await (await getStorefrontPaymentProvider(topup.provider)).verify(authority, Number(topup.amount))).referenceId;
   } catch (error) {
+    const providerCode = error instanceof PaymentProviderError ? error.code ?? null : null;
     if (status !== "OK") {
-      await db.walletTopup.updateMany({ where: { id: topup.id, status: { notIn: ["SUCCESS", "REFUNDED"] } }, data: { status: "CANCELLED" } });
+      // Logged even though this is the "user cancelled" path: a gateway that captured the money
+      // but still failed verify() lands here too, and without this line there is no trace of why.
+      console.error(`[wallet] Top-up not verified (gateway status=${status ?? "none"}, code=${providerCode ?? "none"}).`, error);
+      await db.walletTopup.updateMany({ where: { id: topup.id, status: { notIn: ["SUCCESS", "REFUNDED"] } }, data: { status: "CANCELLED", providerData: { cancelledAfterVerifyError: true, verificationErrorCode: providerCode } } });
       return NextResponse.redirect(walletUrl("?topup=cancelled"));
     }
     console.error("[wallet] Top-up verification could not be completed.", error);

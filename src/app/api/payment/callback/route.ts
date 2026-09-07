@@ -32,8 +32,12 @@ export async function GET(request: Request) {
   try {
     referenceId = (await (await getStorefrontPaymentProvider(payment.provider)).verify(authority, Number(payment.amount))).referenceId;
   } catch (error) {
+    const providerCode = error instanceof PaymentProviderError ? error.code ?? null : null;
     if (status !== "OK") {
-      await db.payment.updateMany({ where: { id: payment.id, status: { notIn: ["SUCCESS", "REFUNDED"] } }, data: { status: "CANCELLED" } });
+      // Logged even though this is the "user cancelled" path: a gateway that captured the money
+      // but still failed verify() lands here too, and without this line there is no trace of why.
+      console.error(`[payment] Not verified (gateway status=${status ?? "none"}, code=${providerCode ?? "none"}).`, error);
+      await db.payment.updateMany({ where: { id: payment.id, status: { notIn: ["SUCCESS", "REFUNDED"] } }, data: { status: "CANCELLED", providerData: { cancelledAfterVerifyError: true, verificationErrorCode: providerCode } } });
       return NextResponse.redirect(`${env.APP_URL}/account?payment=cancelled`);
     }
     console.error("[payment] Zarinpal verification could not be completed.", error);
