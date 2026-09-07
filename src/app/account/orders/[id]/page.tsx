@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Prisma } from "@generated/prisma/client";
 import { ArrowRight, FileCheck2, FileText, ImageIcon, RotateCcw, ShieldCheck, Truck } from "lucide-react";
+import { AccountNotice } from "@/components/account-page-ui";
 import { AccountPaymentHistory, type AccountPaymentHistoryItem } from "@/components/account-payment-history";
 import { AccountReturnRequestForm } from "@/components/account-return-request-form";
 import { OrderCancelButton } from "@/components/order-cancel-button";
@@ -49,10 +50,10 @@ function deliveryState(status: string) {
   return { label: orderStatusLabels[status as keyof typeof orderStatusLabels] ?? "در انتظار بررسی", progress: 12, className: "bg-[var(--muted)] text-[var(--muted)]" };
 }
 
-export default async function OrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function OrderDetailPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ payment?: string }> }) {
   const user = await requireUser();
   await expirePendingOrders();
-  const { id } = await params;
+  const [{ id }, { payment: paymentResult }] = await Promise.all([params, searchParams]);
   const [order, settings, orderSettings] = await Promise.all([
     db.order.findFirst({
       where: { id, userId: user.id },
@@ -110,6 +111,17 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
     isSuccessful: item.status === "SUCCESS",
   }));
 
+  const canRetryPayment = order.status === "PENDING_PAYMENT";
+  const paymentResultBanners = {
+    success: { tone: "success" as const, title: "پرداخت با موفقیت انجام شد", body: <>سفارش شما ثبت شد و برای آماده‌سازی به فروشگاه ارسال شد.{order.invoice ? <> <Link href={`/invoices/${order.id}`} className="font-bold text-[var(--brand-primary)] hover:underline">مشاهدهٔ فاکتور رسمی</Link></> : null}</> },
+    failed: { tone: "danger" as const, title: "پرداخت ناموفق بود", body: <>اگر مبلغی از حساب شما کسر شده باشد، طبق روال درگاه تا ۷۲ ساعت بازمی‌گردد.{canRetryPayment ? <> <Link href="/checkout" className="font-bold text-[var(--danger)] hover:underline">تلاش دوباره برای پرداخت</Link></> : null}</> },
+    cancelled: { tone: "warning" as const, title: "پرداخت ناتمام ماند", body: <>این سفارش تا پایان مهلت پرداخت برای شما نگه داشته می‌شود.{canRetryPayment ? <> <Link href="/checkout" className="font-bold text-[var(--warning)] hover:underline">پرداخت سفارش</Link></> : null}</> },
+    review: { tone: "info" as const, title: "در حال بررسی پرداخت", body: <>پرداخت شما ثبت شده و تأیید نهایی به‌صورت خودکار در حال انجام است؛ تا چند دقیقهٔ دیگر وضعیت به‌روزرسانی می‌شود. لطفاً دوباره پرداخت نکنید.</> },
+  };
+  const resultBanner = paymentResult && paymentResult in paymentResultBanners
+    ? paymentResultBanners[paymentResult as keyof typeof paymentResultBanners]
+    : null;
+
   return <article className="overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface)]" dir="rtl">
     <header className="flex min-h-20 items-center gap-3 border-b border-[var(--border)] px-4 sm:px-6">
       <Link href="/account/orders" aria-label="بازگشت به سفارش‌ها" className="grid size-10 shrink-0 place-items-center rounded-lg text-slate-700 transition hover:bg-[var(--surface-secondary)]"><ArrowRight size={22} /></Link>
@@ -119,6 +131,12 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
         {order.invoice ? <Link href={`/invoices/${order.id}`} className="inline-flex min-h-10 items-center gap-2 text-xs font-bold text-[var(--brand-primary)]"><FileText size={17} />مشاهده فاکتور</Link> : null}
       </div>
     </header>
+
+    {resultBanner && (
+      <div className="px-4 pt-4 sm:px-6">
+        <AccountNotice tone={resultBanner.tone} title={resultBanner.title}>{resultBanner.body}</AccountNotice>
+      </div>
+    )}
 
     <section className="grid gap-4 border-b border-[var(--border)] px-4 py-5 text-sm sm:px-6">
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-xs text-[var(--muted)]"><span>کد پیگیری سفارش <b className="text-[var(--foreground)]" dir="ltr">{order.orderNumber}</b></span><span className="text-slate-300">•</span><span>تاریخ ثبت سفارش <b className="text-[var(--foreground)]">{formatDate(order.createdAt)}</b></span></div>

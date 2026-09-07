@@ -244,7 +244,7 @@ export async function POST(request: Request) {
           } catch (notifyError) { console.error("[notifications] Referral reward notification failed.", notifyError); }
         }
       }
-      return NextResponse.json({ redirectUrl: `/invoices/${result.order.id}` });
+      return NextResponse.json({ redirectUrl: `/account/orders/${result.order.id}?payment=success` });
     }
 
     const order = result.order;
