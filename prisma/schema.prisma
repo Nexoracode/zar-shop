@@ -156,8 +156,12 @@ model User {
   lastLoginAt            DateTime?
   isGuest                Boolean                @default(false)
   smsMarketingConsent    Boolean                @default(false)
+  referralCode           String?                @unique @db.VarChar(12)
   createdAt              DateTime               @default(now())
   updatedAt              DateTime               @updatedAt
+  wallet                 Wallet?
+  referralsMade          Referral[]             @relation("ReferralsMade")
+  referralReceived       Referral?              @relation("ReferralReceived")
   addresses              Address[]
   orders                 Order[]
   cart                   Cart?
@@ -669,6 +673,12 @@ model StoreSetting {
   goldPriceRefreshSeconds       Int                   @default(60)
   goldPriceCacheSeconds         Int                   @default(120)
   goldPriceFallbackMinutes      Int                   @default(15)
+  walletEnabled                 Boolean               @default(true)
+  walletCheckoutEnabled         Boolean               @default(true)
+  referralEnabled               Boolean               @default(true)
+  referralReferrerReward        Decimal               @default(500000) @db.Decimal(18, 0)
+  referralRefereeReward         Decimal               @default(300000) @db.Decimal(18, 0)
+  referralRewardMinOrderAmount  Decimal               @default(0) @db.Decimal(18, 0)
   faqItems                      Json?
   contentPages                  Json?
 
@@ -1081,6 +1091,7 @@ model Order {
   shippingMethodTitle      String?               @db.VarChar(100)
   tax                      Decimal               @default(0) @db.Decimal(18, 0)
   total                    Decimal               @db.Decimal(18, 0)
+  walletAmount             Decimal               @default(0) @db.Decimal(18, 0)
   shippingAddress          Json
   notes                    String?               @db.Text
   expiresAt                DateTime?
@@ -1102,6 +1113,8 @@ model Order {
   promotionRedemptions     PromotionRedemption[]
   issuedPromotionRewards   PromotionReward[]     @relation("PromotionRewardSource")
   redeemedPromotionRewards PromotionReward[]     @relation("PromotionRewardRedemption")
+  walletTransactions       WalletTransaction[]
+  referralsQualified       Referral[]            @relation("ReferralQualifyingOrder")
   returns                  Return[]
 
   @@index([userId, createdAt])
@@ -1251,4 +1264,73 @@ model ContactMessage {
   resolvedAt DateTime?
 
   @@index([isResolved, createdAt])
+}
+
+/// In-store credit for a customer. One row per user, created lazily on first need. The balance is
+/// the source of truth; `WalletTransaction` is an append-only ledger that explains how it got there.
+model Wallet {
+  id           String              @id @default(cuid())
+  userId       String              @unique
+  balance      Decimal             @default(0) @db.Decimal(18, 0)
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+  user         User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions WalletTransaction[]
+
+  @@index([userId])
+}
+
+enum WalletTransactionType {
+  REFERRAL_REWARD
+  REFERRAL_BONUS
+  ORDER_PAYMENT
+  ORDER_REFUND
+  ADMIN_CREDIT
+  ADMIN_DEBIT
+}
+
+/// One movement of wallet credit. `amount` is signed (+ credit, − debit) and `balanceAfter`
+/// snapshots the wallet balance right after this row was written, so the history reads without
+/// re-summing. `actorId` is the admin id for a manual adjustment (plain string, same as AuditLog).
+model WalletTransaction {
+  id           String                @id @default(cuid())
+  walletId     String
+  amount       Decimal               @db.Decimal(18, 0)
+  balanceAfter Decimal               @db.Decimal(18, 0)
+  type         WalletTransactionType
+  orderId      String?
+  actorId      String?
+  description  String                @db.VarChar(191)
+  createdAt    DateTime              @default(now())
+  wallet       Wallet                @relation(fields: [walletId], references: [id], onDelete: Cascade)
+  order        Order?                @relation(fields: [orderId], references: [id], onDelete: SetNull)
+
+  @@index([walletId, createdAt])
+  @@index([orderId])
+}
+
+enum ReferralStatus {
+  PENDING
+  REWARDED
+}
+
+/// Links a new account to the account whose referral code they signed up with. Stays PENDING until
+/// the referee's first successful paid order, then both wallets are credited and it moves to
+/// REWARDED. `refereeId` is unique — a user can only ever be referred once.
+model Referral {
+  id                String         @id @default(cuid())
+  referrerId        String
+  refereeId         String         @unique
+  code              String         @db.VarChar(12)
+  status            ReferralStatus @default(PENDING)
+  qualifyingOrderId String?
+  referrerReward    Decimal        @default(0) @db.Decimal(18, 0)
+  refereeReward     Decimal        @default(0) @db.Decimal(18, 0)
+  rewardedAt        DateTime?
+  createdAt         DateTime       @default(now())
+  referrer          User           @relation("ReferralsMade", fields: [referrerId], references: [id], onDelete: Cascade)
+  referee           User           @relation("ReferralReceived", fields: [refereeId], references: [id], onDelete: Cascade)
+  qualifyingOrder   Order?         @relation("ReferralQualifyingOrder", fields: [qualifyingOrderId], references: [id], onDelete: SetNull)
+
+  @@index([referrerId, status])
 }

@@ -1,11 +1,17 @@
 import Link from "next/link";
-import { Box, ChevronLeft, PackageCheck, ShoppingBag, Undo2 } from "lucide-react";
+import { Box, ChevronLeft, Gift, PackageCheck, ShoppingBag, Undo2, Wallet } from "lucide-react";
 import { AlertDescription, AlertRoot } from "@/components/hero";
 import { AccountEmptyState, AccountProductCard } from "@/components/account-page-ui";
-import { formatDate } from "@/lib/format";
+import { ReferralShare } from "@/components/referral-share";
+import { env } from "@/lib/env";
+import { formatDate, formatMoney } from "@/lib/format";
 import { db } from "@/lib/db";
 import { requireUser } from "@/modules/auth/session";
 import { expirePendingOrders } from "@/modules/orders/expiration";
+import { getGeneralStoreSettings } from "@/modules/settings/general-settings";
+import { getWalletSettings } from "@/modules/settings/wallet-settings";
+import { ensureReferralCode } from "@/modules/wallet/referral-code";
+import { ensureWallet } from "@/modules/wallet/wallet";
 
 const paymentMessages = {
   cancelled: { status: "warning" as const, text: "پرداخت لغو شد؛ سفارش تا پایان مهلت پرداخت برای شما نگه داشته می‌شود." },
@@ -41,6 +47,17 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
     { href: "/account/orders", value: deliveredOrders, label: "تحویل‌شده", icon: PackageCheck },
     { href: "/account/returns", value: returnCount, label: "مرجوعی‌ها", icon: Undo2 },
   ];
+
+  const walletSettings = await getWalletSettings();
+  const showWallet = !user.isGuest && walletSettings.walletEnabled;
+  const showReferral = !user.isGuest && walletSettings.referralEnabled;
+  const [walletBalance, referralCode, currency] = showWallet || showReferral
+    ? await Promise.all([
+      showWallet ? ensureWallet(db, user.id).then((wallet) => wallet.balance.toString()) : Promise.resolve("0"),
+      showReferral ? ensureReferralCode(db, user.id) : Promise.resolve(""),
+      getGeneralStoreSettings().then((settings) => settings.currency),
+    ])
+    : ["0", "", "IRR" as const];
 
   return (
     <>
@@ -103,6 +120,30 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
           </div>
         )}
       </section>
+
+      {(showWallet || showReferral) && (
+        <section className="grid gap-3 sm:grid-cols-2">
+          {showWallet && (
+            <Link href="/account/wallet" className="flex items-center gap-3 rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 shadow-sm transition hover:border-[var(--brand-primary)]">
+              <span className="grid size-10 shrink-0 place-items-center rounded-full bg-[var(--brand-primary)]/10 text-[var(--brand-primary)]"><Wallet size={19} /></span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-[11px] text-[var(--muted)]">موجودی کیف پول</span>
+                <strong className="block text-base font-bold">{formatMoney(walletBalance, currency)}</strong>
+              </span>
+              <ChevronLeft size={16} className="shrink-0 text-[var(--muted)]" />
+            </Link>
+          )}
+          {showReferral && (
+            <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 shadow-sm">
+              <div className="mb-3 flex items-center justify-between gap-2">
+                <span className="flex items-center gap-2 text-sm font-bold"><Gift size={17} className="text-[var(--brand-primary)]" />دعوت دوستان</span>
+                <Link href="/account/referral" className="inline-flex items-center gap-1 text-[11px] font-bold text-[var(--brand-primary)]">جزئیات<ChevronLeft size={13} /></Link>
+              </div>
+              <ReferralShare code={referralCode} inviteUrl={`${env.APP_URL}/register?ref=${referralCode}`} />
+            </div>
+          )}
+        </section>
+      )}
     </>
   );
 }

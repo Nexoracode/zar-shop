@@ -7,6 +7,7 @@ import { BlueprintCatalogSettings } from "@/components/admin/blueprint/catalog-s
 import { BlueprintCommerceSettings } from "@/components/admin/blueprint/commerce-settings";
 import { BlueprintContentSettings } from "@/components/admin/blueprint/content-settings";
 import { BlueprintSeoSettings } from "@/components/admin/blueprint/seo-settings";
+import { BlueprintWalletSettings } from "@/components/admin/blueprint/wallet-settings";
 import { AdminPageHeader } from "@/components/admin-ui";
 import { settingsSectionPermission } from "@/modules/auth/permissions";
 import { requirePermission } from "@/modules/auth/session";
@@ -18,6 +19,7 @@ import { getContentSettings } from "@/modules/settings/content-settings";
 import { getGeneralStoreSettings } from "@/modules/settings/general-settings";
 import { getOrderSettings } from "@/modules/settings/order-settings";
 import { getStoreIndustry } from "@/modules/settings/store-settings";
+import { getWalletSettings } from "@/modules/settings/wallet-settings";
 import { getPublicGatewayConfigs } from "@/modules/payments/gateway-config";
 
 type Context = { params: Promise<{ section: string }> };
@@ -29,6 +31,7 @@ const sectionMeta = {
   commerce: { title: "تنظیمات ارسال و پرداخت", description: "روش‌های تحویل سفارش و وضعیت درگاه پرداخت" },
   content: { title: "تنظیمات محتوا و سوالات متداول", description: "مدیریت FAQ و صفحات راهنما و قوانین فروشگاه" },
   seo: { title: "SEO حرفه‌ای", description: "تنظیمات دیده‌شدن فروشگاه و ساختار فنی صفحات برای موتورهای جستجو" },
+  wallet: { title: "کیف پول و دعوت دوستان", description: "اعتبار داخل فروشگاه، پرداخت با کیف پول و پاداش دعوت دوستان" },
 } as const;
 
 async function getPageMeta(section: string) {
@@ -85,6 +88,10 @@ export default async function AdminSettingSectionPage({ params }: Context) {
     }
     case "seo": {
       content = <BlueprintSeoSettings />;
+      break;
+    }
+    case "wallet": {
+      content = <BlueprintWalletSettings initialSettings={await getWalletSettings()} />;
       break;
     }
     default: notFound();

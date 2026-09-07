@@ -14,6 +14,7 @@ import {
   Search,
   Store,
   Truck,
+  Wallet,
   type LucideIcon,
 } from "lucide-react";
 import type { StoreIndustry, UserRole } from "@generated/prisma/enums";
@@ -51,6 +52,7 @@ export function BlueprintAdminSettingsNavigation({ industry, role }: { industry:
         { href: "/admin/settings/catalog", title: industry === "GOLD" ? "محصول و قیمت طلا" : "محصولات", description: industry === "GOLD" ? "موجودی، کاتالوگ و نرخ قیمت‌گذاری" : "موجودی و نمایش کاتالوگ محصولات", icon: Boxes },
         { href: "/admin/settings/commerce", title: "ارسال و پرداخت", description: "روش‌های تحویل و درگاه پرداخت", icon: Truck },
         { href: "/admin/settings/payment-gateways", title: "درگاه‌های پرداخت", description: "افزودن و مدیریت شناسه درگاه‌ها", icon: CreditCard },
+        { href: "/admin/settings/wallet", title: "کیف پول و دعوت دوستان", description: "اعتبار مشتریان و پاداش معرفی", icon: Wallet },
       ],
     },
     {

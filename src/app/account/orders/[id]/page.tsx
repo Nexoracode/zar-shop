@@ -105,7 +105,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
     amount: formatMoney(item.amount.toString(), settings.currency),
     date: formatDate(item.createdAt),
     referenceId: item.referenceId,
-    gateway: item.provider === "zarinpal" ? "پرداخت اینترنتی زرین‌پال" : "پرداخت اینترنتی",
+    gateway: item.provider === "wallet" ? "پرداخت از کیف پول" : item.provider === "zarinpal" ? "پرداخت اینترنتی زرین‌پال" : "پرداخت اینترنتی",
     isSuccessful: item.status === "SUCCESS",
   }));
 

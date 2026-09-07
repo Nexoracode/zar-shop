@@ -26,6 +26,8 @@ type Quote = {
   shipping: number;
   shippingDiscount: number;
   total: number;
+  /** Portion already captured from the customer's wallet at checkout; the gateway owes the rest. */
+  walletApplied: number;
   applications: Array<{ title: string; code: string | null }>;
 };
 
@@ -99,7 +101,8 @@ export function ResumeOrderCheckout({ orderId, orderNumber, address, quote, curr
             {quote.promotionDiscount > 0 && <div className="flex justify-between gap-4 font-bold text-[var(--success)]"><dt>کد تخفیف</dt><dd>{formatMoney(quote.promotionDiscount, currency)}</dd></div>}
             <div className="flex justify-between gap-4 text-[var(--muted)]"><dt>هزینه ارسال</dt><dd>{quote.shipping === 0 ? "رایگان" : formatMoney(quote.shipping, currency)}</dd></div>
             {quote.shippingDiscount > 0 && <div className="flex justify-between gap-4 font-bold text-[var(--success)]"><dt>تخفیف ارسال</dt><dd>{formatMoney(quote.shippingDiscount, currency)}</dd></div>}
-            <div className="flex justify-between gap-4 border-t border-[var(--border)] pt-4 text-base font-bold"><dt>مبلغ قابل پرداخت</dt><dd>{formatMoney(quote.total, currency)}</dd></div>
+            {quote.walletApplied > 0 && <div className="flex justify-between gap-4 font-bold text-[var(--success)]"><dt>از کیف پول</dt><dd>− {formatMoney(quote.walletApplied, currency)}</dd></div>}
+            <div className="flex justify-between gap-4 border-t border-[var(--border)] pt-4 text-base font-bold"><dt>{quote.walletApplied > 0 ? "مبلغ قابل پرداخت در درگاه" : "مبلغ قابل پرداخت"}</dt><dd>{formatMoney(quote.total - quote.walletApplied, currency)}</dd></div>
           </dl>
           {quote.applications.length > 0 && <div className="mt-4 grid gap-2">{quote.applications.map((application) => <div key={`${application.title}-${application.code ?? "auto"}`} className="rounded-lg bg-[color-mix(in_srgb,var(--success)_12%,transparent)] px-3 py-2 text-xs text-[var(--success)]"><strong>{application.title}</strong>{application.code && <span className="mr-2" dir="ltr">{application.code}</span>}</div>)}</div>}
           {expiresAt ? <div className="mt-4"><OrderExpiryCountdown expiresAt={expiresAt} warningMinutes={warningMinutes} /></div> : null}

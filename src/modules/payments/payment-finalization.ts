@@ -1,7 +1,8 @@
-import type { Prisma } from "@generated/prisma/client";
+import { Prisma } from "@generated/prisma/client";
 import { generalStoreSettingsDefaults } from "@/modules/settings/general-settings";
 import { InventoryUnavailableError, reserveInventory } from "@/modules/orders/inventory";
 import { issueNextPurchaseRewards, type IssuedReward } from "@/modules/promotions/service";
+import { payoutReferralIfEligible, type ReferralPayout } from "@/modules/wallet/referral-service";
 
 export type PaymentFinalizationResult = {
   orderId: string;
@@ -10,6 +11,7 @@ export type PaymentFinalizationResult = {
   userId: string;
   userIsGuest: boolean;
   rewards: IssuedReward[];
+  referralPayout: ReferralPayout | null;
   alreadyCompleted: boolean;
   inventoryWarning: boolean;
 };
@@ -28,15 +30,22 @@ export async function finalizeVerifiedPayment(
 ): Promise<PaymentFinalizationResult> {
   const payment = await transaction.payment.findUnique({
     where: { id: paymentId },
-    include: { order: { include: { items: true, user: true } } },
+    include: { order: { include: { items: true, user: true, payments: { select: { id: true, status: true, amount: true } } } } },
   });
   if (!payment) throw new Error("Payment not found");
   const phone = (payment.order.shippingAddress as { phone?: string } | null)?.phone;
-  const identity = { userId: payment.order.userId, userIsGuest: payment.order.user.isGuest, rewards: [] as IssuedReward[] };
+  const identity = { userId: payment.order.userId, userIsGuest: payment.order.user.isGuest, rewards: [] as IssuedReward[], referralPayout: null as ReferralPayout | null };
   if (payment.status === "SUCCESS") {
     return { orderId: payment.orderId, orderNumber: payment.order.orderNumber, phone, ...identity, alreadyCompleted: true, inventoryWarning: !payment.order.inventoryReserved };
   }
-  if (!payment.amount.equals(payment.order.total)) throw new PaymentAmountMismatchError();
+  // An order can now be settled by more than one payment (wallet credit + gateway), so the
+  // invariant is "every successful payment on the order sums to the total", not "this one payment
+  // equals it". The wallet portion is captured at checkout, so by the time the gateway payment
+  // lands here it already counts toward `capturedElsewhere`.
+  const capturedElsewhere = payment.order.payments
+    .filter((row) => row.id !== payment.id && row.status === "SUCCESS")
+    .reduce((sum, row) => sum.plus(row.amount), new Prisma.Decimal(0));
+  if (!payment.amount.plus(capturedElsewhere).equals(payment.order.total)) throw new PaymentAmountMismatchError();
 
   const claimed = await transaction.payment.updateMany({
     where: { id: payment.id, status: { notIn: ["SUCCESS", "REFUNDED"] } },
@@ -102,6 +111,13 @@ export async function finalizeVerifiedPayment(
     userId: payment.order.userId,
     merchandiseAmount: Number(payment.order.subtotal) - Number(payment.order.productDiscount),
   });
+  const referralPayout = payment.order.user.isGuest
+    ? null
+    : await payoutReferralIfEligible(transaction, {
+      userId: payment.order.userId,
+      orderId: payment.orderId,
+      merchandiseAmount: Number(payment.order.subtotal) - Number(payment.order.productDiscount),
+    });
   if (inventoryWarning) {
     await transaction.auditLog.create({
       data: {
@@ -112,5 +128,5 @@ export async function finalizeVerifiedPayment(
       },
     });
   }
-  return { orderId: payment.orderId, orderNumber: payment.order.orderNumber, phone, ...identity, rewards, alreadyCompleted: false, inventoryWarning };
+  return { orderId: payment.orderId, orderNumber: payment.order.orderNumber, phone, ...identity, rewards, referralPayout, alreadyCompleted: false, inventoryWarning };
 }

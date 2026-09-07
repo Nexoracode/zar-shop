@@ -2,7 +2,7 @@
 
 import { useState, type FormEvent, type ReactNode } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { ChevronLeft } from "lucide-react";
 import { Alert, Button, toast } from "@heroui/react";
 import { AdminCheckbox } from "@/components/admin-checkbox";
@@ -16,7 +16,7 @@ import { TextField } from "@/components/form-field";
 
 type Step = "phone" | "password" | "login-otp" | "register-otp" | "register-complete";
 type OtpPurpose = "LOGIN" | "REGISTER";
-type FieldName = "phone" | "password" | "code" | "firstName" | "lastName";
+type FieldName = "phone" | "password" | "code" | "firstName" | "lastName" | "referralCode";
 
 // HeroUI's own Button base CSS sets text-sm/font-medium directly on `.button` (in the
 // "components" layer, imported by @heroui/styles) — a plain `text-xs`/`font-bold` utility
@@ -57,8 +57,10 @@ function reportFailure(setError: (value: string) => void, status: number, messag
 // heading, mirroring how digikala's SSO screen replaces its title as the flow progresses.
 export function AuthFlow() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [step, setStep] = useState<Step>("phone");
   const [phone, setPhone] = useState("");
+  const [referralCode, setReferralCode] = useState(() => (searchParams.get("ref") ?? "").trim().toUpperCase());
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<FieldName, string>>>({});
   const [loading, setLoading] = useState(false);
@@ -186,7 +188,7 @@ export function AuthFlow() {
     if (Object.keys(nextFieldErrors).length) { setFieldErrors(nextFieldErrors); return; }
     setFieldErrors({});
     setLoading(true);
-    const body = { phone, firstName: firstName || undefined, lastName: lastName || undefined, password, smsMarketingConsent };
+    const body = { phone, firstName: firstName || undefined, lastName: lastName || undefined, password, smsMarketingConsent, referralCode: referralCode.trim() || undefined };
     const { ok, result } = await postJson("/api/auth/register/complete", body);
     setLoading(false);
     if (!ok) { applyIssues(result?.issues); setError(result?.message ?? "ثبت‌نام انجام نشد."); return; }
@@ -256,6 +258,7 @@ export function AuthFlow() {
         <TextField tone="auth" label="نام خانوادگی" error={fieldErrors.lastName} id="lastName" name="lastName" maxLength={authFieldLimits.lastName} onChange={() => clearFieldError("lastName")} />
       </div>
       <PasswordField tone="auth" label="رمز عبور" error={fieldErrors.password} id="password" name="password" maxLength={authFieldLimits.password} onChange={() => clearFieldError("password")} />
+      <TextField tone="auth" label="کد معرف (اختیاری)" dir="ltr" error={fieldErrors.referralCode} id="referralCode" name="referralCode" maxLength={authFieldLimits.referralCode} value={referralCode} hint="اگر با کد دوستتان ثبت‌نام کنید، پس از اولین خرید هر دو هدیه می‌گیرید." onChange={(event) => { setReferralCode(event.target.value.toUpperCase()); clearFieldError("referralCode"); }} />
       <AdminCheckbox isSelected={smsMarketingConsent} onChange={setSmsMarketingConsent} description="برای تخفیف‌ها و خبرهای فروشگاه؛ هر زمان قابل لغو است">مایلم پیامک‌های اطلاع‌رسانی فروشگاه را دریافت کنم</AdminCheckbox>
       {error && <Alert status="danger"><Alert.Description>{error}</Alert.Description></Alert>}
       <Button type="submit" variant="primary" fullWidth className={submitClass} isPending={loading}>

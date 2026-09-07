@@ -20,6 +20,11 @@ import { baseShippingFee, defaultDeliveryMethod, estimatedReadyAt, getCommerceSe
 import { chargeableCartWeight, quoteForMethod } from "@/modules/shipping/quote";
 import { sendAutomatedSms } from "@/modules/communications/sms-service";
 import { InventoryUnavailableError, releaseInventory, reserveInventory } from "@/modules/orders/inventory";
+import { getWalletSettings } from "@/modules/settings/wallet-settings";
+import { creditWallet, debitWallet, ensureWallet, WalletBalanceError } from "@/modules/wallet/wallet";
+import { finalizeVerifiedPayment } from "@/modules/payments/payment-finalization";
+import { notifyWalletCredited } from "@/modules/notifications/wallet-notifications";
+import { notifyNextPurchaseRewards } from "@/modules/notifications/promotion-notifications";
 
 type ItemWithProduct = Prisma.CartItemGetPayload<{ include: { product: { include: { variants: true } } } }>;
 type PriceParts = ReturnType<typeof calculateProductPrice>;
@@ -31,6 +36,8 @@ const checkoutSchema = z.object({
   paymentProvider: storefrontPaymentMethodSchema,
   /** Which delivery option the customer picked; its price is recomputed here, never trusted. */
   shippingMethodId: z.union([z.null(), z.string().cuid()]).default(null),
+  /** Apply the customer's wallet credit against the total; the amount is recomputed server-side. */
+  useWallet: z.boolean().default(false),
 });
 
 export async function POST(request: Request) {
@@ -43,6 +50,8 @@ export async function POST(request: Request) {
     if (!commerceSettings.onlinePaymentEnabled) return NextResponse.json({ message: "پرداخت آنلاین موقتاً غیرفعال است." }, { status: 503 });
     const input = checkoutSchema.parse(await request.json());
     const { couponCode, paymentProvider, addressId, shippingMethodId } = input;
+    const walletSettings = await getWalletSettings();
+    const useWallet = input.useWallet && !user.isGuest && walletSettings.walletEnabled && walletSettings.walletCheckoutEnabled;
     const deliveryMethod = defaultDeliveryMethod(commerceSettings);
     const selectedAddress = await db.address.findFirst({
       where: { id: addressId, userId: user.id, type: "SHIPPING" },
@@ -117,7 +126,7 @@ export async function POST(request: Request) {
     const productDiscount = lines.reduce((sum: number, line: CheckoutLine) => sum + line.discountAmount * line.item.quantity, 0);
     const tax = lines.reduce((sum: number, line: CheckoutLine) => sum + line.parts.tax * line.item.quantity, 0);
     const preparationDays = Math.max(...lines.map((line) => line.p.preparationDays));
-    const order = await db.$transaction(async (tx) => {
+    const result = await db.$transaction(async (tx) => {
       const inventoryItems = lines.map(({ item, p }) => ({ productId: p.id, quantity: item.quantity, selectionKey: item.selectionKey }));
       await reserveInventory(tx, inventoryItems);
       /*
@@ -196,12 +205,53 @@ export async function POST(request: Request) {
         const reserved = await tx.promotionReward.updateMany({ where: { id: promotions.rewardId, redeemedOrderId: null }, data: { redeemedOrderId: created.id } });
         if (reserved.count !== 1) throw new PromotionValidationError("پاداش خرید بعدی هم‌زمان در سفارش دیگری استفاده شده است.");
       }
-      return created;
+
+      // Apply wallet credit against the total. Whatever it covers is captured now (a `wallet`
+      // Payment row + a ledger debit); the gateway only owes the remainder. When the wallet covers
+      // everything, the order is finalized here and there is no gateway hop at all.
+      let walletAmount = 0;
+      if (useWallet) {
+        const wallet = await ensureWallet(tx, user.id);
+        walletAmount = Math.min(Math.floor(Number(wallet.balance)), total);
+        if (walletAmount > 0) {
+          await debitWallet(tx, { userId: user.id, amount: walletAmount, type: "ORDER_PAYMENT", orderId: created.id, description: `پرداخت سفارش ${created.orderNumber}` });
+          await tx.order.update({ where: { id: created.id }, data: { walletAmount } });
+        }
+      }
+      const gatewayDue = total - walletAmount;
+      if (gatewayDue <= 0) {
+        const walletPayment = await tx.payment.create({ data: { orderId: created.id, provider: "wallet", amount: walletAmount, status: "INITIATED" } });
+        const finalizeResult = await finalizeVerifiedPayment(tx, walletPayment.id, "WALLET");
+        await tx.cartItem.deleteMany({ where: { cartId: cart.id } });
+        return { order: created, walletAmount, gatewayDue: 0, walletOnly: true as const, finalizeResult };
+      }
+      if (walletAmount > 0) {
+        await tx.payment.create({ data: { orderId: created.id, provider: "wallet", amount: walletAmount, status: "SUCCESS", paidAt: new Date() } });
+      }
+      return { order: created, walletAmount, gatewayDue, walletOnly: false as const, finalizeResult: null };
     });
+
+    if (result.walletOnly) {
+      try { await sendAutomatedSms("paymentSuccess", address.phone, { orderNumber: result.order.orderNumber }); } catch (smsError) { console.error("[sms] Payment-success notification failed.", smsError); }
+      const finalizeResult = result.finalizeResult;
+      if (finalizeResult && !user.isGuest) {
+        try { await notifyNextPurchaseRewards(db, { userId: user.id, isGuest: false, rewards: finalizeResult.rewards }); } catch (notifyError) { console.error("[notifications] Next-purchase reward notification failed.", notifyError); }
+        if (finalizeResult.referralPayout) {
+          const { referrerId, refereeId, referrerReward, refereeReward } = finalizeResult.referralPayout;
+          try {
+            await notifyWalletCredited(db, { userId: referrerId, amount: referrerReward, reason: "پاداش دعوت دوست", dedupeKey: `referral-reward:${refereeId}` });
+            await notifyWalletCredited(db, { userId: refereeId, amount: refereeReward, reason: "هدیهٔ ثبت‌نام با کد معرف", dedupeKey: `referral-bonus:${refereeId}` });
+          } catch (notifyError) { console.error("[notifications] Referral reward notification failed.", notifyError); }
+        }
+      }
+      return NextResponse.json({ redirectUrl: `/invoices/${result.order.id}` });
+    }
+
+    const order = result.order;
     try {
-      const payment = await db.payment.create({ data: { orderId: order.id, provider: paymentProvider, amount: order.total, status: "INITIATED" } });
+      const payment = await db.payment.create({ data: { orderId: order.id, provider: paymentProvider, amount: result.gatewayDue, status: "INITIATED" } });
       const paymentRequest = await selectedPaymentProvider.request({
-        amount: Number(order.total),
+        amount: result.gatewayDue,
         orderId: order.id,
         callbackUrl: `${env.APP_URL}/api/payment/callback`,
         description: `پرداخت سفارش ${order.orderNumber}`,
@@ -221,6 +271,10 @@ export async function POST(request: Request) {
         const pendingOrder = await tx.order.findUnique({ where: { id: order.id }, include: { items: true } });
         if (pendingOrder?.inventoryReserved) await releaseInventory(tx, pendingOrder.items);
         await tx.promotionReward.updateMany({ where: { redeemedOrderId: order.id, redeemedAt: null }, data: { redeemedOrderId: null } });
+        // The wallet portion was captured when the order was created; hand it back before the row goes.
+        if (result.walletAmount > 0) {
+          await creditWallet(tx, { userId: user.id, amount: result.walletAmount, type: "ORDER_REFUND", orderId: null, description: `بازگشت اعتبار سفارش ناتمام ${order.orderNumber}` });
+        }
         await tx.payment.deleteMany({ where: { orderId: order.id } });
         await tx.order.delete({ where: { id: order.id } });
       });
@@ -229,6 +283,7 @@ export async function POST(request: Request) {
   } catch (error) {
     if (error instanceof InventoryUnavailableError) return NextResponse.json({ message: error.message }, { status: 409 });
     if (error instanceof PromotionValidationError) return NextResponse.json({ message: error.message }, { status: 422 });
+    if (error instanceof WalletBalanceError) return NextResponse.json({ message: "موجودی کیف پول برای این سفارش کافی نیست؛ صفحه را تازه کنید و دوباره تلاش کنید." }, { status: 409 });
     if (error instanceof PaymentProviderError) return NextResponse.json({ message: "ارتباط با درگاه زرین‌پال برقرار نشد؛ لطفاً چند لحظه بعد دوباره تلاش کنید." }, { status: 502 });
     if (error instanceof Error && (error.message.startsWith("موجودی") || error.message.startsWith("تنوع") || error.message.startsWith("قیمت") || error.message.startsWith("حداکثر تعداد"))) return NextResponse.json({ message: error.message }, { status: 409 });
     return apiError(error);

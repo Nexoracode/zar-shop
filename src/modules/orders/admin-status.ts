@@ -6,6 +6,8 @@ import { sendAutomatedSms } from "@/modules/communications/sms-service";
 import { InventoryUnavailableError, releaseInventory, reserveInventory } from "@/modules/orders/inventory";
 import { canAdminMoveOrder } from "@/modules/orders/order-status-transitions";
 import { getOrderSettings, orderExpiresAt, type OrderSettings } from "@/modules/settings/order-settings";
+import { refundOrderWallet } from "@/modules/wallet/wallet";
+import { notifyWalletCredited } from "@/modules/notifications/wallet-notifications";
 
 type AuditContext = ReturnType<typeof auditRequestContext>;
 
@@ -13,6 +15,11 @@ const inventoryReleasingStatuses = new Set<OrderStatus>(["EXPIRED", "CANCELLED",
 
 export function orderStatusHoldsInventory(status: OrderStatus) {
   return !inventoryReleasingStatuses.has(status);
+}
+
+/** The same three terminal states also return any wallet credit that funded the order. */
+export function orderStatusReleasesFunds(status: OrderStatus) {
+  return inventoryReleasingStatuses.has(status);
 }
 
 export function adminOrderStatusTiming(status: OrderStatus, settings: OrderSettings, now: Date) {
@@ -49,8 +56,9 @@ export async function updateOrderStatusByAdmin(input: {
         where: { id: input.orderId },
         include: { items: true, payments: { select: { status: true } }, user: { select: { phone: true } } },
       });
+      const walletRefundAmount = Number(order?.walletAmount ?? 0);
       if (!order) throw new AdminOrderStatusError("سفارش پیدا نشد.", 404);
-      if (order.status === input.status) return { status: order.status, expiresAt: order.expiresAt, inventoryAction: "NONE" as const, orderNumber: order.orderNumber, customerPhone: order.user.phone, changed: false };
+      if (order.status === input.status) return { status: order.status, expiresAt: order.expiresAt, inventoryAction: "NONE" as const, walletRefunded: 0, orderNumber: order.orderNumber, customerPhone: order.user.phone, customerId: order.userId, changed: false };
       if (!canAdminMoveOrder(order.status, input.status)) {
         throw new AdminOrderStatusError("این تغییر وضعیت برای سفارش مجاز نیست.", 409);
       }
@@ -81,6 +89,14 @@ export async function updateOrderStatusByAdmin(input: {
         }
       }
 
+      // Wallet credit that funded the order goes back to the customer whenever the order is
+      // expired, cancelled or refunded. The gateway share of a refund stays a manual step.
+      let walletRefunded = 0;
+      if (orderStatusReleasesFunds(input.status) && walletRefundAmount > 0) {
+        await refundOrderWallet(transaction, { id: order.id, userId: order.userId, walletAmount: order.walletAmount, orderNumber: order.orderNumber });
+        walletRefunded = walletRefundAmount;
+      }
+
       const updated = await transaction.order.update({
         where: { id: order.id },
         data: {
@@ -106,10 +122,13 @@ export async function updateOrderStatusByAdmin(input: {
           } as Prisma.InputJsonObject,
         },
       });
-      return { ...updated, inventoryAction, orderNumber: order.orderNumber, customerPhone: order.user.phone, changed: true };
+      return { ...updated, inventoryAction, walletRefunded, orderNumber: order.orderNumber, customerPhone: order.user.phone, customerId: order.userId, changed: true };
     });
     if (result.changed && input.status === "SHIPPED") {
       try { await sendAutomatedSms("orderShipped", result.customerPhone, { orderNumber: result.orderNumber }); } catch (error) { console.error("[sms] Order-shipped notification failed.", error); }
+    }
+    if (result.changed && result.walletRefunded > 0) {
+      try { await notifyWalletCredited(db, { userId: result.customerId, amount: result.walletRefunded, reason: `بازگشت اعتبار سفارش ${result.orderNumber}`, dedupeKey: `order-refund:${input.orderId}` }); } catch (error) { console.error("[notifications] Wallet-refund notification failed.", error); }
     }
     return { status: result.status, expiresAt: result.expiresAt, inventoryAction: result.inventoryAction };
   } catch (error) {

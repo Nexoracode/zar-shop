@@ -6,6 +6,7 @@ import { PaymentProviderError } from "@/modules/payments/payment-provider";
 import { finalizeVerifiedPayment } from "@/modules/payments/payment-finalization";
 import { sendAutomatedSms } from "@/modules/communications/sms-service";
 import { notifyNextPurchaseRewards } from "@/modules/notifications/promotion-notifications";
+import { notifyWalletCredited } from "@/modules/notifications/wallet-notifications";
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
@@ -16,7 +17,8 @@ export async function GET(request: Request) {
   const payment = await db.payment.findUnique({ where: { authority }, include: { order: true } });
   if (!payment) return NextResponse.redirect(`${env.APP_URL}/account?payment=missing`);
   if (payment.status === "SUCCESS") return NextResponse.redirect(`${env.APP_URL}/invoices/${payment.orderId}`);
-  if (!payment.amount.equals(payment.order.total)) {
+  // The gateway payment only covers the order total minus whatever the wallet already captured.
+  if (!payment.amount.equals(payment.order.total.minus(payment.order.walletAmount))) {
     await db.payment.updateMany({ where: { id: payment.id, status: { not: "SUCCESS" } }, data: { status: "FAILED" } });
     return NextResponse.redirect(`${env.APP_URL}/account?payment=failed`);
   }
@@ -53,6 +55,13 @@ export async function GET(request: Request) {
     if (!result.alreadyCompleted) {
       try { await sendAutomatedSms("paymentSuccess", result.phone, { orderNumber: result.orderNumber }); } catch (smsError) { console.error("[sms] Payment-success notification failed.", smsError); }
       try { await notifyNextPurchaseRewards(db, { userId: result.userId, isGuest: result.userIsGuest, rewards: result.rewards }); } catch (notifyError) { console.error("[notifications] Next-purchase reward notification failed.", notifyError); }
+      if (result.referralPayout) {
+        const { referrerId, refereeId, referrerReward, refereeReward } = result.referralPayout;
+        try {
+          await notifyWalletCredited(db, { userId: referrerId, amount: referrerReward, reason: "پاداش دعوت دوست", dedupeKey: `referral-reward:${refereeId}` });
+          await notifyWalletCredited(db, { userId: refereeId, amount: refereeReward, reason: "هدیهٔ ثبت‌نام با کد معرف", dedupeKey: `referral-bonus:${refereeId}` });
+        } catch (notifyError) { console.error("[notifications] Referral reward notification failed.", notifyError); }
+      }
     }
     return NextResponse.redirect(`${env.APP_URL}/invoices/${result.orderId}`);
   } catch (error) {

@@ -11,6 +11,7 @@ export const authFieldLimits = {
   password: 72,
   firstName: 100,
   lastName: 100,
+  referralCode: 12,
 } as const;
 
 export const phoneSchema = z.string().trim().transform((value) => normalizeNumericValue(value, false)).pipe(z.string().regex(/^09\d{9}$/, "شماره موبایل باید به‌صورت 09xxxxxxxxx باشد."));
@@ -31,11 +32,20 @@ export const otpVerifySchema = z.object({ phone: phoneSchema, purpose: z.enum(["
 // Name is intentionally optional here — Digikala-style registration only asks for a
 // password once the phone is verified; first/last name can be completed later from the
 // account profile.
+// A referral code is Latin/technical: fold Persian digits, uppercase, and treat blank as absent.
+export const referralCodeInputSchema = z
+  .string()
+  .trim()
+  .max(authFieldLimits.referralCode)
+  .transform((value) => value.replace(/[۰-۹]/g, (d) => String("۰۱۲۳۴۵۶۷۸۹".indexOf(d))).replace(/[٠-٩]/g, (d) => String("٠١٢٣٤٥٦٧٨٩".indexOf(d))).toUpperCase())
+  .pipe(z.string().regex(/^[A-Z0-9]*$/, "کد معرف فقط شامل حروف انگلیسی و رقم است."));
+
 export const registerCompleteSchema = z.object({
   phone: phoneSchema,
   firstName: z.string().trim().min(2, "نام باید حداقل ۲ حرف باشد.").max(authFieldLimits.firstName).optional(),
   lastName: z.string().trim().min(2, "نام خانوادگی باید حداقل ۲ حرف باشد.").max(authFieldLimits.lastName).optional(),
   smsMarketingConsent: z.boolean().default(false),
+  referralCode: referralCodeInputSchema.optional(),
   password: newPasswordSchema,
 });
 

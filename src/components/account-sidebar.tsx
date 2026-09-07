@@ -3,11 +3,11 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Button } from "@heroui/react";
-import { Bell, CircleUserRound, Clock3, Headset, Heart, LogOut, MapPin, MessageCircle, Pencil, ShoppingBag, Undo2, UserRound, type LucideIcon } from "lucide-react";
+import { Bell, CircleUserRound, Clock3, Gift, Headset, Heart, LogOut, MapPin, MessageCircle, Pencil, ShoppingBag, Undo2, UserRound, Wallet, type LucideIcon } from "lucide-react";
 
 type Item = { href: string; label: string; icon: LucideIcon };
 
-export function AccountSidebar({ user }: { user: { name: string; phone: string } }) {
+export function AccountSidebar({ user, showWallet = false, showReferral = false }: { user: { name: string; phone: string }; showWallet?: boolean; showReferral?: boolean }) {
   const pathname = usePathname();
   const items: Item[] = [
     { href: "/account", label: "خلاصه فعالیت‌ها", icon: CircleUserRound },
@@ -17,6 +17,8 @@ export function AccountSidebar({ user }: { user: { name: string; phone: string }
     { href: "/account/tickets", label: "تیکت‌های من", icon: Headset },
     { href: "/account/favorites", label: "لیست‌های من", icon: Heart },
     { href: "/account/reviews", label: "دیدگاه‌ها و پرسش‌ها", icon: MessageCircle },
+    ...(showWallet ? [{ href: "/account/wallet", label: "کیف پول", icon: Wallet }] : []),
+    ...(showReferral ? [{ href: "/account/referral", label: "دعوت دوستان", icon: Gift }] : []),
     { href: "/account/recent-visits", label: "بازدیدهای اخیر", icon: Clock3 },
     { href: "/account/addresses", label: "آدرس‌ها", icon: MapPin },
     { href: "/account/profile", label: "اطلاعات حساب", icon: UserRound },

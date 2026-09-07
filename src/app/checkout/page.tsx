@@ -15,6 +15,8 @@ import { expirePendingOrders } from "@/modules/orders/expiration";
 import { resolveCheckoutPromotions } from "@/modules/promotions/service";
 import { getStorefrontPaymentMethods } from "@/modules/payments/storefront-methods";
 import { serializeAddress } from "@/modules/account/addresses";
+import { getWalletSettings } from "@/modules/settings/wallet-settings";
+import { ensureWallet } from "@/modules/wallet/wallet";
 
 export const dynamic = "force-dynamic";
 
@@ -28,7 +30,7 @@ export default async function CheckoutPage() {
   // recomputed; resuming its payment reuses this same page and layout, but with an order
   // already on file it must never fall through into building a brand new one from the cart.
   const pendingOrder = await db.order.findFirst({
-    where: { userId: user.id, status: "PENDING_PAYMENT", expirationHandledAt: null, payments: { none: { status: { in: ["SUCCESS", "REFUNDED"] } } } },
+    where: { userId: user.id, status: "PENDING_PAYMENT", expirationHandledAt: null, payments: { none: { provider: { not: "wallet" }, status: { in: ["SUCCESS", "REFUNDED"] } } } },
     include: { payments: { orderBy: { createdAt: "desc" }, take: 1, select: { provider: true } }, promotionRedemptions: { select: { discountAmount: true, shippingDiscount: true, snapshot: true } } },
     orderBy: { createdAt: "desc" },
   });
@@ -42,6 +44,7 @@ export default async function CheckoutPage() {
       shipping: Number(pendingOrder.shipping),
       shippingDiscount: Number(pendingOrder.shippingDiscount),
       total: Number(pendingOrder.total),
+      walletApplied: Number(pendingOrder.walletAmount),
       applications: pendingOrder.promotionRedemptions.map((redemption) => {
         const snapshot = redemption.snapshot as { title?: string; code?: string | null };
         return { title: snapshot.title ?? "", code: snapshot.code ?? null };
@@ -73,14 +76,17 @@ export default async function CheckoutPage() {
     );
   }
 
-  const [cart, gold, settings, commerceSettings, paymentMethods, addresses] = await Promise.all([
+  const [cart, gold, settings, commerceSettings, paymentMethods, addresses, walletSettings] = await Promise.all([
     db.cart.findUnique({ where: { userId: user.id }, include: { items: { include: { product: { include: { variants: true } } } } } }),
     getGoldPriceForDisplay(),
     getGeneralStoreSettings(),
     getCommerceSettings(),
     getStorefrontPaymentMethods(),
     db.address.findMany({ where: { userId: user.id, type: "SHIPPING" }, orderBy: [{ isDefault: "desc" }, { lastUsedAt: "desc" }, { createdAt: "desc" }], include: { provinceRef: true, cityRef: true } }),
+    getWalletSettings(),
   ]);
+  const walletUsable = !user.isGuest && walletSettings.walletEnabled && walletSettings.walletCheckoutEnabled;
+  const walletBalance = walletUsable ? Math.floor(Number((await ensureWallet(db, user.id)).balance)) : 0;
   if (!cart?.items.length) redirect("/cart");
   const items = cart.items.filter((item) => item.product.storeIndustry === settings.industry);
   if (!items.length) redirect("/cart");
@@ -105,7 +111,9 @@ export default async function CheckoutPage() {
     lines: prices.map((line) => ({ productId: line.productId, categoryId: line.categoryId, lineTotal: line.final * line.quantity })),
   });
   const shipping = Math.max(0, shippingFee - promotions.shippingDiscount);
-  const initialQuote = { subtotal, productDiscount, merchandiseAmount, promotionDiscount: promotions.promotionDiscount, shipping, shippingDiscount: promotions.shippingDiscount, total: merchandiseAmount - promotions.promotionDiscount + shipping, applications: promotions.applications.map((item) => ({ title: item.title, code: item.code, discountAmount: item.discountAmount, shippingDiscount: item.shippingDiscount })) };
+  const total = merchandiseAmount - promotions.promotionDiscount + shipping;
+  const walletApplied = walletUsable ? Math.min(walletBalance, total) : 0;
+  const initialQuote = { subtotal, productDiscount, merchandiseAmount, promotionDiscount: promotions.promotionDiscount, shipping, shippingDiscount: promotions.shippingDiscount, total, walletBalance, walletApplied, payable: total - walletApplied, applications: promotions.applications.map((item) => ({ title: item.title, code: item.code, discountAmount: item.discountAmount, shippingDiscount: item.shippingDiscount })) };
   const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
 
   return (
@@ -115,7 +123,7 @@ export default async function CheckoutPage() {
       <div className="mx-auto w-full max-w-[1280px]">
         {steps}
         <div className="mb-6"><h1 className="m-0 text-xl font-bold sm:text-2xl">تکمیل سفارش</h1><p className="mb-0 mt-2 text-sm text-[var(--muted)]">نشانی، تخفیف و روش پرداخت را بررسی کنید.</p></div>
-        <CheckoutForm settings={commerceSettings} paymentMethods={paymentMethods} currency={settings.currency} itemCount={itemCount} initialQuote={initialQuote} initialAddresses={addresses.map(serializeAddress)} user={{ firstName: user.firstName, lastName: user.lastName, phone: user.phone }} />
+        <CheckoutForm settings={commerceSettings} paymentMethods={paymentMethods} currency={settings.currency} itemCount={itemCount} initialQuote={initialQuote} initialAddresses={addresses.map(serializeAddress)} user={{ firstName: user.firstName, lastName: user.lastName, phone: user.phone }} wallet={{ balance: walletBalance, checkoutEnabled: walletUsable }} />
       </div>
     </main>
     </>

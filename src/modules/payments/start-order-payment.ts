@@ -25,18 +25,24 @@ export async function startPendingOrderPayment(input: { orderId: string; userId:
   if (!order) throw new PendingOrderPaymentError("سفارش پیدا نشد.", 404);
   if (order.status !== "PENDING_PAYMENT" || order.expirationHandledAt) throw new PendingOrderPaymentError("این سفارش دیگر در انتظار پرداخت نیست.", 409);
   if (orderSettings.orderExpirationEnabled && order.expiresAt && order.expiresAt.getTime() <= Date.now()) throw new PendingOrderPaymentError("مهلت پرداخت این سفارش به پایان رسیده است.", 409);
-  if (order.payments.some((payment) => payment.status === "SUCCESS" || payment.status === "REFUNDED")) throw new PendingOrderPaymentError("پرداخت این سفارش قبلاً تعیین تکلیف شده است.", 409);
+  // The wallet portion of a split order is captured (SUCCESS) at checkout — a resumable order can
+  // still legitimately owe its gateway share, so only a settled *gateway* payment closes it here.
+  if (order.payments.some((payment) => payment.provider !== "wallet" && (payment.status === "SUCCESS" || payment.status === "REFUNDED"))) {
+    throw new PendingOrderPaymentError("پرداخت این سفارش قبلاً تعیین تکلیف شده است.", 409);
+  }
 
   const provider = await getStorefrontPaymentProvider(input.paymentProvider);
   const callbackUrl = `${env.APP_URL}/api/payment/callback`;
   const activePayment = order.payments.find((payment) => payment.provider === input.paymentProvider && payment.status === "PENDING" && payment.authority);
   if (activePayment?.authority) return { redirectUrl: provider.redirectUrl(activePayment.authority, callbackUrl), reused: true };
 
-  const payment = await db.payment.create({ data: { orderId: order.id, provider: input.paymentProvider, amount: order.total, status: "INITIATED" } });
+  // Whatever the wallet captured at checkout is already paid; the gateway only owes the rest.
+  const gatewayDue = order.total.minus(order.walletAmount);
+  const payment = await db.payment.create({ data: { orderId: order.id, provider: input.paymentProvider, amount: gatewayDue, status: "INITIATED" } });
   try {
     const address = order.shippingAddress as { phone?: string } | null;
     const request = await provider.request({
-      amount: Number(order.total),
+      amount: Number(gatewayDue),
       orderId: order.id,
       callbackUrl,
       description: `پرداخت سفارش ${order.orderNumber}`,

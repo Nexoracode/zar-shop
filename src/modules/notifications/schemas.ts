@@ -12,6 +12,7 @@ export const NOTIFICATION_TYPES = [
   "PROMOTION_PRODUCT",
   "TICKET_MESSAGE",
   "TICKET_STATUS",
+  "WALLET_CREDIT",
 ] as const;
 
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
@@ -24,6 +25,7 @@ export const notificationTypeLabels: Record<NotificationType, string> = {
   PROMOTION_PRODUCT: "پروموشن محصول",
   TICKET_MESSAGE: "پیام تیکت",
   TICKET_STATUS: "تغییر وضعیت تیکت",
+  WALLET_CREDIT: "شارژ کیف پول",
 };
 
 export const notificationPatchSchema = z

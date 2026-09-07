@@ -30,3 +30,14 @@ export const contentFieldLimits = {
   faqAnswer: 3000,
   pageTitle: 191,
 } as const;
+
+export const walletSettingsLimits = {
+  // A referral reward is store credit, not a real payout — a generous ceiling is still a guard
+  // against a fat-fingered extra zero.
+  maxRewardAmount: 100_000_000,
+  maxMinOrderAmount: 999_999_999_999,
+} as const;
+
+export const walletFieldLimits = {
+  adjustmentReason: 191,
+} as const;

@@ -9,12 +9,15 @@ import { baseShippingFee, defaultDeliveryMethod, getCommerceSettings, qualifiesF
 import { chargeableCartWeight, quoteForMethod } from "@/modules/shipping/quote";
 import { getGeneralStoreSettings, isStorefrontAvailable } from "@/modules/settings/general-settings";
 import { PromotionValidationError, resolveCheckoutPromotions } from "@/modules/promotions/service";
+import { getWalletSettings } from "@/modules/settings/wallet-settings";
+import { ensureWallet } from "@/modules/wallet/wallet";
 
 const schema = z.object({
   couponCode: z.string().trim().max(64).default(""),
   addressId: z.string().cuid(),
   /** Absent until the customer has picked one; the flat fee stands in until then. */
   shippingMethodId: z.union([z.null(), z.string().cuid()]).default(null),
+  useWallet: z.boolean().default(false),
 });
 
 export async function POST(request: Request) {
@@ -66,6 +69,13 @@ export async function POST(request: Request) {
       lines: prices.map((line) => ({ productId: line.productId, categoryId: line.categoryId, lineTotal: line.final * line.quantity })),
     });
     const shipping = Math.max(0, shippingFee - promotions.shippingDiscount);
+    const total = merchandiseAmount - promotions.promotionDiscount + shipping;
+
+    const walletSettings = await getWalletSettings();
+    const walletUsable = walletSettings.walletEnabled && walletSettings.walletCheckoutEnabled && !user.isGuest;
+    const walletBalance = walletUsable ? Math.floor(Number((await ensureWallet(db, user.id)).balance)) : 0;
+    const walletApplied = input.useWallet && walletUsable ? Math.min(walletBalance, total) : 0;
+
     return NextResponse.json({
       subtotal,
       productDiscount,
@@ -74,7 +84,10 @@ export async function POST(request: Request) {
       shipping,
       shippingDiscount: promotions.shippingDiscount,
       shippingMethodTitle: chosen?.title ?? null,
-      total: merchandiseAmount - promotions.promotionDiscount + shipping,
+      total,
+      walletBalance,
+      walletApplied,
+      payable: total - walletApplied,
       applications: promotions.applications.map((item) => ({ title: item.title, code: item.code, discountAmount: item.discountAmount, shippingDiscount: item.shippingDiscount })),
     });
   } catch (error) {

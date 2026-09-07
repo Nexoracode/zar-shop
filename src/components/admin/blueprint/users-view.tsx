@@ -1,3 +1,5 @@
+import Link from "next/link";
+import { Wallet } from "lucide-react";
 import type { Prisma } from "@generated/prisma/client";
 import { AdminStatusBadge } from "@/components/admin-ui";
 import { AdminBulkCheckbox, AdminBulkEditor, AdminBulkTr } from "@/components/admin-bulk-editor";
@@ -11,12 +13,13 @@ import { BlueprintUserRoleSelect } from "./user-role-select";
 
 type UserRow = Prisma.UserGetPayload<{ include: { _count: { select: { orders: true } } } }>;
 
-export function BlueprintUsersView({ users, pagination, actorId, actorRole, assignableRoles }: {
+export function BlueprintUsersView({ users, pagination, actorId, actorRole, assignableRoles, walletEnabled }: {
   users: UserRow[];
   pagination: ReturnType<typeof resolveAdminPagination>;
   actorId: string;
   actorRole: UserRole;
   assignableRoles: UserRole[];
+  walletEnabled: boolean;
 }) {
   return (
     <>
@@ -40,6 +43,9 @@ export function BlueprintUsersView({ users, pagination, actorId, actorRole, assi
                 <div><span className="bp-muted block">تعداد سفارش</span><strong className="mt-1 block">{user._count.orders.toLocaleString("fa-IR")}</strong></div>
                 <div><span className="bp-muted block">تاریخ عضویت</span><strong className="mt-1 block">{formatDate(user.createdAt)}</strong></div>
               </div>
+              {walletEnabled && !user.isGuest && (
+                <Link href={`/admin/users/${user.id}/wallet`} className="bp-btn bp-btn-secondary bp-btn-sm w-full gap-2"><Wallet size={14} />کیف پول</Link>
+              )}
             </article>
           );
         })}
@@ -57,6 +63,7 @@ export function BlueprintUsersView({ users, pagination, actorId, actorRole, assi
               <BpTh>سفارش‌ها</BpTh>
               <BpTh>وضعیت</BpTh>
               <BpTh>عضویت</BpTh>
+              {walletEnabled && <BpTh className="text-center">کیف پول</BpTh>}
             </tr>
           </thead>
           <tbody>
@@ -81,6 +88,13 @@ export function BlueprintUsersView({ users, pagination, actorId, actorRole, assi
                 <BpTd>{user._count.orders.toLocaleString("fa-IR")}</BpTd>
                 <BpTd><AdminStatusBadge tone={userStatusTones[user.status]}>{userStatusLabels[user.status]}</AdminStatusBadge></BpTd>
                 <BpTd className="bp-muted">{formatDate(user.createdAt)}</BpTd>
+                {walletEnabled && (
+                  <BpTd className="text-center">
+                    {user.isGuest ? <span className="bp-muted">—</span> : (
+                      <Link href={`/admin/users/${user.id}/wallet`} aria-label={`کیف پول ${fullName}`} title="مدیریت کیف پول" className="bp-btn bp-btn-ghost bp-btn-icon bp-btn-sm"><Wallet size={15} strokeWidth={1.5} /></Link>
+                    )}
+                  </BpTd>
+                )}
               </>;
               return selectable
                 ? <AdminBulkTr key={user.id} id={user.id}>{cells}</AdminBulkTr>

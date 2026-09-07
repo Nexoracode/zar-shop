@@ -9,6 +9,9 @@ import { hasVerifiedRegistrationOtp, invalidateVerifiedRegistrationOtp } from "@
 import { mergeGuestCartIntoUser } from "@/modules/cart/guest-cart-merge";
 import { getOrderSettings } from "@/modules/settings/order-settings";
 import { notifyFirstPurchaseEligible } from "@/modules/notifications/promotion-notifications";
+import { ensureReferralCode } from "@/modules/wallet/referral-code";
+import { ensureWallet } from "@/modules/wallet/wallet";
+import { attachReferral, ReferralCodeError } from "@/modules/wallet/referral-service";
 
 // Final step of the phone-first registration flow: the phone must already have a
 // consumed REGISTER-purpose OTP (see /api/auth/otp/verify) proving it was actually
@@ -23,7 +26,7 @@ export async function POST(request: Request) {
     }
     const exists = await db.user.findUnique({ where: { phone: input.phone }, select: { id: true } });
     if (exists) return NextResponse.json({ message: "این شماره موبایل قبلاً ثبت شده است." }, { status: 409 });
-    const { password, ...profile } = input;
+    const { password, referralCode, ...profile } = input;
     const passwordHash = await hash(password, 12);
     // A guest cart is created lazily on first add-to-cart; completing registration must
     // not silently strand it, so fold it into the new account before the guest cookie is
@@ -32,6 +35,11 @@ export async function POST(request: Request) {
     const orderSettings = mergeGuestCart ? await getOrderSettings() : null;
     const user = await db.$transaction(async (tx) => {
       const created = await tx.user.create({ data: { ...profile, passwordHash } });
+      await ensureReferralCode(tx, created.id);
+      await ensureWallet(tx, created.id);
+      // An unknown/own/inactive code rolls the whole registration back so the customer can retry
+      // without it; an empty code is a no-op.
+      if (referralCode) await attachReferral(tx, { refereeId: created.id, code: referralCode });
       if (mergeGuestCart && previousUser && orderSettings) {
         await mergeGuestCartIntoUser(tx, previousUser.id, created.id, orderSettings.maxOrderItemQuantity);
         await tx.session.deleteMany({ where: { userId: previousUser.id } });
@@ -46,5 +54,8 @@ export async function POST(request: Request) {
       console.error("[notifications] first-purchase welcome notification failed.", error);
     }
     return NextResponse.json({ user: { id: user.id, phone: user.phone } }, { status: 201 });
-  } catch (error) { return apiError(error); }
+  } catch (error) {
+    if (error instanceof ReferralCodeError) return NextResponse.json({ issues: { referralCode: [error.message] } }, { status: 422 });
+    return apiError(error);
+  }
 }
