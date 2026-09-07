@@ -67,10 +67,10 @@ export function ShippingMethodPicker({ addressId, currency, selectedMethodId, on
   if (!addressId) return null;
 
   return (
-    <Card variant="secondary" className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-sm">
-      <Card.Content className="p-5 sm:p-6">
-        <div className="mb-5 flex items-start gap-3">
-          <span className="grid size-10 shrink-0 place-items-center rounded-full bg-[var(--brand-primary)]/10 text-[var(--brand-primary)]"><Truck size={20} /></span>
+    <Card variant="secondary" className="rounded-xl border border-[var(--border)] bg-[var(--surface)] shadow-sm">
+      <Card.Content className="p-4 sm:p-5">
+        <div className="mb-4 flex items-start gap-3">
+          <span className="grid size-9 shrink-0 place-items-center rounded-full bg-[var(--brand-primary)]/10 text-[var(--brand-primary)]"><Truck size={18} /></span>
           <div>
             <h2 className="m-0 text-base font-bold">روش ارسال</h2>
             <p className="mb-0 mt-1 text-xs text-[var(--muted)]">هزینه بر اساس وزن سفارش و مقصد محاسبه شده است.</p>
@@ -88,7 +88,7 @@ export function ShippingMethodPicker({ addressId, currency, selectedMethodId, on
         )}
 
         {!loading && options.length > 0 && (
-          <div className="grid gap-3">
+          <div className="grid gap-2">
             {options.map((option) => (
               <Button
                 key={option.methodId}
@@ -96,17 +96,17 @@ export function ShippingMethodPicker({ addressId, currency, selectedMethodId, on
                 variant="secondary"
                 aria-pressed={selectedMethodId === option.methodId}
                 onPress={() => onSelect(option.methodId)}
-                className={`h-auto min-h-20 justify-start gap-3 rounded-xl border p-4 text-right ${selectedMethodId === option.methodId ? "border-[var(--brand-primary)] bg-[var(--brand-primary)]/5 ring-1 ring-[var(--brand-primary)]" : "border-[var(--border)]"}`}
+                className={`h-auto min-h-0 w-full items-center justify-start gap-2.5 rounded-lg border px-3 py-2.5 text-right ${selectedMethodId === option.methodId ? "border-[var(--brand-primary)] bg-[var(--brand-primary)]/5" : "border-[var(--border)]"}`}
               >
-                <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-[var(--surface-secondary)] text-[var(--brand-primary)]"><Truck size={22} /></span>
-                <span className="min-w-0">
-                  <strong className="block">{option.title}</strong>
-                  <small className="mt-1 block font-normal text-[var(--muted)]">{option.carrier} · تحویل حدود {option.estimatedDays.toLocaleString("fa-IR")} روز کاری</small>
+                <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-[var(--surface-secondary)] text-[var(--brand-primary)]"><Truck size={17} /></span>
+                <span className="min-w-0 flex-1">
+                  <strong className="block text-[13px]">{option.title}</strong>
+                  <small className="mt-0.5 block text-[11px] font-normal text-[var(--muted)]">{option.carrier} · تحویل حدود {option.estimatedDays.toLocaleString("fa-IR")} روز کاری</small>
                 </span>
-                <span className="mr-auto shrink-0 text-sm font-bold">
+                <span className="shrink-0 text-[13px] font-bold">
                   {freeShipping || option.price === 0 ? "رایگان" : formatMoney(option.price, currency)}
                 </span>
-                {selectedMethodId === option.methodId && <Check size={18} className="shrink-0 text-[var(--brand-primary)]" />}
+                {selectedMethodId === option.methodId && <Check size={16} className="shrink-0 text-[var(--brand-primary)]" />}
               </Button>
             ))}
           </div>
