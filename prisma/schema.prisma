@@ -345,6 +345,30 @@ model ShippingZoneRate {
   @@index([methodId, provinceId, maxWeightGrams])
 }
 
+/// A physical box the shop packs orders into, used to size the parcel a carrier is quoted for.
+///
+/// `selectBox` picks the smallest box whose `maxWeightGrams` still covers the parcel contents;
+/// when nothing fits, the box flagged `isDefault` is used. `tapinBoxId` maps the box onto Tapin's
+/// own numeric box catalogue — a null falls back to their box 1.
+model PackagingBox {
+  id             String   @id @default(cuid())
+  name           String   @db.VarChar(100)
+  lengthCm       Decimal  @db.Decimal(8, 2)
+  widthCm        Decimal  @db.Decimal(8, 2)
+  heightCm       Decimal  @db.Decimal(8, 2)
+  weightGrams    Int
+  maxWeightGrams Int
+  tapinBoxId     Int?
+  isDefault      Boolean  @default(false)
+  isActive       Boolean  @default(true)
+  sortOrder      Int      @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([isActive])
+  @@index([sortOrder])
+}
+
 model Category {
   id              String      @id @default(cuid())
   name            String      @db.VarChar(100)

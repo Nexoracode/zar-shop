@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
 import { cartParcelWeight, chargeableWeightGrams, volumetricWeightGrams, type ParcelLine } from "@/modules/shipping/parcel";
+import { selectBox } from "@/modules/shipping/packaging";
 import { fetchTapinRate } from "@/modules/shipping/tapin-rates";
 import { tableRate, type ZoneRate } from "@/modules/shipping/zone-rates";
 
@@ -68,7 +69,7 @@ function toZoneRates(zones: MethodRow["zones"]): ZoneRate[] {
  * say so — quoting zero would be a promise the store cannot keep.
  */
 export async function getShippingQuotes(input: QuoteInput & { weightGrams: number }): Promise<ShippingQuote[]> {
-  const [methods, origin, destination] = await Promise.all([
+  const [methods, origin, destination, boxes] = await Promise.all([
     db.shippingMethod.findMany({
       where: { isActive: true },
       orderBy: [{ sortOrder: "asc" }, { title: "asc" }],
@@ -78,9 +79,12 @@ export async function getShippingQuotes(input: QuoteInput & { weightGrams: numbe
     input.destination.cityId
       ? db.city.findUnique({ where: { id: input.destination.cityId }, select: { externalId: true, province: { select: { externalId: true } } } })
       : null,
+    db.packagingBox.findMany({ where: { isActive: true }, orderBy: { maxWeightGrams: "asc" } }),
   ]);
 
   const canAskCarrier = Boolean(origin?.originProvince && origin.originCity && destination?.province);
+  // Which of our boxes this parcel goes in, so the carrier is quoted for the right box size.
+  const tapinBoxId = selectBox(input.weightGrams, boxes)?.tapinBoxId ?? 1;
   const quotes: ShippingQuote[] = [];
 
   for (const method of methods as MethodRow[]) {
@@ -96,6 +100,7 @@ export async function getShippingQuotes(input: QuoteInput & { weightGrams: numbe
         orderType: method.orderType,
         from: { provinceCode: origin!.originProvince!.externalId, cityCode: origin!.originCity!.externalId },
         to: { provinceCode: destination!.province.externalId, cityCode: destination!.externalId },
+        boxId: tapinBoxId,
       });
       if (rate) {
         price = rate.total;

@@ -1,5 +1,5 @@
 import type { LucideIcon } from "lucide-react";
-import { BadgePercent, BarChart3, Bell, Boxes, ChartNoAxesCombined, CreditCard, FolderTree, Gem, Headset, Images, ListChecks, ListTree, Mail, MessageSquareText, PackageCheck, Palette, ScrollText, Settings, SlidersHorizontal, Tag, Truck, Undo2, Users } from "lucide-react";
+import { BadgePercent, BarChart3, Bell, Boxes, ChartNoAxesCombined, CreditCard, FolderTree, Gem, Headset, Images, ListChecks, ListTree, Mail, MessageSquareText, Package, PackageCheck, Palette, ScrollText, Settings, SlidersHorizontal, Tag, Truck, Undo2, Users } from "lucide-react";
 import type { StoreIndustry, UserRole } from "@generated/prisma/enums";
 import { canOpenAnySettingsSection, hasPermission, type AdminPermission } from "@/modules/auth/permissions";
 
@@ -50,6 +50,7 @@ export const adminNavGroups: AdminNavGroup[] = [
       { href: "/admin/payments", label: "پرداخت‌ها", icon: CreditCard, permission: "orders:manage" },
       { href: "/admin/promotions", label: "پروموشن‌ها", icon: BadgePercent, permission: "orders:manage" },
       { href: "/admin/shipping-methods", label: "روش‌های ارسال", icon: Truck, permission: "orders:manage" },
+      { href: "/admin/packaging", label: "بسته‌بندی", icon: Package, permission: "settings:manage" },
       { href: "/admin/users", label: "کاربران", icon: Users, permission: "users:manage" },
       { href: "/admin/reviews", label: "دیدگاه‌ها و امتیازها", icon: MessageSquareText, permission: "catalog:manage" },
       { href: "/admin/contact-messages", label: "پیام‌های تماس", icon: Mail, permission: "orders:manage" },
