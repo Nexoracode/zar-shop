@@ -7,7 +7,7 @@ import { Bell, CircleUserRound, Clock3, Gift, Headset, Heart, LogOut, MapPin, Me
 
 type Item = { href: string; label: string; icon: LucideIcon };
 
-export function AccountSidebar({ user, showWallet = false, showReferral = false }: { user: { name: string; phone: string }; showWallet?: boolean; showReferral?: boolean }) {
+export function AccountSidebar({ user, showWallet = false, showReferral = false, walletBalance }: { user: { name: string; phone: string }; showWallet?: boolean; showReferral?: boolean; walletBalance?: string }) {
   const pathname = usePathname();
   const items: Item[] = [
     { href: "/account", label: "خلاصه فعالیت‌ها", icon: CircleUserRound },
@@ -17,7 +17,6 @@ export function AccountSidebar({ user, showWallet = false, showReferral = false 
     { href: "/account/tickets", label: "تیکت‌های من", icon: Headset },
     { href: "/account/favorites", label: "لیست‌های من", icon: Heart },
     { href: "/account/reviews", label: "دیدگاه‌ها و پرسش‌ها", icon: MessageCircle },
-    ...(showWallet ? [{ href: "/account/wallet", label: "کیف پول", icon: Wallet }] : []),
     ...(showReferral ? [{ href: "/account/referral", label: "دعوت دوستان", icon: Gift }] : []),
     { href: "/account/recent-visits", label: "بازدیدهای اخیر", icon: Clock3 },
     { href: "/account/addresses", label: "آدرس‌ها", icon: MapPin },
@@ -31,6 +30,13 @@ export function AccountSidebar({ user, showWallet = false, showReferral = false 
           <div className="min-w-0 flex-1"><strong className="block truncate text-sm font-bold">{user.name}</strong><span className="mt-1 block text-[11px] text-[var(--muted)]" dir="ltr">{user.phone}</span></div>
           <Link href="/account/profile" aria-label="ویرایش اطلاعات حساب" className="grid size-9 place-items-center text-[var(--brand-primary)]"><Pencil size={19} /></Link>
         </div>
+        {showWallet && (
+          <Link href="/account/wallet" aria-current={pathname === "/account/wallet" ? "page" : undefined} className="flex min-h-14 items-center gap-3 border-b border-[var(--border)] px-5 text-xs transition hover:text-[var(--brand-primary)]">
+            <Wallet size={19} className="text-[var(--brand-primary)]" />
+            <strong>کیف پول</strong>
+            <span className="mr-auto font-bold text-[var(--foreground)]">{walletBalance ?? "—"}</span>
+          </Link>
+        )}
         <nav aria-label="منوی حساب کاربری" className="flex gap-2 overflow-x-auto px-2 lg:block lg:overflow-visible lg:px-0">
           {items.map(({ href, label, icon: Icon }) => {
             const active = href === "/account" ? pathname === href : href === "/account/reviews" ? pathname.startsWith("/account/reviews") : pathname === href || pathname.startsWith(`${href}/`);
