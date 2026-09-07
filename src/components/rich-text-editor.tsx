@@ -11,20 +11,17 @@ import Subscript from "@tiptap/extension-subscript";
 import Superscript from "@tiptap/extension-superscript";
 import { TableKit } from "@tiptap/extension-table";
 import { TableDeleteShortcut } from "@/components/rich-text-table-delete";
-import { Button, Spinner, toast } from "@heroui/react";
+import { Button, toast } from "@heroui/react";
 import {
   AlignCenter, AlignJustify, AlignLeft, AlignRight, Bold, Braces, ChevronDown, Code2, Columns3, Eraser, Heading1, Heading2, Heading3, Highlighter,
   Grid2x2X, ImagePlus, Italic, Link2, List, ListOrdered, Maximize2, Minimize2, Minus, Palette, Pilcrow, Plus, Quote, Redo2, Rows3, Strikethrough,
   SubscriptIcon, SuperscriptIcon, Table2, Underline, Undo2, Unlink, type LucideIcon,
 } from "lucide-react";
-import { HeroSelectField } from "@/components/hero-select-field";
-import { useAdminTemplate } from "@/components/admin/template-context";
 import { BpSelect } from "@/components/admin/blueprint/ui/select";
 import { BpButton, BpSpinner } from "@/components/admin/blueprint/ui/button";
 import { BpColorPicker } from "@/components/admin/blueprint/ui/color-picker";
 import { AdminDialog, AdminDialogButton } from "@/components/admin/admin-dialog";
 import { AdminTextField } from "@/components/admin/admin-form-fields";
-import { HeroColorField } from "@/components/hero-color-field";
 
 type Props = { value?: string; onChange: (html: string) => void };
 
@@ -34,18 +31,16 @@ type Props = { value?: string; onChange: (html: string) => void };
  * enough that a blank grey box reads as something being broken.
  */
 function EditorLoading() {
-  const template = useAdminTemplate();
-  const blueprint = template === "BLUEPRINT";
   return (
-    <div className={blueprint ? "bp-frame relative" : "overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"} role="status" aria-live="polite">
-      <div className={`flex flex-wrap items-center gap-1 border-b p-2.5 ${blueprint ? "border-[var(--bp-divider)] bg-[var(--bp-surface)]" : "border-slate-200 bg-slate-50"}`} aria-hidden="true">
+    <div className="bp-frame relative" role="status" aria-live="polite">
+      <div className="flex flex-wrap items-center gap-1 border-b border-[var(--bp-divider)] bg-[var(--bp-surface)] p-2.5" aria-hidden="true">
         {Array.from({ length: 14 }).map((_, index) => (
-          <span key={index} className={`h-9 w-9 animate-pulse rounded-lg ${blueprint ? "bg-[var(--bp-hover)]" : "bg-slate-200"}`} />
+          <span key={index} className="h-9 w-9 animate-pulse rounded-lg bg-[var(--bp-hover)]" />
         ))}
       </div>
       <div className="grid min-h-80 place-items-center gap-3 p-6 text-center">
-        {blueprint ? <BpSpinner size={22} /> : <Spinner size="lg" />}
-        <span className={`text-[12px] ${blueprint ? "bp-muted" : "text-slate-500"}`}>در حال آماده‌سازی ویرایشگر متن...</span>
+        <BpSpinner size={22} />
+        <span className="text-[12px] bp-muted">در حال آماده‌سازی ویرایشگر متن...</span>
       </div>
     </div>
   );
@@ -335,32 +330,24 @@ function Tool({ editor: _editor, label, icon, active, disabled, run }: { editor:
  * system the surrounding admin template uses.
  */
 function ToolSelect({ name, label, placeholder, options, onPick }: { name: string; label: string; placeholder: string; options: Array<{ value: string; label: string }>; onPick: (value: string) => void }) {
-  const template = useAdminTemplate();
-  if (template === "BLUEPRINT") {
-    return (
-      <BpSelect
-        name={name}
-        aria-label={label}
-        value=""
-        placeholder={placeholder}
-        reserveMessage={false}
-        options={options}
-        onChange={(event) => { if (event.target.value) onPick(event.target.value); }}
-        className="w-28"
-      />
-    );
-  }
-  return <HeroSelectField name={name} ariaLabel={label} value="" placeholder={placeholder} includeEmptyOption options={options} onValueChange={(value) => { if (value) onPick(value); }} className="w-28" />;
+  return (
+    <BpSelect
+      name={name}
+      aria-label={label}
+      value=""
+      placeholder={placeholder}
+      reserveMessage={false}
+      options={options}
+      onChange={(event) => { if (event.target.value) onPick(event.target.value); }}
+      className="w-28"
+    />
+  );
 }
 
 /** Reveals the rest of the toolbar. Labelled rather than icon-only: it is not a formatting mark. */
 function MoreToolsToggle({ expanded, onToggle }: { expanded: boolean; onToggle: () => void }) {
-  const template = useAdminTemplate();
   const label = expanded ? "ابزارهای کمتر" : "ابزارهای بیشتر";
-  if (template === "BLUEPRINT") {
-    return <BpButton size="sm" variant="ghost" aria-expanded={expanded} onClick={onToggle} className="shrink-0 gap-1.5">{label}<ChevronDown size={14} className={expanded ? "rotate-180 transition-transform" : "transition-transform"} /></BpButton>;
-  }
-  return <Button type="button" size="sm" variant="ghost" aria-expanded={expanded} onPress={onToggle} className="h-9 min-h-9 shrink-0 gap-1.5 rounded-lg px-3 text-xs text-slate-600 hover:bg-white">{label}<ChevronDown size={14} className={expanded ? "rotate-180 transition-transform" : "transition-transform"} /></Button>;
+  return <BpButton size="sm" variant="ghost" aria-expanded={expanded} onClick={onToggle} className="shrink-0 gap-1.5">{label}<ChevronDown size={14} className={expanded ? "rotate-180 transition-transform" : "transition-transform"} /></BpButton>;
 }
 
 /**
@@ -386,9 +373,7 @@ function Divider() { return <span className="mx-1 h-6 w-px bg-slate-200" aria-hi
  * system the surrounding admin template uses.
  */
 function ColorTool(props: { label: string; clearLabel: string; icon: React.ReactNode; value: string | null; fallback: string; onChange: (hex: string) => void; onClear: () => void }) {
-  const template = useAdminTemplate();
-  if (template === "BLUEPRINT") return <BpColorPicker {...props} />;
-  return <HeroColorField {...props} />;
+  return <BpColorPicker {...props} />;
 }
 
 /*

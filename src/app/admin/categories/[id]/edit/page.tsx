@@ -1,21 +1,8 @@
-import { notFound, redirect } from "next/navigation";
-import { CategoryForm } from "@/components/category-form";
-import { AdminPageHeader } from "@/components/admin-ui";
-import { db } from "@/lib/db";
+import { redirect } from "next/navigation";
 import { requirePermission } from "@/modules/auth/session";
-import { getBrandSettings } from "@/modules/settings/brand-settings";
 
-type Context = { params: Promise<{ id: string }> };
-
-export default async function EditCategoryPage({ params }: Context) {
+// Categories are edited from the list page itself (form beside the table).
+export default async function EditCategoryPage() {
   await requirePermission("catalog:manage");
-  const brandSettings = await getBrandSettings();
-  if (brandSettings.adminTemplate === "BLUEPRINT") redirect("/admin/categories");
-  const { id } = await params;
-  const [category, categories] = await Promise.all([
-    db.category.findUnique({ where: { id }, include: { image: true } }),
-    db.category.findMany({ include: { parent: { select: { name: true } } }, orderBy: [{ sortOrder: "asc" }, { name: "asc" }] }),
-  ]);
-  if (!category) notFound();
-  return <><AdminPageHeader eyebrow="ساختار فروشگاه" title={`ویرایش «${category.name}»`} description="اطلاعات، جایگاه و تصویر شاخص این دسته را به‌روزرسانی کنید." backHref="/admin/categories" backLabel="بازگشت به دسته‌بندی‌ها" /><CategoryForm categories={categories.map((item) => ({ id: item.id, name: item.name, parentName: item.parent?.name ?? null }))} category={{ id: category.id, name: category.name, slug: category.slug, description: category.description ?? "", parentId: category.parentId ?? "", image: category.image ? { id: category.image.id, title: category.image.title ?? category.name, url: category.image.url, type: category.image.type } : null, sortOrder: category.sortOrder, isActive: category.isActive, featured: category.featured }} /></>;
+  redirect("/admin/categories");
 }

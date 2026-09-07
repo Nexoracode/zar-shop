@@ -1,32 +1,15 @@
 import type { Prisma } from "@generated/prisma/client";
 import { UserRole, UserStatus } from "@generated/prisma/enums";
 import { Plus } from "lucide-react";
-import { AdminEmptyState, AdminPageHeader, AdminPanel, AdminPrimaryLink, AdminStatusBadge } from "@/components/admin-ui";
+import { AdminEmptyState, AdminPageHeader, AdminPanel, AdminPrimaryLink } from "@/components/admin-ui";
 import { db } from "@/lib/db";
-import { formatDate } from "@/lib/format";
-import { userRoleLabels, userStatusLabels, userStatusTones } from "@/modules/admin/labels";
+import { userRoleLabels, userStatusLabels } from "@/modules/admin/labels";
 import { AdminListFilters } from "@/components/admin-list-filters";
-import { AdminPagination } from "@/components/admin-pagination";
 import { resolveAdminPagination } from "@/lib/admin-pagination";
 import { parseAdminPaginationRequest } from "@/lib/admin-pagination-server";
 import { requirePermission } from "@/modules/auth/session";
-import { getBrandSettings } from "@/modules/settings/brand-settings";
-import { UserRoleSelect } from "@/components/user-role-select";
 import { BlueprintUsersView } from "@/components/admin/blueprint/users-view";
-import { AdminBulkCheckbox, AdminBulkEditor } from "@/components/admin-bulk-editor";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableColumn,
-  TableContent,
-  TableHeader,
-  TableRow,
-  TableScrollContainer,
-  TruncatedTextTooltip,
-} from "@/components/hero";
 
-type UserRow = Prisma.UserGetPayload<{ include: { _count: { select: { orders: true } } } }>;
 type SearchParams = Promise<{ q?: string; status?: string; role?: string; page?: string; pageSize?: string }>;
 
 const roles = Object.values(UserRole);
@@ -51,7 +34,7 @@ export default async function UsersPage({ searchParams }: { searchParams: Search
       { phone: { contains: query } },
     ] } : {}),
   };
-  const [filteredTotal, brandSettings] = await Promise.all([db.user.count({ where }), getBrandSettings()]);
+  const filteredTotal = await db.user.count({ where });
   const pagination = resolveAdminPagination(filteredTotal, requestedPage, pageSize);
   const users = await db.user.findMany({
     where,
@@ -60,8 +43,6 @@ export default async function UsersPage({ searchParams }: { searchParams: Search
     skip: pagination.skip,
     take: pagination.pageSize,
   });
-  const cell = "border-b border-slate-100 px-5 py-4 text-sm text-slate-600";
-  const isBlueprint = brandSettings.adminTemplate === "BLUEPRINT";
 
   return (
     <>
@@ -69,7 +50,7 @@ export default async function UsersPage({ searchParams }: { searchParams: Search
         eyebrow="مدیریت مشتریان"
         title="کاربران"
         description="اطلاعات تماس، نقش، وضعیت حساب و سابقه سفارش کاربران را بررسی کنید."
-        action={isBlueprint ? <AdminPrimaryLink href="/admin/users/new"><Plus size={17} />کاربر جدید</AdminPrimaryLink> : undefined}
+        action={<AdminPrimaryLink href="/admin/users/new"><Plus size={17} />کاربر جدید</AdminPrimaryLink>}
       />
 
       <AdminPanel className="mb-5 p-4 sm:p-5">
@@ -77,49 +58,9 @@ export default async function UsersPage({ searchParams }: { searchParams: Search
       </AdminPanel>
 
       <AdminPanel>
-        {!users.length ? (
-          <AdminEmptyState title="کاربری پیدا نشد" description={query || role || status ? "فیلترها را تغییر دهید و دوباره جستجو کنید." : "هنوز کاربری در فروشگاه ثبت نشده است."} />
-        ) : isBlueprint ? (
-          <BlueprintUsersView users={users} pagination={pagination} actorId={actor.id} actorRole={actor.role} assignableRoles={assignableRoles} />
-        ) : (
-          <>
-            <div className="divide-y divide-slate-100 md:hidden">
-              {users.map((user: UserRow) => {
-                const fullName = `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim() || "کاربر بدون نام";
-                return (
-                  <article key={user.id} className="space-y-4 p-4">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0"><strong className="block truncate text-sm text-[#17233b]">{fullName}</strong><span className="block truncate text-xs text-slate-400">{user.email ?? "ایمیل ثبت نشده"}</span></div>
-                      <AdminStatusBadge tone={userStatusTones[user.status]}>{userStatusLabels[user.status]}</AdminStatusBadge>
-                    </div>
-                    <div className="grid gap-2"><UserRoleSelect userId={user.id} value={user.role} roles={user.role === "ADMIN" && actor.role !== "ADMIN" ? ["ADMIN"] : assignableRoles} disabled={user.id === actor.id || (user.role === "ADMIN" && actor.role !== "ADMIN")} /><span className="text-xs text-slate-500" dir="ltr">{user.phone ?? "شماره ثبت نشده"}</span></div>
-                    <dl className="grid grid-cols-2 gap-2 rounded-xl bg-slate-50 p-3 text-xs">
-                      <div><dt className="text-slate-400">تعداد سفارش</dt><dd className="mt-1 font-bold text-slate-700">{user._count.orders.toLocaleString("fa-IR")}</dd></div>
-                      <div><dt className="text-slate-400">تاریخ عضویت</dt><dd className="mt-1 font-bold text-slate-700">{formatDate(user.createdAt)}</dd></div>
-                    </dl>
-                  </article>
-                );
-              })}
-            </div>
-
-            <AdminBulkEditor entity="users" entityLabel="کاربر" ids={users.filter((user) => user.id !== actor.id && user.role !== "ADMIN").map((user) => user.id)} actions={[{ value: "status:ACTIVE", label: "فعال‌کردن حساب‌ها" }, { value: "status:SUSPENDED", label: "تعلیق حساب‌ها" }]}><Table><TableScrollContainer><TableContent aria-label="فهرست کاربران" className="w-full min-w-[900px]"><TableHeader><TableColumn id="select" className="w-12 bg-slate-50/70 px-4 py-4 text-center"><span className="sr-only">انتخاب</span></TableColumn>{["ردیف", "کاربر", "تماس", "نقش", "سفارش‌ها", "وضعیت", "عضویت"].map((head, index) => <TableColumn id={head} isRowHeader={index === 1} className="bg-slate-50/70 px-5 py-4 text-right text-xs font-bold text-slate-500" key={head}>{head}</TableColumn>)}</TableHeader><TableBody>{users.map((user: UserRow, index) => {
-                  const fullName = `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim() || "کاربر بدون نام";
-                  return (
-                    <TableRow id={user.id} key={user.id} className="transition hover:bg-slate-50/60">
-                      <TableCell className={`${cell} w-12 text-center`}><AdminBulkCheckbox id={user.id} label={`انتخاب کاربر ${fullName}`} disabled={user.id === actor.id || user.role === "ADMIN"} /></TableCell>
-                      <TableCell className={`${cell} w-16 font-bold text-slate-400`}>{(pagination.skip + index + 1).toLocaleString("fa-IR")}</TableCell>
-                      <TableCell className={`${cell} w-64 max-w-64`}><div className="min-w-0"><TruncatedTextTooltip text={fullName} className="max-w-52 font-bold text-slate-700" /><TruncatedTextTooltip text={user.email ?? "ایمیل ثبت نشده"} dir="ltr" className="max-w-52 text-right text-xs text-slate-400" /></div></TableCell>
-                      <TableCell className={cell}><span dir="ltr">{user.phone ?? "—"}</span></TableCell>
-                      <TableCell className={cell}><UserRoleSelect userId={user.id} value={user.role} roles={user.role === "ADMIN" && actor.role !== "ADMIN" ? ["ADMIN"] : assignableRoles} disabled={user.id === actor.id || (user.role === "ADMIN" && actor.role !== "ADMIN")} /></TableCell>
-                      <TableCell className={cell}>{user._count.orders.toLocaleString("fa-IR")}</TableCell>
-                      <TableCell className={cell}><AdminStatusBadge tone={userStatusTones[user.status]}>{userStatusLabels[user.status]}</AdminStatusBadge></TableCell>
-                      <TableCell className={cell}>{formatDate(user.createdAt)}</TableCell>
-                    </TableRow>
-                  );
-                })}</TableBody></TableContent></TableScrollContainer></Table></AdminBulkEditor>
-            <AdminPagination {...pagination} />
-          </>
-        )}
+        {!users.length
+          ? <AdminEmptyState title="کاربری پیدا نشد" description={query || role || status ? "فیلترها را تغییر دهید و دوباره جستجو کنید." : "هنوز کاربری در فروشگاه ثبت نشده است."} />
+          : <BlueprintUsersView users={users} pagination={pagination} actorId={actor.id} actorRole={actor.role} assignableRoles={assignableRoles} />}
       </AdminPanel>
     </>
   );

@@ -1,89 +1,17 @@
-import Image from "next/image";
-import Link from "next/link";
-import { FolderTree, Pencil, Plus, SlidersHorizontal, Star } from "lucide-react";
-import type { Prisma } from "@generated/prisma/client";
 import { db } from "@/lib/db";
-import { AdminEmptyState, AdminPageHeader, AdminPanel, AdminPrimaryLink, AdminStatusBadge } from "@/components/admin-ui";
-import { CategoryDeleteButton } from "@/components/category-delete-button";
-import { Card, Table, TableBody, TableCell, TableColumn, TableContent, TableHeader, TableRow, TableScrollContainer, TruncatedTextTooltip } from "@/components/hero";
-import { AdminListFilters } from "@/components/admin-list-filters";
-import { AdminPagination } from "@/components/admin-pagination";
-import { resolveAdminPagination } from "@/lib/admin-pagination";
-import { parseAdminPaginationRequest } from "@/lib/admin-pagination-server";
 import { requirePermission } from "@/modules/auth/session";
-import { getBrandSettings } from "@/modules/settings/brand-settings";
-import { AdminBulkCheckbox, AdminBulkEditor } from "@/components/admin-bulk-editor";
 import { BlueprintCategoriesView } from "@/components/admin/blueprint/categories-view";
 
-type Context = { searchParams: Promise<{ q?: string; status?: string; featured?: string; page?: string; pageSize?: string }> };
-type CategoryRow = Prisma.CategoryGetPayload<{ include: { image: true; parent: { select: { name: true } }; _count: { select: { products: true; children: true } } } }>;
-
-export default async function CategoriesPage({ searchParams }: Context) {
+export default async function CategoriesPage() {
   await requirePermission("catalog:manage");
-  const brandSettings = await getBrandSettings();
-  if (brandSettings.adminTemplate === "BLUEPRINT") {
-    const categories = await db.category.findMany({
-      include: { image: { select: { id: true, url: true, alt: true } }, parent: { select: { name: true } }, _count: { select: { products: true, children: true } } },
-      orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
-    });
-    return <BlueprintCategoriesView categories={categories.map((category) => ({
-      id: category.id, name: category.name, slug: category.slug, description: category.description,
-      parentId: category.parentId, parentName: category.parent?.name ?? null,
-      isActive: category.isActive, featured: category.featured, sortOrder: category.sortOrder,
-      image: category.image, _count: category._count,
-    }))} />;
-  }
-  const params = await searchParams;
-  const query = params.q?.trim() ?? "";
-  const status = params.status === "active" || params.status === "inactive" ? params.status : undefined;
-  const featuredFilter = params.featured === "yes" || params.featured === "no" ? params.featured : undefined;
-  const { requestedPage, pageSize } = await parseAdminPaginationRequest(params);
-  const where: Prisma.CategoryWhereInput = {
-    ...(query ? { OR: [{ name: { contains: query } }, { slug: { contains: query } }, { parent: { is: { name: { contains: query } } } }] } : {}),
-    ...(status ? { isActive: status === "active" } : {}),
-    ...(featuredFilter ? { featured: featuredFilter === "yes" } : {}),
-  };
-  const filteredTotal = await db.category.count({ where });
-  const pagination = resolveAdminPagination(filteredTotal, requestedPage, pageSize);
-  const [categories, total, active, featuredCount] = await Promise.all([
-    db.category.findMany({ where, skip: pagination.skip, take: pagination.pageSize, include: { image: true, parent: { select: { name: true } }, _count: { select: { products: true, children: true } } }, orderBy: [{ sortOrder: "asc" }, { name: "asc" }] }),
-    db.category.count(),
-    db.category.count({ where: { isActive: true } }),
-    db.category.count({ where: { featured: true } }),
-  ]);
-
-  return (
-    <>
-      <AdminPageHeader eyebrow="ساختار فروشگاه" title="دسته‌بندی‌ها" description="دسته‌های اصلی، زیردسته‌ها، ترتیب نمایش و تصویر شاخص را مدیریت کنید." action={<AdminPrimaryLink href="/admin/categories/new"><Plus size={17} />دسته جدید</AdminPrimaryLink>} />
-
-      <div className="mb-5 grid grid-cols-3 gap-3">
-        {[{ label: "همه دسته‌ها", value: total }, { label: "دسته فعال", value: active }, { label: "صفحه اصلی", value: featuredCount }].map((item) => <Card key={item.label} variant="secondary" className="rounded-2xl border border-slate-200/80 bg-white p-3.5 sm:p-4"><strong className="block text-xl font-bold text-[var(--accent)]">{item.value.toLocaleString("fa-IR")}</strong><span className="text-[11px] text-slate-500 sm:text-xs">{item.label}</span></Card>)}
-      </div>
-
-      <AdminPanel>
-        <div className="border-b border-slate-100 bg-slate-50/70 p-4"><AdminListFilters path="/admin/categories" query={query} queryLabel="جستجوی دسته‌بندی" queryPlaceholder="نام، نشانی یا دسته والد" filters={[{ name: "status", label: "وضعیت دسته‌بندی", value: status ?? "", options: [{ value: "", label: "همه وضعیت‌ها" }, { value: "active", label: "فعال" }, { value: "inactive", label: "غیرفعال" }] }, { name: "featured", label: "نمایش در صفحه اصلی", value: featuredFilter ?? "", options: [{ value: "", label: "همه دسته‌ها" }, { value: "yes", label: "نمایش در صفحه اصلی" }, { value: "no", label: "عدم نمایش در صفحه اصلی" }] }]} /></div>
-
-        {categories.length ? <>
-          <div className="grid gap-3 p-3 md:hidden">{categories.map((category) => <CategoryMobileCard key={category.id} category={category} />)}</div>
-          <AdminBulkEditor entity="categories" entityLabel="دسته‌بندی" ids={categories.map((category) => category.id)} actions={[{ value: "featured:on", label: "نمایش در صفحه اصلی" }, { value: "featured:off", label: "حذف از صفحه اصلی" }, { value: "active:on", label: "فعال‌کردن دسته‌بندی‌ها" }, { value: "active:off", label: "غیرفعال‌کردن دسته‌بندی‌ها" }]}><Table><TableScrollContainer><TableContent aria-label="فهرست دسته‌بندی‌ها" className="w-full min-w-[980px]"><TableHeader><TableColumn id="select" className="w-12 bg-white px-4 py-4 text-center"><span className="sr-only">انتخاب</span></TableColumn>{["ردیف", "دسته‌بندی", "والد", "محصولات", "زیردسته‌ها", "ترتیب", "وضعیت", "عملیات"].map((head, index) => <TableColumn id={head} key={head} isRowHeader={index === 1} className="bg-white px-5 py-4 text-right text-xs font-bold text-slate-500">{head}</TableColumn>)}</TableHeader><TableBody>{categories.map((category, index) => <CategoryTableRow key={category.id} category={category} rowNumber={pagination.skip + index + 1} />)}</TableBody></TableContent></TableScrollContainer></Table></AdminBulkEditor>
-          <AdminPagination {...pagination} />
-        </> : <AdminEmptyState title="دسته‌بندی‌ای پیدا نشد" description="فیلترها را تغییر دهید یا اولین دسته فروشگاه را ثبت کنید." />}
-      </AdminPanel>
-    </>
-  );
-}
-
-function CategoryThumb({ category }: { category: CategoryRow }) {
-  return <div className="relative grid h-14 w-14 shrink-0 place-items-center overflow-hidden rounded-xl bg-[var(--warning)]/10 text-[var(--warning)]">{category.image?.type === "IMAGE" ? <Image src={category.image.url} alt={category.image.alt ?? category.name} fill sizes="56px" className="object-cover" /> : <FolderTree size={20} />}</div>;
-}
-
-function CategoryMobileCard({ category }: { category: CategoryRow }) {
-  const locked = category._count.products > 0 || category._count.children > 0;
-  return <Card variant="secondary" className="rounded-2xl border border-slate-100 p-4"><div className="flex gap-3"><CategoryThumb category={category} /><div className="min-w-0 flex-1"><div className="flex items-start justify-between gap-2"><div className="min-w-0"><strong className="block truncate text-sm text-slate-800">{category.name}</strong><code className="text-[0.68rem] text-[var(--warning)]">{category.slug}</code></div>{category.featured && <Star size={16} className="shrink-0 fill-[var(--warning)] text-[var(--warning)]" />}</div><span className="mt-1 block text-xs text-slate-400">{category.parent?.name ? `زیرمجموعه ${category.parent.name}` : "دسته اصلی"}</span></div></div><div className="mt-4 flex flex-wrap items-center gap-2"><AdminStatusBadge tone={category.isActive ? "success" : "neutral"}>{category.isActive ? "فعال" : "غیرفعال"}</AdminStatusBadge><span className="text-xs text-slate-500">{category._count.products.toLocaleString("fa-IR")} محصول · {category._count.children.toLocaleString("fa-IR")} زیردسته</span></div><div className="mt-4 grid grid-cols-3 gap-2"><Link href={`/admin/categories/${category.id}/attributes`} className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl bg-violet-50 text-xs font-bold text-violet-700"><SlidersHorizontal size={14} />ویژگی‌ها</Link><Link href={`/admin/categories/${category.id}/edit`} className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl bg-slate-100 text-xs font-bold text-[var(--accent)]"><Pencil size={14} />ویرایش</Link><CategoryDeleteButton id={category.id} name={category.name} disabled={locked} /></div></Card>;
-}
-
-function CategoryTableRow({ category, rowNumber }: { category: CategoryRow; rowNumber: number }) {
-  const cell = "px-5 py-4 text-sm";
-  const locked = category._count.products > 0 || category._count.children > 0;
-  return <TableRow id={category.id} className="transition hover:bg-slate-50/70"><TableCell className={`${cell} w-12 text-center`}><AdminBulkCheckbox id={category.id} label={`انتخاب دسته‌بندی ${category.name}`} /></TableCell><TableCell className={`${cell} w-16 font-bold text-slate-400`}>{rowNumber.toLocaleString("fa-IR")}</TableCell><TableCell className={`${cell} w-[280px] max-w-[280px]`}><div className="flex min-w-0 items-center gap-3"><CategoryThumb category={category} /><div className="min-w-0 flex-1"><div className="flex min-w-0 items-center gap-2"><TruncatedTextTooltip text={category.name} className="max-w-[170px] font-bold text-slate-800" />{category.featured && <Star size={14} className="shrink-0 fill-[var(--warning)] text-[var(--warning)]" />}</div><TruncatedTextTooltip text={category.slug} dir="ltr" className="max-w-[170px] font-mono text-[0.68rem] text-[var(--warning)]" /></div></div></TableCell><TableCell className={`${cell} w-40 max-w-40 text-slate-500`}><TruncatedTextTooltip text={category.parent?.name ?? "دسته اصلی"} className="max-w-32" /></TableCell><TableCell className={`${cell} text-slate-600`}>{category._count.products.toLocaleString("fa-IR")}</TableCell><TableCell className={`${cell} text-slate-600`}>{category._count.children.toLocaleString("fa-IR")}</TableCell><TableCell className={`${cell} text-slate-600`}>{category.sortOrder.toLocaleString("fa-IR")}</TableCell><TableCell className={cell}><AdminStatusBadge tone={category.isActive ? "success" : "neutral"}>{category.isActive ? "فعال" : "غیرفعال"}</AdminStatusBadge></TableCell><TableCell className={cell}><div className="flex items-center gap-2"><Link href={`/admin/categories/${category.id}/attributes`} aria-label={`مدیریت ویژگی‌های دسته‌بندی ${category.name}`} title="ویژگی‌های دسته‌بندی" className="inline-flex h-9 min-h-9 w-9 items-center justify-center rounded-lg border border-violet-200 bg-violet-50 text-violet-700 transition hover:border-violet-400"><SlidersHorizontal size={15} /></Link><Link href={`/admin/categories/${category.id}/edit`} aria-label={`ویرایش دسته‌بندی ${category.name}`} title="ویرایش دسته‌بندی" className="inline-flex h-9 min-h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-[var(--accent)] transition hover:border-[var(--warning)] hover:text-[var(--warning)]"><Pencil size={15} /></Link><CategoryDeleteButton id={category.id} name={category.name} disabled={locked} iconOnly /></div></TableCell></TableRow>;
+  const categories = await db.category.findMany({
+    include: { image: { select: { id: true, url: true, alt: true } }, parent: { select: { name: true } }, _count: { select: { products: true, children: true } } },
+    orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
+  });
+  return <BlueprintCategoriesView categories={categories.map((category) => ({
+    id: category.id, name: category.name, slug: category.slug, description: category.description,
+    parentId: category.parentId, parentName: category.parent?.name ?? null,
+    isActive: category.isActive, featured: category.featured, sortOrder: category.sortOrder,
+    image: category.image, _count: category._count,
+  }))} />;
 }

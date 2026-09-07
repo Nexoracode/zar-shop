@@ -4,11 +4,8 @@ import Image from "next/image";
 import { useState } from "react";
 import { toast } from "@heroui/react";
 import { FileText, Film, TriangleAlert } from "lucide-react";
-import { TextAreaField, TextField } from "@/components/form-field";
 import { BpButton } from "@/components/admin/blueprint/ui/button";
 import { BpInput, BpTextarea } from "@/components/admin/blueprint/ui/input";
-import { AdminSaveButton } from "@/components/admin-save-button";
-import { useAdminTemplate } from "@/components/admin/template-context";
 import { requestErrorMessage, requestJson } from "@/lib/api-request";
 import { formatDate } from "@/lib/format";
 import { mediaFieldLimits } from "@/modules/media/limits";
@@ -45,7 +42,6 @@ function formatSize(bytes?: number) {
  * admin templates — only the field components differ.
  */
 export function MediaDetailsPanel({ media, onSaved, className = "" }: { media: MediaDetails; onSaved: (updated: MediaDetails) => void; className?: string }) {
-  const template = useAdminTemplate();
   /*
    * State is seeded from the asset once. Callers mount this with `key={media.id}`, so choosing a
    * different asset remounts the panel rather than syncing props into state through an effect.
@@ -97,7 +93,6 @@ export function MediaDetailsPanel({ media, onSaved, className = "" }: { media: M
     }
   }
 
-  const blueprint = template === "BLUEPRINT";
   const missingAlt = !fields.alt.trim() && media.type === "IMAGE";
   const facts: Array<[string, string]> = [
     ["ابعاد", media.width && media.height ? `${media.width.toLocaleString("fa-IR")} × ${media.height.toLocaleString("fa-IR")}` : "ثبت نشده"],
@@ -111,7 +106,7 @@ export function MediaDetailsPanel({ media, onSaved, className = "" }: { media: M
   // most of the card, crowding out the facts and fields under it. A fixed, modest height keeps it
   // a thumbnail regardless of how narrow the panel gets.
   const preview = (
-    <div className={`relative h-44 w-full overflow-hidden ${blueprint ? "border border-[var(--bp-divider)] bg-[var(--bp-surface)]" : "rounded-xl border border-[var(--border)] bg-[var(--surface-secondary)]"}`}>
+    <div className="relative h-44 w-full overflow-hidden border border-[var(--bp-divider)] bg-[var(--bp-surface)]">
       {media.type === "IMAGE"
         ? <Image src={media.url} alt={fields.alt || media.title} fill unoptimized={media.mimeType === "image/gif"} sizes="320px" className="object-contain" />
         : media.type === "VIDEO"
@@ -122,10 +117,10 @@ export function MediaDetailsPanel({ media, onSaved, className = "" }: { media: M
   );
 
   const factList = (
-    <dl className={`m-0 grid gap-1.5 ${blueprint ? "text-[12px]" : "text-xs"}`}>
+    <dl className="m-0 grid gap-1.5 text-[12px]">
       {facts.map(([label, value]) => (
         <div key={label} className="flex items-center justify-between gap-3">
-          <dt className={`shrink-0 ${blueprint ? "bp-muted" : "text-[var(--muted)]"}`}>{label}</dt>
+          <dt className="shrink-0 bp-muted">{label}</dt>
           <dd className="m-0 min-w-0 truncate" dir={label === "نوع فایل" ? "ltr" : undefined}>{value}</dd>
         </div>
       ))}
@@ -145,7 +140,7 @@ export function MediaDetailsPanel({ media, onSaved, className = "" }: { media: M
       {preview}
 
       {missingAlt && (
-        <p className={`m-0 flex items-start gap-2 text-[12px] ${blueprint ? "border border-[var(--bp-warning)] p-2.5 text-[var(--bp-warning)]" : "rounded-xl bg-amber-50 p-3 text-amber-800"}`}>
+        <p className="m-0 flex items-start gap-2 border border-[var(--bp-warning)] p-2.5 text-[12px] text-[var(--bp-warning)]">
           <TriangleAlert size={15} className="mt-0.5 shrink-0" />
           این تصویر متن جایگزین ندارد؛ برای سئو و دسترس‌پذیری آن را کامل کنید.
         </p>
@@ -154,20 +149,11 @@ export function MediaDetailsPanel({ media, onSaved, className = "" }: { media: M
       {factList}
 
       <div className="grid gap-2">
-        {blueprint ? <>
-          <BpInput label="عنوان" maxLength={mediaFieldLimits.title} value={fields.title} error={errors.title} onChange={(event) => set("title", event.target.value)} />
-          <BpInput label="متن جایگزین (alt)" maxLength={mediaFieldLimits.alt} value={fields.alt} error={errors.alt} hint={altHint} onChange={(event) => set("alt", event.target.value)} />
-          <BpInput label="کپشن" maxLength={mediaFieldLimits.caption} value={fields.caption} error={errors.caption} onChange={(event) => set("caption", event.target.value)} />
-          <BpTextarea label="توضیحات" rows={4} maxLength={mediaFieldLimits.description} value={fields.description} error={errors.description} onChange={(event) => set("description", event.target.value)} />
-          <BpButton variant="primary" fullWidth isPending={saving} onClick={() => void save()}>ذخیره اطلاعات</BpButton>
-        </> : <>
-          <TextField label="عنوان" maxLength={mediaFieldLimits.title} value={fields.title} error={errors.title} onChange={(event) => set("title", event.target.value)} />
-          <TextField label="متن جایگزین (alt)" maxLength={mediaFieldLimits.alt} value={fields.alt} error={errors.alt} hint={altHint} onChange={(event) => set("alt", event.target.value)} />
-          <TextField label="کپشن" maxLength={mediaFieldLimits.caption} value={fields.caption} error={errors.caption} onChange={(event) => set("caption", event.target.value)} />
-          <TextAreaField label="توضیحات" rows={4} maxLength={mediaFieldLimits.description} value={fields.description} error={errors.description} onChange={(event) => set("description", event.target.value)} />
-          {/* HeroUI buttons take `onPress`, and this one is not inside a form. */}
-          <AdminSaveButton type="button" isSaving={saving} label="ذخیره اطلاعات" fullWidth onPress={() => void save()} />
-        </>}
+        <BpInput label="عنوان" maxLength={mediaFieldLimits.title} value={fields.title} error={errors.title} onChange={(event) => set("title", event.target.value)} />
+        <BpInput label="متن جایگزین (alt)" maxLength={mediaFieldLimits.alt} value={fields.alt} error={errors.alt} hint={altHint} onChange={(event) => set("alt", event.target.value)} />
+        <BpInput label="کپشن" maxLength={mediaFieldLimits.caption} value={fields.caption} error={errors.caption} onChange={(event) => set("caption", event.target.value)} />
+        <BpTextarea label="توضیحات" rows={4} maxLength={mediaFieldLimits.description} value={fields.description} error={errors.description} onChange={(event) => set("description", event.target.value)} />
+        <BpButton variant="primary" fullWidth isPending={saving} onClick={() => void save()}>ذخیره اطلاعات</BpButton>
       </div>
     </aside>
   );

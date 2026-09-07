@@ -1,14 +1,5 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import {
-  BrandSettings,
-  CatalogSettings,
-  CommerceSettings,
-  ContentSettings,
-  GeneralSettings,
-  OrderSettings,
-  SeoSettings,
-} from "@/components/admin-settings";
 import { BlueprintGeneralSettings } from "@/components/admin/blueprint/general-settings";
 import { BlueprintBrandingSettings } from "@/components/admin/blueprint/branding-settings";
 import { BlueprintOrderSettings } from "@/components/admin/blueprint/order-settings";
@@ -21,6 +12,7 @@ import { settingsSectionPermission } from "@/modules/auth/permissions";
 import { requirePermission } from "@/modules/auth/session";
 import { getBrandSettings } from "@/modules/settings/brand-settings";
 import { getCatalogSettings } from "@/modules/settings/catalog-settings";
+// getBrandSettings stays: the branding section still edits the brand settings row.
 import { getCommerceSettings } from "@/modules/settings/commerce-settings";
 import { getContentSettings } from "@/modules/settings/content-settings";
 import { getGeneralStoreSettings } from "@/modules/settings/general-settings";
@@ -66,40 +58,33 @@ export default async function AdminSettingSectionPage({ params }: Context) {
   let content;
   switch (section) {
     case "general": {
-      const [settings, brandSettings] = await Promise.all([getGeneralStoreSettings(), getBrandSettings()]);
-      content = brandSettings.adminTemplate === "BLUEPRINT" ? <BlueprintGeneralSettings initialSettings={settings} /> : <GeneralSettings initialSettings={settings} />;
+      content = <BlueprintGeneralSettings initialSettings={await getGeneralStoreSettings()} />;
       break;
     }
     case "branding": {
       const [brandSettings, industry] = await Promise.all([getBrandSettings(), getStoreIndustry()]);
-      content = brandSettings.adminTemplate === "BLUEPRINT" ? <BlueprintBrandingSettings initialSettings={brandSettings} industry={industry} /> : <BrandSettings initialSettings={brandSettings} industry={industry} />;
+      content = <BlueprintBrandingSettings initialSettings={brandSettings} industry={industry} />;
       break;
     }
     case "orders": {
-      const [settings, brandSettings] = await Promise.all([getOrderSettings(), getBrandSettings()]);
-      content = brandSettings.adminTemplate === "BLUEPRINT" ? <BlueprintOrderSettings initialSettings={settings} /> : <OrderSettings initialSettings={settings} />;
+      content = <BlueprintOrderSettings initialSettings={await getOrderSettings()} />;
       break;
     }
     case "catalog": {
-      const [settings, brandSettings] = await Promise.all([getCatalogSettings(), getBrandSettings()]);
-      content = brandSettings.adminTemplate === "BLUEPRINT" ? <BlueprintCatalogSettings initialSettings={settings} /> : <CatalogSettings initialSettings={settings} />;
+      content = <BlueprintCatalogSettings initialSettings={await getCatalogSettings()} />;
       break;
     }
     case "commerce": {
-      const [settings, gateways, brandSettings] = await Promise.all([getCommerceSettings(), getPublicGatewayConfigs(), getBrandSettings()]);
-      content = brandSettings.adminTemplate === "BLUEPRINT"
-        ? <BlueprintCommerceSettings initialSettings={settings} configuredGatewayCount={gateways.length} />
-        : <CommerceSettings initialSettings={settings} configuredGatewayCount={gateways.length} />;
+      const [settings, gateways] = await Promise.all([getCommerceSettings(), getPublicGatewayConfigs()]);
+      content = <BlueprintCommerceSettings initialSettings={settings} configuredGatewayCount={gateways.length} />;
       break;
     }
     case "content": {
-      const [settings, brandSettings] = await Promise.all([getContentSettings(), getBrandSettings()]);
-      content = brandSettings.adminTemplate === "BLUEPRINT" ? <BlueprintContentSettings initialSettings={settings} /> : <ContentSettings initialSettings={settings} />;
+      content = <BlueprintContentSettings initialSettings={await getContentSettings()} />;
       break;
     }
     case "seo": {
-      const brandSettings = await getBrandSettings();
-      content = brandSettings.adminTemplate === "BLUEPRINT" ? <BlueprintSeoSettings /> : <SeoSettings />;
+      content = <BlueprintSeoSettings />;
       break;
     }
     default: notFound();

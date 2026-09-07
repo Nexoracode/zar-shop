@@ -6,8 +6,7 @@ import { BpCombobox } from "./ui";
 type Option = { id: string; name: string };
 
 /**
- * Where the store ships from — same data source and contract as the Classic
- * `ShippingOriginPicker`, just built on `BpCombobox` (search + a pending state) instead of
+ * Where the store ships from. `ShippingOriginPicker`, just built on `BpCombobox` (search + a pending state) instead of
  * `HeroSelectField`'s `searchable`/`loading` props.
  */
 export function BlueprintShippingOriginPicker({ provinceId, cityId, onChange }: {

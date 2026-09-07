@@ -4,18 +4,16 @@ import { resolveAdminPagination } from "@/lib/admin-pagination";
 import { parseAdminPaginationRequest } from "@/lib/admin-pagination-server";
 import { requirePermission } from "@/modules/auth/session";
 import { getCatalogSettings } from "@/modules/settings/catalog-settings";
-import { getBrandSettings } from "@/modules/settings/brand-settings";
 import { getStoreIndustry } from "@/modules/settings/store-settings";
 import { nextDiscountBoundary } from "@/modules/products/discount-window";
 import { BlueprintProductsView } from "@/components/admin/blueprint/products-view";
-import { ClassicProductsView } from "@/components/admin/classic/products-view";
 import type { AdminProductsListData } from "@/components/admin/products-list-data";
 
 type Context = { searchParams: Promise<{ q?: string; status?: string; category?: string; featured?: string; stock?: string; discount?: string; page?: string; pageSize?: string }> };
 
 export default async function AdminProducts({ searchParams }: Context) {
   await requirePermission("catalog:manage");
-  const [catalogSettings, brandSettings, storeIndustry] = await Promise.all([getCatalogSettings(), getBrandSettings(), getStoreIndustry()]);
+  const [catalogSettings, storeIndustry] = await Promise.all([getCatalogSettings(), getStoreIndustry()]);
   const params = await searchParams;
   const query = params.q?.trim() ?? "";
   const status = (["DRAFT", "ACTIVE", "ARCHIVED"] as const).includes(params.status as ProductStatus) ? params.status as ProductStatus : undefined;
@@ -76,7 +74,5 @@ export default async function AdminProducts({ searchParams }: Context) {
     nextDiscountBoundaryAt: nextDiscountBoundary(products.flatMap((product) => [product, ...product.variants])),
   };
 
-  return brandSettings.adminTemplate === "BLUEPRINT"
-    ? <BlueprintProductsView {...data} />
-    : <ClassicProductsView {...data} />;
+  return <BlueprintProductsView {...data} />;
 }

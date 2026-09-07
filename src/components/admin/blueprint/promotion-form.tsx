@@ -6,7 +6,7 @@ import { toast } from "@heroui/react";
 import { BadgePercent, Check, Gift, Info, ShoppingBag, Truck } from "lucide-react";
 import { AdminPageHeader } from "@/components/admin-ui";
 import { promotionFieldLimits } from "@/modules/promotions/schemas";
-import type { PromotionItem } from "@/components/admin-promotions";
+import type { PromotionItem } from "@/modules/promotions/admin";
 import { BpAsyncMultiSelect, BpButton, BpDateTimeField, BpInput, BpMultiSelect, BpNumberInput, BpSeg, BpSelect, BpSwitch } from "./ui";
 
 type PromotionType = PromotionItem["type"];

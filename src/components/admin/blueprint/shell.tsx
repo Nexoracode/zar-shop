@@ -9,7 +9,6 @@ import { formatDateTime, formatMoney } from "@/lib/format";
 import { userRoleLabels } from "@/modules/admin/labels";
 import { getResolvedAdminTheme, setAdminThemePreference, subscribeToAdminTheme } from "@/lib/admin-theme";
 import { getSidebarCollapsed, setSidebarCollapsed, subscribeToSidebarCollapsed } from "@/lib/admin-sidebar-state";
-import { AdminTemplateProvider } from "@/components/admin/template-context";
 import { useStickyHeaderOffset } from "@/components/admin/use-sticky-offset";
 import { AdminGlobalSearch } from "./global-search";
 import { BlueprintSidebar } from "./sidebar";
@@ -187,7 +186,7 @@ export function BlueprintShell({ user, showGoldPrice, goldPrice, goldFetchedAt, 
         />
 
         <main className="min-w-0 flex-1 px-4 py-6 sm:px-7">
-          <AdminTemplateProvider template="BLUEPRINT">{children}</AdminTemplateProvider>
+          {children}
         </main>
       </div>
     </div>

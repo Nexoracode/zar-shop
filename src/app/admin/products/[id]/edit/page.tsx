@@ -1,11 +1,9 @@
 import { notFound } from "next/navigation";
-import { ProductForm } from "@/components/product-form";
 import { BlueprintProductForm } from "@/components/admin/blueprint/product-form";
 import { db } from "@/lib/db";
 import { AdminPageHeader } from "@/components/admin-ui";
 import { requirePermission } from "@/modules/auth/session";
 import { parseCategoryAttributeSchema, parseProductAttributes } from "@/modules/products/attributes";
-import { getBrandSettings } from "@/modules/settings/brand-settings";
 import { listSelectableOptionTypes } from "@/modules/options/option-library";
 import { productOptionTypeInclude } from "@/modules/products/variant-selection";
 
@@ -14,7 +12,7 @@ type Context = { params: Promise<{ id: string }> };
 export default async function EditProductPage({ params }: Context) {
   await requirePermission("catalog:manage");
   const { id } = await params;
-  const [product, categories, brands, colors, optionLibrary, brandSettings] = await Promise.all([
+  const [product, categories, brands, colors, optionLibrary] = await Promise.all([
     db.product.findUnique({
       where: { id },
       include: { media: { include: { media: true }, orderBy: { position: "asc" } }, variants: { orderBy: { createdAt: "asc" } }, optionTypes: productOptionTypeInclude, optionGuide: true },
@@ -27,7 +25,6 @@ export default async function EditProductPage({ params }: Context) {
     db.brand.findMany({ where: { isActive: true }, orderBy: [{ sortOrder: "asc" }, { name: "asc" }], select: { id: true, name: true } }),
     db.color.findMany({ where: { isActive: true }, orderBy: [{ sortOrder: "asc" }, { name: "asc" }], select: { id: true, name: true, hex: true } }),
     listSelectableOptionTypes(),
-    getBrandSettings(),
   ]);
   if (!product) notFound();
 
@@ -85,9 +82,7 @@ export default async function EditProductPage({ params }: Context) {
   return (
     <>
       <AdminPageHeader title={`ویرایش «${product.name}»`} description="اطلاعات، قیمت‌گذاری، موجودی و گالری این محصول را به‌روزرسانی کنید." backHref="/admin/products" backLabel="بازگشت به محصولات" />
-      {brandSettings.adminTemplate === "BLUEPRINT"
-        ? <BlueprintProductForm storeIndustry={product.storeIndustry} colors={colorOptions} optionLibrary={optionLibraryOptions} categories={categoryOptions} brands={brands} product={editableProduct} />
-        : <ProductForm storeIndustry={product.storeIndustry} colors={colorOptions} optionLibrary={optionLibraryOptions} categories={categoryOptions} product={editableProduct} />}
+      <BlueprintProductForm storeIndustry={product.storeIndustry} colors={colorOptions} optionLibrary={optionLibraryOptions} categories={categoryOptions} brands={brands} product={editableProduct} />
     </>
   );
 }

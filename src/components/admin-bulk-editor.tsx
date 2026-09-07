@@ -2,12 +2,11 @@
 
 import { createContext, useContext, useMemo, useState, type HTMLAttributes, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import { Checkbox, toast } from "@heroui/react";
+import { toast } from "@heroui/react";
 import { CheckSquare, Loader2, TriangleAlert } from "lucide-react";
-import { HeroSelectField, type HeroSelectOption } from "@/components/hero-select-field";
+import { type HeroSelectOption } from "@/components/hero-select-field";
 import { AdminTableRefreshButton } from "@/components/admin-table-refresh";
 import { requestErrorMessage, requestJson } from "@/lib/api-request";
-import { useAdminTemplate } from "@/components/admin/template-context";
 import { AdminDialog, AdminDialogButton } from "@/components/admin/admin-dialog";
 import { BpCheckbox } from "@/components/admin/blueprint/ui/checkbox";
 import { BpSelect } from "@/components/admin/blueprint/ui/select";
@@ -37,7 +36,6 @@ export function useBulkSelection() {
 
 export function AdminBulkEditor({ entity, entityLabel, ids, actions, children, desktopClassName = "hidden md:block", onCompleted, extraAction }: { entity: "products" | "categories" | "brands" | "orders" | "users" | "reviews" | "colors" | "optionTypes" | "promotions" | "contactMessages" | "paymentGateways" | "smsProviders" | "smsCampaigns" | "supportTicketCategories" | "tickets" | "shippingMethods" | "returns"; entityLabel: string; ids: string[]; actions: AdminBulkAction[]; children: ReactNode; desktopClassName?: string; onCompleted?: (result: { action: string; ids: string[] }) => void; /** A caller-owned action beside the quick-edit control — e.g. products' own bulk-edit modal trigger. Reads the selection itself via `useBulkSelection`. */ extraAction?: ReactNode }) {
   const router = useRouter();
-  const template = useAdminTemplate();
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [action, setAction] = useState("");
   const [loading, setLoading] = useState(false);
@@ -84,27 +82,15 @@ export function AdminBulkEditor({ entity, entityLabel, ids, actions, children, d
   return (
     <BulkContext.Provider value={value}>
       <div className={desktopClassName}>
-        {template === "BLUEPRINT" ? (
-          <div className="flex flex-wrap items-center gap-3 border-b border-[var(--bp-divider)] px-4 py-3">
-            <div className="me-auto flex items-center gap-4 text-[13px]">
-              <div className="flex items-center gap-2 border border-[var(--bp-divider)] px-3 py-1.5"><AdminBulkSelectAll /><span>انتخاب همه</span></div>
-              <span className="bp-muted flex items-center gap-2">{loading ? <Loader2 size={16} className="animate-spin text-[var(--bp-accent)]" /> : <CheckSquare size={16} className="text-[var(--bp-accent)]" />}{loading ? "در حال اعمال تغییر..." : selected.size ? `${selected.size.toLocaleString("fa-IR")} ${entityLabel} انتخاب شده` : `برای ویرایش سریع، ${entityLabel} را انتخاب کنید`}</span>
-            </div>
-            <BpSelect aria-label="ویرایش سریع" value={action} disabled={!selected.size || loading} reserveMessage={false} wrapperClassName="w-full sm:w-auto" className="w-full sm:w-64" onChange={(event) => chooseAction(event.target.value)} options={[{ value: "", label: "انتخاب عملیات؛ اعمال خودکار" }, ...actions]} />
-            {extraAction}
-            <AdminTableRefreshButton />
+        <div className="flex flex-wrap items-center gap-3 border-b border-[var(--bp-divider)] px-4 py-3">
+          <div className="me-auto flex items-center gap-4 text-[13px]">
+            <div className="flex items-center gap-2 border border-[var(--bp-divider)] px-3 py-1.5"><AdminBulkSelectAll /><span>انتخاب همه</span></div>
+            <span className="bp-muted flex items-center gap-2">{loading ? <Loader2 size={16} className="animate-spin text-[var(--bp-accent)]" /> : <CheckSquare size={16} className="text-[var(--bp-accent)]" />}{loading ? "در حال اعمال تغییر..." : selected.size ? `${selected.size.toLocaleString("fa-IR")} ${entityLabel} انتخاب شده` : `برای ویرایش سریع، ${entityLabel} را انتخاب کنید`}</span>
           </div>
-        ) : (
-          <div className="flex flex-wrap items-end gap-3 border-b border-slate-100 bg-white px-4 py-3">
-            <div className="ml-auto flex min-h-10 items-center gap-4 text-xs font-bold text-slate-600">
-              <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2"><AdminBulkSelectAll /><span>انتخاب همه</span></div>
-              <span className="flex items-center gap-2">{loading ? <Loader2 size={17} className="animate-spin text-[var(--warning)]" /> : <CheckSquare size={17} className="text-[var(--warning)]" />}{loading ? "در حال اعمال تغییر..." : selected.size ? `${selected.size.toLocaleString("fa-IR")} ${entityLabel} انتخاب شده` : `برای ویرایش سریع، ${entityLabel} را انتخاب کنید`}</span>
-            </div>
-            <HeroSelectField name={`${entity}-bulk-action`} label="ویرایش سریع" value={action} disabled={!selected.size || loading} onValueChange={chooseAction} options={[{ value: "", label: "انتخاب عملیات؛ اعمال خودکار" }, ...actions]} className="w-72" />
-            {extraAction}
-            <AdminTableRefreshButton className="mb-0.5" />
-          </div>
-        )}
+          <BpSelect aria-label="ویرایش سریع" value={action} disabled={!selected.size || loading} reserveMessage={false} wrapperClassName="w-full sm:w-auto" className="w-full sm:w-64" onChange={(event) => chooseAction(event.target.value)} options={[{ value: "", label: "انتخاب عملیات؛ اعمال خودکار" }, ...actions]} />
+          {extraAction}
+          <AdminTableRefreshButton />
+        </div>
         {children}
       </div>
       <AdminDialog
@@ -126,9 +112,7 @@ export function AdminBulkEditor({ entity, entityLabel, ids, actions, children, d
 }
 
 function SelectionCheckbox({ checked, indeterminate = false, disabled = false, label, onChange }: { checked: boolean; indeterminate?: boolean; disabled?: boolean; label: string; onChange: () => void }) {
-  const template = useAdminTemplate();
-  if (template === "BLUEPRINT") return <BpCheckbox isSelected={checked} isIndeterminate={indeterminate} isDisabled={disabled} label={label} onChange={onChange} />;
-  return <Checkbox isSelected={checked} isIndeterminate={indeterminate} isDisabled={disabled} onChange={onChange}><Checkbox.Content aria-label={label} className="cursor-pointer disabled:cursor-not-allowed"><Checkbox.Control className="size-4 rounded border-2 border-[var(--field-border)] bg-[var(--surface)] text-[var(--accent-foreground)] data-[selected]:border-[var(--accent)] data-[selected]:bg-[var(--accent)]"><Checkbox.Indicator className="grid size-full place-items-center" /></Checkbox.Control></Checkbox.Content></Checkbox>;
+  return <BpCheckbox isSelected={checked} isIndeterminate={indeterminate} isDisabled={disabled} label={label} onChange={onChange} />;
 }
 
 export function AdminBulkSelectAll() {

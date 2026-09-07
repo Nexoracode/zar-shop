@@ -13,9 +13,9 @@ function OptionCheckbox({ title, description, isSelected, onChange }: { title: s
 }
 
 /**
- * A demo section, same as its Classic counterpart: no props, no submit endpoint — the button
+ * A demo section: no props, no submit endpoint — the button
  * just says the section connects to the API and database once approved. The two checkboxes keep
- * local state only so they still feel interactive, exactly like Classic's uncontrolled ones.
+ * local state only so they still feel interactive.
  */
 export function BlueprintSeoSettings() {
   const [allowIndexing, setAllowIndexing] = useState(true);

@@ -48,9 +48,6 @@ export function BlueprintBrandingSettings({ initialSettings, industry }: { initi
           brandAccentColor: colors.accent,
           brandBackgroundColor: colors.background,
           brandDangerColor: colors.danger,
-          // The template picker is gone from this form on purpose — Blueprint is the only
-          // template going forward, so every save just re-affirms it instead of exposing a choice.
-          adminTemplate: "BLUEPRINT",
           enforceColorContrast: enforceContrast,
           stickyStoreHeader: stickyHeader,
           compactMobileGrid: compactGrid,

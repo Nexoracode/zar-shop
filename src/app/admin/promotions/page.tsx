@@ -1,12 +1,8 @@
 import type { Prisma } from "@generated/prisma/client";
-import { Plus } from "lucide-react";
-import { AdminPromotions } from "@/components/admin-promotions";
 import { BlueprintPromotionsView } from "@/components/admin/blueprint/promotions-view";
-import { AdminPageHeader, AdminPrimaryLink } from "@/components/admin-ui";
 import { requirePermission } from "@/modules/auth/session";
 import { db } from "@/lib/db";
 import { serializePromotion } from "@/modules/promotions/admin";
-import { getBrandSettings } from "@/modules/settings/brand-settings";
 import { resolveAdminPagination } from "@/lib/admin-pagination";
 import { parseAdminPaginationRequest } from "@/lib/admin-pagination-server";
 
@@ -24,7 +20,7 @@ export default async function AdminPromotionsPage({ searchParams }: Context) {
     ...(status ? { isActive: status === "active" } : {}),
     ...(type ? { type } : {}),
   };
-  const [filteredTotal, brandSettings] = await Promise.all([db.promotion.count({ where }), getBrandSettings()]);
+  const filteredTotal = await db.promotion.count({ where });
   const pagination = resolveAdminPagination(filteredTotal, requestedPage, pageSize);
   const promotions = await db.promotion.findMany({
     where,
@@ -34,20 +30,5 @@ export default async function AdminPromotionsPage({ searchParams }: Context) {
     take: pagination.pageSize,
   });
   const items = promotions.map(serializePromotion);
-
-  if (brandSettings.adminTemplate === "BLUEPRINT") {
-    return <BlueprintPromotionsView initialItems={items} query={query} status={status} type={type} pagination={pagination} />;
-  }
-
-  return (
-    <>
-      <AdminPageHeader
-        eyebrow="بازاریابی و فروش"
-        title="پروموشن‌ها"
-        description="وضعیت، بازه اعتبار و میزان استفاده از کمپین‌های فروش را مدیریت کنید."
-        action={<AdminPrimaryLink href="/admin/promotions/new"><Plus size={17} />پروموشن جدید</AdminPrimaryLink>}
-      />
-      <AdminPromotions mode="list" initialItems={items} query={query} status={status} type={type} pagination={pagination} />
-    </>
-  );
+  return <BlueprintPromotionsView initialItems={items} query={query} status={status} type={type} pagination={pagination} />;
 }

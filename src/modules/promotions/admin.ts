@@ -67,3 +67,6 @@ export function serializePromotion(promotion: Promotion & { _count?: { redemptio
     rewardCount: promotion._count?.rewards ?? 0,
   };
 }
+
+/** The admin promotion row shape, as the list/form components consume it. */
+export type PromotionItem = ReturnType<typeof serializePromotion>;

@@ -1,15 +1,14 @@
-import { Plus } from "lucide-react";
-import { AdminEmptyState, AdminPageHeader, AdminPanel, AdminPrimaryLink } from "@/components/admin-ui";
-import { OptionTypeTable } from "@/components/option-type-table";
 import { BlueprintOptionTypesView } from "@/components/admin/blueprint/option-types-view";
 import { db } from "@/lib/db";
 import { listOptionTypes } from "@/modules/options/option-library";
 import { requirePermission } from "@/modules/auth/session";
-import { getBrandSettings } from "@/modules/settings/brand-settings";
 
 export default async function OptionTypesPage() {
   await requirePermission("catalog:manage");
-  const [types, brandSettings] = await Promise.all([listOptionTypes(), getBrandSettings()]);
+  const [types, colors] = await Promise.all([
+    listOptionTypes(),
+    db.color.findMany({ where: { isActive: true }, select: { id: true, name: true, hex: true }, orderBy: [{ sortOrder: "asc" }, { name: "asc" }] }),
+  ]);
   const items = types.map((type) => ({
     id: type.id,
     name: type.name,
@@ -19,23 +18,5 @@ export default async function OptionTypesPage() {
     productCount: type._count.products,
     values: type.values.map((value) => ({ id: value.id, label: value.label, colorId: value.colorId, hex: value.color?.hex ?? null, isActive: value.isActive })),
   }));
-
-  if (brandSettings.adminTemplate === "BLUEPRINT") {
-    const colors = await db.color.findMany({ where: { isActive: true }, select: { id: true, name: true, hex: true }, orderBy: [{ sortOrder: "asc" }, { name: "asc" }] });
-    return <BlueprintOptionTypesView types={items} colors={colors} />;
-  }
-
-  return <>
-    <AdminPageHeader
-      eyebrow="مدیریت کاتالوگ"
-      title="انواع تنوع"
-      description="نوع‌هایی مانند رنگ و سایز را یک‌بار تعریف کنید تا در فرم هر محصول قابل انتخاب باشند."
-      action={<AdminPrimaryLink href="/admin/option-types/new"><Plus size={17} />نوع تنوع جدید</AdminPrimaryLink>}
-    />
-    <AdminPanel>
-      {items.length
-        ? <OptionTypeTable types={items} />
-        : <AdminEmptyState title="نوع تنوعی ثبت نشده" description="اولین نوع تنوع مانند رنگ یا سایز را با مقادیرش تعریف کنید." />}
-    </AdminPanel>
-  </>;
+  return <BlueprintOptionTypesView types={items} colors={colors} />;
 }

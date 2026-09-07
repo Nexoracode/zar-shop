@@ -1,28 +1,22 @@
-import { AdminPageHeader } from "@/components/admin-ui";
-import { CategoryAttributePicker } from "@/components/category-attribute-picker";
 import { BlueprintCategoryAttributesManager } from "@/components/admin/blueprint/category-attributes-manager";
 import { db } from "@/lib/db";
 import { requirePermission } from "@/modules/auth/session";
-import { getBrandSettings } from "@/modules/settings/brand-settings";
 import { parseCategoryAttributeSchema } from "@/modules/products/attributes";
 
 export default async function CategoryAttributesPage() {
   await requirePermission("catalog:manage");
-  const [categories, brandSettings] = await Promise.all([
-    db.category.findMany({
-      select: {
-        id: true,
-        name: true,
-        slug: true,
-        isActive: true,
-        attributeSchema: true,
-        parent: { select: { name: true } },
-        _count: { select: { products: true } },
-      },
-      orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
-    }),
-    getBrandSettings(),
-  ]);
+  const categories = await db.category.findMany({
+    select: {
+      id: true,
+      name: true,
+      slug: true,
+      isActive: true,
+      attributeSchema: true,
+      parent: { select: { name: true } },
+      _count: { select: { products: true } },
+    },
+    orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
+  });
 
   const rows = categories.map((category) => {
     const groups = parseCategoryAttributeSchema(category.attributeSchema);
@@ -38,18 +32,5 @@ export default async function CategoryAttributesPage() {
     };
   });
 
-  if (brandSettings.adminTemplate === "BLUEPRINT") {
-    return <BlueprintCategoryAttributesManager categories={rows} />;
-  }
-
-  return (
-    <>
-      <AdminPageHeader
-        eyebrow="تنوع و ویژگی‌ها"
-        title="ویژگی‌های دسته‌بندی"
-        description="ابتدا دسته‌بندی را پیدا کنید و سپس گروه‌ها و ویژگی‌های مخصوص محصولات همان دسته را مدیریت کنید."
-      />
-      <CategoryAttributePicker categories={rows} />
-    </>
-  );
+  return <BlueprintCategoryAttributesManager categories={rows} />;
 }

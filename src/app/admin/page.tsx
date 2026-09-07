@@ -1,9 +1,7 @@
 import { db } from "@/lib/db";
 import { requirePermission } from "@/modules/auth/session";
 import { getCatalogSettings } from "@/modules/settings/catalog-settings";
-import { getBrandSettings } from "@/modules/settings/brand-settings";
 import { BlueprintDashboardView } from "@/components/admin/blueprint/dashboard-view";
-import { ClassicDashboardView } from "@/components/admin/classic/dashboard-view";
 import type { AdminDashboardData } from "@/components/admin/dashboard-data";
 
 const SALES_TREND_DAYS = 14;
@@ -17,7 +15,7 @@ function dayKey(value: Date) {
 export default async function AdminPage() {
   const actor = await requirePermission("dashboard:view");
   const isFullAdmin = actor.role === "ADMIN";
-  const [catalogSettings, brandSettings] = await Promise.all([getCatalogSettings(), getBrandSettings()]);
+  const [catalogSettings] = await Promise.all([getCatalogSettings()]);
 
   const trendStart = new Date();
   trendStart.setHours(0, 0, 0, 0);
@@ -91,7 +89,5 @@ export default async function AdminPage() {
     orderStatusBreakdown,
   };
 
-  return brandSettings.adminTemplate === "BLUEPRINT"
-    ? <BlueprintDashboardView {...data} />
-    : <ClassicDashboardView {...data} />;
+  return <BlueprintDashboardView {...data} />;
 }

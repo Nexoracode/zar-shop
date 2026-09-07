@@ -11,7 +11,7 @@ import { AdminPagination } from "@/components/admin-pagination";
 import { AdminBulkCheckbox, AdminBulkEditor, AdminBulkTr } from "@/components/admin-bulk-editor";
 import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
 import { requestErrorMessage, requestJson } from "@/lib/api-request";
-import type { PromotionItem } from "@/components/admin-promotions";
+import type { PromotionItem } from "@/modules/promotions/admin";
 import { BpButton, BpTable, BpTag, BpTd, BpTh, formatPersianDateTime } from "./ui";
 
 function scopeLabel(item: PromotionItem): string | null {

@@ -4,11 +4,9 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Spinner, toast } from "@heroui/react";
 import type { OrderStatus } from "@generated/prisma/enums";
-import { HeroSelectField } from "@/components/hero-select-field";
 import { OrderExpiryCountdown } from "@/components/order-expiry-countdown";
 import { orderStatusLabels } from "@/modules/admin/labels";
 import { adminOrderStatusOptions } from "@/modules/orders/order-status-transitions";
-import { useAdminTemplate } from "@/components/admin/template-context";
 import { BpSelect } from "@/components/admin/blueprint/ui/select";
 
 export function AdminOrderStatusSelect({ orderId, initialStatus, expiresAt, warningMinutes }: { orderId: string; initialStatus: OrderStatus; expiresAt: string | null; warningMinutes: number }) {
@@ -35,14 +33,8 @@ export function AdminOrderStatusSelect({ orderId, initialStatus, expiresAt, warn
     }
   }
 
-  const template = useAdminTemplate();
-
   return <div className="relative min-w-44">
-    {template === "BLUEPRINT" ? (
-      <BpSelect aria-label="تغییر وضعیت سفارش" value={status} disabled={saving} reserveMessage={false} options={options} onChange={(event) => void update(event.target.value)} />
-    ) : (
-      <HeroSelectField name={`order-status-${orderId}`} ariaLabel="تغییر وضعیت سفارش" value={status} disabled={saving} includeEmptyOption={false} options={options} onValueChange={(value) => void update(value)} controlClassName="!min-h-9 h-9 rounded-lg pr-3 pl-8 text-xs" />
-    )}
+    <BpSelect aria-label="تغییر وضعیت سفارش" value={status} disabled={saving} reserveMessage={false} options={options} onChange={(event) => void update(event.target.value)} />
     {saving ? <Spinner size="sm" className="absolute left-2 top-2.5" aria-label="در حال تغییر وضعیت" /> : null}
     {status === "PENDING_PAYMENT" && expiresAt ? <OrderExpiryCountdown expiresAt={expiresAt} warningMinutes={warningMinutes} className="mt-1.5" /> : null}
   </div>;

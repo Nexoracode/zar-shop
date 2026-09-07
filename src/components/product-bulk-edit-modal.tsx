@@ -2,21 +2,16 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Button, toast } from "@heroui/react";
+import { toast } from "@heroui/react";
 import { ListChecks } from "lucide-react";
 import { AdminDialog, AdminDialogButton } from "@/components/admin/admin-dialog";
 import { useBulkSelection } from "@/components/admin-bulk-editor";
-import { adminFieldClass, adminLabelClass } from "@/components/admin-ui";
-import { useAdminTemplate } from "@/components/admin/template-context";
 import { requestErrorMessage, requestJson } from "@/lib/api-request";
 import { BpButton } from "@/components/admin/blueprint/ui/button";
 import { BpSeg, type BpSegOption } from "@/components/admin/blueprint/ui/seg";
 import { BpSelect, type BpSelectOption } from "@/components/admin/blueprint/ui/select";
 import { BpNumberInput } from "@/components/admin/blueprint/ui/number-input";
 import { BpDateTimeField } from "@/components/admin/blueprint/ui/date-time-field";
-import { HeroSelectField, type HeroSelectOption } from "@/components/hero-select-field";
-import { HeroNumberInput } from "@/components/hero-number-input";
-import { HeroDateRangeField } from "@/components/hero-date-range-field";
 
 type ChangeType = "price" | "stock" | "discount" | "scheduledDiscount" | "removeDiscount" | "featured";
 type AdjustMethod = "set" | "increase" | "decrease";
@@ -85,55 +80,31 @@ function BulkEditFields({
   datesError?: string;
   onClearDatesError: () => void;
 }) {
-  const template = useAdminTemplate();
   const isPriceLike = type === "price" || ((type === "discount" || type === "scheduledDiscount") && unit === "FIXED");
   const label = valueLabel(type, method, unit);
   // Nothing to enter for this one — it only clears whatever discount a row already has.
   const removeDiscountNote = <p className="bp-muted m-0 text-[12px] leading-6 text-[var(--muted)]">تخفیف (زمان‌بندی‌شده یا فروش ویژه) هر محصول انتخاب‌شده که تخفیف داشته باشد، پاک می‌شود.</p>;
 
-  if (template === "BLUEPRINT") {
-    return (
-      <div className="grid gap-3">
-        <BpSelect label="نوع تغییر" value={type} onChange={(event) => setType(event.target.value as ChangeType)} options={typeOptions as BpSelectOption[]} />
-        {(type === "price" || type === "stock") && (
-          <BpSeg label="روش تغییر" fullWidth value={method} onChange={setMethod} options={(type === "price" ? priceMethodOptions : stockMethodOptions) as BpSegOption<AdjustMethod>[]} />
-        )}
-        {(type === "discount" || type === "scheduledDiscount") && (
-          <BpSeg label="واحد تخفیف" fullWidth value={unit} onChange={setUnit} options={unitOptions as BpSegOption<DiscountUnit>[]} />
-        )}
-        {type === "featured" && (
-          <BpSeg label="نوع تغییر ویژه" fullWidth value={featuredAction} onChange={setFeaturedAction} options={featuredActionOptions as BpSegOption<FeaturedAction>[]} />
-        )}
-        {type === "removeDiscount" ? removeDiscountNote : type === "featured" ? null : (
-          <BpNumberInput name="value" label={label} value={value} onValueChange={(next) => { setValue(next); onClearValueError(); }} isPrice={isPriceLike} showWords={isPriceLike} error={valueError} disabled={isDisabled} />
-        )}
-        {type === "scheduledDiscount" && (
-          <div className="grid grid-cols-2 gap-2">
-            <BpDateTimeField label="شروع تخفیف" value={startsAt} onChange={(next) => { setStartsAt(next); onClearDatesError(); }} error={datesError} isDisabled={isDisabled} required data-field="dates" />
-            <BpDateTimeField label="پایان تخفیف" value={endsAt} onChange={(next) => { setEndsAt(next); onClearDatesError(); }} error={datesError} isDisabled={isDisabled} required />
-          </div>
-        )}
-      </div>
-    );
-  }
-
   return (
     <div className="grid gap-3">
-      <HeroSelectField name="bulk-edit-type" label="نوع تغییر" value={type} onValueChange={(next) => setType(next as ChangeType)} options={typeOptions as HeroSelectOption[]} includeEmptyOption={false} disabled={isDisabled} />
+      <BpSelect label="نوع تغییر" value={type} onChange={(event) => setType(event.target.value as ChangeType)} options={typeOptions as BpSelectOption[]} />
       {(type === "price" || type === "stock") && (
-        <HeroSelectField name="bulk-edit-method" label="روش تغییر" value={method} onValueChange={(next) => setMethod(next as AdjustMethod)} options={(type === "price" ? priceMethodOptions : stockMethodOptions) as HeroSelectOption[]} includeEmptyOption={false} disabled={isDisabled} />
+        <BpSeg label="روش تغییر" fullWidth value={method} onChange={setMethod} options={(type === "price" ? priceMethodOptions : stockMethodOptions) as BpSegOption<AdjustMethod>[]} />
       )}
       {(type === "discount" || type === "scheduledDiscount") && (
-        <HeroSelectField name="bulk-edit-unit" label="واحد تخفیف" value={unit} onValueChange={(next) => setUnit(next as DiscountUnit)} options={unitOptions as HeroSelectOption[]} includeEmptyOption={false} disabled={isDisabled} />
+        <BpSeg label="واحد تخفیف" fullWidth value={unit} onChange={setUnit} options={unitOptions as BpSegOption<DiscountUnit>[]} />
       )}
       {type === "featured" && (
-        <HeroSelectField name="bulk-edit-featured" label="نوع تغییر ویژه" value={featuredAction} onValueChange={(next) => setFeaturedAction(next as FeaturedAction)} options={featuredActionOptions as HeroSelectOption[]} includeEmptyOption={false} disabled={isDisabled} />
+        <BpSeg label="نوع تغییر ویژه" fullWidth value={featuredAction} onChange={setFeaturedAction} options={featuredActionOptions as BpSegOption<FeaturedAction>[]} />
       )}
-      {type === "removeDiscount" || type === "featured" ? null : (
-        <label className={adminLabelClass}>{label}<HeroNumberInput name="value" value={value} onValueChange={(next) => { setValue(next); onClearValueError(); }} isPrice={isPriceLike} error={valueError} disabled={isDisabled} fullWidth variant="secondary" className={adminFieldClass} /></label>
+      {type === "removeDiscount" ? removeDiscountNote : type === "featured" ? null : (
+        <BpNumberInput name="value" label={label} value={value} onValueChange={(next) => { setValue(next); onClearValueError(); }} isPrice={isPriceLike} showWords={isPriceLike} error={valueError} disabled={isDisabled} />
       )}
       {type === "scheduledDiscount" && (
-        <HeroDateRangeField label="بازه زمانی تخفیف" start={startsAt} end={endsAt} withTime onChange={(range) => { setStartsAt(range?.start ?? null); setEndsAt(range?.end ?? null); onClearDatesError(); }} error={datesError} isDisabled={isDisabled} />
+        <div className="grid grid-cols-2 gap-2">
+          <BpDateTimeField label="شروع تخفیف" value={startsAt} onChange={(next) => { setStartsAt(next); onClearDatesError(); }} error={datesError} isDisabled={isDisabled} required data-field="dates" />
+          <BpDateTimeField label="پایان تخفیف" value={endsAt} onChange={(next) => { setEndsAt(next); onClearDatesError(); }} error={datesError} isDisabled={isDisabled} required />
+        </div>
       )}
     </div>
   );
@@ -268,7 +239,6 @@ export type BulkEditProductSummary = { id: string; variantTypeNames: string[] };
 
 /** Sits beside the quick-edit control in the products table's selection toolbar. */
 export function ProductBulkEditButton({ products }: { products: BulkEditProductSummary[] }) {
-  const template = useAdminTemplate();
   const { selected } = useBulkSelection();
   const [open, setOpen] = useState(false);
   const selectedIds = [...selected];
@@ -278,15 +248,9 @@ export function ProductBulkEditButton({ products }: { products: BulkEditProductS
 
   return (
     <>
-      {template === "BLUEPRINT" ? (
-        <BpButton variant="secondary" disabled={disabled} onClick={() => setOpen(true)} className="gap-1.5">
-          <ListChecks size={14} />ویرایش گروهی
-        </BpButton>
-      ) : (
-        <Button type="button" variant="secondary" isDisabled={disabled} onPress={() => setOpen(true)} className="min-h-10 gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 text-xs font-bold text-slate-600">
-          <ListChecks size={14} />ویرایش گروهی
-        </Button>
-      )}
+      <BpButton variant="secondary" disabled={disabled} onClick={() => setOpen(true)} className="gap-1.5">
+        <ListChecks size={14} />ویرایش گروهی
+      </BpButton>
       <ProductBulkEditModal open={open} ids={selectedIds} variantTypeNames={variantTypeNames} variantProductCount={selectedWithVariants.length} onClose={() => setOpen(false)} onCompleted={() => setOpen(false)} />
     </>
   );

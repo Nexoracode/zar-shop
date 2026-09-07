@@ -4,11 +4,7 @@ import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "@heroui/react";
 import { Truck } from "lucide-react";
-import { AdminSaveButton } from "@/components/admin-save-button";
-import { TextField } from "@/components/form-field";
-import { adminLabelClass } from "@/components/admin-ui";
 import { trackingNumberMaxLength } from "@/modules/orders/tracking";
-import { useAdminTemplate } from "@/components/admin/template-context";
 import { BpButton } from "@/components/admin/blueprint/ui/button";
 import { BpInput } from "@/components/admin/blueprint/ui/input";
 
@@ -18,7 +14,6 @@ export function AdminOrderTrackingField({ orderId, initialTrackingNumber }: { or
   const [value, setValue] = useState(initial);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
-  const template = useAdminTemplate();
 
   const trimmed = value.trim();
   const canSubmit = trimmed.length > 0 && trimmed !== initial;
@@ -42,34 +37,12 @@ export function AdminOrderTrackingField({ orderId, initialTrackingNumber }: { or
     }
   }
 
-  if (template === "BLUEPRINT") {
-    return (
-      <form onSubmit={submit} className="bp-frame grid gap-2 p-3 sm:max-w-sm">
-        <span className="bp-muted flex items-center gap-1.5 text-[12px] font-bold"><Truck size={14} />کد رهگیری مرسوله</span>
-        <div className="flex items-end gap-2">
-          <BpInput aria-label="کد رهگیری مرسوله" value={value} maxLength={trackingNumberMaxLength} error={error || undefined} onChange={(event) => { setValue(event.target.value); setError(""); }} dir="ltr" placeholder="کد رهگیری را وارد کنید" disabled={saving} wrapperClassName="flex-1" />
-          <BpButton type="submit" variant="primary" className="field-action" isPending={saving} disabled={!canSubmit}>ثبت</BpButton>
-        </div>
-      </form>
-    );
-  }
-
   return (
-    <form onSubmit={submit} className="grid gap-2 rounded-xl bg-slate-50 px-4 py-3">
-      <span className={`${adminLabelClass} flex items-center gap-1.5 text-xs text-slate-400`}><Truck size={14} />کد رهگیری مرسوله</span>
-      <div className="flex items-start gap-2">
-        <TextField
-          aria-label="کد رهگیری مرسوله"
-          value={value}
-          maxLength={trackingNumberMaxLength}
-          error={error || undefined}
-          onChange={(event) => { setValue(event.target.value); setError(""); }}
-          dir="ltr"
-          placeholder="کد رهگیری را وارد کنید"
-          disabled={saving}
-          wrapperClassName="flex-1"
-        />
-        <AdminSaveButton isSaving={saving} label="ثبت" isDisabled={!canSubmit} className="field-action min-h-9 !h-9 px-3 text-xs" />
+    <form onSubmit={submit} className="bp-frame grid gap-2 p-3 sm:max-w-sm">
+      <span className="bp-muted flex items-center gap-1.5 text-[12px] font-bold"><Truck size={14} />کد رهگیری مرسوله</span>
+      <div className="flex items-end gap-2">
+        <BpInput aria-label="کد رهگیری مرسوله" value={value} maxLength={trackingNumberMaxLength} error={error || undefined} onChange={(event) => { setValue(event.target.value); setError(""); }} dir="ltr" placeholder="کد رهگیری را وارد کنید" disabled={saving} wrapperClassName="flex-1" />
+        <BpButton type="submit" variant="primary" className="field-action" isPending={saving} disabled={!canSubmit}>ثبت</BpButton>
       </div>
     </form>
   );
