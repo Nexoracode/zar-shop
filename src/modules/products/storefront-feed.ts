@@ -1,6 +1,7 @@
 import type { Prisma } from "@generated/prisma/client";
 import { db } from "@/lib/db";
 import { formatMoney } from "@/lib/format";
+import { getCurrentUser } from "@/modules/auth/session";
 import { getGoldPriceForDisplay } from "@/modules/gold/gold-price.service";
 import { calculateDiscountedPrice } from "@/modules/products/discount";
 import { calculateProductPrice } from "@/modules/products/pricing";
@@ -72,6 +73,21 @@ function serializeProductCard(product: SelectedProduct, goldPrice: Prisma.Decima
   };
 }
 
+type FeedCard = StorefrontProductFeed["items"][number];
+
+/** Flags which of the given cards the signed-in shopper has favourited (mutates in place). */
+export async function markFavoriteCards<T extends FeedCard>(items: T[]): Promise<T[]> {
+  if (!items.length) return items;
+  const user = await getCurrentUser();
+  if (!user || user.isGuest) return items;
+  const favorites = new Set(
+    (await db.productFavorite.findMany({ where: { userId: user.id, productId: { in: items.map((item) => item.id) } }, select: { productId: true } }))
+      .map((row) => row.productId),
+  );
+  for (const item of items) item.isFavorite = favorites.has(item.id);
+  return items;
+}
+
 export async function getStorefrontProductFeed(input: { sort: StorefrontProductSort; page: number; pageSize?: number; categoryId?: string; excludeProductId?: string }): Promise<StorefrontProductFeed> {
   const [settings, catalogSettings] = await Promise.all([getGeneralStoreSettings(), getCatalogSettings()]);
   const where: Prisma.ProductWhereInput = {
@@ -101,7 +117,7 @@ export async function getStorefrontProductFeed(input: { sort: StorefrontProductS
   return {
     sort: input.sort,
     pagination: { page, pageSize, totalItems, totalPages },
-    items: products.map((product) => serializeProductCard(product, goldPrice, settings.currency)),
+    items: await markFavoriteCards(products.map((product) => serializeProductCard(product, goldPrice, settings.currency))),
   };
 }
 
@@ -132,7 +148,7 @@ export async function getStorefrontFlashDeals(limit = 12): Promise<StorefrontPro
 
   // A card can still come back without an active cut (e.g. a gold item whose live rate is
   // unavailable), so keep only the ones actually showing a discount — the timer must match.
-  return products.map((product) => serializeProductCard(product, goldPrice, settings.currency)).filter((card) => card.originalPrice);
+  return markFavoriteCards(products.map((product) => serializeProductCard(product, goldPrice, settings.currency)).filter((card) => card.originalPrice));
 }
 
 /**
@@ -159,8 +175,8 @@ export async function getRecentlyViewedProducts(input: { userId: string; exclude
   ]);
   const goldPrice = gold?.pricePerGram18 ?? null;
   const byId = new Map(products.map((product) => [product.id, product]));
-  return orderedIds.flatMap((id) => {
+  return markFavoriteCards(orderedIds.flatMap((id) => {
     const product = byId.get(id);
     return product ? [serializeProductCard(product, goldPrice, settings.currency)] : [];
-  });
+  }));
 }

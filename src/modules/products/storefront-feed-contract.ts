@@ -22,6 +22,8 @@ export type StorefrontProductCardItem = {
   originalPrice?: string;
   /** When this card's discount stops applying, so a page can refresh itself at that moment. */
   discountEndsAt?: string | null;
+  /** Whether the signed-in shopper has this product in their favourites; undefined for guests. */
+  isFavorite?: boolean;
   image?: { src: string; alt: string };
   stock?: number;
   rating?: number;

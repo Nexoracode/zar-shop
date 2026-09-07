@@ -6,6 +6,7 @@ import { parseCategoryAttributeSchema, parseProductAttributes } from "@/modules/
 import { productColorIds } from "@/modules/products/variant-selection";
 import { lineUnitPrice } from "@/modules/products/line-pricing";
 import { matchesTomanPrice, type StorefrontCatalogQuery, type StorefrontCatalogResult } from "@/modules/products/storefront-catalog-contract";
+import { markFavoriteCards } from "@/modules/products/storefront-feed";
 import { getCatalogSettings } from "@/modules/settings/catalog-settings";
 import { baseShippingFee, getCommerceSettings } from "@/modules/settings/commerce-settings";
 import { getGeneralStoreSettings } from "@/modules/settings/general-settings";
@@ -197,7 +198,7 @@ export async function getStorefrontCatalog(query: StorefrontCatalogQuery, catego
       priceRange: availablePrices.length ? { min: Math.floor(Math.min(...availablePrices)), max: Math.ceil(Math.max(...availablePrices)) } : null,
     },
     pagination: { page, pageSize, totalItems, totalPages },
-    items: pageProducts.map(({ product, finalPriceRials, originalPriceRials }) => {
+    items: await markFavoriteCards(pageProducts.map(({ product, finalPriceRials, originalPriceRials }) => {
       const media = product.media[0]?.media;
       return {
         id: product.id,
@@ -217,6 +218,6 @@ export async function getStorefrontCatalog(query: StorefrontCatalogQuery, catego
         rating: mockRating(product.id),
         colors: catalogColorIds(product).flatMap((id) => colorsById.has(id) ? [colorsById.get(id)!] : []),
       };
-    }),
+    })),
   };
 }
