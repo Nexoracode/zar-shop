@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { ChevronLeft, Headset, LifeBuoy, Minus, Plus, Search } from "lucide-react";
-import { faqCategoryMeta, type FaqCategory } from "@/modules/settings/content-settings";
+import { faqCategoryMeta, type FaqCategory } from "@/modules/settings/faq-categories";
 import { normalizeSearchText } from "@/lib/text-search";
 
 export type StorefrontFaqItem = { id: string; question: string; answer: string; category: FaqCategory };

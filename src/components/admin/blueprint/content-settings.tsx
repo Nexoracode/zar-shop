@@ -4,7 +4,8 @@ import { useState, type FormEvent } from "react";
 import { toast } from "@heroui/react";
 import { FileText, GripVertical, Plus, ToggleLeft, ToggleRight, Trash2 } from "lucide-react";
 import { RichTextEditor } from "@/components/rich-text-editor";
-import { faqCategories, faqCategoryMeta, type ContentPageId, type ContentSettings as ContentSettingsData } from "@/modules/settings/content-settings";
+import type { ContentPageId, ContentSettings as ContentSettingsData } from "@/modules/settings/content-settings";
+import { faqCategories, faqCategoryMeta } from "@/modules/settings/faq-categories";
 import { contentFieldLimits } from "@/modules/settings/settings-limits";
 import { BpButton, BpCheckbox, BpInput, BpKicker, BpSelect, BpTag, BpTextarea } from "./ui";
 

@@ -1,7 +1,11 @@
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { sanitizeProductDescription } from "@/modules/products/rich-text";
+import { faqCategories } from "@/modules/settings/faq-categories";
 import { STORE_SETTING_ID } from "@/modules/settings/store-settings";
+
+// Re-exported for server-side importers; client components import from `faq-categories` directly.
+export { faqCategories, faqCategoryMeta, type FaqCategory } from "@/modules/settings/faq-categories";
 
 export const contentPageIds = ["ABOUT", "CONTACT", "PRIVACY", "TERMS", "RETURNS", "SHIPPING"] as const;
 export type ContentPageId = (typeof contentPageIds)[number];
@@ -13,21 +17,6 @@ export const contentPageMeta: Record<ContentPageId, { slug: string; defaultTitle
   TERMS: { slug: "terms", defaultTitle: "شرایط استفاده" },
   RETURNS: { slug: "returns", defaultTitle: "قوانین بازگشت کالا" },
   SHIPPING: { slug: "shipping", defaultTitle: "شیوه ارسال و تحویل" },
-};
-
-/** FAQ topics — the left-hand list on the storefront FAQ page. Fixed, like Digikala's. */
-export const faqCategories = ["GETTING_STARTED", "ORDER", "PAYMENT", "SHIPPING", "RETURNS", "ACCOUNT", "PRODUCTS", "GENERAL"] as const;
-export type FaqCategory = (typeof faqCategories)[number];
-
-export const faqCategoryMeta: Record<FaqCategory, { label: string; description: string }> = {
-  GETTING_STARTED: { label: "شروع کار و راهنمای خرید", description: "ثبت‌نام، ورود و اولین خرید" },
-  ORDER: { label: "ثبت سفارش و پیگیری", description: "مراحل خرید، وضعیت و تغییر سفارش" },
-  PAYMENT: { label: "پرداخت و کیف پول", description: "روش‌های پرداخت، فاکتور و اعتبار" },
-  SHIPPING: { label: "ارسال و تحویل", description: "زمان و هزینهٔ ارسال، رهگیری مرسوله" },
-  RETURNS: { label: "مرجوعی و بازگشت وجه", description: "شرایط مرجوعی و بازگرداندن مبلغ" },
-  ACCOUNT: { label: "حساب کاربری", description: "پروفایل، نشانی‌ها و امنیت حساب" },
-  PRODUCTS: { label: "کالاها و قیمت‌گذاری", description: "اصالت کالا، موجودی و نحوهٔ قیمت‌گذاری" },
-  GENERAL: { label: "سایر پرسش‌ها", description: "موارد عمومی و پشتیبانی" },
 };
 
 const faqSchema = z.object({
