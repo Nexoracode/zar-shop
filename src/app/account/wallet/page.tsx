@@ -1,6 +1,5 @@
 import { Wallet } from "lucide-react";
-import { AccountEmptyState } from "@/components/account-page-ui";
-import { AlertDescription, AlertRoot } from "@/components/hero";
+import { AccountEmptyState, AccountNotice } from "@/components/account-page-ui";
 import { WalletTopupForm } from "@/components/wallet-topup-form";
 import { db } from "@/lib/db";
 import { formatDateTime, formatMoney } from "@/lib/format";
@@ -22,10 +21,10 @@ const typeLabels: Record<WalletTransactionType, string> = {
 };
 
 const topupMessages = {
-  success: { status: "success" as const, text: "پرداخت موفق بود و اعتبار به کیف پول شما اضافه شد." },
-  cancelled: { status: "warning" as const, text: "پرداخت لغو شد؛ مبلغی از حساب شما کسر نشده است." },
-  missing: { status: "danger" as const, text: "اطلاعات پرداخت پیدا نشد." },
-  review: { status: "warning" as const, text: "پرداخت در درگاه تأیید شده و ثبت نهایی آن در حال بررسی خودکار است؛ کمی بعد موجودی به‌روزرسانی می‌شود." },
+  success: { tone: "success" as const, title: "پرداخت موفق بود", text: "مبلغ افزایش اعتبار به کیف پول شما اضافه شد." },
+  cancelled: { tone: "warning" as const, title: "پرداخت ناتمام ماند", text: "این افزایش اعتبار کامل نشد. اگر مبلغی از حساب شما کسر شده باشد، طبق روال درگاه پرداخت به‌صورت خودکار و حداکثر تا ۷۲ ساعت به حسابتان برمی‌گردد." },
+  missing: { tone: "danger" as const, title: "اطلاعات پرداخت پیدا نشد", text: "درخواست افزایش اعتبار متناظر با این پرداخت پیدا نشد. اگر مبلغی کسر شده است، با پشتیبانی تماس بگیرید." },
+  review: { tone: "info" as const, title: "در حال بررسی پرداخت", text: "پرداخت شما در درگاه ثبت شده و تأیید نهایی آن به‌صورت خودکار در حال انجام است؛ تا چند دقیقهٔ دیگر موجودی کیف پول به‌روزرسانی می‌شود. لطفاً دوباره پرداخت نکنید." },
 };
 
 export default async function AccountWalletPage({ searchParams }: { searchParams: Promise<{ topup?: string }> }) {
@@ -47,7 +46,7 @@ export default async function AccountWalletPage({ searchParams }: { searchParams
 
   return (
     <>
-      {topupMessage && <AlertRoot status={topupMessage.status}><AlertDescription>{topupMessage.text}</AlertDescription></AlertRoot>}
+      {topupMessage && <AccountNotice tone={topupMessage.tone} title={topupMessage.title}>{topupMessage.text}</AccountNotice>}
 
       <section className="overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-sm">
         <div className="flex items-center gap-4 p-5 sm:p-6">

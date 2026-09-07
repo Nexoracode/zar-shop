@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { Box, ChevronLeft, Gift, PackageCheck, ShoppingBag, Undo2, Wallet } from "lucide-react";
-import { AlertDescription, AlertRoot } from "@/components/hero";
-import { AccountEmptyState, AccountProductCard } from "@/components/account-page-ui";
+import { AccountEmptyState, AccountNotice, AccountProductCard } from "@/components/account-page-ui";
 import { ReferralShare } from "@/components/referral-share";
 import { env } from "@/lib/env";
 import { formatDate, formatMoney } from "@/lib/format";
@@ -14,10 +13,10 @@ import { ensureReferralCode } from "@/modules/wallet/referral-code";
 import { ensureWallet } from "@/modules/wallet/wallet";
 
 const paymentMessages = {
-  cancelled: { status: "warning" as const, text: "پرداخت لغو شد؛ سفارش تا پایان مهلت پرداخت برای شما نگه داشته می‌شود." },
-  failed: { status: "danger" as const, text: "تأیید پرداخت ناموفق بود. اگر مبلغی کسر شده است، نتیجه را از پشتیبانی پیگیری کنید." },
-  missing: { status: "danger" as const, text: "اطلاعات پرداخت پیدا نشد." },
-  review: { status: "warning" as const, text: "پرداخت در درگاه تأیید شده و ثبت نهایی آن در حال بررسی خودکار است؛ دوباره پرداخت نکنید." },
+  cancelled: { tone: "warning" as const, title: "پرداخت ناتمام ماند", text: "سفارش شما تا پایان مهلت پرداخت نگه داشته می‌شود و می‌توانید دوباره برای پرداخت آن اقدام کنید." },
+  failed: { tone: "danger" as const, title: "تأیید پرداخت ناموفق بود", text: "اگر مبلغی از حساب شما کسر شده است، نتیجه را از پشتیبانی پیگیری کنید." },
+  missing: { tone: "danger" as const, title: "اطلاعات پرداخت پیدا نشد", text: "پرداختی متناظر با این نشانی پیدا نشد. اگر مبلغی کسر شده است، با پشتیبانی تماس بگیرید." },
+  review: { tone: "info" as const, title: "در حال بررسی پرداخت", text: "پرداخت شما در درگاه ثبت شده و تأیید نهایی آن به‌صورت خودکار در حال انجام است؛ لطفاً دوباره پرداخت نکنید." },
 };
 
 // The summary page shows a preview of recent visits; the full history lives at /account/recent-visits.
@@ -61,8 +60,8 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
 
   return (
     <>
-      {paymentMessage && <AlertRoot status={paymentMessage.status}><AlertDescription>{paymentMessage.text}</AlertDescription></AlertRoot>}
-      {user.isGuest && <AlertRoot status="warning"><AlertDescription>برای نگهداری دائمی فعالیت‌ها، ثبت‌نام خود را تکمیل کنید.</AlertDescription></AlertRoot>}
+      {paymentMessage && <AccountNotice tone={paymentMessage.tone} title={paymentMessage.title}>{paymentMessage.text}</AccountNotice>}
+      {user.isGuest && <AccountNotice tone="warning" title="حساب مهمان">برای نگهداری دائمی سفارش‌ها و فعالیت‌ها، ثبت‌نام خود را تکمیل کنید.</AccountNotice>}
 
       <section aria-labelledby="account-order-stats">
         <div className="mb-3 flex items-center justify-between gap-3">
