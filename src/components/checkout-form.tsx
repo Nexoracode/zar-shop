@@ -15,6 +15,10 @@ import { ShippingMethodPicker } from "@/components/shipping-method-picker";
 
 type Quote = { subtotal: number; productDiscount: number; merchandiseAmount: number; promotionDiscount: number; shipping: number; shippingDiscount: number; total: number; walletBalance: number; walletApplied: number; payable: number; applications: Array<{ title: string; code: string | null; discountAmount: number; shippingDiscount: number }> };
 
+/** Shared look for a selectable payment row — a gateway option or the wallet toggle. */
+const optionClass = (selected: boolean) =>
+  `h-auto min-h-20 w-full justify-start gap-3 rounded-xl border p-4 text-right ${selected ? "border-[var(--brand-primary)] bg-[var(--brand-primary)]/5 ring-1 ring-[var(--brand-primary)]" : "border-[var(--border)]"}`;
+
 export function CheckoutForm({ settings, paymentMethods, currency, itemCount, initialQuote, initialAddresses, user, wallet }: { settings: CommerceSettings; paymentMethods: StorefrontPaymentMethod[]; currency: "IRR" | "IRT"; itemCount: number; initialQuote: Quote; initialAddresses: StorefrontAddress[]; user: { firstName: string | null; lastName: string | null; phone: string | null }; wallet: { balance: number; checkoutEnabled: boolean } }) {
   const formRef = useRef<HTMLFormElement>(null);
   const [paymentProvider, setPaymentProvider] = useState(paymentMethods[0]?.id ?? "");
@@ -94,27 +98,64 @@ export function CheckoutForm({ settings, paymentMethods, currency, itemCount, in
           onSelect={(methodId) => { setShippingMethodId(methodId); void refreshQuote(couponCode, methodId); }}
         />
 
-        <Card variant="secondary" className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-sm"><Card.Content className="p-5 sm:p-6"><div className="mb-5 flex items-start gap-3"><span className="grid size-10 shrink-0 place-items-center rounded-full bg-[var(--brand-primary)]/10 text-[var(--brand-primary)]"><CreditCard size={20} /></span><div><h2 className="m-0 text-base font-bold">روش پرداخت</h2><p className="mb-0 mt-1 text-xs text-[var(--muted)]">پرداخت از طریق درگاه امن بانکی انجام می‌شود.</p></div></div><input type="hidden" name="paymentProvider" value={paymentProvider} />{paymentMethods.length ? <div className="grid gap-3">{paymentMethods.map((method) => <Button key={method.id} type="button" variant="secondary" onPress={() => setPaymentProvider(method.id)} className={`h-auto min-h-20 justify-start gap-3 rounded-xl border p-4 text-right ${paymentProvider === method.id ? "border-[var(--brand-primary)] bg-[var(--brand-primary)]/5 ring-1 ring-[var(--brand-primary)]" : "border-[var(--border)]"}`}><span className="grid size-11 shrink-0 place-items-center rounded-xl bg-[var(--surface-secondary)] text-[var(--brand-primary)]"><CreditCard size={22} /></span><span><strong className="block">{method.name}</strong><small className="mt-1 block font-normal text-[var(--muted)]">{method.description}</small></span>{method.sandbox && <span className="mr-auto rounded-full bg-[color-mix(in_srgb,var(--warning)_14%,transparent)] px-2 py-1 text-[10px] font-bold text-[var(--warning)]">آزمایشی</span>}{paymentProvider === method.id && <Check size={18} className="text-[var(--brand-primary)]" />}</Button>)}</div> : <Alert status="warning"><Alert.Description>هنوز هیچ درگاه پرداختی برای فروشگاه پیکربندی نشده است.</Alert.Description></Alert>}</Card.Content></Card>
+        <Card variant="secondary" className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-sm">
+          <Card.Content className="p-5 sm:p-6">
+            <div className="mb-5 flex items-start gap-3">
+              <span className="grid size-10 shrink-0 place-items-center rounded-full bg-[var(--brand-primary)]/10 text-[var(--brand-primary)]"><CreditCard size={20} /></span>
+              <div>
+                <h2 className="m-0 text-base font-bold">روش پرداخت</h2>
+                <p className="mb-0 mt-1 text-xs text-[var(--muted)]">{walletAvailable ? "می‌توانید بخشی یا همهٔ مبلغ را با کیف پول بپردازید؛ باقی‌مانده از درگاه امن بانکی پرداخت می‌شود." : "پرداخت از طریق درگاه امن بانکی انجام می‌شود."}</p>
+              </div>
+            </div>
+            <input type="hidden" name="paymentProvider" value={paymentProvider} />
 
-        {walletAvailable && (
-          <Card variant="secondary" className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-sm">
-            <Card.Content className="p-5 sm:p-6">
-              <Button
-                type="button"
-                variant="secondary"
-                onPress={() => { const next = !useWallet; setUseWallet(next); void refreshQuote(couponCode, shippingMethodId, next); }}
-                className={`h-auto min-h-20 w-full justify-start gap-3 rounded-xl border p-4 text-right ${useWallet ? "border-[var(--brand-primary)] bg-[var(--brand-primary)]/5 ring-1 ring-[var(--brand-primary)]" : "border-[var(--border)]"}`}
-              >
-                <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-[var(--surface-secondary)] text-[var(--brand-primary)]"><Wallet size={22} /></span>
-                <span className="min-w-0 flex-1">
-                  <strong className="block">استفاده از اعتبار کیف پول</strong>
-                  <small className="mt-1 block font-normal text-[var(--muted)]">موجودی: {formatMoney(wallet.balance, currency)}</small>
-                </span>
-                {useWallet && <Check size={18} className="shrink-0 text-[var(--brand-primary)]" />}
-              </Button>
-            </Card.Content>
-          </Card>
-        )}
+            <div className="grid gap-3">
+              {walletAvailable && (
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onPress={() => { const next = !useWallet; setUseWallet(next); void refreshQuote(couponCode, shippingMethodId, next); }}
+                  className={optionClass(useWallet)}
+                >
+                  <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-[var(--surface-secondary)] text-[var(--brand-primary)]"><Wallet size={22} /></span>
+                  <span className="min-w-0 flex-1">
+                    <strong className="block">اعتبار کیف پول</strong>
+                    <small className="mt-1 block font-normal text-[var(--muted)]">موجودی: {formatMoney(wallet.balance, currency)}{useWallet && quote.walletApplied > 0 ? ` · ${formatMoney(quote.walletApplied, currency)} از این سفارش کسر می‌شود` : ""}</small>
+                  </span>
+                  {useWallet && <Check size={18} className="shrink-0 text-[var(--brand-primary)]" />}
+                </Button>
+              )}
+
+              {quote.payable <= 0 && walletAvailable && useWallet ? (
+                <p className="m-0 flex items-center gap-2 rounded-xl border border-[var(--border)] bg-[var(--surface-secondary)]/45 p-4 text-xs font-bold text-[var(--success)]">
+                  <Check size={16} className="shrink-0" />کل مبلغ این سفارش از اعتبار کیف پول پرداخت می‌شود و نیازی به درگاه بانکی نیست.
+                </p>
+              ) : paymentMethods.length ? (
+                <>
+                  {walletAvailable && useWallet && quote.walletApplied > 0 && (
+                    <p className="m-0 px-1 pt-1 text-[11px] font-bold text-[var(--muted)]">باقی‌ماندهٔ مبلغ ({formatMoney(quote.payable, currency)}) از این درگاه پرداخت می‌شود:</p>
+                  )}
+                  {paymentMethods.map((method) => (
+                    <Button
+                      key={method.id}
+                      type="button"
+                      variant="secondary"
+                      onPress={() => setPaymentProvider(method.id)}
+                      className={optionClass(paymentProvider === method.id)}
+                    >
+                      <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-[var(--surface-secondary)] text-[var(--brand-primary)]"><CreditCard size={22} /></span>
+                      <span><strong className="block">{method.name}</strong><small className="mt-1 block font-normal text-[var(--muted)]">{method.description}</small></span>
+                      {method.sandbox && <span className="mr-auto rounded-full bg-[color-mix(in_srgb,var(--warning)_14%,transparent)] px-2 py-1 text-[10px] font-bold text-[var(--warning)]">آزمایشی</span>}
+                      {paymentProvider === method.id && <Check size={18} className="text-[var(--brand-primary)]" />}
+                    </Button>
+                  ))}
+                </>
+              ) : (
+                <Alert status="warning"><Alert.Description>هنوز هیچ درگاه پرداختی برای فروشگاه پیکربندی نشده است.</Alert.Description></Alert>
+              )}
+            </div>
+          </Card.Content>
+        </Card>
 
         <Card variant="secondary" className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-sm"><Card.Content className="p-5 sm:p-6"><div className="mb-4 flex items-center gap-2"><BadgePercent size={19} className="text-[var(--brand-primary)]" /><h2 className="m-0 text-base font-bold">کد تخفیف</h2></div><div className="relative w-full sm:w-[46%]"><TextField name="couponCode" aria-label="کد تخفیف" value={couponCode} onChange={(event) => { setCouponCode(event.target.value.toUpperCase()); setCouponMessage(""); setCouponError(""); }} dir="rtl" maxLength={promotionFieldLimits.code} reserveMessage={false} controlClassName="pl-24 text-right uppercase placeholder:text-right" placeholder="کد تخفیف را وارد کنید" />{couponHasResult ? <Button type="button" isIconOnly variant="ghost" isDisabled={checkingCoupon} aria-label="حذف کد تخفیف" onPress={clearCoupon} className="absolute left-2 top-1/2 z-10 size-8 min-h-8 min-w-8 -translate-y-1/2 bg-transparent text-[var(--muted)] hover:bg-transparent hover:text-[var(--danger)] data-[hovered=true]:bg-transparent"><X size={15} /></Button> : <Button type="button" variant="ghost" isPending={checkingCoupon} isDisabled={!couponCode.trim()} onPress={() => void refreshQuote()} className="absolute left-2 top-1/2 z-10 h-8 min-h-8 -translate-y-1/2 bg-transparent px-2 text-sm font-medium text-[var(--brand-primary)] hover:bg-transparent data-[disabled=true]:cursor-not-allowed data-[hovered=true]:bg-transparent">بررسی</Button>}</div>{couponMessage && <p className="mb-0 mt-3 flex items-center gap-2 text-xs font-bold text-[var(--success)]"><Check size={15} />{couponMessage}</p>}{couponError && <p className="mb-0 mt-3 text-xs font-bold text-[var(--danger)]">{couponError}</p>}<p className="mb-0 mt-3 text-[11px] leading-6 text-[var(--muted)]">کد تخفیف هنگام ثبت نهایی سفارش دوباره در سرور اعتبارسنجی می‌شود.</p></Card.Content></Card>
       </div>
