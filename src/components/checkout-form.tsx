@@ -17,7 +17,7 @@ type Quote = { subtotal: number; productDiscount: number; merchandiseAmount: num
 
 /** Shared look for a selectable payment row — a gateway option or the wallet toggle. */
 const optionClass = (selected: boolean) =>
-  `h-auto min-h-20 w-full justify-start gap-3 rounded-xl border p-4 text-right ${selected ? "border-[var(--brand-primary)] bg-[var(--brand-primary)]/5 ring-1 ring-[var(--brand-primary)]" : "border-[var(--border)]"}`;
+  `h-auto min-h-0 w-full items-center justify-start gap-2.5 rounded-lg border px-3 py-2.5 text-right ${selected ? "border-[var(--brand-primary)] bg-[var(--brand-primary)]/5" : "border-[var(--border)]"}`;
 
 export function CheckoutForm({ settings, paymentMethods, currency, itemCount, initialQuote, initialAddresses, user, wallet }: { settings: CommerceSettings; paymentMethods: StorefrontPaymentMethod[]; currency: "IRR" | "IRT"; itemCount: number; initialQuote: Quote; initialAddresses: StorefrontAddress[]; user: { firstName: string | null; lastName: string | null; phone: string | null }; wallet: { balance: number; checkoutEnabled: boolean } }) {
   const formRef = useRef<HTMLFormElement>(null);
@@ -100,8 +100,8 @@ export function CheckoutForm({ settings, paymentMethods, currency, itemCount, in
 
         <Card variant="secondary" className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-sm">
           <Card.Content className="p-5 sm:p-6">
-            <div className="mb-5 flex items-start gap-3">
-              <span className="grid size-10 shrink-0 place-items-center rounded-full bg-[var(--brand-primary)]/10 text-[var(--brand-primary)]"><CreditCard size={20} /></span>
+            <div className="mb-4 flex items-start gap-3">
+              <span className="grid size-9 shrink-0 place-items-center rounded-full bg-[var(--brand-primary)]/10 text-[var(--brand-primary)]"><CreditCard size={18} /></span>
               <div>
                 <h2 className="m-0 text-base font-bold">روش پرداخت</h2>
                 <p className="mb-0 mt-1 text-xs text-[var(--muted)]">{walletAvailable ? "می‌توانید بخشی یا همهٔ مبلغ را با کیف پول بپردازید؛ باقی‌مانده از درگاه امن بانکی پرداخت می‌شود." : "پرداخت از طریق درگاه امن بانکی انجام می‌شود."}</p>
@@ -109,7 +109,7 @@ export function CheckoutForm({ settings, paymentMethods, currency, itemCount, in
             </div>
             <input type="hidden" name="paymentProvider" value={paymentProvider} />
 
-            <div className="grid gap-3">
+            <div className="grid gap-2">
               {walletAvailable && (
                 <Button
                   type="button"
@@ -117,18 +117,18 @@ export function CheckoutForm({ settings, paymentMethods, currency, itemCount, in
                   onPress={() => { const next = !useWallet; setUseWallet(next); void refreshQuote(couponCode, shippingMethodId, next); }}
                   className={optionClass(useWallet)}
                 >
-                  <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-[var(--surface-secondary)] text-[var(--brand-primary)]"><Wallet size={22} /></span>
+                  <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-[var(--surface-secondary)] text-[var(--brand-primary)]"><Wallet size={17} /></span>
                   <span className="min-w-0 flex-1">
-                    <strong className="block">اعتبار کیف پول</strong>
-                    <small className="mt-1 block font-normal text-[var(--muted)]">موجودی: {formatMoney(wallet.balance, currency)}{useWallet && quote.walletApplied > 0 ? ` · ${formatMoney(quote.walletApplied, currency)} از این سفارش کسر می‌شود` : ""}</small>
+                    <strong className="block text-[13px]">اعتبار کیف پول</strong>
+                    <small className="mt-0.5 block text-[11px] font-normal text-[var(--muted)]">موجودی: {formatMoney(wallet.balance, currency)}{useWallet && quote.walletApplied > 0 ? ` · ${formatMoney(quote.walletApplied, currency)} کسر می‌شود` : ""}</small>
                   </span>
-                  {useWallet && <Check size={18} className="shrink-0 text-[var(--brand-primary)]" />}
+                  {useWallet && <Check size={16} className="shrink-0 text-[var(--brand-primary)]" />}
                 </Button>
               )}
 
               {quote.payable <= 0 && walletAvailable && useWallet ? (
-                <p className="m-0 flex items-center gap-2 rounded-xl border border-[var(--border)] bg-[var(--surface-secondary)]/45 p-4 text-xs font-bold text-[var(--success)]">
-                  <Check size={16} className="shrink-0" />کل مبلغ این سفارش از اعتبار کیف پول پرداخت می‌شود و نیازی به درگاه بانکی نیست.
+                <p className="m-0 flex items-center gap-2 rounded-lg border border-[var(--border)] bg-[var(--surface-secondary)]/45 px-3 py-2.5 text-[11px] font-bold text-[var(--success)]">
+                  <Check size={15} className="shrink-0" />کل مبلغ این سفارش از اعتبار کیف پول پرداخت می‌شود و نیازی به درگاه بانکی نیست.
                 </p>
               ) : paymentMethods.length ? (
                 <>
@@ -143,10 +143,10 @@ export function CheckoutForm({ settings, paymentMethods, currency, itemCount, in
                       onPress={() => setPaymentProvider(method.id)}
                       className={optionClass(paymentProvider === method.id)}
                     >
-                      <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-[var(--surface-secondary)] text-[var(--brand-primary)]"><CreditCard size={22} /></span>
-                      <span><strong className="block">{method.name}</strong><small className="mt-1 block font-normal text-[var(--muted)]">{method.description}</small></span>
-                      {method.sandbox && <span className="mr-auto rounded-full bg-[color-mix(in_srgb,var(--warning)_14%,transparent)] px-2 py-1 text-[10px] font-bold text-[var(--warning)]">آزمایشی</span>}
-                      {paymentProvider === method.id && <Check size={18} className="text-[var(--brand-primary)]" />}
+                      <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-[var(--surface-secondary)] text-[var(--brand-primary)]"><CreditCard size={17} /></span>
+                      <span className="min-w-0 flex-1"><strong className="block text-[13px]">{method.name}</strong><small className="mt-0.5 block text-[11px] font-normal text-[var(--muted)]">{method.description}</small></span>
+                      {method.sandbox && <span className="shrink-0 rounded-full bg-[color-mix(in_srgb,var(--warning)_14%,transparent)] px-2 py-0.5 text-[10px] font-bold text-[var(--warning)]">آزمایشی</span>}
+                      {paymentProvider === method.id && <Check size={16} className="shrink-0 text-[var(--brand-primary)]" />}
                     </Button>
                   ))}
                 </>
