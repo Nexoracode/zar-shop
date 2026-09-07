@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Button } from "@heroui/react";
-import { Bell, CircleUserRound, Clock3, Headset, Heart, LogOut, MapPin, MessageCircle, Pencil, ShoppingBag, Sparkles, Undo2, UserRound, WalletCards, type LucideIcon } from "lucide-react";
+import { Bell, CircleUserRound, Clock3, Headset, Heart, LogOut, MapPin, MessageCircle, Pencil, ShoppingBag, Undo2, UserRound, type LucideIcon } from "lucide-react";
 
 type Item = { href: string; label: string; icon: LucideIcon };
 
@@ -28,10 +28,6 @@ export function AccountSidebar({ user }: { user: { name: string; phone: string }
         <div className="flex min-h-20 items-center gap-3 border-b border-[var(--border)] px-5 py-4">
           <div className="min-w-0 flex-1"><strong className="block truncate text-sm font-bold">{user.name}</strong><span className="mt-1 block text-[11px] text-[var(--muted)]" dir="ltr">{user.phone}</span></div>
           <Link href="/account/profile" aria-label="ویرایش اطلاعات حساب" className="grid size-9 place-items-center text-[var(--brand-primary)]"><Pencil size={19} /></Link>
-        </div>
-        <div className="grid border-b border-[var(--border)] px-5 py-2 text-xs">
-          <div className="flex min-h-14 items-center gap-3"><WalletCards size={19} /><strong>کیف پول</strong><span className="mr-auto text-[var(--muted)]">به‌زودی</span></div>
-          <div className="flex min-h-14 items-center gap-3 border-t border-[var(--border)]"><Sparkles size={19} className="text-[var(--brand-primary)]" /><strong>باشگاه مشتریان</strong><span className="mr-auto text-[var(--muted)]">۰ امتیاز</span></div>
         </div>
         <nav aria-label="منوی حساب کاربری" className="flex gap-2 overflow-x-auto px-2 lg:block lg:overflow-visible lg:px-0">
           {items.map(({ href, label, icon: Icon }) => {
