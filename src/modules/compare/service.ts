@@ -56,6 +56,26 @@ const compareSelect = {
   media: { orderBy: { position: "asc" as const }, take: 1, select: { media: { select: { type: true, url: true, alt: true } } } },
 } satisfies Prisma.ProductSelect;
 
+type CompareProductRow = Prisma.ProductGetPayload<{ select: typeof compareSelect }>;
+
+/** The sale price of a product, mirroring the storefront card maths. */
+function priceOf(product: CompareProductRow, goldRate: Prisma.Decimal | null) {
+  const base = product.fixedPrice
+    ? Number(product.fixedPrice)
+    : product.storeIndustry === "GOLD" && goldRate !== null
+      ? calculateProductPrice({
+        goldPricePerGram18: goldRate,
+        weightGrams: product.weightGrams,
+        purity: product.purity,
+        makingFeeType: product.makingFeeType,
+        makingFeeValue: product.makingFeeValue,
+        profitPercent: product.profitPercent,
+        taxPercent: product.taxPercent,
+      }).total
+      : null;
+  return base === null ? null : calculateDiscountedPrice(base, product);
+}
+
 /**
  * The side-by-side data for `/compare`. Only ACTIVE products of the current store industry are
  * returned, so a stale id from localStorage simply drops out. Order follows `ids`.
@@ -81,20 +101,7 @@ export async function getComparison(ids: string[]): Promise<ComparisonResult> {
     const product = byId.get(id);
     if (!product) return [];
 
-    const base = product.fixedPrice
-      ? Number(product.fixedPrice)
-      : product.storeIndustry === "GOLD" && goldRate !== null
-        ? calculateProductPrice({
-          goldPricePerGram18: goldRate,
-          weightGrams: product.weightGrams,
-          purity: product.purity,
-          makingFeeType: product.makingFeeType,
-          makingFeeValue: product.makingFeeValue,
-          profitPercent: product.profitPercent,
-          taxPercent: product.taxPercent,
-        }).total
-        : null;
-    const priced = base === null ? null : calculateDiscountedPrice(base, product);
+    const priced = priceOf(product, goldRate);
 
     const groups = buildProductAttributeGroups(product.category?.attributeSchema, product.attributes);
     const attributes: CompareAttributeRow[] = groups.flatMap((group) => group.attributes.map((attribute) => ({ name: attribute.name, values: attribute.values })));
@@ -125,4 +132,66 @@ export async function getComparison(ids: string[]): Promise<ComparisonResult> {
   });
 
   return { products: compareProducts, attributeNames };
+}
+
+export type ComparePickerItem = {
+  id: string;
+  slug: string;
+  name: string;
+  image: string | null;
+  categoryId: string | null;
+  categoryName: string | null;
+  price: string | null;
+  discountPercent: number | null;
+  onSale: boolean;
+  /** A couple of headline specs, shown as chips on the picker card. */
+  chips: string[];
+};
+
+/**
+ * Products for the "انتخاب کالا برای مقایسه" picker. Once the shopper has a product in the list,
+ * `categoryId` is passed so only comparable products show; before that, the most-ordered products
+ * lead. `excludeIds` drops whatever is already picked.
+ */
+export async function getComparePickerProducts(input: { q?: string; categoryId?: string | null; excludeIds?: string[]; limit?: number }): Promise<{ items: ComparePickerItem[]; total: number }> {
+  const settings = await getGeneralStoreSettings();
+  const limit = Math.min(Math.max(input.limit ?? 24, 1), 48);
+  const query = input.q?.trim();
+  const where: Prisma.ProductWhereInput = {
+    status: "ACTIVE",
+    storeIndustry: settings.industry,
+    ...(input.categoryId ? { categoryId: input.categoryId } : {}),
+    ...(query ? { OR: [{ name: { contains: query } }, { sku: { contains: query } }] } : {}),
+    ...(input.excludeIds?.length ? { id: { notIn: input.excludeIds } } : {}),
+  };
+
+  const [products, total, gold] = await Promise.all([
+    db.product.findMany({ where, select: compareSelect, orderBy: [{ orderItems: { _count: "desc" } }, { createdAt: "desc" }], take: limit }),
+    db.product.count({ where }),
+    settings.industry === "GOLD" ? getGoldPriceForDisplay() : Promise.resolve(null),
+  ]);
+  const goldRate = gold?.pricePerGram18 ?? null;
+
+  const items: ComparePickerItem[] = products.map((product) => {
+    const priced = priceOf(product, goldRate);
+    const groups = buildProductAttributeGroups(product.category?.attributeSchema, product.attributes);
+    const attributes = groups.flatMap((group) => group.attributes);
+    const highlighted = attributes.filter((attribute) => attribute.important);
+    const chips = (highlighted.length ? highlighted : attributes).slice(0, 3).map((attribute) => attribute.values.join("، "));
+    const media = product.media[0]?.media;
+    return {
+      id: product.id,
+      slug: product.slug,
+      name: product.name,
+      image: media?.type === "IMAGE" ? media.url : null,
+      categoryId: product.categoryId,
+      categoryName: product.category?.name ?? null,
+      price: priced ? formatMoney(priced.finalPrice, settings.currency) : null,
+      discountPercent: priced?.isActive && priced.originalPrice > 0 ? Math.round((priced.discountAmount / priced.originalPrice) * 100) : null,
+      onSale: Boolean(priced?.isActive),
+      chips,
+    };
+  });
+
+  return { items, total };
 }
