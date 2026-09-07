@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Box, ChevronLeft, PackageCheck, ShoppingBag, Undo2 } from "lucide-react";
-import { AlertDescription, AlertRoot, Card } from "@/components/hero";
+import { AlertDescription, AlertRoot } from "@/components/hero";
 import { AccountEmptyState, AccountProductCard } from "@/components/account-page-ui";
 import { formatDate } from "@/lib/format";
 import { db } from "@/lib/db";
@@ -54,19 +54,18 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
             مشاهده سفارش‌ها<ChevronLeft size={15} />
           </Link>
         </div>
-        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
           {stats.map(({ href, value, label, icon: Icon }) => (
-            <Link key={label} href={href} className="group">
-              <Card
-                variant="secondary"
-                className="h-full rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 shadow-sm transition group-hover:border-[var(--brand-primary)]"
-              >
-                <span className="grid size-9 place-items-center rounded-full bg-[var(--brand-primary)]/10 text-[var(--brand-primary)]">
-                  <Icon size={18} />
-                </span>
-                <strong className="mt-3 block text-xl font-bold">{value.toLocaleString("fa-IR")}</strong>
-                <span className="mt-1 block text-xs text-[var(--muted)]">{label}</span>
-              </Card>
+            <Link
+              key={label}
+              href={href}
+              className="flex items-center gap-2.5 rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 py-2.5 transition hover:border-[var(--brand-primary)]"
+            >
+              <Icon size={16} className="shrink-0 text-[var(--brand-primary)]" />
+              <span className="min-w-0">
+                <strong className="block text-sm font-bold leading-5">{value.toLocaleString("fa-IR")}</strong>
+                <span className="block truncate text-[11px] text-[var(--muted)]">{label}</span>
+              </span>
             </Link>
           ))}
         </div>

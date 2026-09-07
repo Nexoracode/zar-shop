@@ -5,9 +5,9 @@ export default function AccountLoading() {
     <div className="grid gap-6" aria-busy="true">
       <section className="grid gap-3">
         <div className="h-5 w-32 animate-pulse rounded bg-[var(--surface)]" />
-        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
           {Array.from({ length: 4 }).map((_, index) => (
-            <div key={index} className="h-28 animate-pulse rounded-2xl border border-[var(--border)] bg-[var(--surface)]" />
+            <div key={index} className="h-[52px] animate-pulse rounded-xl border border-[var(--border)] bg-[var(--surface)]" />
           ))}
         </div>
       </section>
