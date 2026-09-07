@@ -1,9 +1,11 @@
 "use client";
 
 import { useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button, Checkbox, toast } from "@heroui/react";
-import { FileVideo, ImageIcon, Paperclip, RotateCcw, Send, X } from "lucide-react";
+import { CreditCard, FileVideo, ImageIcon, Paperclip, RotateCcw, Send, TriangleAlert, Wallet, X } from "lucide-react";
+import type { RefundMethod } from "@generated/prisma/enums";
 import { HeroSelectField } from "@/components/hero-select-field";
 import { TextAreaField } from "@/components/form-field";
 import { returnAttachmentAccept, returnAttachmentExtensions, returnLimits } from "@/modules/orders/return-limits";
@@ -12,7 +14,7 @@ export type ReturnableItem = { id: string; name: string; returnable: number };
 
 type LineState = { selected: boolean; quantity: number };
 
-export function AccountReturnRequestForm({ orderId, items, deadlineLabel }: { orderId: string; items: ReturnableItem[]; deadlineLabel: string }) {
+export function AccountReturnRequestForm({ orderId, items, deadlineLabel, refundMethod, refundCardMasked }: { orderId: string; items: ReturnableItem[]; deadlineLabel: string; refundMethod: RefundMethod; refundCardMasked: string | null }) {
   const router = useRouter();
   const [lines, setLines] = useState<Record<string, LineState>>(() =>
     Object.fromEntries(items.map((item) => [item.id, { selected: false, quantity: 1 }])),
@@ -24,6 +26,7 @@ export function AccountReturnRequestForm({ orderId, items, deadlineLabel }: { or
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const selectedCount = useMemo(() => Object.values(lines).filter((line) => line.selected).length, [lines]);
+  const missingCard = refundMethod === "BANK_CARD" && !refundCardMasked;
 
   function setLine(id: string, patch: Partial<LineState>) {
     setLines((current) => ({ ...current, [id]: { ...current[id], ...patch } }));
@@ -85,6 +88,20 @@ export function AccountReturnRequestForm({ orderId, items, deadlineLabel }: { or
     <div className="rounded-xl border border-[var(--border)] p-4 sm:p-5">
       <div className="flex items-center gap-2"><RotateCcw size={18} className="text-[var(--brand-primary)]" /><strong className="text-sm">درخواست مرجوعی کالا</strong></div>
       <p className="m-0 mt-1 text-xs leading-6 text-[var(--muted)]">مهلت ثبت درخواست تا {deadlineLabel}. کالاهایی را که می‌خواهید مرجوع کنید انتخاب کنید، دلیل را بنویسید و در صورت نیاز عکس یا فیلم کالا را پیوست کنید.</p>
+
+      {missingCard ? (
+        <p className="m-0 mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 rounded-lg border border-[var(--danger)] bg-[color-mix(in_srgb,var(--danger)_8%,white)] p-3 text-xs leading-6 text-[var(--danger)]">
+          <TriangleAlert size={15} className="shrink-0" />
+          روش بازگرداندن وجه شما «کارت بانکی» است ولی کارتی ثبت نشده.
+          <Link href="/account/profile" className="font-bold underline">ثبت کارت در اطلاعات حساب</Link>
+        </p>
+      ) : (
+        <p className="m-0 mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 rounded-lg bg-[var(--surface-secondary)] p-3 text-[11px] leading-6 text-[var(--muted)]">
+          {refundMethod === "BANK_CARD" ? <CreditCard size={14} className="text-[var(--brand-primary)]" /> : <Wallet size={14} className="text-[var(--brand-primary)]" />}
+          <span className="font-bold text-[var(--foreground)]">پس از تأیید مرجوعی، وجه به {refundMethod === "BANK_CARD" ? <>کارت <span dir="ltr">{refundCardMasked}</span></> : "کیف پول شما"} بازگردانده می‌شود.</span>
+          <Link href="/account/profile" className="font-bold text-[var(--brand-primary)] hover:underline">تغییر روش</Link>
+        </p>
+      )}
 
       <ul className="m-0 mt-4 grid list-none gap-2 p-0">
         {items.map((item) => {
@@ -161,7 +178,7 @@ export function AccountReturnRequestForm({ orderId, items, deadlineLabel }: { or
 
       <div className="mt-3 flex items-center justify-between gap-3">
         <span className="text-[11px] text-[var(--muted)]">{selectedCount.toLocaleString("fa-IR")} کالا · {files.length.toLocaleString("fa-IR")} فایل</span>
-        <Button type="button" size="sm" isPending={saving} onPress={() => void submit()} className="gap-1.5 bg-[var(--brand-primary)] text-[var(--brand-primary-foreground)]">
+        <Button type="button" size="sm" isPending={saving} isDisabled={missingCard} onPress={() => void submit()} className="gap-1.5 bg-[var(--brand-primary)] text-[var(--brand-primary-foreground)]">
           {!saving && <Send size={15} />}ثبت درخواست مرجوعی
         </Button>
       </div>

@@ -1,7 +1,8 @@
 import Link from "next/link";
-import { Undo2 } from "lucide-react";
+import { CreditCard, Undo2, Wallet } from "lucide-react";
 import { AccountEmptyState } from "@/components/account-page-ui";
-import { formatDate, formatRelativeFa } from "@/lib/format";
+import { maskCardNumber } from "@/modules/account/bank-card";
+import { formatDate, formatMoney, formatRelativeFa } from "@/lib/format";
 import { requireUser } from "@/modules/auth/session";
 import { returnStatusLabels, returnStatusTones } from "@/modules/admin/labels";
 import { StatusBadge } from "@/components/status-badge";
@@ -51,6 +52,17 @@ export default async function AccountReturnsPage() {
 
               <p className="m-0 mt-3 whitespace-pre-wrap break-words rounded-lg bg-[var(--surface-secondary)] p-3 text-xs leading-6 text-[var(--muted)]">
                 <span className="font-bold text-[var(--foreground)]">دلیل شما: </span>{request.reason}
+              </p>
+
+              <p className="m-0 mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-[var(--muted)]">
+                {request.refundMethod === "BANK_CARD" ? <CreditCard size={13} className="text-[var(--brand-primary)]" /> : <Wallet size={13} className="text-[var(--brand-primary)]" />}
+                <span className="font-bold text-[var(--foreground)]">بازگرداندن وجه:</span>
+                {request.refundMethod === "BANK_CARD"
+                  ? <span dir="ltr">{request.refundCardNumber ? maskCardNumber(request.refundCardNumber) : "کارت بانکی"}</span>
+                  : <span>کیف پول</span>}
+                {request.refundedAt && request.refundAmount != null && (
+                  <span className="text-[var(--success)]">· {formatMoney(request.refundAmount.toString())} در {formatDate(request.refundedAt)} بازگردانده شد</span>
+                )}
               </p>
 
               {request.attachments.length > 0 && (

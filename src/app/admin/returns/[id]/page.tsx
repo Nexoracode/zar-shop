@@ -1,10 +1,11 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ClipboardList, ListChecks, Paperclip, ShoppingBag, UserRound } from "lucide-react";
+import { ClipboardList, CreditCard, ListChecks, Paperclip, ShoppingBag, UserRound, Wallet } from "lucide-react";
 import { AdminPageHeader } from "@/components/admin-ui";
 import { ReturnStatusPanel } from "@/components/admin/blueprint/return-status-panel";
 import { BpTable, BpTd, BpTh } from "@/components/admin/blueprint/ui/table";
 import { db } from "@/lib/db";
+import { formatCardNumber, detectBankName, formatSheba } from "@/modules/account/bank-card";
 import { formatDateTime, formatMoney } from "@/lib/format";
 import { requirePermission } from "@/modules/auth/session";
 import { returnAdminNoteMaxLength } from "@/modules/orders/returns";
@@ -31,7 +32,7 @@ export default async function AdminReturnDetailPage({ params }: Context) {
         select: { id: true, orderNumber: true, total: true, createdAt: true },
       },
       items: {
-        include: { orderItem: { select: { name: true, sku: true, quantity: true, total: true } } },
+        include: { orderItem: { select: { name: true, sku: true, quantity: true, total: true, unitPrice: true } } },
       },
       attachments: { select: { id: true, url: true, mimeType: true, originalName: true }, orderBy: { createdAt: "asc" } },
       user: { select: { firstName: true, lastName: true, phone: true, email: true } },
@@ -41,6 +42,10 @@ export default async function AdminReturnDetailPage({ params }: Context) {
 
   const { order } = returnRequest;
   const customerName = [returnRequest.user.firstName, returnRequest.user.lastName].filter(Boolean).join(" ") || "کاربر بدون نام";
+
+  const computedRefund = returnRequest.items.reduce((sum, line) => sum + Math.min(line.quantity, line.orderItem.quantity) * Number(line.orderItem.unitPrice), 0);
+  const refundAmount = returnRequest.refundAmount != null ? Number(returnRequest.refundAmount) : computedRefund;
+  const isCardRefund = returnRequest.refundMethod === "BANK_CARD";
 
   return (
     <>
@@ -77,6 +82,25 @@ export default async function AdminReturnDetailPage({ params }: Context) {
               </dl>
             </section>
           </div>
+
+          <section className="bp-frame relative p-[18px]">
+            <div className="mb-3 flex items-center gap-2">{isCardRefund ? <CreditCard size={16} className="text-[var(--bp-accent)]" /> : <Wallet size={16} className="text-[var(--bp-accent)]" />}<h2 className="m-0 text-[13px] font-bold">روش بازگرداندن وجه</h2></div>
+            <dl className="grid gap-3 sm:grid-cols-2">
+              <DetailItem label="روش انتخابی مشتری" value={isCardRefund ? "واریز به کارت بانکی" : "افزودن به کیف پول"} />
+              <DetailItem label={returnRequest.refundedAt ? "مبلغ بازگردانده‌شده" : "مبلغ قابل بازگشت"} value={formatMoney(refundAmount.toString())} />
+              {isCardRefund && (
+                <>
+                  <DetailItem label="شمارهٔ کارت" value={returnRequest.refundCardNumber ? `${formatCardNumber(returnRequest.refundCardNumber)}${detectBankName(returnRequest.refundCardNumber) ? ` — ${detectBankName(returnRequest.refundCardNumber)}` : ""}` : "ثبت نشده"} ltr />
+                  <DetailItem label="نام صاحب کارت" value={returnRequest.refundCardHolder ?? "ثبت نشده"} />
+                  {returnRequest.refundCardSheba && <DetailItem label="شمارهٔ شبا" value={formatSheba(returnRequest.refundCardSheba)} ltr />}
+                </>
+              )}
+              {returnRequest.refundedAt && <DetailItem label="تاریخ بازگشت وجه" value={formatDateTime(returnRequest.refundedAt)} />}
+            </dl>
+            {isCardRefund && !returnRequest.refundedAt && (
+              <p className="m-0 mt-3 rounded border border-[var(--bp-warning)] bg-[var(--bp-warning-bg)] p-3 text-[11px] leading-6 text-[var(--bp-warning)]">این مرجوعی باید به‌صورت دستی به کارت مشتری واریز شود. پس از واریز، دکمهٔ «تکمیل» را بزنید.</p>
+            )}
+          </section>
 
           <section className="bp-frame relative p-[18px]">
             <div className="mb-3 flex items-center gap-2"><ClipboardList size={16} className="text-[var(--bp-accent)]" /><h2 className="m-0 text-[13px] font-bold">دلیل مرجوعی</h2></div>
@@ -141,7 +165,7 @@ export default async function AdminReturnDetailPage({ params }: Context) {
         </div>
 
         <aside className="grid content-start gap-4">
-          <ReturnStatusPanel returnId={returnRequest.id} status={returnRequest.status} adminNote={returnRequest.adminNote} noteMaxLength={returnAdminNoteMaxLength} />
+          <ReturnStatusPanel returnId={returnRequest.id} status={returnRequest.status} adminNote={returnRequest.adminNote} noteMaxLength={returnAdminNoteMaxLength} refundMethod={returnRequest.refundMethod} refundAmountLabel={formatMoney(refundAmount.toString())} refunded={Boolean(returnRequest.refundedAt)} />
         </aside>
       </div>
     </>

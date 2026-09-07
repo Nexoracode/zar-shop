@@ -132,6 +132,13 @@ enum ReturnStatus {
   COMPLETED
 }
 
+/// Where a customer's money goes when a return is completed: back to the in-store wallet, or to a
+/// bank card they registered (a manual card-to-card transfer the admin records).
+enum RefundMethod {
+  WALLET
+  BANK_CARD
+}
+
 enum AddressType {
   SHIPPING
   BILLING
@@ -157,6 +164,12 @@ model User {
   isGuest                Boolean                @default(false)
   smsMarketingConsent    Boolean                @default(false)
   referralCode           String?                @unique @db.VarChar(12)
+  // How the customer wants return refunds paid back. The card fields are only set when
+  // `refundMethod` is BANK_CARD; the PAN is stored as 16 plain digits, نه CVV/expiry.
+  refundMethod           RefundMethod           @default(WALLET)
+  bankCardNumber         String?                @db.VarChar(16)
+  bankCardHolder         String?                @db.VarChar(120)
+  bankCardSheba          String?                @db.VarChar(24)
   createdAt              DateTime               @default(now())
   updatedAt              DateTime               @updatedAt
   wallet                 Wallet?
@@ -1223,6 +1236,15 @@ model Return {
   adminNote  String?      @db.Text
   resolvedAt DateTime?
   resolvedBy String?
+  // Refund destination, snapshotted from the customer's account when the request is filed so a
+  // later profile change never rewrites an in-flight return. `refundAmount`/`refundedAt` are set
+  // when an admin completes the return.
+  refundMethod     RefundMethod @default(WALLET)
+  refundCardNumber String?      @db.VarChar(16)
+  refundCardHolder String?      @db.VarChar(120)
+  refundCardSheba  String?      @db.VarChar(24)
+  refundAmount     Decimal?     @db.Decimal(18, 0)
+  refundedAt       DateTime?
   createdAt  DateTime     @default(now())
   updatedAt  DateTime     @updatedAt
   items      ReturnItem[]

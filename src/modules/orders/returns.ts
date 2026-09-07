@@ -2,9 +2,11 @@ import { z } from "zod";
 import type { Prisma } from "@generated/prisma/client";
 import type { OrderStatus, ReturnStatus } from "@generated/prisma/enums";
 import { db } from "@/lib/db";
+import { notifyWalletCredited } from "@/modules/notifications/wallet-notifications";
 import type { UploadedReturnFile } from "@/modules/orders/return-attachments";
 import { returnLimits } from "@/modules/orders/return-limits";
 import { getOrderSettings } from "@/modules/settings/order-settings";
+import { creditWallet } from "@/modules/wallet/wallet";
 
 /** Re-exported so existing server call sites keep their import path; the numbers live in `return-limits`. */
 export const returnAdminNoteMaxLength = returnLimits.adminNoteMax;
@@ -89,17 +91,28 @@ export async function createReturnRequest(input: ReturnRequestInput, userId: str
   const settings = await getOrderSettings();
 
   return db.$transaction(async (tx) => {
-    const order = await tx.order.findFirst({
-      where: { id: input.orderId, userId },
-      select: {
-        id: true,
-        status: true,
-        deliveredAt: true,
-        items: { select: { id: true, quantity: true } },
-        returns: { where: { status: { in: [...activeReturnStatuses] } }, select: { id: true } },
-      },
-    });
+    const [order, customer] = await Promise.all([
+      tx.order.findFirst({
+        where: { id: input.orderId, userId },
+        select: {
+          id: true,
+          status: true,
+          deliveredAt: true,
+          items: { select: { id: true, quantity: true } },
+          returns: { where: { status: { in: [...activeReturnStatuses] } }, select: { id: true } },
+        },
+      }),
+      tx.user.findUniqueOrThrow({
+        where: { id: userId },
+        select: { refundMethod: true, bankCardNumber: true, bankCardHolder: true, bankCardSheba: true },
+      }),
+    ]);
     if (!order) throw new ReturnStatusError("سفارش پیدا نشد.", 404);
+
+    // Snapshot the refund destination now; a later profile change must not rewrite an open return.
+    if (customer.refundMethod === "BANK_CARD" && !customer.bankCardNumber) {
+      throw new ReturnStatusError("برای ثبت مرجوعی، ابتدا روش بازگرداندن وجه را در «حساب کاربری ← اطلاعات حساب» تکمیل کنید.", 409);
+    }
 
     const eligibility = evaluateReturnEligibility(order, settings.returnWindowDays);
     if (!eligibility.eligible) throw new ReturnStatusError(eligibility.reason, 409);
@@ -129,6 +142,10 @@ export async function createReturnRequest(input: ReturnRequestInput, userId: str
         orderId: order.id,
         userId,
         reason: input.reason,
+        refundMethod: customer.refundMethod,
+        refundCardNumber: customer.refundMethod === "BANK_CARD" ? customer.bankCardNumber : null,
+        refundCardHolder: customer.refundMethod === "BANK_CARD" ? customer.bankCardHolder : null,
+        refundCardSheba: customer.refundMethod === "BANK_CARD" ? customer.bankCardSheba : null,
         items: { create: [...merged].map(([orderItemId, quantity]) => ({ orderItemId, quantity })) },
         attachments: attachments.length
           ? { create: attachments.map((file) => ({ url: file.url, storageKey: file.storageKey, mimeType: file.mimeType, sizeBytes: file.sizeBytes, originalName: file.originalName })) }
@@ -178,29 +195,82 @@ export async function updateReturnStatus(
     throw new ReturnStatusError(`یادداشت مدیر نباید بیش از ${returnAdminNoteMaxLength.toLocaleString("fa-IR")} نویسه باشد.`, 422);
   }
 
-  return db.$transaction(async (tx) => {
-    const current = await tx.return.findUnique({ where: { id: returnId }, select: { id: true, status: true } });
+  const result = await db.$transaction(async (tx) => {
+    const current = await tx.return.findUnique({
+      where: { id: returnId },
+      select: {
+        id: true,
+        status: true,
+        userId: true,
+        refundMethod: true,
+        refundedAt: true,
+        order: { select: { id: true, orderNumber: true } },
+        items: { select: { quantity: true, orderItem: { select: { quantity: true, unitPrice: true } } } },
+      },
+    });
     if (!current) throw new ReturnStatusError("درخواست مرجوعی پیدا نشد.", 404);
     if (!allowedTransitions[status].includes(current.status)) {
       throw new ReturnStatusError("این تغییر وضعیت برای درخواست مرجوعی مجاز نیست.", 409);
     }
 
     const now = new Date();
-    const updated = await tx.return.update({
-      where: { id: returnId },
-      data: { status, adminNote, resolvedAt: now, resolvedBy: actorId },
-    });
+    const data: Prisma.ReturnUpdateInput = { status, adminNote, resolvedAt: now, resolvedBy: actorId };
+    let walletRefund = 0;
+
+    // Completing the return releases the money. `refundedAt` is the idempotency guard so a
+    // re-run cannot pay twice; the transition rules already stop COMPLETED coming round again.
+    if (status === "COMPLETED" && !current.refundedAt) {
+      const refundAmount = current.items.reduce((sum, line) => {
+        const units = Math.min(line.quantity, line.orderItem.quantity);
+        return sum + units * Number(line.orderItem.unitPrice);
+      }, 0);
+      data.refundAmount = refundAmount;
+      data.refundedAt = now;
+
+      if (refundAmount > 0 && current.refundMethod === "WALLET") {
+        await creditWallet(tx, {
+          userId: current.userId,
+          amount: refundAmount,
+          type: "ORDER_REFUND",
+          orderId: current.order.id,
+          description: `بازگشت وجه مرجوعی سفارش ${current.order.orderNumber}`,
+        });
+        walletRefund = refundAmount;
+      }
+    }
+
+    const updated = await tx.return.update({ where: { id: returnId }, data });
     await tx.auditLog.create({
       data: {
         actorId,
         action: "RETURN_STATUS_UPDATE",
         entityType: "Return",
         entityId: returnId,
-        metadata: { previousStatus: current.status, nextStatus: status, hasNote: Boolean(adminNote) } as Prisma.InputJsonObject,
+        metadata: {
+          previousStatus: current.status,
+          nextStatus: status,
+          hasNote: Boolean(adminNote),
+          ...(updated.refundAmount ? { refundAmount: Number(updated.refundAmount), refundMethod: current.refundMethod } : {}),
+        } as Prisma.InputJsonObject,
       },
     });
-    return updated;
+    return { updated, walletRefund, userId: current.userId, orderNumber: current.order.orderNumber, orderId: current.order.id };
   });
+
+  if (result.walletRefund > 0) {
+    try {
+      await notifyWalletCredited(db, {
+        userId: result.userId,
+        amount: result.walletRefund,
+        reason: `مرجوعی سفارش ${result.orderNumber}`,
+        dedupeKey: `return-refund:${returnId}`,
+      });
+    } catch (error) {
+      console.error("[notifications] Return-refund wallet notification failed.", error);
+    }
+  }
+
+  return result.updated;
 }
 
 /**

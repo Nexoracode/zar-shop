@@ -9,6 +9,7 @@ import { OrderCancelButton } from "@/components/order-cancel-button";
 import { OrderItemReviewAction } from "@/components/order-item-review-action";
 import { StatusBadge } from "@/components/status-badge";
 import { db } from "@/lib/db";
+import { maskCardNumber } from "@/modules/account/bank-card";
 import { formatDate, formatMoney } from "@/lib/format";
 import { orderStatusLabels, paymentStatusLabels, returnStatusLabels, returnStatusTones } from "@/modules/admin/labels";
 import { requireUser } from "@/modules/auth/session";
@@ -162,7 +163,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
             </p>
           </div>
         ) : returnEligibility.eligible && returnableItems.length > 0 ? (
-          <AccountReturnRequestForm orderId={order.id} items={returnableItems} deadlineLabel={formatDate(returnEligibility.deadline)} />
+          <AccountReturnRequestForm orderId={order.id} items={returnableItems} deadlineLabel={formatDate(returnEligibility.deadline)} refundMethod={user.refundMethod} refundCardMasked={user.bankCardNumber ? maskCardNumber(user.bankCardNumber) : null} />
         ) : returnEligibility.eligible ? (
           <p className="m-0 rounded-xl border border-dashed border-[var(--border)] p-4 text-xs leading-6 text-[var(--muted)]">همهٔ کالاهای این سفارش قبلاً برای مرجوعی ثبت شده‌اند.</p>
         ) : order.status === "DELIVERED" ? (

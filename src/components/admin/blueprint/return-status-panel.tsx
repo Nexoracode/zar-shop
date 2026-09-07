@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "@heroui/react";
 import { Check, CheckCheck, X, type LucideIcon } from "lucide-react";
-import type { ReturnStatus } from "@generated/prisma/enums";
+import type { RefundMethod, ReturnStatus } from "@generated/prisma/enums";
 import { BpButton } from "@/components/admin/blueprint/ui/button";
 import { BpTextarea } from "@/components/admin/blueprint/ui/input";
 import { BpTag } from "@/components/admin/blueprint/ui/tag";
@@ -26,12 +26,13 @@ const actionsByStatus: Record<ReturnStatus, { status: DecisionStatus; label: str
   COMPLETED: [],
 };
 
-export function ReturnStatusPanel({ returnId, status, adminNote, noteMaxLength }: { returnId: string; status: ReturnStatus; adminNote: string | null; noteMaxLength: number }) {
+export function ReturnStatusPanel({ returnId, status, adminNote, noteMaxLength, refundMethod, refundAmountLabel, refunded }: { returnId: string; status: ReturnStatus; adminNote: string | null; noteMaxLength: number; refundMethod: RefundMethod; refundAmountLabel: string; refunded: boolean }) {
   const router = useRouter();
   const [note, setNote] = useState(adminNote ?? "");
   const [pending, setPending] = useState<DecisionStatus | null>(null);
   const actions = actionsByStatus[status];
   const isTerminal = actions.length === 0;
+  const canComplete = actions.some((action) => action.status === "COMPLETED");
 
   async function submit(target: DecisionStatus) {
     setPending(target);
@@ -74,6 +75,13 @@ export function ReturnStatusPanel({ returnId, status, adminNote, noteMaxLength }
             placeholder="توضیح تصمیم برای سوابق داخلی…"
             disabled={pending !== null}
           />
+          {canComplete && !refunded && (
+            <p className="m-0 mt-2 border border-[var(--bp-divider)] bg-[var(--bp-bg)] p-3 text-[11px] leading-6">
+              {refundMethod === "WALLET"
+                ? <>با «تکمیل»، مبلغ <b>{refundAmountLabel}</b> بلافاصله به کیف پول مشتری اضافه می‌شود.</>
+                : <>پیش از «تکمیل»، مبلغ <b>{refundAmountLabel}</b> را دستی به کارت مشتری واریز کنید؛ تکمیل فقط وضعیت را نهایی می‌کند.</>}
+            </p>
+          )}
           <div className="mt-2 flex flex-wrap gap-2">
             {actions.map((action) => (
               <BpButton

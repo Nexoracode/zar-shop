@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { normalizeNumericValue } from "@/lib/persian-numbers";
+import { isValidCardNumber, isValidSheba, normalizeCardNumber, normalizeSheba } from "@/modules/account/bank-card";
 
 const digits = (length: number) => z.string().transform((value) => normalizeNumericValue(value, false)).pipe(z.string().regex(new RegExp(`^\\d{${length}}$`)));
 /** See `authFieldLimits`: one number per field, shared by the form control and the schema. */
@@ -46,3 +47,31 @@ export const addressPatchSchema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("set-default") }),
   z.object({ action: z.literal("update"), data: addressInputSchema }),
 ]);
+
+// —— refund settings (return money-back method) ——
+
+export const bankCardFieldLimits = { number: 16, holder: 120, sheba: 24 } as const;
+export const refundMethods = ["WALLET", "BANK_CARD"] as const;
+
+export const bankCardInputSchema = z.object({
+  number: z.string()
+    .transform((value) => normalizeCardNumber(value))
+    .refine((value) => isValidCardNumber(value), "شماره کارت باید ۱۶ رقم و معتبر باشد."),
+  holder: z.string().trim().min(2, "نام صاحب کارت را وارد کنید.").max(bankCardFieldLimits.holder, "نام صاحب کارت بیش از حد مجاز است."),
+  sheba: z.union([
+    z.string().transform((value) => normalizeSheba(value)).refine((value) => value === "" || isValidSheba(value), "شمارهٔ شبا معتبر نیست."),
+    z.literal(""),
+  ]).optional().transform((value) => (value ? value : null)),
+});
+export type BankCardInput = z.infer<typeof bankCardInputSchema>;
+
+/**
+ * The account "روش بازگرداندن وجه" form. `card` is optional so the shopper can flip the method
+ * without retyping a saved card; the API keeps the stored card in that case and rejects choosing
+ * BANK_CARD when there is no card at all.
+ */
+export const refundSettingsSchema = z.object({
+  refundMethod: z.enum(refundMethods),
+  card: bankCardInputSchema.nullable().optional(),
+});
+export type RefundSettingsInput = z.infer<typeof refundSettingsSchema>;
