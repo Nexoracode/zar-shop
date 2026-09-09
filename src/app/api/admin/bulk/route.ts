@@ -7,9 +7,10 @@ import { hasPermission } from "@/modules/auth/permissions";
 import { auditRequestContext } from "@/modules/audit/request-context";
 import { releaseInventory } from "@/modules/orders/inventory";
 import { bulkUpdateReturnStatus } from "@/modules/orders/returns";
+import { revalidateSitemap } from "@/modules/seo/revalidate";
 
 const bodySchema = z.object({
-  entity: z.enum(["products", "categories", "brands", "orders", "users", "reviews", "colors", "optionTypes", "promotions", "contactMessages", "paymentGateways", "smsProviders", "smsCampaigns", "supportTicketCategories", "tickets", "shippingMethods", "packagingBoxes", "returns"]),
+  entity: z.enum(["products", "categories", "brands", "orders", "users", "reviews", "colors", "optionTypes", "promotions", "contactMessages", "paymentGateways", "smsProviders", "smsCampaigns", "supportTicketCategories", "tickets", "shippingMethods", "packagingBoxes", "returns", "articles", "articleCategories"]),
   action: z.string().min(1).max(191),
   ids: z.array(z.string().min(1)).min(1).max(100),
 });
@@ -26,7 +27,7 @@ export async function PATCH(request: Request) {
   if (!parsed.success) return NextResponse.json({ message: "اطلاعات ویرایش گروهی معتبر نیست." }, { status: 422 });
   const { entity, action, ids } = parsed.data;
   const uniqueIds = [...new Set(ids)];
-  const adminOnlyEntities = new Set(["paymentGateways", "smsProviders", "smsCampaigns", "packagingBoxes"]);
+  const adminOnlyEntities = new Set(["paymentGateways", "smsProviders", "smsCampaigns", "packagingBoxes", "articles", "articleCategories"]);
   if (adminOnlyEntities.has(entity) && !hasPermission(actor.role, "settings:manage")) return NextResponse.json({ message: "این عملیات فقط برای مدیر اصلی مجاز است." }, { status: 403 });
   const permission = entity === "orders" || entity === "promotions" || entity === "contactMessages" || entity === "shippingMethods" || entity === "returns" ? "orders:manage" : entity === "users" ? "users:manage" : entity === "supportTicketCategories" || entity === "tickets" ? "tickets:manage" : "catalog:manage";
   if (!adminOnlyEntities.has(entity) && !hasPermission(actor.role, permission)) return NextResponse.json({ message: "برای این عملیات دسترسی کافی ندارید." }, { status: 403 });
@@ -119,6 +120,19 @@ export async function PATCH(request: Request) {
   } else if (entity === "contactMessages") {
     if (action !== "resolved:on" && action !== "resolved:off") return NextResponse.json({ message: "عملیات پیام تماس معتبر نیست." }, { status: 422 });
     updated = (await db.contactMessage.updateMany({ where: { id: { in: uniqueIds } }, data: { isResolved: action === "resolved:on", resolvedAt: action === "resolved:on" ? new Date() : null } })).count;
+  } else if (entity === "articles") {
+    if (action === "delete") {
+      updated = (await db.article.deleteMany({ where: { id: { in: uniqueIds } } })).count;
+    } else if (action === "status:DRAFT" || action === "status:PUBLISHED" || action === "status:ARCHIVED") {
+      const status = action.slice(7) as "DRAFT" | "PUBLISHED" | "ARCHIVED";
+      updated = (await db.article.updateMany({ where: { id: { in: uniqueIds } }, data: { status } })).count;
+      if (status === "PUBLISHED") await db.article.updateMany({ where: { id: { in: uniqueIds }, publishedAt: null }, data: { publishedAt: new Date() } });
+    } else return NextResponse.json({ message: "عملیات مقاله معتبر نیست." }, { status: 422 });
+    if (updated) revalidateSitemap();
+  } else if (entity === "articleCategories") {
+    if (action !== "active:on" && action !== "active:off") return NextResponse.json({ message: "عملیات دستهٔ مقاله معتبر نیست." }, { status: 422 });
+    updated = (await db.articleCategory.updateMany({ where: { id: { in: uniqueIds } }, data: { isActive: action === "active:on" } })).count;
+    if (updated) revalidateSitemap();
   } else if (entity === "returns") {
     if (action !== "status:APPROVED" && action !== "status:REJECTED") return NextResponse.json({ message: "عملیات مرجوعی معتبر نیست." }, { status: 422 });
     updated = await bulkUpdateReturnStatus(uniqueIds, action.slice(7) as "APPROVED" | "REJECTED", actor.id);

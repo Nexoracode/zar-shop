@@ -28,7 +28,7 @@ const EXTENSIONS: Record<string, string> = {
 };
 
 function parseScope(value: string | null): MediaScope | null {
-  return value === "CATEGORY" || value === "PRODUCT" || value === "HOMEPAGE" || value === "BRAND" || value === "PRODUCT_BRAND" ? value : null;
+  return value === "CATEGORY" || value === "PRODUCT" || value === "HOMEPAGE" || value === "BRAND" || value === "PRODUCT_BRAND" || value === "ARTICLE" ? value : null;
 }
 
 function parseType(value: string | null): MediaType | null {

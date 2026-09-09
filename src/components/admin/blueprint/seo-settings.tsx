@@ -264,8 +264,8 @@ export function BlueprintSeoSettings({ initialSettings }: { initialSettings: Seo
             <BpKicker>انواع اسکیمای تولیدشده</BpKicker>
             <ul className="m-0 mt-3 grid list-none gap-1.5 p-0 text-[12px]">
               <li className="flex items-center gap-2 border border-[var(--bp-divider)] bg-[var(--bp-bg)] p-2"><BpTag tone="success">فعال</BpTag> Product — صفحهٔ محصول</li>
-              <li className="flex items-center gap-2 border border-[var(--bp-divider)] bg-[var(--bp-bg)] p-2"><BpTag tone="neutral">آینده</BpTag> Article — صفحات محتوا</li>
-              <li className="flex items-center gap-2 border border-[var(--bp-divider)] bg-[var(--bp-bg)] p-2"><BpTag tone="neutral">آینده</BpTag> FAQPage — سوالات متداول</li>
+              <li className="flex items-center gap-2 border border-[var(--bp-divider)] bg-[var(--bp-bg)] p-2"><BpTag tone="success">فعال</BpTag> Article + BreadcrumbList — صفحات وبلاگ</li>
+              <li className="flex items-center gap-2 border border-[var(--bp-divider)] bg-[var(--bp-bg)] p-2"><BpTag tone="success">فعال</BpTag> FAQPage — سوالات متداول</li>
             </ul>
             <a href="https://search.google.com/test/rich-results" target="_blank" rel="noreferrer" className="mt-3 inline-flex items-center gap-2 text-[12px] font-bold text-[var(--bp-accent)]">
               تست صفحه با ابزار Rich Results گوگل <ExternalLink size={14} />

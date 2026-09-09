@@ -82,6 +82,8 @@ enum MediaScope {
   /// A product manufacturer's own logo (Samsung, Xiaomi, …) — kept apart from `BRAND`, which is
   /// the store's own identity, not a product's.
   PRODUCT_BRAND
+  /// Cover images for blog articles (`Article.coverMedia`).
+  ARTICLE
 }
 
 enum OrderStatus {
@@ -950,6 +952,7 @@ model MediaAsset {
   brandDarkLogo        StoreSetting[] @relation("BrandDarkLogo")
   brandFavicon         StoreSetting[] @relation("BrandFavicon")
   brandSocialImage     StoreSetting[] @relation("BrandSocialImage")
+  articleCovers        Article[]      @relation("ArticleCover")
 
   @@index([scope, createdAt])
   @@index([scope, type, createdAt])
@@ -1448,4 +1451,50 @@ model SeoRedirect {
   createdAt DateTime @default(now())
 
   @@index([fromUrl])
+}
+
+enum ArticleStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+/// A blog article shown under `/blog`. `content` is sanitised HTML from the shared rich-text
+/// editor. `noindex` and the optional `metaTitle`/`metaDescription` feed the storefront page's
+/// metadata and keep the article out of `sitemap.xml`; site-wide 301/410/canonical rules for a
+/// `/blog/*` URL are still handled by the `Seo*` tables + `src/proxy.ts`.
+model Article {
+  id              String           @id @default(cuid())
+  title           String           @db.VarChar(200)
+  slug            String           @unique @db.VarChar(200)
+  excerpt         String           @db.VarChar(300)
+  content         String           @db.LongText
+  coverMediaId    String?
+  authorName      String           @db.VarChar(120)
+  status          ArticleStatus    @default(DRAFT)
+  publishedAt     DateTime?
+  categoryId      String?
+  metaTitle       String?          @db.VarChar(120)
+  metaDescription String?          @db.VarChar(320)
+  noindex         Boolean          @default(false)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  coverMedia      MediaAsset?      @relation("ArticleCover", fields: [coverMediaId], references: [id], onDelete: SetNull)
+  category        ArticleCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
+  @@index([status, publishedAt])
+  @@index([categoryId, status, publishedAt])
+  @@index([coverMediaId])
+}
+
+model ArticleCategory {
+  id        String    @id @default(cuid())
+  name      String    @db.VarChar(120)
+  slug      String    @unique @db.VarChar(120)
+  sortOrder Int       @default(0)
+  isActive  Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  articles  Article[]
+
+  @@index([isActive, sortOrder])
 }

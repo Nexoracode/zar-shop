@@ -60,7 +60,7 @@ export async function GoldHeader({ settings, brand, user, menuItems }: { setting
           <strong className="font-normal">قیمت لحظه‌ای طلای ۱۸ عیار: <span className="font-bold text-[var(--brand-primary)]">{goldPrice}</span></strong>
           <DeliveryAddressPicker initialAddresses={addresses} authenticated={Boolean(user)} user={{ firstName: user?.firstName ?? null, lastName: user?.lastName ?? null, phone: user?.phone ?? null }} compact />
           <nav className="flex items-center gap-7" aria-label="دسترسی‌های اطلاعاتی">
-            <Link href="/#trust">مشتریان ما</Link><Link href="/pages/about">درباره ما</Link><Link href="/pages/contact">تماس با ما</Link>
+            <Link href="/blog">وبلاگ</Link><Link href="/#trust">مشتریان ما</Link><Link href="/pages/about">درباره ما</Link><Link href="/pages/contact">تماس با ما</Link>
           </nav>
         </div>
       </div>

@@ -28,7 +28,8 @@ const buildSitemap = unstable_cache(
     const entry = (path: string, lastModified?: Date): MetadataRoute.Sitemap[number] | null =>
       isEligible(path) ? { url: `${baseUrl}${path === "/" ? "" : path}`, lastModified: lastModified ?? new Date() } : null;
 
-    const [settings, content, products] = await Promise.all([
+    const now = new Date();
+    const [settings, content, products, articles, articleCategories] = await Promise.all([
       getGeneralStoreSettings(),
       getContentSettings(),
       db.product.findMany({
@@ -37,6 +38,13 @@ const buildSitemap = unstable_cache(
         orderBy: { updatedAt: "desc" },
         take: 50_000,
       }),
+      db.article.findMany({
+        where: { status: "PUBLISHED", noindex: false, publishedAt: { not: null, lte: now } },
+        select: { slug: true, updatedAt: true, publishedAt: true, createdAt: true },
+        orderBy: { publishedAt: "desc" },
+        take: 50_000,
+      }),
+      db.articleCategory.findMany({ where: { isActive: true }, select: { slug: true, createdAt: true } }),
     ]);
 
     const staticEntries = [entry("/"), entry("/products")];
@@ -55,7 +63,15 @@ const buildSitemap = unstable_cache(
       entry(`/products/${product.slug}`, product.updatedAt ?? product.createdAt),
     );
 
-    return [...staticEntries, ...pageEntries, ...faqEntries, ...productEntries]
+    const blogEntries = articles.length
+      ? [
+          entry("/blog"),
+          ...articleCategories.map((category) => entry(`/blog/category/${category.slug}`)),
+          ...articles.map((article) => entry(`/blog/${article.slug}`, article.updatedAt ?? article.publishedAt ?? article.createdAt)),
+        ]
+      : [];
+
+    return [...staticEntries, ...pageEntries, ...faqEntries, ...productEntries, ...blogEntries]
       .filter((item): item is NonNullable<typeof item> => item !== null);
   },
   ["sitemap"],

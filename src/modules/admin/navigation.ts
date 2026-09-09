@@ -1,5 +1,5 @@
 import type { LucideIcon } from "lucide-react";
-import { BadgePercent, BarChart3, Bell, Boxes, ChartNoAxesCombined, CreditCard, FolderTree, Gem, Headset, Images, ListChecks, ListTree, Mail, MessageSquareText, Package, PackageCheck, Palette, ScrollText, Settings, SlidersHorizontal, Tag, Truck, Undo2, Users } from "lucide-react";
+import { BadgePercent, BarChart3, Bell, Boxes, ChartNoAxesCombined, CreditCard, FolderTree, Gem, Headset, Images, ListChecks, ListTree, Mail, MessageSquareText, Newspaper, Package, PackageCheck, Palette, ScrollText, Settings, SlidersHorizontal, Tag, Truck, Undo2, Users } from "lucide-react";
 import type { StoreIndustry, UserRole } from "@generated/prisma/enums";
 import { canOpenAnySettingsSection, hasPermission, type AdminPermission } from "@/modules/auth/permissions";
 
@@ -62,6 +62,14 @@ export const adminNavGroups: AdminNavGroup[] = [
     items: [
       { href: "/admin/tickets", label: "تیکت‌های پشتیبانی", icon: Headset, permission: "tickets:manage" },
       { href: "/admin/support-ticket-categories", label: "موضوعات تیکت", icon: Tag, permission: "tickets:manage" },
+    ],
+  },
+  {
+    title: "محتوا و وبلاگ",
+    icon: Newspaper,
+    items: [
+      { href: "/admin/articles", label: "مقالات", icon: Newspaper, permission: "settings:manage" },
+      { href: "/admin/article-categories", label: "دسته‌بندی مقالات", icon: FolderTree, permission: "settings:manage" },
     ],
   },
   {

@@ -1,8 +1,14 @@
-import type { OrderStatus, PaymentStatus, ProductReviewReportStatus, ProductReviewStatus, ProductStatus, ReturnStatus, TicketStatus, UserRole, UserStatus } from "@generated/prisma/enums";
+import type { ArticleStatus, OrderStatus, PaymentStatus, ProductReviewReportStatus, ProductReviewStatus, ProductStatus, ReturnStatus, TicketStatus, UserRole, UserStatus } from "@generated/prisma/enums";
 
 export const productStatusLabels: Record<ProductStatus, string> = {
   DRAFT: "پیش‌نویس",
   ACTIVE: "منتشرشده",
+  ARCHIVED: "بایگانی‌شده",
+};
+
+export const articleStatusLabels: Record<ArticleStatus, string> = {
+  DRAFT: "پیش‌نویس",
+  PUBLISHED: "منتشرشده",
   ARCHIVED: "بایگانی‌شده",
 };
 
@@ -78,6 +84,12 @@ export type AdminTone = "neutral" | "info" | "success" | "warning" | "danger" | 
 export const productStatusTones: Record<ProductStatus, AdminTone> = {
   DRAFT: "warning",
   ACTIVE: "success",
+  ARCHIVED: "info",
+};
+
+export const articleStatusTones: Record<ArticleStatus, AdminTone> = {
+  DRAFT: "warning",
+  PUBLISHED: "success",
   ARCHIVED: "info",
 };
 
