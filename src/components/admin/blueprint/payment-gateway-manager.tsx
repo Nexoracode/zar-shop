@@ -11,7 +11,7 @@ import type { PublicGatewayConfig } from "@/modules/payments/gateway-config";
 import { gatewayFieldLimits } from "@/modules/payments/limits";
 import { BpButton, BpCheckbox, BpInput, BpKicker, BpTable, BpTag, BpTd, BpTh } from "./ui";
 
-export function BlueprintPaymentGatewayManager({ mode, initialConfigs }: { mode: "list" | "form"; initialConfigs: PublicGatewayConfig[] }) {
+export function BlueprintPaymentGatewayManager({ mode, initialConfigs, onSaved }: { mode: "list" | "form"; initialConfigs: PublicGatewayConfig[]; onSaved?: () => void }) {
   const router = useRouter();
   const [configs, setConfigs] = useState(initialConfigs);
   const [selectedId, setSelectedId] = useState<GatewayProviderId>("ZARINPAL");
@@ -31,6 +31,7 @@ export function BlueprintPaymentGatewayManager({ mode, initialConfigs }: { mode:
       setConfigs(result as PublicGatewayConfig[]);
       setCredential("");
       toast.success(`${selected.name} ثبت شد`, { description: "اطلاعات اتصال به‌صورت رمزنگاری‌شده ذخیره شد." });
+      if (onSaved) { onSaved(); return; }
       router.push("/admin/settings/payment-gateways");
       router.refresh();
     } catch (reason) {

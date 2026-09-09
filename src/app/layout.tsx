@@ -7,6 +7,7 @@ import { getCurrentUser } from "@/modules/auth/session";
 import { getGeneralStoreSettings, isStorefrontAvailable } from "@/modules/settings/general-settings";
 import { getHomepageSettings } from "@/modules/settings/homepage-settings";
 import { brandCssVariables, getBrandSettings } from "@/modules/settings/brand-settings";
+import { adminRoles } from "@/modules/auth/permissions";
 import { StorefrontFooter, StorefrontHeader } from "@/storefront/resolve-chrome";
 import "./globals.css";
 
@@ -32,6 +33,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   const [settings, homepageSettings, brandSettings, user] = await Promise.all([getGeneralStoreSettings(), getHomepageSettings(), getBrandSettings(), getCurrentUser()]);
+  const viewerIsAdmin = Boolean(user && adminRoles.includes(user.role));
   return (
     <html lang="fa" dir="rtl" data-theme="zar" data-scroll-behavior="smooth">
       <body style={brandCssVariables(brandSettings)}>
@@ -40,6 +42,8 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
           footer={<StorefrontFooter settings={settings} brand={brandSettings} />}
           storefrontAvailable={isStorefrontAvailable(settings, user?.role)}
           maintenanceMode={settings.maintenanceMode}
+          setupIncomplete={!settings.setupComplete}
+          viewerIsAdmin={viewerIsAdmin}
           storeName={settings.storeName}
           brandStyle={brandCssVariables(brandSettings)}
           compactMobileGrid={brandSettings.compactMobileGrid}

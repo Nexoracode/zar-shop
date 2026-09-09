@@ -47,6 +47,7 @@ export const generalStoreSettingsDefaults: GeneralStoreSettingsInput = {
 };
 
 const generalSelect = {
+  setupCompletedAt: true,
   industry: true,
   storeName: true,
   tagline: true,
@@ -63,14 +64,26 @@ const generalSelect = {
   maintenanceMode: true,
 } as const;
 
+export type GeneralStoreSettings = GeneralStoreSettingsInput & {
+  // `false` until the first-run setup wizard is finished. Carried on the settings object so
+  // every `isStorefrontAvailable` call site enforces it without an extra query of its own.
+  setupComplete: boolean;
+};
+
 // `cache` dedupes this within a request — the root layout, `generateMetadata` and most pages
 // each read the general store settings, and they all want the same one row.
-export const getGeneralStoreSettings = cache(async (): Promise<GeneralStoreSettingsInput> => {
+export const getGeneralStoreSettings = cache(async (): Promise<GeneralStoreSettings> => {
   const existing = await db.storeSetting.findUnique({ where: { id: STORE_SETTING_ID }, select: generalSelect });
   const settings = existing ?? await db.storeSetting.upsert({ where: { id: STORE_SETTING_ID }, create: { id: STORE_SETTING_ID, ...generalStoreSettingsDefaults }, update: {}, select: generalSelect });
-  return generalStoreSettingsSchema.parse(settings);
+  return { ...generalStoreSettingsSchema.parse(settings), setupComplete: Boolean(settings.setupCompletedAt) };
 });
 
-export function isStorefrontAvailable(settings: Pick<GeneralStoreSettingsInput, "isStoreActive" | "maintenanceMode">, role?: UserRole | null) {
+export function isStorefrontAvailable(
+  settings: Pick<GeneralStoreSettings, "isStoreActive" | "maintenanceMode"> & Partial<Pick<GeneralStoreSettings, "setupComplete">>,
+  role?: UserRole | null,
+) {
+  // Until the first-run setup wizard is finished the storefront is closed to everyone, admins
+  // included — there is nothing sellable yet and the owner is told to finish setup first.
+  if (settings.setupComplete === false) return false;
   return Boolean(role && adminRoles.includes(role)) || (settings.isStoreActive && !settings.maintenanceMode);
 }

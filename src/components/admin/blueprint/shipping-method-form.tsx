@@ -52,7 +52,7 @@ function Panel({ title, description, action, children }: { title: string; descri
   );
 }
 
-export function BlueprintShippingMethodForm({ provinces, method }: { provinces: Array<{ id: string; name: string }>; method?: MethodDraft }) {
+export function BlueprintShippingMethodForm({ provinces, method, onSaved }: { provinces: Array<{ id: string; name: string }>; method?: MethodDraft; onSaved?: () => void }) {
   const router = useRouter();
   const [title, setTitle] = useState(method?.title ?? "");
   const [carrier, setCarrier] = useState(method?.carrier ?? "");
@@ -106,6 +106,7 @@ export function BlueprintShippingMethodForm({ provinces, method }: { provinces: 
       }, { fallbackMessage: "ذخیره روش ارسال ناموفق بود." });
       setErrors({});
       toast.success(method ? "روش ارسال به‌روزرسانی شد" : "روش ارسال ثبت شد");
+      if (onSaved) { setSaving(false); onSaved(); return; }
       router.push("/admin/shipping-methods");
       router.refresh();
     } catch (reason) {

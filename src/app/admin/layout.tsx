@@ -1,16 +1,59 @@
 import { cookies } from "next/headers";
 import { BlueprintShell } from "@/components/admin/blueprint/shell";
+import { SetupPendingNotice } from "@/components/admin/blueprint/setup/setup-pending-notice";
+import { SetupWizard } from "@/components/admin/blueprint/setup/setup-wizard";
 import { sidebarCollapsedCookie } from "@/lib/admin-sidebar-state";
 import { db } from "@/lib/db";
 import { requireAdminUser } from "@/modules/auth/session";
 import { getGoldPriceForDisplay } from "@/modules/gold/gold-price.service";
 import { expirePendingOrders } from "@/modules/orders/expiration";
+import { getPublicGatewayConfigs } from "@/modules/payments/gateway-config";
+import { getPublicSmsProviderConfigs } from "@/modules/communications/sms-config";
+import { getBrandSettings } from "@/modules/settings/brand-settings";
+import { getCommerceSettings } from "@/modules/settings/commerce-settings";
+import { getGeneralStoreSettings } from "@/modules/settings/general-settings";
+import { getSetupState, isSetupComplete } from "@/modules/settings/setup";
 import { getStoreIndustry } from "@/modules/settings/store-settings";
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
+  const user = await requireAdminUser();
+
+  // Until the first-run wizard is finished the whole /admin area is the wizard (for ADMIN) or
+  // a holding notice (for the scoped manager roles, who cannot complete store-wide setup).
+  if (!(await isSetupComplete())) {
+    const general = await getGeneralStoreSettings();
+    if (user.role !== "ADMIN") return <SetupPendingNotice storeName={general.storeName} />;
+    const [state, brand, commerce, provinces, gateways, smsConfigs] = await Promise.all([
+      getSetupState(),
+      getBrandSettings(),
+      getCommerceSettings(),
+      db.province.findMany({ where: { isActive: true }, orderBy: { name: "asc" }, select: { id: true, name: true } }),
+      getPublicGatewayConfigs(),
+      getPublicSmsProviderConfigs(),
+    ]);
+    return (
+      <SetupWizard
+        state={state}
+        storeName={general.storeName}
+        basics={{ industry: general.industry, storeName: general.storeName, tagline: general.tagline, shortDescription: general.shortDescription }}
+        contact={{
+          supportPhone: general.supportPhone ?? "",
+          supportEmail: general.supportEmail ?? "",
+          storeAddress: general.storeAddress ?? "",
+          legalIdentifier: general.legalIdentifier ?? "",
+          supportHours: general.supportHours ?? "",
+        }}
+        brand={brand}
+        origin={{ provinceId: commerce.originProvinceId, cityId: commerce.originCityId }}
+        provinces={provinces}
+        gateways={gateways}
+        smsConfigs={smsConfigs}
+      />
+    );
+  }
+
   await expirePendingOrders();
-  const [user, storeIndustry, notificationCount] = await Promise.all([
-    requireAdminUser(),
+  const [storeIndustry, notificationCount] = await Promise.all([
     getStoreIndustry(),
     db.order.count({ where: { OR: [{ status: { in: ["PAID", "PROCESSING"] } }, { status: "PENDING_PAYMENT", expirationHandledAt: { not: null }, expiredAt: null }] } }),
   ]);

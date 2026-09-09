@@ -722,6 +722,11 @@ model StoreSetting {
   walletMaxTopup                Decimal               @default(50000000) @db.Decimal(18, 0)
   faqItems                      Json?
   contentPages                  Json?
+  // First-run setup wizard: null until the admin finishes `/admin` onboarding. While null the
+  // admin area shows the wizard instead of the panel and the storefront is closed to everyone.
+  setupCompletedAt              DateTime?
+  // Ids of the text-only wizard steps the admin has explicitly saved (`["basics","contact"]`).
+  setupStepsDone                Json?
 
   @@index([heroDesktopMediaId])
   @@index([heroMobileMediaId])

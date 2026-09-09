@@ -18,7 +18,7 @@ function statusLabel(item: PublicSmsProviderConfig) {
   return item.isActive ? "فعال" : item.sendSupported ? "غیرفعال" : "نیازمند قرارداد API";
 }
 
-export function BlueprintSmsProviderManager({ mode, initialConfigs }: { mode: "list" | "form"; initialConfigs: PublicSmsProviderConfig[] }) {
+export function BlueprintSmsProviderManager({ mode, initialConfigs, onSaved }: { mode: "list" | "form"; initialConfigs: PublicSmsProviderConfig[]; onSaved?: () => void }) {
   const router = useRouter();
   const [configs, setConfigs] = useState(initialConfigs);
   const [selectedId, setSelectedId] = useState<SmsProviderId>("FARAZ_SMS");
@@ -38,6 +38,7 @@ export function BlueprintSmsProviderManager({ mode, initialConfigs }: { mode: "l
       const result = await response.json().catch(() => null);
       if (!response.ok) throw new Error(result?.message ?? "پیکربندی ذخیره نشد.");
       toast.success(`${selected.name} ذخیره شد`);
+      if (onSaved) { onSaved(); return; }
       router.push("/admin/settings/notifications/providers");
       router.refresh();
     } catch (error) {
