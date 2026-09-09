@@ -32,37 +32,36 @@ function createClient() {
   });
 }
 
-async function clearDevelopmentData(db: PrismaClient) {
-  await db.invoice.deleteMany();
-  await db.payment.deleteMany();
-  await db.promotionRedemption.deleteMany();
-  await db.promotionReward.deleteMany();
-  await db.orderItem.deleteMany();
-  await db.order.deleteMany();
-  await db.cartItem.deleteMany();
-  await db.cart.deleteMany();
-  await db.session.deleteMany();
-  await db.address.deleteMany();
-  await db.auditLog.deleteMany();
-  await db.user.deleteMany();
-  await db.productMedia.deleteMany();
-  await db.productVariant.deleteMany();
-  await db.productOptionValue.deleteMany();
-  await db.productOptionType.deleteMany();
-  await db.product.deleteMany();
-  await db.category.deleteMany();
-  await db.brand.deleteMany();
-  await db.optionValue.deleteMany();
-  await db.optionType.deleteMany();
-  await db.color.deleteMany();
-  await db.storeSetting.deleteMany();
-  await db.mediaAsset.deleteMany();
-  await db.goldPrice.deleteMany();
-  await db.promotion.deleteMany();
-  await db.paymentGatewayConfig.deleteMany();
-  await db.smsProviderConfig.deleteMany();
-  await db.communicationSetting.deleteMany();
-  await db.smsCampaign.deleteMany();
+// Rows that must survive a reseed:
+// - `_prisma_migrations` is Prisma's own migration ledger.
+// - `Province` / `City` are reference data loaded separately (npm run db:sync-locations).
+// - `SupportTicketCategory` is seeded by its own migration and never recreated here.
+// With `keepGallery`, `MediaAsset` is added too: the central media library's files live on
+// the FTP host independent of the database, so preserving these rows keeps every uploaded
+// image/video wired up instead of forcing a re-upload through the admin panel after a reset.
+const ALWAYS_PRESERVED_TABLES = ["_prisma_migrations", "Province", "City", "SupportTicketCategory"];
+
+// A full wipe of every other table — not just the ones the seed repopulates — so "reseed"
+// means the store really is back to a known baseline (no leftover orders, reviews, wallets,
+// tickets, notifications, …). TRUNCATE with FK checks off avoids having to hand-order ~40
+// deletes and stays correct as the schema grows.
+async function clearDevelopmentData(db: PrismaClient, options: { keepGallery: boolean }) {
+  const preserved = new Set(ALWAYS_PRESERVED_TABLES);
+  if (options.keepGallery) preserved.add("MediaAsset");
+
+  const rows = await db.$queryRawUnsafe<Array<{ name: string }>>(
+    "SELECT TABLE_NAME AS name FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_TYPE = 'BASE TABLE'",
+  );
+  const targets = rows.map((row) => row.name).filter((name) => !preserved.has(name));
+  if (targets.length === 0) return;
+
+  // One sequential transaction so every statement runs on the same connection and the
+  // session-level FK-check toggle actually covers the TRUNCATEs.
+  await db.$transaction([
+    db.$executeRawUnsafe("SET FOREIGN_KEY_CHECKS = 0"),
+    ...targets.map((table) => db.$executeRawUnsafe(`TRUNCATE TABLE \`${table}\``)),
+    db.$executeRawUnsafe("SET FOREIGN_KEY_CHECKS = 1"),
+  ]);
 }
 
 function homepageSections() {
@@ -143,8 +142,13 @@ async function createStore(db: PrismaClient, seed: DevelopmentStoreSeed) {
   // real ids that only exist once these rows are actually inserted.
   const mediaIds = new Map<string, string>();
   for (const item of seed.media ?? []) {
-    const created = await db.mediaAsset.create({
-      data: { type: item.type, scope: item.scope, url: item.url, storageKey: item.storageKey, title: item.title ?? null, mimeType: item.mimeType, sizeBytes: item.sizeBytes },
+    // upsert (not create) so a `keepGallery` reseed reuses the existing library row for this
+    // storageKey and leaves its admin-set metadata (alt, caption, …) untouched; on a full
+    // wipe the table is empty so this just creates the row.
+    const created = await db.mediaAsset.upsert({
+      where: { storageKey: item.storageKey },
+      update: {},
+      create: { type: item.type, scope: item.scope, url: item.url, storageKey: item.storageKey, title: item.title ?? null, mimeType: item.mimeType, sizeBytes: item.sizeBytes },
     });
     mediaIds.set(item.key, created.id);
   }
@@ -253,12 +257,13 @@ async function createStore(db: PrismaClient, seed: DevelopmentStoreSeed) {
   }
 }
 
-export async function seedDevelopmentStore(industry: StoreIndustry) {
+export async function seedDevelopmentStore(industry: StoreIndustry, options: { keepGallery?: boolean } = {}) {
   assertDevelopmentDatabase();
+  const keepGallery = options.keepGallery ?? false;
   const db = createClient();
   const seed = industry === "GOLD" ? goldStoreSeed : generalStoreSeed;
   try {
-    await clearDevelopmentData(db);
+    await clearDevelopmentData(db, { keepGallery });
     await createStore(db, seed);
     const [categoryCount, brandCount, productCount, productsWithoutBrand, industries, setting] = await Promise.all([
       db.category.count(),
@@ -271,7 +276,7 @@ export async function seedDevelopmentStore(industry: StoreIndustry) {
     if (categoryCount !== seed.categories.length || brandCount !== seed.brands.length || productCount !== seed.products.length || productsWithoutBrand > 0 || industries.length !== 1 || industries[0].storeIndustry !== industry || setting?.industry !== industry) {
       throw new Error("Development seed verification failed.");
     }
-    console.info(`[seed] ${industry}: ${categoryCount} categories, ${brandCount} brands and ${productCount} products created.`);
+    console.info(`[seed] ${industry}${keepGallery ? " (gallery preserved)" : ""}: ${categoryCount} categories, ${brandCount} brands and ${productCount} products created.`);
   } finally {
     await db.$disconnect();
   }
