@@ -223,7 +223,7 @@ export function MediaLibrary() {
         {pager}
       </div>
       {selected
-        ? <MediaDetailsPanel key={selected.id} media={{ ...selected, usageCount: mediaUsageCount(selected._count) }} onSaved={applySaved} className="border border-[var(--bp-divider)] p-4 lg:sticky lg:top-24" />
+        ? <MediaDetailsPanel key={selected.id} media={{ ...selected, usageCount: mediaUsageCount(selected._count) }} onSaved={applySaved} className="border border-[var(--bp-divider)] p-4" />
         : <aside className="grid place-items-center border border-dashed border-[var(--bp-divider)] p-8 text-center">
             <div>
               <ImageIcon className="mx-auto mb-2 text-[var(--bp-muted)]" size={30} />
