@@ -722,6 +722,8 @@ model StoreSetting {
   walletMaxTopup                Decimal               @default(50000000) @db.Decimal(18, 0)
   faqItems                      Json?
   contentPages                  Json?
+  // Technical SEO settings (default meta, indexing kill-switch, product schema toggle).
+  seoSettings                   Json?
   // First-run setup wizard: null until the admin finishes `/admin` onboarding. While null the
   // admin area shows the wizard instead of the panel and the storefront is closed to everyone.
   setupCompletedAt              DateTime?
@@ -1409,4 +1411,41 @@ model Referral {
   qualifyingOrder   Order?         @relation("ReferralQualifyingOrder", fields: [qualifyingOrderId], references: [id], onDelete: SetNull)
 
   @@index([referrerId, status])
+}
+
+/// Technical-SEO rule tables, managed from the admin "SEO حرفه‌ای" section and applied by
+/// `src/proxy.ts` (301 / 410 / X-Robots-Tag / canonical Link) and `src/app/sitemap.ts`
+/// (eligibility). URLs are stored as site-relative paths ("/old-page").
+model SeoNoindex {
+  id        String   @id @default(cuid())
+  url       String   @unique @db.VarChar(500)
+  createdAt DateTime @default(now())
+
+  @@index([url])
+}
+
+model SeoGonePage {
+  id        String   @id @default(cuid())
+  url       String   @unique @db.VarChar(500)
+  createdAt DateTime @default(now())
+
+  @@index([url])
+}
+
+model SeoCanonical {
+  id        String   @id @default(cuid())
+  sourceUrl String   @unique @db.VarChar(500)
+  targetUrl String   @db.VarChar(500)
+  createdAt DateTime @default(now())
+
+  @@index([sourceUrl])
+}
+
+model SeoRedirect {
+  id        String   @id @default(cuid())
+  fromUrl   String   @unique @db.VarChar(500)
+  toUrl     String   @db.VarChar(500)
+  createdAt DateTime @default(now())
+
+  @@index([fromUrl])
 }

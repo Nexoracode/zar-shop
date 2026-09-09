@@ -11,6 +11,7 @@ import { formatTehranDateInput, tehranDateEnd, tehranDateStart } from "@/modules
 import { parseProductAttributes, validateProductAttributes } from "@/modules/products/attributes";
 import { auditRequestContext } from "@/modules/audit/request-context";
 import { buildAuditChanges, productAuditSnapshot } from "@/modules/audit/product-audit";
+import { revalidateSitemap } from "@/modules/seo/revalidate";
 
 type Context = { params: Promise<{ id: string }> };
 
@@ -111,6 +112,7 @@ export async function PATCH(request: Request, context: Context) {
       }) } });
       return updated;
     });
+    revalidateSitemap();
     return NextResponse.json(product);
   } catch (error) { return apiError(error); }
 }
@@ -131,6 +133,7 @@ export async function DELETE(request: Request, context: Context) {
       await tx.product.delete({ where: { id } });
       await tx.auditLog.create({ data: { actorId: actor.id, action: "PRODUCT_DELETE", entityType: "Product", entityId: id, ...auditRequestContext(request, { name: product.name, sku: product.sku }) } });
     });
+    revalidateSitemap();
     return new NextResponse(null, { status: 204 });
   } catch (error) { return apiError(error); }
 }

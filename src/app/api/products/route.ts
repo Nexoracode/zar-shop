@@ -14,6 +14,7 @@ import { validateVariantSetup, writeVariantSetup } from "@/modules/products/vari
 import { productColorIds, productOptionTypeInclude, selectableTypes } from "@/modules/products/variant-selection";
 import { auditRequestContext } from "@/modules/audit/request-context";
 import { buildAuditChanges, productAuditSnapshot } from "@/modules/audit/product-audit";
+import { revalidateSitemap } from "@/modules/seo/revalidate";
 
 export async function GET() {
   const [settings, user, catalogSettings] = await Promise.all([getGeneralStoreSettings(), getCurrentUser(), getCatalogSettings()]);
@@ -79,6 +80,7 @@ export async function POST(request: Request) {
       }) } });
       return result;
     });
+    revalidateSitemap();
     return NextResponse.json(product, { status: 201 });
   } catch (error) { return apiError(error); }
 }

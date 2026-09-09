@@ -7,6 +7,7 @@ import { writeVariantSetup, type ProductOptionTypeInput, type ProductVariantInpu
 import { productOptionTypeInclude } from "@/modules/products/variant-selection";
 import { auditRequestContext } from "@/modules/audit/request-context";
 import { buildAuditChanges, productAuditSnapshot } from "@/modules/audit/product-audit";
+import { revalidateSitemap } from "@/modules/seo/revalidate";
 
 type Context = { params: Promise<{ id: string }> };
 
@@ -98,6 +99,7 @@ export async function POST(request: Request, context: Context) {
       return result;
     });
 
+    revalidateSitemap();
     return NextResponse.json({ id: duplicated.id }, { status: 201 });
   } catch (error) { return apiError(error); }
 }

@@ -25,6 +25,7 @@ import { getRecentlyViewedProducts, getStorefrontProductFeed } from "@/modules/p
 import { getGoldPriceForDisplay } from "@/modules/gold/gold-price.service";
 import { getCatalogSettings } from "@/modules/settings/catalog-settings";
 import { getGeneralStoreSettings } from "@/modules/settings/general-settings";
+import { getSeoSettings } from "@/modules/settings/seo-settings";
 import { getCurrentUser } from "@/modules/auth/session";
 import { getStorefrontProductReviews } from "@/modules/reviews/service";
 import { ProductActivityTracker } from "@/components/product-activity-tracker";
@@ -68,11 +69,12 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 export default async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const settings = await getGeneralStoreSettings();
-  const [product, gold, catalogSettings, currentUser] = await Promise.all([
+  const [product, gold, catalogSettings, currentUser, seo] = await Promise.all([
     getProductForPage(slug, settings.industry),
     settings.industry === "GOLD" ? getGoldPriceForDisplay() : Promise.resolve(null),
     getCatalogSettings(),
     getCurrentUser(),
+    getSeoSettings(),
   ]);
   if (!product) notFound();
   // `/products?category=` 404s on a category that is not active, so only link to a live one.
@@ -228,7 +230,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
     } : {}),
   };
 
-  return <ProductPurchaseProvider initialSelectedOptions={initialSelectedOptions}><ProductActivityTracker productId={product.id} enabled={Boolean(currentUser && !currentUser.isGuest)} /><script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(productJsonLd) }} /><main className="bg-white px-4 pb-16 pt-5 antialiased sm:px-6 lg:pb-24">
+  return <ProductPurchaseProvider initialSelectedOptions={initialSelectedOptions}><ProductActivityTracker productId={product.id} enabled={Boolean(currentUser && !currentUser.isGuest)} />{seo.enableProductSchema && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(productJsonLd) }} />}<main className="bg-white px-4 pb-16 pt-5 antialiased sm:px-6 lg:pb-24">
     <div className="mx-auto w-full max-w-[1440px]">
       <nav className="mb-6 flex flex-wrap items-center gap-2 text-xs text-slate-500" aria-label="مسیر محصول">
         <Link href="/" className="transition hover:text-slate-900">خانه</Link><span>/</span><Link href="/products" className="transition hover:text-slate-900">محصولات</Link>{product.category && <><span>/</span><Link href={`/products?category=${encodeURIComponent(product.category.slug)}`} className="transition hover:text-slate-900">{product.category.name}</Link></>}

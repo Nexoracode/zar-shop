@@ -18,6 +18,7 @@ import { getCommerceSettings } from "@/modules/settings/commerce-settings";
 import { getContentSettings } from "@/modules/settings/content-settings";
 import { getGeneralStoreSettings } from "@/modules/settings/general-settings";
 import { getOrderSettings } from "@/modules/settings/order-settings";
+import { getSeoSettings } from "@/modules/settings/seo-settings";
 import { getStoreIndustry } from "@/modules/settings/store-settings";
 import { getWalletSettings } from "@/modules/settings/wallet-settings";
 import { getPublicGatewayConfigs } from "@/modules/payments/gateway-config";
@@ -87,7 +88,7 @@ export default async function AdminSettingSectionPage({ params }: Context) {
       break;
     }
     case "seo": {
-      content = <BlueprintSeoSettings />;
+      content = <BlueprintSeoSettings initialSettings={await getSeoSettings()} />;
       break;
     }
     case "wallet": {

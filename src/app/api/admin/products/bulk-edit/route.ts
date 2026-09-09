@@ -6,6 +6,7 @@ import { getCurrentUser } from "@/modules/auth/session";
 import { hasPermission } from "@/modules/auth/permissions";
 import { auditRequestContext } from "@/modules/audit/request-context";
 import { tehranDateEnd, tehranDateStart } from "@/modules/products/discount";
+import { revalidateSitemap } from "@/modules/seo/revalidate";
 
 const dateOnlySchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "تاریخ واردشده معتبر نیست.");
 const dateTimeSchema = z.string().datetime({ offset: true }).or(z.string().datetime());
@@ -159,6 +160,7 @@ export async function POST(request: Request) {
       }) } });
     });
 
+    revalidateSitemap();
     return NextResponse.json({ updated: productUpdates.length + variantUpdates.length, skipped });
   } catch (error) { return apiError(error); }
 }

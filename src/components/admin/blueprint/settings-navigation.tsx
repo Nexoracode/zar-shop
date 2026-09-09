@@ -11,7 +11,7 @@ import {
   LayoutDashboard,
   PackageCheck,
   Palette,
-  Search,
+  SearchCheck,
   Store,
   Truck,
   Wallet,
@@ -61,7 +61,7 @@ export function BlueprintAdminSettingsNavigation({ industry, role }: { industry:
       description: "محتوای راهنما، صفحات و ارتباط با مخاطب",
       items: [
         { href: "/admin/settings/content", title: "محتوا و سوالات متداول", description: "FAQ و صفحات راهنما و قوانین", icon: FileQuestion },
-        { href: "/admin/settings/seo", title: "SEO حرفه‌ای", description: "موتورهای جستجو و ساختار فنی صفحات", icon: Search },
+        { href: "/admin/settings/seo", title: "SEO حرفه‌ای", description: "ایندکس‌پذیری، سایت‌مپ و ریدایرکت‌ها", icon: SearchCheck },
         { href: "/admin/settings/notifications", title: "اعلان و پیامک", description: "پیام‌های مدیریتی و اطلاع‌رسانی مشتریان", icon: Bell },
       ],
     },

@@ -7,6 +7,7 @@ import { getCurrentUser } from "@/modules/auth/session";
 import { getGeneralStoreSettings, isStorefrontAvailable } from "@/modules/settings/general-settings";
 import { getHomepageSettings } from "@/modules/settings/homepage-settings";
 import { brandCssVariables, getBrandSettings } from "@/modules/settings/brand-settings";
+import { getSeoSettings } from "@/modules/settings/seo-settings";
 import { adminRoles } from "@/modules/auth/permissions";
 import { StorefrontFooter, StorefrontHeader } from "@/storefront/resolve-chrome";
 import "./globals.css";
@@ -16,15 +17,18 @@ import "./globals.css";
 export const dynamic = "force-dynamic";
 
 export async function generateMetadata(): Promise<Metadata> {
-  const [requestHeaders, settings, brand] = await Promise.all([headers(), getGeneralStoreSettings(), getBrandSettings()]);
+  const [requestHeaders, settings, brand, seo] = await Promise.all([headers(), getGeneralStoreSettings(), getBrandSettings(), getSeoSettings()]);
   const host = requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host") ?? "localhost:3000";
   const protocol = requestHeaders.get("x-forwarded-proto") ?? (host.startsWith("localhost") ? "http" : "https");
   const baseUrl = new URL(`${protocol}://${host}`);
-  const description = settings.shortDescription;
+  const description = seo.metaDescription || settings.shortDescription;
   return {
     metadataBase: baseUrl,
-    title: { default: settings.storeName, template: `%s | ${settings.storeName}` },
+    title: { default: seo.metaTitle || settings.storeName, template: `%s | ${settings.storeName}` },
     description,
+    // Global indexing kill-switch from the SEO settings; per-URL noindex is applied as an
+    // `X-Robots-Tag` header in `src/proxy.ts`.
+    robots: seo.allowIndexing ? undefined : { index: false, follow: false },
     icons: brand.faviconMedia ? { icon: brand.faviconMedia.url } : undefined,
     openGraph: { title: `${settings.storeName} | ${settings.tagline}`, description, type: "website", locale: "fa_IR", images: [{ url: brand.socialImageMedia?.url ?? new URL("/og.png", baseUrl), width: 1200, height: 630, alt: `${settings.storeName}؛ ${settings.tagline}` }] },
     twitter: { card: "summary_large_image", title: `${settings.storeName} | ${settings.tagline}`, description, images: [brand.socialImageMedia?.url ?? new URL("/og.png", baseUrl)] },

@@ -6,6 +6,7 @@ import { apiError } from "@/lib/http";
 import { getCurrentUser } from "@/modules/auth/session";
 import { hasPermission } from "@/modules/auth/permissions";
 import { auditRequestContext } from "@/modules/audit/request-context";
+import { revalidateSitemap } from "@/modules/seo/revalidate";
 
 type Context = { params: Promise<{ id: string }> };
 
@@ -39,6 +40,7 @@ export async function PATCH(request: Request, context: Context) {
       });
     });
 
+    revalidateSitemap();
     return NextResponse.json({ id, status });
   } catch (error) {
     return apiError(error);
