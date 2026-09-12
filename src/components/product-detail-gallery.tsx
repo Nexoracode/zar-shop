@@ -4,9 +4,8 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { Button, Modal, ProgressBar, toast } from "@heroui/react";
-import { Bell, ChartNoAxesCombined, ChevronLeft, ChevronRight, Ellipsis, ImageIcon, Info, List, Play, Share2, X } from "lucide-react";
+import { Bell, ChartNoAxesCombined, ChevronLeft, ChevronRight, Ellipsis, ImageIcon, Info, List, Play, X } from "lucide-react";
 import { useSelectedProductOptions } from "@/components/add-to-cart";
-import { ProductFavoriteButton } from "@/components/product-favorite-button";
 import { CompareButton } from "@/components/compare-button";
 import type { CompareItem } from "@/modules/compare/compare";
 import { selectionSignature } from "@/modules/products/variant-combinations";
@@ -24,13 +23,11 @@ type ProductGalleryMedia = {
 type SelectionDiscount = { selection: Record<string, string>; hasDiscount: boolean; discountEndsAt: string | null };
 
 type ProductDetailGalleryProps = {
-  productId: string;
   media: ProductGalleryMedia[];
   productName: string;
   productCode: string;
   discountBySelection?: SelectionDiscount[];
   soldPercent?: number;
-  initialFavorite?: boolean;
   compareItem?: CompareItem;
 };
 
@@ -79,7 +76,7 @@ function renderFullscreenGallery({ media, selected, selectedIndex, productName, 
   </Modal.Backdrop>;
 }
 
-export function ProductDetailGallery({ productId, media, productName, productCode, discountBySelection = [], soldPercent = 0, initialFavorite = false, compareItem }: ProductDetailGalleryProps) {
+export function ProductDetailGallery({ media, productName, productCode, discountBySelection = [], soldPercent = 0, compareItem }: ProductDetailGalleryProps) {
   const router = useRouter();
   const selectedOptions = useSelectedProductOptions();
   const viewportRef = useRef<HTMLDivElement>(null);
@@ -186,20 +183,7 @@ export function ProductDetailGallery({ productId, media, productName, productCod
     };
   }, [media]);
 
-  async function shareProduct() {
-    const shareData = { title: productName, url: window.location.href };
-    try {
-      if (navigator.share) await navigator.share(shareData);
-      else await navigator.clipboard.writeText(window.location.href);
-      toast.success("لینک محصول آماده اشتراک‌گذاری شد");
-    } catch (error) {
-      if (error instanceof DOMException && error.name === "AbortError") return;
-      toast.danger("اشتراک‌گذاری انجام نشد");
-    }
-  }
-
   const actions = [
-    { label: "اشتراک‌گذاری محصول", icon: <Share2 size={22} />, onPress: () => void shareProduct() },
     { label: priceAlert ? "غیرفعال‌کردن اطلاع‌رسانی" : "اطلاع‌رسانی تغییرات محصول", icon: <Bell size={22} className={priceAlert ? "fill-[var(--brand-accent)] text-[var(--brand-accent)]" : ""} />, onPress: () => setPriceAlert((value) => !value) },
     { label: "نمودار قیمت", icon: <ChartNoAxesCombined size={22} />, onPress: () => toast.success("نمودار قیمت در مرحله اتصال API فعال می‌شود") },
     { label: "مشخصات محصول", icon: <List size={22} />, onPress: () => document.getElementById("specifications")?.scrollIntoView({ behavior: "smooth" }) },
@@ -211,7 +195,6 @@ export function ProductDetailGallery({ productId, media, productName, productCod
 
     <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
       <div className="flex shrink-0 flex-row gap-1 sm:w-10 sm:flex-col" aria-label="عملیات محصول">
-        <ProductFavoriteButton productId={productId} initialFavorite={initialFavorite} className={`${actionButtonClass} !bg-transparent`} />
         {actions.map((action) => <Button key={action.label} type="button" isIconOnly variant="ghost" size="sm" aria-label={action.label} onPress={action.onPress} className={actionButtonClass}>{action.icon}</Button>)}
         {compareItem && <CompareButton item={compareItem} variant="icon" className={`${actionButtonClass} !border-0`} />}
       </div>

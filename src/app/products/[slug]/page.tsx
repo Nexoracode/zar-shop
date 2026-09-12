@@ -7,6 +7,7 @@ import { AddToCart, ProductPurchaseProvider } from "@/components/add-to-cart";
 import { PriceTooltip } from "@/components/price-tooltip";
 import { ProductDetailGallery } from "@/components/product-detail-gallery";
 import { ExpandableContent } from "@/components/expandable-content";
+import { ProductTitleActions } from "@/components/product-title-actions";
 import { ProductDetailSectionNav } from "@/components/product-detail-section-nav";
 import { DragScrollRow } from "@/components/drag-scroll-row";
 import { ProductCard } from "@/components/product-card";
@@ -240,10 +241,13 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
       <div className="grid items-stretch gap-7 lg:grid-cols-[minmax(0,1fr)_320px]">
         <div className="min-w-0">
           <section className="grid items-start gap-7 lg:grid-cols-[minmax(330px,1.05fr)_minmax(0,1.1fr)] lg:grid-rows-[auto_auto] lg:gap-x-7 lg:gap-y-5">
-            <ProductDetailGallery productId={product.id} media={galleryMedia} productName={product.name} productCode={product.sku} discountBySelection={discountBySelection} soldPercent={soldPercent} initialFavorite={initialFavorite} compareItem={{ id: product.id, slug: product.slug, name: product.name, image: galleryMedia.find((item) => item.type === "IMAGE")?.url ?? null, categoryId: product.categoryId, categoryName: product.category?.name ?? null }} />
+            <ProductDetailGallery media={galleryMedia} productName={product.name} productCode={product.sku} discountBySelection={discountBySelection} soldPercent={soldPercent} compareItem={{ id: product.id, slug: product.slug, name: product.name, image: galleryMedia.find((item) => item.type === "IMAGE")?.url ?? null, categoryId: product.categoryId, categoryName: product.category?.name ?? null }} />
 
             <div className="min-w-0 lg:col-start-2 lg:row-start-1">
-              {product.category && <Link href={`/products?category=${encodeURIComponent(product.category.slug)}`} className="text-sm font-bold text-[var(--brand-accent)] transition-colors hover:text-[var(--brand-primary)]">{product.category.name}</Link>}
+              <div className="flex items-center justify-between gap-3">
+                {product.category ? <Link href={`/products?category=${encodeURIComponent(product.category.slug)}`} className="text-sm font-bold text-[var(--brand-accent)] transition-colors hover:text-[var(--brand-primary)]">{product.category.name}</Link> : <span />}
+                <ProductTitleActions productId={product.id} productName={product.name} initialFavorite={initialFavorite} />
+              </div>
               <h1 className="mb-4 mt-3 text-base font-bold leading-7 text-slate-900 sm:text-lg lg:text-xl">{product.name}</h1>
               <p dir="ltr" className="border-b border-slate-200 pb-4 text-left text-xs text-slate-400">{product.sku}</p>
               <div className="mt-4 flex flex-wrap items-center gap-3 text-xs">
