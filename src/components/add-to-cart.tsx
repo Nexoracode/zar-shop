@@ -137,7 +137,7 @@ export function AddToCart({ productId, options = [], variants = [], optionGuide,
       </div>
     </aside>}
     {showOptionFields && guideModal}
-    {showMobileBar && <div className="fixed inset-x-0 bottom-0 z-40 flex items-center gap-3 border-t border-slate-200 bg-white px-4 py-2.5 shadow-[0_-8px_24px_rgba(0,0,0,.06)] lg:hidden">
+    {showMobileBar && <div className="fixed inset-x-0 bottom-0 z-50 flex items-center gap-3 border-t border-slate-200 bg-white px-4 py-2.5 shadow-[0_-8px_24px_rgba(0,0,0,.06)] lg:hidden">
       <div className="min-w-0 shrink-0">
         {displayedOriginalPrice !== null && displayedPrice !== null && displayedOriginalPrice > displayedPrice && <div className="flex items-center gap-1.5"><span className="text-[10px] text-slate-400 line-through">{formatMoney(displayedOriginalPrice, currency)}</span>{discountLabel && <span className="inline-flex items-center rounded-full bg-[var(--danger)] px-1.5 py-0.5 text-[9px] font-bold text-[var(--danger-foreground)]">{discountLabel}</span>}</div>}
         <strong className="block truncate text-sm font-bold text-slate-900">{displayedPrice === null ? "قیمت نامشخص" : formatMoney(displayedPrice, currency)}</strong>
