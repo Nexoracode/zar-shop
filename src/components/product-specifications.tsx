@@ -24,11 +24,11 @@ export function ProductSpecifications({ groups }: { groups: SpecificationGroup[]
   return <div>
     <div id="product-specification-groups" className="grid gap-9">
       {visibleGroups.map((group) => <section key={group.id} className="grid items-start gap-3 lg:grid-cols-[180px_minmax(0,1fr)] lg:gap-10" aria-labelledby={`specification-group-${group.id}`}>
-        <h3 id={`specification-group-${group.id}`} className="m-0 pt-4 text-sm font-normal text-slate-900">{group.name}</h3>
-        <dl className="m-0 min-w-0">
-          {group.rows.map((row) => <div key={`${group.id}-${row.label}`} className="grid border-b border-slate-100 py-4 sm:grid-cols-[minmax(130px,200px)_minmax(0,1fr)] sm:gap-8">
-            <dt className="mb-2 text-xs leading-7 text-slate-400 sm:mb-0">{row.label}</dt>
-            <dd className="m-0 break-words text-sm font-normal leading-7 text-slate-800">{row.value}</dd>
+        <h3 id={`specification-group-${group.id}`} className="m-0 pt-4 text-base font-bold text-slate-900">{group.name}</h3>
+        <dl className="m-0 grid min-w-0 gap-1.5">
+          {group.rows.map((row) => <div key={`${group.id}-${row.label}`} className="grid overflow-hidden rounded-lg sm:grid-cols-[minmax(130px,200px)_minmax(0,1fr)]">
+            <dt className="m-0 bg-[var(--surface-tertiary)] px-3 py-2.5 text-xs leading-6 text-slate-600">{row.label}</dt>
+            <dd className="m-0 break-words px-3 py-2.5 text-xs leading-6 text-slate-700">{row.value}</dd>
           </div>)}
         </dl>
       </section>)}
