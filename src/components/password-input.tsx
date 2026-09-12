@@ -11,7 +11,7 @@ export function PasswordInput({ className = "", ...props }: ComponentProps<typeo
   const [visible, setVisible] = useState(false);
   return (
     <div className="relative">
-      <Input {...props} type={visible ? "text" : "password"} dir="ltr" className={`${className} pl-10`} />
+      <Input {...props} type={visible ? "text" : "password"} dir="ltr" className={`${className} !pl-10`} />
       <Button
         type="button"
         isIconOnly
