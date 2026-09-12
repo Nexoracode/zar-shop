@@ -110,7 +110,7 @@ export function AddToCart({ productId, options = [], variants = [], optionGuide,
         isPending={loading}
         fullWidth
         variant="primary"
-        className="w-full min-h-[46px] px-6 py-[9px] inline-flex items-center justify-center gap-[9px] border border-[var(--brand-primary)] rounded-sm bg-[var(--brand-primary)] text-[var(--brand-primary-foreground)] transition-all duration-200 hover:-translate-y-[2px] hover:brightness-110 hover:shadow-[0_8px_20px_color-mix(in_srgb,var(--brand-primary)_18%,transparent)] disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-none"
+        className="w-full min-h-[46px] px-6 py-[9px] inline-flex items-center justify-center gap-[9px] border border-[var(--brand-primary)] rounded-lg bg-[var(--brand-primary)] text-[var(--brand-primary-foreground)] transition-all duration-200 hover:-translate-y-[2px] hover:brightness-110 hover:shadow-[0_8px_20px_color-mix(in_srgb,var(--brand-primary)_18%,transparent)] disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-none"
       >
         {({ isPending }) => <>{isPending && <Spinner color="current" size="sm" />}{disabled ? disabledLabel : optionStockUnavailable ? "تنوع موجودی ندارد" : isPending ? "در حال افزودن..." : "افزودن به سبد"}</>}
       </Button>;
