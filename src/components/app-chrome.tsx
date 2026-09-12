@@ -20,6 +20,14 @@ export function AppChrome({ header, footer, children, storefrontAvailable, maint
   // The account area is a self-contained, app-like section with its own sidebar; the marketing
   // footer under it just adds noise, so it renders header + content only.
   const hideFooter = pathname.startsWith("/account");
+  // Below lg, the product detail page renders its own compact header (close/search/cart/more,
+  // see ProductDetailTopBar) instead of the storefront header + bottom nav — a focused product
+  // view rather than a normal browsing page. At lg+ there's room for the full header, so it
+  // stays: a CSS rule (globals.css) hides `.storefront-shell > header`/the bottom nav/footer only
+  // under that breakpoint, rather than removing them from the tree — same DOM shape as any other
+  // page, so product-detail-section-nav.tsx's `.storefront-shell > header` sticky-offset lookup
+  // still resolves (falling back to ProductDetailTopBar's own height when that one is display:none).
+  const isProductDetail = /^\/products\/[^/]+\/?$/.test(pathname);
   if (!storefrontAvailable && !isStandalone && !isAuthPath) {
     const icon = setupIncomplete ? <Rocket size={25} /> : maintenanceMode ? <Settings2 size={25} /> : <Store size={25} />;
     const title = setupIncomplete ? "فروشگاه هنوز راه‌اندازی نشده است" : maintenanceMode ? "فروشگاه در حال بروزرسانی است" : "فروشگاه موقتاً غیرفعال است";
@@ -33,7 +41,7 @@ export function AppChrome({ header, footer, children, storefrontAvailable, maint
   if (isStandalone) return children;
   return (
     <CompareProvider>
-      <div className="storefront-shell" style={brandStyle} data-compact-mobile-grid={compactMobileGrid}>{header}{children}{hideFooter ? null : footer}</div>
+      <div className={`storefront-shell${isProductDetail ? " storefront-shell--product-detail" : ""}`} style={brandStyle} data-compact-mobile-grid={compactMobileGrid}>{header}{children}{hideFooter ? null : footer}</div>
       <CompareTray />
     </CompareProvider>
   );

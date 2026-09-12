@@ -16,13 +16,18 @@ export function ProductDetailSectionNav() {
 
   useEffect(() => {
     const root = document.documentElement;
+    // Below lg this page swaps the storefront header for its own compact top bar (see
+    // ProductDetailTopBar/globals.css) — whichever one is actually visible at the current
+    // breakpoint is the one whose height the offsets below need to account for.
     const storefrontHeader = document.querySelector<HTMLElement>(".storefront-shell > header");
+    const compactTopBar = document.querySelector<HTMLElement>("[data-product-top-bar]");
     const detailNavigation = document.querySelector<HTMLElement>('nav[aria-label="بخش‌های صفحه محصول"]');
 
     const updateStickyOffsets = () => {
-      const headerOffset = storefrontHeader && getComputedStyle(storefrontHeader).position === "sticky"
-        ? Math.round(storefrontHeader.getBoundingClientRect().height)
-        : 0;
+      const activeHeader = [storefrontHeader, compactTopBar].find(
+        (el) => el && getComputedStyle(el).position === "sticky" && el.getBoundingClientRect().height > 0,
+      );
+      const headerOffset = activeHeader ? Math.round(activeHeader.getBoundingClientRect().height) : 0;
       const navigationHeight = Math.round(detailNavigation?.getBoundingClientRect().height ?? 53);
       root.style.setProperty("--storefront-sticky-header-offset", `${headerOffset}px`);
       root.style.setProperty("--product-primary-purchase-offset", `${headerOffset + 24}px`);
@@ -31,8 +36,9 @@ export function ProductDetailSectionNav() {
     };
 
     updateStickyOffsets();
-    const resizeObserver = storefrontHeader || detailNavigation ? new ResizeObserver(updateStickyOffsets) : null;
+    const resizeObserver = storefrontHeader || compactTopBar || detailNavigation ? new ResizeObserver(updateStickyOffsets) : null;
     if (storefrontHeader) resizeObserver?.observe(storefrontHeader);
+    if (compactTopBar) resizeObserver?.observe(compactTopBar);
     if (detailNavigation) resizeObserver?.observe(detailNavigation);
     window.addEventListener("resize", updateStickyOffsets);
 

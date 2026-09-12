@@ -121,6 +121,19 @@ html[dir="rtl"] [data-slot="modal-header"]:has([data-slot="modal-close-trigger"]
   }
 }
 
+/* Product detail page: below lg the page renders its own compact top bar (ProductDetailTopBar)
+   instead of the storefront header/bottom-nav/footer — hidden via CSS rather than removed from
+   the tree, so `.storefront-shell > header` still resolves for product-detail-section-nav.tsx's
+   sticky-offset math (falling back to the compact bar's own height once this one is display:none).
+   At lg+ there's room for the full header again, so it stays untouched. */
+@media (max-width: 1023.98px) {
+  .storefront-shell--product-detail > header:not([data-product-top-bar]),
+  .storefront-shell--product-detail > nav[aria-label="ناوبری موبایل"],
+  .storefront-shell--product-detail > footer {
+    display: none;
+  }
+}
+
 @layer base {
   [data-theme="zar"] {
     color-scheme: light;

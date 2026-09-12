@@ -8,6 +8,8 @@ import { PriceTooltip } from "@/components/price-tooltip";
 import { ProductDetailGallery } from "@/components/product-detail-gallery";
 import { ExpandableContent } from "@/components/expandable-content";
 import { ProductTitleActions } from "@/components/product-title-actions";
+import { ProductDetailTopBar } from "@/components/product-detail-top-bar";
+import { getCartProductCount } from "@/modules/cart/cart-summary";
 import { ProductDetailSectionNav } from "@/components/product-detail-section-nav";
 import { DragScrollRow } from "@/components/drag-scroll-row";
 import { ProductCard } from "@/components/product-card";
@@ -87,11 +89,12 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
 
   const pickerTypes = selectableTypes(product.optionTypes);
   const colorIds = productColorIds(product.optionTypes);
-  const [colors, soldAggregate, reviewData, initialFavorite] = await Promise.all([
+  const [colors, soldAggregate, reviewData, initialFavorite, cartCount] = await Promise.all([
     colorIds.length ? db.color.findMany({ where: { id: { in: colorIds }, isActive: true }, select: { id: true, name: true, hex: true } }) : Promise.resolve([]),
     db.orderItem.aggregate({ where: { productId: product.id, order: { status: { in: [...completedSaleOrderStatuses] } } }, _sum: { quantity: true } }),
     getStorefrontProductReviews(product.id, currentUser?.id ?? null),
     currentUser && !currentUser.isGuest ? db.productFavorite.findUnique({ where: { userId_productId: { userId: currentUser.id, productId: product.id } }, select: { id: true } }).then(Boolean) : Promise.resolve(false),
+    currentUser ? getCartProductCount(currentUser.id, settings.industry) : Promise.resolve(0),
   ]);
   const soldPercent = calculateSoldPercent(soldAggregate._sum.quantity ?? 0, product.stock);
   const colorsById = new Map(colors.map((color) => [color.id, color]));
@@ -232,7 +235,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
     } : {}),
   };
 
-  return <ProductPurchaseProvider initialSelectedOptions={initialSelectedOptions}><ProductActivityTracker productId={product.id} enabled={Boolean(currentUser && !currentUser.isGuest)} />{seo.enableProductSchema && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(productJsonLd) }} />}<main className="bg-white px-4 pb-16 pt-5 antialiased sm:px-6 lg:pb-24">
+  return <ProductPurchaseProvider initialSelectedOptions={initialSelectedOptions}><ProductDetailTopBar productName={product.name} cartCount={cartCount} /><ProductActivityTracker productId={product.id} enabled={Boolean(currentUser && !currentUser.isGuest)} />{seo.enableProductSchema && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(productJsonLd) }} />}<main className="bg-white px-4 pb-16 pt-5 antialiased sm:px-6 lg:pb-24">
     <div className="mx-auto w-full max-w-[1440px]">
       <nav className="mb-6 flex flex-wrap items-center gap-2 text-xs text-slate-500" aria-label="مسیر محصول">
         <Link href="/" className="transition hover:text-slate-900">خانه</Link><span>/</span><Link href="/products" className="transition hover:text-slate-900">محصولات</Link>{product.category && <><span>/</span><Link href={`/products?category=${encodeURIComponent(product.category.slug)}`} className="transition hover:text-slate-900">{product.category.name}</Link></>}
