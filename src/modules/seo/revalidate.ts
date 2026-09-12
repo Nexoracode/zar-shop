@@ -5,5 +5,5 @@ import { revalidateTag } from "next/cache";
 export const SITEMAP_TAG = "sitemap";
 
 export function revalidateSitemap() {
-  revalidateTag(SITEMAP_TAG);
+  revalidateTag(SITEMAP_TAG, "max");
 }
