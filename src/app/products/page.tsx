@@ -5,6 +5,7 @@ import { ProductCard } from "@/components/product-card";
 import { DiscountExpiryRefresh } from "@/components/discount-expiry-refresh";
 import { earliestDiscountExpiry } from "@/modules/products/discount-window";
 import { StorefrontCatalogFilters } from "@/components/storefront-catalog-filters";
+import { StorefrontCatalogFiltersMobile } from "@/components/storefront-catalog-filters-mobile";
 import { db } from "@/lib/db";
 import { collectCategoryAndDescendantIds } from "@/modules/categories/category-tree";
 import { getStorefrontCatalog } from "@/modules/products/storefront-catalog";
@@ -120,21 +121,26 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
   }
 
   const resetFiltersHref = productsHref({ MinPrice: undefined, MaxPrice: undefined, brandSlug: undefined, brand: [], color: [], attr: [], inStock: undefined, hasDiscount: undefined, freeShipping: undefined, sameDayDelivery: undefined, page: undefined });
-  const filters = <StorefrontCatalogFilters
-    key={[query.MinPrice, query.MaxPrice].join("|")}
-    facets={catalog.facets}
-    categoryScoped={Boolean(selectedCategory)}
-    selectedBrands={query.brand ?? []}
-    selectedColors={selectedCategory ? query.color ?? [] : []}
-    selectedAttributes={selectedCategory ? query.attr ?? [] : []}
-    minPrice={query.MinPrice}
-    maxPrice={query.MaxPrice}
-    inStock={query.inStock}
-    hasDiscount={query.hasDiscount}
-    freeShipping={query.freeShipping}
-    sameDayDelivery={query.sameDayDelivery}
-    resetHref={resetFiltersHref}
-  />;
+  const selectedBrandsArr = query.brand ?? [];
+  const selectedColorsArr = selectedCategory ? query.color ?? [] : [];
+  const selectedAttributesArr = selectedCategory ? query.attr ?? [] : [];
+  const activeFilterCount = selectedBrandsArr.length + selectedColorsArr.length + selectedAttributesArr.length + Number(query.MinPrice !== undefined) + Number(query.MaxPrice !== undefined) + Number(Boolean(query.inStock)) + Number(Boolean(query.hasDiscount)) + Number(Boolean(query.freeShipping)) + Number(Boolean(query.sameDayDelivery));
+  const filterKey = [query.MinPrice, query.MaxPrice].join("|");
+  const filterProps = {
+    facets: catalog.facets,
+    categoryScoped: Boolean(selectedCategory),
+    selectedBrands: selectedBrandsArr,
+    selectedColors: selectedColorsArr,
+    selectedAttributes: selectedAttributesArr,
+    minPrice: query.MinPrice,
+    maxPrice: query.MaxPrice,
+    inStock: query.inStock,
+    hasDiscount: query.hasDiscount,
+    freeShipping: query.freeShipping,
+    sameDayDelivery: query.sameDayDelivery,
+    resetHref: resetFiltersHref,
+  };
+  const filters = <StorefrontCatalogFilters key={filterKey} {...filterProps} />;
 
   return <main className="bg-white px-4 py-7 sm:px-6 lg:py-10">
     <div className="mx-auto w-full max-w-[1600px]">
@@ -146,7 +152,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
       <div className="grid items-start gap-6 lg:grid-cols-[270px_minmax(0,1fr)]">
         <aside className="sticky top-[var(--storefront-sticky-offset,112px)] hidden lg:block" aria-label="فیلتر محصولات">{filters}</aside>
         <section className="min-w-0" aria-label="نتایج محصولات">
-          <div className="mb-5 lg:hidden">{filters}</div>
+          <div className="mb-5 lg:hidden"><StorefrontCatalogFiltersMobile activeCount={activeFilterCount} resetHref={resetFiltersHref}><StorefrontCatalogFilters key={filterKey} {...filterProps} embedded /></StorefrontCatalogFiltersMobile></div>
           <div className="flex min-h-12 flex-wrap items-center gap-x-5 gap-y-3 border-b border-slate-200 pb-3 text-xs">
             <span className="inline-flex items-center gap-2 font-bold text-slate-800"><ArrowDownUp size={17} />مرتب‌سازی:</span>
             {sortOptions.map((option) => <Link key={option.id} href={productsHref({ sortby: option.id, page: undefined })} aria-current={query.sortby === option.id ? "page" : undefined} className={`relative py-2 transition after:absolute after:inset-x-0 after:-bottom-3 after:h-0.5 after:rounded-full after:bg-[var(--brand-primary)] ${query.sortby === option.id ? "font-bold text-[var(--brand-primary)] after:scale-x-100" : "text-slate-500 after:scale-x-0 hover:text-[var(--brand-primary)]"}`}>{option.label}</Link>)}

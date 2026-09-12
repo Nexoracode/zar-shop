@@ -26,6 +26,8 @@ type Props = {
   freeShipping?: boolean;
   sameDayDelivery?: boolean;
   resetHref: string;
+  /** Renders bare (no card chrome or own "فیلترها" header) for use inside the mobile filter sheet, which supplies its own header/footer. */
+  embedded?: boolean;
 };
 
 function FilterCheckbox({ selected, onChange, children }: { selected: boolean; onChange: (selected: boolean) => void; children: ReactNode }) {
@@ -87,7 +89,7 @@ function PriceRangeSlider({ bounds, step, value, onChange, onChangeEnd }: {
   </div>;
 }
 
-export function StorefrontCatalogFilters({ facets, categoryScoped, selectedBrands, selectedColors, selectedAttributes, minPrice, maxPrice, inStock, hasDiscount, freeShipping, sameDayDelivery, resetHref }: Props) {
+export function StorefrontCatalogFilters({ facets, categoryScoped, selectedBrands, selectedColors, selectedAttributes, minPrice, maxPrice, inStock, hasDiscount, freeShipping, sameDayDelivery, resetHref, embedded = false }: Props) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -136,12 +138,12 @@ export function StorefrontCatalogFilters({ facets, categoryScoped, selectedBrand
     navigate(next);
   }
 
-  return <div className={`storefront-mega-scroll relative rounded-xl border border-slate-200 bg-white px-4 py-5 transition-opacity lg:max-h-[calc(100dvh-var(--storefront-sticky-offset,112px)-16px)] lg:overflow-y-auto ${isPending ? "opacity-65" : "opacity-100"}`} dir="rtl" aria-busy={isPending}>
+  return <div className={embedded ? `relative transition-opacity ${isPending ? "opacity-65" : "opacity-100"}` : `storefront-mega-scroll relative rounded-xl border border-slate-200 bg-white px-4 py-5 transition-opacity lg:max-h-[calc(100dvh-var(--storefront-sticky-offset,112px)-16px)] lg:overflow-y-auto ${isPending ? "opacity-65" : "opacity-100"}`} dir="rtl" aria-busy={isPending}>
     {isPending && <span className="sticky top-0 z-10 float-left grid size-7 place-items-center rounded-full bg-white shadow-sm" aria-label="در حال بروزرسانی نتایج"><Spinner size="sm" color="current" /></span>}
-    <div className="flex items-center justify-between gap-3 border-b border-slate-100 pb-4">
+    {!embedded && <div className="flex items-center justify-between gap-3 border-b border-slate-100 pb-4">
       <h2 className="m-0 flex items-center gap-2 text-base font-bold text-slate-900"><SlidersHorizontal size={18} />فیلترها</h2>
       {activeCount > 0 && <Link href={resetHref} scroll={false} className="text-[11px] font-bold text-[var(--brand-primary)]">حذف فیلترها</Link>}
-    </div>
+    </div>}
 
     <Accordion dir="rtl" variant="surface" hideSeparator allowsMultipleExpanded defaultExpandedKeys={hasPriceRange ? ["catalog-price"] : []} className="w-full bg-transparent p-0 text-right" aria-label="فیلترهای محصولات">
       {hasPriceRange && <Accordion.Item id="catalog-price" className="mb-2 rounded-xl border border-slate-200/80 bg-white px-3">
