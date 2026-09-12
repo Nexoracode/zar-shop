@@ -2,11 +2,12 @@
 
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { Button, Modal, ProgressBar, toast } from "@heroui/react";
-import { Bell, ChartNoAxesCombined, ChevronLeft, ChevronRight, Ellipsis, Heart, ImageIcon, Info, List, Play, Scale, Share2, X } from "lucide-react";
+import { Bell, ChartNoAxesCombined, ChevronLeft, ChevronRight, Ellipsis, ImageIcon, Info, List, Play, Share2, X } from "lucide-react";
 import { useSelectedProductOptions } from "@/components/add-to-cart";
-import { useCompare } from "@/components/compare-provider";
+import { ProductFavoriteButton } from "@/components/product-favorite-button";
+import { CompareButton } from "@/components/compare-button";
 import type { CompareItem } from "@/modules/compare/compare";
 import { selectionSignature } from "@/modules/products/variant-combinations";
 
@@ -29,7 +30,6 @@ type ProductDetailGalleryProps = {
   productCode: string;
   discountBySelection?: SelectionDiscount[];
   soldPercent?: number;
-  authenticated?: boolean;
   initialFavorite?: boolean;
   compareItem?: CompareItem;
 };
@@ -79,11 +79,10 @@ function renderFullscreenGallery({ media, selected, selectedIndex, productName, 
   </Modal.Backdrop>;
 }
 
-export function ProductDetailGallery({ productId, media, productName, productCode, discountBySelection = [], soldPercent = 0, authenticated = false, initialFavorite = false, compareItem }: ProductDetailGalleryProps) {
+export function ProductDetailGallery({ productId, media, productName, productCode, discountBySelection = [], soldPercent = 0, initialFavorite = false, compareItem }: ProductDetailGalleryProps) {
   const router = useRouter();
   const selectedOptions = useSelectedProductOptions();
-  const compare = useCompare();
-  const inCompare = compareItem ? compare.has(compareItem.id) : false;
+  const viewportRef = useRef<HTMLDivElement>(null);
   // The entry matching whatever is currently picked — the base product's own entry has an empty
   // `selection`, which is also what a product with no combinations, or no pick made yet, reads as.
   const activeDiscount = useMemo(() => {
@@ -93,7 +92,6 @@ export function ProductDetailGallery({ productId, media, productName, productCod
   const hasDiscount = activeDiscount?.hasDiscount ?? false;
   const discountEndsAt = activeDiscount?.discountEndsAt ?? null;
   const [selectedId, setSelectedId] = useState(media[0]?.id ?? "");
-  const [favorite, setFavorite] = useState(initialFavorite);
   const [priceAlert, setPriceAlert] = useState(false);
   const [now, setNow] = useState(() => Date.now());
   // `now` is computed at both server-render and client-hydration time, so it differs by
@@ -144,11 +142,49 @@ export function ProductDetailGallery({ productId, media, productName, productCod
     };
   }, [discountEndsAt, hasDiscount, router]);
 
+  function scrollToIndex(index: number) {
+    const el = viewportRef.current;
+    if (!el || index < 0) return;
+    el.scrollTo({ left: index * el.clientWidth, behavior: "smooth" });
+  }
+
+  // Keeps the thumbnail row / fullscreen picker and the swipeable main viewport in sync — either
+  // one can drive the selection, so both paths go through this instead of just setting state.
+  function selectId(id: string) {
+    setSelectedId(id);
+    scrollToIndex(media.findIndex((item) => item.id === id));
+  }
+
   function selectAt(index: number) {
     if (!media.length) return;
     const normalized = (index + media.length) % media.length;
-    setSelectedId(media[normalized].id);
+    selectId(media[normalized].id);
   }
+
+  // The main viewport is a native horizontal scroller (snap-x) so touch swipe comes free from
+  // the browser; this just reads back which slide ended up centered to keep `selectedId` (and
+  // therefore the thumbnail highlight + counter) in sync when the reader swipes instead of taps.
+  useEffect(() => {
+    const el = viewportRef.current;
+    if (!el || media.length < 2) return;
+    let frame = 0;
+    function onScroll() {
+      if (frame) return;
+      frame = requestAnimationFrame(() => {
+        frame = 0;
+        if (!el) return;
+        const width = el.clientWidth || 1;
+        const index = Math.min(media.length - 1, Math.max(0, Math.round(el.scrollLeft / width)));
+        const item = media[index];
+        if (item) setSelectedId(item.id);
+      });
+    }
+    el.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      el.removeEventListener("scroll", onScroll);
+      if (frame) cancelAnimationFrame(frame);
+    };
+  }, [media]);
 
   async function shareProduct() {
     const shareData = { title: productName, url: window.location.href };
@@ -162,43 +198,35 @@ export function ProductDetailGallery({ productId, media, productName, productCod
     }
   }
 
-  async function toggleFavorite() {
-    if (!authenticated) { router.push(`/login?next=${encodeURIComponent(window.location.pathname)}`); return; }
-    const next = !favorite;
-    const response = await fetch(`/api/account/favorites/${productId}`, { method: next ? "PUT" : "DELETE" });
-    if (!response.ok) { toast.danger("تغییر علاقه‌مندی انجام نشد"); return; }
-    setFavorite(next);
-    toast.success(next ? "به علاقه‌مندی‌ها اضافه شد" : "از علاقه‌مندی‌ها حذف شد");
-  }
-
   const actions = [
-    { label: favorite ? "حذف از علاقه‌مندی‌ها" : "افزودن به علاقه‌مندی‌ها", icon: <Heart size={23} className={favorite ? "fill-[var(--danger)] text-[var(--danger)]" : ""} />, onPress: () => void toggleFavorite() },
     { label: "اشتراک‌گذاری محصول", icon: <Share2 size={22} />, onPress: () => void shareProduct() },
     { label: priceAlert ? "غیرفعال‌کردن اطلاع‌رسانی" : "اطلاع‌رسانی تغییرات محصول", icon: <Bell size={22} className={priceAlert ? "fill-[var(--brand-accent)] text-[var(--brand-accent)]" : ""} />, onPress: () => setPriceAlert((value) => !value) },
     { label: "نمودار قیمت", icon: <ChartNoAxesCombined size={22} />, onPress: () => toast.success("نمودار قیمت در مرحله اتصال API فعال می‌شود") },
-    { label: inCompare ? "حذف از مقایسه" : "افزودن به مقایسه", icon: <Scale size={21} className={inCompare ? "text-[var(--brand-primary)]" : ""} />, onPress: () => {
-      if (!compareItem) return;
-      const nowIn = compare.toggle(compareItem);
-      if (nowIn) toast.success("به فهرست مقایسه اضافه شد");
-      else if (inCompare) toast.success("از فهرست مقایسه حذف شد");
-    } },
     { label: "مشخصات محصول", icon: <List size={22} />, onPress: () => document.getElementById("specifications")?.scrollIntoView({ behavior: "smooth" }) },
   ];
+  const actionButtonClass = "!size-10 !min-h-10 !min-w-10 rounded-full text-slate-700 hover:bg-[var(--surface-tertiary)] hover:text-[var(--brand-primary)]";
 
   return <section className="min-w-0 lg:col-start-1 lg:row-span-2 lg:row-start-1" aria-label="گالری محصول">
     {showBadge && <div className="mb-5 flex min-h-12 items-center gap-3 px-3 text-[11px] font-bold text-[var(--danger)] sm:gap-4 sm:px-5 sm:text-xs" style={{ backgroundColor: "color-mix(in srgb, var(--danger) 10%, white)" }}><span className="shrink-0">{hasSchedule ? "پیشنهاد شگفت‌انگیز" : "فروش ویژه"}</span>{showSoldProgress && <div className="flex min-w-0 flex-1 items-center gap-2 text-slate-500"><span className="shrink-0 font-medium"><strong className="text-[var(--danger)]">{normalizedSoldPercent.toLocaleString("fa-IR")}٪</strong> فروش رفته</span><ProgressBar value={normalizedSoldPercent} aria-label="درصد فروش محصول" dir="ltr" className="min-w-8 flex-1"><ProgressBar.Track className="h-1 overflow-hidden rounded-full" style={{ backgroundColor: "color-mix(in srgb, var(--danger) 18%, white)" }}><ProgressBar.Fill className="h-full rounded-full bg-[var(--danger)]" /></ProgressBar.Track></ProgressBar></div>}{hasSchedule && countdown && <span dir="ltr" className={`${showSoldProgress ? "" : "mr-auto"} flex shrink-0 items-center gap-2 whitespace-nowrap tabular-nums`}>{countdown.days > 0 && <span dir="rtl" className="inline-flex h-7 items-center rounded-md border bg-white/70 px-2 text-[10px] font-bold text-[var(--danger)] sm:text-[11px]" style={{ borderColor: "color-mix(in srgb, var(--danger) 28%, white)" }}>{countdown.days.toLocaleString("fa-IR")} روز</span>}<bdi dir="ltr">{countdown.clock}</bdi></span>}</div>}
 
     <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
       <div className="flex shrink-0 flex-row gap-1 sm:w-10 sm:flex-col" aria-label="عملیات محصول">
-        {actions.map((action) => <Button key={action.label} type="button" isIconOnly variant="ghost" size="sm" aria-label={action.label} onPress={action.onPress} className="size-10 min-h-10 min-w-10 rounded-full text-slate-700 hover:bg-[var(--surface-tertiary)] hover:text-[var(--brand-primary)]">{action.icon}</Button>)}
+        <ProductFavoriteButton productId={productId} initialFavorite={initialFavorite} className={`${actionButtonClass} !bg-transparent`} />
+        {actions.map((action) => <Button key={action.label} type="button" isIconOnly variant="ghost" size="sm" aria-label={action.label} onPress={action.onPress} className={actionButtonClass}>{action.icon}</Button>)}
+        {compareItem && <CompareButton item={compareItem} variant="icon" className={`${actionButtonClass} !border-0`} />}
       </div>
-      <div className="relative grid aspect-square min-w-0 flex-1 place-items-center overflow-hidden bg-white">
-        <GalleryMedia item={selected} productName={productName} priority />
+      <div className="relative min-w-0 flex-1 overflow-hidden">
+        {media.length > 0 ? (
+          <div ref={viewportRef} dir="ltr" className="flex aspect-square snap-x snap-mandatory overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            {media.map((item, index) => <div key={item.id} className="relative grid w-full shrink-0 snap-center place-items-center bg-white"><GalleryMedia item={item} productName={productName} priority={index === 0} /></div>)}
+          </div>
+        ) : <div className="grid aspect-square place-items-center bg-white"><GalleryMedia item={undefined} productName={productName} /></div>}
+        {media.length > 1 && <span dir="ltr" className="pointer-events-none absolute bottom-3 left-1/2 -translate-x-1/2 rounded-full bg-black/55 px-2.5 py-1 text-[11px] font-bold text-white">{(selectedIndex + 1).toLocaleString("fa-IR")} / {media.length.toLocaleString("fa-IR")}</span>}
       </div>
     </div>
 
     {media.length > 1 && <div className="mt-4 flex items-stretch justify-center gap-2 overflow-x-auto pb-1" role="group" aria-label="انتخاب تصویر محصول">
-      {previewMedia.map((item) => <Button key={item.id} type="button" isIconOnly variant="secondary" aria-label={`نمایش ${item.alt || productName}`} aria-pressed={item.id === selected?.id} onPress={() => setSelectedId(item.id)} className={`relative size-[74px] min-h-[74px] min-w-[74px] overflow-hidden rounded-lg border bg-white p-0 ${item.id === selected?.id ? "border-[var(--brand-accent)]" : "border-slate-200 hover:border-[var(--brand-accent)]"}`}>
+      {previewMedia.map((item) => <Button key={item.id} type="button" isIconOnly variant="secondary" aria-label={`نمایش ${item.alt || productName}`} aria-pressed={item.id === selected?.id} onPress={() => selectId(item.id)} className={`relative size-[74px] min-h-[74px] min-w-[74px] overflow-hidden rounded-lg border bg-white p-0 ${item.id === selected?.id ? "border-[var(--brand-accent)]" : "border-slate-200 hover:border-[var(--brand-accent)]"}`}>
         {item.type === "IMAGE" ? <Image src={item.url} alt={item.alt || productName} fill sizes="74px" className="object-contain p-1.5" /> : <><video src={item.url} muted className="h-full w-full object-cover" aria-hidden="true" /><span className="absolute inset-0 grid place-items-center bg-black/20 text-white"><Play size={20} fill="currentColor" /></span></>}
       </Button>)}
       <Modal>
@@ -206,7 +234,7 @@ export function ProductDetailGallery({ productId, media, productName, productCod
           {media[media.length - 1]?.type === "IMAGE" && <Image src={media[media.length - 1].url} alt="" fill sizes="74px" className="scale-110 object-cover blur-[5px]" />}
           <span className="absolute inset-0 grid place-items-center bg-white/45 text-slate-700"><Ellipsis size={28} /></span>
         </Button>
-        {renderFullscreenGallery({ media, selected, selectedIndex, productName, onSelect: setSelectedId, onStep: selectAt })}
+        {renderFullscreenGallery({ media, selected, selectedIndex, productName, onSelect: selectId, onStep: selectAt })}
       </Modal>
     </div>}
     <div className="mt-3 flex flex-wrap items-center justify-center gap-x-7 gap-y-1 text-[11px] text-slate-400"><span className="inline-flex items-center gap-1.5"><Info size={15} />گزارش مشخصات کالا یا موارد قانونی</span><span dir="ltr">{productCode}</span></div>

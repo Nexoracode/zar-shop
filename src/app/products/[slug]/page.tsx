@@ -6,6 +6,7 @@ import { CheckCircle2, Headset, PackageCheck, ShieldCheck, Star, Truck } from "l
 import { AddToCart, ProductPurchaseProvider } from "@/components/add-to-cart";
 import { PriceTooltip } from "@/components/price-tooltip";
 import { ProductDetailGallery } from "@/components/product-detail-gallery";
+import { ExpandableContent } from "@/components/expandable-content";
 import { ProductDetailSectionNav } from "@/components/product-detail-section-nav";
 import { DragScrollRow } from "@/components/drag-scroll-row";
 import { ProductCard } from "@/components/product-card";
@@ -239,7 +240,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
       <div className="grid items-stretch gap-7 lg:grid-cols-[minmax(0,1fr)_320px]">
         <div className="min-w-0">
           <section className="grid items-start gap-7 lg:grid-cols-[minmax(330px,1.05fr)_minmax(0,1.1fr)] lg:grid-rows-[auto_auto] lg:gap-x-7 lg:gap-y-5">
-            <ProductDetailGallery productId={product.id} media={galleryMedia} productName={product.name} productCode={product.sku} discountBySelection={discountBySelection} soldPercent={soldPercent} authenticated={Boolean(currentUser && !currentUser.isGuest)} initialFavorite={initialFavorite} compareItem={{ id: product.id, slug: product.slug, name: product.name, image: galleryMedia.find((item) => item.type === "IMAGE")?.url ?? null, categoryId: product.categoryId, categoryName: product.category?.name ?? null }} />
+            <ProductDetailGallery productId={product.id} media={galleryMedia} productName={product.name} productCode={product.sku} discountBySelection={discountBySelection} soldPercent={soldPercent} initialFavorite={initialFavorite} compareItem={{ id: product.id, slug: product.slug, name: product.name, image: galleryMedia.find((item) => item.type === "IMAGE")?.url ?? null, categoryId: product.categoryId, categoryName: product.category?.name ?? null }} />
 
             <div className="min-w-0 lg:col-start-2 lg:row-start-1">
               {product.category && <Link href={`/products?category=${encodeURIComponent(product.category.slug)}`} className="text-sm font-bold text-[var(--brand-accent)] transition-colors hover:text-[var(--brand-primary)]">{product.category.name}</Link>}
@@ -248,7 +249,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
               <div className="mt-4 flex flex-wrap items-center gap-3 text-xs">
                 <span className="inline-flex items-center gap-1 font-bold text-slate-700"><Star size={16} className="fill-[var(--warning)] text-[var(--warning)]" />{reviewData.summary.average.toLocaleString("fa-IR", { maximumFractionDigits: 1 })}</span><span className="text-slate-400">از ۵</span><span className="size-1 rounded-full bg-slate-300" /><Link href="#reviews" className="font-bold text-[var(--brand-accent)]">{reviewData.summary.count.toLocaleString("fa-IR")} دیدگاه</Link>
               </div>
-              <AddToCart {...cartProps} layout="product-detail" showPurchaseCard={false} />
+              <AddToCart {...cartProps} layout="product-detail" showPurchaseCard={false} showMobileBar />
               {primaryFeatures.length > 0 && <section className="mt-8" aria-labelledby="primary-features-title"><h2 id="primary-features-title" className="mb-4 text-base font-normal text-slate-900">ویژگی‌ها</h2><div className="grid grid-cols-2 gap-2">{primaryFeatures.map((feature) => <div key={feature.id} className="min-h-[62px] rounded-lg bg-[var(--surface-tertiary)] px-3 py-2.5 text-right"><span className="block text-[11px] text-slate-400">{feature.name}</span><strong className="mt-1 block truncate text-xs font-normal text-slate-700">{feature.values.join("، ")}</strong></div>)}</div><div className="mt-4 flex items-center gap-4"><span className="h-px flex-1 bg-slate-200" /><Link href="#specifications" className="inline-flex min-h-10 shrink-0 items-center gap-2 rounded-lg border border-slate-200 px-4 text-xs font-normal text-slate-800 transition hover:border-slate-400">مشاهده همه ویژگی‌ها <span aria-hidden="true">‹</span></Link><span className="h-px flex-1 bg-slate-200" /></div></section>}
             </div>
           </section>
@@ -277,7 +278,9 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
         <div className="min-w-0">
       <section id="introduction" className="border-b border-slate-200 py-9" style={{ scrollMarginTop: "var(--product-detail-anchor-offset, 96px)" }} aria-labelledby="introduction-title">
         <SectionTitle id="introduction-title">معرفی</SectionTitle>
-        <div className="rich-text-content max-w-5xl text-sm leading-8 text-slate-600" dangerouslySetInnerHTML={{ __html: sanitizeProductDescription(product.description || `<p>${product.name} با تضمین اصالت، اطلاعات شفاف و ارسال قابل پیگیری از ${settings.storeName} عرضه می‌شود.</p>`) }} />
+        <ExpandableContent>
+          <div className="rich-text-content max-w-5xl text-sm leading-8 text-slate-600" dangerouslySetInnerHTML={{ __html: sanitizeProductDescription(product.description || `<p>${product.name} با تضمین اصالت، اطلاعات شفاف و ارسال قابل پیگیری از ${settings.storeName} عرضه می‌شود.</p>`) }} />
+        </ExpandableContent>
       </section>
 
       <section id="specifications" className="border-b border-slate-200 py-9" style={{ scrollMarginTop: "var(--product-detail-anchor-offset, 96px)" }} aria-labelledby="specifications-title">

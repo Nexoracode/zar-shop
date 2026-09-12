@@ -40,7 +40,7 @@ export function useSelectedProductOptions(): Record<string, string> {
   return useContext(ProductPurchaseContext)?.selectedOptions ?? {};
 }
 
-export function AddToCart({ productId, options = [], variants = [], optionGuide, disabled, disabledLabel = "ناموجود", currency = "IRR", layout = "default", purchaseSummary, purchaseMeta, purchaseFooter, purchasePrice = null, purchaseOriginalPrice = null, preparationDays = 0, showOptionFields = true, showPurchaseCard = true, purchaseCardClassName, purchaseCardStickyTop = "6rem" }: { productId: string; options?: ProductOption[]; variants?: PurchasableVariant[]; optionGuide?: OptionGuide | null; disabled: boolean; disabledLabel?: string; currency?: "IRR" | "IRT"; layout?: "default" | "product-detail"; purchaseSummary?: ReactNode; purchaseMeta?: ReactNode; /** Rendered under the trust badges, once per card instance — e.g. a "chat with support" link. */ purchaseFooter?: ReactNode; purchasePrice?: number | null; purchaseOriginalPrice?: number | null; preparationDays?: number; showOptionFields?: boolean; showPurchaseCard?: boolean; purchaseCardClassName?: string; purchaseCardStickyTop?: string }) {
+export function AddToCart({ productId, options = [], variants = [], optionGuide, disabled, disabledLabel = "ناموجود", currency = "IRR", layout = "default", purchaseSummary, purchaseMeta, purchaseFooter, purchasePrice = null, purchaseOriginalPrice = null, preparationDays = 0, showOptionFields = true, showPurchaseCard = true, showMobileBar = false, purchaseCardClassName, purchaseCardStickyTop = "6rem" }: { productId: string; options?: ProductOption[]; variants?: PurchasableVariant[]; optionGuide?: OptionGuide | null; disabled: boolean; disabledLabel?: string; currency?: "IRR" | "IRT"; layout?: "default" | "product-detail"; purchaseSummary?: ReactNode; purchaseMeta?: ReactNode; /** Rendered under the trust badges, once per card instance — e.g. a "chat with support" link. */ purchaseFooter?: ReactNode; purchasePrice?: number | null; purchaseOriginalPrice?: number | null; preparationDays?: number; showOptionFields?: boolean; showPurchaseCard?: boolean; /** Renders the persistent mobile bottom price+buy bar — set on exactly one of the page's `AddToCart` instances. */ showMobileBar?: boolean; purchaseCardClassName?: string; purchaseCardStickyTop?: string }) {
   const router = useRouter();
   const sharedState = useContext(ProductPurchaseContext);
   const [localMessage, setLocalMessage] = useState("");
@@ -137,6 +137,13 @@ export function AddToCart({ productId, options = [], variants = [], optionGuide,
       </div>
     </aside>}
     {showOptionFields && guideModal}
+    {showMobileBar && <div className="fixed inset-x-0 bottom-[66px] z-40 flex items-center gap-3 border-t border-slate-200 bg-white px-4 py-2.5 shadow-[0_-8px_24px_rgba(0,0,0,.06)] lg:hidden">
+      <div className="min-w-0 shrink-0">
+        {displayedOriginalPrice !== null && displayedPrice !== null && displayedOriginalPrice > displayedPrice && <div className="flex items-center gap-1.5"><span className="text-[10px] text-slate-400 line-through">{formatMoney(displayedOriginalPrice, currency)}</span>{discountLabel && <span className="inline-flex items-center rounded-full bg-[var(--danger)] px-1.5 py-0.5 text-[9px] font-bold text-[var(--danger-foreground)]">{discountLabel}</span>}</div>}
+        <strong className="block truncate text-sm font-bold text-slate-900">{displayedPrice === null ? "قیمت نامشخص" : formatMoney(displayedPrice, currency)}</strong>
+      </div>
+      <div className="flex-1">{addButton}</div>
+    </div>}
   </>;
 
   return <div className="grid gap-3">
