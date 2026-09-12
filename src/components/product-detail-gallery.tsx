@@ -215,7 +215,7 @@ export function ProductDetailGallery({ productId, media, productName, productCod
         {actions.map((action) => <Button key={action.label} type="button" isIconOnly variant="ghost" size="sm" aria-label={action.label} onPress={action.onPress} className={actionButtonClass}>{action.icon}</Button>)}
         {compareItem && <CompareButton item={compareItem} variant="icon" className={`${actionButtonClass} !border-0`} />}
       </div>
-      <div className="relative min-w-0 flex-1 overflow-hidden">
+      <div className="relative min-w-0 flex-1 overflow-hidden rounded-xl">
         {media.length > 0 ? (
           <div ref={viewportRef} dir="ltr" className="flex aspect-square snap-x snap-mandatory overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {media.map((item, index) => <div key={item.id} className="relative grid w-full shrink-0 snap-center place-items-center bg-white"><GalleryMedia item={item} productName={productName} priority={index === 0} /></div>)}
