@@ -112,7 +112,7 @@ export function ProductCard({ id, isFavorite, href, name, category, industry, we
       {/* Content */}
       <div className={`px-1 pb-4 sm:pb-5 ${isGallery ? "pt-2 text-right" : "px-2.5 pt-2.5 text-center sm:px-[15px] sm:pt-[17px]"}`}>
         {!isGallery && <span className="text-[0.7rem] text-[var(--muted)]">{industry === "GOLD" ? `${category} · ${weight} گرم` : category}</span>}
-        <h3 className={`font-medium ${isGallery ? `mb-1 mt-0 line-clamp-2 h-10 overflow-hidden text-[0.76rem] leading-5 sm:text-[0.82rem] ${industry === "GENERAL" ? "text-slate-700" : ""}` : "mb-[7px] mt-[5px] min-h-8 text-[0.82rem] sm:text-[0.95rem]"}`}>{name}</h3>
+        <h3 className={`font-medium ${isGallery ? `mb-1 mt-0 line-clamp-2 h-9 overflow-hidden text-[0.76rem] leading-[1.15rem] sm:text-[0.82rem] ${industry === "GENERAL" ? "text-slate-700" : ""}` : "mb-[7px] mt-[5px] min-h-8 text-[0.82rem] sm:text-[0.95rem]"}`}>{name}</h3>
         <div className={isGallery ? "grid min-h-9 grid-rows-[1rem_1.125rem] content-start justify-items-start gap-0.5" : ""}>
           {originalPrice ? <span className={`${isGallery ? "block" : "ml-2"} text-[0.7rem] text-slate-400 line-through`}>{originalPrice}</span> : isGallery ? <span aria-hidden="true" className="invisible block text-[0.7rem]">بدون تخفیف</span> : null}
           <strong className={`${isGallery ? "block text-[0.72rem]" : "text-[0.76rem] sm:text-[0.92rem]"} text-[var(--brand-primary)]`}>{price}</strong>
