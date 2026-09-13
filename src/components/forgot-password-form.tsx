@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { useRouter } from "next/navigation";
 import { Alert, Button, toast } from "@heroui/react";
 import { LoadingLabel } from "@/components/loading-label";
 import { OtpCodeInput } from "@/components/otp-code-input";
@@ -32,7 +31,6 @@ async function postJson(url: string, body: unknown) {
 }
 
 export function ForgotPasswordForm() {
-  const router = useRouter();
   const [step, setStep] = useState<"request" | "verify">("request");
   const [phone, setPhone] = useState("");
   const [otp, setOtp] = useState("");
@@ -94,8 +92,8 @@ export function ForgotPasswordForm() {
     setLoading(false);
     if (!ok) { setFieldErrors({ code: result?.message ?? "بازیابی رمز عبور انجام نشد." }); return; }
     toast.success("رمز عبور تغییر کرد", { description: "با موفقیت وارد حساب کاربری شدید.", timeout: 4000 });
-    router.push("/account");
-    router.refresh();
+    // Full browser navigation, not router.push — see auth-flow.tsx for why.
+    window.location.assign("/account");
   }
 
   if (step === "request") {

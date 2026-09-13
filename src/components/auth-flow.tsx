@@ -2,7 +2,7 @@
 
 import { useState, type FormEvent, type ReactNode } from "react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { ChevronLeft } from "lucide-react";
 import { Alert, Button, toast } from "@heroui/react";
 import { AdminCheckbox } from "@/components/admin-checkbox";
@@ -56,7 +56,6 @@ function reportFailure(setError: (value: string) => void, status: number, messag
 // OTP-verified registration), so there is no separate "mode" prop. Each step renders its own
 // heading, mirroring how digikala's SSO screen replaces its title as the flow progresses.
 export function AuthFlow() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const [step, setStep] = useState<Step>("phone");
   const [phone, setPhone] = useState("");
@@ -123,8 +122,10 @@ export function AuthFlow() {
     setLoading(false);
     if (!ok) { setError(result?.message ?? "ورود انجام نشد."); return; }
     toast.success("ورود موفق بود", { description: "با موفقیت وارد حساب کاربری شدید.", timeout: 4000 });
-    router.push("/account");
-    router.refresh();
+    // A full browser navigation (not router.push) so the freshly-set session cookie is always
+    // picked up on the very next request — client-side transitions can otherwise reuse an
+    // already-fetched (pre-login) router cache entry for the destination route.
+    window.location.assign("/account");
   }
 
   async function requestLoginOtp() {
@@ -157,8 +158,7 @@ export function AuthFlow() {
     setLoading(false);
     if (!ok) { setFieldErrors({ code: result?.message ?? "کد وارد شده نادرست است." }); return; }
     toast.success("ورود موفق بود", { description: "با موفقیت وارد حساب کاربری شدید.", timeout: 4000 });
-    router.push("/account");
-    router.refresh();
+    window.location.assign("/account");
   }
 
   async function submitRegisterOtp(event: FormEvent<HTMLFormElement>) {
@@ -193,8 +193,7 @@ export function AuthFlow() {
     setLoading(false);
     if (!ok) { applyIssues(result?.issues); setError(result?.message ?? "ثبت‌نام انجام نشد."); return; }
     toast.success("حساب کاربری ساخته شد", { description: "حساب شما با موفقیت ایجاد شد.", timeout: 4000 });
-    router.push("/");
-    router.refresh();
+    window.location.assign("/");
   }
 
   if (step === "phone") {
