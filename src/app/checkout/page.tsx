@@ -54,7 +54,7 @@ export default async function CheckoutPage() {
     return (
       <>
       <StandaloneTopBar backHref="/cart" backLabel="بازگشت به سبد خرید" />
-      <main className="bg-[var(--background)] px-4 py-8 sm:px-6 sm:py-12">
+      <main className="min-h-[calc(100dvh-4rem)] bg-[var(--background)] px-4 py-8 sm:px-6 sm:py-12">
         <div className="mx-auto w-full max-w-[1280px]">
           {steps}
           <div className="mb-6"><h1 className="m-0 text-xl font-bold sm:text-2xl">تکمیل سفارش</h1><p className="mb-0 mt-2 text-sm text-[var(--muted)]">سفارش <b dir="ltr">{pendingOrder.orderNumber}</b> قبلاً ثبت شده؛ فقط پرداخت آن باقی مانده است.</p></div>
@@ -93,7 +93,7 @@ export default async function CheckoutPage() {
   const needsGoldRate = items.some((item) => item.product.storeIndustry === "GOLD" && item.product.fixedPrice === null);
   const rate = gold?.pricePerGram18 ?? null;
 
-  if (needsGoldRate && rate === null) return <><StandaloneTopBar backHref="/cart" backLabel="بازگشت به سبد خرید" /><main className="px-4 py-12 sm:px-6"><div className="mx-auto max-w-3xl"><AlertRoot status="warning"><AlertDescription>نرخ لحظه‌ای طلا موقتاً در دسترس نیست. سفارش شما ثبت نشده و سبد خرید محفوظ است.</AlertDescription></AlertRoot></div></main></>;
+  if (needsGoldRate && rate === null) return <><StandaloneTopBar backHref="/cart" backLabel="بازگشت به سبد خرید" /><main className="min-h-[calc(100dvh-4rem)] bg-[var(--background)] px-4 py-12 sm:px-6"><div className="mx-auto max-w-3xl"><AlertRoot status="warning"><AlertDescription>نرخ لحظه‌ای طلا موقتاً در دسترس نیست. سفارش شما ثبت نشده و سبد خرید محفوظ است.</AlertDescription></AlertRoot></div></main></>;
 
   const prices = items.map((item) => {
     const product = item.product;
@@ -119,7 +119,7 @@ export default async function CheckoutPage() {
   return (
     <>
     <StandaloneTopBar backHref="/cart" backLabel="بازگشت به سبد خرید" />
-    <main className="bg-[var(--background)] px-4 py-8 sm:px-6 sm:py-12">
+    <main className="min-h-[calc(100dvh-4rem)] bg-[var(--background)] px-4 py-8 sm:px-6 sm:py-12">
       <div className="mx-auto w-full max-w-[1280px]">
         {steps}
         <div className="mb-6"><h1 className="m-0 text-xl font-bold sm:text-2xl">تکمیل سفارش</h1><p className="mb-0 mt-2 text-sm text-[var(--muted)]">نشانی، تخفیف و روش پرداخت را بررسی کنید.</p></div>

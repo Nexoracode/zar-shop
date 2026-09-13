@@ -20,7 +20,9 @@ export function AppChrome({ header, footer, children, storefrontAvailable, maint
   // The account area is a self-contained, app-like section with its own sidebar; the marketing
   // footer under it just adds noise, so it renders header + content only. /categories is the
   // same kind of focused browsing tool (Digikala's own /categories/ has no footer either).
-  const hideFooter = pathname.startsWith("/account") || pathname === "/categories";
+  // /cart is a focused single-purpose screen too (same reasoning as checkout, just not fully
+  // standalone since it still uses the normal storefront header/bottom-nav).
+  const hideFooter = pathname.startsWith("/account") || pathname === "/categories" || pathname === "/cart";
   // Below lg, the product detail page renders its own compact header (close/search/cart/more,
   // see ProductDetailTopBar) instead of the storefront header + bottom nav — a focused product
   // view rather than a normal browsing page. At lg+ there's room for the full header, so it
