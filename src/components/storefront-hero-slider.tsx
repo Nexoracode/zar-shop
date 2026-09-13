@@ -37,7 +37,8 @@ function MobileHeroPeekCarousel({ slides }: { slides: StorefrontHeroSlide[] }) {
       const row = rowRef.current;
       if (!row || pausedRef.current) return;
       const cards = Array.from(row.children) as HTMLElement[];
-      const viewportCenter = row.getBoundingClientRect().left + row.clientWidth / 2;
+      const rowRect = row.getBoundingClientRect();
+      const viewportCenter = rowRect.left + row.clientWidth / 2;
       let currentIndex = 0;
       let closestDistance = Infinity;
       cards.forEach((card, index) => {
@@ -45,7 +46,13 @@ function MobileHeroPeekCarousel({ slides }: { slides: StorefrontHeroSlide[] }) {
         const distance = Math.abs(rect.left + rect.width / 2 - viewportCenter);
         if (distance < closestDistance) { closestDistance = distance; currentIndex = index; }
       });
-      cards[(currentIndex + 1) % cards.length]?.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+      const target = cards[(currentIndex + 1) % cards.length];
+      if (!target) return;
+      // `scrollIntoView` would also nudge the page's own vertical scroll if this row isn't fully
+      // in view (e.g. the visitor has scrolled past the hero) — jumping the whole page back up
+      // every few seconds. Scrolling the row's own scrollLeft keeps this strictly horizontal.
+      const targetRect = target.getBoundingClientRect();
+      row.scrollTo({ left: row.scrollLeft + (targetRect.left + targetRect.width / 2 - viewportCenter), behavior: "smooth" });
     }, 4000);
     return () => window.clearInterval(timer);
   }, [hasMultipleSlides]);
