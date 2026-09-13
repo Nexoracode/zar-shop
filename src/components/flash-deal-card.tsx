@@ -21,7 +21,7 @@ const roundedClasses: Record<NonNullable<Props["roundedSide"]>, string> = {
  */
 export function FlashDealCard({ href, name, discountPercent, price, originalPrice, image, roundedSide = "none" }: Props) {
   return (
-    <Link href={href} className={`flex h-full min-w-[114px] shrink-0 flex-col justify-between overflow-hidden bg-white p-2 transition hover:bg-[#fafafa] sm:min-w-[164px] ${roundedClasses[roundedSide]}`}>
+    <Link href={href} className={`flex min-w-[114px] shrink-0 flex-col justify-between overflow-hidden bg-white p-2 transition hover:bg-[#fafafa] sm:min-w-[164px] ${roundedClasses[roundedSide]}`}>
       <div className="relative aspect-square w-full overflow-hidden rounded-md bg-[var(--surface-tertiary)]">
         {image && <Image src={image.src} alt={image.alt} fill sizes="(min-width: 1024px) 164px, 114px" className="object-contain" />}
       </div>

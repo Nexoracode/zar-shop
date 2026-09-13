@@ -90,7 +90,7 @@ export async function GeneralHome() {
 
     {flashDeals.length > 0 && <section {...sectionProps("FEATURED_PRODUCTS")} className={container} aria-label="پیشنهادهای ویژه">
       <div className="overflow-hidden rounded-2xl" style={{ background: "linear-gradient(225deg, var(--brand-primary) 0%, color-mix(in srgb, var(--brand-primary) 80%, black) 100%)" }}>
-        <div className="flex items-start lg:items-stretch">
+        <div className="flex flex-col lg:flex-row lg:items-stretch">
           <div className="flex shrink-0 items-center gap-3 px-4 pb-3 pt-5 lg:flex-col lg:justify-center lg:gap-6 lg:self-stretch lg:px-5 lg:pb-5 lg:pt-3">
             <Percent size={24} className="shrink-0 text-[var(--brand-primary-foreground)] lg:size-16" />
             <strong className="shrink-0 text-lg font-extrabold leading-6 text-[var(--brand-primary-foreground)] lg:text-center lg:text-2xl lg:leading-8">شگفت‌انگیز</strong>

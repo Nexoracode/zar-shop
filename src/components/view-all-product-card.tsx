@@ -14,7 +14,7 @@ export function ViewAllProductCard({ href, compact = false, roundedSide = "none"
   if (compact) {
     const roundedClass = roundedSide === "right" ? "rounded-r-md" : roundedSide === "left" ? "rounded-l-md" : "";
     return (
-      <Link href={href} className={`group flex h-full min-w-[114px] shrink-0 flex-col items-center justify-center gap-3 bg-white transition hover:bg-[#fafafa] sm:min-w-[164px] ${roundedClass}`}>
+      <Link href={href} className={`group flex min-w-[114px] shrink-0 flex-col items-center justify-center gap-3 bg-white transition hover:bg-[#fafafa] sm:min-w-[164px] ${roundedClass}`}>
         <span className="grid size-10 place-items-center rounded-full border-2 border-[#4b5563] text-[#4b5563] transition group-hover:-translate-x-1">
           <ArrowLeft size={18} />
         </span>
