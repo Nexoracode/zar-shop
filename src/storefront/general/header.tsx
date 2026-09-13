@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { Bell, LayoutDashboard, Menu } from "lucide-react";
+import { Bell, LayoutDashboard } from "lucide-react";
 import type { User } from "@generated/prisma/client";
 import { db } from "@/lib/db";
 import { formatMoney } from "@/lib/format";
@@ -44,10 +44,14 @@ export async function GeneralHeader({ settings, brand, user, menuItems }: Props)
 
   return <>
     <header className={`relative z-50 border-b border-[#e7e9ed] bg-white shadow-[0_2px_10px_rgba(0,0,0,.035)] ${brand.stickyStoreHeader ? "sticky top-0" : ""}`}>
-      <div className="relative flex h-14 items-center justify-center px-4 lg:hidden">
-        <Link href="/products" className="absolute right-4" aria-label="منوی محصولات"><Menu size={23} /></Link>
-        <Link href="/" aria-label={`${settings.storeName}، صفحه اصلی`}>{logo}</Link>
-        <StorefrontSearch className="absolute left-4" />
+      {/* Below lg: no logo/hamburger row — Digikala's own mobile home has none either (category
+          browsing lives in the bottom nav's "دسته‌بندی" tab, see /categories), just a bell next
+          to a full-width search field, then the delivery-address row. */}
+      <div className="flex items-center gap-3 px-4 py-3 lg:hidden">
+        {user && !user.isGuest
+          ? <StorefrontNotificationBell initialUnread={notifUnread} />
+          : <Link href="/login" aria-label="اعلان‌ها" className="grid size-10 shrink-0 place-items-center rounded-lg text-[#323741] transition hover:bg-slate-100"><Bell size={20} strokeWidth={1.7} /></Link>}
+        <StorefrontSearch variant="field" className="flex-1" />
       </div>
       <div className="flex min-h-10 items-center border-t border-slate-100 px-4 lg:hidden"><DeliveryAddressPicker initialAddresses={addresses} authenticated={Boolean(user)} user={{ firstName: user?.firstName ?? null, lastName: user?.lastName ?? null, phone: user?.phone ?? null }} compact /></div>
       <div className="hidden h-[72px] grid-cols-[auto_minmax(320px,500px)_1fr] items-center gap-8 px-10 lg:grid">

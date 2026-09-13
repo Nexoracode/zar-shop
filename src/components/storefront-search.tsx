@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState, type CSSProperties, type FormEvent } from "react";
 import { Button, Input, Modal, Spinner } from "@heroui/react";
-import { Clock3, Grid2X2, History, Search, Sparkles, TrendingUp, X } from "lucide-react";
+import { ArrowRight, Clock3, Grid2X2, History, Search, Sparkles, TrendingUp, X } from "lucide-react";
 
 type SearchItem = { id: string; label: string; href: string };
 type ProductSearchItem = SearchItem & { category: string };
@@ -20,10 +20,17 @@ export function StorefrontSearch({ variant = "icon", className = "" }: { variant
   return <StorefrontSearchContent key={routeQuery} variant={variant} className={className} initialQuery={routeQuery} />;
 }
 
+// Below this width the search panel is Digikala's own full-screen search behavior: tapping the
+// field opens a plain, edge-to-edge screen (no radius, no floating card) that reads as a new
+// page rather than a popup anchored to the trigger. At lg+ there's room for the floating panel
+// anchored near the trigger instead.
+const MOBILE_BREAKPOINT_PX = 1024;
+
 function StorefrontSearchContent({ variant, className, initialQuery }: { variant: "icon" | "field"; className: string; initialQuery: string }) {
   const router = useRouter();
   const triggerRef = useRef<HTMLButtonElement>(null);
   const [open, setOpen] = useState(false);
+  const [isFullScreen, setIsFullScreen] = useState(false);
   const [panelStyle, setPanelStyle] = useState<CSSProperties>({ position: "fixed", top: 8, left: 8, width: "calc(100vw - 16px)", maxHeight: "calc(100dvh - 16px)" });
   const [query, setQuery] = useState(initialQuery);
   const [recent, setRecent] = useState<string[]>([]);
@@ -32,14 +39,20 @@ function StorefrontSearchContent({ variant, className, initialQuery }: { variant
   const [error, setError] = useState("");
 
   const openSearch = useCallback(() => {
-    const triggerRect = triggerRef.current?.getBoundingClientRect();
     const viewportWidth = window.innerWidth;
-    const fieldPanelPadding = variant === "field" ? 8 : 0;
-    const panelWidth = variant === "field" && triggerRect ? Math.min(triggerRect.width + (fieldPanelPadding * 2), viewportWidth - 8) : Math.min(540, viewportWidth - 16);
-    const panelTop = Math.max(4, (triggerRect?.top ?? 8) - fieldPanelPadding);
-    const preferredLeft = variant === "field" && triggerRect ? triggerRect.left - fieldPanelPadding : 8;
-    const panelLeft = Math.max(4, Math.min(preferredLeft, viewportWidth - panelWidth - 4));
-    setPanelStyle({ position: "fixed", top: panelTop, left: panelLeft, width: panelWidth, maxHeight: `calc(100dvh - ${panelTop + 4}px)` });
+    const mobile = viewportWidth < MOBILE_BREAKPOINT_PX;
+    setIsFullScreen(mobile);
+    if (mobile) {
+      setPanelStyle({ position: "fixed", inset: 0, width: "100vw", maxWidth: "100vw", height: "100dvh", maxHeight: "100dvh" });
+    } else {
+      const triggerRect = triggerRef.current?.getBoundingClientRect();
+      const fieldPanelPadding = variant === "field" ? 8 : 0;
+      const panelWidth = variant === "field" && triggerRect ? Math.min(triggerRect.width + (fieldPanelPadding * 2), viewportWidth - 8) : Math.min(540, viewportWidth - 16);
+      const panelTop = Math.max(4, (triggerRect?.top ?? 8) - fieldPanelPadding);
+      const preferredLeft = variant === "field" && triggerRect ? triggerRect.left - fieldPanelPadding : 8;
+      const panelLeft = Math.max(4, Math.min(preferredLeft, viewportWidth - panelWidth - 4));
+      setPanelStyle({ position: "fixed", top: panelTop, left: panelLeft, width: panelWidth, maxHeight: `calc(100dvh - ${panelTop + 4}px)` });
+    }
     try {
       const stored = JSON.parse(window.localStorage.getItem(recentStorageKey) ?? "[]");
       setRecent(Array.isArray(stored) ? stored.filter((item): item is string => typeof item === "string").slice(0, 8) : []);
@@ -116,14 +129,17 @@ function StorefrontSearchContent({ variant, className, initialQuery }: { variant
   return <>
     {variant === "field" ? <Button ref={triggerRef} type="button" variant="ghost" onPress={openSearch} style={{ fontSize: 12 }} className={`group relative flex h-11 w-full items-center justify-start rounded-xl bg-slate-100 pr-11 pl-24 font-normal text-slate-400 transition hover:bg-slate-200/70 hover:text-slate-600 ${className}`}><Search className="pointer-events-none absolute inset-y-0 right-4 my-auto !h-[19px] !w-[19px] shrink-0" size={19} /><span className={`min-w-0 truncate ${query ? "text-slate-700" : ""}`}>{query || "جستجو"}</span><kbd dir="ltr" aria-hidden="true" className="pointer-events-none absolute left-3 hidden items-center rounded-md border border-slate-300 bg-white/90 px-2 py-0.5 font-sans text-[10px] font-medium leading-5 text-slate-500 opacity-0 shadow-sm transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100 sm:inline-flex">Ctrl + K</kbd></Button> : <Button ref={triggerRef} type="button" isIconOnly variant="ghost" onPress={openSearch} aria-label="جستجوی محصولات" className={`size-10 min-h-10 min-w-10 rounded-lg text-inherit ${className}`}><Search size={22} strokeWidth={1.7} /></Button>}
 
-    <Modal.Backdrop isOpen={open} onOpenChange={setOpen} className="z-[100] !bg-black/10 !backdrop-blur-none">
+    <Modal.Backdrop isOpen={open} onOpenChange={setOpen} className={`z-[100] ${isFullScreen ? "!bg-white" : "!bg-black/10 !backdrop-blur-none"}`}>
       <Modal.Container size="lg" placement="center" className="p-0">
-        <Modal.Dialog style={panelStyle} aria-label="جستجوی محصولات" dir="rtl" className="m-0 max-w-none origin-top overflow-hidden rounded-[24px] bg-white p-0 shadow-2xl">
+        <Modal.Dialog style={panelStyle} aria-label="جستجوی محصولات" dir="rtl" className={`m-0 max-w-none origin-top overflow-hidden bg-white p-0 ${isFullScreen ? "rounded-none shadow-none" : "rounded-[24px] shadow-2xl"}`}>
           <Modal.Header className="block p-2">
-            <form onSubmit={(event: FormEvent<HTMLFormElement>) => { event.preventDefault(); searchAll(); }} className="relative">
-              <Search className="pointer-events-none absolute right-4 top-1/2 z-10 -translate-y-1/2 text-slate-400" size={19} />
-              <Input autoFocus value={query} onChange={(event) => setQuery(event.target.value)} aria-label="عبارت جستجو" placeholder="جستجو در همه کالاها" variant="secondary" style={{ fontSize: 12 }} className={`h-11 min-h-11 w-full rounded-xl border-0 bg-slate-100 pr-11 font-normal text-slate-700 outline-none ring-0 placeholder:text-slate-400 ${query ? "pl-11" : "pl-4"}`} />
-              {query && <Button type="button" isIconOnly variant="ghost" aria-label="پاک‌کردن عبارت" onPress={() => setQuery("")} className="absolute left-1 top-1/2 z-20 size-9 min-h-9 min-w-9 -translate-y-1/2 rounded-lg text-slate-400 hover:bg-white/80 hover:text-slate-700"><X size={18} /></Button>}
+            <form onSubmit={(event: FormEvent<HTMLFormElement>) => { event.preventDefault(); searchAll(); }} className="flex items-center gap-1">
+              {isFullScreen && <Button type="button" isIconOnly variant="ghost" aria-label="بستن جستجو" onPress={() => setOpen(false)} className="size-10 min-h-10 min-w-10 shrink-0 rounded-lg text-slate-600"><ArrowRight size={20} /></Button>}
+              <div className="relative min-w-0 flex-1">
+                <Search className="pointer-events-none absolute right-4 top-1/2 z-10 -translate-y-1/2 text-slate-400" size={19} />
+                <Input autoFocus value={query} onChange={(event) => setQuery(event.target.value)} aria-label="عبارت جستجو" placeholder="جستجو در همه کالاها" variant="secondary" style={{ fontSize: 12 }} className={`h-11 min-h-11 w-full rounded-xl border-0 bg-slate-100 pr-11 font-normal text-slate-700 outline-none ring-0 placeholder:text-slate-400 ${query ? "pl-11" : "pl-4"}`} />
+                {query && <Button type="button" isIconOnly variant="ghost" aria-label="پاک‌کردن عبارت" onPress={() => setQuery("")} className="absolute left-1 top-1/2 z-20 size-9 min-h-9 min-w-9 -translate-y-1/2 rounded-lg text-slate-400 hover:bg-white/80 hover:text-slate-700"><X size={18} /></Button>}
+              </div>
             </form>
           </Modal.Header>
 
