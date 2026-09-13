@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Button } from "@heroui/react";
-import { Bell, Box, ChevronLeft, CircleUserRound, Clock3, Gift, Headset, Heart, LogOut, MapPin, MessageCircle, PackageCheck, Pencil, ShoppingBag, Undo2, UserRound, Wallet, type LucideIcon } from "lucide-react";
+import { Box, ChevronLeft, CircleUserRound, LogOut, PackageCheck, Pencil, ShoppingBag, Undo2, Wallet, type LucideIcon } from "lucide-react";
+import { getAccountNavItems, type AccountNavItem } from "@/components/account-nav-items";
 
 type Item = { href: string; label: string; icon: LucideIcon };
 type OrderStats = { totalOrders: number; activeOrders: number; deliveredOrders: number; returnCount: number };
@@ -21,19 +22,7 @@ export function AccountSidebar({ user, showWallet = false, showReferral = false,
   // full-bleed screens with their own heading, reached from here or the bottom-nav account tab.
   // Desktop keeps the sidebar visible everywhere since there's room for it alongside content.
   const isHub = pathname === "/account";
-  const items: Item[] = [
-    { href: "/account", label: "خلاصه فعالیت‌ها", icon: CircleUserRound },
-    { href: "/account/notifications", label: "اعلان‌ها", icon: Bell },
-    { href: "/account/orders", label: "سفارش‌ها", icon: ShoppingBag },
-    { href: "/account/returns", label: "مرجوعی‌ها", icon: Undo2 },
-    { href: "/account/tickets", label: "تیکت‌های من", icon: Headset },
-    { href: "/account/favorites", label: "لیست‌های من", icon: Heart },
-    { href: "/account/reviews", label: "دیدگاه‌ها و پرسش‌ها", icon: MessageCircle },
-    ...(showReferral ? [{ href: "/account/referral", label: "دعوت دوستان", icon: Gift }] : []),
-    { href: "/account/recent-visits", label: "بازدیدهای اخیر", icon: Clock3 },
-    { href: "/account/addresses", label: "آدرس‌ها", icon: MapPin },
-    { href: "/account/profile", label: "اطلاعات حساب", icon: UserRound },
-  ];
+  const items: AccountNavItem[] = [{ href: "/account", label: "خلاصه فعالیت‌ها", icon: CircleUserRound }, ...getAccountNavItems(showReferral)];
 
   return (
     <aside className={`min-w-0 lg:sticky lg:top-24 ${isHub ? "" : "hidden lg:block"}`}>

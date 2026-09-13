@@ -134,6 +134,15 @@ html[dir="rtl"] [data-slot="modal-header"]:has([data-slot="modal-close-trigger"]
   }
 }
 
+/* Account section: below lg, AccountMobileTopBar (rendered inside account/layout.tsx's <main>)
+   replaces the storefront header's logo/search/delivery-address rows — the bottom tab nav stays
+   since Digikala keeps its own persistent bottom nav visible on the profile section too. */
+@media (max-width: 1023.98px) {
+  .storefront-shell--account > header {
+    display: none;
+  }
+}
+
 @layer base {
   [data-theme="zar"] {
     color-scheme: light;

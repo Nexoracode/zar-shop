@@ -28,6 +28,11 @@ export function AppChrome({ header, footer, children, storefrontAvailable, maint
   // page, so product-detail-section-nav.tsx's `.storefront-shell > header` sticky-offset lookup
   // still resolves (falling back to ProductDetailTopBar's own height when that one is display:none).
   const isProductDetail = /^\/products\/[^/]+\/?$/.test(pathname);
+  // Below lg, /account renders its own Digikala-style top bar (AccountMobileTopBar, see
+  // account/layout.tsx) instead of the storefront header — same CSS-hide approach as product
+  // detail above, so `.storefront-shell > header`'s sticky-offset math elsewhere keeps resolving.
+  // The bottom tab nav stays untouched: Digikala keeps it visible on the profile section too.
+  const isAccountSection = pathname.startsWith("/account");
   if (!storefrontAvailable && !isStandalone && !isAuthPath) {
     const icon = setupIncomplete ? <Rocket size={25} /> : maintenanceMode ? <Settings2 size={25} /> : <Store size={25} />;
     const title = setupIncomplete ? "فروشگاه هنوز راه‌اندازی نشده است" : maintenanceMode ? "فروشگاه در حال بروزرسانی است" : "فروشگاه موقتاً غیرفعال است";
@@ -41,7 +46,7 @@ export function AppChrome({ header, footer, children, storefrontAvailable, maint
   if (isStandalone) return children;
   return (
     <CompareProvider>
-      <div className={`storefront-shell${isProductDetail ? " storefront-shell--product-detail" : ""}`} style={brandStyle} data-compact-mobile-grid={compactMobileGrid}>{header}{children}{hideFooter ? null : footer}</div>
+      <div className={`storefront-shell${isProductDetail ? " storefront-shell--product-detail" : ""}${isAccountSection ? " storefront-shell--account" : ""}`} style={brandStyle} data-compact-mobile-grid={compactMobileGrid}>{header}{children}{hideFooter ? null : footer}</div>
       <CompareTray />
     </CompareProvider>
   );
