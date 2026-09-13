@@ -1,23 +1,20 @@
 import Image from "next/image";
 import Link from "next/link";
 import {
-  Headphones,
-  Home,
   LayoutDashboard,
   Menu,
-  UserRound,
   WalletCards,
 } from "lucide-react";
 import type { User } from "@generated/prisma/client";
 import { StorefrontGoldPrice } from "@/components/storefront-gold-price";
 import { formatMoney } from "@/lib/format";
-import { normalizeNumericValue } from "@/lib/persian-numbers";
 import { getGoldPriceForDisplay } from "@/modules/gold/gold-price.service";
 import type { BrandSettings } from "@/modules/settings/brand-settings";
 import { getCatalogSettings } from "@/modules/settings/catalog-settings";
 import type { GeneralStoreSettingsInput } from "@/modules/settings/general-settings";
 import type { HomepageMenuItem } from "@/modules/settings/homepage-settings";
 import { StorefrontSearch } from "@/components/storefront-search";
+import { StorefrontBottomNav } from "@/components/storefront-bottom-nav";
 import { StorefrontCartLink } from "@/components/storefront-cart-link";
 import { db } from "@/lib/db";
 import { DeliveryAddressPicker } from "@/components/delivery-address-picker";
@@ -87,11 +84,6 @@ export async function GoldHeader({ settings, brand, user, menuItems }: { setting
       <div className="flex min-h-10 items-center border-t border-[#eee9e2] px-4 lg:hidden"><DeliveryAddressPicker initialAddresses={addresses} authenticated={Boolean(user)} user={{ firstName: user?.firstName ?? null, lastName: user?.lastName ?? null, phone: user?.phone ?? null }} compact /></div>
     </header>
 
-    <nav className="fixed inset-x-0 bottom-0 z-50 grid h-[66px] grid-cols-4 border-t border-[#eee9e2] bg-white/95 text-[#6f706f] shadow-[0_-5px_20px_rgba(0,0,0,.05)] backdrop-blur lg:hidden" aria-label="ناوبری موبایل">
-      <Link href="/" className="grid place-items-center content-center gap-1 text-[var(--brand-primary)]"><span className="grid size-10 place-items-center rounded-lg bg-[var(--brand-primary)]/8"><Home size={21} /></span><small className="sr-only">خانه</small></Link>
-      <StorefrontCartLink initialCount={cartCount} mobile className="grid place-items-center content-center gap-1" />
-      {settings.supportPhone ? <a href={`tel:${normalizeNumericValue(settings.supportPhone, false)}`} className="grid place-items-center content-center gap-1"><Headphones size={21} /><small className="sr-only">پشتیبانی</small></a> : <Link href="/pages/contact" className="grid place-items-center content-center gap-1"><Headphones size={21} /><small className="sr-only">پشتیبانی</small></Link>}
-      <Link href={accountHref} className="grid place-items-center content-center gap-1"><UserRound size={21} /><small className="sr-only">حساب کاربری</small></Link>
-    </nav>
+    <StorefrontBottomNav cartCount={cartCount} accountHref={accountHref} supportPhone={settings.supportPhone} />
   </>;
 }

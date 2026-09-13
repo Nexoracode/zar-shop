@@ -36,7 +36,7 @@ export function notifyCartUpdated(count: number) {
   window.dispatchEvent(new CustomEvent(CART_UPDATED_EVENT, { detail: { count } }));
 }
 
-export function StorefrontCartLink({ initialCount, className = "", iconSize = 21, mobile = false }: { initialCount: number; className?: string; iconSize?: number; mobile?: boolean }) {
+export function StorefrontCartLink({ initialCount, className = "", iconSize = 21, mobile = false, showLabel = false }: { initialCount: number; className?: string; iconSize?: number; mobile?: boolean; showLabel?: boolean }) {
   const router = useRouter();
   const [count, setCount] = useState(initialCount);
   const [isOpen, setIsOpen] = useState(false);
@@ -182,7 +182,7 @@ export function StorefrontCartLink({ initialCount, className = "", iconSize = 21
     <Link href="/cart" aria-label={`سبد خرید، ${count.toLocaleString("fa-IR")} کالا`} className={`relative ${className}`}>
       <ShoppingCart size={iconSize} strokeWidth={1.7} />
       {badge}
-      <small className="sr-only">سبد خرید</small>
+      {showLabel ? <span className="mt-1 block text-[10px]">سبد خرید</span> : <small className="sr-only">سبد خرید</small>}
     </Link>
   );
 

@@ -1,15 +1,15 @@
 import Image from "next/image";
 import Link from "next/link";
-import { Bell, Headphones, Home, LayoutDashboard, Menu, UserRound } from "lucide-react";
+import { Bell, LayoutDashboard, Menu } from "lucide-react";
 import type { User } from "@generated/prisma/client";
 import { db } from "@/lib/db";
 import { formatMoney } from "@/lib/format";
-import { normalizeNumericValue } from "@/lib/persian-numbers";
 import type { BrandSettings } from "@/modules/settings/brand-settings";
 import type { GeneralStoreSettingsInput } from "@/modules/settings/general-settings";
 import type { HomepageMenuItem } from "@/modules/settings/homepage-settings";
 import { GeneralHeaderMenuRow } from "@/storefront/general/header-menu-row";
 import { StorefrontSearch } from "@/components/storefront-search";
+import { StorefrontBottomNav } from "@/components/storefront-bottom-nav";
 import { StorefrontCartLink } from "@/components/storefront-cart-link";
 import { DeliveryAddressPicker } from "@/components/delivery-address-picker";
 import { serializeAddress } from "@/modules/account/addresses";
@@ -72,11 +72,6 @@ export async function GeneralHeader({ settings, brand, user, menuItems }: Props)
       </div>
       <GeneralHeaderMenuRow categories={categories} menuItems={menuItems} deliveryPicker={<DeliveryAddressPicker initialAddresses={addresses} authenticated={Boolean(user)} user={{ firstName: user?.firstName ?? null, lastName: user?.lastName ?? null, phone: user?.phone ?? null }} compact />} />
     </header>
-    <nav className="fixed inset-x-0 bottom-0 z-50 grid h-[66px] grid-cols-4 border-t border-[#e7e9ed] bg-white/95 text-[#6f7480] shadow-[0_-5px_20px_rgba(0,0,0,.05)] backdrop-blur lg:hidden" aria-label="ناوبری موبایل">
-      <Link href="/" className="grid place-items-center content-center text-[var(--brand-primary)]"><Home size={21} /><small className="sr-only">خانه</small></Link>
-      <StorefrontCartLink initialCount={cartCount} mobile className="grid place-items-center content-center" />
-      {settings.supportPhone ? <a href={`tel:${normalizeNumericValue(settings.supportPhone, false)}`} className="grid place-items-center content-center"><Headphones size={21} /><small className="sr-only">پشتیبانی</small></a> : <Link href="/pages/contact" className="grid place-items-center content-center"><Headphones size={21} /><small className="sr-only">پشتیبانی</small></Link>}
-      <Link href={accountHref} className="grid place-items-center content-center"><UserRound size={21} /><small className="sr-only">حساب کاربری</small></Link>
-    </nav>
+    <StorefrontBottomNav cartCount={cartCount} accountHref={accountHref} supportPhone={settings.supportPhone} />
   </>;
 }
