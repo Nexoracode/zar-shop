@@ -21,6 +21,20 @@ function GeneralProductPlaceholder() {
   return <div className="h-full w-full bg-[var(--surface-tertiary)]" aria-hidden="true" />;
 }
 
+/** Placeholder matching the "catalog" variant's card shape, for the catalogue's initial and lazy-loaded skeletons. */
+export function ProductCardSkeleton() {
+  return (
+    <div className="flex min-h-[390px] min-w-0 flex-col border-b border-l border-slate-200 bg-white p-4" aria-hidden="true">
+      <div className="mx-auto aspect-square w-full max-w-[245px] animate-pulse rounded bg-slate-100" />
+      <div className="flex min-h-0 flex-1 flex-col pt-3">
+        <div className="mt-1 h-4 w-full animate-pulse rounded bg-slate-100" />
+        <div className="mt-2 h-4 w-2/3 animate-pulse rounded bg-slate-100" />
+        <div className="mt-auto h-5 w-1/2 animate-pulse rounded bg-slate-100" />
+      </div>
+    </div>
+  );
+}
+
 type ProductCardProps = {
   id?: string;
   isFavorite?: boolean;

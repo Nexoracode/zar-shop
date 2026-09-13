@@ -1,8 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Spinner } from "@heroui/react";
-import { ProductCard } from "@/components/product-card";
+import { ProductCard, ProductCardSkeleton } from "@/components/product-card";
 import { DiscountExpiryRefresh } from "@/components/discount-expiry-refresh";
 import { earliestDiscountExpiry } from "@/modules/products/discount-window";
 import type { StorefrontProductCardItem } from "@/modules/products/storefront-feed-contract";
@@ -11,6 +10,8 @@ type StorefrontCatalogGridProps = {
   initialItems: StorefrontProductCardItem[];
   initialPage: number;
   totalPages: number;
+  /** How many skeleton cards to show, in place, while the next page loads. */
+  pageSize: number;
   /** The current filter/sort/search query string, without a `page` param. */
   baseQuery: string;
 };
@@ -21,7 +22,7 @@ type StorefrontCatalogGridProps = {
  * `initialItems`, while props changing for other reasons (e.g. a discount-expiry refresh) leaves
  * the already-scrolled list untouched.
  */
-export function StorefrontCatalogGrid({ initialItems, initialPage, totalPages, baseQuery }: StorefrontCatalogGridProps) {
+export function StorefrontCatalogGrid({ initialItems, initialPage, totalPages, pageSize, baseQuery }: StorefrontCatalogGridProps) {
   const [items, setItems] = useState(initialItems);
   const [page, setPage] = useState(initialPage);
   const [hasMore, setHasMore] = useState(initialPage < totalPages);
@@ -56,13 +57,12 @@ export function StorefrontCatalogGrid({ initialItems, initialPage, totalPages, b
   }, [hasMore, loadMore]);
 
   return (
-    <>
-      <div className="mt-5 grid grid-cols-2 border-r border-t border-slate-200 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
-        {items.map((product) => <ProductCard key={product.id} {...product} storefrontVariant="catalog" />)}
-        <DiscountExpiryRefresh at={earliestDiscountExpiry(items)} />
-        {!items.length && <div className="col-span-full grid min-h-72 place-items-center border-b border-l border-slate-200 px-4 text-center text-sm text-slate-500">محصولی مطابق فیلترهای انتخاب‌شده پیدا نشد.</div>}
-      </div>
-      {hasMore && <div ref={sentinelRef} className="mt-8 flex justify-center py-6">{isLoading && <Spinner size="sm" color="current" aria-label="در حال بارگذاری محصولات بیشتر" />}</div>}
-    </>
+    <div className="mt-5 grid grid-cols-2 border-r border-t border-slate-200 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+      {items.map((product) => <ProductCard key={product.id} {...product} storefrontVariant="catalog" />)}
+      {isLoading && Array.from({ length: pageSize }).map((_, index) => <ProductCardSkeleton key={`skeleton-${index}`} />)}
+      <DiscountExpiryRefresh at={earliestDiscountExpiry(items)} />
+      {!items.length && !isLoading && <div className="col-span-full grid min-h-72 place-items-center border-b border-l border-slate-200 px-4 text-center text-sm text-slate-500">محصولی مطابق فیلترهای انتخاب‌شده پیدا نشد.</div>}
+      {hasMore && <div ref={sentinelRef} aria-hidden="true" className="col-span-full h-px" />}
+    </div>
   );
 }

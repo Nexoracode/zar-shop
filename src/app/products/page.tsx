@@ -72,7 +72,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
   const selectedBrand = query.brandSlug ? await db.brand.findFirst({ where: { slug: query.brandSlug, isActive: true }, select: { name: true, slug: true } }) : null;
   if (query.brandSlug && !selectedBrand) notFound();
   const catalog = await getStorefrontCatalog(query, categoryIds);
-  const { page, totalPages: pageCount, totalItems: total } = catalog.pagination;
+  const { page, pageSize, totalPages: pageCount, totalItems: total } = catalog.pagination;
   const sortOptions = [
     { id: "popular", label: "پرفروش‌ترین" },
     { id: "newest", label: "جدیدترین" },
@@ -173,7 +173,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
             <span className="mr-auto text-[11px] text-slate-400">{total.toLocaleString("fa-IR")} کالا</span>
           </div>
 
-          <StorefrontCatalogGrid key={apiBaseQuery} initialItems={catalog.items} initialPage={page} totalPages={pageCount} baseQuery={apiBaseQuery} />
+          <StorefrontCatalogGrid key={apiBaseQuery} initialItems={catalog.items} initialPage={page} totalPages={pageCount} pageSize={pageSize} baseQuery={apiBaseQuery} />
         </section>
       </div>
     </div>
