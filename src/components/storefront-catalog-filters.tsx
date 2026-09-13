@@ -6,7 +6,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Accordion, Checkbox, Slider, Spinner } from "@heroui/react";
 import { SlidersHorizontal } from "lucide-react";
 
-type Facets = {
+export type Facets = {
   brands: Array<{ value: string; count: number }>;
   colors: Array<{ id: string; name: string; hex: string; count: number }>;
   attributes: Array<{ id: string; name: string; values: Array<{ value: string; count: number }> }>;
@@ -28,6 +28,11 @@ type Props = {
   resetHref: string;
   /** Renders bare (no card chrome or own "فیلترها" header) for use inside the mobile filter sheet, which supplies its own header/footer. */
   embedded?: boolean;
+  /** Accordion item id to pre-expand (e.g. "catalog-brands", `catalog-attribute-${id}`) — set when
+   * the mobile filter bar's chip for that specific facet opened this sheet, so the user lands
+   * straight on it instead of a fully collapsed list. Pair with a changing `key` on this
+   * component from the caller so the accordion actually remounts with the new default. */
+  focusKey?: string;
 };
 
 function FilterCheckbox({ selected, onChange, children }: { selected: boolean; onChange: (selected: boolean) => void; children: ReactNode }) {
@@ -89,7 +94,7 @@ function PriceRangeSlider({ bounds, step, value, onChange, onChangeEnd }: {
   </div>;
 }
 
-export function StorefrontCatalogFilters({ facets, categoryScoped, selectedBrands, selectedColors, selectedAttributes, minPrice, maxPrice, inStock, hasDiscount, freeShipping, sameDayDelivery, resetHref, embedded = false }: Props) {
+export function StorefrontCatalogFilters({ facets, categoryScoped, selectedBrands, selectedColors, selectedAttributes, minPrice, maxPrice, inStock, hasDiscount, freeShipping, sameDayDelivery, resetHref, embedded = false, focusKey }: Props) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -175,7 +180,7 @@ export function StorefrontCatalogFilters({ facets, categoryScoped, selectedBrand
       <div className="border-b border-slate-100"><FilterCheckbox selected={Boolean(freeShipping)} onChange={(selected) => updateBooleanValue("freeShipping", selected)}><span className="block text-xs font-bold text-slate-700">فقط ارسال رایگان</span></FilterCheckbox></div>
       <FilterCheckbox selected={Boolean(sameDayDelivery)} onChange={(selected) => updateBooleanValue("sameDayDelivery", selected)}><span className="block text-xs font-bold text-slate-700">فقط ارسال امروز</span></FilterCheckbox>
     </div>
-    <Accordion dir="rtl" variant="surface" hideSeparator allowsMultipleExpanded className="w-full bg-transparent p-0 text-right" aria-label="فیلترهای ویژگی محصول">
+    <Accordion dir="rtl" variant="surface" hideSeparator allowsMultipleExpanded defaultExpandedKeys={focusKey && focusKey !== "catalog-price" ? [focusKey] : []} className="w-full bg-transparent p-0 text-right" aria-label="فیلترهای ویژگی محصول">
       {!categoryScoped && facets.brands.length > 0 && <Accordion.Item id="catalog-brands" className="mb-2 rounded-xl border border-slate-200/80 bg-white px-3">
         <Accordion.Heading><Accordion.Trigger className="relative flex w-full items-center border-b border-slate-100 bg-transparent py-[6px] pl-7 text-xs font-bold text-slate-800 hover:bg-transparent data-[hovered=true]:bg-transparent"><FilterAccordionTitle>برند</FilterAccordionTitle></Accordion.Trigger></Accordion.Heading>
         <Accordion.Panel><Accordion.Body className="max-h-52 overflow-y-auto pb-4">

@@ -587,6 +587,17 @@ img {
   background: rgb(100 116 139 / 45%);
 }
 
+/* Digikala's own horizontally-scrollable filter chip rows hide the scrollbar entirely (the chips
+   themselves are the only visible affordance) — matched here for storefront-catalog-filter-bar. */
+.scrollbar-hide {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
 @keyframes zar-button-pending-spin {
   to {
     transform: rotate(1turn);
