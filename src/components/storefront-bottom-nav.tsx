@@ -17,13 +17,14 @@ export function StorefrontBottomNav({ cartCount, accountHref, supportPhone }: { 
 
   const isHome = pathname === "/";
   const isCategories = pathname === "/categories";
-  const isAccount = pathname.startsWith("/account") || pathname === "/login";
+  const isCart = pathname === "/cart";
+  const isAccount = pathname.startsWith("/account") || pathname === "/login" || pathname === "/register";
 
   return (
     <nav className="fixed inset-x-0 bottom-0 z-50 flex h-[66px] border-t border-[#e7e9ed] bg-white/95 shadow-[0_-5px_20px_rgba(0,0,0,.05)] backdrop-blur lg:hidden" aria-label="ناوبری موبایل">
       <Link href="/" className={tabClass(isHome)}><Home size={22} strokeWidth={1.7} /><span className="text-[10px]">خانه</span></Link>
       <Link href="/categories" className={tabClass(isCategories)}><LayoutGrid size={22} strokeWidth={1.7} /><span className="text-[10px]">دسته‌بندی</span></Link>
-      <StorefrontCartLink initialCount={cartCount} mobile showLabel iconSize={22} className={tabClass(false)} />
+      <StorefrontCartLink initialCount={cartCount} mobile showLabel iconSize={22} className={tabClass(isCart)} />
       {supportPhone
         ? <a href={`tel:${normalizeNumericValue(supportPhone, false)}`} className={tabClass(false)}><Headphones size={22} strokeWidth={1.7} /><span className="text-[10px]">پشتیبانی</span></a>
         : <Link href="/pages/contact" className={tabClass(pathname === "/pages/contact")}><Headphones size={22} strokeWidth={1.7} /><span className="text-[10px]">پشتیبانی</span></Link>}

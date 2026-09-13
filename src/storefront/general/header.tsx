@@ -34,7 +34,10 @@ export async function GeneralHeader({ settings, brand, user, menuItems }: Props)
   const walletBalance = user && !user.isGuest && walletSettings?.walletEnabled
     ? formatMoney((await ensureWallet(db, user.id)).balance.toString(), settings.currency)
     : null;
-  const accountHref = user ? (user.isGuest ? "/cart" : "/account") : "/login";
+  // A guest account is an implementation detail (created lazily on add-to-cart while signed
+  // out, see api/cart/route.ts) — it should not change where the bottom nav's own account tab
+  // points; only a real account has an "/account" to show.
+  const accountHref = user && !user.isGuest ? "/account" : "/login";
   const logo = brand.mainLogoMedia
     ? <span className="relative block h-10 w-28"><Image src={brand.mainLogoMedia.url} alt={brand.mainLogoMedia.alt ?? settings.storeName} fill sizes="112px" className="object-contain" /></span>
     : <strong className="text-base font-bold text-[var(--brand-primary)]">{settings.storeName}</strong>;

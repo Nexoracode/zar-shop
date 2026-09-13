@@ -38,7 +38,10 @@ export async function GoldHeader({ settings, brand, user, menuItems }: { setting
   const walletBalance = user && !user.isGuest && walletSettings?.walletEnabled
     ? formatMoney((await ensureWallet(db, user.id)).balance.toString(), settings.currency)
     : null;
-  const accountHref = user ? (user.isGuest ? "/cart" : "/account") : "/login";
+  // A guest account is an implementation detail (created lazily on add-to-cart while signed
+  // out, see api/cart/route.ts) — it should not change where the bottom nav's own account tab
+  // points; only a real account has an "/account" to show.
+  const accountHref = user && !user.isGuest ? "/account" : "/login";
   const goldPrice = settings.industry === "GOLD" ? <StorefrontGoldPrice initialPrice={gold ? Number(gold.pricePerGram18) : null} currency={settings.currency} live={brand.liveGoldPrice} refreshSeconds={catalogSettings.goldPriceRefreshSeconds} showLabel={false} /> : null;
 
   const logo = brand.mainLogoMedia ? (
