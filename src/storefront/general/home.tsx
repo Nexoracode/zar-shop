@@ -1,9 +1,10 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { LucideIcon } from "lucide-react";
-import { ChevronLeft, Dumbbell, HeartPulse, House, Laptop, Shirt, ShoppingBag, Smartphone, Sparkles } from "lucide-react";
+import { ChevronLeft, Dumbbell, HeartPulse, House, Laptop, Percent, Shirt, ShoppingBag, Smartphone } from "lucide-react";
 import { DiscountExpiryRefresh } from "@/components/discount-expiry-refresh";
 import { DragScrollRow } from "@/components/drag-scroll-row";
+import { FlashDealCard } from "@/components/flash-deal-card";
 import { FlashSaleCountdown } from "@/components/flash-sale-countdown";
 import { HomepageBrands } from "@/components/homepage-brands";
 import { HomepageLatestArticles } from "@/components/homepage-latest-articles";
@@ -87,13 +88,25 @@ export async function GeneralHome() {
 
     {brands.length > 0 && <div {...sectionProps("BRANDS")} className={container}><HomepageBrands brands={brands} /></div>}
 
-    {flashDeals.length > 0 && <section {...sectionProps("FEATURED_PRODUCTS")} className={`${container} overflow-hidden rounded-2xl bg-[var(--brand-primary)] p-3 text-[var(--brand-primary-foreground)] sm:p-4 lg:p-5`} aria-label="پیشنهادهای ویژه">
-      <div className="grid min-w-0 gap-4 lg:grid-cols-[190px_minmax(0,1fr)] lg:items-center">
-        <div className="grid justify-items-center gap-3 px-3 py-3 text-center text-white"><Sparkles size={42} strokeWidth={1.4} /><strong className="text-2xl font-bold leading-9">پیشنهاد<br />شگفت‌انگیز</strong>{flashDealsExpiry && <FlashSaleCountdown endsAt={flashDealsExpiry} />}<Link href="/products" className="inline-flex items-center gap-1 text-xs font-bold">مشاهده همه<ChevronLeft size={15} /></Link></div>
-        <DragScrollRow ariaLabel="پیشنهادهای شگفت‌انگیز" showNavigation className="flex w-full min-w-0 max-w-full gap-1 overflow-x-auto pb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          {flashDeals.map((product, index) => <div key={product.id} className="w-[calc(50%-2px)] min-w-[calc(50%-2px)] snap-start sm:w-[220px] sm:min-w-[220px] lg:w-[224px] lg:min-w-[224px]"><ProductCard {...product} storefrontVariant="gallery" imageTone={index % 4} /></div>)}
-          <div className="w-[calc(50%-2px)] min-w-[calc(50%-2px)] snap-start sm:w-[220px] sm:min-w-[220px] lg:w-[224px] lg:min-w-[224px]"><ViewAllProductCard href="/products" /></div>
-        </DragScrollRow>
+    {flashDeals.length > 0 && <section {...sectionProps("FEATURED_PRODUCTS")} className={container} aria-label="پیشنهادهای ویژه">
+      <div className="overflow-hidden rounded-2xl" style={{ background: "linear-gradient(225deg, var(--brand-primary) 0%, color-mix(in srgb, var(--brand-primary) 80%, black) 100%)" }}>
+        <div className="flex items-start lg:items-stretch">
+          <div className="flex shrink-0 items-center gap-3 px-4 pb-3 pt-5 lg:flex-col lg:justify-center lg:gap-6 lg:self-stretch lg:px-5 lg:pb-5 lg:pt-3">
+            <Percent size={24} className="shrink-0 text-[var(--brand-primary-foreground)] lg:size-16" />
+            <strong className="shrink-0 text-lg font-extrabold leading-6 text-[var(--brand-primary-foreground)] lg:text-center lg:text-2xl lg:leading-8">شگفت‌انگیز</strong>
+            {flashDealsExpiry && <FlashSaleCountdown endsAt={flashDealsExpiry} className="shrink-0" />}
+            <Link href="/products" className="mr-auto inline-flex shrink-0 items-center gap-1 text-xs font-bold text-[var(--brand-primary-foreground)] lg:mr-0 lg:mt-1 lg:rounded-lg lg:px-3 lg:py-2 lg:text-sm lg:transition lg:hover:bg-black/5">
+              <span className="lg:hidden">همه</span><span className="hidden lg:inline">مشاهده همه</span><ChevronLeft size={15} />
+            </Link>
+          </div>
+          <div className="min-w-0 flex-1 overflow-hidden">
+            <DragScrollRow ariaLabel="پیشنهادهای شگفت‌انگیز" showNavigation className="flex w-full min-w-0 max-w-full gap-0.5 overflow-x-auto py-5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              <div className="w-2 shrink-0" aria-hidden="true" />
+              {flashDeals.map((product, index) => <FlashDealCard key={product.id} {...product} roundedSide={index === 0 ? "right" : "none"} />)}
+              <ViewAllProductCard href="/products" compact roundedSide="left" />
+            </DragScrollRow>
+          </div>
+        </div>
       </div>
       <DiscountExpiryRefresh at={flashDealsExpiry} />
     </section>}

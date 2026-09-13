@@ -17,13 +17,14 @@ function splitRemaining(milliseconds: number) {
 const pad = (value: number) => value.toLocaleString("fa-IR", { minimumIntegerDigits: 2, useGrouping: false });
 
 function Cell({ value }: { value: string }) {
-  return <span className="min-w-[26px] rounded-md bg-white/15 px-1 py-1 text-center text-[13px] font-bold tabular-nums text-white">{value}</span>;
+  return <span className="grid size-[26px] shrink-0 place-items-center rounded-[4px] bg-white text-[13px] font-bold tabular-nums text-[var(--foreground)]">{value}</span>;
 }
 
 /**
- * The single countdown in the "پیشنهاد شگفت‌انگیز" section header — time left until the soonest
- * product in the strip stops being discounted. Sits on the brand-primary panel, so it is drawn
- * white-on-primary. `DiscountExpiryRefresh` reloads the section when it hits zero.
+ * The countdown in the "شگفت‌انگیز" section header — time left until the soonest product in the
+ * strip stops being discounted. Matches Digikala's own widget: opaque white chips (readable
+ * regardless of the panel's background) rather than a labelled block. `DiscountExpiryRefresh`
+ * reloads the section when it hits zero.
  */
 export function FlashSaleCountdown({ endsAt, className = "" }: { endsAt: string; className?: string }) {
   const [remaining, setRemaining] = useState(() => new Date(endsAt).getTime() - Date.now());
@@ -43,21 +44,18 @@ export function FlashSaleCountdown({ endsAt, className = "" }: { endsAt: string;
   const { days, hours, minutes, seconds } = splitRemaining(remaining);
 
   return (
-    <div className={`flex flex-col items-center gap-1.5 ${className}`}>
-      <span className="text-[11px] font-bold text-white/85">تا پایان پیشنهاد</span>
-      <div className="flex items-center gap-1" dir="ltr" aria-label="زمان باقی‌مانده تا پایان پیشنهاد">
-        {hydrated && days > 0 && (
-          <>
-            <span className="min-w-[26px] rounded-md bg-white/15 px-1 py-1 text-center text-[13px] font-bold text-white">{days.toLocaleString("fa-IR")}</span>
-            <span className="px-0.5 text-[11px] font-bold text-white/70">روز</span>
-          </>
-        )}
-        <Cell value={hydrated ? pad(hours) : "۰۰"} />
-        <span className="text-xs font-bold text-white/70">:</span>
-        <Cell value={hydrated ? pad(minutes) : "۰۰"} />
-        <span className="text-xs font-bold text-white/70">:</span>
-        <Cell value={hydrated ? pad(seconds) : "۰۰"} />
-      </div>
+    <div className={`flex items-center gap-[2px] ${className}`} dir="ltr" aria-label="زمان باقی‌مانده تا پایان پیشنهاد">
+      {hydrated && days > 0 && (
+        <>
+          <Cell value={days.toLocaleString("fa-IR")} />
+          <span className="w-1 text-center text-[13px] font-bold text-[var(--brand-primary-foreground)]">:</span>
+        </>
+      )}
+      <Cell value={hydrated ? pad(hours) : "۰۰"} />
+      <span className="w-1 text-center text-[13px] font-bold text-[var(--brand-primary-foreground)]">:</span>
+      <Cell value={hydrated ? pad(minutes) : "۰۰"} />
+      <span className="w-1 text-center text-[13px] font-bold text-[var(--brand-primary-foreground)]">:</span>
+      <Cell value={hydrated ? pad(seconds) : "۰۰"} />
     </div>
   );
 }
