@@ -6,11 +6,14 @@ import { useState } from "react";
 import { ChevronDown, ChevronLeft, Package } from "lucide-react";
 import type { CategoryTreeNode } from "@/modules/products/category-tree";
 
-// Digikala's own /categories/ page (measured from the live site, mobile view): a narrow rail of
-// top-level categories on one side (icon over label, active tile pilled in the brand color) and
-// a wide accordion pane on the other showing the selected category's children, each expandable
-// to its own grandchildren. Rebuilt here against this store's real category tree instead of
-// Digikala's multi-vertical marketplace switcher, which has no equivalent in a single-store app.
+// Digikala's own /categories/ page (measured directly from the live site's DOM, mobile view): a
+// narrow rail of top-level categories on one side and a wide accordion pane on the other showing
+// the selected category's children, each expandable to its own grandchildren. The rail itself
+// sits on a light gray track; the active tile is flat white with its icon and label recolored to
+// the brand's primary color (no pill, no rounded highlight — Digikala's own active state is just
+// that color + background swap), inactive tiles stay on the gray track in a neutral dark tone.
+// Rebuilt against this store's real category tree instead of Digikala's multi-vertical
+// marketplace switcher, which has no equivalent in a single-store app (confirmed with the user).
 export function CategoriesBrowser({ categories }: { categories: CategoryTreeNode[] }) {
   const [activeId, setActiveId] = useState(categories[0]?.id ?? "");
   const [expandedChildId, setExpandedChildId] = useState<string | null>(null);
@@ -22,7 +25,7 @@ export function CategoriesBrowser({ categories }: { categories: CategoryTreeNode
 
   return (
     <div className="flex items-start" dir="rtl">
-      <aside className="flex w-20 shrink-0 flex-col gap-1 py-2 sm:w-24" aria-label="دسته‌های اصلی">
+      <aside className="flex w-20 shrink-0 flex-col divide-y divide-[var(--border)] bg-[var(--surface-secondary)] sm:w-24" aria-label="دسته‌های اصلی">
         {categories.map((category) => {
           const isActive = category.id === active.id;
           return (
@@ -31,12 +34,12 @@ export function CategoriesBrowser({ categories }: { categories: CategoryTreeNode
               type="button"
               onClick={() => { setActiveId(category.id); setExpandedChildId(null); }}
               aria-current={isActive ? "true" : undefined}
-              className={`flex flex-col items-center gap-1.5 rounded-xl px-1 py-2.5 text-center transition ${isActive ? "bg-[var(--brand-primary)] text-[var(--brand-primary-foreground)]" : "text-[var(--foreground)]"}`}
+              className={`flex flex-col items-center gap-1 px-2 py-3 text-center transition ${isActive ? "bg-white text-[var(--brand-primary)]" : "bg-transparent text-[var(--foreground)]"}`}
             >
-              <span className={`relative grid size-9 shrink-0 place-items-center overflow-hidden rounded-lg ${isActive ? "bg-white/15" : "bg-[var(--surface-secondary)]"}`}>
-                {category.image?.type === "IMAGE" ? <Image src={category.image.url} alt={category.image.alt ?? category.name} fill sizes="36px" className="object-cover" /> : <Package size={17} />}
+              <span className="relative grid size-5 shrink-0 place-items-center overflow-hidden">
+                {category.image?.type === "IMAGE" ? <Image src={category.image.url} alt={category.image.alt ?? category.name} fill sizes="20px" className="rounded object-cover" /> : <Package size={17} />}
               </span>
-              <span className="line-clamp-2 text-[11px] font-bold leading-4">{category.name}</span>
+              <span className="line-clamp-2 text-[10px] leading-4">{category.name}</span>
             </button>
           );
         })}
