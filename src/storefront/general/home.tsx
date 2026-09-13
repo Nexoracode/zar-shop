@@ -6,6 +6,7 @@ import { DiscountExpiryRefresh } from "@/components/discount-expiry-refresh";
 import { DragScrollRow } from "@/components/drag-scroll-row";
 import { FlashSaleCountdown } from "@/components/flash-sale-countdown";
 import { HomepageBrands } from "@/components/homepage-brands";
+import { HomepageLatestArticles } from "@/components/homepage-latest-articles";
 import { HomepageProductFeed } from "@/components/homepage-product-feed";
 import { HomepageBestSellers } from "@/components/homepage-best-sellers";
 import { ProductCard } from "@/components/product-card";
@@ -13,6 +14,7 @@ import { StorefrontHeroSlider } from "@/components/storefront-hero-slider";
 import { StorefrontImageTiles } from "@/components/storefront-image-tiles";
 import { ViewAllProductCard } from "@/components/view-all-product-card";
 import { db } from "@/lib/db";
+import { getLatestPublishedArticles } from "@/modules/articles/service";
 import { earliestDiscountExpiry } from "@/modules/products/discount-window";
 import { getStorefrontFlashDeals, getStorefrontProductFeed } from "@/modules/products/storefront-feed";
 import type { StorefrontProductCardItem } from "@/modules/products/storefront-feed-contract";
@@ -44,7 +46,7 @@ function ProductRail({ title, description, products, href }: { title: string; de
 }
 
 export async function GeneralHome() {
-  const [homepage, latestFeed, popularFeed, flashDeals, categories, brands] = await Promise.all([
+  const [homepage, latestFeed, popularFeed, flashDeals, categories, brands, latestArticles] = await Promise.all([
     getHomepageSettings(),
     getStorefrontProductFeed({ sort: "LATEST", page: 1 }),
     getStorefrontProductFeed({ sort: "POPULAR", page: 1, pageSize: 12 }),
@@ -61,6 +63,7 @@ export async function GeneralHome() {
       orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
       take: 20,
     }),
+    getLatestPublishedArticles(4),
   ]);
 
   const heroSlides = buildStorefrontHeroSlides(homepage, "/images/zar-hero-campaign.png");
@@ -100,6 +103,8 @@ export async function GeneralHome() {
     {popularFeed.items.length > 0 && <div {...sectionProps("BEST_SELLING_PRODUCTS")} className={container}><HomepageBestSellers products={popularFeed.items} /></div>}
 
     <section {...sectionProps("LATEST_PRODUCTS")} className={`${container} min-w-0 overflow-hidden rounded-2xl border border-[#e6e8ec] bg-white px-4 py-6 sm:px-6 lg:px-7 lg:py-8`}><div className="mb-5 flex items-end justify-between gap-4"><div><h2 className="m-0 text-xl font-bold text-[#232934] sm:text-2xl">جدیدترین محصولات</h2><p className="mb-0 mt-1 text-xs text-[#858b95] sm:text-sm">تازه‌ترین کالاهای اضافه‌شده به فروشگاه</p></div><Link href="/products?sortby=newest" className="inline-flex shrink-0 items-center gap-1 text-xs font-bold text-[#232934] transition hover:text-black">مشاهده همه<ChevronLeft size={15} /></Link></div><HomepageProductFeed initialFeed={latestFeed} industry="GENERAL" /></section>
+
+    {latestArticles.length > 0 && <div {...sectionProps("ARTICLES")} className={`${container} min-w-0 overflow-hidden rounded-2xl border border-[#e6e8ec] bg-white px-4 py-6 sm:px-6 lg:px-7 lg:py-8`}><HomepageLatestArticles articles={latestArticles} /></div>}
 
   </main>;
 }

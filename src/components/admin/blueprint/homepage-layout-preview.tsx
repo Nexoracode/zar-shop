@@ -19,6 +19,7 @@ const sectionNames: Partial<Record<HomepageLayoutItemId, string>> = {
   ABOUT: "معرفی فروشگاه",
   PROMISES: "مزیت‌های خرید",
   CONCIERGE: "خدمات و سوالات",
+  ARTICLES: "آخرین مقالات",
 };
 
 export function BlueprintHomepageLayoutPreview({ sections, settings }: { sections: HomepageSettings["sections"]; settings: HomepageSettings }) {
@@ -96,5 +97,6 @@ function PreviewSection({ id, mode, heroUrl }: { id: HomepageSectionId; mode: Pr
   if (id === "POPULAR_PRODUCTS" || id === "LATEST_PRODUCTS") return <PreviewBlock label={sectionNames[id]!}><ProductShapes count={4} /></PreviewBlock>;
   if (id === "ABOUT") return <PreviewBlock label={sectionNames[id]!}><div className="grid grid-cols-2 gap-1"><span className="h-10 rounded bg-[var(--bp-warning-bg)]" /><span className="h-10 rounded bg-[var(--bp-bg)]" /></div></PreviewBlock>;
   if (id === "PROMISES") return <PreviewBlock label={sectionNames[id]!}><div className="grid grid-cols-4 gap-1">{Array.from({ length: 4 }, (_, index) => <span key={index} className="h-6 rounded bg-[var(--bp-bg)]" />)}</div></PreviewBlock>;
+  if (id === "ARTICLES") return <PreviewBlock label={sectionNames[id]!}><div className={`grid gap-1 ${mode === "mobile" ? "grid-cols-2" : "grid-cols-4"}`}>{Array.from({ length: mode === "mobile" ? 2 : 4 }, (_, index) => <span key={index} className="grid gap-0.5"><i className="aspect-[16/9] rounded bg-[var(--bp-bg)]" /><i className="h-1 rounded-full bg-[var(--bp-bg)]" /></span>)}</div></PreviewBlock>;
   return <PreviewBlock label={sectionNames[id] ?? "خدمات و سوالات"}><div className="grid gap-1">{Array.from({ length: 3 }, (_, index) => <span key={index} className="h-2 rounded bg-[var(--bp-bg)]" />)}</div></PreviewBlock>;
 }

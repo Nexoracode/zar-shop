@@ -61,6 +61,16 @@ export async function getPublishedArticleBySlug(slug: string) {
   return { article, related };
 }
 
+/** Lean read for the homepage's "latest articles" section — no count query, just the rows. */
+export async function getLatestPublishedArticles(limit = 4) {
+  return db.article.findMany({
+    where: publishedWhere(),
+    select: listSelect,
+    orderBy: [{ publishedAt: "desc" }, { id: "desc" }],
+    take: limit,
+  });
+}
+
 export async function getActiveArticleCategories() {
   return db.articleCategory.findMany({ where: { isActive: true }, orderBy: [{ sortOrder: "asc" }, { name: "asc" }], select: { name: true, slug: true } });
 }

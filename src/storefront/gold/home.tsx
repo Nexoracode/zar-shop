@@ -3,11 +3,13 @@ import Link from "next/link";
 import { BadgeCheck, PackageCheck, ReceiptText, Truck } from "lucide-react";
 import type { Prisma } from "@generated/prisma/client";
 import { HomepageBrands } from "@/components/homepage-brands";
+import { HomepageLatestArticles } from "@/components/homepage-latest-articles";
 import { HomepageProductFeed } from "@/components/homepage-product-feed";
 import { StorefrontHeroSlider } from "@/components/storefront-hero-slider";
 import { StorefrontLicenses } from "@/components/storefront-licenses";
 import { StorefrontImageTiles } from "@/components/storefront-image-tiles";
 import { db } from "@/lib/db";
+import { getLatestPublishedArticles } from "@/modules/articles/service";
 import { getStorefrontProductFeed } from "@/modules/products/storefront-feed";
 import { getGeneralStoreSettings } from "@/modules/settings/general-settings";
 import { getHomepageSettings, type HomepageLayoutItemId, type HomepageTreasureCardId } from "@/modules/settings/homepage-settings";
@@ -19,7 +21,7 @@ const container = "mx-auto w-[min(1440px,calc(100%-32px))] lg:w-[min(1440px,calc
 
 export async function GoldHome() {
   const settings = await getGeneralStoreSettings();
-  const [productFeed, homepageCategories, homepage, brands] = await Promise.all([
+  const [productFeed, homepageCategories, homepage, brands, latestArticles] = await Promise.all([
     getStorefrontProductFeed({ sort: "LATEST", page: 1 }),
     db.category.findMany({
       where: { isActive: true, featured: true, products: { some: { status: "ACTIVE", storeIndustry: "GOLD" } } },
@@ -33,6 +35,7 @@ export async function GoldHome() {
       orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
       take: 20,
     }),
+    getLatestPublishedArticles(4),
   ]);
 
   const categories = homepageCategories;
@@ -92,6 +95,8 @@ export async function GoldHome() {
         { icon: <BadgeCheck />, title: "ضمانت اصالت", text: "طلای ۱۸ عیار همراه با فاکتور رسمی" }, { icon: <ReceiptText />, title: "قیمت کاملاً شفاف", text: "نمایش وزن، اجرت، سود و مالیات" }, { icon: <Truck />, title: "ارسال امن", text: "بسته‌بندی مطمئن و قابل پیگیری" }, { icon: <PackageCheck />, title: "پشتیبانی سفارش", text: "همراه شما از انتخاب تا تحویل" },
       ].map(({ icon, title, text }) => <div key={title} className="rounded-[7px] border border-[#e2ded9] bg-white p-6"><span className="mb-5 block text-[var(--brand-primary)]">{icon}</span><strong className="block text-sm">{title}</strong><small className="mt-2 block leading-6 text-[#777]">{text}</small></div>)}</div></div>
     </section>
+
+    {latestArticles.length > 0 && <section {...sectionProps("ARTICLES")} className="bg-white py-10 lg:py-16"><div className={container}><HomepageLatestArticles articles={latestArticles} /></div></section>}
 
     <section {...sectionProps("CONCIERGE")} className="bg-white py-[60px]">
       <div className={container}><h2 className="mb-8 mt-0 text-2xl font-bold">چرا {settings.storeName}؟</h2><div className="grid gap-x-12 gap-y-7 lg:grid-cols-2">{[

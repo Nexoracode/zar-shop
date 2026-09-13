@@ -18,6 +18,7 @@ const sectionMeta: Record<HomepageSectionId, { title: string; description: strin
   ABOUT: { title: "معرفی فروشگاه", description: "داستان، ارزش‌ها و شفافیت فروشگاه" },
   PROMISES: { title: "مزیت‌های خرید", description: "ضمانت اصالت، ارسال امن و قیمت‌گذاری شفاف" },
   CONCIERGE: { title: "خدمات اختصاصی", description: "تضمین اصالت، تحویل و مشاوره انتخاب" },
+  ARTICLES: { title: "آخرین مقالات وبلاگ", description: "تازه‌ترین مقالات منتشرشده با لینک به وبلاگ" },
 };
 
 export function BlueprintHomepageLayoutSettings({ initialSettings }: { initialSettings: HomepageSettings }) {
