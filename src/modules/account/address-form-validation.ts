@@ -32,7 +32,7 @@ export function validateAddressRecipient(values: AddressRecipientValues): Addres
   const errors: AddressRecipientErrors = {};
   const recipient = values.recipient.trim();
   const phone = normalizeNumericValue(values.phone, false);
-  if (recipient.length < 3) errors.recipient = values.recipientType === "SELF" ? "نام و نام خانوادگی حساب کاربری را تکمیل کنید." : "نام و نام خانوادگی گیرنده را کامل وارد کنید.";
+  if (recipient.length < 3) errors.recipient = values.recipientType === "SELF" ? "نام و نام خانوادگی در حساب شما ثبت نشده؛ گزینهٔ «تحویل به شخص دیگر» را انتخاب و نام تحویل‌گیرنده را وارد کنید." : "نام و نام خانوادگی گیرنده را کامل وارد کنید.";
   if (!/^09\d{9}$/.test(phone)) errors.phone = values.recipientType === "SELF" ? "شماره موبایل حساب کاربری را تکمیل کنید." : "شماره موبایل گیرنده معتبر نیست.";
   return errors;
 }

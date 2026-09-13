@@ -20,7 +20,13 @@ type Option = { id: string; name: string };
 export function AddressForm({ initial, user, onSaved, onCancel, onStepChange }: { initial?: StorefrontAddress | null; user: { firstName: string | null; lastName: string | null; phone: string | null }; onSaved: (address: StorefrontAddress) => void; onCancel: () => void; onStepChange?: (step: AddressFormStep) => void }) {
   const formRef = useRef<HTMLFormElement>(null);
   const [step, setStep] = useState<AddressFormStep>(2);
-  const [recipientType, setRecipientType] = useState<"SELF" | "OTHER">(initial?.recipientType ?? "SELF");
+  const selfName = `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim();
+  // "تحویل به خودم" reads the name from the account profile, which guest accounts (and any real
+  // account that skipped the optional name fields at registration) never have — guests in
+  // particular have no way to fill it in later, since profile editing is blocked for them. When
+  // there's no name to show, default to "تحویل به شخص دیگر" so the same form's own name/phone
+  // fields cover it instead of the user hitting a "complete your account" dead end.
+  const [recipientType, setRecipientType] = useState<"SELF" | "OTHER">(initial?.recipientType ?? (selfName ? "SELF" : "OTHER"));
   const [provinceId, setProvinceId] = useState(initial?.provinceId ?? "");
   const [cityId, setCityId] = useState(initial?.cityId ?? "");
   const [provinces, setProvinces] = useState<Option[]>([]);
@@ -30,7 +36,6 @@ export function AddressForm({ initial, user, onSaved, onCancel, onStepChange }: 
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState<AddressFormErrors>({});
   const [recipientErrors, setRecipientErrors] = useState<AddressRecipientErrors>({});
-  const selfName = `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim();
 
   useEffect(() => {
     let active = true;
