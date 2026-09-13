@@ -1,15 +1,12 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowDownUp } from "lucide-react";
-import { ProductCard } from "@/components/product-card";
-import { DiscountExpiryRefresh } from "@/components/discount-expiry-refresh";
-import { earliestDiscountExpiry } from "@/modules/products/discount-window";
 import { StorefrontCatalogFilters } from "@/components/storefront-catalog-filters";
 import { StorefrontCatalogFilterBar } from "@/components/storefront-catalog-filter-bar";
+import { StorefrontCatalogGrid } from "@/components/storefront-catalog-grid";
 import { db } from "@/lib/db";
 import { collectCategoryAndDescendantIds } from "@/modules/categories/category-tree";
 import { getStorefrontCatalog } from "@/modules/products/storefront-catalog";
-import { paginationWindow } from "@/lib/pagination-window";
 import { storefrontCatalogQuerySchema } from "@/modules/products/storefront-catalog-contract";
 import { getGeneralStoreSettings } from "@/modules/settings/general-settings";
 import type { Metadata } from "next";
@@ -121,6 +118,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
   }
 
   const resetFiltersHref = productsHref({ MinPrice: undefined, MaxPrice: undefined, brandSlug: undefined, brand: [], color: [], attr: [], inStock: undefined, hasDiscount: undefined, freeShipping: undefined, sameDayDelivery: undefined, page: undefined });
+  const apiBaseQuery = productsHref({ page: undefined }).split("?")[1] ?? "";
   const selectedBrandsArr = query.brand ?? [];
   const selectedColorsArr = selectedCategory ? query.color ?? [] : [];
   const selectedAttributesArr = selectedCategory ? query.attr ?? [] : [];
@@ -175,17 +173,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
             <span className="mr-auto text-[11px] text-slate-400">{total.toLocaleString("fa-IR")} کالا</span>
           </div>
 
-          <div className="mt-5 grid grid-cols-2 border-r border-t border-slate-200 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
-            {catalog.items.map((product) => <ProductCard key={product.id} {...product} storefrontVariant="catalog" />)}
-            <DiscountExpiryRefresh at={earliestDiscountExpiry(catalog.items)} />
-            {!catalog.items.length && <div className="col-span-full grid min-h-72 place-items-center border-b border-l border-slate-200 px-4 text-center text-sm text-slate-500">محصولی مطابق فیلترهای انتخاب‌شده پیدا نشد.</div>}
-          </div>
-
-          {pageCount > 1 && <nav aria-label="صفحه‌بندی محصولات" className="mt-10 flex flex-wrap items-center justify-center gap-2">
-            {paginationWindow(page, pageCount).map((item, index) => item === "ellipsis"
-              ? <span key={`gap-${index}`} className="grid size-10 place-items-center text-sm text-slate-400">…</span>
-              : <Link key={item} href={productsHref({ page: item.toString() })} aria-current={item === page ? "page" : undefined} className={`grid size-10 place-items-center rounded-lg border text-sm transition ${item === page ? "border-[var(--brand-primary)] bg-[var(--brand-primary)] text-[var(--brand-primary-foreground)]" : "border-slate-200 bg-white text-slate-600 hover:border-[var(--brand-primary)] hover:text-[var(--brand-primary)]"}`}>{item.toLocaleString("fa-IR")}</Link>)}
-          </nav>}
+          <StorefrontCatalogGrid key={apiBaseQuery} initialItems={catalog.items} initialPage={page} totalPages={pageCount} baseQuery={apiBaseQuery} />
         </section>
       </div>
     </div>
