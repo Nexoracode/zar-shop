@@ -21,6 +21,52 @@ type Props = {
   buttonLabel: string;
 };
 
+// Digikala's own mobile hero (measured directly from the live site's DOM): not a full-bleed
+// single slide, but a horizontally scroll-snapping row of individually rounded (8px) 180px-tall
+// cards, sized so the current one dominates the width while a sliver of its neighbor peeks in on
+// each side. Auto-advances like the desktop slider, but native scroll/snap supplies the swipe
+// gesture instead of the custom pointer-drag math the desktop version uses.
+function MobileHeroPeekCarousel({ slides }: { slides: StorefrontHeroSlide[] }) {
+  const rowRef = useRef<HTMLDivElement>(null);
+  const pausedRef = useRef(false);
+  const hasMultipleSlides = slides.length > 1;
+
+  useEffect(() => {
+    if (!hasMultipleSlides) return;
+    const timer = window.setInterval(() => {
+      const row = rowRef.current;
+      if (!row || pausedRef.current) return;
+      const cards = Array.from(row.children) as HTMLElement[];
+      const viewportCenter = row.getBoundingClientRect().left + row.clientWidth / 2;
+      let currentIndex = 0;
+      let closestDistance = Infinity;
+      cards.forEach((card, index) => {
+        const rect = card.getBoundingClientRect();
+        const distance = Math.abs(rect.left + rect.width / 2 - viewportCenter);
+        if (distance < closestDistance) { closestDistance = distance; currentIndex = index; }
+      });
+      cards[(currentIndex + 1) % cards.length]?.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+    }, 4000);
+    return () => window.clearInterval(timer);
+  }, [hasMultipleSlides]);
+
+  return (
+    <div
+      ref={rowRef}
+      dir="rtl"
+      className="scrollbar-hide flex snap-x snap-mandatory gap-2 overflow-x-auto px-[18px] py-3 lg:hidden"
+      onPointerDown={() => { pausedRef.current = true; }}
+      onPointerUp={() => window.setTimeout(() => { pausedRef.current = false; }, 3000)}
+    >
+      {slides.map((slide, index) => (
+        <Link key={slide.id} href={slide.href} aria-label={`مشاهده ${slide.desktop.alt}`} className="relative h-[180px] w-[88%] shrink-0 snap-center overflow-hidden rounded-lg bg-[#e8dfd5]">
+          <Image src={slide.mobile?.src ?? slide.desktop.src} alt={slide.mobile?.alt ?? slide.desktop.alt} fill priority={index === 0} sizes="88vw" className="object-cover" />
+        </Link>
+      ))}
+    </div>
+  );
+}
+
 export function StorefrontHeroSlider({ slides, contentMode, title, description, buttonLabel }: Props) {
   const [activeIndex, setActiveIndex] = useState(0);
   const [hovered, setHovered] = useState(false);
@@ -128,25 +174,24 @@ export function StorefrontHeroSlider({ slides, contentMode, title, description, 
   }
 
   return (
-    <div ref={sliderRef} className={`relative h-[220px] touch-pan-y select-none overflow-hidden bg-[#e8dfd5] sm:h-[300px] lg:h-[440px] ${dragging ? "cursor-grabbing" : hasMultipleSlides ? "cursor-grab" : ""}`} onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)} onPointerDown={pointerDown} onPointerMove={pointerMove} onPointerUp={finishDrag} onPointerCancel={(event) => finishDrag(event, true)} onClickCapture={(event) => { if (suppressClick.current) { event.preventDefault(); event.stopPropagation(); } }} onDragStart={(event) => event.preventDefault()}>
-      {slides.map((slide, index) => <Link href={slide.href} key={slide.id} aria-hidden={index !== activeIndex} tabIndex={index === activeIndex ? 0 : -1} aria-label={`مشاهده ${slide.desktop.alt}`} onTransitionEnd={(event) => { if (index === activeIndex && event.propertyName === "transform") completeAnimation(); }} style={{ transform: `translate3d(calc(${relativePosition(index) * 100}% + ${dragOffset}px), 0, 0)` }} className={`absolute inset-0 will-change-transform ${transitionEnabled ? "transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]" : ""} ${index === activeIndex && !dragging && !animating ? "z-[1]" : "z-0"} ${index === activeIndex ? "" : "pointer-events-none"}`}>
-        {slide.mobile && <Image src={slide.mobile.src} alt={slide.mobile.alt} fill priority={index === 0} draggable={false} sizes="(max-width: 639px) 100vw, 0px" className="object-cover sm:hidden" />}
-        <Image src={slide.desktop.src} alt={slide.desktop.alt} fill priority={index === 0} draggable={false} sizes="100vw" className={`object-cover ${slide.mobile ? "hidden sm:block" : ""}`} />
-      </Link>)}
+    <>
+      <MobileHeroPeekCarousel slides={slides} />
+      <div ref={sliderRef} className={`relative hidden h-[440px] touch-pan-y select-none overflow-hidden bg-[#e8dfd5] lg:block ${dragging ? "cursor-grabbing" : hasMultipleSlides ? "cursor-grab" : ""}`} onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)} onPointerDown={pointerDown} onPointerMove={pointerMove} onPointerUp={finishDrag} onPointerCancel={(event) => finishDrag(event, true)} onClickCapture={(event) => { if (suppressClick.current) { event.preventDefault(); event.stopPropagation(); } }} onDragStart={(event) => event.preventDefault()}>
+        {slides.map((slide, index) => <Link href={slide.href} key={slide.id} aria-hidden={index !== activeIndex} tabIndex={index === activeIndex ? 0 : -1} aria-label={`مشاهده ${slide.desktop.alt}`} onTransitionEnd={(event) => { if (index === activeIndex && event.propertyName === "transform") completeAnimation(); }} style={{ transform: `translate3d(calc(${relativePosition(index) * 100}% + ${dragOffset}px), 0, 0)` }} className={`absolute inset-0 will-change-transform ${transitionEnabled ? "transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]" : ""} ${index === activeIndex && !dragging && !animating ? "z-[1]" : "z-0"} ${index === activeIndex ? "" : "pointer-events-none"}`}>
+          <Image src={slide.desktop.src} alt={slide.desktop.alt} fill priority={index === 0} draggable={false} sizes="100vw" className="object-cover" />
+        </Link>)}
 
-      {contentMode === "WITH_CONTENT" && <>
-        <span className="pointer-events-none absolute inset-0 z-10 bg-gradient-to-l from-black/35 via-transparent to-transparent" />
-        <div className="pointer-events-none relative z-20 mx-auto flex h-full w-[min(1440px,calc(100%-32px))] items-center lg:w-[min(1440px,calc(100%-80px))]"><div className="max-w-[480px] text-white"><h1 className="m-0 text-[clamp(2.2rem,5vw,4.4rem)] font-bold leading-[1.25]">{title}</h1><p className="mb-6 mt-3 text-sm text-white/85">{description}</p><Link href={slides[activeIndex]?.href ?? "/products"} data-slider-control="true" className="pointer-events-auto inline-flex h-11 items-center rounded-md bg-[var(--brand-primary)] px-6 text-xs text-[var(--brand-primary-foreground)]">{buttonLabel}</Link></div></div>
-      </>}
+        {contentMode === "WITH_CONTENT" && <>
+          <span className="pointer-events-none absolute inset-0 z-10 bg-gradient-to-l from-black/35 via-transparent to-transparent" />
+          <div className="pointer-events-none relative z-20 mx-auto flex h-full w-[min(1440px,calc(100%-80px))] items-center"><div className="max-w-[480px] text-white"><h1 className="m-0 text-[clamp(2.2rem,5vw,4.4rem)] font-bold leading-[1.25]">{title}</h1><p className="mb-6 mt-3 text-sm text-white/85">{description}</p><Link href={slides[activeIndex]?.href ?? "/products"} data-slider-control="true" className="pointer-events-auto inline-flex h-11 items-center rounded-md bg-[var(--brand-primary)] px-6 text-xs text-[var(--brand-primary-foreground)]">{buttonLabel}</Link></div></div>
+        </>}
 
-      {/* Digikala's own mobile hero has no arrow controls at all — swipe is the only mobile
-          interaction, matching the drag handling already built into this slider. Desktop keeps
-          them since a mouse has no swipe gesture. */}
-      {hasMultipleSlides && <>
-        <Button type="button" isIconOnly variant="secondary" aria-label="اسلاید قبلی" onPress={previous} className="absolute right-4 top-1/2 z-30 hidden size-10 min-h-10 min-w-10 -translate-y-1/2 rounded-full border border-white/40 bg-black/25 text-white backdrop-blur hover:bg-black/40 lg:grid"><ChevronRight size={19} /></Button>
-        <Button type="button" isIconOnly variant="secondary" aria-label="اسلاید بعدی" onPress={next} className="absolute left-4 top-1/2 z-30 hidden size-10 min-h-10 min-w-10 -translate-y-1/2 rounded-full border border-white/40 bg-black/25 text-white backdrop-blur hover:bg-black/40 lg:grid"><ChevronLeft size={19} /></Button>
-        <div className="absolute bottom-4 left-1/2 z-30 flex -translate-x-1/2 items-center gap-2 rounded-full bg-black/20 px-3 py-2 backdrop-blur" dir="rtl">{slides.map((slide, index) => <Button key={slide.id} type="button" isIconOnly variant="ghost" aria-label={`نمایش اسلاید ${(index + 1).toLocaleString("fa-IR")}`} aria-pressed={index === activeIndex} onPress={() => setActiveIndex(index)} className={`h-2 min-h-2 min-w-2 rounded-full p-0 transition-all ${index === activeIndex ? "w-6 bg-white" : "w-2 bg-white/55 hover:bg-white/80"}`} />)}</div>
-      </>}
-    </div>
+        {hasMultipleSlides && <>
+          <Button type="button" isIconOnly variant="secondary" aria-label="اسلاید قبلی" onPress={previous} className="absolute right-4 top-1/2 z-30 grid size-10 min-h-10 min-w-10 -translate-y-1/2 rounded-full border border-white/40 bg-black/25 text-white backdrop-blur hover:bg-black/40"><ChevronRight size={19} /></Button>
+          <Button type="button" isIconOnly variant="secondary" aria-label="اسلاید بعدی" onPress={next} className="absolute left-4 top-1/2 z-30 grid size-10 min-h-10 min-w-10 -translate-y-1/2 rounded-full border border-white/40 bg-black/25 text-white backdrop-blur hover:bg-black/40"><ChevronLeft size={19} /></Button>
+          <div className="absolute bottom-4 left-1/2 z-30 flex -translate-x-1/2 items-center gap-2 rounded-full bg-black/20 px-3 py-2 backdrop-blur" dir="rtl">{slides.map((slide, index) => <Button key={slide.id} type="button" isIconOnly variant="ghost" aria-label={`نمایش اسلاید ${(index + 1).toLocaleString("fa-IR")}`} aria-pressed={index === activeIndex} onPress={() => setActiveIndex(index)} className={`h-2 min-h-2 min-w-2 rounded-full p-0 transition-all ${index === activeIndex ? "w-6 bg-white" : "w-2 bg-white/55 hover:bg-white/80"}`} />)}</div>
+        </>}
+      </div>
+    </>
   );
 }

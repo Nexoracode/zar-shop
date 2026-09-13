@@ -70,8 +70,8 @@ export function ResumeOrderCheckout({ orderId, orderNumber, address, quote, curr
   }
 
   return (
-    <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_350px]" dir="rtl">
-      <div className="grid gap-4">
+    <div className="grid min-w-0 items-start gap-4 lg:grid-cols-[minmax(0,1fr)_350px]" dir="rtl">
+      <div className="grid min-w-0 gap-4">
         <Card variant="secondary" className="rounded-xl border border-[var(--border)] bg-[var(--surface)] shadow-sm">
           <Card.Content className="p-4 sm:p-5">
             <div className="mb-4 flex items-start gap-3"><span className="grid size-9 shrink-0 place-items-center rounded-full bg-[var(--brand-primary)]/10 text-[var(--brand-primary)]"><MapPin size={18} /></span><div><h2 className="m-0 text-base font-bold">نشانی تحویل سفارش</h2><p className="mb-0 mt-1 text-xs text-[var(--muted)]">این نشانی هنگام ثبت سفارش شما ذخیره شده و قابل تغییر نیست.</p></div></div>
@@ -91,7 +91,7 @@ export function ResumeOrderCheckout({ orderId, orderNumber, address, quote, curr
         </Card>
       </div>
 
-      <aside className="grid gap-4 lg:sticky lg:top-24">
+      <aside className="grid min-w-0 gap-4 lg:sticky lg:top-24">
         <Card variant="secondary" className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4 shadow-sm">
           <div className="mb-4 flex items-center justify-between"><strong className="text-base font-bold">خلاصه سفارش</strong><span className="text-xs text-[var(--muted)]">{itemCount.toLocaleString("fa-IR")} کالا</span></div>
           <p className="mb-3 mt-0 text-xs text-[var(--muted)]">سفارش <b dir="ltr">{orderNumber}</b></p>
