@@ -119,8 +119,8 @@ export function CheckoutForm({ settings, paymentMethods, currency, itemCount, in
                 >
                   <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-[var(--surface-secondary)] text-[var(--brand-primary)]"><Wallet size={17} /></span>
                   <span className="min-w-0 flex-1">
-                    <strong className="block text-[13px]">اعتبار کیف پول</strong>
-                    <small className="mt-0.5 block text-[11px] font-normal text-[var(--muted)]">موجودی: {formatMoney(wallet.balance, currency)}{useWallet && quote.walletApplied > 0 ? ` · ${formatMoney(quote.walletApplied, currency)} کسر می‌شود` : ""}</small>
+                    <strong className="block whitespace-normal text-[13px]">اعتبار کیف پول</strong>
+                    <small className="mt-0.5 block whitespace-normal text-[11px] font-normal text-[var(--muted)]">موجودی: {formatMoney(wallet.balance, currency)}{useWallet && quote.walletApplied > 0 ? ` · ${formatMoney(quote.walletApplied, currency)} کسر می‌شود` : ""}</small>
                   </span>
                   {useWallet && <Check size={16} className="shrink-0 text-[var(--brand-primary)]" />}
                 </Button>
@@ -144,7 +144,7 @@ export function CheckoutForm({ settings, paymentMethods, currency, itemCount, in
                       className={optionClass(paymentProvider === method.id)}
                     >
                       <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-[var(--surface-secondary)] text-[var(--brand-primary)]"><CreditCard size={17} /></span>
-                      <span className="min-w-0 flex-1"><strong className="block text-[13px]">{method.name}</strong><small className="mt-0.5 block text-[11px] font-normal text-[var(--muted)]">{method.description}</small></span>
+                      <span className="min-w-0 flex-1"><strong className="block whitespace-normal text-[13px]">{method.name}</strong><small className="mt-0.5 block whitespace-normal text-[11px] font-normal text-[var(--muted)]">{method.description}</small></span>
                       {method.sandbox && <span className="shrink-0 rounded-full bg-[color-mix(in_srgb,var(--warning)_14%,transparent)] px-2 py-0.5 text-[10px] font-bold text-[var(--warning)]">آزمایشی</span>}
                       {paymentProvider === method.id && <Check size={16} className="shrink-0 text-[var(--brand-primary)]" />}
                     </Button>

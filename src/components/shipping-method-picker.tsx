@@ -100,8 +100,8 @@ export function ShippingMethodPicker({ addressId, currency, selectedMethodId, on
               >
                 <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-[var(--surface-secondary)] text-[var(--brand-primary)]"><Truck size={17} /></span>
                 <span className="min-w-0 flex-1">
-                  <strong className="block text-[13px]">{option.title}</strong>
-                  <small className="mt-0.5 block text-[11px] font-normal text-[var(--muted)]">{option.carrier} · تحویل حدود {option.estimatedDays.toLocaleString("fa-IR")} روز کاری</small>
+                  <strong className="block whitespace-normal text-[13px]">{option.title}</strong>
+                  <small className="mt-0.5 block whitespace-normal text-[11px] font-normal text-[var(--muted)]">{option.carrier} · تحویل حدود {option.estimatedDays.toLocaleString("fa-IR")} روز کاری</small>
                 </span>
                 <span className="shrink-0 text-[13px] font-bold">
                   {freeShipping || option.price === 0 ? "رایگان" : formatMoney(option.price, currency)}
