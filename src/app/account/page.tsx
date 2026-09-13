@@ -75,7 +75,7 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
             <Link
               key={label}
               href={href}
-              className="flex items-center gap-2.5 rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 py-2.5 transition hover:border-[var(--brand-primary)]"
+              className="flex min-w-0 items-center gap-2.5 rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 py-2.5 transition hover:border-[var(--brand-primary)]"
             >
               <Icon size={16} className="shrink-0 text-[var(--brand-primary)]" />
               <span className="min-w-0">

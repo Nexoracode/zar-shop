@@ -24,7 +24,7 @@ export function AccountSidebar({ user, showWallet = false, showReferral = false,
   ];
 
   return (
-    <aside className="lg:sticky lg:top-24">
+    <aside className="min-w-0 lg:sticky lg:top-24">
       <div className="overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface)]">
         <div className="flex min-h-20 items-center gap-3 border-b border-[var(--border)] px-5 py-4">
           <div className="min-w-0 flex-1"><strong className="block truncate text-sm font-bold">{user.name}</strong><span className="mt-1 block text-[11px] text-[var(--muted)]" dir="ltr">{user.phone}</span></div>
