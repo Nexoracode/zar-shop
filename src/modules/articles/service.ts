@@ -71,6 +71,15 @@ export async function getLatestPublishedArticles(limit = 4) {
   });
 }
 
+export async function countPublishedArticles() {
+  return db.article.count({ where: publishedWhere() });
+}
+
 export async function getActiveArticleCategories() {
-  return db.articleCategory.findMany({ where: { isActive: true }, orderBy: [{ sortOrder: "asc" }, { name: "asc" }], select: { name: true, slug: true } });
+  const categories = await db.articleCategory.findMany({
+    where: { isActive: true },
+    orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
+    select: { name: true, slug: true, _count: { select: { articles: { where: publishedWhere() } } } },
+  });
+  return categories.map((category) => ({ name: category.name, slug: category.slug, articleCount: category._count.articles }));
 }

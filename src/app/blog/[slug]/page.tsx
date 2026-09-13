@@ -89,9 +89,9 @@ export default async function ArticlePage({ params }: Context) {
         </div>
 
         {article.coverMedia && (
-          <span className="relative mt-6 block aspect-[16/9] w-full overflow-hidden rounded-2xl bg-[var(--surface-secondary)]">
-            <Image src={article.coverMedia.url} alt={article.coverMedia.alt ?? article.title} fill sizes="(max-width: 768px) 100vw, 768px" className="object-cover" priority />
-          </span>
+          <div className="relative mt-6 aspect-[16/9] w-full overflow-hidden rounded-2xl bg-[var(--surface-secondary)]">
+            <Image src={article.coverMedia.url} alt={article.coverMedia.alt ?? article.title} width={1200} height={675} sizes="(max-width: 768px) 100vw, 768px" className="h-full w-full object-cover" priority />
+          </div>
         )}
 
         <div
