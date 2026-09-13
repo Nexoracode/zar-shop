@@ -56,7 +56,7 @@ type ProductCardProps = {
   colors?: Array<{ id: string; name: string; hex: string }>;
 };
 
-export function ProductCard({ id, isFavorite, href, name, category, industry, weight, purity, makingFee, discountPercent, price, originalPrice, image, storefrontVariant = "default", imageTone = 0, stock, rating, colors = [] }: ProductCardProps) {
+export function ProductCard({ id, isFavorite, href, name, category, industry, weight, makingFee, discountPercent, price, originalPrice, image, storefrontVariant = "default", imageTone = 0, stock, rating, colors = [] }: ProductCardProps) {
   if (storefrontVariant === "catalog") {
     return <Link href={href} className="group relative flex min-h-[390px] min-w-0 flex-col border-b border-l border-slate-200 bg-white p-4 transition duration-200 hover:z-10 hover:shadow-[0_6px_24px_rgba(0,0,0,.09)] focus-visible:z-10 focus-visible:outline-2 focus-visible:outline-[var(--brand-primary)]">
       {colors.length > 0 && <span className="absolute right-2 top-5 z-10 flex flex-col gap-0.5" aria-label={`${colors.length.toLocaleString("fa-IR")} رنگ موجود`}>
@@ -105,7 +105,6 @@ export function ProductCard({ id, isFavorite, href, name, category, industry, we
             <span className="absolute top-[27%] right-[29%] text-white text-2xl drop-shadow-[0_0_14px_#fff]">✦</span>
           </div>
         )}
-        <span className={`absolute top-2.5 max-w-[70%] truncate px-2 py-1 text-[0.62rem] ${isGallery ? "left-2.5 rounded-[4px] bg-white/90 text-slate-600 shadow-sm" : "right-2.5 border border-[var(--brand-accent)]/30 bg-white/90 text-[var(--brand-accent)]"}`}>{industry === "GOLD" ? (isGallery ? `${weight} گرم` : `طلای ${purity}`) : category}</span>
         {isGallery && id && <ProductFavoriteButton productId={id} initialFavorite={isFavorite} className="absolute right-2.5 top-2.5 z-10 shadow-sm" />}
         {isGallery && makingFee ? <span className="absolute bottom-2.5 right-2.5 rounded-[4px] bg-slate-100 px-2 py-1 text-[0.6rem] font-bold text-slate-600 shadow-sm">{makingFee.type === "PERCENT" ? <>اجرت {makingFee.value.toLocaleString("fa-IR")}٪{makingFee.value < 5 && " | کم‌اجرت"}</> : "اجرت ثابت"}</span> : isGallery && discountPercent !== undefined && discountPercent > 0 ? <span className="absolute bottom-2.5 right-2.5 rounded-[4px] bg-[var(--danger)] px-2 py-1 text-[0.6rem] font-bold text-[var(--danger-foreground)]">٪{discountPercent.toLocaleString("fa-IR")}</span> : null}
       </div>
