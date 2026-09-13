@@ -3,6 +3,7 @@ import { hash as hashPassword } from "bcryptjs";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
+import { env } from "@/lib/env";
 import type { UserRole } from "@generated/prisma/enums";
 import { SESSION_COOKIE } from "@/modules/auth/constants";
 import { adminRoles, adminStartPath, hasPermission, type AdminPermission } from "@/modules/auth/permissions";
@@ -15,6 +16,15 @@ export function sessionIsUsable(session: { expiresAt: Date; user: { status: stri
   return Boolean(session && session.expiresAt > now && session.user.status === "ACTIVE");
 }
 
+// `Secure` must reflect whether the site is actually served over HTTPS, not just NODE_ENV: a
+// production *build* (`next start`) opened over plain HTTP — e.g. testing on a phone via a LAN
+// IP like http://192.168.x.x:3000 — still has NODE_ENV=production, so a cookie gated on that
+// alone gets the Secure flag on a connection that isn't secure, and mobile browsers silently
+// refuse to store it (the login API call succeeds, but the browser never keeps the session
+// cookie, so every next request looks logged-out). APP_URL is this project's own source of
+// truth for the site's real origin/protocol, so it isn't fooled by that mismatch.
+const SESSION_COOKIE_SECURE = env.APP_URL.startsWith("https://");
+
 export async function createSession(userId: string) {
   const token = randomBytes(32).toString("base64url");
   await db.session.create({
@@ -24,7 +34,7 @@ export async function createSession(userId: string) {
   store.set(SESSION_COOKIE, token, {
     httpOnly: true,
     sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
+    secure: SESSION_COOKIE_SECURE,
     path: "/",
     maxAge: SESSION_AGE_MS / 1000,
   });
