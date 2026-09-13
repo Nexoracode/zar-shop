@@ -9,6 +9,9 @@ const listSelect = {
   title: true,
   slug: true,
   excerpt: true,
+  authorName: true,
+  ratingAverage: true,
+  ratingCount: true,
   publishedAt: true,
   createdAt: true,
   updatedAt: true,
@@ -42,23 +45,43 @@ export async function getPublishedArticles({ page = 1, categorySlug }: { page?: 
   return { items, page: current, totalPages, total, pageSize: ARTICLES_PAGE_SIZE };
 }
 
-export async function getPublishedArticleBySlug(slug: string) {
+export async function getPublishedArticleBySlug(slug: string, viewerId?: string | null) {
   const article = await db.article.findFirst({
     where: { slug, ...publishedWhere() },
     include: { coverMedia: true, category: { select: { name: true, slug: true, isActive: true } } },
   });
   if (!article) return null;
-  const related = await db.article.findMany({
-    where: {
-      ...publishedWhere(),
-      id: { not: article.id },
-      ...(article.categoryId ? { categoryId: article.categoryId } : {}),
-    },
-    select: listSelect,
-    orderBy: [{ publishedAt: "desc" }, { id: "desc" }],
-    take: 3,
+  const [related, ownRating] = await Promise.all([
+    db.article.findMany({
+      where: {
+        ...publishedWhere(),
+        id: { not: article.id },
+        ...(article.categoryId ? { categoryId: article.categoryId } : {}),
+      },
+      select: listSelect,
+      orderBy: [{ publishedAt: "desc" }, { id: "desc" }],
+      take: 3,
+    }),
+    viewerId
+      ? db.articleRating.findUnique({ where: { articleId_userId: { articleId: article.id, userId: viewerId } }, select: { value: true } })
+      : Promise.resolve(null),
+  ]);
+  return { article, related, viewerRating: ownRating?.value ?? null };
+}
+
+/** Upserts the reader's own score and recomputes the article's denormalized average/count. */
+export async function rateArticle(articleId: string, userId: string, value: number) {
+  return db.$transaction(async (tx) => {
+    await tx.articleRating.upsert({
+      where: { articleId_userId: { articleId, userId } },
+      update: { value },
+      create: { articleId, userId, value },
+    });
+    const aggregate = await tx.articleRating.aggregate({ where: { articleId }, _avg: { value: true }, _count: true });
+    const average = aggregate._avg.value ?? 0;
+    await tx.article.update({ where: { id: articleId }, data: { ratingAverage: average, ratingCount: aggregate._count } });
+    return { average, count: aggregate._count };
   });
-  return { article, related };
 }
 
 /** Lean read for the homepage's "latest articles" section — no count query, just the rows. */

@@ -198,6 +198,7 @@ model User {
   supportTickets         SupportTicket[]        @relation("SupportTicketCustomer")
   assignedSupportTickets SupportTicket[]        @relation("SupportTicketAgent")
   supportTicketMessages  SupportTicketMessage[] @relation("SupportTicketMessageSender")
+  articleRatings         ArticleRating[]
 }
 
 model Session {
@@ -1477,10 +1478,15 @@ model Article {
   metaTitle       String?          @db.VarChar(120)
   metaDescription String?          @db.VarChar(320)
   noindex         Boolean          @default(false)
+  // Denormalized from ArticleRating so a listing card never needs a per-row aggregate query;
+  // recomputed inside the same transaction every time a rating is submitted.
+  ratingAverage   Decimal          @default(0) @db.Decimal(3, 2)
+  ratingCount     Int              @default(0)
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
   coverMedia      MediaAsset?      @relation("ArticleCover", fields: [coverMediaId], references: [id], onDelete: SetNull)
   category        ArticleCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  ratings         ArticleRating[]
 
   @@index([status, publishedAt])
   @@index([categoryId, status, publishedAt])
@@ -1497,4 +1503,20 @@ model ArticleCategory {
   articles  Article[]
 
   @@index([isActive, sortOrder])
+}
+
+/// One rating per reader per article (mirrors ProductReviewVote's shape); the reader can change
+/// their score, which re-upserts the row and recomputes Article.ratingAverage/ratingCount.
+model ArticleRating {
+  id        String   @id @default(cuid())
+  articleId String
+  userId    String
+  value     Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  article   Article  @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([articleId, userId])
+  @@index([articleId])
 }

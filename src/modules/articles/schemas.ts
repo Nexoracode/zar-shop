@@ -66,3 +66,9 @@ export const articleCategorySchema = z.object({
 });
 
 export const updateArticleCategorySchema = z.object(articleCategoryFields).partial();
+
+// —— reader rating ——
+
+export const articleRatingSchema = z.object({
+  value: z.number().int().min(1, "امتیاز باید بین ۱ تا ۵ باشد.").max(5, "امتیاز باید بین ۱ تا ۵ باشد."),
+});

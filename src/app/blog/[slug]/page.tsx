@@ -4,7 +4,9 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CalendarDays, UserRound } from "lucide-react";
 import { ArticleCard } from "@/components/article-card";
+import { ArticleRatingWidget } from "@/components/article-rating-widget";
 import { formatDate } from "@/lib/format";
+import { getCurrentUser } from "@/modules/auth/session";
 import { articleUrl, getPublishedArticleBySlug } from "@/modules/articles/service";
 import { sanitizeProductDescription } from "@/modules/products/rich-text";
 import { getGeneralStoreSettings } from "@/modules/settings/general-settings";
@@ -38,9 +40,10 @@ export async function generateMetadata({ params }: Context): Promise<Metadata> {
 
 export default async function ArticlePage({ params }: Context) {
   const { slug } = await params;
-  const [result, settings] = await Promise.all([getPublishedArticleBySlug(slug), getGeneralStoreSettings()]);
+  const currentUser = await getCurrentUser();
+  const [result, settings] = await Promise.all([getPublishedArticleBySlug(slug, currentUser?.id ?? null), getGeneralStoreSettings()]);
   if (!result) notFound();
-  const { article, related } = result;
+  const { article, related, viewerRating } = result;
   const publishedAt = (article.publishedAt ?? article.createdAt).toISOString();
   const baseUrl = env.APP_URL.replace(/\/$/, "");
 
@@ -98,6 +101,16 @@ export default async function ArticlePage({ params }: Context) {
           className="rich-text-content mt-8 text-[var(--foreground)]"
           dangerouslySetInnerHTML={{ __html: sanitizeProductDescription(article.content) }}
         />
+
+        <div className="mt-8">
+          <ArticleRatingWidget
+            articleId={article.id}
+            initialAverage={Number(article.ratingAverage)}
+            initialCount={article.ratingCount}
+            initialOwnRating={viewerRating}
+            canRate={Boolean(currentUser && !currentUser.isGuest)}
+          />
+        </div>
       </article>
 
       {related.length > 0 && (
