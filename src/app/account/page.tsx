@@ -6,7 +6,7 @@ import { env } from "@/lib/env";
 import { formatDate, formatMoney } from "@/lib/format";
 import { db } from "@/lib/db";
 import { requireUser } from "@/modules/auth/session";
-import { expirePendingOrders } from "@/modules/orders/expiration";
+import { getAccountOrderCounts } from "@/modules/orders/account-summary";
 import { getGeneralStoreSettings } from "@/modules/settings/general-settings";
 import { getWalletSettings } from "@/modules/settings/wallet-settings";
 import { ensureReferralCode } from "@/modules/wallet/referral-code";
@@ -24,14 +24,10 @@ const RECENT_VISITS_SHOWN = 8;
 
 export default async function AccountPage({ searchParams }: { searchParams: Promise<{ payment?: string }> }) {
   const user = await requireUser();
-  await expirePendingOrders();
   const paymentMessage = paymentMessages[(await searchParams).payment as keyof typeof paymentMessages];
 
-  const [totalOrders, activeOrders, deliveredOrders, returnCount, visits] = await Promise.all([
-    db.order.count({ where: { userId: user.id } }),
-    db.order.count({ where: { userId: user.id, status: { notIn: ["DELIVERED", "CANCELLED", "REFUNDED"] } } }),
-    db.order.count({ where: { userId: user.id, status: "DELIVERED" } }),
-    db.return.count({ where: { userId: user.id } }),
+  const [{ totalOrders, activeOrders, deliveredOrders, returnCount }, visits] = await Promise.all([
+    getAccountOrderCounts(user.id),
     db.productVisit.findMany({
       where: { userId: user.id, product: { status: "ACTIVE" } },
       orderBy: { visitedAt: "desc" },
@@ -63,25 +59,17 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
       {paymentMessage && <AccountNotice tone={paymentMessage.tone} title={paymentMessage.title}>{paymentMessage.text}</AccountNotice>}
       {user.isGuest && <AccountNotice tone="warning" title="حساب مهمان">برای نگهداری دائمی سفارش‌ها و فعالیت‌ها، ثبت‌نام خود را تکمیل کنید.</AccountNotice>}
 
-      <section aria-labelledby="account-order-stats">
+      {/* Below sm this same data renders inside AccountSidebar as a Digikala-style circular
+          icon row between the profile header and the menu list; this bordered-grid version
+          stays for tablet/desktop, where the sidebar is a persistent side card instead. */}
+      <section aria-labelledby="account-order-stats" className="hidden sm:block">
         <div className="mb-3 flex items-center justify-between gap-3">
           <h2 id="account-order-stats" className="m-0 text-base font-bold">سفارش‌های من</h2>
           <Link href="/account/orders" className="inline-flex items-center gap-1 text-xs font-bold text-[var(--brand-primary)]">
             مشاهده همه<ChevronLeft size={15} />
           </Link>
         </div>
-        <div className="flex justify-between gap-1 sm:hidden">
-          {stats.map(({ href, value, label, icon: Icon }) => (
-            <Link key={label} href={href} className="flex min-w-0 flex-1 flex-col items-center gap-2 text-center">
-              <span className="relative grid size-12 place-items-center rounded-full bg-[var(--brand-primary)]/10 text-[var(--brand-primary)]">
-                <Icon size={20} />
-                <span className="absolute -left-1 -top-1 grid size-5 place-items-center rounded-full bg-[var(--brand-primary)] text-[10px] font-bold text-[var(--brand-primary-foreground)]">{value.toLocaleString("fa-IR")}</span>
-              </span>
-              <span className="w-full truncate text-[11px] text-[var(--muted)]">{label}</span>
-            </Link>
-          ))}
-        </div>
-        <div className="hidden gap-2 sm:grid sm:grid-cols-4">
+        <div className="grid gap-2 sm:grid-cols-4">
           {stats.map(({ href, value, label, icon: Icon }) => (
             <Link
               key={label}

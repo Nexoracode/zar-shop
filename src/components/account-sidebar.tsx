@@ -3,12 +3,20 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Button } from "@heroui/react";
-import { Bell, ChevronLeft, CircleUserRound, Clock3, Gift, Headset, Heart, LogOut, MapPin, MessageCircle, Pencil, ShoppingBag, Undo2, UserRound, Wallet, type LucideIcon } from "lucide-react";
+import { Bell, Box, ChevronLeft, CircleUserRound, Clock3, Gift, Headset, Heart, LogOut, MapPin, MessageCircle, PackageCheck, Pencil, ShoppingBag, Undo2, UserRound, Wallet, type LucideIcon } from "lucide-react";
 
 type Item = { href: string; label: string; icon: LucideIcon };
+type OrderStats = { totalOrders: number; activeOrders: number; deliveredOrders: number; returnCount: number };
 
-export function AccountSidebar({ user, showWallet = false, showReferral = false, walletBalance }: { user: { name: string; phone: string }; showWallet?: boolean; showReferral?: boolean; walletBalance?: string }) {
+export function AccountSidebar({ user, showWallet = false, showReferral = false, walletBalance, orderStats }: { user: { name: string; phone: string }; showWallet?: boolean; showReferral?: boolean; walletBalance?: string; orderStats: OrderStats }) {
   const pathname = usePathname();
+  const orderStatItems: Item[] = [
+    { href: "/account/orders", label: "کل سفارش‌ها", icon: ShoppingBag },
+    { href: "/account/orders", label: "در حال پیگیری", icon: Box },
+    { href: "/account/orders", label: "تحویل‌شده", icon: PackageCheck },
+    { href: "/account/returns", label: "مرجوعی‌ها", icon: Undo2 },
+  ];
+  const orderStatValues = [orderStats.totalOrders, orderStats.activeOrders, orderStats.deliveredOrders, orderStats.returnCount];
   // Digikala's mobile profile screen shows this menu only on the hub itself; sub-pages are
   // full-bleed screens with their own heading, reached from here or the bottom-nav account tab.
   // Desktop keeps the sidebar visible everywhere since there's room for it alongside content.
@@ -41,6 +49,23 @@ export function AccountSidebar({ user, showWallet = false, showReferral = false,
             <span className="mr-auto font-bold text-[var(--foreground)]">{walletBalance ?? "—"}</span>
           </Link>
         )}
+        <div className="border-b border-[var(--border)] py-4 sm:hidden">
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <h2 className="m-0 text-base font-bold">سفارش‌های من</h2>
+            <Link href="/account/orders" className="inline-flex items-center gap-1 text-xs font-bold text-[var(--brand-primary)]">مشاهده همه<ChevronLeft size={15} /></Link>
+          </div>
+          <div className="flex justify-between gap-1">
+            {orderStatItems.map(({ href, label, icon: Icon }, index) => (
+              <Link key={label} href={href} className="flex min-w-0 flex-1 flex-col items-center gap-2 text-center">
+                <span className="relative grid size-12 place-items-center rounded-full bg-[var(--brand-primary)]/10 text-[var(--brand-primary)]">
+                  <Icon size={20} />
+                  <span className="absolute -left-1 -top-1 grid size-5 place-items-center rounded-full bg-[var(--brand-primary)] text-[10px] font-bold text-[var(--brand-primary-foreground)]">{orderStatValues[index].toLocaleString("fa-IR")}</span>
+                </span>
+                <span className="w-full truncate text-[11px] text-[var(--muted)]">{label}</span>
+              </Link>
+            ))}
+          </div>
+        </div>
         <nav aria-label="منوی حساب کاربری" className="flex flex-col">
           {items.map(({ href, label, icon: Icon }) => {
             const active = href === "/account" ? pathname === href : href === "/account/reviews" ? pathname.startsWith("/account/reviews") : pathname === href || pathname.startsWith(`${href}/`);
