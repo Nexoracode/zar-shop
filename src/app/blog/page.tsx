@@ -2,8 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { ArticleCard } from "@/components/article-card";
+import { ArticleFeaturedSection } from "@/components/article-featured-section";
 import { BlogCategorySidebar } from "@/components/blog-category-sidebar";
-import { getActiveArticleCategories, getPublishedArticles } from "@/modules/articles/service";
+import { getActiveArticleCategories, getFeaturedArticles, getPublishedArticles } from "@/modules/articles/service";
 import { getGeneralStoreSettings } from "@/modules/settings/general-settings";
 
 export const dynamic = "force-dynamic";
@@ -22,9 +23,10 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function BlogIndexPage({ searchParams }: Context) {
   const { page } = await searchParams;
   const requestedPage = Math.max(1, Number.parseInt(page ?? "1", 10) || 1);
-  const [{ items, page: current, totalPages, total }, categories] = await Promise.all([
+  const [{ items, page: current, totalPages, total }, categories, featured] = await Promise.all([
     getPublishedArticles({ page: requestedPage }),
     getActiveArticleCategories(),
+    requestedPage === 1 ? getFeaturedArticles(4) : Promise.resolve([]),
   ]);
 
   return (
@@ -34,6 +36,8 @@ export default async function BlogIndexPage({ searchParams }: Context) {
           <h1 className="m-0 text-3xl font-bold text-[var(--brand-primary)] sm:text-4xl">وبلاگ</h1>
           <p className="mx-auto mt-3 max-w-xl text-sm leading-7 text-[var(--muted)]">مقالات، راهنمای خرید و تازه‌های فروشگاه</p>
         </header>
+
+        {current === 1 && <ArticleFeaturedSection articles={featured} />}
 
         {categories.length > 0 && (
           <nav className="mb-6 flex flex-wrap gap-2 lg:hidden" aria-label="دسته‌های وبلاگ">

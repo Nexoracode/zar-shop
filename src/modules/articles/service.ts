@@ -21,6 +21,19 @@ const listSelect = {
 
 export type ArticleListItem = Prisma.ArticleGetPayload<{ select: typeof listSelect }>;
 
+const featuredSelect = {
+  id: true,
+  title: true,
+  slug: true,
+  excerpt: true,
+  content: true,
+  authorName: true,
+  coverMedia: { select: { url: true, alt: true, width: true, height: true } },
+  category: { select: { name: true, slug: true } },
+} satisfies Prisma.ArticleSelect;
+
+export type FeaturedArticle = Prisma.ArticleGetPayload<{ select: typeof featuredSelect }>;
+
 const ARTICLES_PAGE_SIZE = 12;
 
 function publishedWhere(now = new Date()): Prisma.ArticleWhereInput {
@@ -89,6 +102,16 @@ export async function getLatestPublishedArticles(limit = 4) {
   return db.article.findMany({
     where: publishedWhere(),
     select: listSelect,
+    orderBy: [{ publishedAt: "desc" }, { id: "desc" }],
+    take: limit,
+  });
+}
+
+/** Top-of-page magazine showcase for the blog list — hero card + numbered picks, newest first. */
+export async function getFeaturedArticles(limit = 4) {
+  return db.article.findMany({
+    where: publishedWhere(),
+    select: featuredSelect,
     orderBy: [{ publishedAt: "desc" }, { id: "desc" }],
     take: limit,
   });
