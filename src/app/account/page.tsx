@@ -65,12 +65,23 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
 
       <section aria-labelledby="account-order-stats">
         <div className="mb-3 flex items-center justify-between gap-3">
-          <h2 id="account-order-stats" className="m-0 text-base font-bold">آمار سفارش‌ها</h2>
+          <h2 id="account-order-stats" className="m-0 text-base font-bold">سفارش‌های من</h2>
           <Link href="/account/orders" className="inline-flex items-center gap-1 text-xs font-bold text-[var(--brand-primary)]">
-            مشاهده سفارش‌ها<ChevronLeft size={15} />
+            مشاهده همه<ChevronLeft size={15} />
           </Link>
         </div>
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+        <div className="flex justify-between gap-1 sm:hidden">
+          {stats.map(({ href, value, label, icon: Icon }) => (
+            <Link key={label} href={href} className="flex min-w-0 flex-1 flex-col items-center gap-2 text-center">
+              <span className="relative grid size-12 place-items-center rounded-full bg-[var(--brand-primary)]/10 text-[var(--brand-primary)]">
+                <Icon size={20} />
+                <span className="absolute -left-1 -top-1 grid size-5 place-items-center rounded-full bg-[var(--brand-primary)] text-[10px] font-bold text-[var(--brand-primary-foreground)]">{value.toLocaleString("fa-IR")}</span>
+              </span>
+              <span className="w-full truncate text-[11px] text-[var(--muted)]">{label}</span>
+            </Link>
+          ))}
+        </div>
+        <div className="hidden gap-2 sm:grid sm:grid-cols-4">
           {stats.map(({ href, value, label, icon: Icon }) => (
             <Link
               key={label}
