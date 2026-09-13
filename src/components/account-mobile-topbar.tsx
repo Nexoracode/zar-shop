@@ -9,7 +9,7 @@ import { getAccountNavItems } from "@/components/account-nav-items";
 // with bell / support / settings icons (no logo, no search — measured from the live site), and
 // on every sub-page it collapses to a back-chevron + page title instead, since Digikala's
 // sub-pages are separate full-bleed screens rather than the hub with a nav strip glued on top.
-// This replaces the storefront's usual mobile header (see globals.css .storefront-shell--account
+// This replaces the storefront's usual mobile header (see globals.css .storefront-shell--focused
 // rule) only below lg; desktop keeps the regular site header since there's room for both it and
 // the persistent sidebar.
 export function AccountMobileTopBar({ showReferral }: { showReferral: boolean }) {

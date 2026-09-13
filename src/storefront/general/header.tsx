@@ -16,6 +16,7 @@ import { serializeAddress } from "@/modules/account/addresses";
 import { StorefrontAccountMenu } from "@/components/storefront-account-menu";
 import { StorefrontNotificationBell } from "@/components/storefront-notification-bell";
 import { getCartProductCount } from "@/modules/cart/cart-summary";
+import { getCategoryTree } from "@/modules/products/category-tree";
 import { unreadCount } from "@/modules/notifications/service";
 import { getWalletSettings } from "@/modules/settings/wallet-settings";
 import { ensureWallet } from "@/modules/wallet/wallet";
@@ -24,18 +25,7 @@ type Props = { settings: GeneralStoreSettingsInput; brand: BrandSettings; user: 
 
 export async function GeneralHeader({ settings, brand, user, menuItems }: Props) {
   const [categories, cartCount, addresses, notifUnread, walletSettings] = await Promise.all([
-    db.category.findMany({
-      where: { isActive: true, parentId: null },
-      include: {
-        image: { select: { url: true, alt: true, type: true } },
-        children: {
-          where: { isActive: true },
-          include: { children: { where: { isActive: true }, orderBy: [{ sortOrder: "asc" }, { name: "asc" }] } },
-          orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
-        },
-      },
-      orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
-    }),
+    getCategoryTree(),
     user ? getCartProductCount(user.id, settings.industry) : Promise.resolve(0),
     user ? db.address.findMany({ where: { userId: user.id, type: "SHIPPING" }, include: { provinceRef: true, cityRef: true }, orderBy: [{ isDefault: "desc" }, { lastUsedAt: "desc" }, { createdAt: "desc" }] }).then((items) => items.map(serializeAddress)) : Promise.resolve([]),
     user && !user.isGuest ? unreadCount(db, user.id, user.createdAt) : Promise.resolve(0),

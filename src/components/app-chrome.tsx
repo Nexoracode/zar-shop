@@ -18,8 +18,9 @@ export function AppChrome({ header, footer, children, storefrontAvailable, maint
   const isStandalone = pathname.startsWith("/admin") || pathname.startsWith("/invoices/") || isBareStandalonePage;
   const isAuthPath = pathname.startsWith("/login") || pathname.startsWith("/register") || pathname.startsWith("/account");
   // The account area is a self-contained, app-like section with its own sidebar; the marketing
-  // footer under it just adds noise, so it renders header + content only.
-  const hideFooter = pathname.startsWith("/account");
+  // footer under it just adds noise, so it renders header + content only. /categories is the
+  // same kind of focused browsing tool (Digikala's own /categories/ has no footer either).
+  const hideFooter = pathname.startsWith("/account") || pathname === "/categories";
   // Below lg, the product detail page renders its own compact header (close/search/cart/more,
   // see ProductDetailTopBar) instead of the storefront header + bottom nav — a focused product
   // view rather than a normal browsing page. At lg+ there's room for the full header, so it
@@ -33,6 +34,9 @@ export function AppChrome({ header, footer, children, storefrontAvailable, maint
   // detail above, so `.storefront-shell > header`'s sticky-offset math elsewhere keeps resolving.
   // The bottom tab nav stays untouched: Digikala keeps it visible on the profile section too.
   const isAccountSection = pathname.startsWith("/account");
+  // Same CSS-hide treatment for /categories: Digikala's own category browser below lg has just
+  // a back arrow + search field (see categories/page.tsx), not the full logo/hamburger header.
+  const isCategoriesSection = pathname === "/categories";
   if (!storefrontAvailable && !isStandalone && !isAuthPath) {
     const icon = setupIncomplete ? <Rocket size={25} /> : maintenanceMode ? <Settings2 size={25} /> : <Store size={25} />;
     const title = setupIncomplete ? "فروشگاه هنوز راه‌اندازی نشده است" : maintenanceMode ? "فروشگاه در حال بروزرسانی است" : "فروشگاه موقتاً غیرفعال است";
@@ -46,7 +50,7 @@ export function AppChrome({ header, footer, children, storefrontAvailable, maint
   if (isStandalone) return children;
   return (
     <CompareProvider>
-      <div className={`storefront-shell${isProductDetail ? " storefront-shell--product-detail" : ""}${isAccountSection ? " storefront-shell--account" : ""}`} style={brandStyle} data-compact-mobile-grid={compactMobileGrid}>{header}{children}{hideFooter ? null : footer}</div>
+      <div className={`storefront-shell${isProductDetail ? " storefront-shell--product-detail" : ""}${isAccountSection || isCategoriesSection ? " storefront-shell--focused" : ""}`} style={brandStyle} data-compact-mobile-grid={compactMobileGrid}>{header}{children}{hideFooter ? null : footer}</div>
       <CompareTray />
     </CompareProvider>
   );

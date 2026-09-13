@@ -134,11 +134,12 @@ html[dir="rtl"] [data-slot="modal-header"]:has([data-slot="modal-close-trigger"]
   }
 }
 
-/* Account section: below lg, AccountMobileTopBar (rendered inside account/layout.tsx's <main>)
-   replaces the storefront header's logo/search/delivery-address rows — the bottom tab nav stays
-   since Digikala keeps its own persistent bottom nav visible on the profile section too. */
+/* Focused browsing sections (account, categories): below lg, each renders its own compact top
+   bar (AccountMobileTopBar / the back-arrow+search bar in categories/page.tsx) in place of the
+   storefront header's logo/search/delivery-address rows — the bottom tab nav stays, since
+   Digikala keeps its own persistent bottom nav visible on both of these sections too. */
 @media (max-width: 1023.98px) {
-  .storefront-shell--account > header {
+  .storefront-shell--focused > header {
     display: none;
   }
 }
