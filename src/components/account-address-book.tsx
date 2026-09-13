@@ -72,7 +72,7 @@ export function AccountAddressBook({ initialAddresses, user }: AccountAddressBoo
   }
 
   return <>
-    <section id="addresses" className="rounded-xl border border-[var(--border)] bg-[var(--surface)]">
+    <section id="addresses" className="-mx-4 sm:mx-0 sm:rounded-xl sm:border sm:border-[var(--border)] sm:bg-[var(--surface)]">
       <header className="flex min-h-20 flex-wrap items-center justify-between gap-4 px-4 py-5 sm:px-6">
         <h2 className="relative m-0 w-fit pb-3 text-base font-bold after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 after:bg-[var(--brand-primary)]">آدرس‌ها</h2>
         <DeliveryAddressPicker mode="create" initialAddresses={addresses} user={user} />

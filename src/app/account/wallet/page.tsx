@@ -48,8 +48,8 @@ export default async function AccountWalletPage({ searchParams }: { searchParams
     <>
       {topupMessage && <AccountNotice tone={topupMessage.tone} title={topupMessage.title}>{topupMessage.text}</AccountNotice>}
 
-      <section className="overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-sm">
-        <div className="flex items-center gap-4 p-5 sm:p-6">
+      <section className="-mx-4 overflow-hidden sm:mx-0 sm:rounded-2xl sm:border sm:border-[var(--border)] sm:bg-[var(--surface)] sm:shadow-sm">
+        <div className="flex items-center gap-4 px-4 py-5 sm:p-6">
           <span className="grid size-12 shrink-0 place-items-center rounded-full bg-[var(--brand-primary)]/10 text-[var(--brand-primary)]">
             <Wallet size={24} />
           </span>
@@ -58,14 +58,14 @@ export default async function AccountWalletPage({ searchParams }: { searchParams
             <strong className="mt-1 block text-2xl font-bold">{formatMoney(wallet.balance.toString(), currency)}</strong>
           </div>
         </div>
-        <p className="m-0 border-t border-[var(--border)] bg-[var(--surface)] px-5 py-3 text-[11px] leading-6 text-[var(--muted)] sm:px-6">
+        <p className="m-0 border-t border-[var(--border)] bg-[var(--surface)] px-4 py-3 text-[11px] leading-6 text-[var(--muted)] sm:px-6">
           اعتبار کیف پول فقط برای خرید در همین فروشگاه استفاده می‌شود و قابل برداشت به حساب بانکی نیست.
           {walletSettings.walletCheckoutEnabled ? " هنگام تسویه‌حساب می‌توانید از این اعتبار استفاده کنید." : ""}
         </p>
       </section>
 
       {canTopup && (
-        <section aria-labelledby="wallet-topup" className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 shadow-sm sm:p-6">
+        <section aria-labelledby="wallet-topup" className="-mx-4 px-4 py-5 sm:mx-0 sm:rounded-2xl sm:border sm:border-[var(--border)] sm:bg-[var(--surface)] sm:p-6 sm:shadow-sm">
           <h2 id="wallet-topup" className="m-0 mb-4 text-base font-bold">افزایش اعتبار</h2>
           <WalletTopupForm
             min={walletSettings.walletMinTopup}
@@ -84,13 +84,13 @@ export default async function AccountWalletPage({ searchParams }: { searchParams
             description="هر افزایش یا کاهش اعتبار کیف پول شما در این بخش ثبت می‌شود."
           />
         ) : (
-          <ul className="m-0 grid list-none gap-2 p-0">
+          <ul className="-mx-4 m-0 list-none p-0 sm:mx-0 sm:overflow-hidden sm:rounded-xl sm:border sm:border-[var(--border)] sm:bg-[var(--surface)]">
             {transactions.map((transaction) => {
               const isCredit = Number(transaction.amount) >= 0;
               return (
                 <li
                   key={transaction.id}
-                  className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 rounded-xl border border-[var(--border)] bg-[var(--surface)] px-4 py-3"
+                  className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 border-b border-[var(--border)] px-4 py-3 last:border-b-0"
                 >
                   <div className="min-w-0">
                     <strong className="block text-sm font-bold">{typeLabels[transaction.type]}</strong>

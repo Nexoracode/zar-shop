@@ -53,7 +53,7 @@ export function AccountOrdersPanel({ orders, showCountdown, warningMinutes }: { 
     return orders.filter((order) => tab.statuses.includes(order.status) && (!normalized || order.orderNumber.toLocaleLowerCase("fa-IR").includes(normalized) || order.statusLabel.includes(normalized)));
   }, [activeTab, orders, query]);
 
-  return <section className="overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface)]" dir="rtl">
+  return <section className="-mx-4 overflow-hidden sm:mx-0 sm:rounded-xl sm:border sm:border-[var(--border)] sm:bg-[var(--surface)]" dir="rtl">
     <header className="px-4 pt-5 sm:px-6 sm:pt-7">
       <div className="flex min-h-10 items-center justify-between gap-4">
         <h1 className="m-0 text-base font-bold sm:text-lg">تاریخچه سفارشات</h1>

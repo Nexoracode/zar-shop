@@ -122,7 +122,7 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
       {(showWallet || showReferral) && (
         <section className="grid gap-3 sm:grid-cols-2">
           {showWallet && (
-            <Link href="/account/wallet" className="flex items-center gap-3 rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 shadow-sm transition hover:border-[var(--brand-primary)]">
+            <Link href="/account/wallet" className="-mx-4 flex items-center gap-3 border-y border-[var(--border)] px-4 py-4 transition sm:mx-0 sm:rounded-2xl sm:border sm:bg-[var(--surface)] sm:p-4 sm:shadow-sm sm:hover:border-[var(--brand-primary)]">
               <span className="grid size-10 shrink-0 place-items-center rounded-full bg-[var(--brand-primary)]/10 text-[var(--brand-primary)]"><Wallet size={19} /></span>
               <span className="min-w-0 flex-1">
                 <span className="block text-[11px] text-[var(--muted)]">موجودی کیف پول</span>
@@ -132,7 +132,7 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
             </Link>
           )}
           {showReferral && (
-            <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 shadow-sm">
+            <div className="-mx-4 border-b border-[var(--border)] px-4 py-4 sm:mx-0 sm:rounded-2xl sm:border sm:border-[var(--border)] sm:bg-[var(--surface)] sm:p-4 sm:shadow-sm">
               <div className="mb-3 flex items-center justify-between gap-2">
                 <span className="flex items-center gap-2 text-sm font-bold"><Gift size={17} className="text-[var(--brand-primary)]" />دعوت دوستان</span>
                 <Link href="/account/referral" className="inline-flex items-center gap-1 text-[11px] font-bold text-[var(--brand-primary)]">جزئیات<ChevronLeft size={13} /></Link>

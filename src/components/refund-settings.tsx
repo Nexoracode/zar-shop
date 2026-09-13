@@ -99,7 +99,7 @@ export function RefundSettings({ initial }: { initial: RefundSettingsValue }) {
   ];
 
   return (
-    <Card variant="secondary" className="mt-3 rounded-2xl border border-[#e7e6e2] bg-white p-5" dir="rtl">
+    <Card variant="secondary" className="-mx-4 mt-3 bg-white p-4 sm:mx-0 sm:rounded-2xl sm:border sm:border-[#e7e6e2] sm:p-5" dir="rtl">
       <h2 className="m-0 text-sm font-bold">روش بازگرداندن وجه</h2>
       <p className="mb-0 mt-1 text-xs leading-6 text-[var(--muted)]">وقتی درخواست مرجوعی شما تأیید شود، مبلغ کالاهای بازگشتی از این طریق به شما برگردانده می‌شود.</p>
 

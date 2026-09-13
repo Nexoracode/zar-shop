@@ -122,7 +122,7 @@ export default async function OrderDetailPage({ params, searchParams }: { params
     ? paymentResultBanners[paymentResult as keyof typeof paymentResultBanners]
     : null;
 
-  return <article className="overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface)]" dir="rtl">
+  return <article className="-mx-4 overflow-hidden sm:mx-0 sm:rounded-xl sm:border sm:border-[var(--border)] sm:bg-[var(--surface)]" dir="rtl">
     <header className="flex min-h-20 items-center gap-3 border-b border-[var(--border)] px-4 sm:px-6">
       <Link href="/account/orders" aria-label="بازگشت به سفارش‌ها" className="grid size-10 shrink-0 place-items-center rounded-lg text-slate-700 transition hover:bg-[var(--surface-secondary)]"><ArrowRight size={22} /></Link>
       <h1 className="m-0 text-lg font-bold sm:text-xl">جزئیات سفارش</h1>

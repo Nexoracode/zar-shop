@@ -47,7 +47,7 @@ export function AccountNotificationsPanel({ items: initialItems }: { items: Item
   const hasUnread = items.some((item) => !item.read);
 
   return (
-    <section className="overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-sm" dir="rtl">
+    <section className="-mx-4 overflow-hidden sm:mx-0 sm:rounded-2xl sm:border sm:border-[var(--border)] sm:bg-[var(--surface)] sm:shadow-sm" dir="rtl">
       <div className="flex items-center gap-3 border-b border-[var(--border)] px-5 py-4">
         <Bell size={19} className="text-[var(--brand-primary)]" />
         <h1 className="m-0 text-base font-bold">اعلان‌ها</h1>

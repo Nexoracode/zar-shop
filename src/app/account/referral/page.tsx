@@ -32,7 +32,7 @@ export default async function AccountReferralPage() {
 
   return (
     <>
-      <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 shadow-sm sm:p-6">
+      <section className="-mx-4 px-4 py-5 sm:mx-0 sm:rounded-2xl sm:border sm:border-[var(--border)] sm:bg-[var(--surface)] sm:p-6 sm:shadow-sm">
         <div className="mb-4 flex items-center gap-3">
           <span className="grid size-10 shrink-0 place-items-center rounded-full bg-[var(--brand-primary)]/10 text-[var(--brand-primary)]"><Gift size={20} /></span>
           <div>
@@ -43,7 +43,7 @@ export default async function AccountReferralPage() {
         <ReferralShare code={code} inviteUrl={inviteUrl} />
       </section>
 
-      <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 shadow-sm sm:p-6">
+      <section className="-mx-4 px-4 py-5 sm:mx-0 sm:rounded-2xl sm:border sm:border-[var(--border)] sm:bg-[var(--surface)] sm:p-6 sm:shadow-sm">
         <h2 className="m-0 text-sm font-bold">چطور کار می‌کند؟</h2>
         <ol className="m-0 mt-3 grid list-decimal gap-2 pr-5 text-xs leading-7 text-[var(--muted)]">
           <li>دوستتان با کد معرف شما ثبت‌نام می‌کند.</li>
@@ -54,9 +54,9 @@ export default async function AccountReferralPage() {
         </ol>
       </section>
 
-      <section className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+      <section className="-mx-4 divide-y divide-[var(--border)] sm:mx-0 sm:grid sm:grid-cols-3 sm:gap-2 sm:divide-y-0">
         {stats.map(({ label, value, icon: Icon }) => (
-          <div key={label} className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4">
+          <div key={label} className="px-4 py-3 sm:rounded-xl sm:border sm:border-[var(--border)] sm:bg-[var(--surface)] sm:p-4">
             <Icon size={16} className="text-[var(--brand-primary)]" />
             <strong className="mt-2 block text-base font-bold">{value}</strong>
             <span className="mt-1 block text-[11px] text-[var(--muted)]">{label}</span>
