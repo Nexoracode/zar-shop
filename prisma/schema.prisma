@@ -84,6 +84,8 @@ enum MediaScope {
   PRODUCT_BRAND
   /// Cover images for blog articles (`Article.coverMedia`).
   ARTICLE
+  /// Avatars for `Author` records.
+  ARTICLE_AUTHOR
 }
 
 enum OrderStatus {
@@ -152,53 +154,56 @@ enum AddressRecipientType {
 }
 
 model User {
-  id                     String                 @id @default(cuid())
-  email                  String?                @unique @db.VarChar(191)
-  phone                  String?                @unique @db.VarChar(20)
-  passwordHash           String                 @db.VarChar(191)
-  firstName              String?                @db.VarChar(100)
-  lastName               String?                @db.VarChar(100)
-  nationalId             String?                @unique @db.VarChar(20)
-  role                   UserRole               @default(CUSTOMER)
-  status                 UserStatus             @default(ACTIVE)
-  emailVerifiedAt        DateTime?
-  lastLoginAt            DateTime?
-  isGuest                Boolean                @default(false)
-  smsMarketingConsent    Boolean                @default(false)
-  referralCode           String?                @unique @db.VarChar(12)
+  id                       String                 @id @default(cuid())
+  email                    String?                @unique @db.VarChar(191)
+  phone                    String?                @unique @db.VarChar(20)
+  passwordHash             String                 @db.VarChar(191)
+  firstName                String?                @db.VarChar(100)
+  lastName                 String?                @db.VarChar(100)
+  nationalId               String?                @unique @db.VarChar(20)
+  role                     UserRole               @default(CUSTOMER)
+  status                   UserStatus             @default(ACTIVE)
+  emailVerifiedAt          DateTime?
+  lastLoginAt              DateTime?
+  isGuest                  Boolean                @default(false)
+  smsMarketingConsent      Boolean                @default(false)
+  referralCode             String?                @unique @db.VarChar(12)
   // How the customer wants return refunds paid back. The card fields are only set when
   // `refundMethod` is BANK_CARD; the PAN is stored as 16 plain digits, نه CVV/expiry.
-  refundMethod           RefundMethod           @default(WALLET)
-  bankCardNumber         String?                @db.VarChar(16)
-  bankCardHolder         String?                @db.VarChar(120)
-  bankCardSheba          String?                @db.VarChar(24)
-  createdAt              DateTime               @default(now())
-  updatedAt              DateTime               @updatedAt
-  wallet                 Wallet?
-  walletTopups           WalletTopup[]
-  referralsMade          Referral[]             @relation("ReferralsMade")
-  referralReceived       Referral?              @relation("ReferralReceived")
-  addresses              Address[]
-  orders                 Order[]
-  cart                   Cart?
-  sessions               Session[]
-  auditLogs              AuditLog[]             @relation("AuditActor")
-  promotionRedemptions   PromotionRedemption[]
-  promotionRewards       PromotionReward[]
-  productReviews         ProductReview[]        @relation("ProductReviewAuthor")
-  moderatedReviews       ProductReview[]        @relation("ProductReviewModerator")
-  productReviewVotes     ProductReviewVote[]
-  productReviewReports   ProductReviewReport[]  @relation("ProductReviewReporter")
-  resolvedReviewReports  ProductReviewReport[]  @relation("ProductReviewReportResolver")
-  returns                Return[]
-  productFavorites       ProductFavorite[]
-  productVisits          ProductVisit[]
-  notifications          Notification[]
-  notificationReads      NotificationRead[]
-  supportTickets         SupportTicket[]        @relation("SupportTicketCustomer")
-  assignedSupportTickets SupportTicket[]        @relation("SupportTicketAgent")
-  supportTicketMessages  SupportTicketMessage[] @relation("SupportTicketMessageSender")
-  articleRatings         ArticleRating[]
+  refundMethod             RefundMethod           @default(WALLET)
+  bankCardNumber           String?                @db.VarChar(16)
+  bankCardHolder           String?                @db.VarChar(120)
+  bankCardSheba            String?                @db.VarChar(24)
+  createdAt                DateTime               @default(now())
+  updatedAt                DateTime               @updatedAt
+  wallet                   Wallet?
+  walletTopups             WalletTopup[]
+  referralsMade            Referral[]             @relation("ReferralsMade")
+  referralReceived         Referral?              @relation("ReferralReceived")
+  addresses                Address[]
+  orders                   Order[]
+  cart                     Cart?
+  sessions                 Session[]
+  auditLogs                AuditLog[]             @relation("AuditActor")
+  promotionRedemptions     PromotionRedemption[]
+  promotionRewards         PromotionReward[]
+  productReviews           ProductReview[]        @relation("ProductReviewAuthor")
+  moderatedReviews         ProductReview[]        @relation("ProductReviewModerator")
+  productReviewVotes       ProductReviewVote[]
+  productReviewReports     ProductReviewReport[]  @relation("ProductReviewReporter")
+  resolvedReviewReports    ProductReviewReport[]  @relation("ProductReviewReportResolver")
+  returns                  Return[]
+  productFavorites         ProductFavorite[]
+  productVisits            ProductVisit[]
+  notifications            Notification[]
+  notificationReads        NotificationRead[]
+  supportTickets           SupportTicket[]        @relation("SupportTicketCustomer")
+  assignedSupportTickets   SupportTicket[]        @relation("SupportTicketAgent")
+  supportTicketMessages    SupportTicketMessage[] @relation("SupportTicketMessageSender")
+  articleRatings           ArticleRating[]
+  articleComments          ArticleComment[]       @relation("ArticleCommentAuthor")
+  moderatedArticleComments ArticleComment[]       @relation("ArticleCommentModerator")
+  articleCommentVotes      ArticleCommentVote[]
 }
 
 model Session {
@@ -502,6 +507,7 @@ model Product {
   favorites           ProductFavorite[]
   visits              ProductVisit[]
   supportTickets      SupportTicket[]
+  articlesFeaturing   Article[]            @relation("ArticleRelatedProduct")
 
   @@index([categoryId, status])
   @@index([brandId, status])
@@ -954,6 +960,7 @@ model MediaAsset {
   brandFavicon         StoreSetting[] @relation("BrandFavicon")
   brandSocialImage     StoreSetting[] @relation("BrandSocialImage")
   articleCovers        Article[]      @relation("ArticleCover")
+  authorAvatars        Author[]       @relation("AuthorAvatar")
 
   @@index([scope, createdAt])
   @@index([scope, type, createdAt])
@@ -1237,29 +1244,29 @@ model Invoice {
 /// area; an admin moves it through the `ReturnStatus` states from the admin panel. `resolvedBy`
 /// stores the actor id as a plain string (same shape as `AuditLog.actorId`) rather than a relation.
 model Return {
-  id         String       @id @default(cuid())
-  orderId    String
-  order      Order        @relation(fields: [orderId], references: [id])
-  userId     String
-  user       User         @relation(fields: [userId], references: [id])
-  reason     String       @db.Text
-  status     ReturnStatus @default(PENDING)
-  adminNote  String?      @db.Text
-  resolvedAt DateTime?
-  resolvedBy String?
+  id               String             @id @default(cuid())
+  orderId          String
+  order            Order              @relation(fields: [orderId], references: [id])
+  userId           String
+  user             User               @relation(fields: [userId], references: [id])
+  reason           String             @db.Text
+  status           ReturnStatus       @default(PENDING)
+  adminNote        String?            @db.Text
+  resolvedAt       DateTime?
+  resolvedBy       String?
   // Refund destination, snapshotted from the customer's account when the request is filed so a
   // later profile change never rewrites an in-flight return. `refundAmount`/`refundedAt` are set
   // when an admin completes the return.
-  refundMethod     RefundMethod @default(WALLET)
-  refundCardNumber String?      @db.VarChar(16)
-  refundCardHolder String?      @db.VarChar(120)
-  refundCardSheba  String?      @db.VarChar(24)
-  refundAmount     Decimal?     @db.Decimal(18, 0)
+  refundMethod     RefundMethod       @default(WALLET)
+  refundCardNumber String?            @db.VarChar(16)
+  refundCardHolder String?            @db.VarChar(120)
+  refundCardSheba  String?            @db.VarChar(24)
+  refundAmount     Decimal?           @db.Decimal(18, 0)
   refundedAt       DateTime?
-  createdAt  DateTime     @default(now())
-  updatedAt  DateTime     @updatedAt
-  items      ReturnItem[]
-  attachments ReturnAttachment[]
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  items            ReturnItem[]
+  attachments      ReturnAttachment[]
 
   @@index([orderId])
   @@index([userId])
@@ -1335,7 +1342,7 @@ model Wallet {
   balance      Decimal             @default(0) @db.Decimal(18, 0)
   createdAt    DateTime            @default(now())
   updatedAt    DateTime            @updatedAt
-  user         User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user         User                @relation(fields: [userId], references: [id], onDelete: Cascade)
   transactions WalletTransaction[]
 
   @@index([userId])
@@ -1465,32 +1472,124 @@ enum ArticleStatus {
 /// metadata and keep the article out of `sitemap.xml`; site-wide 301/410/canonical rules for a
 /// `/blog/*` URL are still handled by the `Seo*` tables + `src/proxy.ts`.
 model Article {
-  id              String           @id @default(cuid())
-  title           String           @db.VarChar(200)
-  slug            String           @unique @db.VarChar(200)
-  excerpt         String           @db.VarChar(300)
-  content         String           @db.LongText
-  coverMediaId    String?
-  authorName      String           @db.VarChar(120)
-  status          ArticleStatus    @default(DRAFT)
-  publishedAt     DateTime?
-  categoryId      String?
-  metaTitle       String?          @db.VarChar(120)
-  metaDescription String?          @db.VarChar(320)
-  noindex         Boolean          @default(false)
+  id               String           @id @default(cuid())
+  title            String           @db.VarChar(200)
+  slug             String           @unique @db.VarChar(200)
+  excerpt          String           @db.VarChar(300)
+  content          String           @db.LongText
+  coverMediaId     String?
+  authorId         String
+  // Free-text labels, purely decorative — clicking one on the storefront jumps to a list-page
+  // text search, not a strict relational filter, so a Json array is enough (no join table).
+  tags             Json?
+  relatedProductId String?
+  // Anonymous page-view counter, incremented by a fire-and-forget beacon from the detail page.
+  viewCount        Int              @default(0)
+  status           ArticleStatus    @default(DRAFT)
+  publishedAt      DateTime?
+  categoryId       String?
+  metaTitle        String?          @db.VarChar(120)
+  metaDescription  String?          @db.VarChar(320)
+  noindex          Boolean          @default(false)
   // Denormalized from ArticleRating so a listing card never needs a per-row aggregate query;
   // recomputed inside the same transaction every time a rating is submitted.
-  ratingAverage   Decimal          @default(0) @db.Decimal(3, 2)
-  ratingCount     Int              @default(0)
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
-  coverMedia      MediaAsset?      @relation("ArticleCover", fields: [coverMediaId], references: [id], onDelete: SetNull)
-  category        ArticleCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
-  ratings         ArticleRating[]
+  ratingAverage    Decimal          @default(0) @db.Decimal(3, 2)
+  ratingCount      Int              @default(0)
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  coverMedia       MediaAsset?      @relation("ArticleCover", fields: [coverMediaId], references: [id], onDelete: SetNull)
+  category         ArticleCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  author           Author           @relation(fields: [authorId], references: [id])
+  relatedProduct   Product?         @relation("ArticleRelatedProduct", fields: [relatedProductId], references: [id], onDelete: SetNull)
+  ratings          ArticleRating[]
+  faqs             ArticleFaq[]
+  comments         ArticleComment[]
 
   @@index([status, publishedAt])
   @@index([categoryId, status, publishedAt])
   @@index([coverMediaId])
+  @@index([authorId])
+  @@index([relatedProductId])
+}
+
+/// A reusable content-author profile (name/bio/avatar), selectable across multiple articles —
+/// replaces the old denormalized `Article.authorName` free-text field.
+model Author {
+  id            String      @id @default(cuid())
+  name          String      @db.VarChar(120)
+  bio           String?     @db.Text
+  avatarMediaId String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  avatar        MediaAsset? @relation("AuthorAvatar", fields: [avatarMediaId], references: [id], onDelete: SetNull)
+  articles      Article[]
+
+  @@index([avatarMediaId])
+}
+
+/// A question/answer pair authored alongside an article, rendered as an accordion on the
+/// storefront detail page.
+model ArticleFaq {
+  id        String   @id @default(cuid())
+  articleId String
+  question  String   @db.VarChar(300)
+  answer    String   @db.Text
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  article   Article  @relation(fields: [articleId], references: [id], onDelete: Cascade)
+
+  @@index([articleId, sortOrder])
+}
+
+enum ArticleCommentStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+/// Structural mirror of ProductReview (minus rating/title/isVerifiedPurchase, which don't apply
+/// here — article rating is a separate ArticleRating, and "verified buyer" doesn't map to reading
+/// an article). One level of reply nesting; replies are admin-only, created auto-approved via the
+/// admin reply endpoint.
+model ArticleComment {
+  id             String               @id @default(cuid())
+  articleId      String
+  userId         String
+  parentId       String?
+  body           String               @db.Text
+  status         ArticleCommentStatus @default(PENDING)
+  moderatedById  String?
+  moderatedAt    DateTime?
+  moderationNote String?              @db.VarChar(500)
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+  article        Article              @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  user           User                 @relation("ArticleCommentAuthor", fields: [userId], references: [id], onDelete: Cascade)
+  parent         ArticleComment?      @relation("ArticleCommentThread", fields: [parentId], references: [id], onDelete: Cascade)
+  replies        ArticleComment[]     @relation("ArticleCommentThread")
+  moderatedBy    User?                @relation("ArticleCommentModerator", fields: [moderatedById], references: [id], onDelete: SetNull)
+  votes          ArticleCommentVote[]
+
+  @@index([articleId, status, createdAt])
+  @@index([userId, createdAt])
+  @@index([parentId, status, createdAt])
+  @@index([moderatedById])
+}
+
+/// One up/down vote per reader per comment (mirrors ProductReviewVote's shape).
+model ArticleCommentVote {
+  id        String         @id @default(cuid())
+  commentId String
+  userId    String
+  value     Int
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+  comment   ArticleComment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([commentId, userId])
+  @@index([userId, createdAt])
 }
 
 model ArticleCategory {
