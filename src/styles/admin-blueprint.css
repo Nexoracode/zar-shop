@@ -330,6 +330,11 @@ select.bp-input:focus-visible { border-color: var(--bp-accent); outline: none; }
    gap for the trailing chevron. Same unlayered-rule reason as the search padding above. */
 .bp-input.bp-input-multi { height: auto; min-height: 38px; padding-block: 4px; padding-inline-end: 30px; cursor: pointer; }
 
+/* Same chip-wrapping growth as `.bp-input-multi` above, but for a field the reader types
+   directly into (a free-text tag input, no popover) — no reserved chevron gap, and a text
+   cursor since the box itself isn't a click target. */
+.bp-input.bp-input-tags { height: auto; min-height: 38px; padding-block: 4px; padding-inline-end: 10px; cursor: text; }
+
 /* A secret field (API key, credential) with a show/hide toggle stacked over it, always at its own
    `dir="ltr"` regardless of the surrounding RTL page — so "start" here means the field's own
    left, exactly where the toggle button sits. Same unlayered-rule reason as the search padding

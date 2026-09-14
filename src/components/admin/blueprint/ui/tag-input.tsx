@@ -54,7 +54,7 @@ export function BpTagInput({
   return (
     <div className={`bp-field ${wrapperClassName}`.trim()}>
       {label && <label htmlFor={fieldId}>{label}{required && <BpRequiredMark />}</label>}
-      <div className="bp-input bp-input-multi flex flex-wrap items-center gap-1.5">
+      <div className="bp-input bp-input-tags flex flex-wrap items-center gap-1.5">
         {tags.map((tag) => (
           <span key={tag} className="bp-tag bp-tag-neutral inline-flex items-center gap-1.5">
             <span className="max-w-[160px] truncate">{tag}</span>
