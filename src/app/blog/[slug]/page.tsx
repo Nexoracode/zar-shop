@@ -170,8 +170,8 @@ export default async function ArticlePage({ params }: Context) {
             </div>
 
             {article.coverMedia && (
-              <div className="relative mb-8 h-[200px] w-full max-w-md overflow-hidden rounded-xl bg-[var(--surface-secondary)]">
-                <Image src={article.coverMedia.url} alt={article.coverMedia.alt ?? article.title} fill sizes="(max-width: 768px) 100vw, 448px" className="object-cover" priority />
+              <div className="relative mb-8 h-[260px] w-full overflow-hidden rounded-xl bg-[var(--surface-secondary)] sm:h-[380px]">
+                <Image src={article.coverMedia.url} alt={article.coverMedia.alt ?? article.title} fill sizes="(max-width: 768px) 100vw, 1180px" className="object-cover" priority />
               </div>
             )}
 
