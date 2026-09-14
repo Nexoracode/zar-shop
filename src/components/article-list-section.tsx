@@ -30,7 +30,7 @@ export function ArticleListSection({ items, page, totalPages, total, categories,
   return (
     <section aria-label="فهرست مقالات">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <div className="text-[11px] font-bold tracking-[0.06em] text-[var(--muted)]">همه مقالات · {total.toLocaleString("fa-IR")} مقاله</div>
+        <div className="w-fit border-b-2 border-[var(--brand-accent)] pb-2 text-[18px] font-extrabold text-[var(--foreground)]">همه مقالات · {total.toLocaleString("fa-IR")} مقاله</div>
       </div>
 
       <ArticleSearchFilterBar categories={categories} activeCategorySlug={activeCategorySlug} initialSearch={search} />

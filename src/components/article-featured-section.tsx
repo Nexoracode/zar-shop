@@ -13,7 +13,7 @@ export function ArticleFeaturedSection({ articles }: { articles: FeaturedArticle
 
   return (
     <section className="mb-14">
-      <div className="mb-3.5 text-[11px] font-bold tracking-[0.06em] text-[var(--muted)]">مقالات ویژه</div>
+      <div className="mb-3.5 w-fit border-b-2 border-[var(--brand-accent)] pb-2 text-[18px] font-extrabold text-[var(--foreground)]">مقالات ویژه</div>
       <div className="grid grid-cols-1 items-stretch gap-4 lg:grid-cols-[1.5fr_1fr]">
         <FeaturedHeroCard article={hero} />
         {list.length > 0 && (
