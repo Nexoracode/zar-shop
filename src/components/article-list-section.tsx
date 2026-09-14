@@ -37,7 +37,7 @@ export function ArticleListSection({ items, page, totalPages, total, categories,
 
       {items.length ? (
         <>
-          <div className="flex flex-col gap-3">
+          <div className="grid grid-cols-2 border-r border-t border-[var(--border)] sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
             {items.map((article) => <ArticleRowCard key={article.id} article={article} />)}
           </div>
           {totalPages > 1 && (
