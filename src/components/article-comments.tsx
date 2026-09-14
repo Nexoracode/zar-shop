@@ -94,7 +94,7 @@ export function ArticleComments({ articleId, initialComments, isAuthenticated }:
           value={body}
           onChange={(event) => setBody(event.target.value)}
         />
-        <Button type="button" variant="primary" isPending={submitting} onPress={() => void submit()} className="mt-2.5 min-h-10 rounded-lg bg-[var(--brand-accent)] px-5 text-xs text-white">ثبت دیدگاه</Button>
+        <Button type="button" variant="primary" isPending={submitting} onPress={() => void submit()} className="mt-2.5 min-h-10 rounded-lg bg-[var(--brand-accent)] px-5 text-xs text-[var(--brand-accent-foreground)]">ثبت دیدگاه</Button>
       </div>
     </div>
   );

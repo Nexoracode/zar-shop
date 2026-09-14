@@ -56,7 +56,7 @@ export function ArticleSearchFilterBar({ categories, activeCategorySlug, initial
       <nav className="flex flex-wrap gap-2" aria-label="فیلتر دسته‌بندی مقالات">
         <Link
           href={categoryHref()}
-          className={`rounded-full px-3.5 py-1.5 text-xs font-bold transition ${!activeCategorySlug ? "bg-[var(--brand-accent)] text-white" : "border border-[var(--border)] text-[var(--foreground)] hover:border-[var(--brand-accent)]"}`}
+          className={`rounded-full px-3.5 py-1.5 text-xs font-bold transition ${!activeCategorySlug ? "bg-[var(--brand-accent)] text-[var(--brand-accent-foreground)]" : "border border-[var(--border)] text-[var(--foreground)] hover:border-[var(--brand-accent)]"}`}
         >
           همه
         </Link>
@@ -64,7 +64,7 @@ export function ArticleSearchFilterBar({ categories, activeCategorySlug, initial
           <Link
             key={category.slug}
             href={categoryHref(category.slug)}
-            className={`rounded-full px-3.5 py-1.5 text-xs font-bold transition ${category.slug === activeCategorySlug ? "bg-[var(--brand-accent)] text-white" : "border border-[var(--border)] text-[var(--foreground)] hover:border-[var(--brand-accent)]"}`}
+            className={`rounded-full px-3.5 py-1.5 text-xs font-bold transition ${category.slug === activeCategorySlug ? "bg-[var(--brand-accent)] text-[var(--brand-accent-foreground)]" : "border border-[var(--border)] text-[var(--foreground)] hover:border-[var(--brand-accent)]"}`}
           >
             {category.name}
           </Link>

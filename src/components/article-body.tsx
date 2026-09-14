@@ -19,7 +19,7 @@ export function ArticleBody({ html, tags }: { html: string; tags: string[] }) {
             <Link
               key={tag}
               href={`/blog?search=${encodeURIComponent(tag)}`}
-              className="rounded-full border border-[var(--border)] bg-[var(--surface-secondary)] px-3 py-1.5 text-xs text-[var(--muted)] transition hover:border-[var(--brand-accent)] hover:bg-[var(--brand-accent)] hover:text-white"
+              className="rounded-full border border-[var(--border)] bg-[var(--surface-secondary)] px-3 py-1.5 text-xs text-[var(--muted)] transition hover:border-[var(--brand-accent)] hover:bg-[var(--brand-accent)] hover:text-[var(--brand-accent-foreground)]"
             >
               {tag}
             </Link>

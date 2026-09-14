@@ -25,7 +25,7 @@ export function ArticleRelatedProductCard({ product }: { product: RelatedProduct
       <div className="p-4">
         <div className="mb-1.5 text-[14.5px] font-bold text-[var(--foreground)]">{product.name}</div>
         <div className="mb-3 text-[15px] font-bold" style={{ color: "color-mix(in srgb, var(--brand-accent) 65%, black)" }}>{product.price}</div>
-        <Link href={product.href} className="flex items-center justify-center gap-1.5 rounded-lg bg-[var(--brand-accent)] py-2.5 text-[13px] font-bold text-white">
+        <Link href={product.href} className="flex items-center justify-center gap-1.5 rounded-lg bg-[var(--brand-accent)] py-2.5 text-[13px] font-bold text-[var(--brand-accent-foreground)]">
           مشاهده و خرید از فروشگاه<ArrowLeft size={15} />
         </Link>
       </div>
