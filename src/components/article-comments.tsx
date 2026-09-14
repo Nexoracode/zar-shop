@@ -75,7 +75,7 @@ export function ArticleComments({ articleId, initialComments, isAuthenticated }:
     <div className="grid gap-4">
       {comments.length > 0 && (
         <div className="flex flex-col">
-          {comments.map((comment) => <CommentCard key={comment.id} comment={comment} authenticated={isAuthenticated} busyVote={busyVote} onVote={vote} />)}
+          {comments.map((comment) => <CommentCard key={comment.id} comment={comment} busyVote={busyVote} onVote={vote} />)}
         </div>
       )}
 
@@ -100,9 +100,8 @@ export function ArticleComments({ articleId, initialComments, isAuthenticated }:
   );
 }
 
-function CommentCard({ comment, authenticated, busyVote, onVote }: {
+function CommentCard({ comment, busyVote, onVote }: {
   comment: StorefrontArticleComment;
-  authenticated: boolean;
   busyVote: string | null;
   onVote: (comment: StorefrontArticleComment, value: -1 | 1) => void;
 }) {

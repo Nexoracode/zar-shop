@@ -136,7 +136,7 @@ export function BlueprintAuthorsView({ authors }: { authors: AuthorRow[] }) {
                 <div>
                   <span className="bp-muted mb-1.5 block text-[12px] font-bold">آواتار</span>
                   <div className="flex items-center gap-3">
-                    <AuthorThumb avatar={avatar ? { id: avatar.id, url: avatar.url, alt: avatar.alt } : null} name={name || "نویسنده"} />
+                    <AuthorThumb avatar={avatar ? { id: avatar.id, url: avatar.url, alt: avatar.alt ?? null } : null} name={name || "نویسنده"} />
                     <BpButton type="button" size="sm" className="gap-2" onClick={() => setPickerOpen(true)}><Images size={13} />{avatar ? "تغییر" : "انتخاب از گالری"}</BpButton>
                     {avatar && <BpButton type="button" isIconOnly size="sm" variant="ghost" aria-label="حذف آواتار" className="bp-btn-danger-icon" onClick={() => setAvatar(null)}><Trash2 size={13} /></BpButton>}
                   </div>
