@@ -15,7 +15,7 @@ export function ArticleRowCard({ article }: { article: ArticleRowItem }) {
       href={articlePath(article.slug)}
       className="group flex overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface)] transition hover:border-[var(--brand-accent)]"
     >
-      <div className="relative h-[140px] w-[140px] shrink-0 overflow-hidden bg-[var(--surface-tertiary)] sm:w-[180px]">
+      <div className="relative min-h-[140px] w-[140px] shrink-0 self-stretch overflow-hidden bg-[var(--surface-tertiary)] sm:w-[180px]">
         {article.coverMedia ? (
           <Image
             src={article.coverMedia.url}
