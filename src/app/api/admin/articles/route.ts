@@ -17,7 +17,7 @@ export async function POST(request: Request) {
       const cover = await db.mediaAsset.findUnique({ where: { id: input.coverMediaId }, select: { type: true, scope: true } });
       if (!cover || cover.type !== "IMAGE" || cover.scope !== "ARTICLE") return NextResponse.json({ message: "تصویر کاور باید از گالری «مقالات» انتخاب شود." }, { status: 422 });
     }
-    if (input.categoryId && !(await db.articleCategory.findUnique({ where: { id: input.categoryId }, select: { id: true } }))) {
+    if (!(await db.articleCategory.findUnique({ where: { id: input.categoryId }, select: { id: true } }))) {
       return NextResponse.json({ message: "دستهٔ انتخاب‌شده پیدا نشد." }, { status: 422 });
     }
     if (!(await db.author.findUnique({ where: { id: input.authorId }, select: { id: true } }))) {
@@ -42,7 +42,7 @@ export async function POST(request: Request) {
           relatedProductId: input.relatedProductId ?? null,
           status: input.status,
           publishedAt,
-          categoryId: input.categoryId ?? null,
+          categoryId: input.categoryId,
           metaTitle: input.metaTitle ?? null,
           metaDescription: input.metaDescription ?? null,
           noindex: input.noindex,

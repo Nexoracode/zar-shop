@@ -253,7 +253,7 @@ export function BlueprintArticleCategoriesView({ categories }: { categories: Art
                           <BpTd>
                             <div className="flex items-center justify-center gap-1">
                               <BpButton isIconOnly size="sm" variant="ghost" title="ویرایش دسته" aria-label={`ویرایش ${category.name}`} onClick={() => startEdit(category)}><SquarePen size={15} strokeWidth={1.5} /></BpButton>
-                              <BpButton isIconOnly size="sm" variant="ghost" className="bp-btn-danger-icon" title="حذف دسته" aria-label={`حذف ${category.name}`} onClick={() => { setDeleteError(""); setDeleteTarget(category); }}><Trash2 size={15} strokeWidth={1.5} /></BpButton>
+                              <BpButton isIconOnly size="sm" variant="ghost" className="bp-btn-danger-icon" title={category._count.articles > 0 ? "دستهٔ دارای مقاله قابل حذف نیست" : "حذف دسته"} aria-label={`حذف ${category.name}`} disabled={category._count.articles > 0} onClick={() => { setDeleteError(""); setDeleteTarget(category); }}><Trash2 size={15} strokeWidth={1.5} /></BpButton>
                             </div>
                           </BpTd>
                         </AdminBulkTr>
@@ -270,7 +270,7 @@ export function BlueprintArticleCategoriesView({ categories }: { categories: Art
       <DeleteConfirmDialog
         open={deleteTarget !== null}
         itemName={deleteTarget?.name}
-        description="با حذف این دسته، مقالات آن بدون دسته می‌شوند اما حذف نمی‌شوند."
+        description="این دسته برای همیشه حذف می‌شود."
         error={deleteError}
         loading={deleteLoading}
         onClose={() => { if (!deleteLoading) setDeleteTarget(null); }}

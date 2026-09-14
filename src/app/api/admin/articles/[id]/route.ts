@@ -35,7 +35,7 @@ export async function PATCH(request: Request, context: Context) {
 
     const data: Record<string, unknown> = {};
     for (const key of ["title", "slug", "excerpt", "authorId", "status", "categoryId", "metaTitle", "metaDescription", "noindex", "coverMediaId", "relatedProductId"] as const) {
-      if (input[key] !== undefined) data[key] = key === "categoryId" || key === "metaTitle" || key === "metaDescription" || key === "coverMediaId" || key === "relatedProductId" ? input[key] ?? null : input[key];
+      if (input[key] !== undefined) data[key] = key === "metaTitle" || key === "metaDescription" || key === "coverMediaId" || key === "relatedProductId" ? input[key] ?? null : input[key];
     }
     if (input.tags !== undefined) data.tags = input.tags.length ? input.tags : null;
     if (input.content !== undefined) data.content = sanitizeProductDescription(input.content);

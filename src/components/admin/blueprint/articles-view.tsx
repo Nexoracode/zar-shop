@@ -19,7 +19,7 @@ type ArticleRow = {
   publishedAt: string | null;
   createdAt: string;
   coverMedia: { url: string; alt: string | null } | null;
-  category: { name: string } | null;
+  category: { name: string };
 };
 
 type Props = {
@@ -100,7 +100,7 @@ export function BlueprintArticlesView({ articles, categories, counts, filters, p
                     <BpTag tone={articleStatusTones[article.status]} size="md" withDot>{articleStatusLabels[article.status]}</BpTag>
                   </div>
                   <div className="flex items-center justify-between gap-3 text-[12px]">
-                    <span className="bp-muted">{article.category?.name ?? "بدون دسته"}</span>
+                    <span className="bp-muted">{article.category.name}</span>
                     <span className="bp-muted">{dateLabel(article)}</span>
                   </div>
                   <RowActions article={article} />
@@ -135,7 +135,7 @@ export function BlueprintArticlesView({ articles, categories, counts, filters, p
                           </div>
                         </div>
                       </BpTd>
-                      <BpTd className="bp-muted max-w-[160px] truncate">{article.category?.name ?? "بدون دسته"}</BpTd>
+                      <BpTd className="bp-muted max-w-[160px] truncate">{article.category.name}</BpTd>
                       <BpTd><BpTag tone={articleStatusTones[article.status]} size="md" withDot>{articleStatusLabels[article.status]}</BpTag></BpTd>
                       <BpTd className="bp-muted">{dateLabel(article)}</BpTd>
                       <BpTd><RowActions article={article} /></BpTd>

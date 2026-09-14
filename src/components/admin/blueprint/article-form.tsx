@@ -43,7 +43,7 @@ export type ArticleFormData = {
   faqs: FaqDraft[];
   status: (typeof articleStatuses)[number];
   publishedAt: string | null;
-  categoryId: string | null;
+  categoryId: string;
   metaTitle: string;
   metaDescription: string;
   noindex: boolean;
@@ -70,7 +70,7 @@ export function BlueprintArticleForm({ article, categories, authors }: Props) {
   const [faqs, setFaqs] = useState<FaqDraft[]>(article?.faqs ?? []);
   const [status, setStatus] = useState<string>(article?.status ?? "DRAFT");
   const [publishedAt, setPublishedAt] = useState<string | null>(article?.publishedAt ?? null);
-  const [categoryId, setCategoryId] = useState(article?.categoryId ?? "");
+  const [categoryId, setCategoryId] = useState(article?.categoryId ?? categories[0]?.id ?? "");
   const [metaTitle, setMetaTitle] = useState(article?.metaTitle ?? "");
   const [metaDescription, setMetaDescription] = useState(article?.metaDescription ?? "");
   const [noindex, setNoindex] = useState(article?.noindex ?? false);
@@ -97,7 +97,7 @@ export function BlueprintArticleForm({ article, categories, authors }: Props) {
       faqs: faqs.map((faq, index) => ({ id: faq.id, question: faq.question.trim(), answer: faq.answer.trim(), sortOrder: index })),
       status,
       publishedAt: publishedAt ?? null,
-      categoryId: categoryId || null,
+      categoryId,
       metaTitle: metaTitle.trim() || null,
       metaDescription: metaDescription.trim() || null,
       noindex,
@@ -212,7 +212,15 @@ export function BlueprintArticleForm({ article, categories, authors }: Props) {
           <div className="mt-3 grid gap-3">
             <BpSelect label="وضعیت" value={status} options={articleStatuses.map((value) => ({ value, label: articleStatusLabels[value] }))} onChange={(event) => { setStatus(event.target.value); touch(); }} />
             <BpDateTimeField label="تاریخ انتشار" value={publishedAt} onChange={(value) => { setPublishedAt(value); touch(); }} hint="خالی بگذارید تا هنگام انتشار به‌صورت خودکار ثبت شود." />
-            <BpSelect label="دسته" value={categoryId} placeholder="بدون دسته" options={categories.map((category) => ({ value: category.id, label: category.name }))} onChange={(event) => { setCategoryId(event.target.value); touch(); }} />
+            <BpSelect
+              label="دسته"
+              required
+              placeholder={categories.length ? "انتخاب دسته" : "ابتدا از بخش «دسته‌بندی مقالات» یک دسته ثبت کنید"}
+              value={categoryId}
+              error={errors.categoryId}
+              options={categories.map((category) => ({ value: category.id, label: category.name }))}
+              onChange={(event) => { setCategoryId(event.target.value); clearError("categoryId"); touch(); }}
+            />
           </div>
         </section>
       </div>

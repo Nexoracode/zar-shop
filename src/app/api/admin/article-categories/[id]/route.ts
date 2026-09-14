@@ -39,9 +39,12 @@ export async function DELETE(request: Request, context: Context) {
     const actor = await getPermittedActor("settings:manage");
     if (!actor) return NextResponse.json({ message: "دسترسی غیرمجاز است." }, { status: 403 });
     const { id } = await context.params;
-    const category = await db.articleCategory.findUnique({ where: { id }, select: { name: true, slug: true } });
+    const category = await db.articleCategory.findUnique({ where: { id }, select: { name: true, slug: true, _count: { select: { articles: true } } } });
     if (!category) return NextResponse.json({ message: "دسته پیدا نشد." }, { status: 404 });
-    // Articles keep working — the FK is `onDelete: SetNull`, so they just lose their category.
+    // An article can no longer exist without a category, so a category still in use can't be deleted.
+    if (category._count.articles > 0) {
+      return NextResponse.json({ message: "این دسته مقاله دارد و قابل حذف نیست." }, { status: 409 });
+    }
     await db.$transaction(async (tx) => {
       await tx.articleCategory.delete({ where: { id } });
       await tx.auditLog.create({ data: { actorId: actor.id, action: "ARTICLE_CATEGORY_DELETE", entityType: "ArticleCategory", entityId: id, ...auditRequestContext(request, { name: category.name, slug: category.slug }) } });

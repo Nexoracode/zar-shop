@@ -44,7 +44,7 @@ const articleFields = {
   faqs: z.array(articleFaqSchema).max(30).optional(),
   status: z.enum(articleStatuses),
   publishedAt: z.union([z.null(), z.string().datetime({ offset: true }), z.string().datetime()]).optional(),
-  categoryId: z.string().cuid("دستهٔ انتخاب‌شده معتبر نیست.").nullable().optional(),
+  categoryId: z.string().cuid("دسته را انتخاب کنید."),
   metaTitle: optionalText(articleFieldLimits.metaTitle),
   metaDescription: optionalText(articleFieldLimits.metaDescription),
   noindex: z.boolean(),

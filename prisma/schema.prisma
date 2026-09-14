@@ -1487,7 +1487,7 @@ model Article {
   viewCount        Int              @default(0)
   status           ArticleStatus    @default(DRAFT)
   publishedAt      DateTime?
-  categoryId       String?
+  categoryId       String
   metaTitle        String?          @db.VarChar(120)
   metaDescription  String?          @db.VarChar(320)
   noindex          Boolean          @default(false)
@@ -1498,7 +1498,7 @@ model Article {
   createdAt        DateTime         @default(now())
   updatedAt        DateTime         @updatedAt
   coverMedia       MediaAsset?      @relation("ArticleCover", fields: [coverMediaId], references: [id], onDelete: SetNull)
-  category         ArticleCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  category         ArticleCategory  @relation(fields: [categoryId], references: [id])
   author           Author           @relation(fields: [authorId], references: [id])
   relatedProduct   Product?         @relation("ArticleRelatedProduct", fields: [relatedProductId], references: [id], onDelete: SetNull)
   ratings          ArticleRating[]
