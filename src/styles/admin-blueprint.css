@@ -334,6 +334,13 @@ select.bp-input:focus-visible { border-color: var(--bp-accent); outline: none; }
    directly into (a free-text tag input, no popover) — no reserved chevron gap, and a text
    cursor since the box itself isn't a click target. */
 .bp-input.bp-input-tags { height: auto; min-height: 38px; padding-block: 4px; padding-inline-end: 10px; cursor: text; }
+/* The focusable element is the bare `<input>` inside, not this wrapper, so the wrapper needs its
+   own `:focus-within` to draw the same accent hairline every other `.bp-input` draws on focus.
+   The inner input's own outline is cancelled here too — `.bp-root :focus-visible` (unlayered)
+   would otherwise win over its Tailwind `outline-none` (layered) and draw a stray ring. */
+.bp-input.bp-input-tags:focus-within { border-color: var(--bp-accent); }
+.bp-input-tags input:focus,
+.bp-input-tags input:focus-visible { outline: none; }
 
 /* A secret field (API key, credential) with a show/hide toggle stacked over it, always at its own
    `dir="ltr"` regardless of the surrounding RTL page — so "start" here means the field's own
