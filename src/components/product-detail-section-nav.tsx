@@ -91,6 +91,7 @@ export function ProductDetailSectionNav() {
         return <Link
           key={section.id}
           href={`#${section.id}`}
+          replace
           aria-current={active ? "location" : undefined}
           onClick={() => setActiveSection(section.id)}
           className={`relative shrink-0 py-4 transition-colors after:absolute after:inset-x-0 after:bottom-0 after:h-[3px] after:rounded-t-full after:transition-opacity ${active ? "text-[var(--brand-primary)] after:bg-[var(--brand-primary)] after:opacity-100" : "hover:text-[var(--brand-primary)] after:opacity-0"}`}
