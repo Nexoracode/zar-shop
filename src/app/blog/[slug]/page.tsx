@@ -2,13 +2,31 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { CalendarDays, UserRound } from "lucide-react";
+import { CalendarDays, ChevronLeft, Clock, Eye, UserRound } from "lucide-react";
+import { ArticleAuthorBioCard } from "@/components/article-author-bio-card";
+import { ArticleBody } from "@/components/article-body";
 import { ArticleCard } from "@/components/article-card";
+import { ArticleComments } from "@/components/article-comments";
+import { ArticleFaqAccordion } from "@/components/article-faq-accordion";
+import { ArticleFontSizeControl } from "@/components/article-font-size-control";
+import { ArticleFontSizeProvider } from "@/components/article-font-size-context";
 import { ArticleRatingWidget } from "@/components/article-rating-widget";
-import { formatDate } from "@/lib/format";
+import { ArticleReadingProgressBar } from "@/components/article-reading-progress-bar";
+import { ArticleRelatedProductCard } from "@/components/article-related-product-card";
+import { ArticleShareBox } from "@/components/article-share-box";
+import { ArticleTocBox } from "@/components/article-toc-box";
+import { ArticleViewTracker } from "@/components/article-view-tracker";
+import type { StorefrontArticleComment } from "@/modules/article-comments/service";
+import { getStorefrontArticleComments } from "@/modules/article-comments/service";
+import { formatDate, formatMoney } from "@/lib/format";
+import { estimateReadingMinutes, formatReadingTime } from "@/lib/reading-time";
+import { extractTableOfContents } from "@/lib/article-toc";
 import { getCurrentUser } from "@/modules/auth/session";
 import { articleUrl, getPublishedArticleBySlug } from "@/modules/articles/service";
+import { calculateDiscountedPrice } from "@/modules/products/discount";
+import { calculateProductPrice } from "@/modules/products/pricing";
 import { sanitizeProductDescription } from "@/modules/products/rich-text";
+import { getGoldPriceForDisplay } from "@/modules/gold/gold-price.service";
 import { getGeneralStoreSettings } from "@/modules/settings/general-settings";
 import { env } from "@/lib/env";
 
@@ -38,14 +56,48 @@ export async function generateMetadata({ params }: Context): Promise<Metadata> {
   };
 }
 
+function countComments(items: StorefrontArticleComment[]): number {
+  return items.reduce((total, item) => total + 1 + countComments(item.replies), 0);
+}
+
 export default async function ArticlePage({ params }: Context) {
   const { slug } = await params;
   const currentUser = await getCurrentUser();
   const [result, settings] = await Promise.all([getPublishedArticleBySlug(slug, currentUser?.id ?? null), getGeneralStoreSettings()]);
   if (!result) notFound();
   const { article, related, viewerRating } = result;
+  const isAuthenticated = Boolean(currentUser && !currentUser.isGuest);
   const publishedAt = (article.publishedAt ?? article.createdAt).toISOString();
   const baseUrl = env.APP_URL.replace(/\/$/, "");
+
+  const sanitizedContent = sanitizeProductDescription(article.content);
+  const { html: contentHtml, sections } = extractTableOfContents(sanitizedContent);
+  const tags = Array.isArray(article.tags) ? (article.tags as string[]) : [];
+  const readTime = formatReadingTime(estimateReadingMinutes(article.content));
+  const faqs = article.faqs.map((faq) => ({ id: faq.id, question: faq.question, answer: faq.answer }));
+
+  const comments = await getStorefrontArticleComments(article.id, currentUser?.id ?? null);
+  const commentCount = countComments(comments);
+
+  let relatedProductView: { name: string; href: string; price: string; image?: { src: string; alt: string } } | null = null;
+  if (article.relatedProduct) {
+    const rp = article.relatedProduct;
+    const gold = rp.storeIndustry === "GOLD" ? await getGoldPriceForDisplay() : null;
+    const rate = gold?.pricePerGram18 ?? null;
+    const parts = rp.storeIndustry === "GOLD" && rate !== null
+      ? calculateProductPrice({ goldPricePerGram18: rate, weightGrams: rp.weightGrams, purity: rp.purity, makingFeeType: rp.makingFeeType, makingFeeValue: rp.makingFeeValue, profitPercent: rp.profitPercent, taxPercent: rp.taxPercent })
+      : null;
+    const baseTotal = rp.fixedPrice ? Number(rp.fixedPrice) : parts?.total ?? null;
+    const discounted = baseTotal === null ? null : calculateDiscountedPrice(baseTotal, rp);
+    const total = discounted?.finalPrice ?? null;
+    const media = rp.media[0]?.media;
+    relatedProductView = {
+      name: rp.name,
+      href: `/products/${rp.slug}`,
+      price: total !== null ? formatMoney(total, settings.currency) : "قیمت موقتاً در دسترس نیست",
+      image: media?.type === "IMAGE" ? { src: media.url, alt: media.alt ?? rp.name } : undefined,
+    };
+  }
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -70,61 +122,105 @@ export default async function ArticlePage({ params }: Context) {
   };
 
   return (
-    <main className="px-4 py-10 sm:px-6 sm:py-16">
-      {!article.noindex && (
-        <>
-          <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
-          <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }} />
-        </>
-      )}
-
-      <article className="mx-auto max-w-3xl">
-        <nav className="mb-4 flex flex-wrap items-center gap-2 text-xs text-[var(--muted)]" aria-label="مسیر مقاله">
-          <Link href="/" className="hover:text-[var(--foreground)]">خانه</Link><span>/</span>
-          <Link href="/blog" className="hover:text-[var(--foreground)]">وبلاگ</Link>
-          {article.category?.isActive && <><span>/</span><Link href={`/blog/category/${article.category.slug}`} className="hover:text-[var(--foreground)]">{article.category.name}</Link></>}
-        </nav>
-
-        <h1 className="m-0 text-2xl font-bold leading-relaxed text-[var(--brand-primary)] sm:text-3xl">{article.title}</h1>
-        <div className="mt-3 flex flex-wrap items-center gap-4 text-xs text-[var(--muted)]">
-          <span className="flex items-center gap-1.5"><UserRound size={14} />{article.author.name}</span>
-          <span className="flex items-center gap-1.5"><CalendarDays size={14} />{formatDate(publishedAt)}</span>
-        </div>
-
-        {article.coverMedia && (
-          <div className="relative mt-6 aspect-[16/9] w-full overflow-hidden rounded-2xl bg-[var(--surface-secondary)]">
-            <Image src={article.coverMedia.url} alt={article.coverMedia.alt ?? article.title} width={1200} height={675} sizes="(max-width: 768px) 100vw, 768px" className="h-full w-full object-cover" priority />
-          </div>
+    <>
+      <ArticleReadingProgressBar contentId="article-main-column" />
+      <main className="px-4 py-8 sm:px-6 sm:py-10">
+        {!article.noindex && (
+          <>
+            <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+            <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }} />
+          </>
         )}
 
-        <div
-          className="rich-text-content mt-8 text-[var(--foreground)]"
-          dangerouslySetInnerHTML={{ __html: sanitizeProductDescription(article.content) }}
-        />
+        <div className="mx-auto w-[min(1180px,100%)]">
+          <nav className="mb-5 flex flex-wrap items-center gap-1.5 text-xs text-[var(--muted)]" aria-label="مسیر مقاله">
+            <Link href="/" className="hover:text-[var(--foreground)]">خانه</Link>
+            <ChevronLeft size={10} />
+            <Link href="/blog" className="hover:text-[var(--foreground)]">وبلاگ</Link>
+            {article.category?.isActive && <>
+              <ChevronLeft size={10} />
+              <Link href={`/blog/category/${article.category.slug}`} className="hover:text-[var(--foreground)]">{article.category.name}</Link>
+            </>}
+            <ChevronLeft size={10} />
+            <span className="line-clamp-1 max-w-[320px] text-[var(--foreground)]">{article.title}</span>
+          </nav>
 
-        <div className="mt-8">
-          <ArticleRatingWidget
-            articleId={article.id}
-            initialAverage={Number(article.ratingAverage)}
-            initialCount={article.ratingCount}
-            initialOwnRating={viewerRating}
-            canRate={Boolean(currentUser && !currentUser.isGuest)}
-          />
-        </div>
-      </article>
+          <ArticleFontSizeProvider>
+            {article.category?.isActive && (
+              <span
+                className="mb-3 inline-block rounded-full px-3.5 py-[5px] text-[11.5px] font-bold"
+                style={{ color: "color-mix(in srgb, var(--brand-accent) 65%, black)", background: "color-mix(in srgb, var(--brand-accent) 14%, var(--surface))" }}
+              >
+                {article.category.name}
+              </span>
+            )}
+            <h1 className="m-0 mb-4 text-[22px] font-bold leading-relaxed text-[var(--foreground)] sm:text-[28px]">{article.title}</h1>
 
-      {related.length > 0 && (
-        <section className="mx-auto mt-16 max-w-5xl">
-          <h2 className="m-0 mb-5 text-lg font-bold text-[var(--brand-primary)]">مقالات مرتبط</h2>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {related.map((item) => <ArticleCard key={item.id} article={item} />)}
+            <div className="mb-5 flex flex-wrap items-center gap-4 text-xs text-[var(--muted)]">
+              <span className="flex items-center gap-1.5">
+                <span className="relative grid size-[26px] shrink-0 place-items-center overflow-hidden rounded-full bg-[var(--surface-tertiary)]">
+                  {article.author.avatar ? <Image src={article.author.avatar.url} alt={article.author.avatar.alt ?? article.author.name} fill sizes="26px" className="object-cover" /> : <UserRound size={13} />}
+                </span>
+                {article.author.name}
+              </span>
+              <span className="flex items-center gap-1.5"><CalendarDays size={14} />{formatDate(publishedAt)}</span>
+              <span className="flex items-center gap-1.5"><Clock size={14} />{readTime}</span>
+              <span className="flex items-center gap-1.5"><Eye size={14} />{article.viewCount.toLocaleString("fa-IR")} بازدید</span>
+              <ArticleFontSizeControl />
+            </div>
+
+            {article.coverMedia && (
+              <div className="relative mb-8 h-[260px] w-full overflow-hidden rounded-xl bg-[var(--surface-secondary)] sm:h-[380px]">
+                <Image src={article.coverMedia.url} alt={article.coverMedia.alt ?? article.title} fill sizes="(max-width: 768px) 100vw, 1180px" className="object-cover" priority />
+              </div>
+            )}
+
+            <div className="grid items-start gap-8 lg:grid-cols-[1fr_280px]">
+              <div id="article-main-column" className="min-w-0">
+                <ArticleTocBox sections={sections} />
+                <ArticleBody html={contentHtml} tags={tags} />
+                <ArticleFaqAccordion faqs={faqs} />
+              </div>
+
+              <aside className="grid gap-4 lg:sticky lg:top-[84px]">
+                <ArticleAuthorBioCard author={article.author} />
+                {relatedProductView && <ArticleRelatedProductCard product={relatedProductView} />}
+                <ArticleShareBox title={article.title} url={articleUrl(article.slug)} />
+              </aside>
+            </div>
+          </ArticleFontSizeProvider>
+
+          <section className="mt-11 border-t border-[var(--border)] pt-8">
+            <h2 className="m-0 mb-4 text-[17px] font-bold text-[var(--foreground)]">دیدگاه‌ها و امتیازها <span className="text-[13.5px] font-medium text-[var(--muted)]">({commentCount.toLocaleString("fa-IR")})</span></h2>
+            <div className="mb-6">
+              <ArticleRatingWidget
+                key={`${article.ratingAverage}-${article.ratingCount}`}
+                articleId={article.id}
+                initialAverage={Number(article.ratingAverage)}
+                initialCount={article.ratingCount}
+                initialOwnRating={viewerRating}
+                canRate={isAuthenticated}
+                interactive={false}
+              />
+            </div>
+            <ArticleComments articleId={article.id} initialComments={comments} isAuthenticated={isAuthenticated} />
+          </section>
+
+          {related.length > 0 && (
+            <section className="mt-11">
+              <div className="mb-4 text-[11px] font-bold tracking-[0.06em] text-[var(--muted)]">مقالات مرتبط</div>
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {related.map((item) => <ArticleCard key={item.id} article={item} />)}
+              </div>
+            </section>
+          )}
+
+          <div className="mt-10 text-center">
+            <Link href="/blog" className="text-sm font-bold text-[var(--brand-accent)]">بازگشت به وبلاگ</Link>
           </div>
-        </section>
-      )}
-
-      <div className="mx-auto mt-12 max-w-3xl text-center">
-        <Link href="/blog" className="text-sm font-bold text-[var(--brand-accent)]">بازگشت به وبلاگ</Link>
-      </div>
-    </main>
+        </div>
+      </main>
+      <ArticleViewTracker articleId={article.id} />
+    </>
   );
 }
