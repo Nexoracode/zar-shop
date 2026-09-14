@@ -19,7 +19,7 @@ export function ArticleAnchorOffset() {
 
     update();
     const resizeObserver = header ? new ResizeObserver(update) : null;
-    if (header) resizeObserver.observe(header);
+    if (header) resizeObserver?.observe(header);
     window.addEventListener("resize", update);
 
     return () => {
