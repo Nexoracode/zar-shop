@@ -155,33 +155,31 @@ export function BlueprintAuthorsView({ authors }: { authors: AuthorRow[] }) {
             <>
               <BpListFilters query={query} onQueryChange={setQuery} searchLabel="جستجوی نویسنده" searchPlaceholder="جستجو بر اساس نام نویسنده" filters={[]} />
               {visible.length ? (
-                <div className="overflow-x-auto">
-                  <BpTable ariaLabel="فهرست نویسندگان" minWidth={480}>
-                    <thead>
-                      <tr>
-                        <BpTh className="w-10">آواتار</BpTh>
-                        <BpTh>نام</BpTh>
-                        <BpTh>مقالات</BpTh>
-                        <BpTh className="text-center">عملیات</BpTh>
+                <BpTable ariaLabel="فهرست نویسندگان" minWidth={480}>
+                  <thead>
+                    <tr>
+                      <BpTh className="w-10">آواتار</BpTh>
+                      <BpTh>نام</BpTh>
+                      <BpTh>مقالات</BpTh>
+                      <BpTh className="text-center">عملیات</BpTh>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {visible.map((author) => (
+                      <tr key={author.id} className="border-b border-[var(--bp-row-line)] last:border-b-0">
+                        <BpTd><AuthorThumb avatar={author.avatar} name={author.name} /></BpTd>
+                        <BpTd className="max-w-[220px] truncate font-bold" title={author.name}>{author.name}</BpTd>
+                        <BpTd className="text-[var(--bp-text)]">{author._count.articles.toLocaleString("fa-IR")}</BpTd>
+                        <BpTd>
+                          <div className="flex items-center justify-center gap-1">
+                            <BpButton isIconOnly size="sm" variant="ghost" title="ویرایش نویسنده" aria-label={`ویرایش ${author.name}`} onClick={() => startEdit(author)}><SquarePen size={15} strokeWidth={1.5} /></BpButton>
+                            <BpButton isIconOnly size="sm" variant="ghost" title={author._count.articles > 0 ? "نویسندهٔ دارای مقاله قابل حذف نیست" : "حذف نویسنده"} className="bp-btn-danger-icon" aria-label={`حذف ${author.name}`} disabled={author._count.articles > 0} onClick={() => { setDeleteError(""); setDeleteTarget(author); }}><Trash2 size={15} strokeWidth={1.5} /></BpButton>
+                          </div>
+                        </BpTd>
                       </tr>
-                    </thead>
-                    <tbody>
-                      {visible.map((author) => (
-                        <tr key={author.id} className="border-b border-[var(--bp-row-line)] last:border-b-0">
-                          <BpTd><AuthorThumb avatar={author.avatar} name={author.name} /></BpTd>
-                          <BpTd className="max-w-[220px] truncate font-bold" title={author.name}>{author.name}</BpTd>
-                          <BpTd className="text-[var(--bp-text)]">{author._count.articles.toLocaleString("fa-IR")}</BpTd>
-                          <BpTd>
-                            <div className="flex items-center justify-center gap-1">
-                              <BpButton isIconOnly size="sm" variant="ghost" title="ویرایش نویسنده" aria-label={`ویرایش ${author.name}`} onClick={() => startEdit(author)}><SquarePen size={15} strokeWidth={1.5} /></BpButton>
-                              <BpButton isIconOnly size="sm" variant="ghost" title={author._count.articles > 0 ? "نویسندهٔ دارای مقاله قابل حذف نیست" : "حذف نویسنده"} className="bp-btn-danger-icon" aria-label={`حذف ${author.name}`} disabled={author._count.articles > 0} onClick={() => { setDeleteError(""); setDeleteTarget(author); }}><Trash2 size={15} strokeWidth={1.5} /></BpButton>
-                            </div>
-                          </BpTd>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </BpTable>
-                </div>
+                    ))}
+                  </tbody>
+                </BpTable>
               ) : <div className="p-6"><AdminEmptyState title="نویسنده‌ای پیدا نشد" description="هیچ نویسنده‌ای با جستجوی انتخابی مطابقت ندارد." /></div>}
             </>
           ) : <AdminEmptyState title="نویسنده‌ای ثبت نشده" description="اولین نویسندهٔ وبلاگ را از فرم کنار جدول ثبت کنید." />}
