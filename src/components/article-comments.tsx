@@ -83,7 +83,7 @@ export function ArticleComments({ articleId, initialComments, isAuthenticated }:
         <div className="mb-3 text-[13px] font-bold text-[var(--foreground)]">ثبت امتیاز و دیدگاه</div>
         <div className="mb-3.5 flex items-center gap-2">
           <span className="text-xs text-[var(--muted)]">امتیاز شما:</span>
-          <ReviewRatingField rating={rating} onChange={setRating} showLabel={false} />
+          <ReviewRatingField rating={rating} onChange={setRating} showLabel={false} reserveMessage={false} />
         </div>
         <TextAreaField
           name="comment-body"

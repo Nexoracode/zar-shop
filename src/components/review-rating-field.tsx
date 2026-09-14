@@ -12,13 +12,16 @@ const scores = [1, 2, 3, 4, 5] as const;
  * The message deliberately sits here rather than in a toast: a toast renders outside the dialog
  * and the modal treats that as an interaction outside itself.
  */
-export function ReviewRatingField({ rating, onChange, error, label = "امتیاز شما", size = "md", showLabel = true, className = "" }: {
+export function ReviewRatingField({ rating, onChange, error, label = "امتیاز شما", size = "md", showLabel = true, reserveMessage = true, className = "" }: {
   rating: number;
   onChange: (rating: number) => void;
   error?: string;
   label?: string;
   size?: "sm" | "md";
   showLabel?: boolean;
+  /** Off for a star row sharing a single line with other inline controls — the reserved error
+   *  line below would otherwise throw off their `items-center` alignment. */
+  reserveMessage?: boolean;
   className?: string;
 }) {
   const messageId = `${useId()}-rating-message`;
@@ -30,7 +33,7 @@ export function ReviewRatingField({ rating, onChange, error, label = "امتیا
         role="radiogroup"
         aria-label={label}
         aria-invalid={error ? true : undefined}
-        aria-describedby={error ? messageId : undefined}
+        aria-describedby={reserveMessage && error ? messageId : undefined}
         className="flex gap-1"
         dir="ltr"
       >
@@ -50,7 +53,7 @@ export function ReviewRatingField({ rating, onChange, error, label = "امتیا
           </Button>
         ))}
       </div>
-      <span id={messageId} className={`field-message ${error ? "field-message-error" : "field-message-hint"}`}>{error ?? ""}</span>
+      {reserveMessage && <span id={messageId} className={`field-message ${error ? "field-message-error" : "field-message-hint"}`}>{error ?? ""}</span>}
     </div>
   );
 }

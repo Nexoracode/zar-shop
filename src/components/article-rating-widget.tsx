@@ -60,7 +60,7 @@ export function ArticleRatingWidget({ articleId, initialAverage, initialCount, i
         canRate ? (
           <div className="mr-auto flex items-center gap-2.5">
             <span className="text-xs font-bold text-[var(--foreground)]">{ownRating ? "امتیاز شما" : "به این مقاله امتیاز دهید"}</span>
-            <ReviewRatingField rating={ownRating} onChange={submit} showLabel={false} size="sm" />
+            <ReviewRatingField rating={ownRating} onChange={submit} showLabel={false} reserveMessage={false} size="sm" />
           </div>
         ) : (
           <Link href="/login" className="mr-auto text-xs font-bold text-[var(--brand-accent)]">برای ثبت امتیاز وارد حساب کاربری شوید</Link>
