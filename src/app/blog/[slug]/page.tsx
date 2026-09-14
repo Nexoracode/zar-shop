@@ -3,6 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CalendarDays, ChevronLeft, Clock, Eye, UserRound } from "lucide-react";
+import { ArticleAnchorOffset } from "@/components/article-anchor-offset";
 import { ArticleAuthorBioCard } from "@/components/article-author-bio-card";
 import { ArticleBody } from "@/components/article-body";
 import { ArticleCard } from "@/components/article-card";
@@ -123,6 +124,7 @@ export default async function ArticlePage({ params }: Context) {
 
   return (
     <>
+      <ArticleAnchorOffset />
       <ArticleReadingProgressBar contentId="article-main-column" />
       <main className="px-4 py-8 sm:px-6 sm:py-10">
         {!article.noindex && (

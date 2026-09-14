@@ -389,6 +389,12 @@ img {
 .rich-text-content h3 { font-size: 1.25rem; }
 .rich-text-content h4 { font-size: 1.08rem; }
 
+/* A blog article's table-of-contents links land on `h2[id="s0"]`-style anchors injected by
+   `extractTableOfContents`. Without this, the sticky storefront header covers the heading after
+   the jump; `--blog-anchor-offset` is measured live by `ArticleAnchorOffset` (mirrors the product
+   page's `--product-detail-anchor-offset`). */
+.rich-text-content h2[id] { scroll-margin-top: var(--blog-anchor-offset, 88px); }
+
 .rich-text-content ul,
 .rich-text-content ol {
   margin: 0.75rem 0;
