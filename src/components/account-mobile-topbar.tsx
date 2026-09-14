@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect } from "react";
 import { Bell, ChevronRight, Headset, Settings } from "lucide-react";
 import { getAccountNavItems } from "@/components/account-nav-items";
 
@@ -15,6 +16,14 @@ import { getAccountNavItems } from "@/components/account-nav-items";
 export function AccountMobileTopBar({ showReferral }: { showReferral: boolean }) {
   const pathname = usePathname();
   const isHub = pathname === "/account";
+
+  // Entering /account (e.g. from the bottom nav while scrolled down on a taller page like the
+  // home feed) doesn't reset scroll on its own: the storefront's shared root layout/AppChrome
+  // wrapper never unmounts across this navigation, so Next's own scroll-to-top never fires and
+  // the account page renders mid-scroll instead of at its top.
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0 });
+  }, [pathname]);
 
   if (isHub) {
     return (
