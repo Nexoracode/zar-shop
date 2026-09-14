@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
-import { Clock, ImageOff, UserRound } from "lucide-react";
+import { CalendarDays, Clock, ImageOff, UserRound } from "lucide-react";
+import { formatDate } from "@/lib/format";
 import { estimateReadingMinutes, formatReadingTime } from "@/lib/reading-time";
 import { articlePath } from "@/modules/articles/paths";
 import type { FeaturedArticle } from "@/modules/articles/service";
@@ -14,7 +15,7 @@ export function ArticleFeaturedSection({ articles }: { articles: FeaturedArticle
   return (
     <section className="mb-14">
       <div className="mb-3.5 w-fit border-b-2 border-[var(--brand-accent)] pb-2 text-[18px] font-extrabold text-[var(--foreground)]">مقالات ویژه</div>
-      <div className="grid grid-cols-1 items-stretch gap-4 lg:grid-cols-[1.5fr_1fr]">
+      <div className="grid grid-cols-1 items-stretch gap-8 lg:grid-cols-[1.5fr_1fr]">
         <FeaturedHeroCard article={hero} />
         {list.length > 0 && (
           <div className="flex flex-col">
@@ -74,6 +75,7 @@ function FeaturedHeroCard({ article }: { article: FeaturedArticle }) {
 }
 
 function FeaturedListItem({ article, index, isLast }: { article: FeaturedArticle; index: number; isLast: boolean }) {
+  const date = article.publishedAt ?? article.createdAt;
   const readTime = formatReadingTime(estimateReadingMinutes(article.content));
   const paddingClass = index === 0 ? "pb-[18px] pt-0" : isLast ? "pb-0 pt-[18px]" : "py-[18px]";
   return (
@@ -97,7 +99,12 @@ function FeaturedListItem({ article, index, isLast }: { article: FeaturedArticle
           </span>
         )}
         <div className="line-clamp-2 text-[15px] font-bold">{article.title}</div>
-        <div className="mt-2 flex items-center gap-1.5 text-[11px] text-[var(--muted)]"><Clock size={12} />{readTime}</div>
+        <p className="m-0 mt-1.5 line-clamp-2 text-[12.5px] leading-6 text-[var(--muted)]">{article.excerpt}</p>
+        <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-[var(--muted)]">
+          <span className="flex items-center gap-1.5"><UserRound size={12} />{article.author.name}</span>
+          <span className="flex items-center gap-1.5"><CalendarDays size={12} />{formatDate(date)}</span>
+          <span className="flex items-center gap-1.5"><Clock size={12} />{readTime}</span>
+        </div>
       </div>
     </Link>
   );

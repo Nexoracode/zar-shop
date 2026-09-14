@@ -28,6 +28,8 @@ const featuredSelect = {
   excerpt: true,
   content: true,
   author: { select: { name: true } },
+  publishedAt: true,
+  createdAt: true,
   coverMedia: { select: { url: true, alt: true, width: true, height: true } },
   category: { select: { name: true, slug: true } },
 } satisfies Prisma.ArticleSelect;
