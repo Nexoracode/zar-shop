@@ -19,7 +19,11 @@ export function ProductDetailTopBar({ productName, cartCount }: { productName: s
   const [moreOpen, setMoreOpen] = useState(false);
 
   function close() {
-    if (window.history.length > 1) router.back();
+    // router.back() goes through Next's own client-transition queue, which can silently drop the
+    // navigation if something else (a background router.refresh(), a pending Suspense boundary)
+    // happens to be mid-transition at the same moment — the tap then does nothing. The browser's
+    // own history.back() bypasses that queue entirely and always works.
+    if (window.history.length > 1) window.history.back();
     else router.push("/");
   }
 
