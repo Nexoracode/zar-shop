@@ -13,7 +13,7 @@ import { mediaUsageCount, type MediaUsageCounts } from "@/modules/media/usage";
 import { requestErrorMessage, requestJson } from "@/lib/api-request";
 import { readImageDimensions } from "@/modules/media/image-dimensions";
 
-export type MediaScope = "CATEGORY" | "PRODUCT" | "HOMEPAGE" | "BRAND" | "PRODUCT_BRAND" | "ARTICLE";
+export type MediaScope = "CATEGORY" | "PRODUCT" | "HOMEPAGE" | "BRAND" | "PRODUCT_BRAND" | "ARTICLE" | "ARTICLE_AUTHOR";
 export type MediaChoice = {
   id: string;
   title: string;
@@ -43,6 +43,7 @@ const scopes: Array<{ value: MediaScope; label: string }> = [
   { value: "BRAND", label: "هویت بصری" },
   { value: "PRODUCT_BRAND", label: "برند محصول" },
   { value: "ARTICLE", label: "مقالات" },
+  { value: "ARTICLE_AUTHOR", label: "نویسندگان" },
 ];
 
 const typeFilters = [

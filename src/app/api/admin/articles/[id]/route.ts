@@ -26,11 +26,18 @@ export async function PATCH(request: Request, context: Context) {
     if (input.categoryId && !(await db.articleCategory.findUnique({ where: { id: input.categoryId }, select: { id: true } }))) {
       return NextResponse.json({ message: "دستهٔ انتخاب‌شده پیدا نشد." }, { status: 422 });
     }
+    if (input.authorId && !(await db.author.findUnique({ where: { id: input.authorId }, select: { id: true } }))) {
+      return NextResponse.json({ message: "نویسندهٔ انتخاب‌شده پیدا نشد." }, { status: 422 });
+    }
+    if (input.relatedProductId && !(await db.product.findUnique({ where: { id: input.relatedProductId }, select: { id: true } }))) {
+      return NextResponse.json({ message: "محصول مرتبط انتخاب‌شده پیدا نشد." }, { status: 422 });
+    }
 
     const data: Record<string, unknown> = {};
-    for (const key of ["title", "slug", "excerpt", "authorName", "status", "categoryId", "metaTitle", "metaDescription", "noindex", "coverMediaId"] as const) {
-      if (input[key] !== undefined) data[key] = key === "categoryId" || key === "metaTitle" || key === "metaDescription" || key === "coverMediaId" ? input[key] ?? null : input[key];
+    for (const key of ["title", "slug", "excerpt", "authorId", "status", "categoryId", "metaTitle", "metaDescription", "noindex", "coverMediaId", "relatedProductId"] as const) {
+      if (input[key] !== undefined) data[key] = key === "categoryId" || key === "metaTitle" || key === "metaDescription" || key === "coverMediaId" || key === "relatedProductId" ? input[key] ?? null : input[key];
     }
+    if (input.tags !== undefined) data.tags = input.tags.length ? input.tags : null;
     if (input.content !== undefined) data.content = sanitizeProductDescription(input.content);
     // Stamp `publishedAt` the first time an article goes live; an explicit date always wins.
     const nextStatus = input.status ?? existing.status;
@@ -39,6 +46,12 @@ export async function PATCH(request: Request, context: Context) {
 
     const article = await db.$transaction(async (tx) => {
       const updated = await tx.article.update({ where: { id }, data });
+      // Simplest correct approach for a small, admin-authored repeatable list: replace in full
+      // on every save rather than diffing per-row ids.
+      if (input.faqs !== undefined) {
+        await tx.articleFaq.deleteMany({ where: { articleId: id } });
+        if (input.faqs.length) await tx.articleFaq.createMany({ data: input.faqs.map((faq, index) => ({ articleId: id, question: faq.question, answer: faq.answer, sortOrder: index })) });
+      }
       await tx.auditLog.create({ data: { actorId: actor.id, action: "ARTICLE_UPDATE", entityType: "Article", entityId: id, ...auditRequestContext(request, { changedFields: Object.keys(data) }) } });
       return updated;
     });

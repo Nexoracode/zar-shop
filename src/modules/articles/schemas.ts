@@ -7,11 +7,13 @@ export const articleFieldLimits = {
   slug: 200,
   excerpt: 300,
   content: 200_000,
-  authorName: 120,
   metaTitle: 120,
   metaDescription: 320,
   categoryName: 120,
   categorySlug: 120,
+  tag: 40,
+  faqQuestion: 300,
+  faqAnswer: 3000,
 } as const;
 
 export const articleStatuses = ["DRAFT", "PUBLISHED", "ARCHIVED"] as const;
@@ -23,13 +25,23 @@ const slug = (max: number) =>
 const optionalText = (max: number) =>
   z.union([z.null(), z.string().trim().max(max)]).transform((value) => value || null);
 
+export const articleFaqSchema = z.object({
+  id: z.string().cuid().optional(),
+  question: z.string().trim().min(3, "سؤال را وارد کنید.").max(articleFieldLimits.faqQuestion),
+  answer: z.string().trim().min(3, "پاسخ را وارد کنید.").max(articleFieldLimits.faqAnswer),
+  sortOrder: z.coerce.number().int().min(0).max(1000),
+});
+
 const articleFields = {
   title: z.string().trim().min(3, "عنوان مقاله را وارد کنید.").max(articleFieldLimits.title),
   slug: slug(articleFieldLimits.slug),
   excerpt: z.string().trim().min(10, "خلاصهٔ مقاله دست‌کم ۱۰ نویسه باشد.").max(articleFieldLimits.excerpt),
   content: z.string().min(1, "متن مقاله را وارد کنید.").max(articleFieldLimits.content),
   coverMediaId: z.string().cuid().nullable().optional(),
-  authorName: z.string().trim().min(2, "نام نویسنده را وارد کنید.").max(articleFieldLimits.authorName),
+  authorId: z.string().cuid("نویسنده را انتخاب کنید."),
+  tags: z.array(z.string().trim().min(1).max(articleFieldLimits.tag)).max(20).optional(),
+  relatedProductId: z.string().cuid().nullable().optional(),
+  faqs: z.array(articleFaqSchema).max(30).optional(),
   status: z.enum(articleStatuses),
   publishedAt: z.union([z.null(), z.string().datetime({ offset: true }), z.string().datetime()]).optional(),
   categoryId: z.string().cuid("دستهٔ انتخاب‌شده معتبر نیست.").nullable().optional(),

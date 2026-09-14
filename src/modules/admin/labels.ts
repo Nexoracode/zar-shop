@@ -1,4 +1,4 @@
-import type { ArticleStatus, OrderStatus, PaymentStatus, ProductReviewReportStatus, ProductReviewStatus, ProductStatus, ReturnStatus, TicketStatus, UserRole, UserStatus } from "@generated/prisma/enums";
+import type { ArticleCommentStatus, ArticleStatus, OrderStatus, PaymentStatus, ProductReviewReportStatus, ProductReviewStatus, ProductStatus, ReturnStatus, TicketStatus, UserRole, UserStatus } from "@generated/prisma/enums";
 
 export const productStatusLabels: Record<ProductStatus, string> = {
   DRAFT: "پیش‌نویس",
@@ -141,4 +141,16 @@ export const reviewReportStatusTones: Record<ProductReviewReportStatus, AdminTon
   PENDING: "warning",
   RESOLVED: "success",
   DISMISSED: "neutral",
+};
+
+export const articleCommentStatusLabels: Record<ArticleCommentStatus, string> = {
+  PENDING: "در انتظار بررسی",
+  APPROVED: "تأییدشده",
+  REJECTED: "ردشده",
+};
+
+export const articleCommentStatusTones: Record<ArticleCommentStatus, AdminTone> = {
+  PENDING: "warning",
+  APPROVED: "success",
+  REJECTED: "danger",
 };

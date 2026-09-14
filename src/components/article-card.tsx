@@ -39,7 +39,7 @@ export function ArticleCard({ article }: { article: ArticleListItem }) {
       <div className="px-1 pb-4 pt-2 text-right sm:pb-5">
         <h3 className="m-0 mb-1 line-clamp-2 h-10 overflow-hidden text-[0.76rem] font-medium leading-5 text-slate-800 sm:text-[0.82rem]">{article.title}</h3>
         <div className="flex items-center justify-between gap-2 text-[0.7rem] text-[var(--muted)]">
-          <span className="truncate">{article.authorName}</span>
+          <span className="truncate">{article.author.name}</span>
           {article.ratingCount > 0 && (
             <span className="flex shrink-0 items-center gap-1 text-slate-600">
               <Star size={12} className="fill-[var(--warning)] text-[var(--warning)]" />

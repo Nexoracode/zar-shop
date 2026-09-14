@@ -65,7 +65,7 @@ function FeaturedHeroCard({ article }: { article: FeaturedArticle }) {
         <h2 className="mb-2.5 text-[26px] font-bold leading-[1.4] text-white">{article.title}</h2>
         <p className="mb-3.5 line-clamp-2 max-w-[520px] text-[13.5px] text-white/[0.82]">{article.excerpt}</p>
         <div className="flex items-center gap-4 text-xs text-white/[0.82]">
-          <span className="flex items-center gap-1.5"><UserRound size={14} />{article.authorName}</span>
+          <span className="flex items-center gap-1.5"><UserRound size={14} />{article.author.name}</span>
           <span className="flex items-center gap-1.5"><Clock size={14} />{readTime}</span>
         </div>
       </div>

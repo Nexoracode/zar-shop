@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "@heroui/react";
-import { ArrowRight, ImageOff, Trash2, Upload } from "lucide-react";
+import { ArrowRight, ImageOff, Plus, Trash2, Upload } from "lucide-react";
 import { MediaPickerDialog } from "@/components/media-picker-dialog";
 import type { MediaChoice } from "@/components/media-library";
 import { RichTextEditor } from "@/components/rich-text-editor";
@@ -13,12 +13,23 @@ import { requestErrorMessage, requestJson } from "@/lib/api-request";
 import { useUnsavedChangesWarning } from "@/components/admin/use-unsaved-changes-warning";
 import { articleFieldLimits, articleSchema, articleStatuses } from "@/modules/articles/schemas";
 import { articleStatusLabels } from "@/modules/admin/labels";
-import { BpButton } from "./ui/button";
+import { BpAsyncMultiSelect, BpButton, BpTagInput } from "./ui";
 import { BpKicker } from "./ui/card";
 import { BpCheckbox } from "./ui/checkbox";
 import { BpDateTimeField } from "./ui/date-time-field";
 import { BpInput, BpTextarea } from "./ui/input";
 import { BpSelect } from "./ui/select";
+
+type ProductRef = { id: string; name: string; sku: string };
+
+async function searchProducts(query: string, signal: AbortSignal): Promise<ProductRef[]> {
+  const response = await fetch(`/api/admin/products/search?q=${encodeURIComponent(query)}`, { signal });
+  if (!response.ok) return [];
+  const data = await response.json().catch(() => null);
+  return Array.isArray(data) ? data : [];
+}
+
+type FaqDraft = { id?: string; question: string; answer: string };
 
 export type ArticleFormData = {
   id: string;
@@ -26,7 +37,10 @@ export type ArticleFormData = {
   slug: string;
   excerpt: string;
   content: string;
-  authorName: string;
+  authorId: string;
+  tags: string[];
+  relatedProduct: ProductRef | null;
+  faqs: FaqDraft[];
   status: (typeof articleStatuses)[number];
   publishedAt: string | null;
   categoryId: string | null;
@@ -39,18 +53,21 @@ export type ArticleFormData = {
 type Props = {
   article?: ArticleFormData;
   categories: Array<{ id: string; name: string }>;
-  defaultAuthorName: string;
+  authors: Array<{ id: string; name: string }>;
 };
 
 type FieldErrors = Partial<Record<string, string>>;
 
-export function BlueprintArticleForm({ article, categories, defaultAuthorName }: Props) {
+export function BlueprintArticleForm({ article, categories, authors }: Props) {
   const router = useRouter();
   const [title, setTitle] = useState(article?.title ?? "");
   const [slug, setSlug] = useState(article?.slug ?? "");
   const [excerpt, setExcerpt] = useState(article?.excerpt ?? "");
   const [content, setContent] = useState(article?.content ?? "");
-  const [authorName, setAuthorName] = useState(article?.authorName ?? defaultAuthorName);
+  const [authorId, setAuthorId] = useState(article?.authorId ?? authors[0]?.id ?? "");
+  const [tags, setTags] = useState<string[]>(article?.tags ?? []);
+  const [relatedProduct, setRelatedProduct] = useState<ProductRef | null>(article?.relatedProduct ?? null);
+  const [faqs, setFaqs] = useState<FaqDraft[]>(article?.faqs ?? []);
   const [status, setStatus] = useState<string>(article?.status ?? "DRAFT");
   const [publishedAt, setPublishedAt] = useState<string | null>(article?.publishedAt ?? null);
   const [categoryId, setCategoryId] = useState(article?.categoryId ?? "");
@@ -74,7 +91,10 @@ export function BlueprintArticleForm({ article, categories, defaultAuthorName }:
       excerpt: excerpt.trim(),
       content,
       coverMediaId: cover?.id ?? null,
-      authorName: authorName.trim(),
+      authorId,
+      tags,
+      relatedProductId: relatedProduct?.id ?? null,
+      faqs: faqs.map((faq, index) => ({ id: faq.id, question: faq.question.trim(), answer: faq.answer.trim(), sortOrder: index })),
       status,
       publishedAt: publishedAt ?? null,
       categoryId: categoryId || null,
@@ -121,6 +141,11 @@ export function BlueprintArticleForm({ article, categories, defaultAuthorName }:
     }
   }
 
+  function updateFaq(index: number, patch: Partial<FaqDraft>) {
+    setFaqs((current) => current.map((faq, faqIndex) => (faqIndex === index ? { ...faq, ...patch } : faq)));
+    touch();
+  }
+
   return (
     <div className="grid gap-2">
       <div className="flex items-center justify-between gap-3">
@@ -143,12 +168,13 @@ export function BlueprintArticleForm({ article, categories, defaultAuthorName }:
             <RichTextEditor value={content} onChange={(html) => { setContent(html); clearError("content"); touch(); }} />
             {errors.content && <p role="alert" className="m-0 mt-1 text-[12px] leading-6 text-[var(--bp-danger)]">{errors.content}</p>}
           </div>
+          <BpTagInput label="برچسب‌ها" hint="با Enter یا کاما ثبت می‌شود؛ در صفحهٔ مقاله به جست‌وجوی همان برچسب لینک می‌شود." tags={tags} onChange={(next) => { setTags(next); touch(); }} maxTagLength={articleFieldLimits.tag} />
         </div>
       </section>
 
       <div className="grid gap-2 lg:grid-cols-2">
         <section className="bp-frame relative p-[16px]">
-          <BpKicker>تصویر کاور و نویسنده</BpKicker>
+          <BpKicker>تصویر کاور، نویسنده و محصول مرتبط</BpKicker>
           <div className="mt-3 grid gap-3">
             <div className="flex flex-wrap items-center gap-2.5 border border-[var(--bp-divider)] bg-[var(--bp-bg)] p-2.5">
               <span className="relative grid size-12 shrink-0 place-items-center overflow-hidden rounded-md bg-[var(--bp-card)] text-[var(--bp-muted)]">
@@ -158,7 +184,26 @@ export function BlueprintArticleForm({ article, categories, defaultAuthorName }:
               <BpButton type="button" size="sm" className="gap-1.5" onClick={() => setPickerOpen(true)}><Upload size={13} />{cover ? "تغییر" : "انتخاب"}</BpButton>
               {cover && <BpButton type="button" isIconOnly size="sm" variant="ghost" className="bp-btn-danger-icon" aria-label="حذف کاور" onClick={() => { setCover(null); touch(); }}><Trash2 size={13} /></BpButton>}
             </div>
-            <BpInput label="نام نویسنده" required maxLength={articleFieldLimits.authorName} value={authorName} error={errors.authorName} onChange={(event) => { setAuthorName(event.target.value); clearError("authorName"); touch(); }} />
+            <BpSelect
+              label="نویسنده"
+              required
+              placeholder={authors.length ? "انتخاب نویسنده" : "ابتدا از بخش «نویسندگان» یک نویسنده ثبت کنید"}
+              value={authorId}
+              error={errors.authorId}
+              options={authors.map((author) => ({ value: author.id, label: author.name }))}
+              onChange={(event) => { setAuthorId(event.target.value); clearError("authorId"); touch(); }}
+            />
+            <BpAsyncMultiSelect<ProductRef>
+              label="محصول مرتبط"
+              hint="در نوار کناری صفحهٔ مقاله با تصویر، قیمت و لینک خرید نمایش داده می‌شود."
+              tokens={relatedProduct ? [{ value: relatedProduct.id, label: relatedProduct.name, hint: relatedProduct.sku }] : []}
+              onAdd={(hit) => { setRelatedProduct(hit); touch(); }}
+              onRemove={() => { setRelatedProduct(null); touch(); }}
+              search={searchProducts}
+              renderHit={(hit) => ({ label: hit.name, hint: hit.sku })}
+              searchPlaceholder="نام یا کد محصول"
+              placeholder="بدون محصول مرتبط"
+            />
           </div>
         </section>
 
@@ -171,6 +216,26 @@ export function BlueprintArticleForm({ article, categories, defaultAuthorName }:
           </div>
         </section>
       </div>
+
+      <section className="bp-frame relative p-[16px]">
+        <div className="flex items-center justify-between gap-3">
+          <BpKicker>سوالات متداول</BpKicker>
+          <BpButton type="button" size="sm" className="gap-1.5" onClick={() => { setFaqs((current) => [...current, { question: "", answer: "" }]); touch(); }}><Plus size={13} />افزودن سؤال</BpButton>
+        </div>
+        {faqs.length === 0 && <p className="bp-muted m-0 mt-2 text-[12px] leading-6">اگر سؤالی افزوده نشود، این بخش در صفحهٔ مقاله نمایش داده نمی‌شود.</p>}
+        <div className="mt-3 grid gap-3">
+          {faqs.map((faq, index) => (
+            <div key={faq.id ?? index} className="grid gap-2 border border-[var(--bp-divider)] p-3">
+              <div className="flex items-center justify-between gap-2">
+                <span className="bp-muted text-[11px] font-bold">سؤال {(index + 1).toLocaleString("fa-IR")}</span>
+                <BpButton type="button" isIconOnly size="sm" variant="ghost" className="bp-btn-danger-icon" aria-label="حذف سؤال" onClick={() => { setFaqs((current) => current.filter((_, faqIndex) => faqIndex !== index)); touch(); }}><Trash2 size={13} /></BpButton>
+              </div>
+              <BpInput label="سؤال" maxLength={articleFieldLimits.faqQuestion} value={faq.question} onChange={(event) => updateFaq(index, { question: event.target.value })} />
+              <BpTextarea label="پاسخ" rows={2} maxLength={articleFieldLimits.faqAnswer} value={faq.answer} onChange={(event) => updateFaq(index, { answer: event.target.value })} />
+            </div>
+          ))}
+        </div>
+      </section>
 
       <section className="bp-frame relative p-[16px]">
         <BpKicker>تنظیمات SEO</BpKicker>

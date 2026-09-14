@@ -55,7 +55,7 @@ export default async function ArticlePage({ params }: Context) {
     ...(article.coverMedia ? { image: [article.coverMedia.url] } : {}),
     datePublished: publishedAt,
     dateModified: article.updatedAt.toISOString(),
-    author: { "@type": "Person", name: article.authorName },
+    author: { "@type": "Person", name: article.author.name },
     publisher: { "@type": "Organization", name: settings.storeName },
     mainEntityOfPage: { "@type": "WebPage", "@id": articleUrl(article.slug) },
   };
@@ -87,7 +87,7 @@ export default async function ArticlePage({ params }: Context) {
 
         <h1 className="m-0 text-2xl font-bold leading-relaxed text-[var(--brand-primary)] sm:text-3xl">{article.title}</h1>
         <div className="mt-3 flex flex-wrap items-center gap-4 text-xs text-[var(--muted)]">
-          <span className="flex items-center gap-1.5"><UserRound size={14} />{article.authorName}</span>
+          <span className="flex items-center gap-1.5"><UserRound size={14} />{article.author.name}</span>
           <span className="flex items-center gap-1.5"><CalendarDays size={14} />{formatDate(publishedAt)}</span>
         </div>
 

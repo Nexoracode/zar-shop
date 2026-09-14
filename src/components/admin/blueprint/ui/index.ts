@@ -22,4 +22,5 @@ export { BpSwitch } from "./switch";
 export { BpTable, BpTd, BpTh } from "./table";
 export { BpTabs } from "./tabs";
 export { BpTag, type BpTagTone } from "./tag";
+export { BpTagInput } from "./tag-input";
 export { useDebounced } from "./use-debounced";
