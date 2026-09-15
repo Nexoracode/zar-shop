@@ -30,3 +30,12 @@ export async function getPublicSmsProviderConfigs(): Promise<PublicSmsProviderCo
 }
 
 export const activeProviderInputSchema = z.object({ provider: smsProviderSchema });
+
+// Patterns, balance and other Faraz SMS API calls all need the same active-provider API key —
+// centralized here so callers don't duplicate the lookup + decrypt + credential-shape check.
+export async function getActiveFarazProvider() {
+  const provider = await db.smsProviderConfig.findFirst({ where: { isActive: true, provider: "FARAZ_SMS" } });
+  if (!provider) return null;
+  const credentials = z.object({ apiKey: z.string().min(1) }).parse(decryptSmsCredentials(provider.credentialsEncrypted));
+  return { id: provider.id, apiKey: credentials.apiKey, senderNumber: provider.senderNumber };
+}

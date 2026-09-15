@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "@heroui/react";
 import { AlertTriangle, ExternalLink, MessageSquareText, Power, ShieldCheck, Trash2 } from "lucide-react";
@@ -8,8 +8,9 @@ import { AdminBulkCheckbox, AdminBulkEditor } from "@/components/admin-bulk-edit
 import { AdminEmptyState, AdminPanel } from "@/components/admin-ui";
 import { smsProviders, type SmsProviderId } from "@/modules/communications/sms-providers";
 import type { PublicSmsProviderConfig } from "@/modules/communications/sms-config";
+import type { SmsPattern } from "@/modules/communications/sms-patterns";
 import { smsProviderFieldLimits } from "@/modules/communications/limits";
-import { BpButton, BpInput, BpKicker, BpTable, BpTag, BpTd, BpTh } from "./ui";
+import { BpButton, BpInput, BpKicker, BpSelect, BpTable, BpTag, BpTd, BpTh } from "./ui";
 
 function statusTone(item: PublicSmsProviderConfig) {
   return item.isActive ? "success" : item.sendSupported ? "neutral" : "warning";
@@ -28,7 +29,18 @@ export function BlueprintSmsProviderManager({ mode, initialConfigs, onSaved }: {
   const [senderNumber, setSenderNumber] = useState("");
   const [otpPatternCode, setOtpPatternCode] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
+  const [existingPatterns, setExistingPatterns] = useState<SmsPattern[]>([]);
   const selected = useMemo(() => smsProviders.find((item) => item.id === selectedId)!, [selectedId]);
+  const hasSavedFarazKey = initialConfigs.some((config) => config.provider === "FARAZ_SMS");
+
+  // Once an API key is already saved, offer a shortcut to pick a pattern already created (via
+  // the patterns page) instead of copy-pasting its code by hand.
+  useEffect(() => {
+    if (mode !== "form" || selectedId !== "FARAZ_SMS" || !hasSavedFarazKey) return;
+    let cancelled = false;
+    fetch("/api/admin/sms/patterns").then((response) => response.ok ? response.json() : []).then((result) => { if (!cancelled) setExistingPatterns(Array.isArray(result) ? result : []); }).catch(() => {});
+    return () => { cancelled = true; };
+  }, [mode, selectedId, hasSavedFarazKey]);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -188,7 +200,17 @@ export function BlueprintSmsProviderManager({ mode, initialConfigs, onSaved }: {
             {selectedId === "FARAZ_SMS" ? (
               <>
                 <BpInput label="API Key" secret required maxLength={smsProviderFieldLimits.apiKey} value={apiKey} onChange={(event) => setApiKey(event.target.value)} dir="ltr" />
-                <BpInput label="کد پترن کد تأیید (OTP)" hint="پترنی با متغیرهای name و otp در پنل فراز اس‌ام‌اس بسازید و کد آن را اینجا وارد کنید" required dir="ltr" maxLength={smsProviderFieldLimits.otpPatternCode} value={otpPatternCode} onChange={(event) => setOtpPatternCode(event.target.value)} placeholder="SJ3FgPrE0C" />
+                {existingPatterns.length > 0 && (
+                  <BpSelect
+                    label="انتخاب سریع از پترن‌های ثبت‌شده"
+                    hint="با انتخاب یکی از پترن‌های زیر، کد آن در فیلد پایین پر می‌شود"
+                    placeholder="انتخاب پترن…"
+                    value=""
+                    onChange={(event) => setOtpPatternCode(event.target.value)}
+                    options={existingPatterns.map((pattern) => ({ value: pattern.code, label: `${pattern.text.slice(0, 40)} (${pattern.code})` }))}
+                  />
+                )}
+                <BpInput label="کد پترن کد تأیید (OTP)" hint="پترنی با متغیرهای name و otp در پنل فراز اس‌ام‌اس بسازید و کد آن را اینجا وارد کنید یا از پترن‌های پیامک بسازید" required dir="ltr" maxLength={smsProviderFieldLimits.otpPatternCode} value={otpPatternCode} onChange={(event) => setOtpPatternCode(event.target.value)} placeholder="SJ3FgPrE0C" />
               </>
             ) : (
               <>

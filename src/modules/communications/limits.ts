@@ -10,3 +10,5 @@ export const communicationFieldLimits = { adminPhone: 20, template: 500 } as con
 export const smsFieldLimits = { message: 500, phone: 11 } as const;
 
 export const smsProviderFieldLimits = { apiKey: 500, username: 191, password: 500, senderNumber: 20, otpPatternCode: 100 } as const;
+
+export const smsPatternFieldLimits = { text: 500, description: 300, website: 200, variableName: 40, variableCount: 10 } as const;
