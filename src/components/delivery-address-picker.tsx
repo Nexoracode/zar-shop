@@ -36,11 +36,8 @@ export function DeliveryAddressPicker({ initialAddresses, user, authenticated = 
   }, []);
 
   function replace(address: StorefrontAddress) {
-    setAddresses((current) => {
-      const next = current.some((item) => item.id === address.id) ? current.map((item) => item.id === address.id ? address : address.isDefault ? { ...item, isDefault: false } : item) : [address, ...current.map((item) => address.isDefault ? { ...item, isDefault: false } : item)];
-      window.dispatchEvent(new CustomEvent(ADDRESS_UPDATED_EVENT, { detail: { address } }));
-      return next;
-    });
+    setAddresses((current) => current.some((item) => item.id === address.id) ? current.map((item) => item.id === address.id ? address : address.isDefault ? { ...item, isDefault: false } : item) : [address, ...current.map((item) => address.isDefault ? { ...item, isDefault: false } : item)]);
+    window.dispatchEvent(new CustomEvent(ADDRESS_UPDATED_EVENT, { detail: { address } }));
     setEditing(null);
     if (mode === "create") setOpen(false);
   }
