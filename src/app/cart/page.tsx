@@ -49,7 +49,7 @@ export default async function CartPage() {
   const remainingForFreeShipping = merchandiseTotal !== null && commerceSettings.freeShippingThreshold !== null ? Math.max(0, commerceSettings.freeShippingThreshold - merchandiseTotal) : null;
 
   return (
-    <main className="bg-[var(--background)] px-4 py-8 sm:px-6 sm:py-12">
+    <main className="min-h-dvh bg-[var(--background)] px-4 pb-[calc(66px+env(safe-area-inset-bottom)+16px)] pt-8 sm:px-6 sm:pt-12 lg:pb-12">
       <div className="mx-auto w-full max-w-[1280px]">
         <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
           <div>
