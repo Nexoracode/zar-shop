@@ -25,7 +25,7 @@ export async function startWalletTopup(input: { userId: string; amount: number; 
   if (!methods.some((method) => method.id === input.paymentProvider)) throw new WalletTopupError("روش پرداخت انتخاب‌شده در دسترس نیست.", 422);
   const provider = await getStorefrontPaymentProvider(input.paymentProvider);
 
-  const topup = await db.walletTopup.create({ data: { userId: input.userId, amount: input.amount, provider: input.paymentProvider, status: "INITIATED" } });
+  const topup = await db.walletTopup.create({ data: { userId: input.userId, amount: input.amount, provider: input.paymentProvider, status: "INITIATED", returnOrigin: input.origin } });
   try {
     const request = await provider.request({
       amount: input.amount,

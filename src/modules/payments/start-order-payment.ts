@@ -37,7 +37,7 @@ export async function startPendingOrderPayment(input: { orderId: string; userId:
 
   // Whatever the wallet captured at checkout is already paid; the gateway only owes the rest.
   const gatewayDue = order.total.minus(order.walletAmount);
-  const payment = await db.payment.create({ data: { orderId: order.id, provider: input.paymentProvider, amount: gatewayDue, status: "INITIATED" } });
+  const payment = await db.payment.create({ data: { orderId: order.id, provider: input.paymentProvider, amount: gatewayDue, status: "INITIATED", returnOrigin: input.origin } });
   try {
     const address = order.shippingAddress as { phone?: string } | null;
     const request = await provider.request({

@@ -6,7 +6,11 @@ import { PaymentProviderError } from "@/modules/payments/payment-provider";
 import { finalizeVerifiedTopup } from "@/modules/wallet/topup";
 
 export async function GET(request: Request) {
-  const walletUrl = (params: string) => `${getRequestOrigin(request)}/account/wallet${params}`;
+  // Only a fallback — see the equivalent comment in the order-payment callback. The top-up
+  // row's own `returnOrigin`, set from the (Origin-aware) request that started it, is what
+  // actually gets this right once the row is found.
+  let origin = getRequestOrigin(request);
+  const walletUrl = (params: string) => `${origin}/account/wallet${params}`;
   const url = new URL(request.url);
   const authority = url.searchParams.get("Authority") ?? url.searchParams.get("authority");
   const status = url.searchParams.get("Status") ?? url.searchParams.get("status");
@@ -14,6 +18,7 @@ export async function GET(request: Request) {
 
   const topup = await db.walletTopup.findUnique({ where: { authority } });
   if (!topup) return NextResponse.redirect(walletUrl("?topup=missing"));
+  origin = topup.returnOrigin ?? origin;
   if (topup.status === "SUCCESS") return NextResponse.redirect(walletUrl("?topup=success"));
 
   // As in the order-payment callback, the gateway's own verify() is the only financial source of

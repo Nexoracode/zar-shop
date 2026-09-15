@@ -16,14 +16,20 @@ const orderResult = (origin: string, orderId: string, outcome: "success" | "fail
   `${origin}/account/orders/${orderId}?payment=${outcome}`;
 
 export async function GET(request: Request) {
-  const origin = getRequestOrigin(request);
+  // Only a fallback: this GET is the gateway's own browser redirect, which — unlike the fetch()
+  // that started the payment — carries no Origin header, and some tunnels/proxies used while
+  // testing locally rewrite Host without adding X-Forwarded-Host either. The payment row's own
+  // `returnOrigin`, captured from the (Origin-aware) request that started it, is what actually
+  // gets this right; header sniffing here is a last resort for the "no such payment" cases below.
+  const fallbackOrigin = getRequestOrigin(request);
   const url = new URL(request.url);
   const authority = url.searchParams.get("Authority") ?? url.searchParams.get("authority");
   const status = url.searchParams.get("Status") ?? url.searchParams.get("status");
-  if (!authority) return NextResponse.redirect(`${origin}/account?payment=cancelled`);
+  if (!authority) return NextResponse.redirect(`${fallbackOrigin}/account?payment=cancelled`);
 
   const payment = await db.payment.findUnique({ where: { authority }, include: { order: true } });
-  if (!payment) return NextResponse.redirect(`${origin}/account?payment=missing`);
+  if (!payment) return NextResponse.redirect(`${fallbackOrigin}/account?payment=missing`);
+  const origin = payment.returnOrigin ?? fallbackOrigin;
   if (payment.status === "SUCCESS") return NextResponse.redirect(orderResult(origin, payment.orderId, "success"));
   // The gateway payment only covers the order total minus whatever the wallet already captured.
   if (!payment.amount.equals(payment.order.total.minus(payment.order.walletAmount))) {

@@ -248,11 +248,12 @@ export async function POST(request: Request) {
 
     const order = result.order;
     try {
-      const payment = await db.payment.create({ data: { orderId: order.id, provider: paymentProvider, amount: result.gatewayDue, status: "INITIATED" } });
+      const origin = getRequestOrigin(request);
+      const payment = await db.payment.create({ data: { orderId: order.id, provider: paymentProvider, amount: result.gatewayDue, status: "INITIATED", returnOrigin: origin } });
       const paymentRequest = await selectedPaymentProvider.request({
         amount: result.gatewayDue,
         orderId: order.id,
-        callbackUrl: `${getRequestOrigin(request)}/api/payment/callback`,
+        callbackUrl: `${origin}/api/payment/callback`,
         description: `پرداخت سفارش ${order.orderNumber}`,
         mobile: user.phone ?? address.phone,
         email: user.isGuest ? undefined : (user.email ?? undefined),
