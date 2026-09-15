@@ -8,7 +8,7 @@ import { AdminBulkCheckbox, AdminBulkEditor } from "@/components/admin-bulk-edit
 import { AdminEmptyState, AdminPanel } from "@/components/admin-ui";
 import { smsProviders, type SmsProviderId } from "@/modules/communications/sms-providers";
 import type { PublicSmsProviderConfig } from "@/modules/communications/sms-config";
-import type { SmsPattern } from "@/modules/communications/sms-patterns";
+import type { SmsPattern } from "@/modules/communications/sms-pattern-schemas";
 import { smsProviderFieldLimits } from "@/modules/communications/limits";
 import { BpButton, BpInput, BpKicker, BpSelect, BpTable, BpTag, BpTd, BpTh } from "./ui";
 

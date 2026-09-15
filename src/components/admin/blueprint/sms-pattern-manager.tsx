@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "@heroui/react";
 import { FileText, Pencil, Plus, RefreshCw, Trash2, X } from "lucide-react";
 import { AdminEmptyState, AdminPanel } from "@/components/admin-ui";
-import { smsPatternCategories, type SmsPattern } from "@/modules/communications/sms-patterns";
+import { smsPatternCategories, type SmsPattern } from "@/modules/communications/sms-pattern-schemas";
 import { smsPatternFieldLimits } from "@/modules/communications/limits";
 import { BpButton, BpInput, BpKicker, BpSelect, BpSwitch, BpTable, BpTag, BpTd, BpTextarea, BpTh } from "./ui";
 
