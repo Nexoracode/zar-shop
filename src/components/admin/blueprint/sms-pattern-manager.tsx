@@ -3,7 +3,7 @@
 import { useEffect, useId, useRef, useState, type ClipboardEvent, type FormEvent, type KeyboardEvent, type MouseEvent } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "@heroui/react";
-import { FileText, Pencil, Plus, RefreshCw, Trash2, X } from "lucide-react";
+import { FileText, Pencil, RefreshCw, Trash2 } from "lucide-react";
 import { AdminEmptyState, AdminPanel } from "@/components/admin-ui";
 import { smsPatternCategories, type SmsPattern } from "@/modules/communications/sms-pattern-schemas";
 import { smsPatternFieldLimits } from "@/modules/communications/limits";
@@ -48,10 +48,10 @@ function serializeEditor(root: HTMLElement): string {
 
 /** Splits one text node into [text?, chip, text?, chip, ..., trailing text] wherever a complete
  * `%var%` token appears, and returns the trailing text node so the caret can be restored there. */
-function convertTextNode(textNode: Text, onNewVariable: (name: string) => void): Text | null {
-  // A chip's own label renders literal "%name%" text (e.g. inside its <bdi>) — without this
-  // guard, re-scanning the whole editor on blur/paste/mount would match that label text too and
-  // nest a brand-new chip inside the existing one, one layer deeper on every pass.
+function convertTextNode(textNode: Text): Text | null {
+  // A chip's own label renders literal "name" text (e.g. inside its <bdi>) — without this guard,
+  // re-scanning the whole editor on blur/paste/mount would match that label text too and nest a
+  // brand-new chip inside the existing one, one layer deeper on every pass.
   if (textNode.parentElement?.closest("[data-var-chip]")) return null;
   const text = textNode.textContent ?? "";
   const pattern = new RegExp(VARIABLE_TOKEN_SOURCE, "g");
@@ -65,7 +65,6 @@ function convertTextNode(textNode: Text, onNewVariable: (name: string) => void):
   while ((match = pattern.exec(text))) {
     if (match.index > lastIndex) fragment.appendChild(document.createTextNode(text.slice(lastIndex, match.index)));
     fragment.appendChild(buildChipNode(match[1]));
-    onNewVariable(match[1]);
     lastIndex = match.index + match[0].length;
   }
   const trailing = document.createTextNode(text.slice(lastIndex));
@@ -74,12 +73,20 @@ function convertTextNode(textNode: Text, onNewVariable: (name: string) => void):
   return trailing;
 }
 
-function convertAllTextNodes(root: HTMLElement, onNewVariable: (name: string) => void) {
+function convertAllTextNodes(root: HTMLElement) {
   const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
   const nodes: Text[] = [];
   let current = walker.nextNode();
   while (current) { nodes.push(current as Text); current = walker.nextNode(); }
-  for (const node of nodes) convertTextNode(node, onNewVariable);
+  for (const node of nodes) convertTextNode(node);
+}
+
+/** The variable names currently present as chips, in reading order — the single source of truth
+ * the variables table below is derived from, so adding/removing a chip adds/removes its row. */
+function collectVariableNames(root: HTMLElement): string[] {
+  const seen = new Set<string>();
+  root.querySelectorAll<HTMLElement>("[data-var-chip]").forEach((chip) => { if (chip.dataset.varChip) seen.add(chip.dataset.varChip); });
+  return [...seen];
 }
 
 function placeCaretAtEnd(node: Node) {
@@ -114,32 +121,33 @@ function insertPlainText(root: HTMLElement, text: string) {
  * Deliberately not a shared `blueprint/ui` control — the `%var%` chip convention only exists for
  * this one field, unlike the generic text/select/switch controls that rule requires everywhere.
  */
-function PatternTextEditor({ initialValue, maxLength, onChange, onVariableDetected }: {
+function PatternTextEditor({ initialValue, maxLength, onChange, onVariablesChanged }: {
   initialValue: string;
   maxLength: number;
   onChange: (value: string) => void;
-  onVariableDetected: (name: string) => void;
+  onVariablesChanged: (names: string[]) => void;
 }) {
   const fieldId = useId();
   const rootRef = useRef<HTMLDivElement>(null);
   const onChangeRef = useRef(onChange);
-  const onVariableDetectedRef = useRef(onVariableDetected);
+  const onVariablesChangedRef = useRef(onVariablesChanged);
   const [length, setLength] = useState(initialValue.length);
 
   // Keeps the refs current after every render (never during it, which the lint rules below
   // disallow) so the DOM event handlers below always call the latest callback without needing
-  // `onChange`/`onVariableDetected` in their own dependency arrays.
+  // `onChange`/`onVariablesChanged` in their own dependency arrays.
   useEffect(() => {
     onChangeRef.current = onChange;
-    onVariableDetectedRef.current = onVariableDetected;
+    onVariablesChangedRef.current = onVariablesChanged;
   });
 
   useEffect(() => {
     const root = rootRef.current;
     if (!root) return;
     root.textContent = initialValue;
-    convertAllTextNodes(root, (name) => onVariableDetectedRef.current(name));
+    convertAllTextNodes(root);
     setLength(serializeEditor(root).length);
+    onVariablesChangedRef.current(collectVariableNames(root));
     // Runs once to seed the editor from the initial pattern text; the DOM is the source of
     // truth afterward, so this must not re-run when `initialValue` changes by reference.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -151,6 +159,7 @@ function PatternTextEditor({ initialValue, maxLength, onChange, onVariableDetect
     const value = serializeEditor(root);
     setLength(value.length);
     onChangeRef.current(value);
+    onVariablesChangedRef.current(collectVariableNames(root));
   }
 
   function handleInput(event: FormEvent<HTMLDivElement>) {
@@ -159,7 +168,7 @@ function PatternTextEditor({ initialValue, maxLength, onChange, onVariableDetect
     if (root && native.data === " ") {
       const anchor = window.getSelection()?.anchorNode;
       if (anchor && anchor.nodeType === Node.TEXT_NODE && root.contains(anchor)) {
-        const trailing = convertTextNode(anchor as Text, (name) => onVariableDetectedRef.current(name));
+        const trailing = convertTextNode(anchor as Text);
         if (trailing) placeCaretAtEnd(trailing);
       }
     }
@@ -182,7 +191,7 @@ function PatternTextEditor({ initialValue, maxLength, onChange, onVariableDetect
     const remaining = maxLength - serializeEditor(root).length;
     if (remaining <= 0) return;
     insertPlainText(root, event.clipboardData.getData("text/plain").slice(0, remaining));
-    convertAllTextNodes(root, (name) => onVariableDetectedRef.current(name));
+    convertAllTextNodes(root);
     emitChange();
   }
 
@@ -206,7 +215,7 @@ function PatternTextEditor({ initialValue, maxLength, onChange, onVariableDetect
   function handleBlur() {
     const root = rootRef.current;
     if (!root) return;
-    convertAllTextNodes(root, (name) => onVariableDetectedRef.current(name));
+    convertAllTextNodes(root);
     emitChange();
   }
 
@@ -365,7 +374,10 @@ export function BlueprintSmsPatternList({ initialPatterns }: { initialPatterns: 
 }
 
 type PatternVariable = { var: string; length: string; type: "string" | "int" };
-function emptyVariable(): PatternVariable { return { var: "", length: "20", type: "string" }; }
+
+// A pattern created here only ever serves this store's OTP flow, so the category Faraz's create
+// API requires is fixed rather than asked of the admin.
+const OTP_PATTERN_CATEGORY = 1;
 
 export function BlueprintSmsPatternForm({ pattern }: { pattern?: SmsPattern }) {
   const router = useRouter();
@@ -374,21 +386,20 @@ export function BlueprintSmsPatternForm({ pattern }: { pattern?: SmsPattern }) {
   const [description, setDescription] = useState(pattern?.description ?? "");
   const [website, setWebsite] = useState(pattern?.website ?? "");
   const [shared, setShared] = useState(pattern?.shared ?? false);
-  const [category, setCategory] = useState(String(pattern?.category ?? smsPatternCategories[0].value));
-  const [vars, setVars] = useState<PatternVariable[]>(pattern?.vars.length ? pattern.vars.map((item) => ({ var: item.var, length: String(item.length || 20), type: item.type === "int" ? "int" : "string" })) : [emptyVariable()]);
+  const [vars, setVars] = useState<PatternVariable[]>(pattern?.vars.map((item) => ({ var: item.var, length: String(item.length || 20), type: item.type === "int" ? "int" : "string" })) ?? []);
   const [busy, setBusy] = useState(false);
 
-  function updateVariable(index: number, patch: Partial<PatternVariable>) {
-    setVars((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, ...patch } : item));
+  function updateVariable(name: string, patch: Partial<Pick<PatternVariable, "length" | "type">>) {
+    setVars((current) => current.map((item) => item.var === name ? { ...item, ...patch } : item));
   }
 
-  // Fills the still-blank first row for the pattern's first chip, then appends a row per
-  // additional chip — so typing `%otp% ` in the text above populates the table below on its own.
-  function handleVariableDetected(name: string) {
+  // The table is a pure reflection of the chips typed into the text above: a variable that
+  // appears there gets a row (keeping its length/type if it already had one), and a variable
+  // that's no longer there loses its row — no manual add/remove for this table itself.
+  function handleVariablesChanged(names: string[]) {
     setVars((current) => {
-      if (current.some((item) => item.var === name)) return current;
-      if (current.length === 1 && !current[0].var.trim()) return [{ ...current[0], var: name }];
-      return [...current, { var: name, length: "20", type: "string" }];
+      const byName = new Map(current.map((item) => [item.var, item]));
+      return names.map((name) => byName.get(name) ?? { var: name, length: "20", type: "string" });
     });
   }
 
@@ -396,7 +407,7 @@ export function BlueprintSmsPatternForm({ pattern }: { pattern?: SmsPattern }) {
     event.preventDefault();
     setBusy(true);
     try {
-      const body = { text, description: description || undefined, shared, website, category: Number(category), vars: vars.filter((item) => item.var.trim()).map((item) => ({ var: item.var.trim(), length: Number(item.length) || 20, type: item.type })) };
+      const body = { text, description: description || undefined, shared, website, category: OTP_PATTERN_CATEGORY, vars: vars.map((item) => ({ var: item.var, length: Number(item.length) || 20, type: item.type })) };
       const response = await fetch(isEdit ? `/api/admin/sms/patterns/${encodeURIComponent(pattern!.code)}` : "/api/admin/sms/patterns", { method: isEdit ? "PUT" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
       const result = await response.json().catch(() => null);
       if (!response.ok) throw new Error(result?.message ?? "ذخیره پترن انجام نشد.");
@@ -413,34 +424,26 @@ export function BlueprintSmsPatternForm({ pattern }: { pattern?: SmsPattern }) {
       <section className="bp-frame relative p-[16px]">
         <BpKicker>محتوای پترن</BpKicker>
         <div className="mt-3 grid gap-3">
-          <PatternTextEditor initialValue={pattern?.text ?? ""} maxLength={smsPatternFieldLimits.text} onChange={setText} onVariableDetected={handleVariableDetected} />
-          <BpTextarea label="توضیحات" hint="فقط برای شناسایی این پترن در پنل شماست و برای گیرنده ارسال نمی‌شود" rows={2} maxLength={smsPatternFieldLimits.description} value={description} onChange={(event) => setDescription(event.target.value)} />
-          <div className="grid gap-3 sm:grid-cols-2">
-            <BpInput label="دامنه وب‌سایت" hint="دامنه فروشگاه، بدون https و www" required dir="ltr" maxLength={smsPatternFieldLimits.website} value={website} onChange={(event) => setWebsite(event.target.value)} placeholder="example.com" />
-            {!isEdit && (
-              <BpSelect label="دسته پترن" required value={category} onChange={(event) => setCategory(event.target.value)} options={smsPatternCategories.map((item) => ({ value: String(item.value), label: item.label }))} />
-            )}
-          </div>
+          <PatternTextEditor initialValue={pattern?.text ?? ""} maxLength={smsPatternFieldLimits.text} onChange={setText} onVariablesChanged={handleVariablesChanged} />
+          <BpTextarea label="توضیحات" rows={2} maxLength={smsPatternFieldLimits.description} value={description} onChange={(event) => setDescription(event.target.value)} />
+          <BpInput label="دامنه وب‌سایت" hint="دامنه فروشگاه، بدون https و www" required dir="ltr" maxLength={smsPatternFieldLimits.website} value={website} onChange={(event) => setWebsite(event.target.value)} placeholder="example.com" />
           <BpSwitch isSelected={shared} onChange={setShared}>اشتراک‌گذاری پترن با سایر کاربران فراز اس‌ام‌اس</BpSwitch>
         </div>
       </section>
 
       <section className="bp-frame relative p-[16px]">
-        <div className="flex items-center justify-between gap-3">
-          <BpKicker>متغیرها</BpKicker>
-          <BpButton type="button" variant="secondary" size="sm" onClick={() => setVars((current) => [...current, emptyVariable()])} className="gap-2"><Plus size={14} />افزودن متغیر</BpButton>
-        </div>
-        <p className="bp-muted m-0 mt-1 text-[12px] leading-6">برای استفاده به‌عنوان پترن کد تأیید (OTP) این فروشگاه، دقیقاً دو متغیر با نام‌های <bdi dir="ltr" className="font-mono">name</bdi> و <bdi dir="ltr" className="font-mono">otp</bdi> بسازید.</p>
-        <div className="mt-3 grid gap-2">
-          {vars.map((variable, index) => (
-            <div key={index} className="grid grid-cols-2 items-end gap-2 border border-[var(--bp-divider)] bg-[var(--bp-bg)] p-2.5 sm:grid-cols-[1fr_100px_120px_auto]">
-              <BpInput label={index === 0 ? "نام متغیر" : undefined} required dir="ltr" maxLength={smsPatternFieldLimits.variableName} value={variable.var} onChange={(event) => updateVariable(index, { var: event.target.value })} placeholder="otp" reserveMessage={false} />
-              <BpInput label={index === 0 ? "حداکثر طول" : undefined} required type="number" min={1} max={500} dir="ltr" value={variable.length} onChange={(event) => updateVariable(index, { length: event.target.value })} reserveMessage={false} />
-              <BpSelect label={index === 0 ? "نوع" : undefined} value={variable.type} onChange={(event) => updateVariable(index, { type: event.target.value as "string" | "int" })} options={[{ value: "string", label: "متن" }, { value: "int", label: "عدد" }]} reserveMessage={false} />
-              <BpButton type="button" variant="ghost" isIconOnly size="sm" aria-label="حذف این متغیر" disabled={vars.length === 1} onClick={() => setVars((current) => current.filter((_, itemIndex) => itemIndex !== index))}><X size={15} /></BpButton>
-            </div>
-          ))}
-        </div>
+        <BpKicker>متغیرها</BpKicker>
+        {vars.length ? (
+          <div className="mt-3 grid gap-2">
+            {vars.map((variable) => (
+              <div key={variable.var} className="grid grid-cols-2 items-center gap-2 border border-[var(--bp-divider)] bg-[var(--bp-bg)] p-2.5 sm:grid-cols-[auto_100px_120px]">
+                <BpTag tone="accent"><bdi dir="ltr" className="font-mono">{variable.var}</bdi></BpTag>
+                <BpInput aria-label={`حداکثر طول متغیر ${variable.var}`} required type="number" min={1} max={500} dir="ltr" value={variable.length} onChange={(event) => updateVariable(variable.var, { length: event.target.value })} reserveMessage={false} />
+                <BpSelect aria-label={`نوع متغیر ${variable.var}`} value={variable.type} onChange={(event) => updateVariable(variable.var, { type: event.target.value as "string" | "int" })} options={[{ value: "string", label: "متن" }, { value: "int", label: "عدد" }]} reserveMessage={false} />
+              </div>
+            ))}
+          </div>
+        ) : <p className="bp-muted m-0 mt-2 text-[12px] leading-6">با نوشتن %نام% در متن پترن بالا، متغیر اینجا اضافه می‌شود. برای کد تأیید (OTP)، دقیقاً دو متغیر با نام‌های <bdi dir="ltr" className="font-mono">name</bdi> و <bdi dir="ltr" className="font-mono">otp</bdi> لازم است.</p>}
       </section>
 
       <div className="flex items-center gap-2">
