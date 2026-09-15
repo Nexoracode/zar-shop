@@ -49,6 +49,10 @@ function serializeEditor(root: HTMLElement): string {
 /** Splits one text node into [text?, chip, text?, chip, ..., trailing text] wherever a complete
  * `%var%` token appears, and returns the trailing text node so the caret can be restored there. */
 function convertTextNode(textNode: Text, onNewVariable: (name: string) => void): Text | null {
+  // A chip's own label renders literal "%name%" text (e.g. inside its <bdi>) — without this
+  // guard, re-scanning the whole editor on blur/paste/mount would match that label text too and
+  // nest a brand-new chip inside the existing one, one layer deeper on every pass.
+  if (textNode.parentElement?.closest("[data-var-chip]")) return null;
   const text = textNode.textContent ?? "";
   const pattern = new RegExp(VARIABLE_TOKEN_SOURCE, "g");
   if (!pattern.test(text)) return null;
@@ -73,9 +77,8 @@ function convertTextNode(textNode: Text, onNewVariable: (name: string) => void):
 function convertAllTextNodes(root: HTMLElement, onNewVariable: (name: string) => void) {
   const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
   const nodes: Text[] = [];
-  let current: Node | null;
-  // eslint-disable-next-line no-cond-assign
-  while ((current = walker.nextNode())) nodes.push(current as Text);
+  let current = walker.nextNode();
+  while (current) { nodes.push(current as Text); current = walker.nextNode(); }
   for (const node of nodes) convertTextNode(node, onNewVariable);
 }
 
@@ -121,9 +124,15 @@ function PatternTextEditor({ initialValue, maxLength, onChange, onVariableDetect
   const rootRef = useRef<HTMLDivElement>(null);
   const onChangeRef = useRef(onChange);
   const onVariableDetectedRef = useRef(onVariableDetected);
-  onChangeRef.current = onChange;
-  onVariableDetectedRef.current = onVariableDetected;
   const [length, setLength] = useState(initialValue.length);
+
+  // Keeps the refs current after every render (never during it, which the lint rules below
+  // disallow) so the DOM event handlers below always call the latest callback without needing
+  // `onChange`/`onVariableDetected` in their own dependency arrays.
+  useEffect(() => {
+    onChangeRef.current = onChange;
+    onVariableDetectedRef.current = onVariableDetected;
+  });
 
   useEffect(() => {
     const root = rootRef.current;
