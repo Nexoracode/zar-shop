@@ -15,7 +15,7 @@ export async function POST(request: Request) {
   try {
     const actor = await getPermittedActor("settings:manage"); if (!actor) return NextResponse.json({ message: "دسترسی غیرمجاز است." }, { status: 403 });
     const input = smsProviderInputSchema.parse(await request.json()); const info = smsProviderInfo(input.provider);
-    const credentials = input.provider === "FARAZ_SMS" ? { apiKey: input.apiKey } : { username: input.username, password: input.password };
+    const credentials = input.provider === "FARAZ_SMS" ? { apiKey: input.apiKey, otpPatternCode: input.otpPatternCode } : { username: input.username, password: input.password };
     const maskSource = input.provider === "FARAZ_SMS" ? input.apiKey : input.username;
     await db.$transaction(async (tx) => {
       const item = await tx.smsProviderConfig.upsert({ where: { provider: input.provider }, create: { provider: input.provider, displayName: info.name, credentialsEncrypted: encryptSmsCredentials(credentials), credentialMasked: maskSmsCredential(maskSource), senderNumber: input.senderNumber }, update: { displayName: info.name, credentialsEncrypted: encryptSmsCredentials(credentials), credentialMasked: maskSmsCredential(maskSource), senderNumber: input.senderNumber } });

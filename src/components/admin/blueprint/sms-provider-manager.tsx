@@ -26,6 +26,7 @@ export function BlueprintSmsProviderManager({ mode, initialConfigs, onSaved }: {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [senderNumber, setSenderNumber] = useState("");
+  const [otpPatternCode, setOtpPatternCode] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
   const selected = useMemo(() => smsProviders.find((item) => item.id === selectedId)!, [selectedId]);
 
@@ -33,7 +34,7 @@ export function BlueprintSmsProviderManager({ mode, initialConfigs, onSaved }: {
     event.preventDefault();
     setBusy("save");
     try {
-      const body = selectedId === "FARAZ_SMS" ? { provider: selectedId, apiKey, senderNumber } : { provider: selectedId, username, password, senderNumber };
+      const body = selectedId === "FARAZ_SMS" ? { provider: selectedId, apiKey, senderNumber, otpPatternCode } : { provider: selectedId, username, password, senderNumber };
       const response = await fetch("/api/admin/sms/providers", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
       const result = await response.json().catch(() => null);
       if (!response.ok) throw new Error(result?.message ?? "پیکربندی ذخیره نشد.");
@@ -185,7 +186,10 @@ export function BlueprintSmsProviderManager({ mode, initialConfigs, onSaved }: {
           <p className="bp-muted m-0 mt-1 text-[12px]">اعتبارنامه رمزنگاری می‌شود و بعداً کامل نمایش داده نخواهد شد.</p>
           <div className="mt-3 grid gap-3">
             {selectedId === "FARAZ_SMS" ? (
-              <BpInput label="API Key" secret required maxLength={smsProviderFieldLimits.apiKey} value={apiKey} onChange={(event) => setApiKey(event.target.value)} dir="ltr" />
+              <>
+                <BpInput label="API Key" secret required maxLength={smsProviderFieldLimits.apiKey} value={apiKey} onChange={(event) => setApiKey(event.target.value)} dir="ltr" />
+                <BpInput label="کد پترن کد تأیید (OTP)" hint="کد پترن تأییدشده در پنل فراز اس‌ام‌اس برای ارسال کد ورود و ثبت‌نام" required dir="ltr" maxLength={smsProviderFieldLimits.otpPatternCode} value={otpPatternCode} onChange={(event) => setOtpPatternCode(event.target.value)} placeholder="0ejt4dkexhr6squ" />
+              </>
             ) : (
               <>
                 <BpInput label="نام کاربری" required dir="ltr" maxLength={smsProviderFieldLimits.username} value={username} onChange={(event) => setUsername(event.target.value)} />

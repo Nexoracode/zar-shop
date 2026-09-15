@@ -11,7 +11,7 @@ export const smsProviders = [
     signupUrl: "https://farazsms.com/",
     docsUrl: "https://ippanelcom.github.io/Edge-Document/fa/docs/",
     sendSupported: true,
-    steps: ["در فراز اس‌ام‌اس حساب بسازید و احراز هویت را کامل کنید.", "از حساب کاربری ← برنامه‌نویسان ← کلیدهای دسترسی، API Key بسازید.", "سرشماره خدماتی اختصاص‌یافته به حساب را همراه کلید در فرم وارد کنید."],
+    steps: ["در فراز اس‌ام‌اس حساب بسازید و احراز هویت را کامل کنید.", "از حساب کاربری ← برنامه‌نویسان ← کلیدهای دسترسی، API Key بسازید.", "سرشماره خدماتی اختصاص‌یافته به حساب را همراه کلید در فرم وارد کنید.", "یک پترن کد تأیید (OTP) با متغیرهای name و ref-id در پنل ثبت و تأیید کنید و کد آن را در فرم وارد کنید."],
   },
   {
     id: "IRAN_SMS" as const,
@@ -24,7 +24,7 @@ export const smsProviders = [
 ] as const;
 
 export const smsProviderInputSchema = z.discriminatedUnion("provider", [
-  z.object({ provider: z.literal("FARAZ_SMS"), apiKey: z.string().trim().min(20).max(smsProviderFieldLimits.apiKey), senderNumber: z.string().trim().regex(/^\+?\d{3,20}$/) }),
+  z.object({ provider: z.literal("FARAZ_SMS"), apiKey: z.string().trim().min(20).max(smsProviderFieldLimits.apiKey), senderNumber: z.string().trim().regex(/^\+?\d{3,20}$/), otpPatternCode: z.string().trim().min(1).max(smsProviderFieldLimits.otpPatternCode) }),
   z.object({ provider: z.literal("IRAN_SMS"), username: z.string().trim().min(2).max(smsProviderFieldLimits.username), password: z.string().min(4).max(smsProviderFieldLimits.password), senderNumber: z.string().trim().regex(/^\+?\d{3,20}$/) }),
 ]);
 
