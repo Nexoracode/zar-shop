@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState, type CSSProperties, type FormEvent } from "react";
-import { Button, Input, Modal, Spinner } from "@heroui/react";
+import { Button, Card, Chip, Input, Modal, Spinner } from "@heroui/react";
 import { ArrowRight, Clock3, Grid2X2, History, Search, Sparkles, TrendingUp, X } from "lucide-react";
 
 type SearchItem = { id: string; label: string; href: string };
@@ -156,7 +156,7 @@ function InitialSearchContent({ recent, popularTerms, loading, onClearRecent, on
   return <div className="grid gap-6 p-4 sm:p-5">
     {recent.length > 0 && <section><div className="mb-3 flex items-center justify-between"><h2 className="m-0 text-sm font-bold text-slate-800">جستجوهای اخیر</h2><Button type="button" size="sm" variant="ghost" onPress={onClearRecent} className="min-h-8 px-2 text-xs font-normal text-slate-500">پاک کردن</Button></div><div className="flex flex-wrap gap-2">{recent.map((term) => <Button key={term} type="button" size="sm" variant="secondary" onPress={() => onSelect(term)} className="min-h-9 max-w-full rounded-full border border-slate-200 bg-white px-3.5 text-xs font-normal text-slate-700"><Clock3 size={14} /><span className="max-w-[min(360px,70vw)] truncate">{term}</span></Button>)}</div></section>}
     <section><h2 className="mb-3 mt-0 text-sm font-bold text-slate-800">جستجوهای پرتکرار</h2>{loading && !popularTerms.length ? <div className="grid min-h-20 place-items-center"><Spinner size="sm" /></div> : <div className="flex flex-wrap gap-2">{popularTerms.map((term, index) => <Button key={term} type="button" size="sm" variant="secondary" onPress={() => onSelect(term)} className="min-h-9 max-w-full rounded-full border border-slate-200 bg-white px-3.5 text-xs font-normal text-slate-700">{index < 3 ? <TrendingUp size={14} /> : <Search size={14} />}<span className="max-w-[min(360px,70vw)] truncate">{term}</span></Button>)}</div>}</section>
-    <Link href="/products?sortby=popular" onClick={onClose} className="relative overflow-hidden rounded-2xl bg-[linear-gradient(120deg,#111827,#334155)] p-5 text-white shadow-sm"><Sparkles className="absolute -left-3 -top-5 size-28 opacity-10" /><span className="relative block text-[11px] text-white/70">پیشنهاد امروز فروشگاه</span><strong className="relative mt-1 block text-lg font-bold">محبوب‌ترین انتخاب‌ها را ببینید</strong><span className="relative mt-3 inline-flex rounded-full bg-white px-5 py-2 text-xs font-bold text-slate-900">مشاهده محصولات</span></Link>
+    <Card onClick={onClose} render={(cardProps) => <Link {...cardProps} href="/products?sortby=popular" />} className="relative overflow-hidden rounded-2xl bg-[linear-gradient(120deg,#111827,#334155)] p-5 text-white shadow-sm"><Sparkles className="absolute -left-3 -top-5 size-28 opacity-10" /><span className="relative block text-[11px] text-white/70">پیشنهاد امروز فروشگاه</span><strong className="relative mt-1 block text-lg font-bold">محبوب‌ترین انتخاب‌ها را ببینید</strong><Chip variant="solid" className="relative mt-3 w-fit bg-white text-slate-900"><Chip.Label className="text-xs font-bold">مشاهده محصولات</Chip.Label></Chip></Card>
   </div>;
 }
 
