@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { db } from "@/lib/db";
-import { env } from "@/lib/env";
-import { apiError } from "@/lib/http";
+import { apiError, getRequestOrigin } from "@/lib/http";
 import { getCurrentUser } from "@/modules/auth/session";
 import { getGoldPrice } from "@/modules/gold/gold-price.service";
 import { calculateProductPrice } from "@/modules/products/pricing";
@@ -253,7 +252,7 @@ export async function POST(request: Request) {
       const paymentRequest = await selectedPaymentProvider.request({
         amount: result.gatewayDue,
         orderId: order.id,
-        callbackUrl: `${env.APP_URL}/api/payment/callback`,
+        callbackUrl: `${getRequestOrigin(request)}/api/payment/callback`,
         description: `پرداخت سفارش ${order.orderNumber}`,
         mobile: user.phone ?? address.phone,
         email: user.isGuest ? undefined : (user.email ?? undefined),

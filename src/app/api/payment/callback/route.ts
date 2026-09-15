@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { env } from "@/lib/env";
+import { getRequestOrigin } from "@/lib/http";
 import { getStorefrontPaymentProvider } from "@/modules/payments/storefront-methods";
 import { PaymentProviderError } from "@/modules/payments/payment-provider";
 import { finalizeVerifiedPayment } from "@/modules/payments/payment-finalization";
@@ -9,23 +9,26 @@ import { notifyNextPurchaseRewards } from "@/modules/notifications/promotion-not
 import { notifyWalletCredited } from "@/modules/notifications/wallet-notifications";
 
 /** Every outcome lands the shopper on the order page with a result banner — never straight on
- *  the invoice — so they always see the order, the payment status and what to do next first. */
-const orderResult = (orderId: string, outcome: "success" | "failed" | "cancelled" | "review") =>
-  `${env.APP_URL}/account/orders/${orderId}?payment=${outcome}`;
+ *  the invoice — so they always see the order, the payment status and what to do next first.
+ *  Built from the request's own origin (the gateway calls back on whatever host the shopper
+ *  actually started checkout on), not the fixed APP_URL env var. */
+const orderResult = (origin: string, orderId: string, outcome: "success" | "failed" | "cancelled" | "review") =>
+  `${origin}/account/orders/${orderId}?payment=${outcome}`;
 
 export async function GET(request: Request) {
+  const origin = getRequestOrigin(request);
   const url = new URL(request.url);
   const authority = url.searchParams.get("Authority") ?? url.searchParams.get("authority");
   const status = url.searchParams.get("Status") ?? url.searchParams.get("status");
-  if (!authority) return NextResponse.redirect(`${env.APP_URL}/account?payment=cancelled`);
+  if (!authority) return NextResponse.redirect(`${origin}/account?payment=cancelled`);
 
   const payment = await db.payment.findUnique({ where: { authority }, include: { order: true } });
-  if (!payment) return NextResponse.redirect(`${env.APP_URL}/account?payment=missing`);
-  if (payment.status === "SUCCESS") return NextResponse.redirect(orderResult(payment.orderId, "success"));
+  if (!payment) return NextResponse.redirect(`${origin}/account?payment=missing`);
+  if (payment.status === "SUCCESS") return NextResponse.redirect(orderResult(origin, payment.orderId, "success"));
   // The gateway payment only covers the order total minus whatever the wallet already captured.
   if (!payment.amount.equals(payment.order.total.minus(payment.order.walletAmount))) {
     await db.payment.updateMany({ where: { id: payment.id, status: { not: "SUCCESS" } }, data: { status: "FAILED" } });
-    return NextResponse.redirect(orderResult(payment.orderId, "failed"));
+    return NextResponse.redirect(orderResult(origin, payment.orderId, "failed"));
   }
 
   // `Status` is a client-supplied query string on a redirect the end user's browser makes,
@@ -43,7 +46,7 @@ export async function GET(request: Request) {
       // but still failed verify() lands here too, and without this line there is no trace of why.
       console.error(`[payment] Not verified (gateway status=${status ?? "none"}, code=${providerCode ?? "none"}).`, error);
       await db.payment.updateMany({ where: { id: payment.id, status: { notIn: ["SUCCESS", "REFUNDED"] } }, data: { status: "CANCELLED", providerData: { cancelledAfterVerifyError: true, verificationErrorCode: providerCode } } });
-      return NextResponse.redirect(orderResult(payment.orderId, "cancelled"));
+      return NextResponse.redirect(orderResult(origin, payment.orderId, "cancelled"));
     }
     console.error("[payment] Zarinpal verification could not be completed.", error);
     await db.payment.updateMany({
@@ -56,7 +59,7 @@ export async function GET(request: Request) {
         },
       },
     });
-    return NextResponse.redirect(orderResult(payment.orderId, "review"));
+    return NextResponse.redirect(orderResult(origin, payment.orderId, "review"));
   }
 
   try {
@@ -72,13 +75,13 @@ export async function GET(request: Request) {
         } catch (notifyError) { console.error("[notifications] Referral reward notification failed.", notifyError); }
       }
     }
-    return NextResponse.redirect(orderResult(result.orderId, "success"));
+    return NextResponse.redirect(orderResult(origin, result.orderId, "success"));
   } catch (error) {
     console.error("[payment] Provider verified the payment, but local finalization needs a retry.", error);
     await db.payment.updateMany({
       where: { id: payment.id, status: { not: "SUCCESS" } },
       data: { status: "PENDING", providerData: { verifiedReferenceId: referenceId, finalizationPending: true } },
     });
-    return NextResponse.redirect(orderResult(payment.orderId, "review"));
+    return NextResponse.redirect(orderResult(origin, payment.orderId, "review"));
   }
 }

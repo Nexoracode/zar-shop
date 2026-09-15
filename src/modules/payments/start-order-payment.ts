@@ -1,5 +1,4 @@
 import { db } from "@/lib/db";
-import { env } from "@/lib/env";
 import { expirePendingOrders } from "@/modules/orders/expiration";
 import { getStorefrontPaymentMethods, getStorefrontPaymentProvider, type StorefrontPaymentMethodId } from "@/modules/payments/storefront-methods";
 import { getCommerceSettings } from "@/modules/settings/commerce-settings";
@@ -12,7 +11,7 @@ export class PendingOrderPaymentError extends Error {
   }
 }
 
-export async function startPendingOrderPayment(input: { orderId: string; userId: string; paymentProvider: StorefrontPaymentMethodId }) {
+export async function startPendingOrderPayment(input: { orderId: string; userId: string; paymentProvider: StorefrontPaymentMethodId; origin: string }) {
   await expirePendingOrders();
   const [commerceSettings, orderSettings, methods] = await Promise.all([getCommerceSettings(), getOrderSettings(), getStorefrontPaymentMethods()]);
   if (!commerceSettings.onlinePaymentEnabled) throw new PendingOrderPaymentError("پرداخت آنلاین موقتاً غیرفعال است.", 503);
@@ -32,7 +31,7 @@ export async function startPendingOrderPayment(input: { orderId: string; userId:
   }
 
   const provider = await getStorefrontPaymentProvider(input.paymentProvider);
-  const callbackUrl = `${env.APP_URL}/api/payment/callback`;
+  const callbackUrl = `${input.origin}/api/payment/callback`;
   const activePayment = order.payments.find((payment) => payment.provider === input.paymentProvider && payment.status === "PENDING" && payment.authority);
   if (activePayment?.authority) return { redirectUrl: provider.redirectUrl(activePayment.authority, callbackUrl), reused: true };
 

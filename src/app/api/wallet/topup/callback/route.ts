@@ -1,13 +1,12 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { env } from "@/lib/env";
+import { getRequestOrigin } from "@/lib/http";
 import { getStorefrontPaymentProvider } from "@/modules/payments/storefront-methods";
 import { PaymentProviderError } from "@/modules/payments/payment-provider";
 import { finalizeVerifiedTopup } from "@/modules/wallet/topup";
 
-const walletUrl = (params: string) => `${env.APP_URL}/account/wallet${params}`;
-
 export async function GET(request: Request) {
+  const walletUrl = (params: string) => `${getRequestOrigin(request)}/account/wallet${params}`;
   const url = new URL(request.url);
   const authority = url.searchParams.get("Authority") ?? url.searchParams.get("authority");
   const status = url.searchParams.get("Status") ?? url.searchParams.get("status");

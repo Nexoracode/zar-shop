@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { apiError } from "@/lib/http";
+import { apiError, getRequestOrigin } from "@/lib/http";
 import { getCurrentUser } from "@/modules/auth/session";
 import { PaymentProviderError } from "@/modules/payments/payment-provider";
 import { walletTopupSchema } from "@/modules/wallet/schemas";
@@ -16,6 +16,7 @@ export async function POST(request: Request) {
       paymentProvider: input.paymentProvider,
       mobile: user.phone,
       email: user.email,
+      origin: getRequestOrigin(request),
     });
     return NextResponse.json(result);
   } catch (error) {

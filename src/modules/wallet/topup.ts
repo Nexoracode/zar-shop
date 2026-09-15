@@ -1,6 +1,5 @@
 import type { Prisma } from "@generated/prisma/client";
 import { db } from "@/lib/db";
-import { env } from "@/lib/env";
 import { getStorefrontPaymentMethods, getStorefrontPaymentProvider, type StorefrontPaymentMethodId } from "@/modules/payments/storefront-methods";
 import { getWalletSettings } from "@/modules/settings/wallet-settings";
 import { creditWallet } from "@/modules/wallet/wallet";
@@ -16,7 +15,7 @@ export const WALLET_TOPUP_CALLBACK = "/api/wallet/topup/callback";
 
 /** Creates a top-up record and hands back the gateway redirect. Mirrors the order-payment start
  *  flow but against `WalletTopup` instead of `Payment`, since a top-up has no order. */
-export async function startWalletTopup(input: { userId: string; amount: number; paymentProvider: StorefrontPaymentMethodId; mobile?: string | null; email?: string | null }) {
+export async function startWalletTopup(input: { userId: string; amount: number; paymentProvider: StorefrontPaymentMethodId; mobile?: string | null; email?: string | null; origin: string }) {
   const settings = await getWalletSettings();
   if (!settings.walletEnabled || !settings.walletTopupEnabled) throw new WalletTopupError("افزایش اعتبار کیف پول در حال حاضر غیرفعال است.", 503);
   if (input.amount < settings.walletMinTopup) throw new WalletTopupError(`حداقل مبلغ افزایش اعتبار ${settings.walletMinTopup.toLocaleString("fa-IR")} ریال است.`, 422);
@@ -31,7 +30,7 @@ export async function startWalletTopup(input: { userId: string; amount: number; 
     const request = await provider.request({
       amount: input.amount,
       orderId: topup.id,
-      callbackUrl: `${env.APP_URL}${WALLET_TOPUP_CALLBACK}`,
+      callbackUrl: `${input.origin}${WALLET_TOPUP_CALLBACK}`,
       description: `افزایش اعتبار کیف پول`,
       mobile: input.mobile ?? undefined,
       email: input.email ?? undefined,
