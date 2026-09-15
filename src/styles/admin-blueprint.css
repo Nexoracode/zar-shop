@@ -342,6 +342,17 @@ select.bp-input:focus-visible { border-color: var(--bp-accent); outline: none; }
 .bp-input-tags input:focus,
 .bp-input-tags input:focus-visible { outline: none; }
 
+/* The pattern-text editor (SMS pattern content, free text mixed with %var% chips) is itself
+   the focusable/editable element — unlike `.bp-input-tags` above, whose focus target is a bare
+   `<input>` nested inside a non-editable wrapper. It needs the taller, wrapping body of a
+   textarea rather than the single 38px row `.bp-input-tags` reserves for a flat chip list, so
+   this can't just compose with that class — `min-height` is set once here instead. */
+.bp-input.bp-pattern-editor { min-height: 90px; white-space: pre-wrap; overflow-wrap: anywhere; cursor: text; }
+.bp-pattern-editor:empty:before { content: attr(data-placeholder); color: var(--bp-muted); }
+/* The chip is a non-editable island inside the editable flow — its own hairline instead of the
+   plain `.bp-tag` background, so it still reads against the editor's own surface colour. */
+.bp-pattern-chip { display: inline-flex; align-items: center; gap: 4px; margin: 0 2px; cursor: default; user-select: none; }
+
 /* A secret field (API key, credential) with a show/hide toggle stacked over it, always at its own
    `dir="ltr"` regardless of the surrounding RTL page — so "start" here means the field's own
    left, exactly where the toggle button sits. Same unlayered-rule reason as the search padding

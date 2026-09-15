@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useEffect, useId, useRef, useState, type ClipboardEvent, type FormEvent, type KeyboardEvent, type MouseEvent } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "@heroui/react";
 import { FileText, Pencil, Plus, RefreshCw, Trash2, X } from "lucide-react";
@@ -8,6 +8,239 @@ import { AdminEmptyState, AdminPanel } from "@/components/admin-ui";
 import { smsPatternCategories, type SmsPattern } from "@/modules/communications/sms-pattern-schemas";
 import { smsPatternFieldLimits } from "@/modules/communications/limits";
 import { BpButton, BpInput, BpKicker, BpSelect, BpSwitch, BpTable, BpTag, BpTd, BpTextarea, BpTh } from "./ui";
+
+/*
+ * Chips inside the pattern-text editor are plain DOM nodes created and mutated imperatively via
+ * these helpers, never through React state — a contentEditable region's children must stay out
+ * of React's own reconciliation, or the two fight over the same DOM nodes.
+ */
+const VARIABLE_TOKEN_SOURCE = `%([A-Za-z0-9_]{1,${smsPatternFieldLimits.variableName}})%`;
+
+function buildChipNode(name: string): HTMLSpanElement {
+  const chip = document.createElement("span");
+  chip.className = "bp-tag bp-tag-accent bp-pattern-chip";
+  chip.contentEditable = "false";
+  chip.dataset.varChip = name;
+  const label = document.createElement("bdi");
+  label.dir = "ltr";
+  label.className = "font-mono";
+  label.textContent = `%${name}%`;
+  const removeButton = document.createElement("button");
+  removeButton.type = "button";
+  removeButton.setAttribute("aria-label", `حذف متغیر ${name}`);
+  removeButton.className = "grid h-3.5 w-3.5 place-items-center leading-none text-[var(--bp-muted)] hover:text-[var(--bp-danger)]";
+  removeButton.textContent = "×";
+  // Without this, the mousedown that precedes the click first collapses the editor's selection
+  // into the contentEditable region, moving focus before the click handler ever runs.
+  removeButton.addEventListener("mousedown", (event) => event.preventDefault());
+  chip.append(label, removeButton);
+  return chip;
+}
+
+function serializeEditor(root: HTMLElement): string {
+  let output = "";
+  root.childNodes.forEach((node) => {
+    if (node.nodeType === Node.TEXT_NODE) output += node.textContent ?? "";
+    else if (node instanceof HTMLElement && node.dataset.varChip) output += `%${node.dataset.varChip}%`;
+  });
+  return output;
+}
+
+/** Splits one text node into [text?, chip, text?, chip, ..., trailing text] wherever a complete
+ * `%var%` token appears, and returns the trailing text node so the caret can be restored there. */
+function convertTextNode(textNode: Text, onNewVariable: (name: string) => void): Text | null {
+  const text = textNode.textContent ?? "";
+  const pattern = new RegExp(VARIABLE_TOKEN_SOURCE, "g");
+  if (!pattern.test(text)) return null;
+  pattern.lastIndex = 0;
+  const parent = textNode.parentNode;
+  if (!parent) return null;
+  const fragment = document.createDocumentFragment();
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+  while ((match = pattern.exec(text))) {
+    if (match.index > lastIndex) fragment.appendChild(document.createTextNode(text.slice(lastIndex, match.index)));
+    fragment.appendChild(buildChipNode(match[1]));
+    onNewVariable(match[1]);
+    lastIndex = match.index + match[0].length;
+  }
+  const trailing = document.createTextNode(text.slice(lastIndex));
+  fragment.appendChild(trailing);
+  parent.replaceChild(fragment, textNode);
+  return trailing;
+}
+
+function convertAllTextNodes(root: HTMLElement, onNewVariable: (name: string) => void) {
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  const nodes: Text[] = [];
+  let current: Node | null;
+  // eslint-disable-next-line no-cond-assign
+  while ((current = walker.nextNode())) nodes.push(current as Text);
+  for (const node of nodes) convertTextNode(node, onNewVariable);
+}
+
+function placeCaretAtEnd(node: Node) {
+  const selection = window.getSelection();
+  if (!selection) return;
+  const range = document.createRange();
+  range.selectNodeContents(node);
+  range.collapse(false);
+  selection.removeAllRanges();
+  selection.addRange(range);
+}
+
+function insertPlainText(root: HTMLElement, text: string) {
+  const selection = window.getSelection();
+  if (!selection || selection.rangeCount === 0 || !root.contains(selection.getRangeAt(0).commonAncestorContainer)) {
+    root.appendChild(document.createTextNode(text));
+    return;
+  }
+  const range = selection.getRangeAt(0);
+  range.deleteContents();
+  const node = document.createTextNode(text);
+  range.insertNode(node);
+  range.setStartAfter(node);
+  range.setEndAfter(node);
+  selection.removeAllRanges();
+  selection.addRange(range);
+}
+
+/**
+ * Free-text editor for SMS pattern content: typing `%name%` followed by a space turns it into a
+ * removable chip in place, and pasted or pre-existing `%name%` tokens are chipped on paste/mount.
+ * Deliberately not a shared `blueprint/ui` control — the `%var%` chip convention only exists for
+ * this one field, unlike the generic text/select/switch controls that rule requires everywhere.
+ */
+function PatternTextEditor({ initialValue, maxLength, onChange, onVariableDetected }: {
+  initialValue: string;
+  maxLength: number;
+  onChange: (value: string) => void;
+  onVariableDetected: (name: string) => void;
+}) {
+  const fieldId = useId();
+  const rootRef = useRef<HTMLDivElement>(null);
+  const onChangeRef = useRef(onChange);
+  const onVariableDetectedRef = useRef(onVariableDetected);
+  onChangeRef.current = onChange;
+  onVariableDetectedRef.current = onVariableDetected;
+  const [length, setLength] = useState(initialValue.length);
+
+  useEffect(() => {
+    const root = rootRef.current;
+    if (!root) return;
+    root.textContent = initialValue;
+    convertAllTextNodes(root, (name) => onVariableDetectedRef.current(name));
+    setLength(serializeEditor(root).length);
+    // Runs once to seed the editor from the initial pattern text; the DOM is the source of
+    // truth afterward, so this must not re-run when `initialValue` changes by reference.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  function emitChange() {
+    const root = rootRef.current;
+    if (!root) return;
+    const value = serializeEditor(root);
+    setLength(value.length);
+    onChangeRef.current(value);
+  }
+
+  function handleInput(event: FormEvent<HTMLDivElement>) {
+    const root = rootRef.current;
+    const native = event.nativeEvent as InputEvent;
+    if (root && native.data === " ") {
+      const anchor = window.getSelection()?.anchorNode;
+      if (anchor && anchor.nodeType === Node.TEXT_NODE && root.contains(anchor)) {
+        const trailing = convertTextNode(anchor as Text, (name) => onVariableDetectedRef.current(name));
+        if (trailing) placeCaretAtEnd(trailing);
+      }
+    }
+    emitChange();
+  }
+
+  function handleBeforeInput(event: FormEvent<HTMLDivElement>) {
+    const native = event.nativeEvent as InputEvent;
+    if (native.inputType !== "insertText" && native.inputType !== "insertCompositionText") return;
+    const incoming = native.data?.length ?? 0;
+    const root = rootRef.current;
+    if (!incoming || !root) return;
+    if (serializeEditor(root).length + incoming > maxLength) event.preventDefault();
+  }
+
+  function handlePaste(event: ClipboardEvent<HTMLDivElement>) {
+    event.preventDefault();
+    const root = rootRef.current;
+    if (!root) return;
+    const remaining = maxLength - serializeEditor(root).length;
+    if (remaining <= 0) return;
+    insertPlainText(root, event.clipboardData.getData("text/plain").slice(0, remaining));
+    convertAllTextNodes(root, (name) => onVariableDetectedRef.current(name));
+    emitChange();
+  }
+
+  function handleKeyDown(event: KeyboardEvent<HTMLDivElement>) {
+    const root = rootRef.current;
+    if (!root) return;
+    if (event.key === "Enter") {
+      event.preventDefault();
+      if (serializeEditor(root).length < maxLength) { insertPlainText(root, "\n"); emitChange(); }
+      return;
+    }
+    if (event.key === "Backspace") {
+      const selection = window.getSelection();
+      if (!selection || !selection.isCollapsed || !selection.anchorNode || selection.anchorOffset !== 0) return;
+      const anchor = selection.anchorNode;
+      const previous = anchor.nodeType === Node.TEXT_NODE ? anchor.previousSibling : anchor.childNodes[selection.anchorOffset - 1] ?? null;
+      if (previous instanceof HTMLElement && previous.dataset.varChip) { event.preventDefault(); previous.remove(); emitChange(); }
+    }
+  }
+
+  function handleBlur() {
+    const root = rootRef.current;
+    if (!root) return;
+    convertAllTextNodes(root, (name) => onVariableDetectedRef.current(name));
+    emitChange();
+  }
+
+  function handleChipClick(event: MouseEvent<HTMLDivElement>) {
+    const target = event.target as HTMLElement;
+    const button = target.closest("button");
+    const chip = button?.closest<HTMLElement>("[data-var-chip]");
+    if (!button || !chip) return;
+    event.preventDefault();
+    chip.remove();
+    emitChange();
+  }
+
+  const remaining = maxLength - length;
+  const showCounter = remaining <= Math.min(50, Math.floor(maxLength / 4));
+
+  return (
+    <div className="bp-field">
+      <label htmlFor={fieldId}>متن پترن<span aria-hidden className="text-[var(--bp-danger)]"> *</span></label>
+      <div
+        id={fieldId}
+        ref={rootRef}
+        role="textbox"
+        aria-multiline="true"
+        contentEditable
+        dir="rtl"
+        suppressContentEditableWarning
+        data-placeholder="مثلا: کد تأیید شما: %otp% است"
+        className="bp-input bp-pattern-editor"
+        onInput={handleInput}
+        onBeforeInput={handleBeforeInput}
+        onPaste={handlePaste}
+        onKeyDown={handleKeyDown}
+        onBlur={handleBlur}
+        onClick={handleChipClick}
+      />
+      <span className="flex items-start justify-between gap-2">
+        <span className="bp-field-message bp-field-message-hint">هر متغیر را با %نام% بنویسید و یک فاصله بزنید تا به چیپ قابل‌حذف تبدیل شود</span>
+        {showCounter && <span aria-live="polite" className={`bp-field-message shrink-0 ${remaining <= 0 ? "bp-field-message-error" : "bp-field-message-hint"}`}>{remaining.toLocaleString("fa-IR")} نویسه باقی مانده</span>}
+      </span>
+    </div>
+  );
+}
 
 function statusTone(status: string | null) {
   if (!status) return "neutral" as const;
@@ -140,6 +373,16 @@ export function BlueprintSmsPatternForm({ pattern }: { pattern?: SmsPattern }) {
     setVars((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, ...patch } : item));
   }
 
+  // Fills the still-blank first row for the pattern's first chip, then appends a row per
+  // additional chip — so typing `%otp% ` in the text above populates the table below on its own.
+  function handleVariableDetected(name: string) {
+    setVars((current) => {
+      if (current.some((item) => item.var === name)) return current;
+      if (current.length === 1 && !current[0].var.trim()) return [{ ...current[0], var: name }];
+      return [...current, { var: name, length: "20", type: "string" }];
+    });
+  }
+
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setBusy(true);
@@ -161,7 +404,7 @@ export function BlueprintSmsPatternForm({ pattern }: { pattern?: SmsPattern }) {
       <section className="bp-frame relative p-[16px]">
         <BpKicker>محتوای پترن</BpKicker>
         <div className="mt-3 grid gap-3">
-          <BpTextarea label="متن پترن" hint="جای هر متغیر را با %نام_متغیر% مشخص کنید، مثلا: کد تأیید شما: %otp%" required rows={3} maxLength={smsPatternFieldLimits.text} value={text} onChange={(event) => setText(event.target.value)} />
+          <PatternTextEditor initialValue={pattern?.text ?? ""} maxLength={smsPatternFieldLimits.text} onChange={setText} onVariableDetected={handleVariableDetected} />
           <BpTextarea label="توضیحات" hint="فقط برای شناسایی این پترن در پنل شماست و برای گیرنده ارسال نمی‌شود" rows={2} maxLength={smsPatternFieldLimits.description} value={description} onChange={(event) => setDescription(event.target.value)} />
           <div className="grid gap-3 sm:grid-cols-2">
             <BpInput label="دامنه وب‌سایت" hint="دامنه فروشگاه، بدون https و www" required dir="ltr" maxLength={smsPatternFieldLimits.website} value={website} onChange={(event) => setWebsite(event.target.value)} placeholder="example.com" />
