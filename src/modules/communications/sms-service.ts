@@ -29,32 +29,36 @@ function audienceWhere(audience: SmsAudience) {
 
 export async function countSmsAudience(audience: SmsAudience) { return db.user.count({ where: audienceWhere(audience) }); }
 
+// Faraz SMS's current API (docs.farazsms.com) lives on api.iranpayamak.com and takes recipient
+// numbers with the local leading zero (09xxxxxxxxx), not the +98 form their older ippanel-based
+// API used.
 function normalizeIranPhone(value: string) {
   const digits = value.replace(/[۰-۹]/g, (digit) => String("۰۱۲۳۴۵۶۷۸۹".indexOf(digit))).replace(/[٠-٩]/g, (digit) => String("٠١٢٣٤٥٦٧٨٩".indexOf(digit))).replace(/\D/g, "");
   const local = digits.startsWith("0098") ? digits.slice(4) : digits.startsWith("98") ? digits.slice(2) : digits.startsWith("0") ? digits.slice(1) : digits;
-  return /^9\d{9}$/.test(local) ? `+98${local}` : null;
+  return /^9\d{9}$/.test(local) ? `0${local}` : null;
 }
 
 async function sendWithFaraz(provider: { senderNumber: string; credentialsEncrypted: string }, recipients: string[], message: string) {
   const credentials = z.object({ apiKey: z.string().min(1) }).parse(decryptSmsCredentials(provider.credentialsEncrypted));
-  const response = await fetch("https://edge.ippanel.com/v1/api/send", { method: "POST", headers: { "Content-Type": "application/json", Authorization: credentials.apiKey }, body: JSON.stringify({ sending_type: "webservice", from_number: provider.senderNumber, message, params: { recipients } }), signal: AbortSignal.timeout(15000) });
+  const response = await fetch("https://api.iranpayamak.com/ws/v1/sms/simple", { method: "POST", headers: { "Content-Type": "application/json", "Api-Key": credentials.apiKey }, body: JSON.stringify({ text: message, line_number: provider.senderNumber, recipients, number_format: "english" }), signal: AbortSignal.timeout(15000) });
   const result = await response.json().catch(() => null);
   if (!response.ok) throw new Error(`ارسال پیامک با خطای ${response.status.toLocaleString("fa-IR")} مواجه شد.`);
   return result;
 }
 
-// OTP codes go through ippanel's registered-pattern API instead of the free-text webservice
-// endpoint above: carriers in Iran require verification codes to use a pre-approved pattern
-// so they aren't filtered as advertising. The pattern code and sender are per-store (each
-// ippanel account approves its own pattern), so they come from the admin-configured provider
-// rather than being fixed here. The pattern's wording only has "name" and "ref-id" slots, so
-// purpose-specific copy isn't possible here — that only lives in the SmsCampaign audit record
-// via otpMessages below.
-async function sendOtpWithFarazPattern(apiKey: string, patternCode: string, sender: string, recipient: string, code: string, name: string) {
-  const response = await fetch("https://api2.ippanel.com/api/v1/sms/pattern/normal/send", {
+// OTP codes go through Faraz SMS's registered-pattern API instead of the free-text "simple"
+// endpoint above: carriers in Iran require verification codes to use a pre-approved pattern so
+// they aren't filtered as advertising (and unlike the simple endpoint, pattern sends aren't
+// held for human moderation). The pattern code and line number are per-store (each Faraz SMS
+// account approves its own pattern), so they come from the admin-configured provider rather
+// than being fixed here. The pattern must be created in the panel with attribute variables
+// named exactly "name" and "otp" to match the payload below — purpose-specific copy isn't
+// possible here, that only lives in the SmsCampaign audit record via otpMessages below.
+async function sendOtpWithFarazPattern(apiKey: string, patternCode: string, lineNumber: string, recipient: string, code: string, name: string) {
+  const response = await fetch("https://api.iranpayamak.com/ws/v1/sms/pattern", {
     method: "POST",
-    headers: { "Content-Type": "application/json", apikey: apiKey },
-    body: JSON.stringify({ code: patternCode, sender, recipient, variable: { name, "ref-id": code } }),
+    headers: { "Content-Type": "application/json", "Api-Key": apiKey },
+    body: JSON.stringify({ code: patternCode, recipient, line_number: lineNumber, number_format: "english", attributes: { name, otp: code } }),
     signal: AbortSignal.timeout(15000),
   });
   const result = await response.json().catch(() => null);

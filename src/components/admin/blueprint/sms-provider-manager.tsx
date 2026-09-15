@@ -188,7 +188,7 @@ export function BlueprintSmsProviderManager({ mode, initialConfigs, onSaved }: {
             {selectedId === "FARAZ_SMS" ? (
               <>
                 <BpInput label="API Key" secret required maxLength={smsProviderFieldLimits.apiKey} value={apiKey} onChange={(event) => setApiKey(event.target.value)} dir="ltr" />
-                <BpInput label="کد پترن کد تأیید (OTP)" hint="کد پترن تأییدشده در پنل فراز اس‌ام‌اس برای ارسال کد ورود و ثبت‌نام" required dir="ltr" maxLength={smsProviderFieldLimits.otpPatternCode} value={otpPatternCode} onChange={(event) => setOtpPatternCode(event.target.value)} placeholder="0ejt4dkexhr6squ" />
+                <BpInput label="کد پترن کد تأیید (OTP)" hint="پترنی با متغیرهای name و otp در پنل فراز اس‌ام‌اس بسازید و کد آن را اینجا وارد کنید" required dir="ltr" maxLength={smsProviderFieldLimits.otpPatternCode} value={otpPatternCode} onChange={(event) => setOtpPatternCode(event.target.value)} placeholder="SJ3FgPrE0C" />
               </>
             ) : (
               <>
@@ -196,7 +196,7 @@ export function BlueprintSmsProviderManager({ mode, initialConfigs, onSaved }: {
                 <BpInput label="رمز وب‌سرویس" required type="password" dir="ltr" maxLength={smsProviderFieldLimits.password} value={password} onChange={(event) => setPassword(event.target.value)} />
               </>
             )}
-            <BpInput label="سرشماره ارسال" required dir="ltr" maxLength={smsProviderFieldLimits.senderNumber} value={senderNumber} onChange={(event) => setSenderNumber(event.target.value)} placeholder="+983000505" />
+            <BpInput label="سرشماره ارسال" required dir="ltr" maxLength={smsProviderFieldLimits.senderNumber} value={senderNumber} onChange={(event) => setSenderNumber(event.target.value)} placeholder="90008361" />
             <BpButton type="submit" variant="primary" fullWidth isPending={busy === "save"}>ذخیره پیکربندی</BpButton>
           </div>
         </section>

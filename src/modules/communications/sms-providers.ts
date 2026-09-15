@@ -9,9 +9,9 @@ export const smsProviders = [
     id: "FARAZ_SMS" as const,
     name: "فراز اس‌ام‌اس",
     signupUrl: "https://farazsms.com/",
-    docsUrl: "https://ippanelcom.github.io/Edge-Document/fa/docs/",
+    docsUrl: "https://docs.farazsms.com/",
     sendSupported: true,
-    steps: ["در فراز اس‌ام‌اس حساب بسازید و احراز هویت را کامل کنید.", "از حساب کاربری ← برنامه‌نویسان ← کلیدهای دسترسی، API Key بسازید.", "سرشماره خدماتی اختصاص‌یافته به حساب را همراه کلید در فرم وارد کنید.", "یک پترن کد تأیید (OTP) با متغیرهای name و ref-id در پنل ثبت و تأیید کنید و کد آن را در فرم وارد کنید."],
+    steps: ["در فراز اس‌ام‌اس حساب بسازید و احراز هویت را کامل کنید.", "از پنل، Api-Key را بسازید و سرشماره (line_number) اختصاص‌یافته به حساب را همراه کلید در فرم وارد کنید.", "یک پترن کد تأیید (OTP) با متغیرهای name و otp در پنل ثبت و تأیید کنید و کد پترن را در فرم وارد کنید."],
   },
   {
     id: "IRAN_SMS" as const,
