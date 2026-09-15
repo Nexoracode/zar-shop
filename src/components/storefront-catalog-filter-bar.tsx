@@ -186,7 +186,7 @@ export function StorefrontCatalogFilterBar({ facets, categoryScoped, selectedBra
       {/* Level 1: the full facet-name list opened by the "فیلتر" chip. */}
       <Modal.Backdrop isOpen={sheet === "list"} onOpenChange={(open) => { if (!open) closeSheet(); }} variant="blur">
         <Modal.Container placement="bottom" size="full">
-          <Modal.Dialog aria-label="فیلترها" dir="rtl" className="mx-0 flex max-h-[88dvh] w-full max-w-none flex-col rounded-b-none rounded-t-2xl border-t border-[var(--border)] bg-[var(--surface)] shadow-2xl">
+          <Modal.Dialog aria-label="فیلترها" dir="rtl" className="mx-0 flex h-auto max-h-[88dvh] min-h-0 w-full max-w-none flex-col rounded-b-none rounded-t-2xl border-t border-[var(--border)] bg-[var(--surface)] shadow-2xl">
             <Modal.Header className="flex-row items-center border-b border-[var(--border)] px-4 py-3">
               <Modal.Heading className="text-base font-bold text-[var(--foreground)]">فیلترها</Modal.Heading>
               <div className="mr-auto flex items-center gap-3">
@@ -222,7 +222,7 @@ export function StorefrontCatalogFilterBar({ facets, categoryScoped, selectedBra
           into from the level-1 list above (back arrow instead of a close button in that case). */}
       <Modal.Backdrop isOpen={isFacetSheet} onOpenChange={(open) => { if (!open) closeSheet(); }} variant="blur">
         <Modal.Container placement="bottom" size="full">
-          <Modal.Dialog aria-label={facetTitle} dir="rtl" className="mx-0 flex max-h-[88dvh] w-full max-w-none flex-col rounded-b-none rounded-t-2xl border-t border-[var(--border)] bg-[var(--surface)] shadow-2xl">
+          <Modal.Dialog aria-label={facetTitle} dir="rtl" className="mx-0 flex h-auto max-h-[88dvh] min-h-0 w-full max-w-none flex-col rounded-b-none rounded-t-2xl border-t border-[var(--border)] bg-[var(--surface)] shadow-2xl">
             <Modal.Header className="flex-row items-center gap-3 border-b border-[var(--border)] px-4 py-3">
               {cameFromList
                 ? <button type="button" aria-label="بازگشت به فیلترها" onClick={() => setSheet("list")} className="grid size-8 place-items-center rounded-lg text-[var(--muted)] transition hover:bg-[var(--surface-secondary)] hover:text-[var(--foreground)]"><ArrowRight size={19} /></button>
@@ -244,7 +244,7 @@ export function StorefrontCatalogFilterBar({ facets, categoryScoped, selectedBra
       {/* Sort has no facet row of its own — it's a separate chip next to "فیلتر" on Digikala too. */}
       <Modal.Backdrop isOpen={sheet === "sort"} onOpenChange={(open) => { if (!open) closeSheet(); }} variant="blur">
         <Modal.Container placement="bottom" size="full">
-          <Modal.Dialog aria-label="مرتب‌سازی محصولات" dir="rtl" className="mx-0 w-full max-w-none rounded-b-none rounded-t-2xl border-t border-[var(--border)] bg-[var(--surface)] shadow-2xl">
+          <Modal.Dialog aria-label="مرتب‌سازی محصولات" dir="rtl" className="mx-0 h-auto max-h-[88dvh] min-h-0 w-full max-w-none rounded-b-none rounded-t-2xl border-t border-[var(--border)] bg-[var(--surface)] shadow-2xl">
             <Modal.Header className="flex-row items-center border-b border-[var(--border)] px-4 py-3">
               <Modal.Heading className="text-base font-bold text-[var(--foreground)]">مرتب‌سازی</Modal.Heading>
               <Modal.CloseTrigger aria-label="بستن" className="mr-auto grid size-8 place-items-center rounded-lg text-[var(--muted)] transition hover:bg-[var(--surface-secondary)] hover:text-[var(--foreground)]"><X size={18} /></Modal.CloseTrigger>
