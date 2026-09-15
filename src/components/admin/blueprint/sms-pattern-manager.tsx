@@ -24,7 +24,7 @@ function buildChipNode(name: string): HTMLSpanElement {
   const label = document.createElement("bdi");
   label.dir = "ltr";
   label.className = "font-mono";
-  label.textContent = `%${name}%`;
+  label.textContent = name;
   const removeButton = document.createElement("button");
   removeButton.type = "button";
   removeButton.setAttribute("aria-label", `حذف متغیر ${name}`);
