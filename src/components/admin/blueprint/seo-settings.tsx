@@ -174,8 +174,8 @@ export function BlueprintSeoSettings({ initialSettings }: { initialSettings: Seo
             <BpKicker>متادیتای پیش‌فرض</BpKicker>
             <p className="bp-muted m-0 mt-1 text-[12px] leading-6">عنوان و توضیحی که موتورهای جستجو برای صفحهٔ اصلی و صفحات بدون متای اختصاصی استفاده می‌کنند.</p>
             <div className="mt-3 grid gap-3">
-              <BpInput label="عنوان پیش‌فرض سایت" maxLength={120} value={form.metaTitle} onChange={(event) => set("metaTitle", event.target.value)} />
-              <BpTextarea label="توضیحات متا" rows={3} maxLength={320} value={form.metaDescription} onChange={(event) => set("metaDescription", event.target.value)} />
+              <BpInput label="عنوان پیش‌فرض سایت" maxLength={120} value={form.metaTitle} onChange={(event) => set("metaTitle", event.target.value)} hint="خالی بماند از نام فروشگاه استفاده می‌شود." />
+              <BpTextarea label="توضیحات متا" rows={3} maxLength={320} value={form.metaDescription} onChange={(event) => set("metaDescription", event.target.value)} hint="خالی بماند از توضیح کوتاه فروشگاه استفاده می‌شود." />
               <BpInput label="دامنه اصلی (Canonical)" dir="ltr" maxLength={100} value={form.canonicalDomain} onChange={(event) => set("canonicalDomain", event.target.value)} hint="آدرس کامل مانند https://zargallery.ir" />
             </div>
           </section>

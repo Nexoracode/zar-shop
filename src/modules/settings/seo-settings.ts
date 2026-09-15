@@ -5,8 +5,8 @@ import { STORE_SETTING_ID } from "@/modules/settings/store-settings";
 // Mirrors `content-settings.ts`: Zod schema → type, single `StoreSetting` JSON column, defaults
 // derived by parsing `{}` (every field has a `.default()`).
 export const seoSettingsSchema = z.object({
-  metaTitle: z.string().trim().max(120).default("زر گالری | خرید آنلاین طلا با قیمت روز"),
-  metaDescription: z.string().trim().max(320).default("خرید آنلاین زیورآلات طلای ۱۸ عیار با قیمت لحظه‌ای، تضمین اصالت و فاکتور رسمی."),
+  metaTitle: z.string().trim().max(120).default(""),
+  metaDescription: z.string().trim().max(320).default(""),
   canonicalDomain: z.url("دامنه باید یک آدرس کامل مانند https://example.ir باشد.").max(100).default("https://zargallery.ir"),
   allowIndexing: z.boolean().default(true),
   enableProductSchema: z.boolean().default(true),
