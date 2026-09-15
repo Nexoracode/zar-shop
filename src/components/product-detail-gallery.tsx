@@ -3,8 +3,8 @@
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
-import { Button, Modal, ProgressBar, toast } from "@heroui/react";
-import { Bell, ChartNoAxesCombined, ChevronLeft, ChevronRight, Ellipsis, ImageIcon, Info, List, Play, X } from "lucide-react";
+import { Button, Modal, ProgressBar } from "@heroui/react";
+import { ChevronLeft, ChevronRight, Ellipsis, ImageIcon, Info, List, Play, X } from "lucide-react";
 import { useSelectedProductOptions } from "@/components/add-to-cart";
 import { CompareButton } from "@/components/compare-button";
 import type { CompareItem } from "@/modules/compare/compare";
@@ -57,7 +57,7 @@ function renderFullscreenGallery({ media, selected, selectedIndex, productName, 
       <Modal.Dialog aria-label={`گالری تصاویر ${productName}`} className="h-dvh w-screen max-w-none overflow-hidden rounded-none bg-black text-white shadow-none" dir="rtl">
         <Modal.Header className="absolute inset-x-0 top-0 z-20 flex-row items-center justify-between bg-gradient-to-b from-black/70 to-transparent p-4 sm:p-6">
           <span className="text-xs text-white/70">{(selectedIndex + 1).toLocaleString("fa-IR")} از {media.length.toLocaleString("fa-IR")}</span>
-          <Modal.CloseTrigger aria-label="بستن گالری" className="grid size-10 place-items-center rounded-full text-white transition hover:bg-white/15"><X size={25} /></Modal.CloseTrigger>
+          <Modal.CloseTrigger aria-label="بستن گالری" className="grid size-10 place-items-center rounded-full bg-white/10 text-white transition hover:bg-white/20"><X size={25} /></Modal.CloseTrigger>
         </Modal.Header>
         <Modal.Body className="relative h-dvh overflow-hidden p-0">
           <div className="absolute inset-x-3 bottom-28 top-16 sm:inset-x-[12vw] sm:bottom-32 sm:top-20">
@@ -89,7 +89,6 @@ export function ProductDetailGallery({ media, productName, productCode, discount
   const hasDiscount = activeDiscount?.hasDiscount ?? false;
   const discountEndsAt = activeDiscount?.discountEndsAt ?? null;
   const [selectedId, setSelectedId] = useState(media[0]?.id ?? "");
-  const [priceAlert, setPriceAlert] = useState(false);
   const [now, setNow] = useState(() => Date.now());
   // `now` is computed at both server-render and client-hydration time, so it differs by
   // however long that gap takes; gating the countdown behind `hydrated` (false during SSR
@@ -139,9 +138,16 @@ export function ProductDetailGallery({ media, productName, productCode, discount
     };
   }, [discountEndsAt, hasDiscount, router]);
 
+  // While a click-triggered smooth scroll is animating, its own scroll events pass through
+  // intermediate slides — the scroll-sync effect below would round those to the *previous*
+  // slide for roughly the first half of the animation, flashing the thumbnail highlight back
+  // before it settles back on the one just picked. Suppress that sync until the scroll ends.
+  const suppressScrollSyncRef = useRef(false);
+
   function scrollToIndex(index: number) {
     const el = viewportRef.current;
     if (!el || index < 0) return;
+    suppressScrollSyncRef.current = true;
     el.scrollTo({ left: index * el.clientWidth, behavior: "smooth" });
   }
 
@@ -166,7 +172,7 @@ export function ProductDetailGallery({ media, productName, productCode, discount
     if (!el || media.length < 2) return;
     let frame = 0;
     function onScroll() {
-      if (frame) return;
+      if (frame || suppressScrollSyncRef.current) return;
       frame = requestAnimationFrame(() => {
         frame = 0;
         if (!el) return;
@@ -176,16 +182,17 @@ export function ProductDetailGallery({ media, productName, productCode, discount
         if (item) setSelectedId(item.id);
       });
     }
+    function onScrollEnd() { suppressScrollSyncRef.current = false; }
     el.addEventListener("scroll", onScroll, { passive: true });
+    el.addEventListener("scrollend", onScrollEnd);
     return () => {
       el.removeEventListener("scroll", onScroll);
+      el.removeEventListener("scrollend", onScrollEnd);
       if (frame) cancelAnimationFrame(frame);
     };
   }, [media]);
 
   const actions = [
-    { label: priceAlert ? "غیرفعال‌کردن اطلاع‌رسانی" : "اطلاع‌رسانی تغییرات محصول", icon: <Bell size={22} className={priceAlert ? "fill-[var(--brand-accent)] text-[var(--brand-accent)]" : ""} />, onPress: () => setPriceAlert((value) => !value) },
-    { label: "نمودار قیمت", icon: <ChartNoAxesCombined size={22} />, onPress: () => toast.success("نمودار قیمت در مرحله اتصال API فعال می‌شود") },
     { label: "مشخصات محصول", icon: <List size={22} />, onPress: () => document.getElementById("specifications")?.scrollIntoView({ behavior: "smooth" }) },
   ];
   const actionButtonClass = "!size-10 !min-h-10 !min-w-10 rounded-full text-slate-700 hover:bg-[var(--surface-tertiary)] hover:text-[var(--brand-primary)]";
