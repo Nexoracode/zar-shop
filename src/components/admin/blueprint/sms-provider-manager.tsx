@@ -28,10 +28,13 @@ export function BlueprintSmsProviderManager({ mode, initialConfigs, onSaved }: {
   const [password, setPassword] = useState("");
   const [senderNumber, setSenderNumber] = useState("");
   const [otpPatternCode, setOtpPatternCode] = useState("");
+  const [otpCodeVariable, setOtpCodeVariable] = useState("");
+  const [otpNameVariable, setOtpNameVariable] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
   const [existingPatterns, setExistingPatterns] = useState<SmsPattern[]>([]);
   const selected = useMemo(() => smsProviders.find((item) => item.id === selectedId)!, [selectedId]);
   const hasSavedFarazKey = initialConfigs.some((config) => config.provider === "FARAZ_SMS");
+  const selectedPattern = existingPatterns.find((pattern) => pattern.code === otpPatternCode) ?? null;
 
   // Once an API key is already saved, offer a shortcut to pick a pattern already created (via
   // the patterns page) instead of copy-pasting its code by hand.
@@ -46,7 +49,7 @@ export function BlueprintSmsProviderManager({ mode, initialConfigs, onSaved }: {
     event.preventDefault();
     setBusy("save");
     try {
-      const body = selectedId === "FARAZ_SMS" ? { provider: selectedId, apiKey, senderNumber, otpPatternCode } : { provider: selectedId, username, password, senderNumber };
+      const body = selectedId === "FARAZ_SMS" ? { provider: selectedId, apiKey, senderNumber, otpPatternCode, otpCodeVariable, otpNameVariable: otpNameVariable || undefined } : { provider: selectedId, username, password, senderNumber };
       const response = await fetch("/api/admin/sms/providers", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
       const result = await response.json().catch(() => null);
       if (!response.ok) throw new Error(result?.message ?? "پیکربندی ذخیره نشد.");
@@ -200,17 +203,35 @@ export function BlueprintSmsProviderManager({ mode, initialConfigs, onSaved }: {
             {selectedId === "FARAZ_SMS" ? (
               <>
                 <BpInput label="API Key" secret required maxLength={smsProviderFieldLimits.apiKey} value={apiKey} onChange={(event) => setApiKey(event.target.value)} dir="ltr" />
-                {existingPatterns.length > 0 && (
+                {existingPatterns.length > 0 ? (
                   <BpSelect
-                    label="انتخاب سریع از پترن‌های ثبت‌شده"
-                    hint="با انتخاب یکی از پترن‌های زیر، کد آن در فیلد پایین پر می‌شود"
+                    label="پترن کد تأیید (OTP)"
+                    hint="از صفحه پترن‌های پیامک ساخته یا اینجا انتخاب کنید"
                     placeholder="انتخاب پترن…"
-                    value=""
-                    onChange={(event) => setOtpPatternCode(event.target.value)}
+                    value={otpPatternCode}
+                    onChange={(event) => {
+                      const code = event.target.value;
+                      setOtpPatternCode(code);
+                      const found = existingPatterns.find((pattern) => pattern.code === code);
+                      setOtpCodeVariable(found?.vars.length === 1 ? found.vars[0].var : "");
+                      setOtpNameVariable("");
+                    }}
                     options={existingPatterns.map((pattern) => ({ value: pattern.code, label: `${pattern.text.slice(0, 40)} (${pattern.code})` }))}
                   />
+                ) : (
+                  <BpInput label="کد پترن کد تأیید (OTP)" hint="کد پترنی که در صفحه پترن‌های پیامک ساختید" required dir="ltr" maxLength={smsProviderFieldLimits.otpPatternCode} value={otpPatternCode} onChange={(event) => setOtpPatternCode(event.target.value)} placeholder="SJ3FgPrE0C" />
                 )}
-                <BpInput label="کد پترن کد تأیید (OTP)" hint="پترنی با متغیرهای name و otp در پنل فراز اس‌ام‌اس بسازید و کد آن را اینجا وارد کنید یا از پترن‌های پیامک بسازید" required dir="ltr" maxLength={smsProviderFieldLimits.otpPatternCode} value={otpPatternCode} onChange={(event) => setOtpPatternCode(event.target.value)} placeholder="SJ3FgPrE0C" />
+                {selectedPattern && selectedPattern.vars.length > 0 ? (
+                  <>
+                    <BpSelect label="متغیر کد تأیید" required value={otpCodeVariable} onChange={(event) => setOtpCodeVariable(event.target.value)} placeholder="انتخاب کنید" options={selectedPattern.vars.map((variable) => ({ value: variable.var, label: variable.var }))} />
+                    <BpSelect label="متغیر نام فروشگاه" hint="اختیاری؛ اگر پترن جای نام فروشگاه هم دارد" value={otpNameVariable} onChange={(event) => setOtpNameVariable(event.target.value)} placeholder="هیچ‌کدام" options={selectedPattern.vars.map((variable) => ({ value: variable.var, label: variable.var }))} />
+                  </>
+                ) : (
+                  <>
+                    <BpInput label="نام متغیر کد تأیید" hint="همان نامی که هنگام ساخت پترن برای این متغیر گذاشتید" required dir="ltr" maxLength={smsProviderFieldLimits.otpVariableName} value={otpCodeVariable} onChange={(event) => setOtpCodeVariable(event.target.value)} placeholder="otp" />
+                    <BpInput label="نام متغیر نام فروشگاه" hint="اختیاری؛ اگر پترن جای نام فروشگاه هم دارد" dir="ltr" maxLength={smsProviderFieldLimits.otpVariableName} value={otpNameVariable} onChange={(event) => setOtpNameVariable(event.target.value)} placeholder="name" />
+                  </>
+                )}
               </>
             ) : (
               <>

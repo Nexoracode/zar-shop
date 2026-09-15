@@ -49,16 +49,16 @@ async function sendWithFaraz(provider: { senderNumber: string; credentialsEncryp
 // OTP codes go through Faraz SMS's registered-pattern API instead of the free-text "simple"
 // endpoint above: carriers in Iran require verification codes to use a pre-approved pattern so
 // they aren't filtered as advertising (and unlike the simple endpoint, pattern sends aren't
-// held for human moderation). The pattern code and line number are per-store (each Faraz SMS
-// account approves its own pattern), so they come from the admin-configured provider rather
-// than being fixed here. The pattern must be created in the panel with attribute variables
-// named exactly "name" and "otp" to match the payload below — purpose-specific copy isn't
-// possible here, that only lives in the SmsCampaign audit record via otpMessages below.
-async function sendOtpWithFarazPattern(apiKey: string, patternCode: string, lineNumber: string, recipient: string, code: string, name: string) {
+// held for human moderation). The pattern code, line number and attribute names are all per-store
+// (each Faraz SMS account approves its own pattern with whatever variable names the admin chose),
+// so `attributes` arrives pre-built from the admin-configured provider rather than assuming any
+// fixed variable names here — purpose-specific copy isn't possible here, that only lives in the
+// SmsCampaign audit record via otpMessages below.
+async function sendOtpWithFarazPattern(apiKey: string, patternCode: string, lineNumber: string, recipient: string, attributes: Record<string, string>) {
   const response = await fetch("https://api.iranpayamak.com/ws/v1/sms/pattern", {
     method: "POST",
     headers: { "Content-Type": "application/json", "Api-Key": apiKey },
-    body: JSON.stringify({ code: patternCode, recipient, line_number: lineNumber, number_format: "english", attributes: { name, otp: code } }),
+    body: JSON.stringify({ code: patternCode, recipient, line_number: lineNumber, number_format: "english", attributes }),
     signal: AbortSignal.timeout(15000),
   });
   const result = await response.json().catch(() => null);
@@ -94,11 +94,13 @@ export async function sendPhoneOtpCode(phone: string | null | undefined, code: s
   if (!settings.smsEnabled) return false;
   const recipient = normalizeIranPhone(phone); if (!recipient) return false;
   const provider = await db.smsProviderConfig.findFirst({ where: { isActive: true, provider: "FARAZ_SMS" } }); if (!provider) return false;
-  const credentials = z.object({ apiKey: z.string().min(1), otpPatternCode: z.string().min(1) }).parse(decryptSmsCredentials(provider.credentialsEncrypted));
+  const credentials = z.object({ apiKey: z.string().min(1), otpPatternCode: z.string().min(1), otpCodeVariable: z.string().min(1), otpNameVariable: z.string().optional() }).parse(decryptSmsCredentials(provider.credentialsEncrypted));
   const storeName = (await getGeneralStoreSettings()).storeName;
   const message = otpMessages[purpose](code);
+  const attributes: Record<string, string> = { [credentials.otpCodeVariable]: code };
+  if (credentials.otpNameVariable) attributes[credentials.otpNameVariable] = storeName;
   const campaign = await db.smsCampaign.create({ data: { provider: provider.provider, audience: `SYSTEM_PHONE_OTP_${purpose}`, message, recipientCount: 1, status: "SENDING" } });
-  try { const result = await sendOtpWithFarazPattern(credentials.apiKey, credentials.otpPatternCode, provider.senderNumber, recipient, code, storeName); await db.smsCampaign.update({ where: { id: campaign.id }, data: { status: "SENT", successfulCount: 1, providerData: result ?? undefined } }); return true; }
+  try { const result = await sendOtpWithFarazPattern(credentials.apiKey, credentials.otpPatternCode, provider.senderNumber, recipient, attributes); await db.smsCampaign.update({ where: { id: campaign.id }, data: { status: "SENT", successfulCount: 1, providerData: result ?? undefined } }); return true; }
   catch (error) { await db.smsCampaign.update({ where: { id: campaign.id }, data: { status: "FAILED", failedCount: 1, errorMessage: error instanceof Error ? error.message : "خطای ناشناخته" } }); return false; }
 }
 

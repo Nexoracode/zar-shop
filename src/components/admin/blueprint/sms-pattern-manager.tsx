@@ -443,7 +443,7 @@ export function BlueprintSmsPatternForm({ pattern }: { pattern?: SmsPattern }) {
               </div>
             ))}
           </div>
-        ) : <p className="bp-muted m-0 mt-2 text-[12px] leading-6">با نوشتن %نام% در متن پترن بالا، متغیر اینجا اضافه می‌شود. برای کد تأیید (OTP)، دقیقاً دو متغیر با نام‌های <bdi dir="ltr" className="font-mono">name</bdi> و <bdi dir="ltr" className="font-mono">otp</bdi> لازم است.</p>}
+        ) : <p className="bp-muted m-0 mt-2 text-[12px] leading-6">با نوشتن %نام% در متن پترن بالا، متغیر اینجا اضافه می‌شود؛ نام متغیر دلخواه است و بعداً هنگام تنظیم این پترن به‌عنوان پترن OTP در ارائه‌دهنده پیامک مشخص می‌کنید کدام متغیر کد تأیید است.</p>}
       </section>
 
       <div className="flex items-center gap-2">
