@@ -43,7 +43,7 @@ export function AccountSidebar({ user, showWallet = false, showReferral = false,
             <h2 className="m-0 text-base font-bold">سفارش‌های من</h2>
             <Link href="/account/orders" className="inline-flex items-center gap-1 text-xs font-bold text-[var(--brand-primary)]">مشاهده همه<ChevronLeft size={15} /></Link>
           </div>
-          <div className="flex justify-between gap-1">
+          <div className="flex justify-between gap-3">
             {orderStatItems.map(({ href, label, icon: Icon }, index) => (
               <Link key={label} href={href} className="flex min-w-0 flex-1 flex-col items-center gap-2 text-center">
                 <span className="relative grid size-12 place-items-center rounded-full bg-[var(--brand-primary)]/10 text-[var(--brand-primary)]">
