@@ -182,6 +182,7 @@ html[dir="rtl"] [data-slot="modal-header"]:has([data-slot="modal-close-trigger"]
     --success-foreground: #ffffff;
     --info: #2b6cb0;
     --info-foreground: #ffffff;
+    --backdrop: rgba(23, 35, 59, 0.32);
   }
 
   [data-theme="zar-dark"] {
@@ -221,6 +222,7 @@ html[dir="rtl"] [data-slot="modal-header"]:has([data-slot="modal-close-trigger"]
     --success-foreground: #07130c;
     --info: #63b3ed;
     --info-foreground: #07131f;
+    --backdrop: rgba(0, 0, 0, 0.45);
   }
 
   a {
@@ -352,6 +354,14 @@ html[dir="rtl"] [data-slot="modal-header"]:has([data-slot="modal-close-trigger"]
 
 button {
   cursor: pointer;
+}
+
+@layer utilities {
+  /* HeroUI's own backdrop-blur-md (12px) reads as too heavy/dark for our bottom sheets and
+     dialogs; a lighter blur keeps the page behind legible without losing the frosted-glass cue. */
+  .modal__backdrop--blur {
+    backdrop-filter: blur(4px);
+  }
 }
 
 img {
