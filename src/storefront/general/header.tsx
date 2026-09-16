@@ -38,6 +38,7 @@ export async function GeneralHeader({ settings, brand, user, menuItems }: Props)
   // out, see api/cart/route.ts) — it should not change where the bottom nav's own account tab
   // points; only a real account has an "/account" to show.
   const accountHref = user && !user.isGuest ? "/account" : "/login";
+  const ticketsHref = user && !user.isGuest ? "/account/tickets" : `/login?redirect=${encodeURIComponent("/account/tickets")}`;
   const logo = brand.mainLogoMedia
     ? <span className="relative block h-10 w-28"><Image src={brand.mainLogoMedia.url} alt={brand.mainLogoMedia.alt ?? settings.storeName} fill sizes="112px" className="object-contain" /></span>
     : <strong className="text-base font-bold text-[var(--brand-primary)]">{settings.storeName}</strong>;
@@ -69,6 +70,6 @@ export async function GeneralHeader({ settings, brand, user, menuItems }: Props)
       </div>
       <GeneralHeaderMenuRow categories={categories} menuItems={menuItems} deliveryPicker={<DeliveryAddressPicker initialAddresses={addresses} authenticated={Boolean(user)} user={{ firstName: user?.firstName ?? null, lastName: user?.lastName ?? null, phone: user?.phone ?? null }} compact />} />
     </header>
-    <StorefrontBottomNav cartCount={cartCount} accountHref={accountHref} supportPhone={settings.supportPhone} />
+    <StorefrontBottomNav cartCount={cartCount} accountHref={accountHref} ticketsHref={ticketsHref} />
   </>;
 }

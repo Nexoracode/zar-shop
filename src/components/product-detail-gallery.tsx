@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { Button, Modal, ProgressBar } from "@heroui/react";
@@ -26,6 +27,7 @@ type ProductDetailGalleryProps = {
   media: ProductGalleryMedia[];
   productName: string;
   productCode: string;
+  ticketHref: string;
   discountBySelection?: SelectionDiscount[];
   soldPercent?: number;
   compareItem?: CompareItem;
@@ -76,7 +78,7 @@ function FullscreenGallery({ media, selected, selectedIndex, productName, onSele
   </Modal.Backdrop>;
 }
 
-export function ProductDetailGallery({ media, productName, productCode, discountBySelection = [], soldPercent = 0, compareItem }: ProductDetailGalleryProps) {
+export function ProductDetailGallery({ media, productName, productCode, ticketHref, discountBySelection = [], soldPercent = 0, compareItem }: ProductDetailGalleryProps) {
   const router = useRouter();
   const selectedOptions = useSelectedProductOptions();
   const viewportRef = useRef<HTMLDivElement>(null);
@@ -227,7 +229,7 @@ export function ProductDetailGallery({ media, productName, productCode, discount
         <FullscreenGallery media={media} selected={selected} selectedIndex={selectedIndex} productName={productName} onSelect={selectId} onStep={selectAt} />
       </Modal>
     </div>}
-    <div className="mt-3 flex flex-wrap items-center justify-center gap-x-7 gap-y-1 text-[11px] text-slate-400"><span className="inline-flex items-center gap-1.5"><Info size={15} />گزارش مشخصات کالا یا موارد قانونی</span><span dir="ltr">{productCode}</span></div>
+    <div className="mt-3 flex flex-wrap items-center justify-center gap-x-7 gap-y-1 text-[11px] text-slate-400"><Link href={ticketHref} className="inline-flex items-center gap-1.5 transition hover:text-[var(--brand-primary)]"><Info size={15} />گزارش مشخصات کالا یا موارد قانونی</Link><span dir="ltr">{productCode}</span></div>
 
   </section>;
 }

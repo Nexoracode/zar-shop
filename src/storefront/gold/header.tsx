@@ -42,6 +42,7 @@ export async function GoldHeader({ settings, brand, user, menuItems }: { setting
   // out, see api/cart/route.ts) — it should not change where the bottom nav's own account tab
   // points; only a real account has an "/account" to show.
   const accountHref = user && !user.isGuest ? "/account" : "/login";
+  const ticketsHref = user && !user.isGuest ? "/account/tickets" : `/login?redirect=${encodeURIComponent("/account/tickets")}`;
   const goldPrice = settings.industry === "GOLD" ? <StorefrontGoldPrice initialPrice={gold ? Number(gold.pricePerGram18) : null} currency={settings.currency} live={brand.liveGoldPrice} refreshSeconds={catalogSettings.goldPriceRefreshSeconds} showLabel={false} /> : null;
 
   const logo = brand.mainLogoMedia ? (
@@ -91,6 +92,6 @@ export async function GoldHeader({ settings, brand, user, menuItems }: { setting
       <div className="flex min-h-10 items-center border-t border-[#eee9e2] px-4 lg:hidden"><DeliveryAddressPicker initialAddresses={addresses} authenticated={Boolean(user)} user={{ firstName: user?.firstName ?? null, lastName: user?.lastName ?? null, phone: user?.phone ?? null }} compact /></div>
     </header>
 
-    <StorefrontBottomNav cartCount={cartCount} accountHref={accountHref} supportPhone={settings.supportPhone} />
+    <StorefrontBottomNav cartCount={cartCount} accountHref={accountHref} ticketsHref={ticketsHref} />
   </>;
 }

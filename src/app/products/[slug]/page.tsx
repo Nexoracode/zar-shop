@@ -189,9 +189,10 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
         : `${product.stock.toLocaleString("fa-IR")} عدد موجود در انبار`;
   const purchaseMeta = <span className={`text-xs font-bold ${product.stock < 1 || lowStock ? "text-[var(--danger)]" : "text-[var(--success)]"}`}>{stockLabel}</span>;
   const ticketHref = `/account/tickets/new?productId=${product.id}`;
+  const resolvedTicketHref = currentUser && !currentUser.isGuest ? ticketHref : `/login?redirect=${encodeURIComponent(ticketHref)}`;
   const purchaseFooter = (
     <Link
-      href={currentUser && !currentUser.isGuest ? ticketHref : `/login?redirect=${encodeURIComponent(ticketHref)}`}
+      href={resolvedTicketHref}
       className="flex min-h-10 items-center justify-center gap-2 rounded-lg border border-slate-200 text-xs font-bold text-slate-600 transition hover:border-[var(--brand-primary)] hover:text-[var(--brand-primary)]"
     >
       <Headset size={16} />گفتگو با پشتیبان
@@ -244,7 +245,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
       <div className="grid items-stretch gap-7 lg:grid-cols-[minmax(0,1fr)_320px]">
         <div className="min-w-0">
           <section className="grid items-start gap-7 lg:grid-cols-[minmax(330px,1.05fr)_minmax(0,1.1fr)] lg:grid-rows-[auto_auto] lg:gap-x-7 lg:gap-y-5">
-            <ProductDetailGallery media={galleryMedia} productName={product.name} productCode={product.sku} discountBySelection={discountBySelection} soldPercent={soldPercent} compareItem={{ id: product.id, slug: product.slug, name: product.name, image: galleryMedia.find((item) => item.type === "IMAGE")?.url ?? null, categoryId: product.categoryId, categoryName: product.category?.name ?? null }} />
+            <ProductDetailGallery media={galleryMedia} productName={product.name} productCode={product.sku} ticketHref={resolvedTicketHref} discountBySelection={discountBySelection} soldPercent={soldPercent} compareItem={{ id: product.id, slug: product.slug, name: product.name, image: galleryMedia.find((item) => item.type === "IMAGE")?.url ?? null, categoryId: product.categoryId, categoryName: product.category?.name ?? null }} />
 
             <div className="min-w-0 lg:col-start-2 lg:row-start-1">
               <div className="flex items-center justify-between gap-3">
