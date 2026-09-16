@@ -58,7 +58,14 @@ function SeoRuleList({ title, description, endpoint, pair, sourceLabel, targetLa
     }
   }, [endpoint]);
 
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => {
+    let active = true;
+    requestJson<RuleRow[]>(endpoint, {}, { fallbackMessage: "دریافت فهرست انجام نشد." })
+      .then((data) => { if (active) setRows(data); })
+      .catch((reason) => { if (active) toast.danger("دریافت فهرست انجام نشد", { description: requestErrorMessage(reason) }); })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, [endpoint]);
 
   async function add(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();

@@ -51,7 +51,7 @@ function GalleryMedia({ item, productName, priority = false, modal = false }: { 
   return <Image src={item.url} alt={item.alt || productName} fill priority={priority} sizes={modal ? "90vw" : "(max-width: 1024px) 100vw, 38vw"} className={`object-contain ${modal ? "p-2 sm:p-5" : "p-3 sm:p-5"}`} />;
 }
 
-function renderFullscreenGallery({ media, selected, selectedIndex, productName, onSelect, onStep }: { media: ProductGalleryMedia[]; selected: ProductGalleryMedia | undefined; selectedIndex: number; productName: string; onSelect: (id: string) => void; onStep: (index: number) => void }) {
+function FullscreenGallery({ media, selected, selectedIndex, productName, onSelect, onStep }: { media: ProductGalleryMedia[]; selected: ProductGalleryMedia | undefined; selectedIndex: number; productName: string; onSelect: (id: string) => void; onStep: (index: number) => void }) {
   return <Modal.Backdrop isDismissable={false} className="z-[120] !bg-black !backdrop-blur-none">
     <Modal.Container size="full" placement="center" className="h-dvh w-screen max-w-none p-0">
       <Modal.Dialog aria-label={`گالری تصاویر ${productName}`} className="h-dvh w-screen max-w-none overflow-hidden rounded-none bg-black text-white shadow-none" dir="rtl">
@@ -224,7 +224,7 @@ export function ProductDetailGallery({ media, productName, productCode, discount
           {media[media.length - 1]?.type === "IMAGE" && <Image src={media[media.length - 1].url} alt="" fill sizes="74px" className="scale-110 object-cover blur-[5px]" />}
           <span className="absolute inset-0 grid place-items-center bg-white/45 text-slate-700"><Ellipsis size={28} /></span>
         </Button>
-        {renderFullscreenGallery({ media, selected, selectedIndex, productName, onSelect: selectId, onStep: selectAt })}
+        <FullscreenGallery media={media} selected={selected} selectedIndex={selectedIndex} productName={productName} onSelect={selectId} onStep={selectAt} />
       </Modal>
     </div>}
     <div className="mt-3 flex flex-wrap items-center justify-center gap-x-7 gap-y-1 text-[11px] text-slate-400"><span className="inline-flex items-center gap-1.5"><Info size={15} />گزارش مشخصات کالا یا موارد قانونی</span><span dir="ltr">{productCode}</span></div>
