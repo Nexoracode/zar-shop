@@ -236,7 +236,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
     } : {}),
   };
 
-  return <ProductPurchaseProvider initialSelectedOptions={initialSelectedOptions}><ProductDetailTopBar productName={product.name} cartCount={cartCount} /><ProductActivityTracker productId={product.id} enabled={Boolean(currentUser && !currentUser.isGuest)} />{seo.enableProductSchema && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(productJsonLd) }} />}<main className="bg-white px-4 pb-16 pt-5 antialiased sm:px-6 lg:pb-24">
+  return <ProductPurchaseProvider initialSelectedOptions={initialSelectedOptions}><ProductDetailTopBar productName={product.name} cartCount={cartCount} ticketHref={resolvedTicketHref} /><ProductActivityTracker productId={product.id} enabled={Boolean(currentUser && !currentUser.isGuest)} />{seo.enableProductSchema && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(productJsonLd) }} />}<main className="bg-white px-4 pb-16 pt-5 antialiased sm:px-6 lg:pb-24">
     <div className="mx-auto w-full max-w-[1440px]">
       <nav className="mb-6 flex flex-wrap items-center gap-2 text-xs text-slate-500" aria-label="مسیر محصول">
         <Link href="/" className="transition hover:text-slate-900">خانه</Link><span>/</span><Link href="/products" className="transition hover:text-slate-900">محصولات</Link>{product.category && <><span>/</span><Link href={`/products?category=${encodeURIComponent(product.category.slug)}`} className="transition hover:text-slate-900">{product.category.name}</Link></>}

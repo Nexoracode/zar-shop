@@ -14,7 +14,7 @@ const iconButtonClass = "grid size-10 place-items-center rounded-lg text-slate-7
  * compact bar on the product page — close, search, cart, more — instead of stacking its own
  * header/footer navigation on top of the product content. AppChrome renders this instead of
  * <StorefrontHeader> for `/products/[slug]`. */
-export function ProductDetailTopBar({ productName, cartCount }: { productName: string; cartCount: number }) {
+export function ProductDetailTopBar({ productName, cartCount, ticketHref }: { productName: string; cartCount: number; ticketHref: string }) {
   const router = useRouter();
   const [moreOpen, setMoreOpen] = useState(false);
 
@@ -49,7 +49,7 @@ export function ProductDetailTopBar({ productName, cartCount }: { productName: s
         <Popover.Content placement="bottom left" dir="rtl" className="z-[190] w-56 rounded-xl border border-[var(--border)] bg-[var(--surface)] p-0 text-right text-[var(--foreground)] shadow-[0_10px_35px_rgba(15,23,42,.18)]">
           <Popover.Dialog dir="rtl" className="p-0 text-right">
             <button type="button" onClick={() => { setMoreOpen(false); void shareProduct(); }} className="flex min-h-12 w-full items-center gap-3 border-b border-[var(--border)] px-4 text-sm font-bold text-slate-700 transition hover:text-[var(--brand-primary)]"><Share2 size={18} />اشتراک‌گذاری محصول</button>
-            <Link href="/account/tickets" onClick={() => setMoreOpen(false)} className="flex min-h-12 items-center gap-3 px-4 text-sm font-bold text-slate-700 transition hover:text-[var(--brand-primary)]"><MessageCircleQuestion size={18} />گفتگو با پشتیبان</Link>
+            <Link href={ticketHref} onClick={() => setMoreOpen(false)} className="flex min-h-12 items-center gap-3 px-4 text-sm font-bold text-slate-700 transition hover:text-[var(--brand-primary)]"><MessageCircleQuestion size={18} />گفتگو با پشتیبان</Link>
           </Popover.Dialog>
         </Popover.Content>
       </Popover>
