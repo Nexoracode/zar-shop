@@ -1,4 +1,5 @@
 import "server-only";
+import { cacheLife, cacheTag } from "next/cache";
 import { db } from "@/lib/db";
 import type { Prisma } from "@generated/prisma/client";
 
@@ -61,7 +62,12 @@ function publishedWhere(now = new Date()): Prisma.ArticleWhereInput {
   return { status: "PUBLISHED", publishedAt: { not: null, lte: now } };
 }
 
+// Cached across requests; no admin-side revalidateTag is wired yet for article
+// publish/unpublish/edit, so a short cacheLife keeps staleness small until it self-heals.
 export async function getPublishedArticles({ page = 1, categorySlug, search }: { page?: number; categorySlug?: string; search?: string }) {
+  "use cache";
+  cacheLife("minutes");
+  cacheTag("articles:list");
   const trimmedSearch = search?.trim();
   const where: Prisma.ArticleWhereInput = {
     ...publishedWhere(),
@@ -105,7 +111,13 @@ const relatedProductSelect = {
 
 export type ArticleRelatedProduct = Prisma.ProductGetPayload<{ select: typeof relatedProductSelect }>;
 
+// Cached across requests (keyed by slug + viewerId, since the own-rating lookup is
+// viewer-specific). No admin-side revalidateTag is wired yet for article edits, so a short
+// cacheLife keeps that staleness window small until it self-heals.
 export async function getPublishedArticleBySlug(slug: string, viewerId?: string | null) {
+  "use cache";
+  cacheLife("minutes");
+  cacheTag("articles:list");
   const article = await db.article.findFirst({
     where: { slug, ...publishedWhere() },
     include: {
@@ -152,6 +164,9 @@ export async function rateArticle(articleId: string, userId: string, value: numb
 
 /** Lean read for the homepage's "latest articles" section — no count query, just the rows. */
 export async function getLatestPublishedArticles(limit = 4) {
+  "use cache";
+  cacheLife("minutes");
+  cacheTag("articles:list");
   return db.article.findMany({
     where: publishedWhere(),
     select: listSelect,
@@ -162,6 +177,9 @@ export async function getLatestPublishedArticles(limit = 4) {
 
 /** Top-of-page magazine showcase for the blog list — hero card + numbered picks, newest first. */
 export async function getFeaturedArticles(limit = 4) {
+  "use cache";
+  cacheLife("minutes");
+  cacheTag("articles:list");
   return db.article.findMany({
     where: publishedWhere(),
     select: featuredSelect,
@@ -175,6 +193,9 @@ export async function countPublishedArticles() {
 }
 
 export async function getActiveArticleCategories() {
+  "use cache";
+  cacheLife("minutes");
+  cacheTag("articles:list");
   const categories = await db.articleCategory.findMany({
     where: { isActive: true },
     orderBy: [{ sortOrder: "asc" }, { name: "asc" }],

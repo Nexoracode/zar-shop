@@ -1,7 +1,8 @@
 import Link from "next/link";
-import { cache } from "react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { connection } from "next/server";
+import { cacheLife, cacheTag } from "next/cache";
 import { CheckCircle2, Headset, PackageCheck, ShieldCheck, Star, Truck } from "lucide-react";
 import { AddToCart, ProductPurchaseProvider } from "@/components/add-to-cart";
 import { PriceTooltip } from "@/components/price-tooltip";
@@ -38,16 +39,18 @@ import { DiscountExpiryRefresh } from "@/components/discount-expiry-refresh";
 import { earliestDiscountExpiry } from "@/modules/products/discount-window";
 import { env } from "@/lib/env";
 
-// Reads the viewer's session directly (favorite state, personalization) alongside the product
-// data, so this page is genuinely session-coupled today — same judgment call as the storefront
-// header. Left dynamic for now.
-export const instant = false;
-
 // The status filter is deliberately absent: the page needs to tell an unpublished product
 // apart from a slug that never existed, so that the first case can explain itself instead of
-// falling through to a bare 404.
-const getProductForPage = cache(async (slug: string, industry: "GOLD" | "GENERAL") =>
-  db.product.findFirst({ where: { slug, storeIndustry: industry }, include: { category: true, media: { include: { media: true }, orderBy: { position: "asc" } }, variants: true, optionTypes: productOptionTypeInclude, optionGuide: true } }));
+// falling through to a bare 404. Cached across requests — this also keeps generateMetadata
+// (which has no session dependency of its own) genuinely cacheable/prerenderable. No
+// admin-side revalidateTag is wired yet for product edits, so a short cacheLife keeps that
+// staleness window small until it self-heals.
+async function getProductForPage(slug: string, industry: "GOLD" | "GENERAL") {
+  "use cache";
+  cacheLife("minutes");
+  cacheTag("products:detail");
+  return db.product.findFirst({ where: { slug, storeIndustry: industry }, include: { category: true, media: { include: { media: true }, orderBy: { position: "asc" } }, variants: true, optionTypes: productOptionTypeInclude, optionGuide: true } });
+}
 
 function plainProductDescription(product: { name: string; description: string | null }, storeName: string) {
   return product.description
@@ -74,6 +77,11 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 }
 
 export default async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
+  // Reads the viewer's session (favorite state, personalization) alongside uncached data
+  // (live gold price, catalog settings) inside the Promise.all below, and that cookies() read
+  // can't reliably establish dynamic rendering on its own during prerendering when it's racing
+  // other reads concurrently. `connection()` marks this render as request-time explicitly.
+  await connection();
   const { slug } = await params;
   const settings = await getGeneralStoreSettings();
   const [product, gold, catalogSettings, currentUser, seo] = await Promise.all([

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { cacheLife, cacheTag } from "next/cache";
 import { ArticleListSection } from "@/components/article-list-section";
 import { db } from "@/lib/db";
 import { getActiveArticleCategories, getPublishedArticles } from "@/modules/articles/service";
@@ -8,6 +9,9 @@ import { getActiveArticleCategories, getPublishedArticles } from "@/modules/arti
 type Context = { params: Promise<{ slug: string }>; searchParams: Promise<{ page?: string; search?: string }> };
 
 async function getCategory(slug: string) {
+  "use cache";
+  cacheLife("minutes");
+  cacheTag("articles:list");
   return db.articleCategory.findFirst({ where: { slug, isActive: true }, select: { name: true, slug: true } });
 }
 
