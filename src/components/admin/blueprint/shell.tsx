@@ -26,10 +26,11 @@ type Props = {
   notificationCount: number;
   industry: StoreIndustry;
   sidebarCollapsed: boolean;
+  initialTheme: "light" | "dark";
   children: ReactNode;
 };
 
-export function BlueprintShell({ user, showGoldPrice, goldPrice, goldFetchedAt, notificationCount, industry, sidebarCollapsed, children }: Props) {
+export function BlueprintShell({ user, showGoldPrice, goldPrice, goldFetchedAt, notificationCount, industry, sidebarCollapsed, initialTheme, children }: Props) {
   const router = useRouter();
   const [loggingOut, setLoggingOut] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -39,17 +40,26 @@ export function BlueprintShell({ user, showGoldPrice, goldPrice, goldFetchedAt, 
   const bellRef = useRef<HTMLButtonElement>(null);
   const userRef = useRef<HTMLButtonElement>(null);
   const closeMenu = useCallback(() => setOpenMenu(null), []);
-  const theme = useSyncExternalStore(subscribeToAdminTheme, getResolvedAdminTheme, () => "light");
+  // The cookie-backed server snapshot (read in the layout) makes the very first paint already
+  // match the saved preference — no more painting light and snapping to dark once this hook
+  // resolves client-side. `data-theme` is also set directly on this component's own root below
+  // (rather than only imperatively on `document.documentElement`), so the visible shell is
+  // correct in the very same render pass instead of a tick later.
+  const themeServerSnapshot = useCallback(() => initialTheme, [initialTheme]);
+  const theme = useSyncExternalStore(subscribeToAdminTheme, getResolvedAdminTheme, themeServerSnapshot);
   // The rail's own state, read here because its toggle now lives in this header.
   const railServerSnapshot = useCallback(() => sidebarCollapsed, [sidebarCollapsed]);
   const railCollapsed = useSyncExternalStore(subscribeToSidebarCollapsed, getSidebarCollapsed, railServerSnapshot);
   useStickyHeaderOffset(headerRef, shellRef);
   const fullName = `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim() || "مدیر فروشگاه";
 
+  // Dialog/Popover/date-picker portal straight to document.body, outside this component's own
+  // tree, so they can't see the data-theme set on the root div below — they still need it on
+  // `documentElement` to render in the right theme. This still only ever runs after hydration,
+  // but that's fine: nothing can portal open before the page has hydrated enough to be clicked.
   useEffect(() => {
     document.documentElement.dataset.theme = theme === "dark" ? "zar-dark" : "zar";
   }, [theme]);
-
   useEffect(() => () => { document.documentElement.dataset.theme = "zar"; }, []);
 
   async function logout() {
@@ -64,7 +74,7 @@ export function BlueprintShell({ user, showGoldPrice, goldPrice, goldFetchedAt, 
   }
 
   return (
-    <div ref={shellRef} dir="rtl" className="bp-root flex min-h-dvh flex-col">
+    <div ref={shellRef} dir="rtl" data-theme={theme === "dark" ? "zar-dark" : "zar"} className="bp-root flex min-h-dvh flex-col">
       {/* Full-width, above the rail too — like WordPress's own admin bar, not scoped to the
           content column the way it used to be. */}
       <header ref={headerRef} className="bp-dark-bar sticky top-0 z-40 grid h-12 flex-none grid-cols-[auto_1fr_auto] items-center gap-3 border-b border-[var(--bp-sidebar-border)] px-3 sm:px-4">

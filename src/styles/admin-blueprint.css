@@ -96,7 +96,8 @@
 /* Dark set. The upstream system ships light tokens only; these keep the same tonal
    relationships (hairline dividers, transparent surfaces) on an ink ground, and lift the
    accent to the 300/400 steps so text and strokes stay legible on it. */
-[data-theme="zar-dark"] .bp-root {
+[data-theme="zar-dark"] .bp-root,
+.bp-root[data-theme="zar-dark"] {
   --bp-bg: #16181a;
   --bp-card: #1e2022;
   --bp-surface: #1d1f20;

@@ -3,6 +3,7 @@ import { BlueprintShell } from "@/components/admin/blueprint/shell";
 import { SetupPendingNotice } from "@/components/admin/blueprint/setup/setup-pending-notice";
 import { SetupWizard } from "@/components/admin/blueprint/setup/setup-wizard";
 import { sidebarCollapsedCookie } from "@/lib/admin-sidebar-state";
+import { adminThemeCookie } from "@/lib/admin-theme";
 import { db } from "@/lib/db";
 import { env } from "@/lib/env";
 import { requireAdminUser } from "@/modules/auth/session";
@@ -65,7 +66,13 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     db.order.count({ where: { OR: [{ status: { in: ["PAID", "PROCESSING"] } }, { status: "PENDING_PAYMENT", expirationHandledAt: { not: null }, expiredAt: null }] } }),
   ]);
   const goldPrice = storeIndustry === "GOLD" ? await getGoldPriceForDisplay() : null;
-  const sidebarCollapsed = (await cookies()).get(sidebarCollapsedCookie)?.value === "1";
+  const cookieStore = await cookies();
+  const sidebarCollapsed = cookieStore.get(sidebarCollapsedCookie)?.value === "1";
+  // "system" preference can't be resolved server-side (no media-query access), so it falls back
+  // to light for the very first paint same as an unset cookie — the client-side effect corrects
+  // it immediately after if the OS is actually in dark mode, same one-time adjustment every
+  // "system"-preference site makes, just no longer combined with the explicit light/dark flash.
+  const initialTheme = cookieStore.get(adminThemeCookie)?.value === "dark" ? "dark" : "light";
   return (
     <BlueprintShell
       user={{ firstName: user.firstName, lastName: user.lastName, email: user.email, role: user.role }}
@@ -75,6 +82,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       notificationCount={notificationCount}
       industry={storeIndustry}
       sidebarCollapsed={sidebarCollapsed}
+      initialTheme={initialTheme}
     >
       {children}
     </BlueprintShell>
