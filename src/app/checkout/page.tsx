@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { CreditCard, MapPin, ShoppingCart } from "lucide-react";
-import { AlertDescription, AlertRoot } from "@/components/hero";
 import { CheckoutForm } from "@/components/checkout-form";
+import { InlineAlert } from "@/components/inline-alert";
 import { ResumeOrderCheckout } from "@/components/resume-order-checkout";
 import { StandaloneTopBar } from "@/components/standalone-top-bar";
 import { requireUser } from "@/modules/auth/session";
@@ -97,7 +97,7 @@ export default async function CheckoutPage() {
   const needsGoldRate = items.some((item) => item.product.storeIndustry === "GOLD" && item.product.fixedPrice === null);
   const rate = gold?.pricePerGram18 ?? null;
 
-  if (needsGoldRate && rate === null) return <><StandaloneTopBar backHref="/cart" backLabel="بازگشت به سبد خرید" /><main className="min-h-[calc(100dvh-4rem)] bg-[var(--background)] px-4 py-12 sm:px-6"><div className="mx-auto max-w-3xl"><AlertRoot status="warning"><AlertDescription>نرخ لحظه‌ای طلا موقتاً در دسترس نیست. سفارش شما ثبت نشده و سبد خرید محفوظ است.</AlertDescription></AlertRoot></div></main></>;
+  if (needsGoldRate && rate === null) return <><StandaloneTopBar backHref="/cart" backLabel="بازگشت به سبد خرید" /><main className="min-h-[calc(100dvh-4rem)] bg-[var(--background)] px-4 py-12 sm:px-6"><div className="mx-auto max-w-3xl"><InlineAlert status="warning">نرخ لحظه‌ای طلا موقتاً در دسترس نیست. سفارش شما ثبت نشده و سبد خرید محفوظ است.</InlineAlert></div></main></>;
 
   const prices = items.map((item) => {
     const product = item.product;

@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Alert, Button, Modal, Spinner, toast } from "@heroui/react";
+import { Button, Modal, Spinner, toast } from "@heroui/react";
 import { Ban, X } from "lucide-react";
+import { InlineAlert } from "@/components/inline-alert";
 
 export function OrderCancelButton({ orderId, orderNumber }: { orderId: string; orderNumber: string }) {
   const router = useRouter();
@@ -40,7 +41,7 @@ export function OrderCancelButton({ orderId, orderNumber }: { orderId: string; o
             </Modal.Header>
             <Modal.Body className="p-5 text-sm leading-7 text-[var(--muted)]">
               سفارش <b className="text-[var(--foreground)]" dir="ltr">{orderNumber}</b> لغو شود؟ این سفارش هنوز پرداخت نشده و پس از لغو دیگر قابل پرداخت نخواهد بود.
-              {error && <Alert status="danger" className="mt-3"><Alert.Description>{error}</Alert.Description></Alert>}
+              {error && <InlineAlert status="danger" className="mt-3">{error}</InlineAlert>}
             </Modal.Body>
             <Modal.Footer className="gap-2 border-t border-[var(--border)] p-4">
               <Button type="button" variant="danger" isPending={loading} onPress={() => void cancel()}>

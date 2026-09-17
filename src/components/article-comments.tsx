@@ -2,8 +2,9 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { Alert, Button, toast } from "@heroui/react";
+import { Button, toast } from "@heroui/react";
 import { ThumbsDown, ThumbsUp } from "lucide-react";
+import { InlineAlert } from "@/components/inline-alert";
 import { TextAreaField } from "@/components/form-field";
 import { requestErrorMessage, requestJson } from "@/lib/api-request";
 import { ReviewRatingField } from "@/components/review-rating-field";
@@ -99,10 +100,12 @@ export function ArticleComments({ articleId, initialComments, isAuthenticated }:
             <Button type="button" variant="primary" isPending={submitting} onPress={() => void submit()} className="mt-2.5 min-h-10 rounded-lg bg-[var(--brand-accent)] px-5 text-xs text-[var(--brand-accent-foreground)]">ثبت دیدگاه</Button>
           </>
         ) : (
-          <>
-            <Alert status="warning"><Alert.Description>برای ثبت امتیاز و دیدگاه، ابتدا باید در فروشگاه ثبت‌نام یا وارد حساب کاربری خود شوید.</Alert.Description></Alert>
-            <Button type="button" variant="primary" onPress={() => router.push("/login")} className="mt-3 min-h-10 rounded-lg bg-[var(--brand-accent)] px-5 text-xs text-[var(--brand-accent-foreground)]">ثبت‌نام</Button>
-          </>
+          <InlineAlert
+            status="warning"
+            action={<Button type="button" variant="primary" size="sm" onPress={() => router.push("/login")} className="min-h-9 rounded-lg bg-[var(--brand-accent)] px-4 text-xs text-[var(--brand-accent-foreground)]">ثبت‌نام</Button>}
+          >
+            برای ثبت امتیاز و دیدگاه، ابتدا باید در فروشگاه ثبت‌نام یا وارد حساب کاربری خود شوید.
+          </InlineAlert>
         )}
       </div>
     </div>

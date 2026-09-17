@@ -2,9 +2,10 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Alert, Button, Chip, Modal, toast } from "@heroui/react";
+import { Button, Chip, Modal, toast } from "@heroui/react";
 import { ListFilter, MessageCircleReply, MoreVertical, Star, ThumbsDown, ThumbsUp } from "lucide-react";
 import type { StorefrontReview, StorefrontReviewData } from "@/modules/reviews/service";
+import { InlineAlert } from "@/components/inline-alert";
 import { TextAreaField, TextField } from "@/components/form-field";
 import { requestErrorMessage, requestJson } from "@/lib/api-request";
 import { ReviewRatingField } from "@/components/review-rating-field";
@@ -167,7 +168,7 @@ export function ProductReviews({ productId, initialData, isAuthenticated }: Prop
       <Modal.Backdrop isOpen={composeOpen} onOpenChange={setComposeOpen} isDismissable={false}>
       <Modal.Container size="md" placement="center" scroll="inside"><Modal.Dialog aria-label={replyTo ? "ثبت پاسخ دیدگاه" : "ثبت امتیاز و دیدگاه"} dir="rtl">
         <Modal.Header className="pl-10"><Modal.Heading>{replyTo ? `پاسخ به ${replyTo.author.name}` : "ثبت امتیاز و دیدگاه"}</Modal.Heading><Modal.CloseTrigger aria-label="بستن" className="left-4 right-auto" /></Modal.Header>
-        <Modal.Body><div ref={composerRef} className="grid gap-3"><p className="text-sm text-slate-500">دیدگاه شما پیش از انتشار توسط مدیریت بررسی می‌شود.</p>{!isAuthenticated ? <Alert status="warning"><Alert.Description>برای ثبت دیدگاه باید وارد حساب کاربری شوید.</Alert.Description></Alert> : <>
+        <Modal.Body><div ref={composerRef} className="grid gap-3"><p className="text-sm text-slate-500">دیدگاه شما پیش از انتشار توسط مدیریت بررسی می‌شود.</p>{!isAuthenticated ? <InlineAlert status="warning">برای ثبت دیدگاه باید وارد حساب کاربری شوید.</InlineAlert> : <>
           {!replyTo && <ReviewRatingField rating={rating} onChange={(value) => { setRating(value); clearReviewError("rating"); }} error={reviewErrors.rating} />}
           {!replyTo && <TextField name="title" label="عنوان دیدگاه" required maxLength={reviewFieldLimits.title} placeholder="خلاصه تجربه شما" value={title} error={reviewErrors.title} onChange={(event) => { setTitle(event.target.value); clearReviewError("title"); }} />}
           <TextAreaField name="body" label={`متن ${replyTo ? "پاسخ" : "دیدگاه"}`} required rows={6} maxLength={reviewFieldLimits.body} hint="حداقل ۳ نویسه" placeholder="تجربه خود را با جزئیات بنویسید" value={body} error={reviewErrors.body} onChange={(event) => { setBody(event.target.value); clearReviewError("body"); }} />

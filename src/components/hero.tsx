@@ -1,7 +1,7 @@
 "use client";
 
 import { useSyncExternalStore, type ComponentProps } from "react";
-import { Alert, Button, Card, Chip, Input, Table as HeroTable, Tooltip } from "@heroui/react";
+import { Button, Card, Chip, Input, Table as HeroTable, Tooltip } from "@heroui/react";
 
 export { Button, Card, Input };
 const subscribe = () => () => undefined;
@@ -23,8 +23,6 @@ export function Table(props: ComponentProps<typeof HeroTable>) {
   return <HeroTable {...props} />;
 }
 
-export const AlertRoot = Alert;
-export const AlertDescription = Alert.Description;
 export const CardContent = Card.Content;
 export const ChipRoot = Chip;
 export const ChipLabel = Chip.Label;

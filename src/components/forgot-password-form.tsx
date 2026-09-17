@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { Alert, Button, toast } from "@heroui/react";
+import { Button, toast } from "@heroui/react";
+import { InlineAlert } from "@/components/inline-alert";
 import { LoadingLabel } from "@/components/loading-label";
 import { OtpCodeInput } from "@/components/otp-code-input";
 import { OtpResendCountdown } from "@/components/otp-resend-countdown";
@@ -101,7 +102,7 @@ export function ForgotPasswordForm() {
       <form className="grid gap-5" onSubmit={requestCode} noValidate>
         <StepHeader title="بازیابی رمز عبور" subtitle="شماره موبایل حساب خود را وارد کنید تا کد بازیابی برایتان پیامک شود" />
         <TextField tone="auth" label="شماره موبایل" error={fieldErrors.phone} id="phone" name="phone" inputMode="tel" dir="ltr" maxLength={authFieldLimits.phone} placeholder="09123456789" onChange={() => clearFieldError("phone")} autoFocus />
-        {error && <Alert status="danger"><Alert.Description>{error}</Alert.Description></Alert>}
+        {error && <InlineAlert status="danger">{error}</InlineAlert>}
         <Button type="submit" variant="primary" fullWidth className={submitClass} isPending={loading}>
           {({ isPending }) => <LoadingLabel isPending={isPending}>ارسال کد بازیابی</LoadingLabel>}
         </Button>
@@ -118,7 +119,7 @@ export function ForgotPasswordForm() {
       </div>
       <PasswordField tone="auth" label="رمز عبور جدید" error={fieldErrors.password} id="password" name="password" maxLength={authFieldLimits.password} onChange={() => clearFieldError("password")} />
       <PasswordField tone="auth" label="تکرار رمز عبور جدید" error={fieldErrors.confirmPassword} id="confirmPassword" name="confirmPassword" maxLength={authFieldLimits.password} onChange={() => clearFieldError("confirmPassword")} />
-      {error && <Alert status="danger"><Alert.Description>{error}</Alert.Description></Alert>}
+      {error && <InlineAlert status="danger">{error}</InlineAlert>}
       <Button type="submit" variant="primary" fullWidth className={submitClass} isPending={loading} isDisabled={otp.length !== 6}>
         {({ isPending }) => <LoadingLabel isPending={isPending}>تغییر رمز عبور</LoadingLabel>}
       </Button>

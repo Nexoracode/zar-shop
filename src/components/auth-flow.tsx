@@ -4,8 +4,9 @@ import { useState, type FormEvent, type ReactNode } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { ChevronLeft } from "lucide-react";
-import { Alert, Button, toast } from "@heroui/react";
+import { Button, toast } from "@heroui/react";
 import { AdminCheckbox } from "@/components/admin-checkbox";
+import { InlineAlert } from "@/components/inline-alert";
 import { LoadingLabel } from "@/components/loading-label";
 import { OtpCodeInput } from "@/components/otp-code-input";
 import { OtpResendCountdown } from "@/components/otp-resend-countdown";
@@ -201,7 +202,7 @@ export function AuthFlow() {
       <form className="grid gap-5" onSubmit={submitPhone} noValidate>
         <StepHeader title="ورود یا ثبت‌نام" subtitle="لطفاً شماره موبایل خود را وارد کنید" size="lg" />
         <TextField tone="auth" label="شماره موبایل" error={fieldErrors.phone} id="phone" name="phone" inputMode="tel" dir="ltr" maxLength={authFieldLimits.phone} placeholder="09123456789" onChange={() => clearFieldError("phone")} autoFocus />
-        {error && <Alert status="danger"><Alert.Description>{error}</Alert.Description></Alert>}
+        {error && <InlineAlert status="danger">{error}</InlineAlert>}
         <Button type="submit" variant="primary" fullWidth className={submitClass} isPending={loading}>
           {({ isPending }) => <LoadingLabel isPending={isPending}>ادامه</LoadingLabel>}
         </Button>
@@ -220,7 +221,7 @@ export function AuthFlow() {
           </Button>
           <Link href="/forgot-password" className={`${secondaryActionClass} inline-flex items-center px-2`}>فراموشی رمز عبور<ChevronLeft size={15} /></Link>
         </div>
-        {error && <Alert status="danger"><Alert.Description>{error}</Alert.Description></Alert>}
+        {error && <InlineAlert status="danger">{error}</InlineAlert>}
         <Button type="submit" variant="primary" fullWidth className={submitClass} isPending={loading}>
           {({ isPending }) => <LoadingLabel isPending={isPending}>تایید</LoadingLabel>}
         </Button>
@@ -239,7 +240,7 @@ export function AuthFlow() {
           <OtpCodeInput value={otp} onChange={(value) => { setOtp(value); clearFieldError("code"); }} isDisabled={loading} />
           {fieldErrors.code && <p role="alert" className="m-0 text-center text-[11px] font-normal text-[var(--danger)]">{fieldErrors.code}</p>}
         </div>
-        {error && <Alert status="danger"><Alert.Description>{error}</Alert.Description></Alert>}
+        {error && <InlineAlert status="danger">{error}</InlineAlert>}
         <Button type="submit" variant="primary" fullWidth className={submitClass} isPending={loading} isDisabled={otp.length !== 6}>
           {({ isPending }) => <LoadingLabel isPending={isPending}>تأیید کد</LoadingLabel>}
         </Button>
@@ -259,7 +260,7 @@ export function AuthFlow() {
       <PasswordField tone="auth" label="رمز عبور" error={fieldErrors.password} id="password" name="password" maxLength={authFieldLimits.password} onChange={() => clearFieldError("password")} />
       <TextField tone="auth" label="کد معرف (اختیاری)" dir="ltr" error={fieldErrors.referralCode} id="referralCode" name="referralCode" maxLength={authFieldLimits.referralCode} value={referralCode} hint="اگر با کد دوستتان ثبت‌نام کنید، پس از اولین خرید هر دو هدیه می‌گیرید." onChange={(event) => { setReferralCode(event.target.value.toUpperCase()); clearFieldError("referralCode"); }} />
       <AdminCheckbox isSelected={smsMarketingConsent} onChange={setSmsMarketingConsent} description="برای تخفیف‌ها و خبرهای فروشگاه؛ هر زمان قابل لغو است">مایلم پیامک‌های اطلاع‌رسانی فروشگاه را دریافت کنم</AdminCheckbox>
-      {error && <Alert status="danger"><Alert.Description>{error}</Alert.Description></Alert>}
+      {error && <InlineAlert status="danger">{error}</InlineAlert>}
       <Button type="submit" variant="primary" fullWidth className={submitClass} isPending={loading}>
         {({ isPending }) => <LoadingLabel isPending={isPending}>ساخت حساب</LoadingLabel>}
       </Button>

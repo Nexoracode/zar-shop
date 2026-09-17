@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { BadgePercent, ChevronLeft, PackageOpen, ShieldCheck, ShoppingCart, Truck } from "lucide-react";
-import { AlertDescription, AlertRoot, Card, ChipLabel, ChipRoot } from "@/components/hero";
+import { Card, ChipLabel, ChipRoot } from "@/components/hero";
+import { InlineAlert } from "@/components/inline-alert";
 import { getCurrentUser } from "@/modules/auth/session";
 import { db } from "@/lib/db";
 import { getGoldPriceForDisplay } from "@/modules/gold/gold-price.service";
@@ -72,11 +73,11 @@ export default async function CartPage() {
               {pricedItems.map(({ item, selectedWeight, pricing }) => {
                 const product = item.product;
                 const cover = product.media[0]?.media;
-                return pricing ? <CartItemCard key={item.id} id={item.id} name={product.name} slug={product.slug} imageUrl={cover?.type === "IMAGE" ? cover.url : null} imageAlt={cover?.alt ?? product.name} quantity={item.quantity} maxQuantity={Math.min(orderSettings.maxOrderItemQuantity, product.stock)} optionSummary={optionEntries(item.selectedOptions).map(([name, value]) => `${name}: ${value}`)} weight={product.storeIndustry === "GOLD" ? `${Number(selectedWeight).toLocaleString("fa-IR", { maximumFractionDigits: 3 })} گرم` : null} unitPrice={pricing.finalPrice} originalUnitPrice={pricing.isActive ? pricing.originalPrice : null} currency={settings.currency} preparationDays={product.preparationDays} /> : <AlertRoot key={item.id} status="warning" className="m-4"><AlertDescription>قیمت «{product.name}» موقتاً قابل محاسبه نیست.</AlertDescription></AlertRoot>;
+                return pricing ? <CartItemCard key={item.id} id={item.id} name={product.name} slug={product.slug} imageUrl={cover?.type === "IMAGE" ? cover.url : null} imageAlt={cover?.alt ?? product.name} quantity={item.quantity} maxQuantity={Math.min(orderSettings.maxOrderItemQuantity, product.stock)} optionSummary={optionEntries(item.selectedOptions).map(([name, value]) => `${name}: ${value}`)} weight={product.storeIndustry === "GOLD" ? `${Number(selectedWeight).toLocaleString("fa-IR", { maximumFractionDigits: 3 })} گرم` : null} unitPrice={pricing.finalPrice} originalUnitPrice={pricing.isActive ? pricing.originalPrice : null} currency={settings.currency} preparationDays={product.preparationDays} /> : <InlineAlert key={item.id} status="warning" className="m-4">قیمت «{product.name}» موقتاً قابل محاسبه نیست.</InlineAlert>;
               })}
             </section>
 
-            {priceUnavailable || subtotal === null || merchandiseTotal === null ? <AlertRoot status="warning"><AlertDescription>نرخ لحظه‌ای طلا موقتاً در دسترس نیست. سبد خرید شما حفظ شده است.</AlertDescription></AlertRoot> : <aside className="grid gap-4 lg:sticky lg:top-24">
+            {priceUnavailable || subtotal === null || merchandiseTotal === null ? <InlineAlert status="warning">نرخ لحظه‌ای طلا موقتاً در دسترس نیست. سبد خرید شما حفظ شده است.</InlineAlert> : <aside className="grid gap-4 lg:sticky lg:top-24">
               <Card variant="secondary" className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 shadow-sm">
                 <dl className="m-0 grid gap-4 text-sm"><div className="flex items-center justify-between gap-4 text-[var(--muted)]"><dt>قیمت کالاها ({itemCount.toLocaleString("fa-IR")})</dt><dd>{formatMoney(subtotal, settings.currency)}</dd></div>{productDiscount! > 0 && <div className="flex items-center justify-between gap-4 font-bold text-[var(--danger)]"><dt>تخفیف کالاها</dt><dd>{formatMoney(productDiscount!, settings.currency)}</dd></div>}<div className="flex items-center justify-between gap-4 border-t border-[var(--border)] pt-4 font-bold"><dt>جمع سبد خرید</dt><dd>{formatMoney(merchandiseTotal, settings.currency)}</dd></div></dl>
                 <p className="mb-0 mt-4 text-[11px] leading-6 text-[var(--muted)]">هزینه ارسال بر اساس نشانی و تخفیف‌های فعال در مرحله بعد محاسبه می‌شود.</p>

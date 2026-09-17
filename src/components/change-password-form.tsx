@@ -2,9 +2,10 @@
 
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { Alert, Button, Modal, toast } from "@heroui/react";
+import { Button, Modal, toast } from "@heroui/react";
 import { KeyRound, X } from "lucide-react";
 import { authFieldLimits } from "@/modules/auth/schemas";
+import { InlineAlert } from "@/components/inline-alert";
 import { TextField } from "@/components/form-field";
 
 export function ChangePasswordForm() {
@@ -57,7 +58,7 @@ export function ChangePasswordForm() {
                 <TextField name="currentPassword" label="رمز عبور فعلی" type="password" dir="ltr" required maxLength={authFieldLimits.password} />
                 <TextField name="newPassword" label="رمز عبور جدید" type="password" dir="ltr" required minLength={8} maxLength={authFieldLimits.password} hint="حداقل ۸ نویسه، شامل حرف انگلیسی و رقم" />
                 <TextField name="confirmPassword" label="تکرار رمز عبور جدید" type="password" dir="ltr" required minLength={8} maxLength={authFieldLimits.password} />
-                {error && <Alert status="danger"><Alert.Description>{error}</Alert.Description></Alert>}
+                {error && <InlineAlert status="danger">{error}</InlineAlert>}
                 <div className="flex justify-end gap-2 border-t border-[var(--border)] pt-4">
                   <Button type="submit" variant="primary" isPending={saving}>ذخیره رمز عبور جدید</Button>
                   <Button type="button" variant="secondary" isDisabled={saving} onPress={() => setOpen(false)}>انصراف</Button>

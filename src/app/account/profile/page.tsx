@@ -2,13 +2,13 @@ import { ProfileEditor } from "@/components/profile-editor";
 import { ChangePasswordForm } from "@/components/change-password-form";
 import { RefundSettings } from "@/components/refund-settings";
 import { SmsConsentPreference } from "@/components/sms-consent-preference";
-import { AlertDescription, AlertRoot } from "@/components/hero";
+import { InlineAlert } from "@/components/inline-alert";
 import { requireUser } from "@/modules/auth/session";
 
 export default async function ProfilePage() {
   const user = await requireUser();
   if (user.isGuest) {
-    return <AlertRoot status="warning"><AlertDescription>ویرایش پروفایل برای حساب مهمان در دسترس نیست؛ ابتدا ثبت‌نام را کامل کنید.</AlertDescription></AlertRoot>;
+    return <InlineAlert status="warning">ویرایش پروفایل برای حساب مهمان در دسترس نیست؛ ابتدا ثبت‌نام را کامل کنید.</InlineAlert>;
   }
   return (
     <>

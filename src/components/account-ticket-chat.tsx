@@ -3,8 +3,9 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Alert, Button, Modal, TextArea, toast } from "@heroui/react";
+import { Button, Modal, TextArea, toast } from "@heroui/react";
 import { ArrowDown, ArrowRight, FileText, Headset, Lock, Paperclip, Send, Star, X } from "lucide-react";
+import { InlineAlert } from "@/components/inline-alert";
 import { formatDayLabel, formatTimeFa } from "@/lib/format";
 import { ticketFieldLimits, TICKET_MAX_ATTACHMENTS } from "@/modules/tickets/limits";
 import { ticketStatusLabels, ticketStatusTones } from "@/modules/admin/labels";
@@ -335,7 +336,7 @@ export function AccountTicketChat({ ticket: initialTicket }: { ticket: TicketDet
             <Modal.CloseTrigger aria-label="بستن" className="grid size-9 place-items-center rounded-lg"><X size={18} /></Modal.CloseTrigger>
           </Modal.Header>
           <Modal.Body className="p-5 text-sm leading-7 text-[var(--muted)]">
-            <Alert status="warning"><Alert.Description>این تیکت پس از بسته شدن دیگر قابل بازکردن نیست و گفت‌وگو در همین‌جا پایان می‌یابد. آیا مطمئن هستید؟</Alert.Description></Alert>
+            <InlineAlert status="warning">این تیکت پس از بسته شدن دیگر قابل بازکردن نیست و گفت‌وگو در همین‌جا پایان می‌یابد. آیا مطمئن هستید؟</InlineAlert>
           </Modal.Body>
           <Modal.Footer className="gap-2 border-t border-[var(--border)] p-4">
             <Button type="button" variant="danger" isPending={statusBusy} onPress={() => void closeTicket()}>

@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { Alert, Button, Modal, toast } from "@heroui/react";
+import { Button, Modal, toast } from "@heroui/react";
 import { Pencil, X } from "lucide-react";
 import { profileFieldLimits } from "@/modules/account/schemas";
+import { InlineAlert } from "@/components/inline-alert";
 import { TextField } from "@/components/form-field";
 
 type Profile = { firstName: string | null; lastName: string | null; email: string | null; phone: string | null; nationalId: string | null };
@@ -34,5 +35,5 @@ export function ProfileEditor({ initialProfile }: { initialProfile: Profile }) {
                 <TextField name="phone" label="شماره موبایل" required dir="ltr" inputMode="tel" defaultValue={profile.phone ?? ""} maxLength={profileFieldLimits.phone} hint="با الگوی 09xxxxxxxxx" />
                 <TextField name="nationalId" label="کد ملی" dir="ltr" inputMode="numeric" defaultValue={profile.nationalId ?? ""} minLength={profileFieldLimits.nationalId} maxLength={profileFieldLimits.nationalId} hint="۱۰ رقم، اختیاری" />
                 <TextField name="email" label="ایمیل" type="email" dir="ltr" defaultValue={profile.email ?? ""} maxLength={profileFieldLimits.email} wrapperClassName="sm:col-span-2" />
-                {error && <Alert status="danger" className="sm:col-span-2"><Alert.Description>{error}</Alert.Description></Alert>}<div className="flex justify-end gap-2 border-t border-[var(--border)] pt-4 sm:col-span-2"><Button type="submit" variant="primary" isPending={saving}>ذخیره تغییرات</Button><Button type="button" variant="secondary" onPress={() => setOpen(false)}>انصراف</Button></div></form></Modal.Body></Modal.Dialog></Modal.Container></Modal.Backdrop></>;
+                {error && <InlineAlert status="danger" className="sm:col-span-2">{error}</InlineAlert>}<div className="flex justify-end gap-2 border-t border-[var(--border)] pt-4 sm:col-span-2"><Button type="submit" variant="primary" isPending={saving}>ذخیره تغییرات</Button><Button type="button" variant="secondary" onPress={() => setOpen(false)}>انصراف</Button></div></form></Modal.Body></Modal.Dialog></Modal.Container></Modal.Backdrop></>;
 }

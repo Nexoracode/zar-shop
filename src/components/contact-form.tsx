@@ -1,8 +1,9 @@
 "use client";
 
 import { useRef, useState, type FormEvent } from "react";
-import { Alert, Button, Spinner, toast } from "@heroui/react";
+import { Button, Spinner, toast } from "@heroui/react";
 import { Send } from "lucide-react";
+import { InlineAlert } from "@/components/inline-alert";
 import { TextAreaField, TextField } from "@/components/form-field";
 import { requestErrorMessage, requestJson } from "@/lib/api-request";
 import { normalizeNumericValue } from "@/lib/persian-numbers";
@@ -76,7 +77,7 @@ export function ContactForm() {
   }
 
   if (sent) {
-    return <Alert status="success"><Alert.Description>پیام شما با موفقیت ارسال شد؛ تیم پشتیبانی به‌زودی پاسخ می‌دهد.</Alert.Description></Alert>;
+    return <InlineAlert status="success">پیام شما با موفقیت ارسال شد؛ تیم پشتیبانی به‌زودی پاسخ می‌دهد.</InlineAlert>;
   }
 
   return (

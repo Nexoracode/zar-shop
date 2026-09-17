@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { Alert, Button } from "@heroui/react";
+import { Button } from "@heroui/react";
 import { Check, ChevronLeft } from "lucide-react";
 import { HeroSelectField } from "@/components/hero-select-field";
+import { InlineAlert } from "@/components/inline-alert";
 import { TextAreaField, TextField } from "@/components/form-field";
 import { addressFieldLimits } from "@/modules/account/schemas";
 import { validateAddressForm, validateAddressRecipient, type AddressFormErrors, type AddressFormField, type AddressRecipientErrors, type AddressRecipientField } from "@/modules/account/address-form-validation";
@@ -159,7 +160,7 @@ export function AddressForm({ initial, user, onSaved, onCancel, onStepChange }: 
         )}
       </section>
 
-      {error && <Alert status="danger"><Alert.Description>{error}</Alert.Description></Alert>}
+      {error && <InlineAlert status="danger">{error}</InlineAlert>}
     </div>
 
     <div className="sticky bottom-0 z-10 flex gap-3 border-t border-[var(--border)] bg-white px-5 py-2.5 sm:px-6">{step === 2 ? <Button type="button" variant="primary" isDisabled={locationsLoading} onPress={goToConfirmation} style={primaryButtonStyle} className="mr-auto min-h-10 min-w-44 justify-center gap-2 rounded-lg px-6 text-sm font-bold"><span>تأیید و ادامه</span><ChevronLeft size={16} /></Button> : <><Button type="button" variant="outline" fullWidth isDisabled={saving} onPress={onCancel} className="min-h-10 flex-1 rounded-lg border border-[var(--brand-primary)] bg-white text-sm font-bold text-[var(--brand-primary)]">انصراف</Button><Button type="submit" variant="primary" fullWidth isPending={saving} isDisabled={saving} style={primaryButtonStyle} className="min-h-10 flex-1 justify-center gap-2 rounded-lg px-5 text-sm font-bold"><Check size={16} /><span>ذخیره آدرس</span></Button></>}</div>

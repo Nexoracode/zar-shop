@@ -1,8 +1,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Alert, Button, Spinner } from "@heroui/react";
+import { Button, Spinner } from "@heroui/react";
 import { Plus } from "lucide-react";
+import { InlineAlert } from "@/components/inline-alert";
 import { TextField } from "@/components/form-field";
 import { formatMoney } from "@/lib/format";
 import { formatPersianNumber, normalizeNumericValue, priceToPersianWords, rialPriceToTomanWords } from "@/lib/persian-numbers";
@@ -80,7 +81,7 @@ export function WalletTopupForm({ min, max, currency, methods }: { min: number; 
           </div>
         </div>
       )}
-      {error && <Alert status="danger"><Alert.Description>{error}</Alert.Description></Alert>}
+      {error && <InlineAlert status="danger">{error}</InlineAlert>}
       <Button type="submit" variant="primary" isPending={loading} isDisabled={!provider} className="min-h-11 gap-2 rounded-lg bg-[var(--brand-primary)] px-5 font-bold text-[var(--brand-primary-foreground)]">
         {({ isPending }) => <>{isPending && <Spinner color="current" size="sm" />}{isPending ? "در حال انتقال به درگاه..." : "پرداخت و افزایش اعتبار"}</>}
       </Button>

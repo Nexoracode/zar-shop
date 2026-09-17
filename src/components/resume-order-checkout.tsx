@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { Alert, Button, Card, Spinner } from "@heroui/react";
+import { Button, Card, Spinner } from "@heroui/react";
 import { Check, CreditCard, MapPin, PackageCheck, ShieldCheck } from "lucide-react";
+import { InlineAlert } from "@/components/inline-alert";
 import { formatMoney } from "@/lib/format";
 import { OrderExpiryCountdown } from "@/components/order-expiry-countdown";
 import type { StorefrontPaymentMethod, StorefrontPaymentMethodId } from "@/modules/payments/storefront-methods";
@@ -86,7 +87,7 @@ export function ResumeOrderCheckout({ orderId, orderNumber, address, quote, curr
         <Card variant="secondary" className="rounded-xl border border-[var(--border)] bg-[var(--surface)] shadow-sm">
           <Card.Content className="p-4 sm:p-5">
             <div className="mb-4 flex items-start gap-3"><span className="grid size-9 shrink-0 place-items-center rounded-full bg-[var(--brand-primary)]/10 text-[var(--brand-primary)]"><CreditCard size={18} /></span><div><h2 className="m-0 text-base font-bold">روش پرداخت</h2><p className="mb-0 mt-1 text-xs text-[var(--muted)]">پرداخت از طریق درگاه امن بانکی انجام می‌شود.</p></div></div>
-            {methods.length ? <div className="grid gap-2">{methods.map((method) => <Button key={method.id} type="button" variant="secondary" isDisabled={isPending} onPress={() => setPaymentProvider(method.id)} className={`h-auto min-h-0 w-full items-center justify-start gap-2.5 rounded-lg border px-3 py-2.5 text-right ${paymentProvider === method.id ? "border-[var(--brand-primary)] bg-[var(--brand-primary)]/5" : "border-[var(--border)]"}`}><span className="grid size-9 shrink-0 place-items-center rounded-lg bg-[var(--surface-secondary)] text-[var(--brand-primary)]"><CreditCard size={17} /></span><span className="min-w-0 flex-1"><strong className="block whitespace-normal text-[13px]">{method.name}</strong><small className="mt-0.5 block whitespace-normal text-[11px] font-normal text-[var(--muted)]">{method.description}</small></span>{method.sandbox && <span className="shrink-0 rounded-full bg-[color-mix(in_srgb,var(--warning)_14%,transparent)] px-2 py-0.5 text-[10px] font-bold text-[var(--warning)]">آزمایشی</span>}{paymentProvider === method.id && <Check size={16} className="shrink-0 text-[var(--brand-primary)]" />}</Button>)}</div> : <Alert status="warning"><Alert.Description>هنوز هیچ درگاه پرداختی برای فروشگاه پیکربندی نشده است.</Alert.Description></Alert>}
+            {methods.length ? <div className="grid gap-2">{methods.map((method) => <Button key={method.id} type="button" variant="secondary" isDisabled={isPending} onPress={() => setPaymentProvider(method.id)} className={`h-auto min-h-0 w-full items-center justify-start gap-2.5 rounded-lg border px-3 py-2.5 text-right ${paymentProvider === method.id ? "border-[var(--brand-primary)] bg-[var(--brand-primary)]/5" : "border-[var(--border)]"}`}><span className="grid size-9 shrink-0 place-items-center rounded-lg bg-[var(--surface-secondary)] text-[var(--brand-primary)]"><CreditCard size={17} /></span><span className="min-w-0 flex-1"><strong className="block whitespace-normal text-[13px]">{method.name}</strong><small className="mt-0.5 block whitespace-normal text-[11px] font-normal text-[var(--muted)]">{method.description}</small></span>{method.sandbox && <span className="shrink-0 rounded-full bg-[color-mix(in_srgb,var(--warning)_14%,transparent)] px-2 py-0.5 text-[10px] font-bold text-[var(--warning)]">آزمایشی</span>}{paymentProvider === method.id && <Check size={16} className="shrink-0 text-[var(--brand-primary)]" />}</Button>)}</div> : <InlineAlert status="warning">هنوز هیچ درگاه پرداختی برای فروشگاه پیکربندی نشده است.</InlineAlert>}
           </Card.Content>
         </Card>
       </div>
@@ -106,7 +107,7 @@ export function ResumeOrderCheckout({ orderId, orderNumber, address, quote, curr
           </dl>
           {quote.applications.length > 0 && <div className="mt-4 grid gap-2">{quote.applications.map((application) => <div key={`${application.title}-${application.code ?? "auto"}`} className="rounded-lg bg-[color-mix(in_srgb,var(--success)_12%,transparent)] px-3 py-2 text-xs text-[var(--success)]"><strong>{application.title}</strong>{application.code && <span className="mr-2" dir="ltr">{application.code}</span>}</div>)}</div>}
           {expiresAt ? <div className="mt-4"><OrderExpiryCountdown expiresAt={expiresAt} warningMinutes={warningMinutes} /></div> : null}
-          {error ? <Alert status="danger" className="mt-4"><Alert.Description>{error}</Alert.Description></Alert> : null}
+          {error ? <InlineAlert status="danger" className="mt-4">{error}</InlineAlert> : null}
           <Button type="button" fullWidth variant="primary" isPending={isPending} isDisabled={!paymentProvider} onPress={() => void pay()} className="mt-5 min-h-12 gap-2 rounded-lg bg-[var(--brand-primary)] px-5 font-bold text-[var(--brand-primary-foreground)]">{({ isPending: loading }) => <>{loading && <Spinner color="current" size="sm" />}{loading ? "در حال انتقال به درگاه..." : "پرداخت سفارش"}</>}</Button>
         </Card>
         <Card variant="secondary" className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-3.5 text-xs text-[var(--muted)]"><span className="flex items-center gap-2 font-bold text-[var(--foreground)]"><PackageCheck size={16} />سفارش شما محفوظ است</span><p className="mb-0 mt-1.5 leading-6">این سفارش قبلاً ثبت شده؛ فقط کافی است پرداخت را تکمیل کنید.</p></Card>

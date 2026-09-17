@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Alert, Button, Card, Spinner } from "@heroui/react";
+import { Button, Card, Spinner } from "@heroui/react";
 import { Check, Truck } from "lucide-react";
+import { InlineAlert } from "@/components/inline-alert";
 import { formatMoney } from "@/lib/format";
 
 export type ShippingOption = {
@@ -81,10 +82,10 @@ export function ShippingMethodPicker({ addressId, currency, selectedMethodId, on
 
         {loading && <div className="flex items-center gap-2 text-xs text-[var(--muted)]"><Spinner size="sm" />در حال محاسبه هزینه ارسال…</div>}
 
-        {!loading && error && <Alert status="danger"><Alert.Description>{error}</Alert.Description></Alert>}
+        {!loading && error && <InlineAlert status="danger">{error}</InlineAlert>}
 
         {!loading && !error && options.length === 0 && (
-          <Alert status="warning"><Alert.Description>برای این مقصد روش ارسالی تعریف نشده است؛ هزینه ارسال طبق تنظیمات فروشگاه محاسبه می‌شود.</Alert.Description></Alert>
+          <InlineAlert status="warning">برای این مقصد روش ارسالی تعریف نشده است؛ هزینه ارسال طبق تنظیمات فروشگاه محاسبه می‌شود.</InlineAlert>
         )}
 
         {!loading && options.length > 0 && (
