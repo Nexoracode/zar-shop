@@ -5,6 +5,11 @@ import { adminStartPath, canOpenAnySettingsSection } from "@/modules/auth/permis
 import { requireAdminUser } from "@/modules/auth/session";
 import { getStoreIndustry } from "@/modules/settings/store-settings";
 
+// @next-codemod-ignore Cache Components adoption: this segment temporarily allows blocking.
+// Remove this opt-out after verifying the segment passes validation without it.
+// See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
+export const instant = false;
+
 export default async function AdminSettingsPage() {
   const user = await requireAdminUser();
   if (!canOpenAnySettingsSection(user.role)) redirect(adminStartPath(user.role));

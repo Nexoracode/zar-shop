@@ -4,6 +4,11 @@ import { requirePermission } from "@/modules/auth/session";
 import { getStoreIndustry } from "@/modules/settings/store-settings";
 import { BlueprintOrderDetail } from "@/components/admin/blueprint/order-detail";
 
+// @next-codemod-ignore Cache Components adoption: this segment temporarily allows blocking.
+// Remove this opt-out after verifying the segment passes validation without it.
+// See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
+export const instant = false;
+
 type PageParams = Promise<{ id: string }>;
 
 export default async function OrderDetailsPage({ params }: { params: PageParams }) {

@@ -7,6 +7,11 @@ import { db } from "@/lib/db";
 import { requirePermission } from "@/modules/auth/session";
 import { articleCommentStatusLabels, articleCommentStatusTones } from "@/modules/admin/labels";
 
+// @next-codemod-ignore Cache Components adoption: this segment temporarily allows blocking.
+// Remove this opt-out after verifying the segment passes validation without it.
+// See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
+export const instant = false;
+
 function MetricCard({ icon, label, children, tone = "" }: { icon: ReactNode; label: string; children: ReactNode; tone?: string }) {
   return (
     <AdminPanel className="p-4">

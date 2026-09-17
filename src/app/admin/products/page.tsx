@@ -9,6 +9,11 @@ import { nextDiscountBoundary } from "@/modules/products/discount-window";
 import { BlueprintProductsView } from "@/components/admin/blueprint/products-view";
 import type { AdminProductsListData } from "@/components/admin/products-list-data";
 
+// @next-codemod-ignore Cache Components adoption: this segment temporarily allows blocking.
+// Remove this opt-out after verifying the segment passes validation without it.
+// See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
+export const instant = false;
+
 type Context = { searchParams: Promise<{ q?: string; status?: string; category?: string; featured?: string; stock?: string; discount?: string; page?: string; pageSize?: string }> };
 
 export default async function AdminProducts({ searchParams }: Context) {

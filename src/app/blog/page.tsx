@@ -5,6 +5,11 @@ import { ArticleListSection } from "@/components/article-list-section";
 import { getActiveArticleCategories, getFeaturedArticles, getPublishedArticles } from "@/modules/articles/service";
 import { getGeneralStoreSettings } from "@/modules/settings/general-settings";
 
+// @next-codemod-ignore Cache Components adoption: this segment temporarily allows blocking.
+// Remove this opt-out after verifying the segment passes validation without it.
+// See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
+export const instant = false;
+
 type Context = { searchParams: Promise<{ page?: string; search?: string; category?: string }> };
 
 export async function generateMetadata(): Promise<Metadata> {

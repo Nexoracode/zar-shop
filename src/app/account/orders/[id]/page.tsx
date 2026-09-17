@@ -20,6 +20,11 @@ import { optionEntries } from "@/modules/products/options";
 import { getGeneralStoreSettings } from "@/modules/settings/general-settings";
 import { getOrderSettings } from "@/modules/settings/order-settings";
 
+// @next-codemod-ignore Cache Components adoption: this segment temporarily allows blocking.
+// Remove this opt-out after verifying the segment passes validation without it.
+// See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
+export const instant = false;
+
 type JsonRecord = Record<string, Prisma.JsonValue>;
 
 function asRecord(value: Prisma.JsonValue | null | undefined): JsonRecord {

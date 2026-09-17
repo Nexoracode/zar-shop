@@ -5,6 +5,11 @@ import { BlueprintSmsPatternForm } from "@/components/admin/blueprint/sms-patter
 import { requirePermission } from "@/modules/auth/session";
 import { listSmsPatterns } from "@/modules/communications/sms-patterns";
 
+// @next-codemod-ignore Cache Components adoption: this segment temporarily allows blocking.
+// Remove this opt-out after verifying the segment passes validation without it.
+// See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
+export const instant = false;
+
 export const metadata: Metadata = { title: "ویرایش پترن پیامک" };
 
 export default async function EditSmsPatternPage({ params }: { params: Promise<{ code: string }> }) {

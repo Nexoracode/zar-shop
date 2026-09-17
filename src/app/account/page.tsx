@@ -12,6 +12,11 @@ import { getWalletSettings } from "@/modules/settings/wallet-settings";
 import { ensureReferralCode } from "@/modules/wallet/referral-code";
 import { ensureWallet } from "@/modules/wallet/wallet";
 
+// @next-codemod-ignore Cache Components adoption: this segment temporarily allows blocking.
+// Remove this opt-out after verifying the segment passes validation without it.
+// See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
+export const instant = false;
+
 const paymentMessages = {
   cancelled: { tone: "warning" as const, title: "پرداخت ناتمام ماند", text: "سفارش شما تا پایان مهلت پرداخت نگه داشته می‌شود و می‌توانید دوباره برای پرداخت آن اقدام کنید." },
   failed: { tone: "danger" as const, title: "تأیید پرداخت ناموفق بود", text: "اگر مبلغی از حساب شما کسر شده است، نتیجه را از پشتیبانی پیگیری کنید." },

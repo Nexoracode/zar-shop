@@ -4,6 +4,11 @@ import { AdminPageHeader } from "@/components/admin-ui";
 import { requirePermission } from "@/modules/auth/session";
 import { getPublicGatewayConfigs } from "@/modules/payments/gateway-config";
 
+// @next-codemod-ignore Cache Components adoption: this segment temporarily allows blocking.
+// Remove this opt-out after verifying the segment passes validation without it.
+// See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
+export const instant = false;
+
 export const metadata: Metadata = { title: "افزودن درگاه پرداخت" };
 
 export default async function NewPaymentGatewayPage() {

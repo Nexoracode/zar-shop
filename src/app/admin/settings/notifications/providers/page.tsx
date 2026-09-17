@@ -6,6 +6,11 @@ import { requirePermission } from "@/modules/auth/session";
 import { getPublicSmsProviderConfigs } from "@/modules/communications/sms-config";
 import { getSmsAccountBalance } from "@/modules/communications/sms-patterns";
 
+// @next-codemod-ignore Cache Components adoption: this segment temporarily allows blocking.
+// Remove this opt-out after verifying the segment passes validation without it.
+// See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
+export const instant = false;
+
 export const metadata: Metadata = { title: "ارائه‌دهندگان پیامک" };
 export default async function SmsProvidersPage() {
   await requirePermission("settings:manage");

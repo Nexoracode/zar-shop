@@ -6,6 +6,11 @@ import { BlueprintReviewDetailView } from "@/components/admin/blueprint/review-d
 import { db } from "@/lib/db";
 import { requirePermission } from "@/modules/auth/session";
 
+// @next-codemod-ignore Cache Components adoption: this segment temporarily allows blocking.
+// Remove this opt-out after verifying the segment passes validation without it.
+// See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
+export const instant = false;
+
 const statusLabel = { PENDING: "در انتظار بررسی", APPROVED: "تأییدشده", REJECTED: "ردشده" } as const;
 const statusTone = { PENDING: "warning", APPROVED: "success", REJECTED: "danger" } as const;
 

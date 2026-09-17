@@ -12,6 +12,11 @@ import { ExportCsvButton } from "./export-csv-button";
 import { ReportSkeleton } from "./report-skeleton";
 import { ReportsFilterBar } from "./reports-filter-bar";
 
+// @next-codemod-ignore Cache Components adoption: this segment temporarily allows blocking.
+// Remove this opt-out after verifying the segment passes validation without it.
+// See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
+export const instant = false;
+
 type SearchParams = Promise<{ range?: string; from?: string; to?: string }>;
 
 const faInt = (value: number) => Math.round(value).toLocaleString("fa-IR");

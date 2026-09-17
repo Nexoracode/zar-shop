@@ -6,6 +6,11 @@ import { formatMoney } from "@/lib/format";
 import { AdminPageHeader } from "@/components/admin-ui";
 import { BpKicker } from "@/components/admin/blueprint/ui/card";
 
+// @next-codemod-ignore Cache Components adoption: this segment temporarily allows blocking.
+// Remove this opt-out after verifying the segment passes validation without it.
+// See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
+export const instant = false;
+
 type Context = { params: Promise<{ id: string }> };
 
 /** An order actually became a sale once it was paid — not while it is still pending, expired,

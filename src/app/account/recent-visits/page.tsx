@@ -3,6 +3,11 @@ import { AccountEmptyState, AccountProductCard } from "@/components/account-page
 import { db } from "@/lib/db";
 import { requireUser } from "@/modules/auth/session";
 
+// @next-codemod-ignore Cache Components adoption: this segment temporarily allows blocking.
+// Remove this opt-out after verifying the segment passes validation without it.
+// See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
+export const instant = false;
+
 export default async function RecentVisitsPage() {
   const user = await requireUser();
   const visits = await db.productVisit.findMany({ where: { userId: user.id, product: { status: "ACTIVE" } }, orderBy: { visitedAt: "desc" }, take: 60, include: { product: { include: { category: true, media: { take: 1, orderBy: { position: "asc" }, include: { media: true } } } } } });

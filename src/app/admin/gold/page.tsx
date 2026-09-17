@@ -13,6 +13,11 @@ import { getCatalogSettings } from "@/modules/settings/catalog-settings";
 import { getStoreIndustry } from "@/modules/settings/store-settings";
 import { GoldPriceRefreshButton } from "./gold-price-refresh-button";
 
+// @next-codemod-ignore Cache Components adoption: this segment temporarily allows blocking.
+// Remove this opt-out after verifying the segment passes validation without it.
+// See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
+export const instant = false;
+
 const shortStamp = (value: Date) => new Intl.DateTimeFormat("fa-IR", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }).format(value);
 
 type CacheState = { tone: BpTagTone; label: string };

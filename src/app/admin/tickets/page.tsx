@@ -6,6 +6,11 @@ import { resolveAdminPagination } from "@/lib/admin-pagination";
 import { parseAdminPaginationRequest } from "@/lib/admin-pagination-server";
 import { BlueprintTicketsView } from "@/components/admin/blueprint/tickets-view";
 
+// @next-codemod-ignore Cache Components adoption: this segment temporarily allows blocking.
+// Remove this opt-out after verifying the segment passes validation without it.
+// See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
+export const instant = false;
+
 type SearchParams = Promise<{ q?: string; status?: string; categoryId?: string; mine?: string; page?: string; pageSize?: string }>;
 
 export default async function AdminTicketsPage({ searchParams }: { searchParams: SearchParams }) {

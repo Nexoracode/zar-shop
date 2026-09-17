@@ -8,6 +8,11 @@ import { db } from "@/lib/db";
 import { requirePermission } from "@/modules/auth/session";
 import { BlueprintReviewsView } from "@/components/admin/blueprint/reviews-view";
 
+// @next-codemod-ignore Cache Components adoption: this segment temporarily allows blocking.
+// Remove this opt-out after verifying the segment passes validation without it.
+// See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
+export const instant = false;
+
 type SearchParams = Promise<{ q?: string; status?: string; page?: string; pageSize?: string }>;
 const statuses = ["PENDING", "APPROVED", "REJECTED"] as const;
 const labels = { PENDING: "در انتظار بررسی", APPROVED: "تأییدشده", REJECTED: "ردشده" } as const;

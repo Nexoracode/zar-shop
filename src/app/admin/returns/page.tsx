@@ -10,6 +10,11 @@ import { returnStatusLabels } from "@/modules/admin/labels";
 import { requirePermission } from "@/modules/auth/session";
 import { BlueprintReturnsView, serializeAdminReturnRow } from "@/components/admin/blueprint/returns-view";
 
+// @next-codemod-ignore Cache Components adoption: this segment temporarily allows blocking.
+// Remove this opt-out after verifying the segment passes validation without it.
+// See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
+export const instant = false;
+
 type SearchParams = Promise<{ q?: string; status?: string; page?: string; pageSize?: string }>;
 
 const statuses = Object.values(ReturnStatus);

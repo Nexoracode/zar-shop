@@ -3,6 +3,11 @@ import { db } from "@/lib/db";
 import { requireUser } from "@/modules/auth/session";
 import { NewTicketComposer } from "@/components/account-ticket-composer";
 
+// @next-codemod-ignore Cache Components adoption: this segment temporarily allows blocking.
+// Remove this opt-out after verifying the segment passes validation without it.
+// See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
+export const instant = false;
+
 type Context = { searchParams: Promise<{ productId?: string }> };
 
 export default async function NewTicketPage({ searchParams }: Context) {

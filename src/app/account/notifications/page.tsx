@@ -4,6 +4,11 @@ import { db } from "@/lib/db";
 import { requireUser } from "@/modules/auth/session";
 import { listForUser, pruneExpired } from "@/modules/notifications/service";
 
+// @next-codemod-ignore Cache Components adoption: this segment temporarily allows blocking.
+// Remove this opt-out after verifying the segment passes validation without it.
+// See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
+export const instant = false;
+
 export default async function AccountNotificationsPage() {
   const user = await requireUser();
   await pruneExpired(db);

@@ -7,6 +7,11 @@ import { parseCategoryAttributeSchema, parseProductAttributes } from "@/modules/
 import { listSelectableOptionTypes } from "@/modules/options/option-library";
 import { productOptionTypeInclude } from "@/modules/products/variant-selection";
 
+// @next-codemod-ignore Cache Components adoption: this segment temporarily allows blocking.
+// Remove this opt-out after verifying the segment passes validation without it.
+// See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
+export const instant = false;
+
 type Context = { params: Promise<{ id: string }> };
 
 export default async function EditProductPage({ params }: Context) {
