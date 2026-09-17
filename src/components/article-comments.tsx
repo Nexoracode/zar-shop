@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { Button, toast } from "@heroui/react";
+import { Alert, Button, toast } from "@heroui/react";
 import { ThumbsDown, ThumbsUp } from "lucide-react";
 import { TextAreaField } from "@/components/form-field";
 import { requestErrorMessage, requestJson } from "@/lib/api-request";
@@ -81,20 +81,29 @@ export function ArticleComments({ articleId, initialComments, isAuthenticated }:
 
       <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-[18px]">
         <div className="mb-3 text-[13px] font-bold text-[var(--foreground)]">ثبت امتیاز و دیدگاه</div>
-        <div className="mb-3.5 flex items-center gap-2">
-          <span className="text-xs text-[var(--muted)]">امتیاز شما:</span>
-          <ReviewRatingField rating={rating} onChange={setRating} showLabel={false} reserveMessage={false} />
-        </div>
-        <TextAreaField
-          name="comment-body"
-          aria-label="متن دیدگاه"
-          rows={4}
-          maxLength={commentFieldLimits.body}
-          placeholder="تجربه یا نظر خود را دربارهٔ این مقاله بنویسید…"
-          value={body}
-          onChange={(event) => setBody(event.target.value)}
-        />
-        <Button type="button" variant="primary" isPending={submitting} onPress={() => void submit()} className="mt-2.5 min-h-10 rounded-lg bg-[var(--brand-accent)] px-5 text-xs text-[var(--brand-accent-foreground)]">ثبت دیدگاه</Button>
+        {isAuthenticated ? (
+          <>
+            <div className="mb-3.5 flex items-center gap-2">
+              <span className="text-xs text-[var(--muted)]">امتیاز شما:</span>
+              <ReviewRatingField rating={rating} onChange={setRating} showLabel={false} reserveMessage={false} />
+            </div>
+            <TextAreaField
+              name="comment-body"
+              aria-label="متن دیدگاه"
+              rows={4}
+              maxLength={commentFieldLimits.body}
+              placeholder="تجربه یا نظر خود را دربارهٔ این مقاله بنویسید…"
+              value={body}
+              onChange={(event) => setBody(event.target.value)}
+            />
+            <Button type="button" variant="primary" isPending={submitting} onPress={() => void submit()} className="mt-2.5 min-h-10 rounded-lg bg-[var(--brand-accent)] px-5 text-xs text-[var(--brand-accent-foreground)]">ثبت دیدگاه</Button>
+          </>
+        ) : (
+          <>
+            <Alert status="warning"><Alert.Description>برای ثبت امتیاز و دیدگاه، ابتدا باید در فروشگاه ثبت‌نام یا وارد حساب کاربری خود شوید.</Alert.Description></Alert>
+            <Button type="button" variant="primary" onPress={() => router.push("/login")} className="mt-3 min-h-10 rounded-lg bg-[var(--brand-accent)] px-5 text-xs text-[var(--brand-accent-foreground)]">ثبت‌نام</Button>
+          </>
+        )}
       </div>
     </div>
   );
