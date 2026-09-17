@@ -56,7 +56,7 @@ export function BlueprintShell({ user, showGoldPrice, goldPrice, goldFetchedAt, 
     setLoggingOut(true);
     try {
       await fetch("/api/auth/logout", { method: "POST" });
-      router.push("/admin-login");
+      router.push("/admin/login");
       router.refresh();
     } finally {
       setLoggingOut(false);

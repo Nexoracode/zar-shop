@@ -13,7 +13,7 @@ export function SetupPendingNotice({ storeName }: { storeName: string }) {
     setLoggingOut(true);
     try {
       await fetch("/api/auth/logout", { method: "POST" });
-      router.push("/admin-login");
+      router.push("/admin/login");
       router.refresh();
     } finally {
       setLoggingOut(false);
