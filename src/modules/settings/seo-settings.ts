@@ -1,3 +1,4 @@
+import { cacheLife, cacheTag } from "next/cache";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { STORE_SETTING_ID } from "@/modules/settings/store-settings";
@@ -18,7 +19,12 @@ export const seoSettingsDefaults: SeoSettings = seoSettingsSchema.parse({});
 
 const select = { seoSettings: true } as const;
 
+// Cached across requests; `revalidateTag("settings:seo")` in the SEO settings save route
+// clears this on save.
 export async function getSeoSettings(): Promise<SeoSettings> {
+  "use cache";
+  cacheLife("hours");
+  cacheTag("settings:seo");
   const row = await db.storeSetting.findUnique({ where: { id: STORE_SETTING_ID }, select });
   const parsed = seoSettingsSchema.safeParse(row?.seoSettings ?? {});
   return parsed.success ? parsed.data : seoSettingsDefaults;

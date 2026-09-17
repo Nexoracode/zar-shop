@@ -1,4 +1,4 @@
-import { cache } from "react";
+import { cacheLife, cacheTag } from "next/cache";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { STORE_SETTING_ID } from "@/modules/settings/store-settings";
@@ -47,13 +47,16 @@ const select = {
   socialImageMedia: { select: { id: true, title: true, alt: true, url: true, type: true, mimeType: true } },
 } as const;
 
-// `cache` dedupes this within a request — the root layout and the branding settings page both
-// read the brand settings, all wanting the same one row.
-export const getBrandSettings = cache(async (): Promise<BrandSettings> => {
+// Cached across requests — the root layout and the branding settings page both read the brand
+// settings. `revalidateTag("settings:brand")` in the settings save route clears this on save.
+export async function getBrandSettings(): Promise<BrandSettings> {
+  "use cache";
+  cacheLife("hours");
+  cacheTag("settings:brand");
   const existing = await db.storeSetting.findUnique({ where: { id: STORE_SETTING_ID }, select });
   const settings = existing ?? await db.storeSetting.upsert({ where: { id: STORE_SETTING_ID }, create: { id: STORE_SETTING_ID, ...brandSettingsDefaults }, update: {}, select });
   return brandSettingsSchema.parse(settings);
-});
+}
 
 function foregroundFor(hex: string) {
   const values = [1, 3, 5].map((start) => Number.parseInt(hex.slice(start, start + 2), 16) / 255).map((value) => value <= 0.03928 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4);

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 import { apiError } from "@/lib/http";
 import { db } from "@/lib/db";
 import { getPermittedActor } from "@/modules/auth/session";
@@ -26,6 +27,9 @@ export async function PATCH(request: Request) {
       await tx.storeSetting.upsert({ where: { id: STORE_SETTING_ID }, create: { id: STORE_SETTING_ID, ...input }, update: input });
       await tx.auditLog.create({ data: { actorId: actor.id, action: "BRAND_SETTINGS_UPDATE", entityType: "StoreSetting", entityId: STORE_SETTING_ID, ...auditRequestContext(request, { changedFields: Object.keys(input) }) } });
     });
+    // { expire: 0 } (not "max") because the response below re-reads the cached getter — the
+    // admin must see their own save immediately, not stale-while-revalidate content.
+    revalidateTag("settings:brand", { expire: 0 });
     return NextResponse.json(await getBrandSettings());
   } catch (error) { return apiError(error); }
 }
