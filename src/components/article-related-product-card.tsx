@@ -15,9 +15,9 @@ export function ArticleRelatedProductCard({ product }: { product: RelatedProduct
       <div className="px-4 pt-3.5">
         <span className="text-[11px] font-bold" style={{ color: "color-mix(in srgb, var(--brand-accent) 65%, black)" }}>مرتبط با این مقاله</span>
       </div>
-      <div className="relative mt-2.5 h-40 w-full bg-[var(--surface-tertiary)]">
+      <div className="relative mx-auto mt-2.5 aspect-square w-full max-w-[160px] bg-[var(--surface-tertiary)]">
         {product.image ? (
-          <Image src={product.image.src} alt={product.image.alt} fill sizes="280px" className="object-contain" />
+          <Image src={product.image.src} alt={product.image.alt} fill sizes="160px" className="object-contain" />
         ) : (
           <div className="grid h-full w-full place-items-center text-[var(--muted)]"><ImageOff size={26} /></div>
         )}
