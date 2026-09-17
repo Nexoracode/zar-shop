@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState, type InputHTMLAttributes, type ReactNode, type TextareaHTMLAttributes } from "react";
+import { forwardRef, useId, useState, type InputHTMLAttributes, type ReactNode, type TextareaHTMLAttributes } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import { BpFieldMessage, BpRequiredMark, describedBy } from "./field-message";
 
@@ -25,7 +25,7 @@ type BpInputProps = Omit<InputHTMLAttributes<HTMLInputElement>, "className" | "t
   type?: InputHTMLAttributes<HTMLInputElement>["type"];
 };
 
-export function BpInput({ label, hint, error, reserveMessage = true, className = "", wrapperClassName = "", id, required, secret = false, type, ...rest }: BpInputProps) {
+export const BpInput = forwardRef<HTMLInputElement, BpInputProps>(function BpInput({ label, hint, error, reserveMessage = true, className = "", wrapperClassName = "", id, required, secret = false, type, ...rest }, ref) {
   const generated = useId();
   const inputId = id ?? generated;
   const messageId = `${inputId}-message`;
@@ -38,6 +38,7 @@ export function BpInput({ label, hint, error, reserveMessage = true, className =
           below would resolve off the page's inherited `rtl` and land the toggle on the right. */}
       <div dir={secret ? "ltr" : undefined} className={secret ? "bp-select-wrap" : undefined}>
         <input
+          ref={ref}
           id={inputId}
           type={secret ? (visible ? "text" : "password") : type}
           required={required}
@@ -61,7 +62,7 @@ export function BpInput({ label, hint, error, reserveMessage = true, className =
       <BpFieldMessage id={messageId} error={error} hint={hint} reserve={reserveMessage} />
     </div>
   );
-}
+});
 
 type BpTextareaProps = Omit<TextareaHTMLAttributes<HTMLTextAreaElement>, "className"> & SharedFieldProps;
 

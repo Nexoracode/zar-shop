@@ -86,14 +86,19 @@ export async function requireUser() {
   return user;
 }
 
-export async function requireRole(roles: UserRole[]) {
-  const user = await requireUser();
+export async function requireRole(roles: UserRole[], loginPath = "/login") {
+  const user = await getCurrentUser();
+  if (!user) redirect(loginPath);
   if (!roles.includes(user.role)) redirect("/");
   return user;
 }
 
+// Staff sign in through their own page, not the customer-facing one — an unauthenticated visit
+// to any /admin route lands there instead of /login. It lives outside /admin (rather than at
+// /admin/login) so it never nests under admin/layout.tsx's own requireAdminUser() gate, which
+// would otherwise redirect the login page back to itself.
 export async function requireAdminUser() {
-  return requireRole(adminRoles);
+  return requireRole(adminRoles, "/admin-login");
 }
 
 export async function requirePermission(permission: AdminPermission) {
