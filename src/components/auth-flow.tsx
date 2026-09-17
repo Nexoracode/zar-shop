@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { ChevronLeft } from "lucide-react";
 import { Button, toast } from "@heroui/react";
+import type { UserRole } from "@generated/prisma/enums";
 import { AdminCheckbox } from "@/components/admin-checkbox";
 import { InlineAlert } from "@/components/inline-alert";
 import { LoadingLabel } from "@/components/loading-label";
@@ -14,6 +15,7 @@ import { PasswordField } from "@/components/password-input";
 import { newPasswordSchema, phoneSchema } from "@/modules/auth/schemas";
 import { authFieldLimits } from "@/modules/auth/schemas";
 import { TextField } from "@/components/form-field";
+import { isAdminRole } from "@/modules/auth/permissions";
 
 type Step = "phone" | "password" | "login-otp" | "register-otp" | "register-complete";
 type OtpPurpose = "LOGIN" | "REGISTER";
@@ -36,12 +38,18 @@ function StepHeader({ title, subtitle, size = "md" }: { title: string; subtitle?
   );
 }
 
-type ApiResult = { message?: string; exists?: boolean; issues?: Record<string, string[]> } | null;
+type ApiResult = { message?: string; exists?: boolean; issues?: Record<string, string[]>; user?: { role: UserRole } } | null;
 
 async function postJson(url: string, body: unknown) {
   const response = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
   const result: ApiResult = await response.json().catch(() => null);
   return { ok: response.ok, status: response.status, result };
+}
+
+// Staff signing in from the customer-facing form (rather than /admin/login) still land in the
+// admin panel instead of their storefront profile — the same account works from either page.
+function postLoginDestination(role: UserRole | undefined) {
+  return role && isAdminRole(role) ? "/admin" : "/account";
 }
 
 // SMS delivery failures (503, see OtpSendFailedError) are transient infrastructure noise, not
@@ -126,7 +134,7 @@ export function AuthFlow() {
     // A full browser navigation (not router.push) so the freshly-set session cookie is always
     // picked up on the very next request — client-side transitions can otherwise reuse an
     // already-fetched (pre-login) router cache entry for the destination route.
-    window.location.assign("/account");
+    window.location.assign(postLoginDestination(result?.user?.role));
   }
 
   async function requestLoginOtp() {
@@ -159,7 +167,7 @@ export function AuthFlow() {
     setLoading(false);
     if (!ok) { setFieldErrors({ code: result?.message ?? "کد وارد شده نادرست است." }); return; }
     toast.success("ورود موفق بود", { description: "با موفقیت وارد حساب کاربری شدید.", timeout: 4000 });
-    window.location.assign("/account");
+    window.location.assign(postLoginDestination(result?.user?.role));
   }
 
   async function submitRegisterOtp(event: FormEvent<HTMLFormElement>) {
