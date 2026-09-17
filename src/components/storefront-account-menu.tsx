@@ -29,7 +29,7 @@ export function StorefrontAccountMenu({ user, walletBalance = null, className = 
   // exists, since every other account-menu entry point resolves the same way.
   if (!user || user.isGuest) {
     return (
-      <Link href="/login" aria-label="ورود یا ثبت‌نام" className={`flex h-10 shrink-0 items-center gap-1.5 rounded-lg px-3 text-sm font-bold text-[var(--foreground)] transition hover:bg-[var(--brand-primary)]/8 ${className}`}>
+      <Link href="/login" aria-label="ورود یا ثبت‌نام" className={`flex h-10 shrink-0 items-center gap-1.5 rounded-lg border border-[var(--border)] px-3 text-sm font-bold text-[var(--foreground)] transition hover:border-[var(--brand-primary)]/30 hover:bg-[var(--brand-primary)]/8 ${className}`}>
         <UserRound size={20} strokeWidth={1.7} />
         <span>ورود / ثبت‌نام</span>
       </Link>
