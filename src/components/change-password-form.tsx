@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button, Modal, toast } from "@heroui/react";
 import { KeyRound, X } from "lucide-react";
@@ -8,11 +9,26 @@ import { authFieldLimits } from "@/modules/auth/schemas";
 import { InlineAlert } from "@/components/inline-alert";
 import { TextField } from "@/components/form-field";
 
-export function ChangePasswordForm() {
+export function ChangePasswordForm({ hasPassword }: { hasPassword: boolean }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+
+  // Registration no longer sets a password — an OTP-only account has nothing to verify a
+  // "current password" against, so it gets the forgot-password flow instead (already
+  // OTP-based, and setting a password for the first time is functionally identical to
+  // resetting one).
+  if (!hasPassword) {
+    return (
+      <section className="-mx-4 mt-3 sm:mx-0 sm:rounded-2xl sm:border sm:border-[var(--border)] sm:bg-[var(--surface)] sm:shadow-sm">
+        <header className="flex items-center justify-between gap-3 p-5">
+          <div><h2 className="m-0 text-base font-bold">رمز عبور</h2><p className="mb-0 mt-1 text-xs text-[var(--muted)]">این حساب هنوز رمز عبوری ندارد و فقط با کد یکبار مصرف وارد می‌شود.</p></div>
+          <Link href="/forgot-password" className="inline-flex shrink-0 items-center gap-2 rounded-lg px-3 py-2 text-sm font-bold text-[var(--brand-primary)] transition hover:bg-[var(--brand-primary)]/8"><KeyRound size={16} />تنظیم رمز عبور</Link>
+        </header>
+      </section>
+    );
+  }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();

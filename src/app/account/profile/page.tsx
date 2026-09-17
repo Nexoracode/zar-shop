@@ -18,7 +18,7 @@ export default async function ProfilePage() {
   return (
     <>
       <ProfileEditor initialProfile={{ firstName: user.firstName, lastName: user.lastName, email: user.email, phone: user.phone, nationalId: user.nationalId }} />
-      <ChangePasswordForm />
+      <ChangePasswordForm hasPassword={Boolean(user.passwordHash)} />
       <RefundSettings initial={{ refundMethod: user.refundMethod, bankCardNumber: user.bankCardNumber, bankCardHolder: user.bankCardHolder, bankCardSheba: user.bankCardSheba }} />
       <SmsConsentPreference initialValue={user.smsMarketingConsent} />
     </>

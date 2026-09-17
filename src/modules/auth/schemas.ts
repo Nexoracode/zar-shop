@@ -46,7 +46,10 @@ export const registerCompleteSchema = z.object({
   lastName: z.string().trim().min(2, "نام خانوادگی باید حداقل ۲ حرف باشد.").max(authFieldLimits.lastName).optional(),
   smsMarketingConsent: z.boolean().default(false),
   referralCode: referralCodeInputSchema.optional(),
-  password: newPasswordSchema,
+  // No password at registration — the account is OTP-only until the customer sets one later
+  // (the forgot-password flow doubles as "set a password for the first time", no separate
+  // endpoint needed since it never required an existing password to begin with).
+  password: newPasswordSchema.optional(),
 });
 
 export const loginSchema = z.object({

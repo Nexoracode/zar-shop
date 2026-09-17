@@ -12,7 +12,7 @@ export async function POST(request: Request) {
     const blockedUntil = await assertLoginAllowed(request, input.phone);
     if (blockedUntil) return rateLimitResponse(blockedUntil);
     const user = await db.user.findUnique({ where: { phone: input.phone } });
-    if (!user || user.isGuest || user.status !== "ACTIVE" || !(await compare(input.password, user.passwordHash))) {
+    if (!user || user.isGuest || user.status !== "ACTIVE" || !user.passwordHash || !(await compare(input.password, user.passwordHash))) {
       await recordLoginFailure(request, input.phone);
       return NextResponse.json({ message: "شماره موبایل یا رمز عبور نادرست است." }, { status: 401 });
     }

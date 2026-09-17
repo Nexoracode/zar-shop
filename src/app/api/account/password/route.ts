@@ -10,6 +10,9 @@ export async function PATCH(request: Request) {
     const user = await getCurrentUser();
     if (!user) return NextResponse.json({ message: "ابتدا وارد حساب شوید." }, { status: 401 });
     if (user.isGuest) return NextResponse.json({ message: "حساب مهمان رمز عبور ندارد." }, { status: 403 });
+    if (!user.passwordHash) {
+      return NextResponse.json({ message: "این حساب هنوز رمز عبوری ندارد؛ از مسیر «فراموشی رمز عبور» یک رمز تازه بسازید." }, { status: 409 });
+    }
     const input = changePasswordSchema.parse(await request.json());
     if (!(await compare(input.currentPassword, user.passwordHash))) {
       return NextResponse.json({ message: "رمز عبور فعلی نادرست است." }, { status: 401 });

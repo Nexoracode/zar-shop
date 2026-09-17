@@ -6,20 +6,19 @@ import { useSearchParams } from "next/navigation";
 import { ChevronLeft } from "lucide-react";
 import { Button, toast } from "@heroui/react";
 import type { UserRole } from "@generated/prisma/enums";
-import { AdminCheckbox } from "@/components/admin-checkbox";
 import { InlineAlert } from "@/components/inline-alert";
 import { LoadingLabel } from "@/components/loading-label";
 import { OtpCodeInput } from "@/components/otp-code-input";
 import { OtpResendCountdown } from "@/components/otp-resend-countdown";
 import { PasswordField } from "@/components/password-input";
-import { newPasswordSchema, phoneSchema } from "@/modules/auth/schemas";
+import { phoneSchema } from "@/modules/auth/schemas";
 import { authFieldLimits } from "@/modules/auth/schemas";
 import { TextField } from "@/components/form-field";
 import { isAdminRole } from "@/modules/auth/permissions";
 
-type Step = "phone" | "password" | "login-otp" | "register-otp" | "register-complete";
+type Step = "phone" | "password" | "login-otp" | "register-otp";
 type OtpPurpose = "LOGIN" | "REGISTER";
-type FieldName = "phone" | "password" | "code" | "firstName" | "lastName" | "referralCode";
+type FieldName = "phone" | "password" | "code";
 
 // HeroUI's own Button base CSS sets text-sm/font-medium directly on `.button` (in the
 // "components" layer, imported by @heroui/styles) — a plain `text-xs`/`font-bold` utility
@@ -38,7 +37,7 @@ function StepHeader({ title, subtitle, size = "md" }: { title: string; subtitle?
   );
 }
 
-type ApiResult = { message?: string; exists?: boolean; issues?: Record<string, string[]>; user?: { role: UserRole } } | null;
+type ApiResult = { message?: string; exists?: boolean; hasPassword?: boolean; issues?: Record<string, string[]>; user?: { role: UserRole } } | null;
 
 async function postJson(url: string, body: unknown) {
   const response = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
@@ -68,14 +67,18 @@ export function AuthFlow() {
   const searchParams = useSearchParams();
   const [step, setStep] = useState<Step>("phone");
   const [phone, setPhone] = useState("");
-  const [referralCode, setReferralCode] = useState(() => (searchParams.get("ref") ?? "").trim().toUpperCase());
+  // Only ever set once, from a ?ref= link — there is no field left for the visitor to type
+  // one into themselves.
+  const [referralCode] = useState(() => (searchParams.get("ref") ?? "").trim().toUpperCase());
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<FieldName, string>>>({});
   const [loading, setLoading] = useState(false);
   const [altLoading, setAltLoading] = useState(false);
   const [otp, setOtp] = useState("");
   const [resendKey, setResendKey] = useState(0);
-  const [smsMarketingConsent, setSmsMarketingConsent] = useState(false);
+  // Only meaningful once /api/auth/phone/check has answered for an existing account — lets the
+  // OTP-login step hide the "ورود با رمز عبور" fallback for an account that has none to try.
+  const [hasPassword, setHasPassword] = useState(true);
 
   function clearFieldError(field: FieldName) {
     setFieldErrors((current) => (current[field] ? { ...current, [field]: undefined } : current));
@@ -116,7 +119,18 @@ export function AuthFlow() {
     setLoading(false);
     if (!ok) { applyIssues(result?.issues); reportFailure(setError, status, result?.message, "بررسی شماره موبایل انجام نشد."); return; }
     setPhone(parsed.data);
-    if (result?.exists) { setStep("password"); return; }
+    if (result?.exists) {
+      setHasPassword(Boolean(result.hasPassword));
+      if (result.hasPassword) { setStep("password"); return; }
+      // No password on this account (registered through the no-password flow) — a password
+      // field would have nothing to check against, so go straight to the OTP-login codepath.
+      setLoading(true);
+      const otpResult = await postJson("/api/auth/otp/request", { phone: parsed.data, purpose: "LOGIN" });
+      setLoading(false);
+      if (!otpResult.ok) { reportFailure(setError, otpResult.status, otpResult.result?.message, "ارسال کد یکبار مصرف انجام نشد."); return; }
+      goToOtpStep("login-otp");
+      return;
+    }
     goToOtpStep("register-otp");
   }
 
@@ -176,28 +190,19 @@ export function AuthFlow() {
     setFieldErrors({});
     setLoading(true);
     const { ok, result } = await postJson("/api/auth/otp/verify", { phone, purpose: "REGISTER", code: otp });
+    if (!ok) { setLoading(false); setFieldErrors({ code: result?.message ?? "کد وارد شده نادرست است." }); return; }
+    // No password, no name, no separate step — the verified code is the whole registration.
+    // A referral code only ever gets here pre-filled from the ?ref= link (there is no field
+    // left to type one into), so an invalid/expired one is silently dropped and retried
+    // instead of blocking someone who never typed it themselves.
+    const code = referralCode.trim() || undefined;
+    let complete = await postJson("/api/auth/register/complete", { phone, referralCode: code });
+    if (!complete.ok && code && complete.result?.issues?.referralCode) {
+      complete = await postJson("/api/auth/register/complete", { phone });
+    }
     setLoading(false);
-    if (!ok) { setFieldErrors({ code: result?.message ?? "کد وارد شده نادرست است." }); return; }
-    setOtp("");
-    setStep("register-complete");
-  }
-
-  async function submitRegisterComplete(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setError("");
-    const form = new FormData(event.currentTarget);
-    const password = String(form.get("password") ?? "");
-    const nextFieldErrors: Partial<Record<FieldName, string>> = {};
-    const passwordCheck = newPasswordSchema.safeParse(password);
-    if (!passwordCheck.success) nextFieldErrors.password = passwordCheck.error.issues[0]?.message;
-    if (Object.keys(nextFieldErrors).length) { setFieldErrors(nextFieldErrors); return; }
-    setFieldErrors({});
-    setLoading(true);
-    const body = { phone, password, smsMarketingConsent, referralCode: referralCode.trim() || undefined };
-    const { ok, result } = await postJson("/api/auth/register/complete", body);
-    setLoading(false);
-    if (!ok) { applyIssues(result?.issues); setError(result?.message ?? "ثبت‌نام انجام نشد."); return; }
-    toast.success("حساب کاربری ساخته شد", { description: "حساب شما با موفقیت ایجاد شد.", timeout: 4000 });
+    if (!complete.ok) { setOtp(""); setError(complete.result?.message ?? "ثبت‌نام انجام نشد."); return; }
+    toast.success("حساب کاربری ساخته شد", { description: "خوش آمدید!", timeout: 4000 });
     window.location.assign("/");
   }
 
@@ -239,7 +244,7 @@ export function AuthFlow() {
     return (
       <form className="grid gap-5" onSubmit={submit} noValidate>
         <StepHeader title="کد تایید را وارد کنید" subtitle={<>کد تایید برای شماره <strong dir="ltr">{phone}</strong> پیامک شد</>} />
-        {step === "login-otp" && <Button type="button" variant="ghost" onPress={() => setStep("password")} className={`${switchLinkClass} justify-self-start`}>ورود با رمز عبور<ChevronLeft size={15} /></Button>}
+        {step === "login-otp" && hasPassword && <Button type="button" variant="ghost" onPress={() => setStep("password")} className={`${switchLinkClass} justify-self-start`}>ورود با رمز عبور<ChevronLeft size={15} /></Button>}
         <div className="grid gap-2">
           <OtpCodeInput value={otp} onChange={(value) => { setOtp(value); clearFieldError("code"); }} isDisabled={loading} />
           {fieldErrors.code && <p role="alert" className="m-0 text-center text-[11px] font-normal text-[var(--danger)]">{fieldErrors.code}</p>}
@@ -254,16 +259,5 @@ export function AuthFlow() {
     );
   }
 
-  return (
-    <form className="grid gap-5" onSubmit={submitRegisterComplete} noValidate>
-      <StepHeader title="تعیین رمز عبور" subtitle={<>شماره <strong dir="ltr">{phone}</strong> تأیید شد؛ برای تکمیل ثبت‌نام رمز عبور بسازید</>} />
-      <PasswordField tone="auth" label="رمز عبور" error={fieldErrors.password} id="password" name="password" maxLength={authFieldLimits.password} onChange={() => clearFieldError("password")} />
-      <TextField tone="auth" label="کد معرف (اختیاری)" dir="ltr" error={fieldErrors.referralCode} id="referralCode" name="referralCode" maxLength={authFieldLimits.referralCode} value={referralCode} hint="اگر با کد دوستتان ثبت‌نام کنید، پس از اولین خرید هر دو هدیه می‌گیرید." onChange={(event) => { setReferralCode(event.target.value.toUpperCase()); clearFieldError("referralCode"); }} />
-      <AdminCheckbox isSelected={smsMarketingConsent} onChange={setSmsMarketingConsent} description="برای تخفیف‌ها و خبرهای فروشگاه؛ هر زمان قابل لغو است">مایلم پیامک‌های اطلاع‌رسانی فروشگاه را دریافت کنم</AdminCheckbox>
-      {error && <InlineAlert status="danger">{error}</InlineAlert>}
-      <Button type="submit" variant="primary" fullWidth className={submitClass} isPending={loading}>
-        {({ isPending }) => <LoadingLabel isPending={isPending}>ساخت حساب</LoadingLabel>}
-      </Button>
-    </form>
-  );
+  return null;
 }

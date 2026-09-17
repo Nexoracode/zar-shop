@@ -27,7 +27,7 @@ export async function POST(request: Request) {
     const exists = await db.user.findUnique({ where: { phone: input.phone }, select: { id: true } });
     if (exists) return NextResponse.json({ message: "این شماره موبایل قبلاً ثبت شده است." }, { status: 409 });
     const { password, referralCode, ...profile } = input;
-    const passwordHash = await hash(password, 12);
+    const passwordHash = password ? await hash(password, 12) : null;
     // A guest cart is created lazily on first add-to-cart; completing registration must
     // not silently strand it, so fold it into the new account before the guest cookie is
     // overwritten below.

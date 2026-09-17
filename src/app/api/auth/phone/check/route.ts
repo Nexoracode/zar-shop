@@ -13,9 +13,9 @@ export async function POST(request: Request) {
     const blockedUntil = await consumePhoneCheckAttempt(request);
     if (blockedUntil) return rateLimitResponse(blockedUntil);
     const { phone } = phoneCheckSchema.parse(await request.json());
-    const existing = await db.user.findUnique({ where: { phone }, select: { status: true, isGuest: true } });
+    const existing = await db.user.findUnique({ where: { phone }, select: { status: true, isGuest: true, passwordHash: true } });
     if (existing && !existing.isGuest && existing.status === "ACTIVE") {
-      return NextResponse.json({ exists: true });
+      return NextResponse.json({ exists: true, hasPassword: Boolean(existing.passwordHash) });
     }
     await issuePhoneOtp(phone, "REGISTER");
     return NextResponse.json({ exists: false });
