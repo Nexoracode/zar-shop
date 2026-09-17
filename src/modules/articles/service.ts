@@ -62,12 +62,11 @@ function publishedWhere(now = new Date()): Prisma.ArticleWhereInput {
   return { status: "PUBLISHED", publishedAt: { not: null, lte: now } };
 }
 
-// Cached across requests; no admin-side revalidateTag is wired yet for article
-// publish/unpublish/edit, so a short cacheLife keeps staleness small until it self-heals.
+// Not cached: the row includes `ratingAverage` as a raw Prisma `Decimal`, which "use cache"
+// can't serialize (RSC/Client Component serialization rejects class instances). Converting it
+// to a plain number here to allow caching is a larger, separate change — see the caching
+// migration's follow-up notes.
 export async function getPublishedArticles({ page = 1, categorySlug, search }: { page?: number; categorySlug?: string; search?: string }) {
-  "use cache";
-  cacheLife("minutes");
-  cacheTag("articles:list");
   const trimmedSearch = search?.trim();
   const where: Prisma.ArticleWhereInput = {
     ...publishedWhere(),
@@ -111,13 +110,12 @@ const relatedProductSelect = {
 
 export type ArticleRelatedProduct = Prisma.ProductGetPayload<{ select: typeof relatedProductSelect }>;
 
-// Cached across requests (keyed by slug + viewerId, since the own-rating lookup is
-// viewer-specific). No admin-side revalidateTag is wired yet for article edits, so a short
-// cacheLife keeps that staleness window small until it self-heals.
+// Not cached: the article row (ratingAverage) and its relatedProduct (weightGrams,
+// makingFeeValue, profitPercent, taxPercent, fixedPrice, discountValue) carry raw Prisma
+// `Decimal` fields, which "use cache" can't serialize — and the product ones are exactly the
+// financial fields the project requires exact Decimal precision for, so converting them to
+// plain numbers to allow caching isn't a safe shortcut here.
 export async function getPublishedArticleBySlug(slug: string, viewerId?: string | null) {
-  "use cache";
-  cacheLife("minutes");
-  cacheTag("articles:list");
   const article = await db.article.findFirst({
     where: { slug, ...publishedWhere() },
     include: {
@@ -162,11 +160,11 @@ export async function rateArticle(articleId: string, userId: string, value: numb
   });
 }
 
-/** Lean read for the homepage's "latest articles" section — no count query, just the rows. */
+/**
+ * Lean read for the homepage's "latest articles" section — no count query, just the rows.
+ * Not cached: `ratingAverage` is a raw Prisma `Decimal`, which "use cache" can't serialize.
+ */
 export async function getLatestPublishedArticles(limit = 4) {
-  "use cache";
-  cacheLife("minutes");
-  cacheTag("articles:list");
   return db.article.findMany({
     where: publishedWhere(),
     select: listSelect,
@@ -175,11 +173,12 @@ export async function getLatestPublishedArticles(limit = 4) {
   });
 }
 
-/** Top-of-page magazine showcase for the blog list — hero card + numbered picks, newest first. */
+/**
+ * Top-of-page magazine showcase for the blog list — hero card + numbered picks, newest first.
+ * Not cached: `featuredSelect` doesn't include `ratingAverage`, but stays uncached to match
+ * `getPublishedArticles`/`getLatestPublishedArticles` in the same listing pages.
+ */
 export async function getFeaturedArticles(limit = 4) {
-  "use cache";
-  cacheLife("minutes");
-  cacheTag("articles:list");
   return db.article.findMany({
     where: publishedWhere(),
     select: featuredSelect,

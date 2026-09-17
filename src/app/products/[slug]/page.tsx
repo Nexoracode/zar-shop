@@ -2,7 +2,6 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
-import { cacheLife, cacheTag } from "next/cache";
 import { CheckCircle2, Headset, PackageCheck, ShieldCheck, Star, Truck } from "lucide-react";
 import { AddToCart, ProductPurchaseProvider } from "@/components/add-to-cart";
 import { PriceTooltip } from "@/components/price-tooltip";
@@ -41,14 +40,11 @@ import { env } from "@/lib/env";
 
 // The status filter is deliberately absent: the page needs to tell an unpublished product
 // apart from a slug that never existed, so that the first case can explain itself instead of
-// falling through to a bare 404. Cached across requests — this also keeps generateMetadata
-// (which has no session dependency of its own) genuinely cacheable/prerenderable. No
-// admin-side revalidateTag is wired yet for product edits, so a short cacheLife keeps that
-// staleness window small until it self-heals.
+// falling through to a bare 404. Not cached: the row carries raw Prisma `Decimal` fields
+// (weightGrams, makingFeeValue, profitPercent, taxPercent, fixedPrice, discountValue) — exactly
+// the financial fields the project requires exact Decimal precision for, and "use cache" can't
+// serialize a Decimal instance (RSC/Client Component serialization rejects class instances).
 async function getProductForPage(slug: string, industry: "GOLD" | "GENERAL") {
-  "use cache";
-  cacheLife("minutes");
-  cacheTag("products:detail");
   return db.product.findFirst({ where: { slug, storeIndustry: industry }, include: { category: true, media: { include: { media: true }, orderBy: { position: "asc" } }, variants: true, optionTypes: productOptionTypeInclude, optionGuide: true } });
 }
 
@@ -59,6 +55,9 @@ function plainProductDescription(product: { name: string; description: string | 
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  // getProductForPage is an uncached raw DB read (see its own comment); mark this metadata
+  // generation as request-time explicitly so Next doesn't attempt to prerender through it.
+  await connection();
   const { slug } = await params;
   const settings = await getGeneralStoreSettings();
   const product = await getProductForPage(slug, settings.industry);

@@ -27,9 +27,15 @@ export async function generateMetadata(): Promise<Metadata> {
   const [settings, brand, seo] = await Promise.all([getGeneralStoreSettings(), getBrandSettings(), getSeoSettings()]);
   // A configured, build-time-known origin (not a per-request headers() read) so this function
   // stays cacheable under Cache Components — matches the pattern already used for article URLs.
-  const baseUrl = new URL(env.APP_URL);
+  // Kept as a plain string (not `new URL(...)`), since this function is "use cache" and a URL
+  // instance can't be serialized across that boundary (RSC/Client Component serialization
+  // rejects class instances).
+  const baseUrl = env.APP_URL.replace(/\/$/, "");
+  const defaultOgImage = `${baseUrl}/og.png`;
   const description = seo.metaDescription || settings.shortDescription;
   return {
+    // Per Next's own "use cache" + generateMetadata guidance: return metadataBase as a string,
+    // not `new URL(...)` — a URL instance isn't serializable across a Cache Function boundary.
     metadataBase: baseUrl,
     title: { default: seo.metaTitle || settings.storeName, template: `%s | ${settings.storeName}` },
     description,
@@ -37,8 +43,8 @@ export async function generateMetadata(): Promise<Metadata> {
     // `X-Robots-Tag` header in `src/proxy.ts`.
     robots: seo.allowIndexing ? undefined : { index: false, follow: false },
     icons: brand.faviconMedia ? { icon: brand.faviconMedia.url } : undefined,
-    openGraph: { title: `${settings.storeName} | ${settings.tagline}`, description, type: "website", locale: "fa_IR", images: [{ url: brand.socialImageMedia?.url ?? new URL("/og.png", baseUrl), width: 1200, height: 630, alt: `${settings.storeName}؛ ${settings.tagline}` }] },
-    twitter: { card: "summary_large_image", title: `${settings.storeName} | ${settings.tagline}`, description, images: [brand.socialImageMedia?.url ?? new URL("/og.png", baseUrl)] },
+    openGraph: { title: `${settings.storeName} | ${settings.tagline}`, description, type: "website", locale: "fa_IR", images: [{ url: brand.socialImageMedia?.url ?? defaultOgImage, width: 1200, height: 630, alt: `${settings.storeName}؛ ${settings.tagline}` }] },
+    twitter: { card: "summary_large_image", title: `${settings.storeName} | ${settings.tagline}`, description, images: [brand.socialImageMedia?.url ?? defaultOgImage] },
   };
 }
 

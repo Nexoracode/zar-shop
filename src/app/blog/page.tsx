@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { connection } from "next/server";
 import { ArticleFeaturedSection } from "@/components/article-featured-section";
 import { ArticleListSection } from "@/components/article-list-section";
 import { getActiveArticleCategories, getFeaturedArticles, getPublishedArticles } from "@/modules/articles/service";
@@ -22,6 +23,10 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function BlogIndexPage({ searchParams }: Context) {
+  // getPublishedArticles/getFeaturedArticles are uncached raw DB reads (see their own
+  // comments); mark this render as request-time explicitly so Next doesn't attempt to
+  // prerender through them.
+  await connection();
   const { page, search, category } = await searchParams;
   const requestedPage = Math.max(1, Number.parseInt(page ?? "1", 10) || 1);
   const trimmedSearch = search?.trim() ?? "";
