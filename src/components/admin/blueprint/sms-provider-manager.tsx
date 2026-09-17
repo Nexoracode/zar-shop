@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "@heroui/react";
+import Link from "next/link";
 import { AlertTriangle, ExternalLink, MessageSquareText, Power, ShieldCheck, Trash2 } from "lucide-react";
 import { AdminBulkCheckbox, AdminBulkEditor } from "@/components/admin-bulk-editor";
 import { AdminEmptyState, AdminPanel } from "@/components/admin-ui";
@@ -19,7 +20,7 @@ function statusLabel(item: PublicSmsProviderConfig) {
   return item.isActive ? "فعال" : item.sendSupported ? "غیرفعال" : "نیازمند قرارداد API";
 }
 
-export function BlueprintSmsProviderManager({ mode, initialConfigs, onSaved }: { mode: "list" | "form"; initialConfigs: PublicSmsProviderConfig[]; onSaved?: () => void }) {
+export function BlueprintSmsProviderManager({ mode, initialConfigs, smsEnabled, onSaved }: { mode: "list" | "form"; initialConfigs: PublicSmsProviderConfig[]; smsEnabled?: boolean; onSaved?: () => void }) {
   const router = useRouter();
   const [configs, setConfigs] = useState(initialConfigs);
   const [selectedId, setSelectedId] = useState<SmsProviderId>("FARAZ_SMS");
@@ -153,6 +154,16 @@ export function BlueprintSmsProviderManager({ mode, initialConfigs, onSaved }: {
 
   return (
     <div className="grid gap-2">
+      {smsEnabled === false && (
+        <div className="bp-frame relative flex items-start gap-3 border-[var(--bp-warning)] p-[14px]">
+          <AlertTriangle size={17} className="mt-0.5 shrink-0 text-[var(--bp-warning)]" />
+          <div className="min-w-0 text-[12px] leading-6">
+            <strong className="block text-[13px]">ارسال پیامک هنوز خاموش است</strong>
+            تا کلید «ارسال پیامک فعال باشد» در تنظیمات پیامک و اعلان روشن نشود، هیچ پیامکی (از جمله کد یک‌بارمصرف) ارسال نمی‌شود.
+            <Link href="/admin/settings/notifications" className="mt-1 block font-bold text-[var(--bp-accent)]">رفتن به تنظیمات پیامک و اعلان ←</Link>
+          </div>
+        </div>
+      )}
       <section className="bp-frame relative p-[16px]">
         <BpKicker>ارائه‌دهنده‌های پیشنهادی</BpKicker>
         <div className="mt-3 flex flex-wrap justify-start gap-2">

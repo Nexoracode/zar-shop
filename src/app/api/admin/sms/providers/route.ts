@@ -18,7 +18,11 @@ export async function POST(request: Request) {
     const credentials = input.provider === "FARAZ_SMS" ? { apiKey: input.apiKey, otpPatternCode: input.otpPatternCode, otpCodeVariable: input.otpCodeVariable, otpNameVariable: input.otpNameVariable } : { username: input.username, password: input.password };
     const maskSource = input.provider === "FARAZ_SMS" ? input.apiKey : input.username;
     await db.$transaction(async (tx) => {
-      const item = await tx.smsProviderConfig.upsert({ where: { provider: input.provider }, create: { provider: input.provider, displayName: info.name, credentialsEncrypted: encryptSmsCredentials(credentials), credentialMasked: maskSmsCredential(maskSource), senderNumber: input.senderNumber }, update: { displayName: info.name, credentialsEncrypted: encryptSmsCredentials(credentials), credentialMasked: maskSmsCredential(maskSource), senderNumber: input.senderNumber } });
+      // A brand-new config activates itself when it's the only usable one — otherwise saving it
+      // silently does nothing (sendPhoneOtpCode only ever looks at the active provider) and the
+      // admin has no reason to expect a second "فعال‌سازی" step on another page.
+      const existingActive = info.sendSupported ? await tx.smsProviderConfig.findFirst({ where: { isActive: true } }) : null;
+      const item = await tx.smsProviderConfig.upsert({ where: { provider: input.provider }, create: { provider: input.provider, displayName: info.name, credentialsEncrypted: encryptSmsCredentials(credentials), credentialMasked: maskSmsCredential(maskSource), senderNumber: input.senderNumber, isActive: info.sendSupported && !existingActive }, update: { displayName: info.name, credentialsEncrypted: encryptSmsCredentials(credentials), credentialMasked: maskSmsCredential(maskSource), senderNumber: input.senderNumber } });
       await tx.auditLog.create({ data: { actorId: actor.id, action: "SMS_PROVIDER_CONFIG_UPSERT", entityType: "SmsProviderConfig", entityId: item.id, ...auditRequestContext(request, { provider: input.provider, senderNumber: input.senderNumber }) } });
     });
     return NextResponse.json(await getPublicSmsProviderConfigs(), { status: 201 });
