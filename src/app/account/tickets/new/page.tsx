@@ -3,8 +3,6 @@ import { db } from "@/lib/db";
 import { requireUser } from "@/modules/auth/session";
 import { NewTicketComposer } from "@/components/account-ticket-composer";
 
-export const dynamic = "force-dynamic";
-
 type Context = { searchParams: Promise<{ productId?: string }> };
 
 export default async function NewTicketPage({ searchParams }: Context) {

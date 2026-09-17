@@ -7,8 +7,6 @@ import { expirePendingOrders } from "@/modules/orders/expiration";
 import { getGeneralStoreSettings } from "@/modules/settings/general-settings";
 import { getOrderSettings } from "@/modules/settings/order-settings";
 
-export const dynamic = "force-dynamic";
-
 export default async function OrdersPage() {
   const user = await requireUser();
   await expirePendingOrders();

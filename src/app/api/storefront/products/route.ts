@@ -5,8 +5,6 @@ import { getStorefrontProductFeed } from "@/modules/products/storefront-feed";
 import { storefrontProductFeedQuerySchema } from "@/modules/products/storefront-feed-contract";
 import { getGeneralStoreSettings, isStorefrontAvailable } from "@/modules/settings/general-settings";
 
-export const dynamic = "force-dynamic";
-
 export async function GET(request: Request) {
   try {
     const [settings, user] = await Promise.all([getGeneralStoreSettings(), getCurrentUser()]);

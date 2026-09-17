@@ -9,8 +9,6 @@ import { ticketStatusLabels, ticketStatusTones } from "@/modules/admin/labels";
 import { StatusBadge } from "@/components/status-badge";
 import { formatRelativeFa } from "@/lib/format";
 
-export const dynamic = "force-dynamic";
-
 export default async function AccountTicketsPage() {
   const user = await requireUser();
   const tickets = await listForUser(db, user.id);

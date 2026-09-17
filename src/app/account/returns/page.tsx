@@ -8,8 +8,6 @@ import { returnStatusLabels, returnStatusTones } from "@/modules/admin/labels";
 import { StatusBadge } from "@/components/status-badge";
 import { listUserReturns } from "@/modules/orders/returns";
 
-export const dynamic = "force-dynamic";
-
 export default async function AccountReturnsPage() {
   const user = await requireUser();
   const returns = await listUserReturns(user.id);

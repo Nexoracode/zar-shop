@@ -11,7 +11,9 @@ import { optionEntries } from "@/modules/products/options";
 type InvoiceOrder = Prisma.OrderGetPayload<{ include: { invoice: true; items: true; payments: true; user: true } }>;
 type JsonRecord = Record<string, Prisma.JsonValue>;
 
-export const dynamic = "force-dynamic";
+// Per-order, per-user document; no static-shell value. Deferred from full Cache Components
+// conversion — see the caching migration plan for scope.
+export const instant = false;
 
 function asRecord(value: Prisma.JsonValue | null | undefined): JsonRecord {
   return value && typeof value === "object" && !Array.isArray(value) ? value as JsonRecord : {};

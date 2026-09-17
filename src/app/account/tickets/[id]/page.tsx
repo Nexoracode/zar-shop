@@ -5,8 +5,6 @@ import { getTicketForUser } from "@/modules/tickets/service";
 import { serializeTicketDetail } from "@/modules/tickets/admin";
 import { AccountTicketChat } from "@/components/account-ticket-chat";
 
-export const dynamic = "force-dynamic";
-
 type Context = { params: Promise<{ id: string }> };
 
 export default async function AccountTicketPage({ params }: Context) {

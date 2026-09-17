@@ -4,8 +4,6 @@ import { db } from "@/lib/db";
 import { requireUser } from "@/modules/auth/session";
 import { listForUser, pruneExpired } from "@/modules/notifications/service";
 
-export const dynamic = "force-dynamic";
-
 export default async function AccountNotificationsPage() {
   const user = await requireUser();
   await pruneExpired(db);

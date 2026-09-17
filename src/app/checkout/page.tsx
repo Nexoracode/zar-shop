@@ -18,7 +18,9 @@ import { serializeAddress } from "@/modules/account/addresses";
 import { getWalletSettings } from "@/modules/settings/wallet-settings";
 import { ensureWallet } from "@/modules/wallet/wallet";
 
-export const dynamic = "force-dynamic";
+// Per-user checkout; no static-shell value. Deferred from full Cache Components conversion —
+// see the caching migration plan for scope.
+export const instant = false;
 
 // This row's three labels + two dividers don't fit a narrow phone at full size; scrolling
 // horizontally within the row itself (rather than letting it force the whole page wider) keeps

@@ -7,8 +7,6 @@ import { getStorefrontCatalog } from "@/modules/products/storefront-catalog";
 import { storefrontCatalogQuerySchema } from "@/modules/products/storefront-catalog-contract";
 import { getGeneralStoreSettings, isStorefrontAvailable } from "@/modules/settings/general-settings";
 
-export const dynamic = "force-dynamic";
-
 export async function GET(request: Request) {
   try {
     const [settings, user] = await Promise.all([getGeneralStoreSettings(), getCurrentUser()]);

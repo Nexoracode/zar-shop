@@ -5,8 +5,6 @@ import { apiError } from "@/lib/http";
 import { getCurrentUser } from "@/modules/auth/session";
 import { getGeneralStoreSettings, isStorefrontAvailable } from "@/modules/settings/general-settings";
 
-export const dynamic = "force-dynamic";
-
 const searchQuerySchema = z.string().trim().max(100);
 
 export async function GET(request: Request) {

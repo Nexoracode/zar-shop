@@ -20,8 +20,6 @@ import { optionEntries } from "@/modules/products/options";
 import { getGeneralStoreSettings } from "@/modules/settings/general-settings";
 import { getOrderSettings } from "@/modules/settings/order-settings";
 
-export const dynamic = "force-dynamic";
-
 type JsonRecord = Record<string, Prisma.JsonValue>;
 
 function asRecord(value: Prisma.JsonValue | null | undefined): JsonRecord {
