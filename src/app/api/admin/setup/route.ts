@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 import type { StoreIndustry } from "@generated/prisma/enums";
 import { apiError } from "@/lib/http";
 import { db } from "@/lib/db";
@@ -70,6 +71,7 @@ export async function PATCH(request: Request) {
       });
     });
 
+    revalidateTag("settings:general", { expire: 0 });
     return NextResponse.json({ ok: true });
   } catch (error) {
     return apiError(error);

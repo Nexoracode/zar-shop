@@ -1,15 +1,18 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { connection } from "next/server";
+import { cacheLife, cacheTag } from "next/cache";
 import { ArticleListSection } from "@/components/article-list-section";
 import { db } from "@/lib/db";
 import { getActiveArticleCategories, getPublishedArticles } from "@/modules/articles/service";
 
-export const dynamic = "force-dynamic";
-
 type Context = { params: Promise<{ slug: string }>; searchParams: Promise<{ page?: string; search?: string }> };
 
 async function getCategory(slug: string) {
+  "use cache";
+  cacheLife("minutes");
+  cacheTag("articles:list");
   return db.articleCategory.findFirst({ where: { slug, isActive: true }, select: { name: true, slug: true } });
 }
 
@@ -21,6 +24,9 @@ export async function generateMetadata({ params }: Context): Promise<Metadata> {
 }
 
 export default async function BlogCategoryPage({ params, searchParams }: Context) {
+  // getPublishedArticles is an uncached raw DB read (see its own comment); mark this render
+  // as request-time explicitly so Next doesn't attempt to prerender through it.
+  await connection();
   const [{ slug }, { page, search }] = await Promise.all([params, searchParams]);
   const category = await getCategory(slug);
   if (!category) notFound();

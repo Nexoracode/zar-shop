@@ -5,6 +5,11 @@ import { parseAdminPaginationRequest } from "@/lib/admin-pagination-server";
 import { requirePermission } from "@/modules/auth/session";
 import { BlueprintArticlesView } from "@/components/admin/blueprint/articles-view";
 
+// @next-codemod-ignore Cache Components adoption: this segment temporarily allows blocking.
+// Remove this opt-out after verifying the segment passes validation without it.
+// See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
+export const instant = false;
+
 type Context = { searchParams: Promise<{ q?: string; status?: string; category?: string; page?: string; pageSize?: string }> };
 
 const statuses = ["DRAFT", "PUBLISHED", "ARCHIVED"] as const;

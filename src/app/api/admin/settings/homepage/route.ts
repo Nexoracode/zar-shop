@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 import { apiError } from "@/lib/http";
 import { db } from "@/lib/db";
 import { getPermittedActor } from "@/modules/auth/session";
@@ -56,6 +57,8 @@ export async function PATCH(request: Request) {
         },
       });
     });
+    // { expire: 0 } because the response below re-reads the cached getter immediately.
+    revalidateTag("settings:homepage", { expire: 0 });
     return NextResponse.json(await getHomepageSettings());
   } catch (error) {
     return apiError(error);

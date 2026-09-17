@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { connection } from "next/server";
 import { ArrowDownUp } from "lucide-react";
 import { StorefrontCatalogFilters } from "@/components/storefront-catalog-filters";
 import { StorefrontCatalogFilterBar } from "@/components/storefront-catalog-filter-bar";
@@ -46,8 +47,6 @@ type ProductHrefState = {
   sameDayDelivery?: string;
 };
 
-export const dynamic = "force-dynamic";
-
 export async function generateMetadata({ searchParams }: { searchParams: Promise<ProductSearchParams> }): Promise<Metadata> {
   const [settings, params] = await Promise.all([getGeneralStoreSettings(), searchParams]);
   const title = settings.industry === "GOLD" ? "محصولات طلا" : "محصولات";
@@ -61,6 +60,11 @@ export async function generateMetadata({ searchParams }: { searchParams: Promise
 }
 
 export default async function ProductsPage({ searchParams }: { searchParams: Promise<ProductSearchParams> }) {
+  // The catalog grid flags each card's favorite state per viewer (getStorefrontCatalog →
+  // markFavoriteCards → getCurrentUser), and that cookies() read happens after other uncached
+  // DB reads (the category/brand lookups below), so it can't establish dynamic rendering on its
+  // own during prerendering. `connection()` marks this render as request-time explicitly.
+  await connection();
   const params = await searchParams;
   const parsedQuery = storefrontCatalogQuerySchema.safeParse(params);
   if (!parsedQuery.success) notFound();

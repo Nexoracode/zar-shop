@@ -4,6 +4,11 @@ import { PendingReviewButton } from "@/components/pending-review-button";
 import { db } from "@/lib/db";
 import { requireUser } from "@/modules/auth/session";
 
+// @next-codemod-ignore Cache Components adoption: this segment temporarily allows blocking.
+// Remove this opt-out after verifying the segment passes validation without it.
+// See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
+export const instant = false;
+
 export default async function PendingReviewsPage() {
   const user = await requireUser();
   const items = await db.orderItem.findMany({ where: { productId: { not: null }, order: { userId: user.id, status: { in: ["PAID", "PROCESSING", "SHIPPED", "DELIVERED"] } }, product: { status: "ACTIVE", reviews: { none: { userId: user.id, parentId: null } } } }, distinct: ["productId"], orderBy: { order: { createdAt: "desc" } }, include: { product: { include: { category: true, media: { take: 1, orderBy: { position: "asc" }, include: { media: true } } } } } });

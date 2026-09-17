@@ -11,7 +11,7 @@ function createClient(): PrismaClient {
     user: env.DATABASE_USER,
     password: env.DATABASE_PASSWORD,
     database: env.DATABASE_NAME,
-    connectionLimit: 8,
+    connectionLimit: env.DATABASE_CONNECTION_LIMIT,
   });
   return new PrismaClient({ adapter }) as PrismaClient;
 }

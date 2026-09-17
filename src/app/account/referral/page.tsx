@@ -9,6 +9,11 @@ import { getGeneralStoreSettings } from "@/modules/settings/general-settings";
 import { getWalletSettings } from "@/modules/settings/wallet-settings";
 import { ensureReferralCode } from "@/modules/wallet/referral-code";
 
+// @next-codemod-ignore Cache Components adoption: this segment temporarily allows blocking.
+// Remove this opt-out after verifying the segment passes validation without it.
+// See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
+export const instant = false;
+
 export default async function AccountReferralPage() {
   const user = await requireUser();
   const [walletSettings, generalSettings] = await Promise.all([getWalletSettings(), getGeneralStoreSettings()]);

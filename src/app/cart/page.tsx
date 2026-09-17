@@ -19,7 +19,9 @@ import { PendingOrderCartNotice } from "@/components/pending-order-cart-notice";
 
 type CartItemRow = Prisma.CartItemGetPayload<{ include: { product: { include: { variants: true; media: { include: { media: true } } } } } }>;
 
-export const dynamic = "force-dynamic";
+// Per-user cart contents; no static-shell value. Deferred from full Cache Components
+// conversion — see the caching migration plan for scope.
+export const instant = false;
 
 export default async function CartPage() {
   const user = await getCurrentUser();

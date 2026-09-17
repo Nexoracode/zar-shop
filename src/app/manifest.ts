@@ -2,8 +2,6 @@ import type { MetadataRoute } from "next";
 import { getGeneralStoreSettings } from "@/modules/settings/general-settings";
 import { getBrandSettings } from "@/modules/settings/brand-settings";
 
-export const dynamic = "force-dynamic";
-
 export default async function manifest(): Promise<MetadataRoute.Manifest> {
   const [settings, brand] = await Promise.all([getGeneralStoreSettings(), getBrandSettings()]);
   const icons = brand.faviconMedia

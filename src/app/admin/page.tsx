@@ -4,6 +4,11 @@ import { getCatalogSettings } from "@/modules/settings/catalog-settings";
 import { BlueprintDashboardView } from "@/components/admin/blueprint/dashboard-view";
 import type { AdminDashboardData } from "@/components/admin/dashboard-data";
 
+// @next-codemod-ignore Cache Components adoption: this segment temporarily allows blocking.
+// Remove this opt-out after verifying the segment passes validation without it.
+// See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
+export const instant = false;
+
 const SALES_TREND_DAYS = 14;
 const SUCCESSFUL_ORDER_STATUSES = ["PAID", "PROCESSING", "SHIPPED", "DELIVERED"] as const;
 

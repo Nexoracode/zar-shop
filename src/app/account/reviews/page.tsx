@@ -8,6 +8,11 @@ import { db } from "@/lib/db";
 import { formatDate } from "@/lib/format";
 import { requireUser } from "@/modules/auth/session";
 
+// @next-codemod-ignore Cache Components adoption: this segment temporarily allows blocking.
+// Remove this opt-out after verifying the segment passes validation without it.
+// See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
+export const instant = false;
+
 const tones = { PENDING: "warning", APPROVED: "success", REJECTED: "danger" } as const;
 const labels = { PENDING: "در انتظار بررسی", APPROVED: "تأییدشده", REJECTED: "ردشده" } as const;
 

@@ -12,6 +12,10 @@ const schema = z.object({
   DATABASE_USER: z.string().default("root"),
   DATABASE_PASSWORD: z.string().default(""),
   DATABASE_NAME: z.string().default("store_db"),
+  // Prisma/mariadb pool cap. Tune to the DB server's real max_connections and how many app
+  // instances share it — this default is a starting point for a single instance, not a
+  // universal answer.
+  DATABASE_CONNECTION_LIMIT: z.coerce.number().int().positive().default(20),
   AUTH_SECRET: z.string().min(32).default(DEVELOPMENT_AUTH_SECRET),
   APP_URL: z.url().default("http://localhost:3000"),
   GOLD_PRICE_PROVIDER: z.enum(["mock", "tgju", "http"]).default("tgju"),

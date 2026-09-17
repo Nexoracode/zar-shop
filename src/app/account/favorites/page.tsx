@@ -3,6 +3,11 @@ import { FavoriteRemoveButton } from "@/components/favorite-remove-button";
 import { db } from "@/lib/db";
 import { requireUser } from "@/modules/auth/session";
 
+// @next-codemod-ignore Cache Components adoption: this segment temporarily allows blocking.
+// Remove this opt-out after verifying the segment passes validation without it.
+// See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
+export const instant = false;
+
 export default async function FavoritesPage() {
   const user = await requireUser();
   const favorites = await db.productFavorite.findMany({ where: { userId: user.id, product: { status: "ACTIVE" } }, orderBy: { createdAt: "desc" }, include: { product: { include: { category: true, media: { take: 1, orderBy: { position: "asc" }, include: { media: true } } } } } });

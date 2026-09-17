@@ -1,4 +1,4 @@
-import { cache } from "react";
+import { cacheLife, cacheTag } from "next/cache";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import type { UserRole } from "@generated/prisma/enums";
@@ -70,13 +70,17 @@ export type GeneralStoreSettings = GeneralStoreSettingsInput & {
   setupComplete: boolean;
 };
 
-// `cache` dedupes this within a request — the root layout, `generateMetadata` and most pages
-// each read the general store settings, and they all want the same one row.
-export const getGeneralStoreSettings = cache(async (): Promise<GeneralStoreSettings> => {
+// Cached across requests (not just within one) — the root layout, `generateMetadata` and most
+// pages read the general store settings. `revalidateTag("settings:general")` in the settings
+// save route clears this the moment an admin updates it.
+export async function getGeneralStoreSettings(): Promise<GeneralStoreSettings> {
+  "use cache";
+  cacheLife("hours");
+  cacheTag("settings:general");
   const existing = await db.storeSetting.findUnique({ where: { id: STORE_SETTING_ID }, select: generalSelect });
   const settings = existing ?? await db.storeSetting.upsert({ where: { id: STORE_SETTING_ID }, create: { id: STORE_SETTING_ID, ...generalStoreSettingsDefaults }, update: {}, select: generalSelect });
   return { ...generalStoreSettingsSchema.parse(settings), setupComplete: Boolean(settings.setupCompletedAt) };
-});
+}
 
 export function isStorefrontAvailable(
   settings: Pick<GeneralStoreSettings, "isStoreActive" | "maintenanceMode"> & Partial<Pick<GeneralStoreSettings, "setupComplete">>,

@@ -15,6 +15,11 @@ import { getGeneralStoreSettings } from "@/modules/settings/general-settings";
 import { getSetupState, isSetupComplete } from "@/modules/settings/setup";
 import { getStoreIndustry } from "@/modules/settings/store-settings";
 
+// The whole admin area is per-session and per-role; a static shell has no value here, so this
+// segment stays fully dynamic under Cache Components instead of chasing an instant-navigation
+// shell that would need Suspense-wrapping the auth/session reads on every one of ~77 pages.
+export const instant = false;
+
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const user = await requireAdminUser();
 

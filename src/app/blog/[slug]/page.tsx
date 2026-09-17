@@ -30,12 +30,15 @@ import { sanitizeProductDescription } from "@/modules/products/rich-text";
 import { getGoldPriceForDisplay } from "@/modules/gold/gold-price.service";
 import { getGeneralStoreSettings } from "@/modules/settings/general-settings";
 import { env } from "@/lib/env";
-
-export const dynamic = "force-dynamic";
+import { connection } from "next/server";
 
 type Context = { params: Promise<{ slug: string }> };
 
 export async function generateMetadata({ params }: Context): Promise<Metadata> {
+  // getPublishedArticleBySlug is an uncached raw DB read (see its own comment); mark this
+  // metadata generation as request-time explicitly so Next doesn't attempt to prerender
+  // through it.
+  await connection();
   const { slug } = await params;
   const result = await getPublishedArticleBySlug(slug);
   if (!result) return {};

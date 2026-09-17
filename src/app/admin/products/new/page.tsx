@@ -6,6 +6,11 @@ import { getStoreIndustry } from "@/modules/settings/store-settings";
 import { parseCategoryAttributeSchema } from "@/modules/products/attributes";
 import { listSelectableOptionTypes } from "@/modules/options/option-library";
 
+// @next-codemod-ignore Cache Components adoption: this segment temporarily allows blocking.
+// Remove this opt-out after verifying the segment passes validation without it.
+// See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
+export const instant = false;
+
 export default async function NewProduct() {
   await requirePermission("catalog:manage");
   const [categories, brands, colors, optionLibrary, storeIndustry] = await Promise.all([

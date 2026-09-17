@@ -1,4 +1,4 @@
-import { cache } from "react";
+import { cacheLife, cacheTag } from "next/cache";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { STORE_SETTING_ID } from "@/modules/settings/store-settings";
@@ -292,9 +292,13 @@ const homepageSelect = {
   promoMobileMediaId: true,
 } as const;
 
-// `cache` dedupes this within a request — the root layout reads it once and the homepage reads
-// it again, and it fans out into several more queries (legacy menu items, homepage media).
-export const getHomepageSettings = cache(async (): Promise<HomepageSettings> => {
+// Cached across requests — this fans out into several more queries (legacy menu items,
+// homepage media) on top of the settings row itself. `revalidateTag("settings:homepage")` in
+// the homepage settings save routes clears this on save.
+export async function getHomepageSettings(): Promise<HomepageSettings> {
+  "use cache";
+  cacheLife("hours");
+  cacheTag("settings:homepage");
   const existing = await db.storeSetting.findUnique({ where: { id: STORE_SETTING_ID }, select: homepageSelect });
   const { sections, menuItems: defaultMenuItems, tileGroups: defaultTileGroups, treasureCards: defaultTreasureCards, heroSlides: defaultHeroSlides, licenses: defaultLicenses, ...homepageDefaults } = homepageSettingsDefaults;
   const settings = existing ?? await db.storeSetting.upsert({
@@ -374,7 +378,7 @@ export const getHomepageSettings = cache(async (): Promise<HomepageSettings> => 
     promoDesktopMedia: resolveMedia(activeSettings.promoDesktopMediaId),
     promoMobileMedia: resolveMedia(activeSettings.promoMobileMediaId),
   });
-});
+}
 
 export type HomepageMenuLinkOption = {
   id: string;

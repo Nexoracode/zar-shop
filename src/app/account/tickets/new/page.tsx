@@ -3,7 +3,10 @@ import { db } from "@/lib/db";
 import { requireUser } from "@/modules/auth/session";
 import { NewTicketComposer } from "@/components/account-ticket-composer";
 
-export const dynamic = "force-dynamic";
+// @next-codemod-ignore Cache Components adoption: this segment temporarily allows blocking.
+// Remove this opt-out after verifying the segment passes validation without it.
+// See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
+export const instant = false;
 
 type Context = { searchParams: Promise<{ productId?: string }> };
 

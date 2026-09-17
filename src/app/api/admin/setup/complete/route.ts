@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 import { apiError } from "@/lib/http";
 import { db } from "@/lib/db";
 import { getPermittedActor } from "@/modules/auth/session";
@@ -37,6 +38,9 @@ export async function POST(request: Request) {
       });
     });
 
+    // { expire: 0 }: the storefront must reflect "store is now open" immediately, not after a
+    // stale-while-revalidate window.
+    revalidateTag("settings:general", { expire: 0 });
     return NextResponse.json({ ok: true });
   } catch (error) {
     return apiError(error);

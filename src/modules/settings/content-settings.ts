@@ -1,3 +1,4 @@
+import { cacheLife, cacheTag } from "next/cache";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { sanitizeProductDescription } from "@/modules/products/rich-text";
@@ -80,7 +81,12 @@ export const contentSettingsDefaults: ContentSettings = {
 
 const select = { faqItems: true, contentPages: true } as const;
 
+// Cached across requests; revalidateTag("settings:content") in the content settings save
+// route clears this on save.
 export async function getContentSettings(): Promise<ContentSettings> {
+  "use cache";
+  cacheLife("hours");
+  cacheTag("settings:content");
   const existing = await db.storeSetting.findUnique({ where: { id: STORE_SETTING_ID }, select });
   const settings = existing ?? await db.storeSetting.upsert({
     where: { id: STORE_SETTING_ID },

@@ -9,6 +9,11 @@ import { getGeneralStoreSettings } from "@/modules/settings/general-settings";
 import { getWalletSettings } from "@/modules/settings/wallet-settings";
 import { ensureWallet } from "@/modules/wallet/wallet";
 
+// The account area is per-user (wallet balance, order stats, session) with no meaningful static
+// shell to prerender, so it stays fully dynamic under Cache Components rather than being
+// Suspense-wrapped page by page for a shell that would carry almost no shared content anyway.
+export const instant = false;
+
 export default async function AccountLayout({ children }: { children: ReactNode }) {
   const user = await requireUser();
   const [walletSettings, generalSettings, orderStats] = await Promise.all([getWalletSettings(), getGeneralStoreSettings(), getAccountOrderCounts(user.id)]);

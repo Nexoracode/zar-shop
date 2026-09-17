@@ -12,6 +12,11 @@ import { formatDate, formatDateTime } from "@/lib/format";
 import { requirePermission } from "@/modules/auth/session";
 import { NOTIFICATION_TYPES, notificationTypeLabels, type NotificationType } from "@/modules/notifications/schemas";
 
+// @next-codemod-ignore Cache Components adoption: this segment temporarily allows blocking.
+// Remove this opt-out after verifying the segment passes validation without it.
+// See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
+export const instant = false;
+
 type SearchParams = Promise<{ q?: string; type?: string; scope?: string; page?: string; pageSize?: string }>;
 
 const scopes = ["all", "broadcast", "targeted"] as const;

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 import { apiError } from "@/lib/http";
 import { db } from "@/lib/db";
 import { getPermittedActor } from "@/modules/auth/session";
@@ -28,6 +29,9 @@ export async function PATCH(request: Request) {
       });
       return saved;
     });
+    // { expire: 0 } (not "max") because the response below re-reads the cached getter — the
+    // admin must see their own save immediately, not stale-while-revalidate content.
+    revalidateTag("settings:general", { expire: 0 });
     return NextResponse.json(generalStoreSettingsSchema.parse(settings));
   } catch (error) {
     return apiError(error);

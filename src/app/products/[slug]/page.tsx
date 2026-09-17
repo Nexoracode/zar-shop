@@ -1,7 +1,7 @@
 import Link from "next/link";
-import { cache } from "react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { connection } from "next/server";
 import { CheckCircle2, Headset, PackageCheck, ShieldCheck, Star, Truck } from "lucide-react";
 import { AddToCart, ProductPurchaseProvider } from "@/components/add-to-cart";
 import { PriceTooltip } from "@/components/price-tooltip";
@@ -38,13 +38,15 @@ import { DiscountExpiryRefresh } from "@/components/discount-expiry-refresh";
 import { earliestDiscountExpiry } from "@/modules/products/discount-window";
 import { env } from "@/lib/env";
 
-export const dynamic = "force-dynamic";
-
 // The status filter is deliberately absent: the page needs to tell an unpublished product
 // apart from a slug that never existed, so that the first case can explain itself instead of
-// falling through to a bare 404.
-const getProductForPage = cache(async (slug: string, industry: "GOLD" | "GENERAL") =>
-  db.product.findFirst({ where: { slug, storeIndustry: industry }, include: { category: true, media: { include: { media: true }, orderBy: { position: "asc" } }, variants: true, optionTypes: productOptionTypeInclude, optionGuide: true } }));
+// falling through to a bare 404. Not cached: the row carries raw Prisma `Decimal` fields
+// (weightGrams, makingFeeValue, profitPercent, taxPercent, fixedPrice, discountValue) — exactly
+// the financial fields the project requires exact Decimal precision for, and "use cache" can't
+// serialize a Decimal instance (RSC/Client Component serialization rejects class instances).
+async function getProductForPage(slug: string, industry: "GOLD" | "GENERAL") {
+  return db.product.findFirst({ where: { slug, storeIndustry: industry }, include: { category: true, media: { include: { media: true }, orderBy: { position: "asc" } }, variants: true, optionTypes: productOptionTypeInclude, optionGuide: true } });
+}
 
 function plainProductDescription(product: { name: string; description: string | null }, storeName: string) {
   return product.description
@@ -53,6 +55,9 @@ function plainProductDescription(product: { name: string; description: string | 
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  // getProductForPage is an uncached raw DB read (see its own comment); mark this metadata
+  // generation as request-time explicitly so Next doesn't attempt to prerender through it.
+  await connection();
   const { slug } = await params;
   const settings = await getGeneralStoreSettings();
   const product = await getProductForPage(slug, settings.industry);
@@ -71,6 +76,11 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 }
 
 export default async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
+  // Reads the viewer's session (favorite state, personalization) alongside uncached data
+  // (live gold price, catalog settings) inside the Promise.all below, and that cookies() read
+  // can't reliably establish dynamic rendering on its own during prerendering when it's racing
+  // other reads concurrently. `connection()` marks this render as request-time explicitly.
+  await connection();
   const { slug } = await params;
   const settings = await getGeneralStoreSettings();
   const [product, gold, catalogSettings, currentUser, seo] = await Promise.all([

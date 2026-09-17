@@ -8,6 +8,11 @@ import { auditActionLabel } from "@/modules/audit/audit-log";
 import { requirePermission } from "@/modules/auth/session";
 import { BlueprintAuditLogsView } from "@/components/admin/blueprint/audit-logs-view";
 
+// @next-codemod-ignore Cache Components adoption: this segment temporarily allows blocking.
+// Remove this opt-out after verifying the segment passes validation without it.
+// See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
+export const instant = false;
+
 type SearchParams = Promise<{ q?: string; action?: string; page?: string; pageSize?: string }>;
 
 export default async function AuditLogsPage({ searchParams }: { searchParams: SearchParams }) {

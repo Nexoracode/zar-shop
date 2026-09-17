@@ -1,4 +1,5 @@
 import "server-only";
+import { cacheLife, cacheTag } from "next/cache";
 import { db } from "@/lib/db";
 import type { Prisma } from "@generated/prisma/client";
 
@@ -61,6 +62,10 @@ function publishedWhere(now = new Date()): Prisma.ArticleWhereInput {
   return { status: "PUBLISHED", publishedAt: { not: null, lte: now } };
 }
 
+// Not cached: the row includes `ratingAverage` as a raw Prisma `Decimal`, which "use cache"
+// can't serialize (RSC/Client Component serialization rejects class instances). Converting it
+// to a plain number here to allow caching is a larger, separate change — see the caching
+// migration's follow-up notes.
 export async function getPublishedArticles({ page = 1, categorySlug, search }: { page?: number; categorySlug?: string; search?: string }) {
   const trimmedSearch = search?.trim();
   const where: Prisma.ArticleWhereInput = {
@@ -105,6 +110,11 @@ const relatedProductSelect = {
 
 export type ArticleRelatedProduct = Prisma.ProductGetPayload<{ select: typeof relatedProductSelect }>;
 
+// Not cached: the article row (ratingAverage) and its relatedProduct (weightGrams,
+// makingFeeValue, profitPercent, taxPercent, fixedPrice, discountValue) carry raw Prisma
+// `Decimal` fields, which "use cache" can't serialize — and the product ones are exactly the
+// financial fields the project requires exact Decimal precision for, so converting them to
+// plain numbers to allow caching isn't a safe shortcut here.
 export async function getPublishedArticleBySlug(slug: string, viewerId?: string | null) {
   const article = await db.article.findFirst({
     where: { slug, ...publishedWhere() },
@@ -150,7 +160,10 @@ export async function rateArticle(articleId: string, userId: string, value: numb
   });
 }
 
-/** Lean read for the homepage's "latest articles" section — no count query, just the rows. */
+/**
+ * Lean read for the homepage's "latest articles" section — no count query, just the rows.
+ * Not cached: `ratingAverage` is a raw Prisma `Decimal`, which "use cache" can't serialize.
+ */
 export async function getLatestPublishedArticles(limit = 4) {
   return db.article.findMany({
     where: publishedWhere(),
@@ -160,7 +173,11 @@ export async function getLatestPublishedArticles(limit = 4) {
   });
 }
 
-/** Top-of-page magazine showcase for the blog list — hero card + numbered picks, newest first. */
+/**
+ * Top-of-page magazine showcase for the blog list — hero card + numbered picks, newest first.
+ * Not cached: `featuredSelect` doesn't include `ratingAverage`, but stays uncached to match
+ * `getPublishedArticles`/`getLatestPublishedArticles` in the same listing pages.
+ */
 export async function getFeaturedArticles(limit = 4) {
   return db.article.findMany({
     where: publishedWhere(),
@@ -175,6 +192,9 @@ export async function countPublishedArticles() {
 }
 
 export async function getActiveArticleCategories() {
+  "use cache";
+  cacheLife("minutes");
+  cacheTag("articles:list");
   const categories = await db.articleCategory.findMany({
     where: { isActive: true },
     orderBy: [{ sortOrder: "asc" }, { name: "asc" }],

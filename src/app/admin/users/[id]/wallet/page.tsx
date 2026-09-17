@@ -13,6 +13,11 @@ import { getGeneralStoreSettings } from "@/modules/settings/general-settings";
 import { ensureWallet } from "@/modules/wallet/wallet";
 import type { WalletTransactionType } from "@generated/prisma/enums";
 
+// @next-codemod-ignore Cache Components adoption: this segment temporarily allows blocking.
+// Remove this opt-out after verifying the segment passes validation without it.
+// See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
+export const instant = false;
+
 const typeLabels: Record<WalletTransactionType, string> = {
   REFERRAL_REWARD: "پاداش دعوت دوست",
   REFERRAL_BONUS: "هدیهٔ ثبت‌نام با کد معرف",
