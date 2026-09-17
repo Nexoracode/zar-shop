@@ -117,12 +117,16 @@ function CommentCard({ comment, busyVote, onVote }: {
             <span className="mr-auto text-[11px] text-[var(--muted)]">{new Date(comment.createdAt).toLocaleDateString("fa-IR")}</span>
           </div>
           <p className="m-0 mt-2 whitespace-pre-wrap break-words text-[13.5px] leading-8 text-[var(--foreground)]">{comment.body}</p>
-          <div className="mt-2.5 flex items-center gap-3.5 text-[11.5px] text-[var(--muted)]">
-            <Button type="button" variant="ghost" size="sm" isPending={busyVote === `${comment.id}:1`} isDisabled={busy || comment.isOwn} onPress={() => onVote(comment, 1)} className={`min-h-0 gap-1 rounded-none px-0 py-0 text-[11.5px] ${comment.votes.current === 1 ? "text-[var(--brand-accent)]" : "text-[var(--muted)]"}`}><ThumbsUp size={14} />{comment.votes.likes.toLocaleString("fa-IR")}</Button>
-            <Button type="button" variant="ghost" size="sm" isPending={busyVote === `${comment.id}:-1`} isDisabled={busy || comment.isOwn} onPress={() => onVote(comment, -1)} className={`min-h-0 gap-1 rounded-none px-0 py-0 text-[11.5px] ${comment.votes.current === -1 ? "text-[var(--danger)]" : "text-[var(--muted)]"}`}><ThumbsDown size={14} />{comment.votes.dislikes.toLocaleString("fa-IR")}</Button>
-            {/* Decorative only — customers can't reply; replies are admin-only, matching the source design. */}
-            <span className="inline-flex items-center gap-1">پاسخ</span>
-          </div>
+          {comment.status === "PENDING" ? (
+            <p className="m-0 mt-2.5 text-[11.5px] leading-6 text-[var(--warning)]">این دیدگاه فقط برای شما قابل مشاهده است؛ در حال بررسی مدیریت است و پس از تأیید برای همه نمایش داده می‌شود.</p>
+          ) : (
+            <div className="mt-2.5 flex items-center gap-3.5 text-[11.5px] text-[var(--muted)]">
+              <Button type="button" variant="ghost" size="sm" isPending={busyVote === `${comment.id}:1`} isDisabled={busy || comment.isOwn} onPress={() => onVote(comment, 1)} className={`!h-auto min-h-0 gap-1 rounded-none px-0 py-0 text-[11.5px] ${comment.votes.current === 1 ? "text-[var(--brand-accent)]" : "text-[var(--muted)]"}`}><ThumbsUp size={14} />{comment.votes.likes.toLocaleString("fa-IR")}</Button>
+              <Button type="button" variant="ghost" size="sm" isPending={busyVote === `${comment.id}:-1`} isDisabled={busy || comment.isOwn} onPress={() => onVote(comment, -1)} className={`!h-auto min-h-0 gap-1 rounded-none px-0 py-0 text-[11.5px] ${comment.votes.current === -1 ? "text-[var(--danger)]" : "text-[var(--muted)]"}`}><ThumbsDown size={14} />{comment.votes.dislikes.toLocaleString("fa-IR")}</Button>
+              {/* Decorative only — customers can't reply; replies are admin-only, matching the source design. */}
+              <span className="inline-flex items-center gap-1">پاسخ</span>
+            </div>
+          )}
 
           {comment.replies.length > 0 && (
             <div className="mr-4 mt-3.5 border-r-2 border-[var(--border)] pr-[18px]">
