@@ -186,18 +186,14 @@ export function AuthFlow() {
     event.preventDefault();
     setError("");
     const form = new FormData(event.currentTarget);
-    const firstName = String(form.get("firstName") ?? "").trim();
-    const lastName = String(form.get("lastName") ?? "").trim();
     const password = String(form.get("password") ?? "");
     const nextFieldErrors: Partial<Record<FieldName, string>> = {};
-    if (firstName && firstName.length < 2) nextFieldErrors.firstName = "نام باید حداقل ۲ حرف باشد.";
-    if (lastName && lastName.length < 2) nextFieldErrors.lastName = "نام خانوادگی باید حداقل ۲ حرف باشد.";
     const passwordCheck = newPasswordSchema.safeParse(password);
     if (!passwordCheck.success) nextFieldErrors.password = passwordCheck.error.issues[0]?.message;
     if (Object.keys(nextFieldErrors).length) { setFieldErrors(nextFieldErrors); return; }
     setFieldErrors({});
     setLoading(true);
-    const body = { phone, firstName: firstName || undefined, lastName: lastName || undefined, password, smsMarketingConsent, referralCode: referralCode.trim() || undefined };
+    const body = { phone, password, smsMarketingConsent, referralCode: referralCode.trim() || undefined };
     const { ok, result } = await postJson("/api/auth/register/complete", body);
     setLoading(false);
     if (!ok) { applyIssues(result?.issues); setError(result?.message ?? "ثبت‌نام انجام نشد."); return; }
@@ -261,10 +257,6 @@ export function AuthFlow() {
   return (
     <form className="grid gap-5" onSubmit={submitRegisterComplete} noValidate>
       <StepHeader title="تعیین رمز عبور" subtitle={<>شماره <strong dir="ltr">{phone}</strong> تأیید شد؛ برای تکمیل ثبت‌نام رمز عبور بسازید</>} />
-      <div className="grid grid-cols-1 gap-[14px] sm:grid-cols-2">
-        <TextField tone="auth" label="نام" error={fieldErrors.firstName} id="firstName" name="firstName" maxLength={authFieldLimits.firstName} onChange={() => clearFieldError("firstName")} />
-        <TextField tone="auth" label="نام خانوادگی" error={fieldErrors.lastName} id="lastName" name="lastName" maxLength={authFieldLimits.lastName} onChange={() => clearFieldError("lastName")} />
-      </div>
       <PasswordField tone="auth" label="رمز عبور" error={fieldErrors.password} id="password" name="password" maxLength={authFieldLimits.password} onChange={() => clearFieldError("password")} />
       <TextField tone="auth" label="کد معرف (اختیاری)" dir="ltr" error={fieldErrors.referralCode} id="referralCode" name="referralCode" maxLength={authFieldLimits.referralCode} value={referralCode} hint="اگر با کد دوستتان ثبت‌نام کنید، پس از اولین خرید هر دو هدیه می‌گیرید." onChange={(event) => { setReferralCode(event.target.value.toUpperCase()); clearFieldError("referralCode"); }} />
       <AdminCheckbox isSelected={smsMarketingConsent} onChange={setSmsMarketingConsent} description="برای تخفیف‌ها و خبرهای فروشگاه؛ هر زمان قابل لغو است">مایلم پیامک‌های اطلاع‌رسانی فروشگاه را دریافت کنم</AdminCheckbox>
