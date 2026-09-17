@@ -216,10 +216,6 @@ export default async function ArticlePage({ params }: Context) {
               </div>
             </section>
           )}
-
-          <div className="mt-10 text-center">
-            <Link href="/blog" className="text-sm font-bold text-[var(--brand-accent)]">بازگشت به وبلاگ</Link>
-          </div>
         </div>
       </main>
       <ArticleViewTracker articleId={article.id} />
