@@ -10,6 +10,7 @@ import { BpKicker, BpTag } from "../../ui";
 type Props = {
   gateways: PublicGatewayConfig[];
   smsConfigs: PublicSmsProviderConfig[];
+  appUrl: string;
   onSaved: () => void;
 };
 
@@ -23,7 +24,7 @@ function StatusLine({ done, label }: { done: boolean; label: string }) {
   );
 }
 
-export function SetupPaymentSmsStep({ gateways, smsConfigs, onSaved }: Props) {
+export function SetupPaymentSmsStep({ gateways, smsConfigs, appUrl, onSaved }: Props) {
   return (
     <div className="grid gap-3">
       <section className="bp-frame relative p-[16px]">
@@ -38,7 +39,7 @@ export function SetupPaymentSmsStep({ gateways, smsConfigs, onSaved }: Props) {
         <BpKicker>درگاه پرداخت</BpKicker>
         <p className="bp-muted m-0 mt-1 text-[12px] leading-6">بدون درگاه فعال، امکان پرداخت آنلاین سفارش وجود ندارد.</p>
         <div className="mt-3">
-          <BlueprintPaymentGatewayManager mode="form" initialConfigs={gateways} onSaved={onSaved} />
+          <BlueprintPaymentGatewayManager mode="form" initialConfigs={gateways} appUrl={appUrl} onSaved={onSaved} />
         </div>
       </section>
 

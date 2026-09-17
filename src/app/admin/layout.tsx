@@ -4,6 +4,7 @@ import { SetupPendingNotice } from "@/components/admin/blueprint/setup/setup-pen
 import { SetupWizard } from "@/components/admin/blueprint/setup/setup-wizard";
 import { sidebarCollapsedCookie } from "@/lib/admin-sidebar-state";
 import { db } from "@/lib/db";
+import { env } from "@/lib/env";
 import { requireAdminUser } from "@/modules/auth/session";
 import { getGoldPriceForDisplay } from "@/modules/gold/gold-price.service";
 import { expirePendingOrders } from "@/modules/orders/expiration";
@@ -53,6 +54,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         provinces={provinces}
         gateways={gateways}
         smsConfigs={smsConfigs}
+        appUrl={env.APP_URL}
       />
     );
   }

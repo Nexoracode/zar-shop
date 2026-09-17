@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { BlueprintPaymentGatewayManager } from "@/components/admin/blueprint/payment-gateway-manager";
 import { AdminPageHeader } from "@/components/admin-ui";
+import { env } from "@/lib/env";
 import { requirePermission } from "@/modules/auth/session";
 import { getPublicGatewayConfigs } from "@/modules/payments/gateway-config";
 
@@ -23,6 +24,6 @@ export default async function NewPaymentGatewayPage() {
       backHref="/admin/settings/payment-gateways"
       backLabel="بازگشت به درگاه‌ها"
     />
-    <BlueprintPaymentGatewayManager mode="form" initialConfigs={configs} />
+    <BlueprintPaymentGatewayManager mode="form" initialConfigs={configs} appUrl={env.APP_URL} />
   </>;
 }

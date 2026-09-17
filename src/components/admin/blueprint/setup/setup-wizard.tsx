@@ -47,9 +47,10 @@ type Props = {
   provinces: Array<{ id: string; name: string }>;
   gateways: PublicGatewayConfig[];
   smsConfigs: PublicSmsProviderConfig[];
+  appUrl: string;
 };
 
-export function SetupWizard({ state, storeName, basics, contact, brand, origin, provinces, gateways, smsConfigs }: Props) {
+export function SetupWizard({ state, storeName, basics, contact, brand, origin, provinces, gateways, smsConfigs, appUrl }: Props) {
   const router = useRouter();
   const [current, setCurrent] = useState<WizardStepId>(() => STEP_ORDER.find((id) => id !== "finish" && !state.steps[id as SetupStepId]) ?? "finish");
   const [loggingOut, setLoggingOut] = useState(false);
@@ -119,7 +120,7 @@ export function SetupWizard({ state, storeName, basics, contact, brand, origin, 
         {current === "basics" && <SetupBasicsStep initial={basics} onSaved={savedAndNext} />}
         {current === "contact" && <SetupContactStep initial={contact} onSaved={savedAndNext} />}
         {current === "brand" && <SetupBrandStep initial={brand} onSaved={savedAndNext} />}
-        {current === "payment-sms" && <SetupPaymentSmsStep gateways={gateways} smsConfigs={smsConfigs} onSaved={refresh} />}
+        {current === "payment-sms" && <SetupPaymentSmsStep gateways={gateways} smsConfigs={smsConfigs} appUrl={appUrl} onSaved={refresh} />}
         {current === "shipping" && (
           <SetupShippingStep
             provinces={provinces}

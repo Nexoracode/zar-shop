@@ -3,7 +3,7 @@
 import { useMemo, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "@heroui/react";
-import { CheckCircle2, CreditCard, ExternalLink, Plus, ShieldCheck, Trash2 } from "lucide-react";
+import { Check, CheckCircle2, Copy, CreditCard, ExternalLink, Plus, ShieldCheck, Trash2 } from "lucide-react";
 import { AdminBulkCheckbox, AdminBulkEditor } from "@/components/admin-bulk-editor";
 import { AdminEmptyState, AdminPanel } from "@/components/admin-ui";
 import { gatewayProviders, type GatewayProviderId } from "@/modules/payments/gateway-providers";
@@ -11,7 +11,7 @@ import type { PublicGatewayConfig } from "@/modules/payments/gateway-config";
 import { gatewayFieldLimits } from "@/modules/payments/limits";
 import { BpButton, BpCheckbox, BpInput, BpKicker, BpTable, BpTag, BpTd, BpTh } from "./ui";
 
-export function BlueprintPaymentGatewayManager({ mode, initialConfigs, onSaved }: { mode: "list" | "form"; initialConfigs: PublicGatewayConfig[]; onSaved?: () => void }) {
+export function BlueprintPaymentGatewayManager({ mode, initialConfigs, appUrl, onSaved }: { mode: "list" | "form"; initialConfigs: PublicGatewayConfig[]; appUrl?: string; onSaved?: () => void }) {
   const router = useRouter();
   const [configs, setConfigs] = useState(initialConfigs);
   const [selectedId, setSelectedId] = useState<GatewayProviderId>("ZARINPAL");
@@ -19,7 +19,21 @@ export function BlueprintPaymentGatewayManager({ mode, initialConfigs, onSaved }
   const [isSandbox, setIsSandbox] = useState(false);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState<GatewayProviderId | null>(null);
+  const [callbackCopied, setCallbackCopied] = useState(false);
   const selected = useMemo(() => gatewayProviders.find((provider) => provider.id === selectedId)!, [selectedId]);
+  const callbackUrl = appUrl ? `${appUrl.replace(/\/$/, "")}/api/payment/callback` : null;
+
+  async function copyCallbackUrl() {
+    if (!callbackUrl) return;
+    try {
+      await navigator.clipboard.writeText(callbackUrl);
+      setCallbackCopied(true);
+      toast.success("نشانی Callback کپی شد");
+      setTimeout(() => setCallbackCopied(false), 2000);
+    } catch {
+      toast.danger("کپی انجام نشد؛ نشانی را دستی انتخاب کنید.");
+    }
+  }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -183,6 +197,19 @@ export function BlueprintPaymentGatewayManager({ mode, initialConfigs, onSaved }
             dir="ltr"
             wrapperClassName="mt-3"
           />
+          {callbackUrl && (
+            <div className="mt-3">
+              <span className="block text-[12px] font-bold">نشانی Callback</span>
+              <p className="bp-muted m-0 mt-1 text-[11px] leading-5">این نشانی را هنگام ساخت درگاه در پنل {selected.name} به‌عنوان آدرس بازگشت ثبت کنید.</p>
+              <div className="mt-1.5 flex min-w-0 items-center gap-2">
+                <span dir="ltr" className="min-w-0 flex-1 truncate border border-[var(--bp-divider)] bg-[var(--bp-bg)] px-3 py-2 text-[11px] text-[var(--bp-muted)]">{callbackUrl}</span>
+                <BpButton type="button" variant="ghost" size="sm" onClick={() => void copyCallbackUrl()} className="shrink-0 gap-1.5">
+                  {callbackCopied ? <Check size={14} /> : <Copy size={14} />}
+                  کپی
+                </BpButton>
+              </div>
+            </div>
+          )}
           {(selected.id === "ZARINPAL" || selected.id === "ZIBAL") && (
             <BpCheckbox isSelected={isSandbox} onChange={() => setIsSandbox((value) => !value)} className="mt-1 w-full items-center gap-3 border border-[var(--bp-divider)] bg-[var(--bp-bg)] p-3">
               <span><strong className="block text-[13px] font-bold">حالت آزمایشی</strong><span className="bp-muted mt-0.5 block text-[11px] leading-5">فقط برای بررسی اتصال و تراکنش آزمایشی استفاده شود</span></span>
