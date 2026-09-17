@@ -30,7 +30,7 @@ export const generalStoreSettingsUpdateSchema = generalStoreSettingsSchema.omit(
 export type GeneralStoreSettingsInput = z.infer<typeof generalStoreSettingsSchema>;
 
 export const generalStoreSettingsDefaults: GeneralStoreSettingsInput = {
-  industry: "GOLD",
+  industry: "GENERAL",
   storeName: "زر گالری",
   tagline: "طلا، روایت ماندگار شما",
   shortDescription: "فروش آنلاین زیورآلات طلای ۱۸ عیار با قیمت روز و فاکتور رسمی",

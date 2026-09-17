@@ -13,7 +13,7 @@ export async function getStoreIndustry(): Promise<StoreIndustry> {
   cacheTag("settings:general");
   const setting = await db.storeSetting.upsert({
     where: { id: STORE_SETTING_ID },
-    create: { id: STORE_SETTING_ID, industry: "GOLD" },
+    create: { id: STORE_SETTING_ID, industry: "GENERAL" },
     update: {},
     select: { industry: true },
   });

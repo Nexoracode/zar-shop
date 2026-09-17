@@ -33,7 +33,7 @@ export const getSetupState = cache(async (): Promise<SetupState> => {
   return {
     completed: Boolean(row?.setupCompletedAt),
     completedAt: row?.setupCompletedAt?.toISOString() ?? null,
-    industry: row?.industry ?? "GOLD",
+    industry: row?.industry ?? "GENERAL",
     steps,
     allStepsSatisfied: SETUP_STEP_IDS.every((id) => steps[id]),
   };
