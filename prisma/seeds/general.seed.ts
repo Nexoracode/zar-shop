@@ -1,4 +1,4 @@
-import type { DevelopmentBrandSeed, DevelopmentCategorySeed, DevelopmentMediaSeed, DevelopmentStoreSeed } from "./types";
+import type { DevelopmentArticleCategorySeed, DevelopmentArticleSeed, DevelopmentAuthorSeed, DevelopmentBrandSeed, DevelopmentCategorySeed, DevelopmentMediaSeed, DevelopmentStoreSeed } from "./types";
 
 // Snapshot of prisma\zar-shop's real MediaAsset table (and every category/product/homepage
 // slot that referenced it) captured 2026-08-23. The files themselves already live on the FTP
@@ -164,6 +164,88 @@ const generalBrandSeed: DevelopmentBrandSeed[] = [
   { name: "اپل", slug: "apple", featured: true },
 ];
 
+// Blog demo data. Cover images reuse existing homepage media keys from generalMediaSeed above
+// (same real, already-hosted files) rather than a separate upload — a MediaAsset row can be
+// referenced from more than one place, exactly like product photos already are.
+const generalAuthorSeed: DevelopmentAuthorSeed[] = [
+  { key: "editorial-team", name: "تحریریه فروشگاه", bio: "تیم تحریریه با تجربه خرید و استفاده واقعی از محصولات، راهنما و نکات کاربردی می‌نویسد." },
+];
+
+const generalArticleCategorySeed: DevelopmentArticleCategorySeed[] = [
+  { key: "buying-guide", name: "راهنمای خرید", slug: "buying-guide" },
+  { key: "tips-tricks", name: "نکات و ترفندها", slug: "tips-tricks" },
+  { key: "news-deals", name: "اخبار و تخفیف‌ها", slug: "news-deals" },
+];
+
+const generalArticleSeed: DevelopmentArticleSeed[] = [
+  {
+    title: "راهنمای خرید هدفون بی‌سیم: چه نکاتی را باید بررسی کنید؟",
+    slug: "wireless-headphones-buying-guide",
+    excerpt: "قبل از خرید هدفون بی‌سیم بعدی‌تان، این چند نکته دربارهٔ باتری، کیفیت صدا و راحتی استفاده را بررسی کنید.",
+    content: "<h2>چرا انتخاب هدفون بی‌سیم سخت شده؟</h2><p>بازار هدفون‌های بی‌سیم این روزها پر از گزینه‌های مختلف با قیمت و امکانات متفاوت است. برای اینکه سردرگم نشوید، بهتر است قبل از خرید چند معیار ساده را در نظر بگیرید.</p><h2>عمر باتری</h2><p>برای استفاده روزمره، هدفونی را انتخاب کنید که حداقل ۲۰ ساعت با یک بار شارژ کار کند. جعبه شارژ همراه هم باید بتواند چند بار شارژ کامل اضافه در اختیارتان بگذارد.</p><h2>کیفیت صدا و میکروفون</h2><p>اگر قرار است از هدفون برای تماس‌های کاری هم استفاده کنید، کیفیت میکروفون به همان اندازه کیفیت پخش صدا اهمیت دارد.</p><ul><li>وزن سبک برای استفاده طولانی‌مدت</li><li>مقاومت در برابر عرق و رطوبت برای ورزش</li><li>اتصال پایدار بلوتوث بدون قطعی</li></ul><p>با در نظر گرفتن این نکات، انتخاب بین گزینه‌های مختلف فروشگاه بسیار ساده‌تر خواهد شد.</p>",
+    categoryKey: "buying-guide",
+    authorKey: "editorial-team",
+    coverKey: "homepage-01",
+    tags: ["هدفون", "کالای دیجیتال", "راهنمای خرید"],
+    publishedAt: "2026-08-05T08:00:00.000Z",
+  },
+  {
+    title: "۵ ترفند برای افزایش عمر باتری پاوربانک",
+    slug: "power-bank-battery-life-tips",
+    excerpt: "با رعایت چند نکته ساده، می‌توانید عمر باتری پاوربانک خود را برای سال‌ها حفظ کنید.",
+    content: "<h2>پاوربانک را کامل خالی نکنید</h2><p>شارژ و دشارژ کامل مکرر به باتری‌های لیتیومی آسیب می‌زند. تا حد امکان قبل از رسیدن به صفر درصد، دستگاه را شارژ کنید.</p><h2>از گرما و سرمای شدید دور نگه دارید</h2><p>نگهداری پاوربانک در ماشین در روزهای گرم تابستان یا محیط‌های بسیار سرد، عمر باتری را به‌سرعت کاهش می‌دهد.</p><h2>شارژر اورجینال استفاده کنید</h2><p>استفاده از شارژرهای بی‌کیفیت می‌تواند باعث نوسان جریان و آسیب به سلول‌های باتری شود.</p><ul><li>هر چند ماه یک‌بار پاوربانک را کامل شارژ و دشارژ کنید</li><li>در محل خشک و خنک نگهداری کنید</li><li>از افتادن و ضربه به دستگاه جلوگیری کنید</li></ul>",
+    categoryKey: "tips-tricks",
+    authorKey: "editorial-team",
+    coverKey: "homepage-07",
+    tags: ["پاوربانک", "نکات کاربردی"],
+    publishedAt: "2026-08-12T08:00:00.000Z",
+  },
+  {
+    title: "چگونه کوله پشتی مناسب سفر و طبیعت‌گردی انتخاب کنیم؟",
+    slug: "hiking-backpack-buying-guide",
+    excerpt: "انتخاب کوله پشتی مناسب می‌تواند تفاوت زیادی در راحتی سفرهای طبیعت‌گردی شما ایجاد کند.",
+    content: "<h2>حجم مناسب را مشخص کنید</h2><p>برای سفرهای یک‌روزه، کوله ۲۰ تا ۳۰ لیتری کافی است؛ اما برای کوله‌گردی چندروزه به حجم ۴۰ لیتر یا بیشتر نیاز خواهید داشت.</p><h2>راحتی بندها و پشتی</h2><p>بندهای قابل‌تنظیم و پشتی دارای تهویه، فشار روی شانه و کمر را در طول مسیرهای طولانی کاهش می‌دهند.</p><h2>مقاومت در برابر آب</h2><p>پارچه ضدآب یا حداقل مقاوم در برابر رطوبت، از خیس‌شدن وسایل داخل کوله در بارش ناگهانی جلوگیری می‌کند.</p><p>با توجه به این نکات، کوله‌ای انتخاب کنید که هم به نوع سفرتان بخورد و هم استفاده روزمره از آن راحت باشد.</p>",
+    categoryKey: "buying-guide",
+    authorKey: "editorial-team",
+    coverKey: "homepage-02",
+    tags: ["کوله پشتی", "ورزش و سفر"],
+    publishedAt: "2026-08-19T08:00:00.000Z",
+  },
+  {
+    title: "راهنمای مراقبت روزانه از پوست در فصل‌های مختلف",
+    slug: "daily-skincare-guide-by-season",
+    excerpt: "نیاز پوست شما در تابستان و زمستان متفاوت است؛ این راهنما کمکتان می‌کند روتین مناسب فصل را انتخاب کنید.",
+    content: "<h2>تابستان: تمرکز روی محافظت</h2><p>در فصل گرما، استفاده از ضدآفتاب سبک و مرطوب‌کننده‌های غیرچرب اولویت اصلی است.</p><h2>زمستان: آبرسانی عمیق‌تر</h2><p>هوای خشک زمستان باعث از دست رفتن رطوبت پوست می‌شود، بنابراین کرم‌های مرطوب‌کننده غلیظ‌تر توصیه می‌شوند.</p><h2>ثابت‌ماندن روتین پایه</h2><p>شست‌وشوی ملایم صورت و استفاده منظم از مرطوب‌کننده، صرف‌نظر از فصل، پایه هر روتین مراقبت پوستی است.</p><ul><li>ضدآفتاب را هرگز فراموش نکنید</li><li>محصولات متناسب با نوع پوست خود انتخاب کنید</li><li>تغییرات پوست را در طول فصل‌ها زیر نظر داشته باشید</li></ul>",
+    categoryKey: "tips-tricks",
+    authorKey: "editorial-team",
+    coverKey: "homepage-08",
+    tags: ["مراقبت پوست", "زیبایی و سلامت"],
+    publishedAt: "2026-08-26T08:00:00.000Z",
+  },
+  {
+    title: "جشنواره تخفیف پاییزه فروشگاه آغاز شد",
+    slug: "autumn-discount-festival",
+    excerpt: "با شروع فصل پاییز، بخشی از محصولات پرطرفدار فروشگاه با تخفیف ویژه عرضه می‌شوند.",
+    content: "<h2>تخفیف روی دسته‌بندی‌های پرفروش</h2><p>در جشنواره پاییزه امسال، محصولات منتخب از دسته‌بندی‌های کالای دیجیتال، خانه و آشپزخانه و مد و پوشاک با تخفیف ویژه عرضه می‌شوند.</p><h2>موجودی محدود</h2><p>با توجه به استقبال بالا، برخی محصولات ممکن است زودتر از موعد از موجودی خارج شوند؛ پیشنهاد می‌کنیم خرید خود را به تعویق نیندازید.</p><p>برای مشاهده فهرست کامل محصولات تخفیف‌دار، به صفحه محصولات فروشگاه سر بزنید.</p>",
+    categoryKey: "news-deals",
+    authorKey: "editorial-team",
+    coverKey: "homepage-03",
+    tags: ["تخفیف", "اخبار فروشگاه"],
+    publishedAt: "2026-09-02T08:00:00.000Z",
+  },
+  {
+    title: "بررسی iPhone 17: آیا ارتقا ارزشش را دارد؟",
+    slug: "iphone-17-review",
+    excerpt: "نگاهی به مهم‌ترین تغییرات آیفون ۱۷ نسبت به نسل قبل و اینکه چه کسانی باید به فکر ارتقا باشند.",
+    content: "<h2>طراحی و نمایشگر</h2><p>آیفون ۱۷ با نمایشگر LTPO Super Retina XDR OLED و نرخ به‌روزرسانی ۱۲۰ هرتز، تجربه بصری نرم‌تری نسبت به نسل‌های قبل ارائه می‌دهد.</p><h2>عملکرد تراشه A19</h2><p>تراشه جدید بهبود محسوسی در سرعت پردازش و بهینگی مصرف انرژی نسبت به نسل قبل دارد، به‌خصوص در اجرای برنامه‌های سنگین و بازی.</p><h2>دوربین</h2><p>دوربین دوگانه با لنز عریض و فوق‌عریض، همراه با بهبودهای نرم‌افزاری در HDR و ضبط ویدئوی 4K، یکی از نقاط قوت این نسل است.</p><h2>جمع‌بندی</h2><p>اگر از دو نسل قبل استفاده می‌کنید، ارتقا منطقی به‌نظر می‌رسد؛ اما برای صاحبان نسل قبلی، تفاوت‌ها ممکن است آن‌قدر محسوس نباشد که ارتقای فوری را توجیه کند.</p>",
+    categoryKey: "buying-guide",
+    authorKey: "editorial-team",
+    coverKey: "product-media-14",
+    tags: ["موبایل", "اپل", "بررسی محصول"],
+    publishedAt: "2026-09-09T08:00:00.000Z",
+  },
+];
+
 export const generalStoreSeed: DevelopmentStoreSeed = {
   industry: "GENERAL",
   storeName: "فروشگاه توسعه",
@@ -218,4 +300,7 @@ export const generalStoreSeed: DevelopmentStoreSeed = {
     promoDesktopKey: "homepage-09",
     promoMobileKey: "homepage-09",
   },
+  authors: generalAuthorSeed,
+  articleCategories: generalArticleCategorySeed,
+  articles: generalArticleSeed,
 };

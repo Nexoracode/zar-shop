@@ -8,7 +8,7 @@ import type { StoreIndustry } from "../../generated/prisma/enums";
 // slot that references it; the real cuid is only known once the row is actually created.
 export type DevelopmentMediaSeed = {
   key: string;
-  scope: "CATEGORY" | "PRODUCT" | "HOMEPAGE" | "BRAND" | "PRODUCT_BRAND";
+  scope: "CATEGORY" | "PRODUCT" | "HOMEPAGE" | "BRAND" | "PRODUCT_BRAND" | "ARTICLE" | "ARTICLE_AUTHOR";
   type: "IMAGE" | "VIDEO" | "DOCUMENT";
   url: string;
   storageKey: string;
@@ -63,6 +63,31 @@ export type DevelopmentHomepageMediaSeed = {
   promoMobileKey?: string;
 };
 
+export type DevelopmentAuthorSeed = {
+  key: string;
+  name: string;
+  bio?: string;
+  avatarKey?: string;
+};
+
+export type DevelopmentArticleCategorySeed = {
+  key: string;
+  name: string;
+  slug: string;
+};
+
+export type DevelopmentArticleSeed = {
+  title: string;
+  slug: string;
+  excerpt: string;
+  content: string;
+  categoryKey: string;
+  authorKey: string;
+  coverKey?: string;
+  tags?: string[];
+  publishedAt: string;
+};
+
 export type DevelopmentStoreSeed = {
   industry: StoreIndustry;
   storeName: string;
@@ -74,4 +99,7 @@ export type DevelopmentStoreSeed = {
   media?: readonly DevelopmentMediaSeed[];
   brandLogoKey?: string;
   homepage?: DevelopmentHomepageMediaSeed;
+  authors?: readonly DevelopmentAuthorSeed[];
+  articleCategories?: readonly DevelopmentArticleCategorySeed[];
+  articles?: readonly DevelopmentArticleSeed[];
 };

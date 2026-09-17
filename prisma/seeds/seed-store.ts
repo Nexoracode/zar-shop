@@ -56,12 +56,14 @@ async function clearDevelopmentData(db: PrismaClient, options: { keepGallery: bo
   if (targets.length === 0) return;
 
   // One sequential transaction so every statement runs on the same connection and the
-  // session-level FK-check toggle actually covers the TRUNCATEs.
+  // session-level FK-check toggle actually covers the TRUNCATEs. Prisma's default 5s
+  // interactive-transaction timeout is tuned for a local database; ~40 TRUNCATEs over a
+  // higher-latency connection can run past it, so it's raised explicitly.
   await db.$transaction([
     db.$executeRawUnsafe("SET FOREIGN_KEY_CHECKS = 0"),
     ...targets.map((table) => db.$executeRawUnsafe(`TRUNCATE TABLE \`${table}\``)),
     db.$executeRawUnsafe("SET FOREIGN_KEY_CHECKS = 1"),
-  ]);
+  ], { timeout: 30_000 });
 }
 
 function homepageSections() {
@@ -254,6 +256,43 @@ async function createStore(db: PrismaClient, seed: DevelopmentStoreSeed) {
 
   if (seed.industry === "GOLD") {
     await db.goldPrice.create({ data: { pricePerGram18: "48500000", source: "development-seed", fetchedAt: new Date() } });
+  }
+
+  const authorIds = new Map<string, string>();
+  for (const author of seed.authors ?? []) {
+    const created = await db.author.create({
+      data: { name: author.name, bio: author.bio ?? null, avatarMediaId: resolveMediaId(author.avatarKey) },
+    });
+    authorIds.set(author.key, created.id);
+  }
+
+  const articleCategoryIds = new Map<string, string>();
+  for (const [index, category] of (seed.articleCategories ?? []).entries()) {
+    const created = await db.articleCategory.create({
+      data: { name: category.name, slug: category.slug, isActive: true, sortOrder: (index + 1) * 10 },
+    });
+    articleCategoryIds.set(category.key, created.id);
+  }
+
+  for (const article of seed.articles ?? []) {
+    const authorId = authorIds.get(article.authorKey);
+    if (!authorId) throw new Error(`Seed article author not found: ${article.authorKey}`);
+    const categoryId = articleCategoryIds.get(article.categoryKey);
+    if (!categoryId) throw new Error(`Seed article category not found: ${article.categoryKey}`);
+    await db.article.create({
+      data: {
+        title: article.title,
+        slug: article.slug,
+        excerpt: article.excerpt,
+        content: article.content,
+        coverMediaId: resolveMediaId(article.coverKey),
+        authorId,
+        categoryId,
+        tags: article.tags ?? [],
+        status: "PUBLISHED",
+        publishedAt: new Date(article.publishedAt),
+      },
+    });
   }
 }
 
