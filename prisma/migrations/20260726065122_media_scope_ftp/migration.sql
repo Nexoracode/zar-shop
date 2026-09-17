@@ -1,5 +1,5 @@
 -- AlterTable
-ALTER TABLE `mediaasset` ADD COLUMN `scope` ENUM('CATEGORY', 'PRODUCT') NOT NULL DEFAULT 'PRODUCT';
+ALTER TABLE `MediaAsset` ADD COLUMN `scope` ENUM('CATEGORY', 'PRODUCT') NOT NULL DEFAULT 'PRODUCT';
 
 -- Keep category images that existed before media scopes in the correct gallery.
 UPDATE `MediaAsset`

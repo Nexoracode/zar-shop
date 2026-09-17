@@ -1,8 +1,8 @@
 -- DropForeignKey
-ALTER TABLE `productoptionvalue` DROP FOREIGN KEY `ProductOptionValue_optionType_fkey`;
+ALTER TABLE `ProductOptionValue` DROP FOREIGN KEY `ProductOptionValue_optionType_fkey`;
 
 -- AlterTable
-ALTER TABLE `productvariant` ADD COLUMN `discountEndsAt` DATETIME(3) NULL,
+ALTER TABLE `ProductVariant` ADD COLUMN `discountEndsAt` DATETIME(3) NULL,
     ADD COLUMN `discountStartsAt` DATETIME(3) NULL;
 
 -- CreateIndex

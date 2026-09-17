@@ -1,5 +1,5 @@
 -- AlterTable
-ALTER TABLE `promotion`
+ALTER TABLE `Promotion`
     ADD COLUMN `itemScope` VARCHAR(20) NOT NULL DEFAULT 'ALL',
     ADD COLUMN `targetProductIds` JSON NULL,
     ADD COLUMN `targetCategoryIds` JSON NULL,
@@ -7,7 +7,7 @@ ALTER TABLE `promotion`
     ADD COLUMN `targetUserIds` JSON NULL;
 
 -- AlterTable
-ALTER TABLE `promotionreward`
+ALTER TABLE `PromotionReward`
     ADD COLUMN `itemScope` VARCHAR(20) NOT NULL DEFAULT 'ALL',
     ADD COLUMN `targetProductIds` JSON NULL,
     ADD COLUMN `targetCategoryIds` JSON NULL;

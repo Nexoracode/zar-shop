@@ -1,8 +1,8 @@
 -- AlterTable
-ALTER TABLE `order` ADD COLUMN `deliveredAt` DATETIME(3) NULL;
+ALTER TABLE `Order` ADD COLUMN `deliveredAt` DATETIME(3) NULL;
 
 -- AlterTable
-ALTER TABLE `storesetting` ADD COLUMN `returnWindowDays` INTEGER NOT NULL DEFAULT 7;
+ALTER TABLE `StoreSetting` ADD COLUMN `returnWindowDays` INTEGER NOT NULL DEFAULT 7;
 
 -- CreateTable
 CREATE TABLE `ReturnItem` (

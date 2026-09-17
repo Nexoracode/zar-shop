@@ -1,5 +1,5 @@
 -- AlterTable
-ALTER TABLE `payment` ADD COLUMN `returnOrigin` VARCHAR(255) NULL;
+ALTER TABLE `Payment` ADD COLUMN `returnOrigin` VARCHAR(255) NULL;
 
 -- AlterTable
-ALTER TABLE `wallettopup` ADD COLUMN `returnOrigin` VARCHAR(255) NULL;
+ALTER TABLE `WalletTopup` ADD COLUMN `returnOrigin` VARCHAR(255) NULL;

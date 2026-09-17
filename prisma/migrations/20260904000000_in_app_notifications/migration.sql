@@ -1,5 +1,5 @@
 -- AlterTable
-ALTER TABLE `promotion` ADD COLUMN `announceInApp` BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE `Promotion` ADD COLUMN `announceInApp` BOOLEAN NOT NULL DEFAULT false;
 
 -- CreateTable
 CREATE TABLE `Notification` (

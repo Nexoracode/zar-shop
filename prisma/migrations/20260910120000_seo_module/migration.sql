@@ -1,5 +1,5 @@
 -- AlterTable
-ALTER TABLE `storesetting` ADD COLUMN `seoSettings` JSON NULL;
+ALTER TABLE `StoreSetting` ADD COLUMN `seoSettings` JSON NULL;
 
 -- CreateTable
 CREATE TABLE `SeoNoindex` (

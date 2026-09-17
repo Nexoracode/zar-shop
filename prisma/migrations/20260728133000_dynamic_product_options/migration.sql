@@ -36,7 +36,7 @@ ALTER TABLE `CartItem`
     ADD COLUMN `selectedOptions` JSON NULL;
 
 UPDATE `CartItem`
-SET `id` = CONCAT('cart-', MD5(CONCAT(`cartId`, '|', `productId`, '|', `selectedSize`))),
+SET `id` = CONCAT('cart-', SHA2(CONCAT(`cartId`, '|', `productId`, '|', `selectedSize`), 256)),
     `selectionKey` = CASE WHEN `selectedSize` = '' THEN '' ELSE SHA2(CONCAT('سایز=', `selectedSize`), 256) END,
     `selectedOptions` = CASE WHEN `selectedSize` = '' THEN NULL ELSE JSON_OBJECT('سایز', `selectedSize`) END;
 

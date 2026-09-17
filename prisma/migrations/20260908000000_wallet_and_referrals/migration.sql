@@ -1,8 +1,8 @@
 -- AlterTable
-ALTER TABLE `order` ADD COLUMN `walletAmount` DECIMAL(18, 0) NOT NULL DEFAULT 0;
+ALTER TABLE `Order` ADD COLUMN `walletAmount` DECIMAL(18, 0) NOT NULL DEFAULT 0;
 
 -- AlterTable
-ALTER TABLE `storesetting` ADD COLUMN `referralEnabled` BOOLEAN NOT NULL DEFAULT true,
+ALTER TABLE `StoreSetting` ADD COLUMN `referralEnabled` BOOLEAN NOT NULL DEFAULT true,
     ADD COLUMN `referralRefereeReward` DECIMAL(18, 0) NOT NULL DEFAULT 300000,
     ADD COLUMN `referralReferrerReward` DECIMAL(18, 0) NOT NULL DEFAULT 500000,
     ADD COLUMN `referralRewardMinOrderAmount` DECIMAL(18, 0) NOT NULL DEFAULT 0,
@@ -10,7 +10,7 @@ ALTER TABLE `storesetting` ADD COLUMN `referralEnabled` BOOLEAN NOT NULL DEFAULT
     ADD COLUMN `walletEnabled` BOOLEAN NOT NULL DEFAULT true;
 
 -- AlterTable
-ALTER TABLE `user` ADD COLUMN `referralCode` VARCHAR(12) NULL;
+ALTER TABLE `User` ADD COLUMN `referralCode` VARCHAR(12) NULL;
 
 -- CreateTable
 CREATE TABLE `Wallet` (
