@@ -12,6 +12,7 @@ function RouteProgressBarInner() {
   const isNavigatingRef = useRef(false);
   const trickleRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const hideRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const stuckRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   function clearTimers() {
     if (trickleRef.current) {
@@ -21,6 +22,10 @@ function RouteProgressBarInner() {
     if (hideRef.current) {
       clearTimeout(hideRef.current);
       hideRef.current = null;
+    }
+    if (stuckRef.current) {
+      clearTimeout(stuckRef.current);
+      stuckRef.current = null;
     }
   }
 
@@ -37,6 +42,12 @@ function RouteProgressBarInner() {
         return Math.min(90, current + step);
       });
     }, 250);
+    // Browser back/forward (popstate) doesn't reliably pair with the pathname-change effect
+    // below the way a same-tab link click does — a route restored instantly from the router
+    // cache can remount this component around the same tick, resetting isNavigatingRef before
+    // finish() ever sees it was navigating, which left the bar stuck around 90% forever. This
+    // is a hard ceiling so it always completes even when that pairing is missed.
+    stuckRef.current = setTimeout(finish, 4000);
   }
 
   function finish() {
