@@ -26,7 +26,7 @@ export function StorefrontBottomNav({ cartCount, accountHref, ticketsHref }: { c
       <Link href="/categories" className={tabClass(isCategories)}><LayoutGrid size={22} strokeWidth={1.7} /><span className="text-[10px]">دسته‌بندی</span></Link>
       <StorefrontCartLink initialCount={cartCount} mobile showLabel iconSize={22} className={tabClass(isCart)} />
       <Link href={ticketsHref} className={tabClass(isTickets)}><Headphones size={22} strokeWidth={1.7} /><span className="text-[10px]">پشتیبانی</span></Link>
-      <Link href={accountHref} className={tabClass(isAccount)}><UserRound size={22} strokeWidth={1.7} /><span className="text-[10px]">حساب من</span></Link>
+      <Link href={accountHref} className={tabClass(isAccount)}><UserRound size={22} strokeWidth={1.7} /><span className="text-[10px]">{accountHref === "/login" ? "ورود" : "حساب من"}</span></Link>
     </nav>
   );
 }

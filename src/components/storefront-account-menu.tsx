@@ -24,8 +24,16 @@ export function StorefrontAccountMenu({ user, walletBalance = null, className = 
     }
   }
 
+  // A guest account (created lazily on add-to-cart while signed out) must still lead here to
+  // /login — it's the only way a guest ever reaches the register/login form again once one
+  // exists, since every other account-menu entry point resolves the same way.
   if (!user || user.isGuest) {
-    return <Link href={user ? "/cart" : "/login"} aria-label={user ? "ادامه خرید مهمان" : "ورود به حساب کاربری"} className={`grid size-10 place-items-center rounded-lg transition hover:bg-[var(--brand-primary)]/8 ${className}`}><UserRound size={21} strokeWidth={1.7} /></Link>;
+    return (
+      <Link href="/login" aria-label="ورود یا ثبت‌نام" className={`flex h-10 shrink-0 items-center gap-1.5 rounded-lg px-3 text-sm font-bold text-[var(--foreground)] transition hover:bg-[var(--brand-primary)]/8 ${className}`}>
+        <UserRound size={20} strokeWidth={1.7} />
+        <span>ورود / ثبت‌نام</span>
+      </Link>
+    );
   }
 
   const name = `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim() || user.phone || user.email || "کاربر زرشاپ";
