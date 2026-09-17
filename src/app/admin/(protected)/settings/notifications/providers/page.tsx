@@ -27,7 +27,7 @@ export default async function SmsProvidersPage() {
         <div className="min-w-0 text-[12px] leading-6">
           <strong className="block text-[13px]">ارسال پیامک هنوز خاموش است</strong>
           ارائه‌دهنده فعال است، اما کلید «ارسال پیامک فعال باشد» در تنظیمات پیامک و اعلان روشن نیست؛ تا قبل از روشن‌کردنش کد یک‌بارمصرف یا پیامک دیگری ارسال نمی‌شود.
-          <Link href="/admin/settings/notifications" className="mt-1 block font-bold text-[var(--bp-accent)]">رفتن به تنظیمات پیامک و اعلان ←</Link>
+          <Link href="/admin/settings/notifications/preferences" className="mt-1 block font-bold text-[var(--bp-accent)]">رفتن به تنظیمات پیامک و اعلان ←</Link>
         </div>
       </div>
     )}

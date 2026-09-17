@@ -160,7 +160,7 @@ export function BlueprintSmsProviderManager({ mode, initialConfigs, smsEnabled, 
           <div className="min-w-0 text-[12px] leading-6">
             <strong className="block text-[13px]">ارسال پیامک هنوز خاموش است</strong>
             تا کلید «ارسال پیامک فعال باشد» در تنظیمات پیامک و اعلان روشن نشود، هیچ پیامکی (از جمله کد یک‌بارمصرف) ارسال نمی‌شود.
-            <Link href="/admin/settings/notifications" className="mt-1 block font-bold text-[var(--bp-accent)]">رفتن به تنظیمات پیامک و اعلان ←</Link>
+            <Link href="/admin/settings/notifications/preferences" className="mt-1 block font-bold text-[var(--bp-accent)]">رفتن به تنظیمات پیامک و اعلان ←</Link>
           </div>
         </div>
       )}
