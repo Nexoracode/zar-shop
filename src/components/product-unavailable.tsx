@@ -18,9 +18,9 @@ export function ProductUnavailable({ name, categorySlug, categoryName }: { name:
         </p>
         <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:justify-center">
           {categorySlug && categoryName
-            ? <Link href={`/products?category=${categorySlug}`} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[var(--brand-primary)] px-5 text-sm font-bold text-[var(--brand-primary-foreground)]"><Search size={17} />محصولات {categoryName}</Link>
-            : <Link href="/products" className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[var(--brand-primary)] px-5 text-sm font-bold text-[var(--brand-primary-foreground)]"><Search size={17} />مشاهده محصولات</Link>}
-          <Link href="/" className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-[var(--border)] px-5 text-sm font-bold text-[var(--foreground)] transition hover:border-[var(--brand-accent)] hover:text-[var(--brand-accent)]"><Home size={17} />بازگشت به صفحه اصلی</Link>
+            ? <Link href={`/products?category=${categorySlug}`} className="inline-flex w-full min-h-11 items-center justify-center gap-2 rounded-xl bg-[var(--brand-primary)] px-5 text-sm font-bold text-[var(--brand-primary-foreground)] sm:w-auto"><Search size={17} />محصولات {categoryName}</Link>
+            : <Link href="/products" className="inline-flex w-full min-h-11 items-center justify-center gap-2 rounded-xl bg-[var(--brand-primary)] px-5 text-sm font-bold text-[var(--brand-primary-foreground)] sm:w-auto"><Search size={17} />مشاهده محصولات</Link>}
+          <Link href="/" className="inline-flex w-full min-h-11 items-center justify-center gap-2 rounded-xl border border-[var(--border)] px-5 text-sm font-bold text-[var(--foreground)] transition hover:border-[var(--brand-accent)] hover:text-[var(--brand-accent)] sm:w-auto"><Home size={17} />بازگشت به صفحه اصلی</Link>
         </div>
       </Card>
     </main>

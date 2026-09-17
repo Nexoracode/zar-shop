@@ -20,8 +20,8 @@ export default function AdminErrorBoundary({ error, retry }: { error: Error & { 
         <p className="bp-muted mb-0 mt-2 text-[13px] leading-7">مشکلی در نمایش این صفحه رخ داد. می‌توانید دوباره تلاش کنید یا به داشبورد بازگردید.</p>
         {error.digest && <p className="bp-muted mb-0 mt-2 text-[11px]" dir="ltr">کد خطا: {error.digest}</p>}
         <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:justify-center">
-          <BpButton type="button" variant="primary" onClick={() => retry()} className="gap-2"><RotateCw size={16} />تلاش دوباره</BpButton>
-          <Link href="/admin" className="bp-btn bp-btn-secondary gap-2"><LayoutDashboard size={16} />بازگشت به داشبورد</Link>
+          <BpButton type="button" variant="primary" onClick={() => retry()} className="w-full gap-2 sm:w-auto"><RotateCw size={16} />تلاش دوباره</BpButton>
+          <Link href="/admin" className="bp-btn bp-btn-secondary w-full gap-2 sm:w-auto"><LayoutDashboard size={16} />بازگشت به داشبورد</Link>
         </div>
       </div>
     </div>

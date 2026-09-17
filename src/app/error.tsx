@@ -19,8 +19,8 @@ export default function GlobalErrorBoundary({ error, retry }: { error: Error & {
         <h1 className="m-0 text-lg font-bold text-[var(--foreground)]">خطایی پیش آمد</h1>
         <p className="mb-0 mt-2 text-sm leading-7 text-[var(--muted)]">مشکلی در نمایش این صفحه رخ داد. می‌توانید دوباره تلاش کنید یا به صفحه اصلی بازگردید.</p>
         <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:justify-center">
-          <Button type="button" onPress={() => retry()} className="min-h-11 gap-2 rounded-xl bg-[var(--brand-primary)] px-5 text-sm font-bold text-[var(--brand-primary-foreground)]"><RotateCw size={17} />تلاش دوباره</Button>
-          <Link href="/" className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-[var(--border)] px-5 text-sm font-bold text-[var(--foreground)] transition hover:border-[var(--brand-accent)] hover:text-[var(--brand-accent)]"><Home size={17} />بازگشت به صفحه اصلی</Link>
+          <Button type="button" onPress={() => retry()} className="w-full min-h-11 gap-2 rounded-xl bg-[var(--brand-primary)] px-5 text-sm font-bold text-[var(--brand-primary-foreground)] sm:w-auto"><RotateCw size={17} />تلاش دوباره</Button>
+          <Link href="/" className="inline-flex w-full min-h-11 items-center justify-center gap-2 rounded-xl border border-[var(--border)] px-5 text-sm font-bold text-[var(--foreground)] transition hover:border-[var(--brand-accent)] hover:text-[var(--brand-accent)] sm:w-auto"><Home size={17} />بازگشت به صفحه اصلی</Link>
         </div>
       </Card>
     </main>
