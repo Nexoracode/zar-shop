@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { Button } from "@heroui/react";
 import { ChevronUp } from "lucide-react";
 
-const SIZE = 48;
+const SIZE = 56;
 const STROKE = 3;
 const RADIUS = (SIZE - STROKE) / 2;
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
@@ -34,8 +34,8 @@ export function ArticleReadingProgressBar({ contentId }: { contentId: string }) 
 
   return (
     <div
-      className="fixed left-4 top-1/2 z-[60] size-12 transition-[opacity,transform] duration-300 ease-out sm:left-6"
-      style={{ opacity: visible ? 1 : 0, transform: `translateY(-50%) scale(${visible ? 1 : 0.7})`, pointerEvents: visible ? "auto" : "none" }}
+      className="fixed bottom-[82px] left-4 z-[60] size-14 transition-[opacity,transform] duration-300 ease-out lg:bottom-6 sm:left-6"
+      style={{ opacity: visible ? 1 : 0, transform: `scale(${visible ? 1 : 0.7})`, pointerEvents: visible ? "auto" : "none" }}
     >
       <svg aria-hidden width={SIZE} height={SIZE} viewBox={`0 0 ${SIZE} ${SIZE}`} className="pointer-events-none absolute inset-0 -rotate-90 drop-shadow-[0_6px_18px_rgba(0,0,0,0.14)]">
         <circle cx={SIZE / 2} cy={SIZE / 2} r={RADIUS} fill="var(--surface)" stroke="var(--border)" strokeWidth={STROKE} />
@@ -58,9 +58,10 @@ export function ArticleReadingProgressBar({ contentId }: { contentId: string }) 
         variant="ghost"
         aria-label={`بازگشت به بالای مقاله (${Math.round(progress)} درصد مطالعه شده)`}
         onPress={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-        className="absolute inset-0 size-full min-h-0 min-w-0 rounded-full border-0 bg-transparent text-[var(--brand-accent)] hover:bg-[color-mix(in_srgb,var(--brand-accent)_10%,transparent)]"
+        className="absolute inset-0 size-full min-h-0 min-w-0 flex-col gap-0 rounded-full border-0 bg-transparent text-[var(--brand-accent)] hover:bg-[color-mix(in_srgb,var(--brand-accent)_10%,transparent)]"
       >
-        <ChevronUp size={19} />
+        <ChevronUp size={15} />
+        <span className="text-[10px] font-bold leading-none">{Math.round(progress)}٪</span>
       </Button>
     </div>
   );
