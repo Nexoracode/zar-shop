@@ -31,7 +31,10 @@ import { getGoldPriceForDisplay } from "@/modules/gold/gold-price.service";
 import { getGeneralStoreSettings } from "@/modules/settings/general-settings";
 import { env } from "@/lib/env";
 
-export const dynamic = "force-dynamic";
+// Reads the viewer's session directly (comment/rating permissions, the viewer's own pending
+// comments) alongside the article content, so this page is genuinely session-coupled today —
+// same judgment call as the storefront header. Left dynamic for now.
+export const instant = false;
 
 type Context = { params: Promise<{ slug: string }> };
 

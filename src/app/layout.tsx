@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { headers } from "next/headers";
+import { cacheLife } from "next/cache";
 import { SitePromoBanner } from "@/components/site-promo-banner";
 import { AppChrome } from "@/components/app-chrome";
 import { AppToasts } from "@/components/app-toasts";
@@ -11,17 +11,23 @@ import { brandCssVariables, getBrandSettings } from "@/modules/settings/brand-se
 import { getSeoSettings } from "@/modules/settings/seo-settings";
 import { adminRoles } from "@/modules/auth/permissions";
 import { StorefrontFooter, StorefrontHeader } from "@/storefront/resolve-chrome";
+import { env } from "@/lib/env";
 import "./globals.css";
 
-// The root layout reads tenant/store settings from MySQL for every request.
-// Keeping the segment dynamic prevents build-time database rendering and stale branding.
-export const dynamic = "force-dynamic";
+// The page shape here (storefront vs. maintenance/setup screen) depends on the viewer's role
+// (an admin can preview a paused store), so the root layout genuinely needs a per-request
+// session read — same judgment call as /admin and /account. The settings reads below are
+// cached across requests regardless (see the settings modules), so this doesn't reintroduce
+// the DB load the caching migration set out to remove.
+export const instant = false;
 
 export async function generateMetadata(): Promise<Metadata> {
-  const [requestHeaders, settings, brand, seo] = await Promise.all([headers(), getGeneralStoreSettings(), getBrandSettings(), getSeoSettings()]);
-  const host = requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host") ?? "localhost:3000";
-  const protocol = requestHeaders.get("x-forwarded-proto") ?? (host.startsWith("localhost") ? "http" : "https");
-  const baseUrl = new URL(`${protocol}://${host}`);
+  "use cache";
+  cacheLife("hours");
+  const [settings, brand, seo] = await Promise.all([getGeneralStoreSettings(), getBrandSettings(), getSeoSettings()]);
+  // A configured, build-time-known origin (not a per-request headers() read) so this function
+  // stays cacheable under Cache Components — matches the pattern already used for article URLs.
+  const baseUrl = new URL(env.APP_URL);
   const description = seo.metaDescription || settings.shortDescription;
   return {
     metadataBase: baseUrl,

@@ -38,7 +38,10 @@ import { DiscountExpiryRefresh } from "@/components/discount-expiry-refresh";
 import { earliestDiscountExpiry } from "@/modules/products/discount-window";
 import { env } from "@/lib/env";
 
-export const dynamic = "force-dynamic";
+// Reads the viewer's session directly (favorite state, personalization) alongside the product
+// data, so this page is genuinely session-coupled today — same judgment call as the storefront
+// header. Left dynamic for now.
+export const instant = false;
 
 // The status filter is deliberately absent: the page needs to tell an unpublished product
 // apart from a slug that never existed, so that the first case can explain itself instead of

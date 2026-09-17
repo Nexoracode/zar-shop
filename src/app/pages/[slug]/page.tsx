@@ -9,8 +9,6 @@ import { sanitizeProductDescription } from "@/modules/products/rich-text";
 
 type Context = { params: Promise<{ slug: string }> };
 
-export const dynamic = "force-dynamic";
-
 export async function generateMetadata({ params }: Context): Promise<Metadata> {
   const { slug } = await params;
   const content = await getContentSettings();

@@ -46,7 +46,12 @@ type ProductHrefState = {
   sameDayDelivery?: string;
 };
 
-export const dynamic = "force-dynamic";
+// The catalog grid flags each card's favorite state per viewer (getStorefrontCatalog →
+// markFavoriteCards → getCurrentUser), so this page is genuinely session-coupled today, not
+// just settings/query-driven — same judgment call as the storefront header. A static shell
+// would need decoupling favorites-flagging from the base catalog query, a separate, larger
+// change; left dynamic for now.
+export const instant = false;
 
 export async function generateMetadata({ searchParams }: { searchParams: Promise<ProductSearchParams> }): Promise<Metadata> {
   const [settings, params] = await Promise.all([getGeneralStoreSettings(), searchParams]);

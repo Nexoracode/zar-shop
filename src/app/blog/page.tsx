@@ -5,8 +5,6 @@ import { ArticleListSection } from "@/components/article-list-section";
 import { getActiveArticleCategories, getFeaturedArticles, getPublishedArticles } from "@/modules/articles/service";
 import { getGeneralStoreSettings } from "@/modules/settings/general-settings";
 
-export const dynamic = "force-dynamic";
-
 type Context = { searchParams: Promise<{ page?: string; search?: string; category?: string }> };
 
 export async function generateMetadata(): Promise<Metadata> {

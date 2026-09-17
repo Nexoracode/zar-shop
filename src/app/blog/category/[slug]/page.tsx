@@ -5,8 +5,6 @@ import { ArticleListSection } from "@/components/article-list-section";
 import { db } from "@/lib/db";
 import { getActiveArticleCategories, getPublishedArticles } from "@/modules/articles/service";
 
-export const dynamic = "force-dynamic";
-
 type Context = { params: Promise<{ slug: string }>; searchParams: Promise<{ page?: string; search?: string }> };
 
 async function getCategory(slug: string) {
