@@ -7,6 +7,7 @@ import { Send, Trash2, UserRound, Users } from "lucide-react";
 import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
 import { AdminBulkCheckbox, AdminBulkEditor } from "@/components/admin-bulk-editor";
 import { AdminColumn, AdminColumnSettingsButton, AdminColumnVisibility } from "@/components/admin-column-visibility";
+import { AdminGenericBulkEditButton } from "@/components/admin-generic-bulk-edit";
 import { AdminEmptyState, AdminPanel } from "@/components/admin-ui";
 import { normalizeNumericValue } from "@/lib/persian-numbers";
 import { smsAudienceOptions, type SmsAudience } from "@/modules/communications/sms-audiences";
@@ -120,6 +121,14 @@ const smsCampaignColumns = [
 
 export function BlueprintSmsCampaignList({ items, initialHiddenColumns }: { items: SmsCampaignListItem[]; initialHiddenColumns: string[] }) {
   const [campaigns, setCampaigns] = useState(items);
+  // The server list is the source of truth once a mutation settles and `router.refresh()` brings
+  // a fresh copy (e.g. after the bulk-edit modal's own delete); this render-time sync (not an
+  // effect) picks it up without an extra render pass.
+  const [prevItems, setPrevItems] = useState(items);
+  if (items !== prevItems) {
+    setPrevItems(items);
+    setCampaigns(items);
+  }
   const [pendingDelete, setPendingDelete] = useState<SmsCampaignListItem | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState("");
@@ -172,9 +181,9 @@ export function BlueprintSmsCampaignList({ items, initialHiddenColumns }: { item
                 entity="smsCampaigns"
                 entityLabel="رکورد پیامک"
                 ids={campaigns.map((item) => item.id)}
-                actions={[{ value: "delete", label: "حذف رکوردهای انتخاب‌شده", confirmation: { title: "حذف گروهی تاریخچه پیامک", description: "این عملیات فقط رکوردهای پنل را حذف می‌کند؛ پیامک‌های ارسال‌شده قابل لغو یا بازگردانی نیستند.", confirmLabel: "حذف از تاریخچه" } }]}
-                onCompleted={({ ids }) => setCampaigns((current) => current.filter((item) => !ids.includes(item.id)))}
+                actions={[]}
                 beforeSelectAll={<AdminColumnSettingsButton />}
+                extraAction={<AdminGenericBulkEditButton entity="smsCampaigns" entityLabel="رکورد پیامک" changeTypes={[{ value: "delete", label: "حذف رکوردهای انتخاب‌شده", confirmation: { title: "حذف گروهی تاریخچه پیامک", description: "این عملیات فقط رکوردهای پنل را حذف می‌کند؛ پیامک‌های ارسال‌شده قابل لغو یا بازگردانی نیستند.", confirmLabel: "حذف از تاریخچه" } }]} />}
               >
                 <BpTable ariaLabel="تاریخچه ارسال دستی پیامک" minWidth={880}>
                   <thead>
