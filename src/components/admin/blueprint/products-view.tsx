@@ -6,6 +6,7 @@ import { productStatusLabels, productStatusTones } from "@/modules/admin/labels"
 import { AdminListFilters } from "@/components/admin-list-filters";
 import { AdminPagination } from "@/components/admin-pagination";
 import { AdminBulkCheckbox, AdminBulkEditor, AdminBulkTr } from "@/components/admin-bulk-editor";
+import { AdminColumn, AdminColumnSettingsButton, AdminColumnVisibility } from "@/components/admin-column-visibility";
 import { isProductDiscountActive } from "@/modules/products/discount";
 import { DiscountExpiryRefresh } from "@/components/discount-expiry-refresh";
 import { formatDateTime } from "@/lib/format";
@@ -86,7 +87,17 @@ function ProductName({ product }: { product: ProductRow }) {
   );
 }
 
-export function BlueprintProductsView({ products, categories, filters, pagination, lowStockThreshold, storeIndustry, nextDiscountBoundaryAt }: AdminProductsListData) {
+const PRODUCTS_TABLE_ID = "products";
+
+export function BlueprintProductsView({ products, categories, filters, pagination, lowStockThreshold, storeIndustry, nextDiscountBoundaryAt, initialHiddenColumns }: AdminProductsListData) {
+  const columns = [
+    { id: "product", label: "محصول" },
+    { id: "category", label: "دسته‌بندی" },
+    { id: "brand", label: "برند" },
+    { id: "priceOrWeight", label: storeIndustry === "GOLD" ? "وزن (گرم)" : "قیمت (ریال)" },
+    { id: "stock", label: "موجودی" },
+    { id: "status", label: "وضعیت" },
+  ];
   const bulkActions = [
     { value: "featured:on", label: "افزودن به محصولات ویژه" },
     { value: "featured:off", label: "حذف از محصولات ویژه" },
@@ -148,38 +159,40 @@ export function BlueprintProductsView({ products, categories, filters, paginatio
               ))}
             </div>
 
-            <AdminBulkEditor entity="products" entityLabel="محصول" ids={products.map((product) => product.id)} actions={bulkActions} extraAction={<ProductBulkEditButton products={products.map((product) => ({ id: product.id, variantTypeNames: product.optionTypes.map((optionType) => optionType.type.name) }))} />}>
-              <BpTable ariaLabel="فهرست محصولات" minWidth={860}>
-                <thead>
-                  <tr>
-                    <BpTh className="w-10 text-center"><span className="sr-only">انتخاب</span></BpTh>
-                    <BpTh className="w-10">#</BpTh>
-                    <BpTh>محصول</BpTh>
-                    <BpTh>دسته‌بندی</BpTh>
-                    <BpTh>برند</BpTh>
-                    <BpTh>{storeIndustry === "GOLD" ? "وزن (گرم)" : "قیمت (ریال)"}</BpTh>
-                    <BpTh>موجودی</BpTh>
-                    <BpTh>وضعیت</BpTh>
-                    <BpTh className="text-center">عملیات</BpTh>
-                  </tr>
-                </thead>
-                <tbody>
-                  {products.map((product, index) => (
-                    <AdminBulkTr key={product.id} id={product.id}>
-                      <BpTd className="w-10 text-center"><AdminBulkCheckbox id={product.id} label={`انتخاب محصول ${product.name}`} /></BpTd>
-                      <BpTd className="bp-muted w-10">{(pagination.skip + index + 1).toLocaleString("fa-IR")}</BpTd>
-                      <BpTd className="w-[240px] max-w-[240px]"><div className="flex min-w-0 items-center gap-2.5"><ProductThumb product={product} /><ThumbRule /><ProductName product={product} /></div></BpTd>
-                      <BpTd className="bp-muted max-w-[180px] truncate" title={product.category?.name ?? "بدون دسته‌بندی"}>{product.category?.name ?? "بدون دسته‌بندی"}</BpTd>
-                      <BpTd className="bp-muted max-w-[140px] truncate" title={product.brand?.name ?? "بدون برند"}>{product.brand?.name ?? "بدون برند"}</BpTd>
-                      <BpTd>{priceLabel(product)}</BpTd>
-                      <BpTd className={product.stock <= lowStockThreshold ? "font-bold text-[var(--bp-danger)]" : ""}>{product.stock.toLocaleString("fa-IR")}</BpTd>
-                      <BpTd><BpTag tone={productStatusTones[product.status]} size="md" withDot>{productStatusLabels[product.status]}</BpTag></BpTd>
-                      <BpTd><RowActions product={product} /></BpTd>
-                    </AdminBulkTr>
-                  ))}
-                </tbody>
-              </BpTable>
-            </AdminBulkEditor>
+            <AdminColumnVisibility tableId={PRODUCTS_TABLE_ID} columns={columns} initialHidden={initialHiddenColumns}>
+              <AdminBulkEditor entity="products" entityLabel="محصول" ids={products.map((product) => product.id)} actions={bulkActions} beforeSelectAll={<AdminColumnSettingsButton />} extraAction={<ProductBulkEditButton products={products.map((product) => ({ id: product.id, variantTypeNames: product.optionTypes.map((optionType) => optionType.type.name) }))} />}>
+                <BpTable ariaLabel="فهرست محصولات" minWidth={860}>
+                  <thead>
+                    <tr>
+                      <BpTh className="w-10 text-center"><span className="sr-only">انتخاب</span></BpTh>
+                      <BpTh className="w-10">#</BpTh>
+                      <AdminColumn id="product"><BpTh>محصول</BpTh></AdminColumn>
+                      <AdminColumn id="category"><BpTh>دسته‌بندی</BpTh></AdminColumn>
+                      <AdminColumn id="brand"><BpTh>برند</BpTh></AdminColumn>
+                      <AdminColumn id="priceOrWeight"><BpTh>{storeIndustry === "GOLD" ? "وزن (گرم)" : "قیمت (ریال)"}</BpTh></AdminColumn>
+                      <AdminColumn id="stock"><BpTh>موجودی</BpTh></AdminColumn>
+                      <AdminColumn id="status"><BpTh>وضعیت</BpTh></AdminColumn>
+                      <BpTh className="text-center">عملیات</BpTh>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {products.map((product, index) => (
+                      <AdminBulkTr key={product.id} id={product.id}>
+                        <BpTd className="w-10 text-center"><AdminBulkCheckbox id={product.id} label={`انتخاب محصول ${product.name}`} /></BpTd>
+                        <BpTd className="bp-muted w-10">{(pagination.skip + index + 1).toLocaleString("fa-IR")}</BpTd>
+                        <AdminColumn id="product"><BpTd className="w-[240px] max-w-[240px]"><div className="flex min-w-0 items-center gap-2.5"><ProductThumb product={product} /><ThumbRule /><ProductName product={product} /></div></BpTd></AdminColumn>
+                        <AdminColumn id="category"><BpTd className="bp-muted max-w-[180px] truncate" title={product.category?.name ?? "بدون دسته‌بندی"}>{product.category?.name ?? "بدون دسته‌بندی"}</BpTd></AdminColumn>
+                        <AdminColumn id="brand"><BpTd className="bp-muted max-w-[140px] truncate" title={product.brand?.name ?? "بدون برند"}>{product.brand?.name ?? "بدون برند"}</BpTd></AdminColumn>
+                        <AdminColumn id="priceOrWeight"><BpTd>{priceLabel(product)}</BpTd></AdminColumn>
+                        <AdminColumn id="stock"><BpTd className={product.stock <= lowStockThreshold ? "font-bold text-[var(--bp-danger)]" : ""}>{product.stock.toLocaleString("fa-IR")}</BpTd></AdminColumn>
+                        <AdminColumn id="status"><BpTd><BpTag tone={productStatusTones[product.status]} size="md" withDot>{productStatusLabels[product.status]}</BpTag></BpTd></AdminColumn>
+                        <BpTd><RowActions product={product} /></BpTd>
+                      </AdminBulkTr>
+                    ))}
+                  </tbody>
+                </BpTable>
+              </AdminBulkEditor>
+            </AdminColumnVisibility>
             <AdminPagination page={pagination.page} pageSize={pagination.pageSize} totalItems={pagination.totalItems} totalPages={pagination.totalPages} />
           </>
         ) : <AdminEmptyState title="محصولی پیدا نشد" description="فیلترها را تغییر دهید یا اولین محصول را ثبت کنید." />}

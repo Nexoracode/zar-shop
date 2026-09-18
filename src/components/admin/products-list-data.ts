@@ -13,4 +13,5 @@ export type AdminProductsListData = {
   storeIndustry: "GOLD" | "GENERAL";
   /** Soonest moment a row's discount starts or ends, so the table can redraw itself then. */
   nextDiscountBoundaryAt: string | null;
+  initialHiddenColumns: string[];
 };

@@ -2,6 +2,7 @@ import type { Prisma, ProductStatus } from "@generated/prisma/client";
 import { db } from "@/lib/db";
 import { resolveAdminPagination } from "@/lib/admin-pagination";
 import { parseAdminPaginationRequest } from "@/lib/admin-pagination-server";
+import { readHiddenColumns } from "@/lib/admin-column-visibility-server";
 import { requirePermission } from "@/modules/auth/session";
 import { getCatalogSettings } from "@/modules/settings/catalog-settings";
 import { getStoreIndustry } from "@/modules/settings/store-settings";
@@ -54,7 +55,7 @@ export default async function AdminProducts({ searchParams }: Context) {
   };
   const filteredTotal = await db.product.count({ where });
   const pagination = resolveAdminPagination(filteredTotal, requestedPage, pageSize);
-  const [products, categories, total, active, drafts] = await Promise.all([
+  const [products, categories, total, active, drafts, initialHiddenColumns] = await Promise.all([
     // Ordered by creation, not by `updatedAt`: editing a product used to move its row to the
     // top of the list, so a row would jump away from under the cursor the moment its status was
     // toggled. `id` breaks ties — seeded rows share a `createdAt` to the millisecond, and
@@ -64,6 +65,7 @@ export default async function AdminProducts({ searchParams }: Context) {
     db.product.count(),
     db.product.count({ where: { status: "ACTIVE" } }),
     db.product.count({ where: { status: "DRAFT" } }),
+    readHiddenColumns("products"),
   ]);
 
   const data: AdminProductsListData = {
@@ -77,6 +79,7 @@ export default async function AdminProducts({ searchParams }: Context) {
     // A boundary on a combination's own discount window counts too — otherwise the list would
     // not know to refresh when a variant-only discount starts or ends.
     nextDiscountBoundaryAt: nextDiscountBoundary(products.flatMap((product) => [product, ...product.variants])),
+    initialHiddenColumns,
   };
 
   return <BlueprintProductsView {...data} />;
