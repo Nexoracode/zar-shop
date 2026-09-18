@@ -4,6 +4,7 @@ import { ImageOff, Layers, Plus, SquarePen, Star, Tag } from "lucide-react";
 import { AdminEmptyState, AdminPageHeader, AdminPrimaryLink } from "@/components/admin-ui";
 import { productStatusLabels, productStatusTones } from "@/modules/admin/labels";
 import { AdminListFilters } from "@/components/admin-list-filters";
+import { AdminColumnFilter } from "@/components/admin-column-filter";
 import { AdminPagination } from "@/components/admin-pagination";
 import { AdminBulkCheckbox, AdminBulkEditor, AdminBulkTr } from "@/components/admin-bulk-editor";
 import { AdminColumn, AdminColumnSettingsButton, AdminColumnVisibility } from "@/components/admin-column-visibility";
@@ -108,6 +109,19 @@ export function BlueprintProductsView({ products, categories, filters, paginatio
     ...categories.map((category) => ({ value: `category:${category.id}`, label: `انتقال به دسته: ${category.name}` })),
   ];
 
+  // Column-header filters, replacing the combobox row that used to sit above the table — each
+  // group is the exact same URL param / option set `AdminListFilters` used to drive, just
+  // surfaced next to the header it belongs to instead of in a bar of its own.
+  const categoryFilter = { name: "category", label: "دسته‌بندی", value: filters.category, options: [{ value: "", label: "همه دسته‌ها" }, ...categories.map((category) => ({ value: category.id, label: category.name }))] };
+  const stockFilter = { name: "stock", label: "وضعیت موجودی", value: filters.stock, options: [{ value: "", label: "همه موجودی‌ها" }, { value: "in", label: "موجود" }, { value: "low", label: "کم‌موجود" }, { value: "out", label: "ناموجود" }] };
+  const statusFilter = { name: "status", label: "وضعیت محصول", value: filters.status, options: [{ value: "", label: "همه وضعیت‌ها" }, ...Object.entries(productStatusLabels).map(([value, label]) => ({ value, label }))] };
+  // "ویژه" (featured) and "تخفیف" (discount) show up as icons inside the "محصول" cell itself
+  // (see ProductName), so its funnel covers both rather than inventing columns neither flag has.
+  const productFilters = [
+    { name: "featured", label: "نمایش ویژه", value: filters.featured, options: [{ value: "", label: "همه محصولات" }, { value: "yes", label: "محصولات ویژه" }, { value: "no", label: "محصولات عادی" }] },
+    { name: "discount", label: "وضعیت تخفیف", value: filters.discount, options: [{ value: "", label: "همه تخفیف‌ها" }, { value: "active", label: "دارای تخفیف فعال" }, { value: "upcoming", label: "تخفیف آینده" }, { value: "none", label: "بدون تخفیف" }] },
+  ];
+
   return (
     <div className="flex flex-col gap-2">
       {/* Redraws the rows the moment any discount opens or closes, so the flags cannot go stale. */}
@@ -125,13 +139,7 @@ export function BlueprintProductsView({ products, categories, filters, paginatio
           query={filters.query}
           queryLabel="جستجوی محصول"
           queryPlaceholder="نام، کد کالا یا نشانی محصول"
-          filters={[
-            { name: "status", label: "وضعیت محصول", value: filters.status, options: [{ value: "", label: "همه وضعیت‌ها" }, ...Object.entries(productStatusLabels).map(([value, label]) => ({ value, label }))] },
-            { name: "category", label: "دسته‌بندی", value: filters.category, options: [{ value: "", label: "همه دسته‌ها" }, ...categories.map((category) => ({ value: category.id, label: category.name }))] },
-            { name: "featured", label: "نمایش ویژه", value: filters.featured, options: [{ value: "", label: "همه محصولات" }, { value: "yes", label: "محصولات ویژه" }, { value: "no", label: "محصولات عادی" }] },
-            { name: "stock", label: "وضعیت موجودی", value: filters.stock, options: [{ value: "", label: "همه موجودی‌ها" }, { value: "in", label: "موجود" }, { value: "low", label: "کم‌موجود" }, { value: "out", label: "ناموجود" }] },
-            { name: "discount", label: "وضعیت تخفیف", value: filters.discount, options: [{ value: "", label: "همه تخفیف‌ها" }, { value: "active", label: "دارای تخفیف فعال" }, { value: "upcoming", label: "تخفیف آینده" }, { value: "none", label: "بدون تخفیف" }] },
-          ]}
+          filters={[]}
         />
       </Panel>
 
@@ -166,12 +174,12 @@ export function BlueprintProductsView({ products, categories, filters, paginatio
                     <tr>
                       <BpTh className="w-10 text-center"><span className="sr-only">انتخاب</span></BpTh>
                       <BpTh className="w-10">#</BpTh>
-                      <AdminColumn id="product"><BpTh>محصول</BpTh></AdminColumn>
-                      <AdminColumn id="category"><BpTh>دسته‌بندی</BpTh></AdminColumn>
+                      <AdminColumn id="product"><BpTh><span className="inline-flex items-center">محصول<AdminColumnFilter path="/admin/products" ariaLabel="فیلتر محصول" groups={productFilters} /></span></BpTh></AdminColumn>
+                      <AdminColumn id="category"><BpTh><span className="inline-flex items-center">دسته‌بندی<AdminColumnFilter path="/admin/products" ariaLabel="فیلتر دسته‌بندی" groups={[categoryFilter]} /></span></BpTh></AdminColumn>
                       <AdminColumn id="brand"><BpTh>برند</BpTh></AdminColumn>
                       <AdminColumn id="priceOrWeight"><BpTh>{storeIndustry === "GOLD" ? "وزن (گرم)" : "قیمت (ریال)"}</BpTh></AdminColumn>
-                      <AdminColumn id="stock"><BpTh>موجودی</BpTh></AdminColumn>
-                      <AdminColumn id="status"><BpTh>وضعیت</BpTh></AdminColumn>
+                      <AdminColumn id="stock"><BpTh><span className="inline-flex items-center">موجودی<AdminColumnFilter path="/admin/products" ariaLabel="فیلتر موجودی" groups={[stockFilter]} /></span></BpTh></AdminColumn>
+                      <AdminColumn id="status"><BpTh><span className="inline-flex items-center">وضعیت<AdminColumnFilter path="/admin/products" ariaLabel="فیلتر وضعیت" groups={[statusFilter]} /></span></BpTh></AdminColumn>
                       <BpTh className="text-center">عملیات</BpTh>
                     </tr>
                   </thead>
