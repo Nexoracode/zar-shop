@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "@heroui/react";
 import Link from "next/link";
-import { AlertTriangle, ExternalLink, MessageSquareText, Pencil, Power, ShieldCheck, Trash2 } from "lucide-react";
+import { AlertTriangle, ExternalLink, MessageSquareText, Power, ShieldCheck, SquarePen, Trash2 } from "lucide-react";
 import { AdminBulkCheckbox, AdminBulkEditor } from "@/components/admin-bulk-editor";
 import { AdminEmptyState, AdminPanel } from "@/components/admin-ui";
 import { smsProviders, type SmsProviderId } from "@/modules/communications/sms-providers";
@@ -97,7 +97,7 @@ export function BlueprintSmsProviderManager({ mode, initialConfigs, smsEnabled, 
                     <BpTag tone={statusTone(item)}>{statusLabel(item)}</BpTag>
                   </div>
                   <div className="mt-3 grid grid-cols-3 gap-2">
-                    <BpLinkButton href={`/admin/settings/notifications/providers/${item.provider}/edit`} variant="secondary" className="gap-2"><Pencil size={14} />ویرایش</BpLinkButton>
+                    <BpLinkButton href={`/admin/settings/notifications/providers/${item.provider}/edit`} variant="secondary" className="gap-2"><SquarePen size={14} />ویرایش</BpLinkButton>
                     <BpButton type="button" variant="secondary" isPending={busy === `PATCH-${item.provider}`} disabled={!item.sendSupported || item.isActive} onClick={() => void mutate(item.provider, "PATCH")} className="gap-2"><Power size={14} />فعال‌سازی</BpButton>
                     <BpButton type="button" variant="danger" isPending={busy === `DELETE-${item.provider}`} onClick={() => void mutate(item.provider, "DELETE")} className="gap-2"><Trash2 size={14} />حذف</BpButton>
                   </div>
@@ -138,7 +138,7 @@ export function BlueprintSmsProviderManager({ mode, initialConfigs, smsEnabled, 
                       <BpTd><BpTag tone={statusTone(item)}>{statusLabel(item)}</BpTag></BpTd>
                       <BpTd className="text-center">
                         <div className="flex items-center justify-center gap-1">
-                          <BpLinkButton href={`/admin/settings/notifications/providers/${item.provider}/edit`} variant="ghost" isIconOnly size="sm" aria-label={`ویرایش ${item.displayName}`}><Pencil size={15} strokeWidth={1.5} /></BpLinkButton>
+                          <BpLinkButton href={`/admin/settings/notifications/providers/${item.provider}/edit`} variant="ghost" isIconOnly size="sm" aria-label={`ویرایش ${item.displayName}`}><SquarePen size={15} strokeWidth={1.5} /></BpLinkButton>
                           <BpButton type="button" variant="ghost" isIconOnly size="sm" disabled={!item.sendSupported || item.isActive} isPending={busy === `PATCH-${item.provider}`} aria-label={`فعال‌سازی ${item.displayName}`} onClick={() => void mutate(item.provider, "PATCH")}><Power size={15} strokeWidth={1.5} /></BpButton>
                           <BpButton type="button" variant="ghost" className="bp-btn-danger-icon" isIconOnly size="sm" isPending={busy === `DELETE-${item.provider}`} aria-label={`حذف ${item.displayName}`} onClick={() => void mutate(item.provider, "DELETE")}><Trash2 size={15} strokeWidth={1.5} /></BpButton>
                         </div>

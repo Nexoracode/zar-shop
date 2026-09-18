@@ -3,7 +3,7 @@
 import { useEffect, useId, useRef, useState, type ClipboardEvent, type FormEvent, type KeyboardEvent, type MouseEvent } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "@heroui/react";
-import { FileText, Pencil, RefreshCw, Trash2 } from "lucide-react";
+import { FileText, RefreshCw, SquarePen, Trash2 } from "lucide-react";
 import { AdminEmptyState, AdminPanel } from "@/components/admin-ui";
 import { smsPatternCategories, type SmsPattern } from "@/modules/communications/sms-pattern-schemas";
 import { smsPatternFieldLimits } from "@/modules/communications/limits";
@@ -329,7 +329,7 @@ export function BlueprintSmsPatternList({ initialPatterns }: { initialPatterns: 
                   <BpTag tone={statusTone(item.status)}>{statusLabel(item.status)}</BpTag>
                 </div>
                 <div className="mt-3 grid grid-cols-2 gap-2">
-                  <BpButton type="button" variant="secondary" onClick={() => router.push(`/admin/settings/notifications/patterns/${encodeURIComponent(item.code)}/edit`)} className="gap-2"><Pencil size={14} />ویرایش</BpButton>
+                  <BpButton type="button" variant="secondary" onClick={() => router.push(`/admin/settings/notifications/patterns/${encodeURIComponent(item.code)}/edit`)} className="gap-2"><SquarePen size={14} />ویرایش</BpButton>
                   <BpButton type="button" variant="danger" isPending={busy === `delete-${item.code}`} onClick={() => void remove(item.code)} className="gap-2"><Trash2 size={14} />حذف</BpButton>
                 </div>
               </article>
@@ -358,7 +358,7 @@ export function BlueprintSmsPatternList({ initialPatterns }: { initialPatterns: 
                     <BpTd><BpTag tone={statusTone(item.status)}>{statusLabel(item.status)}</BpTag></BpTd>
                     <BpTd className="text-center">
                       <div className="flex items-center justify-center gap-1">
-                        <BpButton type="button" variant="ghost" isIconOnly size="sm" aria-label={`ویرایش پترن ${item.code}`} onClick={() => router.push(`/admin/settings/notifications/patterns/${encodeURIComponent(item.code)}/edit`)}><Pencil size={15} strokeWidth={1.5} /></BpButton>
+                        <BpButton type="button" variant="ghost" isIconOnly size="sm" aria-label={`ویرایش پترن ${item.code}`} onClick={() => router.push(`/admin/settings/notifications/patterns/${encodeURIComponent(item.code)}/edit`)}><SquarePen size={15} strokeWidth={1.5} /></BpButton>
                         <BpButton type="button" variant="ghost" className="bp-btn-danger-icon" isIconOnly size="sm" isPending={busy === `delete-${item.code}`} aria-label={`حذف پترن ${item.code}`} onClick={() => void remove(item.code)}><Trash2 size={15} strokeWidth={1.5} /></BpButton>
                       </div>
                     </BpTd>
