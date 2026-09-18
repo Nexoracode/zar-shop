@@ -7,6 +7,8 @@ import { GripVertical, Info, SquarePen, Trash2 } from "lucide-react";
 import { AdminEmptyState, AdminPageHeader, AdminStatusBadge } from "@/components/admin-ui";
 import { AdminBulkCheckbox, AdminBulkEditor, AdminBulkTr } from "@/components/admin-bulk-editor";
 import { AdminColumn, AdminColumnSettingsButton, AdminColumnVisibility } from "@/components/admin-column-visibility";
+import { AdminColumnFilter } from "@/components/admin-column-filter";
+import { AdminGenericBulkEditButton } from "@/components/admin-generic-bulk-edit";
 import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
 import { requestErrorMessage, requestJson } from "@/lib/api-request";
 import { normalizeSearchText } from "@/lib/text-search";
@@ -240,9 +242,6 @@ export function BlueprintColorsView({ colors, initialHiddenColumns }: { colors: 
                 onQueryChange={setQuery}
                 searchLabel="جستجوی رنگ"
                 searchPlaceholder="جستجو بر اساس نام یا کد رنگ"
-                filters={[
-                  { name: "status", ariaLabel: "وضعیت رنگ", value: statusFilter, onChange: setStatusFilter, options: [{ value: "", label: "همه وضعیت‌ها" }, { value: "active", label: "فعال" }, { value: "inactive", label: "غیرفعال" }] },
-                ]}
               />
               {visible.length ? (
               <>
@@ -275,7 +274,14 @@ export function BlueprintColorsView({ colors, initialHiddenColumns }: { colors: 
               </div>
 
               <AdminColumnVisibility tableId={COLORS_TABLE_ID} columns={colorColumns} initialHidden={initialHiddenColumns}>
-                <AdminBulkEditor entity="colors" entityLabel="رنگ" ids={visible.map((color) => color.id)} actions={[{ value: "active:on", label: "فعال‌کردن رنگ‌ها" }, { value: "active:off", label: "غیرفعال‌کردن رنگ‌ها" }]} beforeSelectAll={<AdminColumnSettingsButton />}>
+                <AdminBulkEditor
+                  entity="colors"
+                  entityLabel="رنگ"
+                  ids={visible.map((color) => color.id)}
+                  actions={[]}
+                  beforeSelectAll={<AdminColumnSettingsButton />}
+                  extraAction={<AdminGenericBulkEditButton entity="colors" entityLabel="رنگ" changeTypes={[{ value: "active", label: "وضعیت", options: [{ value: "active:on", label: "فعال‌کردن" }, { value: "active:off", label: "غیرفعال‌کردن" }] }]} />}
+                >
                   <p className="m-0 flex items-center gap-1.5 border-b border-[var(--bp-divider)] px-4 py-2 text-[12px] text-[var(--bp-info)]">
                     <Info size={14} className="shrink-0" aria-hidden />
                     {filtersActive ? "برای تغییر ترتیب نمایش، ابتدا جستجو و فیلترها را پاک کنید." : "با کشیدن ردیف، ترتیب نمایش رنگ‌ها در فروشگاه را تنظیم کنید."}
@@ -288,7 +294,7 @@ export function BlueprintColorsView({ colors, initialHiddenColumns }: { colors: 
                         <AdminColumn id="swatch"><BpTh className="w-10">رنگ</BpTh></AdminColumn>
                         <AdminColumn id="name"><BpTh>نام</BpTh></AdminColumn>
                         <AdminColumn id="hex"><BpTh>کد</BpTh></AdminColumn>
-                        <AdminColumn id="status"><BpTh>وضعیت</BpTh></AdminColumn>
+                        <AdminColumn id="status"><BpTh><span className="inline-flex items-center">وضعیت<AdminColumnFilter ariaLabel="فیلتر وضعیت" groups={[{ name: "status", label: "وضعیت", value: statusFilter, onChange: setStatusFilter, options: [{ value: "", label: "همه وضعیت‌ها" }, { value: "active", label: "فعال" }, { value: "inactive", label: "غیرفعال" }] }]} /></span></BpTh></AdminColumn>
                         <BpTh className="text-center">عملیات</BpTh>
                       </tr>
                     </thead>
