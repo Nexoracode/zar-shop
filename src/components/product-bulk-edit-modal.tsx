@@ -4,16 +4,18 @@ import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "@heroui/react";
 import { ListChecks } from "lucide-react";
+import type { ProductStatus } from "@generated/prisma/enums";
 import { AdminDialog, AdminDialogButton } from "@/components/admin/admin-dialog";
 import { useBulkSelection } from "@/components/admin-bulk-editor";
 import { requestErrorMessage, requestJson } from "@/lib/api-request";
+import { productStatusLabels } from "@/modules/admin/labels";
 import { BpButton } from "@/components/admin/blueprint/ui/button";
 import { BpSeg, type BpSegOption } from "@/components/admin/blueprint/ui/seg";
 import { BpSelect, type BpSelectOption } from "@/components/admin/blueprint/ui/select";
 import { BpNumberInput } from "@/components/admin/blueprint/ui/number-input";
 import { BpDateTimeField } from "@/components/admin/blueprint/ui/date-time-field";
 
-type ChangeType = "price" | "stock" | "discount" | "scheduledDiscount" | "removeDiscount" | "featured";
+type ChangeType = "price" | "stock" | "discount" | "scheduledDiscount" | "removeDiscount" | "featured" | "status" | "category";
 type AdjustMethod = "set" | "increase" | "decrease";
 type DiscountUnit = "PERCENT" | "FIXED";
 type FeaturedAction = "add" | "remove";
@@ -25,7 +27,14 @@ const typeOptions: { value: ChangeType; label: string }[] = [
   { value: "scheduledDiscount", label: "تخفیف زمان‌بندی‌شده" },
   { value: "removeDiscount", label: "حذف تخفیف" },
   { value: "featured", label: "محصول ویژه" },
+  { value: "status", label: "تغییر وضعیت" },
+  { value: "category", label: "تغییر دسته‌بندی" },
 ];
+
+// Same labels the status filter and table tag already use — this picker is choosing a state to
+// move rows into, not phrasing a one-click action, so it reads consistently with the rest of the
+// admin rather than inventing new imperative copy just for this modal.
+const statusOptions: { value: ProductStatus; label: string }[] = Object.entries(productStatusLabels).map(([value, label]) => ({ value: value as ProductStatus, label }));
 
 const featuredActionOptions: { value: FeaturedAction; label: string }[] = [
   { value: "add", label: "افزودن به محصولات ویژه" },
@@ -64,7 +73,7 @@ function valueLabel(type: ChangeType, method: AdjustMethod, unit: DiscountUnit) 
  */
 function BulkEditFields({
   type, setType, method, setMethod, unit, setUnit, value, setValue, startsAt, setStartsAt, endsAt, setEndsAt,
-  featuredAction, setFeaturedAction, isDisabled,
+  featuredAction, setFeaturedAction, status, setStatus, categoryId, setCategoryId, categories, isDisabled,
   valueError, onClearValueError, datesError, onClearDatesError,
 }: {
   type: ChangeType; setType: (value: ChangeType) => void;
@@ -74,6 +83,9 @@ function BulkEditFields({
   startsAt: string | null; setStartsAt: (value: string | null) => void;
   endsAt: string | null; setEndsAt: (value: string | null) => void;
   featuredAction: FeaturedAction; setFeaturedAction: (value: FeaturedAction) => void;
+  status: ProductStatus; setStatus: (value: ProductStatus) => void;
+  categoryId: string | null; setCategoryId: (value: string | null) => void;
+  categories: { id: string; name: string }[];
   isDisabled: boolean;
   valueError?: string;
   onClearValueError: () => void;
@@ -97,7 +109,18 @@ function BulkEditFields({
       {type === "featured" && (
         <BpSeg label="نوع تغییر ویژه" fullWidth value={featuredAction} onChange={setFeaturedAction} options={featuredActionOptions as BpSegOption<FeaturedAction>[]} />
       )}
-      {type === "removeDiscount" ? removeDiscountNote : type === "featured" ? null : (
+      {type === "status" && (
+        <BpSeg label="وضعیت جدید" fullWidth value={status} onChange={setStatus} options={statusOptions as BpSegOption<ProductStatus>[]} />
+      )}
+      {type === "category" && (
+        <BpSelect
+          label="دسته‌بندی جدید"
+          value={categoryId ?? "none"}
+          onChange={(event) => setCategoryId(event.target.value === "none" ? null : event.target.value)}
+          options={[{ value: "none", label: "بدون دسته‌بندی" }, ...categories.map((category) => ({ value: category.id, label: category.name }))] as BpSelectOption[]}
+        />
+      )}
+      {type === "removeDiscount" ? removeDiscountNote : (type === "featured" || type === "status" || type === "category") ? null : (
         <BpNumberInput name="value" label={label} value={value} onValueChange={(next) => { setValue(next); onClearValueError(); }} isPrice={isPriceLike} showWords={isPriceLike} error={valueError} disabled={isDisabled} />
       )}
       {type === "scheduledDiscount" && (
@@ -110,7 +133,7 @@ function BulkEditFields({
   );
 }
 
-function ProductBulkEditModal({ open, ids, variantTypeNames, variantProductCount, onClose, onCompleted }: { open: boolean; ids: string[]; variantTypeNames: string[]; variantProductCount: number; onClose: () => void; onCompleted: () => void }) {
+function ProductBulkEditModal({ open, ids, variantTypeNames, variantProductCount, categories, onClose, onCompleted }: { open: boolean; ids: string[]; variantTypeNames: string[]; variantProductCount: number; categories: { id: string; name: string }[]; onClose: () => void; onCompleted: () => void }) {
   const router = useRouter();
   const [type, setType] = useState<ChangeType>("price");
   const [method, setMethod] = useState<AdjustMethod>("set");
@@ -119,6 +142,8 @@ function ProductBulkEditModal({ open, ids, variantTypeNames, variantProductCount
   const [startsAt, setStartsAt] = useState<string | null>(null);
   const [endsAt, setEndsAt] = useState<string | null>(null);
   const [featuredAction, setFeaturedAction] = useState<FeaturedAction>("add");
+  const [status, setStatus] = useState<ProductStatus>("ACTIVE");
+  const [categoryId, setCategoryId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   // Field-level errors sit under their own control; `formError` is only for a failure that
   // belongs to the request as a whole (the server unreachable, etc.), not to one input.
@@ -129,6 +154,7 @@ function ProductBulkEditModal({ open, ids, variantTypeNames, variantProductCount
 
   function reset() {
     setType("price"); setMethod("set"); setUnit("PERCENT"); setValue(""); setStartsAt(null); setEndsAt(null); setFeaturedAction("add");
+    setStatus("ACTIVE"); setCategoryId(null);
     setValueError(undefined); setDatesError(undefined); setFormError("");
   }
 
@@ -143,7 +169,7 @@ function ProductBulkEditModal({ open, ids, variantTypeNames, variantProductCount
     const amount = Number(value);
     let nextValueError: string | undefined;
     let nextDatesError: string | undefined;
-    if (type !== "removeDiscount" && type !== "featured") {
+    if (type !== "removeDiscount" && type !== "featured" && type !== "status" && type !== "category") {
       if (!value || !Number.isFinite(amount) || amount <= 0) nextValueError = "مقدار را وارد کنید.";
       else if ((type === "discount" || type === "scheduledDiscount") && unit === "PERCENT" && amount > 100) nextValueError = "درصد تخفیف نمی‌تواند بیشتر از ۱۰۰ باشد.";
     }
@@ -173,9 +199,11 @@ function ProductBulkEditModal({ open, ids, variantTypeNames, variantProductCount
           type,
           ...(type === "price" || type === "stock" ? { method } : {}),
           ...(type === "discount" || type === "scheduledDiscount" ? { unit } : {}),
-          ...(type !== "removeDiscount" && type !== "featured" ? { value: amount } : {}),
+          ...(type !== "removeDiscount" && type !== "featured" && type !== "status" && type !== "category" ? { value: amount } : {}),
           ...(type === "scheduledDiscount" ? { startsAt, endsAt } : {}),
           ...(type === "featured" ? { featuredAction } : {}),
+          ...(type === "status" ? { status } : {}),
+          ...(type === "category" ? { categoryId } : {}),
         }),
       }, { fallbackMessage: "ویرایش گروهی انجام نشد." });
       toast.success("ویرایش گروهی انجام شد", {
@@ -217,6 +245,9 @@ function ProductBulkEditModal({ open, ids, variantTypeNames, variantProductCount
           startsAt={startsAt} setStartsAt={setStartsAt}
           endsAt={endsAt} setEndsAt={setEndsAt}
           featuredAction={featuredAction} setFeaturedAction={setFeaturedAction}
+          status={status} setStatus={setStatus}
+          categoryId={categoryId} setCategoryId={setCategoryId}
+          categories={categories}
           isDisabled={loading}
           valueError={valueError} onClearValueError={() => setValueError(undefined)}
           datesError={datesError} onClearDatesError={() => setDatesError(undefined)}
@@ -224,9 +255,10 @@ function ProductBulkEditModal({ open, ids, variantTypeNames, variantProductCount
       </div>
       {/* Combinations carry their own price, stock and discount — the base product's fields stay
          untouched once it has any, so this note keeps the reach of the change from being a surprise.
-         Naming the actual variant types found in the selection beats a generic example. «ویژه» is
-         product-only and never reaches a combination, so this would be misleading for it. */}
-      {type !== "featured" && variantProductCount > 0 && (
+         Naming the actual variant types found in the selection beats a generic example. «ویژه»,
+         وضعیت and دسته‌بندی are all product-only and never reach a combination, so this would be
+         misleading for them. */}
+      {type !== "featured" && type !== "status" && type !== "category" && variantProductCount > 0 && (
         <p className="bp-muted m-0 text-[11px] leading-6 text-[var(--muted)]">
           {variantProductCount.toLocaleString("fa-IR")} محصول انتخاب‌شده تنوع ({variantTypeNames.join("، ")}) دارند؛ این تغییر روی همهٔ ترکیب‌های آن‌ها اعمال می‌شود.
         </p>
@@ -237,8 +269,8 @@ function ProductBulkEditModal({ open, ids, variantTypeNames, variantProductCount
 
 export type BulkEditProductSummary = { id: string; variantTypeNames: string[] };
 
-/** Sits beside the quick-edit control in the products table's selection toolbar. */
-export function ProductBulkEditButton({ products }: { products: BulkEditProductSummary[] }) {
+/** The products table's only bulk-edit surface — sits in the selection toolbar. */
+export function ProductBulkEditButton({ products, categories }: { products: BulkEditProductSummary[]; categories: { id: string; name: string }[] }) {
   const { selected } = useBulkSelection();
   const [open, setOpen] = useState(false);
   const selectedIds = [...selected];
@@ -251,7 +283,7 @@ export function ProductBulkEditButton({ products }: { products: BulkEditProductS
       <BpButton variant="secondary" disabled={disabled} onClick={() => setOpen(true)} className="gap-1.5">
         <ListChecks size={14} />ویرایش گروهی
       </BpButton>
-      <ProductBulkEditModal open={open} ids={selectedIds} variantTypeNames={variantTypeNames} variantProductCount={selectedWithVariants.length} onClose={() => setOpen(false)} onCompleted={() => setOpen(false)} />
+      <ProductBulkEditModal open={open} ids={selectedIds} variantTypeNames={variantTypeNames} variantProductCount={selectedWithVariants.length} categories={categories} onClose={() => setOpen(false)} onCompleted={() => setOpen(false)} />
     </>
   );
 }

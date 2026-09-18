@@ -100,15 +100,6 @@ export function BlueprintProductsView({ products, categories, filters, paginatio
     { id: "stock", label: "موجودی" },
     { id: "status", label: "وضعیت" },
   ];
-  const bulkActions = [
-    { value: "featured:on", label: "افزودن به محصولات ویژه" },
-    { value: "featured:off", label: "حذف از محصولات ویژه" },
-    { value: "status:ACTIVE", label: "انتشار محصولات" },
-    { value: "status:DRAFT", label: "انتقال به پیش‌نویس" },
-    { value: "status:ARCHIVED", label: "بایگانی محصولات" },
-    { value: "category:none", label: "حذف دسته‌بندی محصولات" },
-    ...categories.map((category) => ({ value: `category:${category.id}`, label: `انتقال به دسته: ${category.name}` })),
-  ];
 
   // Column-header filters, replacing the combobox row that used to sit above the table — each
   // group is the exact same URL param / option set `AdminListFilters` used to drive, just
@@ -171,7 +162,7 @@ export function BlueprintProductsView({ products, categories, filters, paginatio
             </div>
 
             <AdminColumnVisibility tableId={PRODUCTS_TABLE_ID} columns={columns} initialHidden={initialHiddenColumns}>
-              <AdminBulkEditor entity="products" entityLabel="محصول" ids={products.map((product) => product.id)} actions={bulkActions} beforeSelectAll={<AdminColumnSettingsButton />} extraAction={<ProductBulkEditButton products={products.map((product) => ({ id: product.id, variantTypeNames: product.optionTypes.map((optionType) => optionType.type.name) }))} />}>
+              <AdminBulkEditor entity="products" entityLabel="محصول" ids={products.map((product) => product.id)} actions={[]} beforeSelectAll={<AdminColumnSettingsButton />} extraAction={<ProductBulkEditButton products={products.map((product) => ({ id: product.id, variantTypeNames: product.optionTypes.map((optionType) => optionType.type.name) }))} categories={categories} />}>
                 <BpTable ariaLabel="فهرست محصولات" minWidth={860}>
                   <thead>
                     <tr>

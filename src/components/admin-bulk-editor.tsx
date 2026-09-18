@@ -86,9 +86,11 @@ export function AdminBulkEditor({ entity, entityLabel, ids, actions, children, d
           <div className="me-auto flex items-center gap-4 text-[13px]">
             {beforeSelectAll}
             <div className="flex items-center gap-2 border border-[var(--bp-divider)] px-3 py-1.5"><AdminBulkSelectAll /><span>انتخاب همه</span></div>
-            <span className="bp-muted flex items-center gap-2">{loading ? <Loader2 size={16} className="animate-spin text-[var(--bp-accent)]" /> : <CheckSquare size={16} className="text-[var(--bp-accent)]" />}{loading ? "در حال اعمال تغییر..." : selected.size ? `${selected.size.toLocaleString("fa-IR")} ${entityLabel} انتخاب شده` : `برای ویرایش سریع، ${entityLabel} را انتخاب کنید`}</span>
+            <span className="bp-muted flex items-center gap-2">{loading ? <Loader2 size={16} className="animate-spin text-[var(--bp-accent)]" /> : <CheckSquare size={16} className="text-[var(--bp-accent)]" />}{loading ? "در حال اعمال تغییر..." : selected.size ? `${selected.size.toLocaleString("fa-IR")} ${entityLabel} انتخاب شده` : actions.length > 0 ? `برای ویرایش سریع، ${entityLabel} را انتخاب کنید` : `${entityLabel} را برای ویرایش انتخاب کنید`}</span>
           </div>
-          <BpSelect aria-label="ویرایش سریع" value={action} disabled={!selected.size || loading} reserveMessage={false} wrapperClassName="w-full sm:w-auto" className="w-full sm:w-64" onChange={(event) => chooseAction(event.target.value)} options={[{ value: "", label: "انتخاب عملیات؛ اعمال خودکار" }, ...actions]} />
+          {actions.length > 0 && (
+            <BpSelect aria-label="ویرایش سریع" value={action} disabled={!selected.size || loading} reserveMessage={false} wrapperClassName="w-full sm:w-auto" className="w-full sm:w-64" onChange={(event) => chooseAction(event.target.value)} options={[{ value: "", label: "انتخاب عملیات؛ اعمال خودکار" }, ...actions]} />
+          )}
           {extraAction}
           <AdminTableRefreshButton />
         </div>

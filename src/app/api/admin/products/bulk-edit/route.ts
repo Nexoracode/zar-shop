@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { ProductStatus } from "@generated/prisma/enums";
 import { db } from "@/lib/db";
 import { apiError } from "@/lib/http";
 import { getCurrentUser } from "@/modules/auth/session";
@@ -14,21 +15,31 @@ const boundarySchema = z.union([dateOnlySchema, dateTimeSchema], "تاریخ و 
 
 const bodySchema = z.object({
   ids: z.array(z.string().min(1)).min(1, "دست‌کم یک محصول را انتخاب کنید.").max(50, "حداکثر ۵۰ محصول در هر ویرایش گروهی قابل انتخاب است."),
-  type: z.enum(["price", "stock", "discount", "scheduledDiscount", "removeDiscount", "featured"], "نوع تغییر را انتخاب کنید."),
+  type: z.enum(["price", "stock", "discount", "scheduledDiscount", "removeDiscount", "featured", "status", "category"], "نوع تغییر را انتخاب کنید."),
   method: z.enum(["set", "increase", "decrease"]).optional(),
   unit: z.enum(["PERCENT", "FIXED"]).optional(),
-  // Every type but removeDiscount and featured needs an amount — neither of those ever reads
-  // one, so they are the only types allowed to leave this out.
+  // Every type but removeDiscount, featured, status and category needs an amount — none of
+  // those ever reads one, so they are the only types allowed to leave this out.
   value: z.coerce.number("مقدار را وارد کنید.").positive("مقدار باید بیشتر از صفر باشد.").max(999999999999999999, "مقدار واردشده بیش از حد مجاز است.").optional(),
   startsAt: boundarySchema.nullable().optional(),
   endsAt: boundarySchema.nullable().optional(),
   featuredAction: z.enum(["add", "remove"]).optional(),
+  status: z.enum(Object.values(ProductStatus) as [ProductStatus, ...ProductStatus[]]).optional(),
+  // `null` clears the category; a non-empty id assigns one. Distinct from `undefined` (not sent
+  // at all), which only ever happens for a `type` other than "category".
+  categoryId: z.string().min(1).nullable().optional(),
 }).superRefine((data, context) => {
-  if (data.type !== "removeDiscount" && data.type !== "featured" && data.value === undefined) {
+  if (data.type !== "removeDiscount" && data.type !== "featured" && data.type !== "status" && data.type !== "category" && data.value === undefined) {
     context.addIssue({ code: "custom", path: ["value"], message: "مقدار را وارد کنید." });
   }
   if (data.type === "featured" && !data.featuredAction) {
     context.addIssue({ code: "custom", path: ["featuredAction"], message: "نوع تغییر وضعیت ویژه را انتخاب کنید." });
+  }
+  if (data.type === "status" && !data.status) {
+    context.addIssue({ code: "custom", path: ["status"], message: "وضعیت محصول را انتخاب کنید." });
+  }
+  if (data.type === "category" && data.categoryId === undefined) {
+    context.addIssue({ code: "custom", path: ["categoryId"], message: "دسته‌بندی را انتخاب کنید." });
   }
 });
 
@@ -78,15 +89,21 @@ export async function POST(request: Request) {
     if (!actor || !hasPermission(actor.role, "catalog:manage")) return NextResponse.json({ message: "دسترسی غیرمجاز است." }, { status: 403 });
     const parsed = bodySchema.safeParse(await request.json().catch(() => null));
     if (!parsed.success) return NextResponse.json({ message: parsed.error.issues[0]?.message ?? "اطلاعات ویرایش گروهی معتبر نیست." }, { status: 422 });
-    const { ids, type, method, unit, value, startsAt, endsAt, featuredAction } = parsed.data;
+    const { ids, type, method, unit, value, startsAt, endsAt, featuredAction, status, categoryId } = parsed.data;
     const uniqueIds = [...new Set(ids)];
-    // Guaranteed defined here for every type but removeDiscount and featured, neither of which
-    // reads it — the schema's own superRefine already rejected a missing value for the others.
+    // Guaranteed defined here for every type but removeDiscount, featured, status and category,
+    // none of which read it — the schema's own superRefine already rejected a missing value for
+    // the others.
     const amount = value ?? 0;
 
     if ((type === "price" || type === "stock") && !method) return NextResponse.json({ message: "روش تغییر را انتخاب کنید." }, { status: 422 });
     if ((type === "discount" || type === "scheduledDiscount") && !unit) return NextResponse.json({ message: "واحد تخفیف را انتخاب کنید." }, { status: 422 });
     if (unit === "PERCENT" && amount > 100) return NextResponse.json({ message: "درصد تخفیف نمی‌تواند بیشتر از ۱۰۰ باشد." }, { status: 422 });
+    if (type === "status" && !status) return NextResponse.json({ message: "وضعیت محصول را انتخاب کنید." }, { status: 422 });
+    if (type === "category" && categoryId) {
+      const categoryExists = await db.category.findUnique({ where: { id: categoryId }, select: { id: true } });
+      if (!categoryExists) return NextResponse.json({ message: "دسته‌بندی انتخاب‌شده پیدا نشد." }, { status: 404 });
+    }
 
     let windowStart: Date | null = null;
     let windowEnd: Date | null = null;
@@ -104,10 +121,15 @@ export async function POST(request: Request) {
     const variantUpdates: { id: string; data: Record<string, unknown> }[] = [];
     let skipped = 0;
 
-    // "ویژه" lives only on the product, never a combination, so this bypasses `rowsFor` entirely
-    // — a product with variants still gets exactly one update, unlike every other type here.
+    // "ویژه", status and category all live only on the product, never a combination, so these
+    // bypass `rowsFor` entirely — a product with variants still gets exactly one update, unlike
+    // every other type here.
     if (type === "featured") {
       for (const product of products) productUpdates.push({ id: product.id, data: { featured: featuredAction === "add" } });
+    } else if (type === "status") {
+      for (const product of products) productUpdates.push({ id: product.id, data: { status } });
+    } else if (type === "category") {
+      for (const product of products) productUpdates.push({ id: product.id, data: { categoryId: categoryId ?? null } });
     } else for (const product of products) {
       for (const row of rowsFor(product)) {
         const data: Record<string, unknown> = {};
@@ -153,7 +175,7 @@ export async function POST(request: Request) {
       for (const update of productUpdates) await tx.product.update({ where: { id: update.id }, data: update.data });
       for (const update of variantUpdates) await tx.productVariant.update({ where: { id: update.id }, data: update.data });
       await tx.auditLog.create({ data: { actorId: actor.id, action: "PRODUCT_BULK_EDIT", entityType: "Product", ...auditRequestContext(request, {
-        type, method, unit, value, startsAt, endsAt, featuredAction,
+        type, method, unit, value, startsAt, endsAt, featuredAction, status, categoryId,
         requestedIds: uniqueIds,
         updated: productUpdates.length + variantUpdates.length,
         skipped,
