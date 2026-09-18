@@ -4,6 +4,7 @@ import { AdminEmptyState, AdminPageHeader, AdminPanel } from "@/components/admin
 import { AdminListFilters } from "@/components/admin-list-filters";
 import { resolveAdminPagination } from "@/lib/admin-pagination";
 import { parseAdminPaginationRequest } from "@/lib/admin-pagination-server";
+import { readHiddenColumns } from "@/lib/admin-column-visibility-server";
 import { db } from "@/lib/db";
 import { requirePermission } from "@/modules/auth/session";
 import { BlueprintReviewsView } from "@/components/admin/blueprint/reviews-view";
@@ -32,12 +33,13 @@ export default async function AdminReviewsPage({ searchParams }: { searchParams:
       { user: { is: { OR: [{ firstName: { contains: q } }, { lastName: { contains: q } }, { phone: { contains: q } }] } } },
     ] } : {}),
   };
-  const [filteredTotal, pendingCount, approvedCount, rejectedCount, ratingAggregate] = await Promise.all([
+  const [filteredTotal, pendingCount, approvedCount, rejectedCount, ratingAggregate, initialHiddenColumns] = await Promise.all([
     db.productReview.count({ where }),
     db.productReview.count({ where: { status: "PENDING" } }),
     db.productReview.count({ where: { status: "APPROVED" } }),
     db.productReview.count({ where: { status: "REJECTED" } }),
     db.productReview.aggregate({ where: { status: "APPROVED", rating: { not: null } }, _avg: { rating: true } }),
+    readHiddenColumns("reviews"),
   ]);
   const pagination = resolveAdminPagination(filteredTotal, requestedPage, pageSize);
   const reviews = await db.productReview.findMany({
@@ -65,7 +67,7 @@ export default async function AdminReviewsPage({ searchParams }: { searchParams:
       <AdminPanel>
         {!reviews.length
           ? <AdminEmptyState title="دیدگاهی پیدا نشد" description="هنوز دیدگاهی ثبت نشده یا فیلترهای انتخاب‌شده نتیجه‌ای ندارند." />
-          : <BlueprintReviewsView reviews={reviews} pagination={pagination} />}
+          : <BlueprintReviewsView reviews={reviews} pagination={pagination} initialHiddenColumns={initialHiddenColumns} />}
       </AdminPanel>
     </>
   );
