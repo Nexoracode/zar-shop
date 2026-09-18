@@ -4,6 +4,7 @@ import { BlueprintPaymentGatewayManager } from "@/components/admin/blueprint/pay
 import { AdminPageHeader, AdminPrimaryLink } from "@/components/admin-ui";
 import { requirePermission } from "@/modules/auth/session";
 import { getPublicGatewayConfigs } from "@/modules/payments/gateway-config";
+import { readHiddenColumns } from "@/lib/admin-column-visibility-server";
 
 // @next-codemod-ignore Cache Components adoption: this segment temporarily allows blocking.
 // Remove this opt-out after verifying the segment passes validation without it.
@@ -14,7 +15,7 @@ export const metadata: Metadata = { title: "درگاه‌های پرداخت" };
 
 export default async function PaymentGatewaysPage() {
   await requirePermission("settings:manage");
-  const configs = await getPublicGatewayConfigs();
+  const [configs, initialHiddenColumns] = await Promise.all([getPublicGatewayConfigs(), readHiddenColumns("paymentGateways")]);
 
   return <>
     <AdminPageHeader
@@ -25,6 +26,6 @@ export default async function PaymentGatewaysPage() {
       backLabel="بازگشت به تنظیمات"
       action={<AdminPrimaryLink href="/admin/settings/payment-gateways/new"><Plus size={17} />افزودن درگاه</AdminPrimaryLink>}
     />
-    <BlueprintPaymentGatewayManager key={configs.map((config) => config.updatedAt).join("|")} mode="list" initialConfigs={configs} />
+    <BlueprintPaymentGatewayManager key={configs.map((config) => config.updatedAt).join("|")} mode="list" initialConfigs={configs} initialHiddenColumns={initialHiddenColumns} />
   </>;
 }

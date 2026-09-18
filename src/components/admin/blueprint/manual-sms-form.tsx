@@ -6,6 +6,7 @@ import { toast } from "@heroui/react";
 import { Send, Trash2, UserRound, Users } from "lucide-react";
 import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
 import { AdminBulkCheckbox, AdminBulkEditor } from "@/components/admin-bulk-editor";
+import { AdminColumn, AdminColumnSettingsButton, AdminColumnVisibility } from "@/components/admin-column-visibility";
 import { AdminEmptyState, AdminPanel } from "@/components/admin-ui";
 import { normalizeNumericValue } from "@/lib/persian-numbers";
 import { smsAudienceOptions, type SmsAudience } from "@/modules/communications/sms-audiences";
@@ -106,7 +107,18 @@ export function BlueprintManualSmsForm() {
   );
 }
 
-export function BlueprintSmsCampaignList({ items }: { items: SmsCampaignListItem[] }) {
+const SMS_CAMPAIGNS_TABLE_ID = "smsCampaigns";
+
+const smsCampaignColumns = [
+  { id: "message", label: "متن پیام" },
+  { id: "recipients", label: "مخاطبان" },
+  { id: "successful", label: "موفق" },
+  { id: "failed", label: "ناموفق" },
+  { id: "status", label: "وضعیت" },
+  { id: "sentAt", label: "زمان ارسال" },
+];
+
+export function BlueprintSmsCampaignList({ items, initialHiddenColumns }: { items: SmsCampaignListItem[]; initialHiddenColumns: string[] }) {
   const [campaigns, setCampaigns] = useState(items);
   const [pendingDelete, setPendingDelete] = useState<SmsCampaignListItem | null>(null);
   const [deleting, setDeleting] = useState(false);
@@ -155,42 +167,45 @@ export function BlueprintSmsCampaignList({ items }: { items: SmsCampaignListItem
               ))}
             </div>
 
-            <AdminBulkEditor
-              entity="smsCampaigns"
-              entityLabel="رکورد پیامک"
-              ids={campaigns.map((item) => item.id)}
-              actions={[{ value: "delete", label: "حذف رکوردهای انتخاب‌شده", confirmation: { title: "حذف گروهی تاریخچه پیامک", description: "این عملیات فقط رکوردهای پنل را حذف می‌کند؛ پیامک‌های ارسال‌شده قابل لغو یا بازگردانی نیستند.", confirmLabel: "حذف از تاریخچه" } }]}
-              onCompleted={({ ids }) => setCampaigns((current) => current.filter((item) => !ids.includes(item.id)))}
-            >
-              <BpTable ariaLabel="تاریخچه ارسال دستی پیامک" minWidth={880}>
-                <thead>
-                  <tr>
-                    <BpTh className="w-10 text-center"><span className="sr-only">انتخاب</span></BpTh>
-                    <BpTh>متن پیام</BpTh>
-                    <BpTh>مخاطبان</BpTh>
-                    <BpTh>موفق</BpTh>
-                    <BpTh>ناموفق</BpTh>
-                    <BpTh>وضعیت</BpTh>
-                    <BpTh>زمان ارسال</BpTh>
-                    <BpTh className="text-center">عملیات</BpTh>
-                  </tr>
-                </thead>
-                <tbody>
-                  {campaigns.map((item) => (
-                    <tr key={item.id}>
-                      <BpTd className="w-10 text-center"><AdminBulkCheckbox id={item.id} label={`انتخاب پیام ${item.message.slice(0, 40)}`} /></BpTd>
-                      <BpTd className="max-w-[280px] truncate font-bold" title={item.message}>{item.message}</BpTd>
-                      <BpTd>{item.recipientCount.toLocaleString("fa-IR")}</BpTd>
-                      <BpTd className="text-[var(--bp-success)]">{item.successfulCount.toLocaleString("fa-IR")}</BpTd>
-                      <BpTd className="bp-btn-danger-icon">{item.failedCount.toLocaleString("fa-IR")}</BpTd>
-                      <BpTd><BpTag>{statusLabel(item.status)}</BpTag></BpTd>
-                      <BpTd className="bp-muted">{new Date(item.createdAt).toLocaleString("fa-IR")}</BpTd>
-                      <BpTd className="text-center"><BpButton type="button" variant="ghost" className="bp-btn-danger-icon" isIconOnly size="sm" aria-label="حذف پیام از تاریخچه" onClick={() => { setDeleteError(""); setPendingDelete(item); }}><Trash2 size={15} strokeWidth={1.5} /></BpButton></BpTd>
+            <AdminColumnVisibility tableId={SMS_CAMPAIGNS_TABLE_ID} columns={smsCampaignColumns} initialHidden={initialHiddenColumns}>
+              <AdminBulkEditor
+                entity="smsCampaigns"
+                entityLabel="رکورد پیامک"
+                ids={campaigns.map((item) => item.id)}
+                actions={[{ value: "delete", label: "حذف رکوردهای انتخاب‌شده", confirmation: { title: "حذف گروهی تاریخچه پیامک", description: "این عملیات فقط رکوردهای پنل را حذف می‌کند؛ پیامک‌های ارسال‌شده قابل لغو یا بازگردانی نیستند.", confirmLabel: "حذف از تاریخچه" } }]}
+                onCompleted={({ ids }) => setCampaigns((current) => current.filter((item) => !ids.includes(item.id)))}
+                beforeSelectAll={<AdminColumnSettingsButton />}
+              >
+                <BpTable ariaLabel="تاریخچه ارسال دستی پیامک" minWidth={880}>
+                  <thead>
+                    <tr>
+                      <BpTh className="w-10 text-center"><span className="sr-only">انتخاب</span></BpTh>
+                      <AdminColumn id="message"><BpTh>متن پیام</BpTh></AdminColumn>
+                      <AdminColumn id="recipients"><BpTh>مخاطبان</BpTh></AdminColumn>
+                      <AdminColumn id="successful"><BpTh>موفق</BpTh></AdminColumn>
+                      <AdminColumn id="failed"><BpTh>ناموفق</BpTh></AdminColumn>
+                      <AdminColumn id="status"><BpTh>وضعیت</BpTh></AdminColumn>
+                      <AdminColumn id="sentAt"><BpTh>زمان ارسال</BpTh></AdminColumn>
+                      <BpTh className="text-center">عملیات</BpTh>
                     </tr>
-                  ))}
-                </tbody>
-              </BpTable>
-            </AdminBulkEditor>
+                  </thead>
+                  <tbody>
+                    {campaigns.map((item) => (
+                      <tr key={item.id}>
+                        <BpTd className="w-10 text-center"><AdminBulkCheckbox id={item.id} label={`انتخاب پیام ${item.message.slice(0, 40)}`} /></BpTd>
+                        <AdminColumn id="message"><BpTd className="max-w-[280px] truncate font-bold" title={item.message}>{item.message}</BpTd></AdminColumn>
+                        <AdminColumn id="recipients"><BpTd>{item.recipientCount.toLocaleString("fa-IR")}</BpTd></AdminColumn>
+                        <AdminColumn id="successful"><BpTd className="text-[var(--bp-success)]">{item.successfulCount.toLocaleString("fa-IR")}</BpTd></AdminColumn>
+                        <AdminColumn id="failed"><BpTd className="bp-btn-danger-icon">{item.failedCount.toLocaleString("fa-IR")}</BpTd></AdminColumn>
+                        <AdminColumn id="status"><BpTd><BpTag>{statusLabel(item.status)}</BpTag></BpTd></AdminColumn>
+                        <AdminColumn id="sentAt"><BpTd className="bp-muted">{new Date(item.createdAt).toLocaleString("fa-IR")}</BpTd></AdminColumn>
+                        <BpTd className="text-center"><BpButton type="button" variant="ghost" className="bp-btn-danger-icon" isIconOnly size="sm" aria-label="حذف پیام از تاریخچه" onClick={() => { setDeleteError(""); setPendingDelete(item); }}><Trash2 size={15} strokeWidth={1.5} /></BpButton></BpTd>
+                      </tr>
+                    ))}
+                  </tbody>
+                </BpTable>
+              </AdminBulkEditor>
+            </AdminColumnVisibility>
           </>
         ) : <AdminEmptyState title="ارسال دستی ثبت نشده" description="هنوز هیچ پیامک دستی‌ای برای فروشگاه ارسال نشده است." />}
       </AdminPanel>

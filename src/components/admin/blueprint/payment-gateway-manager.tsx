@@ -5,13 +5,22 @@ import { useRouter } from "next/navigation";
 import { toast } from "@heroui/react";
 import { Check, CheckCircle2, Copy, CreditCard, ExternalLink, Plus, ShieldCheck, Trash2 } from "lucide-react";
 import { AdminBulkCheckbox, AdminBulkEditor } from "@/components/admin-bulk-editor";
+import { AdminColumn, AdminColumnSettingsButton, AdminColumnVisibility } from "@/components/admin-column-visibility";
 import { AdminEmptyState, AdminPanel } from "@/components/admin-ui";
 import { gatewayProviders, type GatewayProviderId } from "@/modules/payments/gateway-providers";
 import type { PublicGatewayConfig } from "@/modules/payments/gateway-config";
 import { gatewayFieldLimits } from "@/modules/payments/limits";
 import { BpButton, BpCheckbox, BpInput, BpKicker, BpTable, BpTag, BpTd, BpTh } from "./ui";
 
-export function BlueprintPaymentGatewayManager({ mode, initialConfigs, appUrl, onSaved }: { mode: "list" | "form"; initialConfigs: PublicGatewayConfig[]; appUrl?: string; onSaved?: () => void }) {
+const PAYMENT_GATEWAYS_TABLE_ID = "paymentGateways";
+
+const paymentGatewayColumns = [
+  { id: "gateway", label: "درگاه" },
+  { id: "credential", label: "شناسه اتصال" },
+  { id: "environment", label: "محیط" },
+];
+
+export function BlueprintPaymentGatewayManager({ mode, initialConfigs, appUrl, onSaved, initialHiddenColumns = [] }: { mode: "list" | "form"; initialConfigs: PublicGatewayConfig[]; appUrl?: string; onSaved?: () => void; initialHiddenColumns?: string[] }) {
   const router = useRouter();
   const [configs, setConfigs] = useState(initialConfigs);
   const [selectedId, setSelectedId] = useState<GatewayProviderId>("ZARINPAL");
@@ -95,43 +104,48 @@ export function BlueprintPaymentGatewayManager({ mode, initialConfigs, appUrl, o
               ))}
             </div>
 
-            <AdminBulkEditor
-              entity="paymentGateways"
-              entityLabel="درگاه"
-              ids={configs.map((config) => config.id)}
-              actions={[{ value: "delete", label: "حذف درگاه‌های انتخاب‌شده", confirmation: { title: "حذف گروهی درگاه‌ها", description: "اطلاعات اتصال رمزنگاری‌شده درگاه‌های انتخاب‌شده حذف می‌شود و پرداخت از طریق آن‌ها دیگر ممکن نخواهد بود.", confirmLabel: "حذف درگاه‌ها" } }]}
-              onCompleted={({ ids }) => setConfigs((current) => current.filter((item) => !ids.includes(item.id)))}
-            >
-              <BpTable ariaLabel="فهرست درگاه‌های پرداخت" minWidth={680}>
-                <thead>
-                  <tr>
-                    <BpTh className="w-10 text-center"><span className="sr-only">انتخاب</span></BpTh>
-                    <BpTh>درگاه</BpTh>
-                    <BpTh>شناسه اتصال</BpTh>
-                    <BpTh>محیط</BpTh>
-                    <BpTh className="text-center">عملیات</BpTh>
-                  </tr>
-                </thead>
-                <tbody>
-                  {configs.map((config) => (
-                    <tr key={config.id}>
-                      <BpTd className="w-10 text-center"><AdminBulkCheckbox id={config.id} label={`انتخاب درگاه ${config.displayName}`} /></BpTd>
-                      <BpTd className="font-bold">
-                        <span className="flex min-w-0 items-center gap-2.5">
-                          <span className="grid size-8 shrink-0 place-items-center border border-[var(--bp-success)] bg-[var(--bp-success-bg)] text-[var(--bp-success)]"><CheckCircle2 size={15} /></span>
-                          <span className="truncate">{config.displayName}</span>
-                        </span>
-                      </BpTd>
-                      <BpTd className="bp-muted font-mono" dir="ltr">{config.credentialMasked}</BpTd>
-                      <BpTd><BpTag tone={config.isSandbox ? "warning" : "success"}>{config.isSandbox ? "آزمایشی" : "اصلی"}</BpTag></BpTd>
-                      <BpTd className="text-center">
-                        <BpButton type="button" variant="ghost" className="bp-btn-danger-icon" isIconOnly size="sm" isPending={deleting === config.provider} aria-label={`حذف ${config.displayName}`} onClick={() => void remove(config.provider)}><Trash2 size={15} strokeWidth={1.5} /></BpButton>
-                      </BpTd>
+            <AdminColumnVisibility tableId={PAYMENT_GATEWAYS_TABLE_ID} columns={paymentGatewayColumns} initialHidden={initialHiddenColumns}>
+              <AdminBulkEditor
+                entity="paymentGateways"
+                entityLabel="درگاه"
+                ids={configs.map((config) => config.id)}
+                actions={[{ value: "delete", label: "حذف درگاه‌های انتخاب‌شده", confirmation: { title: "حذف گروهی درگاه‌ها", description: "اطلاعات اتصال رمزنگاری‌شده درگاه‌های انتخاب‌شده حذف می‌شود و پرداخت از طریق آن‌ها دیگر ممکن نخواهد بود.", confirmLabel: "حذف درگاه‌ها" } }]}
+                onCompleted={({ ids }) => setConfigs((current) => current.filter((item) => !ids.includes(item.id)))}
+                beforeSelectAll={<AdminColumnSettingsButton />}
+              >
+                <BpTable ariaLabel="فهرست درگاه‌های پرداخت" minWidth={680}>
+                  <thead>
+                    <tr>
+                      <BpTh className="w-10 text-center"><span className="sr-only">انتخاب</span></BpTh>
+                      <AdminColumn id="gateway"><BpTh>درگاه</BpTh></AdminColumn>
+                      <AdminColumn id="credential"><BpTh>شناسه اتصال</BpTh></AdminColumn>
+                      <AdminColumn id="environment"><BpTh>محیط</BpTh></AdminColumn>
+                      <BpTh className="text-center">عملیات</BpTh>
                     </tr>
-                  ))}
-                </tbody>
-              </BpTable>
-            </AdminBulkEditor>
+                  </thead>
+                  <tbody>
+                    {configs.map((config) => (
+                      <tr key={config.id}>
+                        <BpTd className="w-10 text-center"><AdminBulkCheckbox id={config.id} label={`انتخاب درگاه ${config.displayName}`} /></BpTd>
+                        <AdminColumn id="gateway">
+                          <BpTd className="font-bold">
+                            <span className="flex min-w-0 items-center gap-2.5">
+                              <span className="grid size-8 shrink-0 place-items-center border border-[var(--bp-success)] bg-[var(--bp-success-bg)] text-[var(--bp-success)]"><CheckCircle2 size={15} /></span>
+                              <span className="truncate">{config.displayName}</span>
+                            </span>
+                          </BpTd>
+                        </AdminColumn>
+                        <AdminColumn id="credential"><BpTd className="bp-muted font-mono" dir="ltr">{config.credentialMasked}</BpTd></AdminColumn>
+                        <AdminColumn id="environment"><BpTd><BpTag tone={config.isSandbox ? "warning" : "success"}>{config.isSandbox ? "آزمایشی" : "اصلی"}</BpTag></BpTd></AdminColumn>
+                        <BpTd className="text-center">
+                          <BpButton type="button" variant="ghost" className="bp-btn-danger-icon" isIconOnly size="sm" isPending={deleting === config.provider} aria-label={`حذف ${config.displayName}`} onClick={() => void remove(config.provider)}><Trash2 size={15} strokeWidth={1.5} /></BpButton>
+                        </BpTd>
+                      </tr>
+                    ))}
+                  </tbody>
+                </BpTable>
+              </AdminBulkEditor>
+            </AdminColumnVisibility>
           </>
         ) : <AdminEmptyState title="درگاهی ثبت نشده" description="هنوز هیچ درگاه پرداختی برای فروشگاه ثبت نشده است." />}
       </AdminPanel>
