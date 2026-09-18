@@ -1,8 +1,10 @@
 import Link from "next/link";
-import type { ReturnStatus } from "@generated/prisma/enums";
+import { ReturnStatus } from "@generated/prisma/enums";
 import { Eye } from "lucide-react";
 import { AdminBulkCheckbox, AdminBulkEditor, AdminBulkTr } from "@/components/admin-bulk-editor";
 import { AdminColumn, AdminColumnSettingsButton, AdminColumnVisibility } from "@/components/admin-column-visibility";
+import { AdminColumnFilter } from "@/components/admin-column-filter";
+import { AdminGenericBulkEditButton } from "@/components/admin-generic-bulk-edit";
 import { AdminPagination } from "@/components/admin-pagination";
 import type { resolveAdminPagination } from "@/lib/admin-pagination";
 import { formatDate, formatMoney } from "@/lib/format";
@@ -21,11 +23,6 @@ export type AdminReturnRow = {
   status: ReturnStatus;
   createdAt: string;
 };
-
-const bulkActions = [
-  { value: "status:APPROVED", label: "تأیید مرجوعی‌های در انتظار" },
-  { value: "status:REJECTED", label: "رد مرجوعی‌های در انتظار" },
-];
 
 export function serializeAdminReturnRow(row: {
   id: string;
@@ -61,7 +58,7 @@ const returnColumns = [
   { id: "createdAt", label: "تاریخ ثبت" },
 ];
 
-export function BlueprintReturnsView({ returns, pagination, initialHiddenColumns }: { returns: AdminReturnRow[]; pagination: ReturnType<typeof resolveAdminPagination>; initialHiddenColumns: string[] }) {
+export function BlueprintReturnsView({ returns, pagination, initialHiddenColumns, status }: { returns: AdminReturnRow[]; pagination: ReturnType<typeof resolveAdminPagination>; initialHiddenColumns: string[]; status: string }) {
   return (
     <>
       <div className="md:hidden">
@@ -89,7 +86,14 @@ export function BlueprintReturnsView({ returns, pagination, initialHiddenColumns
       </div>
 
       <AdminColumnVisibility tableId={RETURNS_TABLE_ID} columns={returnColumns} initialHidden={initialHiddenColumns}>
-        <AdminBulkEditor entity="returns" entityLabel="مرجوعی" ids={returns.map((row) => row.id)} actions={bulkActions} beforeSelectAll={<AdminColumnSettingsButton />}>
+        <AdminBulkEditor
+          entity="returns"
+          entityLabel="مرجوعی"
+          ids={returns.map((row) => row.id)}
+          actions={[]}
+          beforeSelectAll={<AdminColumnSettingsButton />}
+          extraAction={<AdminGenericBulkEditButton entity="returns" entityLabel="مرجوعی" changeTypes={[{ value: "status", label: "وضعیت", options: [{ value: "status:APPROVED", label: "تأیید" }, { value: "status:REJECTED", label: "رد" }] }]} />}
+        >
           <BpTable ariaLabel="فهرست درخواست‌های مرجوعی" minWidth={960}>
             <thead>
               <tr>
@@ -99,7 +103,7 @@ export function BlueprintReturnsView({ returns, pagination, initialHiddenColumns
                 <AdminColumn id="customer"><BpTh>مشتری</BpTh></AdminColumn>
                 <AdminColumn id="items"><BpTh>اقلام</BpTh></AdminColumn>
                 <AdminColumn id="reason"><BpTh>دلیل مرجوعی</BpTh></AdminColumn>
-                <AdminColumn id="status"><BpTh>وضعیت</BpTh></AdminColumn>
+                <AdminColumn id="status"><BpTh><span className="inline-flex items-center">وضعیت<AdminColumnFilter path="/admin/returns" ariaLabel="فیلتر وضعیت" groups={[{ name: "status", label: "وضعیت", value: status, options: [{ value: "", label: "همه وضعیت‌ها" }, ...Object.values(ReturnStatus).map((item) => ({ value: item, label: returnStatusLabels[item] }))] }]} /></span></BpTh></AdminColumn>
                 <AdminColumn id="createdAt"><BpTh>تاریخ ثبت</BpTh></AdminColumn>
                 <BpTh className="text-center">جزئیات</BpTh>
               </tr>

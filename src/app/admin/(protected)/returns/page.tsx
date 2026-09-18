@@ -7,7 +7,6 @@ import { resolveAdminPagination } from "@/lib/admin-pagination";
 import { parseAdminPaginationRequest } from "@/lib/admin-pagination-server";
 import { readHiddenColumns } from "@/lib/admin-column-visibility-server";
 import { db } from "@/lib/db";
-import { returnStatusLabels } from "@/modules/admin/labels";
 import { requirePermission } from "@/modules/auth/session";
 import { BlueprintReturnsView, serializeAdminReturnRow } from "@/components/admin/blueprint/returns-view";
 
@@ -85,14 +84,7 @@ export default async function AdminReturnsPage({ searchParams }: { searchParams:
           query={query}
           queryLabel="جستجوی مرجوعی"
           queryPlaceholder="شماره سفارش، مشتری یا دلیل"
-          filters={[
-            {
-              name: "status",
-              label: "وضعیت",
-              value: status ?? "",
-              options: [{ value: "", label: "همه وضعیت‌ها" }, ...statuses.map((item) => ({ value: item, label: returnStatusLabels[item] }))],
-            },
-          ]}
+          filters={[]}
         />
       </section>
 
@@ -103,7 +95,7 @@ export default async function AdminReturnsPage({ searchParams }: { searchParams:
             description={query || status ? "فیلترها را تغییر دهید و دوباره جستجو کنید." : "هنوز درخواست مرجوعی ثبت نشده است."}
           />
         ) : (
-          <BlueprintReturnsView returns={returns.map(serializeAdminReturnRow)} pagination={pagination} initialHiddenColumns={initialHiddenColumns} />
+          <BlueprintReturnsView returns={returns.map(serializeAdminReturnRow)} pagination={pagination} initialHiddenColumns={initialHiddenColumns} status={status ?? ""} />
         )}
       </section>
     </div>
