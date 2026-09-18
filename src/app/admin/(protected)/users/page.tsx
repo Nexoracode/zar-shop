@@ -7,6 +7,7 @@ import { userRoleLabels, userStatusLabels } from "@/modules/admin/labels";
 import { AdminListFilters } from "@/components/admin-list-filters";
 import { resolveAdminPagination } from "@/lib/admin-pagination";
 import { parseAdminPaginationRequest } from "@/lib/admin-pagination-server";
+import { readHiddenColumns } from "@/lib/admin-column-visibility-server";
 import { requirePermission } from "@/modules/auth/session";
 import { getWalletSettings } from "@/modules/settings/wallet-settings";
 import { BlueprintUsersView } from "@/components/admin/blueprint/users-view";
@@ -40,7 +41,7 @@ export default async function UsersPage({ searchParams }: { searchParams: Search
       { phone: { contains: query } },
     ] } : {}),
   };
-  const [filteredTotal, walletSettings] = await Promise.all([db.user.count({ where }), getWalletSettings()]);
+  const [filteredTotal, walletSettings, initialHiddenColumns] = await Promise.all([db.user.count({ where }), getWalletSettings(), readHiddenColumns("users")]);
   const pagination = resolveAdminPagination(filteredTotal, requestedPage, pageSize);
   const users = await db.user.findMany({
     where,
@@ -66,7 +67,7 @@ export default async function UsersPage({ searchParams }: { searchParams: Search
       <AdminPanel>
         {!users.length
           ? <AdminEmptyState title="کاربری پیدا نشد" description={query || role || status ? "فیلترها را تغییر دهید و دوباره جستجو کنید." : "هنوز کاربری در فروشگاه ثبت نشده است."} />
-          : <BlueprintUsersView users={users} pagination={pagination} actorId={actor.id} actorRole={actor.role} assignableRoles={assignableRoles} walletEnabled={walletSettings.walletEnabled} />}
+          : <BlueprintUsersView users={users} pagination={pagination} actorId={actor.id} actorRole={actor.role} assignableRoles={assignableRoles} walletEnabled={walletSettings.walletEnabled} initialHiddenColumns={initialHiddenColumns} />}
       </AdminPanel>
     </>
   );
