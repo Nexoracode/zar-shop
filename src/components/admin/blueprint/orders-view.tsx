@@ -162,7 +162,7 @@ export function serializeAdminOrderRow(order: {
     id: order.id,
     orderNumber: order.orderNumber,
     customerName: `${order.user.firstName ?? ""} ${order.user.lastName ?? ""}`.trim() || "کاربر بدون نام",
-    contact: order.user.email ?? order.user.phone ?? "—",
+    contact: order.user.phone ?? order.user.email ?? "—",
     itemsCount: order._count.items,
     total: order.total.toString(),
     status: order.status,
