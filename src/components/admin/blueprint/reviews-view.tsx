@@ -4,6 +4,8 @@ import { Eye, Flag, MessageCircleReply, MessageSquareText, Star, ThumbsUp, UserR
 import { AdminStatusBadge } from "@/components/admin-ui";
 import { AdminBulkCheckbox, AdminBulkEditor, AdminBulkTr } from "@/components/admin-bulk-editor";
 import { AdminColumn, AdminColumnSettingsButton, AdminColumnVisibility } from "@/components/admin-column-visibility";
+import { AdminColumnFilter } from "@/components/admin-column-filter";
+import { AdminGenericBulkEditButton } from "@/components/admin-generic-bulk-edit";
 import { AdminPagination } from "@/components/admin-pagination";
 import type { resolveAdminPagination } from "@/lib/admin-pagination";
 import { formatDate, formatDateTime } from "@/lib/format";
@@ -53,7 +55,7 @@ const reviewColumns = [
   { id: "status", label: "وضعیت" },
 ];
 
-export function BlueprintReviewsView({ reviews, pagination, initialHiddenColumns }: { reviews: ReviewRow[]; pagination: ReturnType<typeof resolveAdminPagination>; initialHiddenColumns: string[] }) {
+export function BlueprintReviewsView({ reviews, pagination, initialHiddenColumns, status }: { reviews: ReviewRow[]; pagination: ReturnType<typeof resolveAdminPagination>; initialHiddenColumns: string[]; status: string }) {
   return (
     <>
       <div className="xl:hidden">
@@ -88,7 +90,15 @@ export function BlueprintReviewsView({ reviews, pagination, initialHiddenColumns
       </div>
 
       <AdminColumnVisibility tableId={REVIEWS_TABLE_ID} columns={reviewColumns} initialHidden={initialHiddenColumns}>
-        <AdminBulkEditor entity="reviews" entityLabel="دیدگاه" ids={reviews.map((review) => review.id)} actions={[{ value: "status:APPROVED", label: "تأیید و انتشار دیدگاه‌ها" }, { value: "status:REJECTED", label: "رد دیدگاه‌ها" }]} desktopClassName="hidden xl:block" beforeSelectAll={<AdminColumnSettingsButton />}>
+        <AdminBulkEditor
+          entity="reviews"
+          entityLabel="دیدگاه"
+          ids={reviews.map((review) => review.id)}
+          actions={[]}
+          desktopClassName="hidden xl:block"
+          beforeSelectAll={<AdminColumnSettingsButton />}
+          extraAction={<AdminGenericBulkEditButton entity="reviews" entityLabel="دیدگاه" changeTypes={[{ value: "status", label: "وضعیت", options: [{ value: "status:APPROVED", label: "تأیید و انتشار" }, { value: "status:REJECTED", label: "رد دیدگاه" }] }]} />}
+        >
           <BpTable ariaLabel="فهرست دیدگاه‌های محصولات" minWidth={960}>
             <thead>
               <tr>
@@ -97,7 +107,7 @@ export function BlueprintReviewsView({ reviews, pagination, initialHiddenColumns
                 <AdminColumn id="author"><BpTh>نویسنده</BpTh></AdminColumn>
                 <AdminColumn id="rating"><BpTh>امتیاز</BpTh></AdminColumn>
                 <AdminColumn id="engagement"><BpTh>تعامل</BpTh></AdminColumn>
-                <AdminColumn id="status"><BpTh>وضعیت</BpTh></AdminColumn>
+                <AdminColumn id="status"><BpTh><span className="inline-flex items-center">وضعیت<AdminColumnFilter path="/admin/reviews" ariaLabel="فیلتر وضعیت" groups={[{ name: "status", label: "وضعیت", value: status, options: [{ value: "", label: "همه وضعیت‌ها" }, ...Object.entries(reviewStatusLabels).map(([value, label]) => ({ value, label }))] }]} /></span></BpTh></AdminColumn>
                 <BpTh className="text-center">عملیات</BpTh>
               </tr>
             </thead>

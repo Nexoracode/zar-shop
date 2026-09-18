@@ -62,12 +62,12 @@ export default async function AdminReviewsPage({ searchParams }: { searchParams:
         <AdminPanel className="p-4"><span className="mb-2 flex items-center gap-2 text-xs text-[var(--bp-muted)]"><Star size={16} />میانگین امتیاز</span><strong className="text-xl text-[var(--warning)]">{averageRating ? averageRating.toLocaleString("fa-IR", { maximumFractionDigits: 1 }) : "—"}</strong><span className="mr-1 text-xs text-[var(--bp-muted)]">از ۵</span></AdminPanel>
       </section>
 
-      <AdminPanel className="mb-5 p-4 sm:p-5"><AdminListFilters path="/admin/reviews" query={q} queryLabel="جستجوی دیدگاه" queryPlaceholder="محصول، کاربر یا متن دیدگاه" filters={[{ name: "status", label: "وضعیت", value: status ?? "", options: [{ value: "", label: "همه وضعیت‌ها" }, ...statuses.map((item) => ({ value: item, label: labels[item] }))] }]} /></AdminPanel>
+      <AdminPanel className="mb-5 p-4 sm:p-5"><AdminListFilters path="/admin/reviews" query={q} queryLabel="جستجوی دیدگاه" queryPlaceholder="محصول، کاربر یا متن دیدگاه" filters={[]} /></AdminPanel>
 
       <AdminPanel>
         {!reviews.length
           ? <AdminEmptyState title="دیدگاهی پیدا نشد" description="هنوز دیدگاهی ثبت نشده یا فیلترهای انتخاب‌شده نتیجه‌ای ندارند." />
-          : <BlueprintReviewsView reviews={reviews} pagination={pagination} initialHiddenColumns={initialHiddenColumns} />}
+          : <BlueprintReviewsView reviews={reviews} pagination={pagination} initialHiddenColumns={initialHiddenColumns} status={status ?? ""} />}
       </AdminPanel>
     </>
   );
