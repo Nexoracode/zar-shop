@@ -4,11 +4,10 @@ import { Eye, X } from "lucide-react";
 import { AdminEmptyState, AdminPageHeader, AdminPrimaryLink } from "@/components/admin-ui";
 import { AdminListFilters } from "@/components/admin-list-filters";
 import { AdminPagination } from "@/components/admin-pagination";
-import { AdminBulkCheckbox, AdminBulkEditor, AdminBulkTr } from "@/components/admin-bulk-editor";
 import { AdminOrderStatusSelect } from "@/components/admin-order-status-select";
 import { formatDate, formatMoney } from "@/lib/format";
 import { orderStatusLabels } from "@/modules/admin/labels";
-import { BpTable, BpTd, BpTh } from "./ui";
+import { OrdersTable } from "./orders-table";
 
 export type AdminOrderRow = {
   id: string;
@@ -30,20 +29,14 @@ export type AdminOrdersListData = {
   filteredProduct: { id: string; name: string } | null;
   warningMinutes: number;
   pagination: { page: number; pageSize: number; totalItems: number; totalPages: number; skip: number };
+  initialHiddenColumns: string[];
 };
 
 function Panel({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return <section className={`bp-frame relative ${className}`.trim()}>{children}</section>;
 }
 
-const bulkActions = [
-  { value: "status:PROCESSING", label: "شروع آماده‌سازی سفارش‌های پرداخت‌شده" },
-  { value: "status:SHIPPED", label: "ثبت ارسال سفارش‌های در حال آماده‌سازی" },
-  { value: "status:DELIVERED", label: "ثبت تحویل سفارش‌های ارسال‌شده" },
-  { value: "status:CANCELLED", label: "لغو سفارش‌های پرداخت‌نشده" },
-];
-
-export function BlueprintOrdersView({ orders, query, status, statuses, filteredProduct, warningMinutes, pagination }: AdminOrdersListData) {
+export function BlueprintOrdersView({ orders, query, status, statuses, filteredProduct, warningMinutes, pagination, initialHiddenColumns }: AdminOrdersListData) {
   const statusKey = (order: AdminOrderRow) => `${order.id}:${order.status}:${order.expiresAt ?? "none"}`;
 
   return (
@@ -101,45 +94,7 @@ export function BlueprintOrdersView({ orders, query, status, statuses, filteredP
               ))}
             </div>
 
-            <AdminBulkEditor entity="orders" entityLabel="سفارش" ids={orders.map((order) => order.id)} actions={bulkActions}>
-              <BpTable ariaLabel="فهرست سفارش‌ها" minWidth={960}>
-                <thead>
-                  <tr>
-                    <BpTh className="w-10 text-center"><span className="sr-only">انتخاب</span></BpTh>
-                    <BpTh className="w-12">ردیف</BpTh>
-                    <BpTh>شماره سفارش</BpTh>
-                    <BpTh>مشتری</BpTh>
-                    <BpTh>اقلام</BpTh>
-                    <BpTh>مبلغ</BpTh>
-                    <BpTh>وضعیت</BpTh>
-                    <BpTh>تاریخ</BpTh>
-                    <BpTh className="text-center">جزئیات</BpTh>
-                  </tr>
-                </thead>
-                <tbody>
-                  {orders.map((order, index) => (
-                    <AdminBulkTr key={order.id} id={order.id}>
-                      <BpTd className="w-10 text-center"><AdminBulkCheckbox id={order.id} label={`انتخاب سفارش ${order.orderNumber}`} /></BpTd>
-                      <BpTd className="bp-muted w-12">{(pagination.skip + index + 1).toLocaleString("fa-IR")}</BpTd>
-                      <BpTd className="font-bold"><span dir="ltr">{order.orderNumber}</span></BpTd>
-                      <BpTd className="max-w-[220px]">
-                        <span className="block truncate font-bold" title={order.customerName}>{order.customerName}</span>
-                        <span dir="ltr" className="bp-muted block truncate text-right text-[11px]">{order.contact}</span>
-                      </BpTd>
-                      <BpTd className="text-[var(--bp-text)]">{order.itemsCount.toLocaleString("fa-IR")}</BpTd>
-                      <BpTd className="font-bold text-[var(--bp-text)]">{formatMoney(order.total)}</BpTd>
-                      <BpTd><AdminOrderStatusSelect key={statusKey(order)} orderId={order.id} initialStatus={order.status} expiresAt={order.expiresAt} warningMinutes={warningMinutes} /></BpTd>
-                      <BpTd className="bp-muted whitespace-nowrap">{order.createdAt}</BpTd>
-                      <BpTd>
-                        <div className="flex items-center justify-center">
-                          <Link href={`/admin/orders/${order.id}`} aria-label={`مشاهده جزئیات سفارش ${order.orderNumber}`} title="مشاهده جزئیات" className="bp-btn bp-btn-ghost bp-btn-icon bp-btn-sm"><Eye size={15} strokeWidth={1.5} /></Link>
-                        </div>
-                      </BpTd>
-                    </AdminBulkTr>
-                  ))}
-                </tbody>
-              </BpTable>
-            </AdminBulkEditor>
+            <OrdersTable orders={orders} pagination={pagination} warningMinutes={warningMinutes} initialHiddenColumns={initialHiddenColumns} />
             <AdminPagination page={pagination.page} pageSize={pagination.pageSize} totalItems={pagination.totalItems} totalPages={pagination.totalPages} />
           </>
         )}

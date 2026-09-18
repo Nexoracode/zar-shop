@@ -1,8 +1,10 @@
 import type { Prisma } from "@generated/prisma/client";
+import { cookies } from "next/headers";
 import { OrderStatus } from "@generated/prisma/enums";
 import { db } from "@/lib/db";
 import { resolveAdminPagination } from "@/lib/admin-pagination";
 import { parseAdminPaginationRequest } from "@/lib/admin-pagination-server";
+import { columnVisibilityCookieName, parseHiddenColumnsCookie } from "@/lib/admin-column-visibility";
 import { requirePermission } from "@/modules/auth/session";
 import { getOrderSettings } from "@/modules/settings/order-settings";
 import { BlueprintOrdersView, serializeAdminOrderRow } from "@/components/admin/blueprint/orders-view";
@@ -39,7 +41,7 @@ export default async function OrdersPage({ searchParams }: { searchParams: Searc
       ],
     } : {}),
   };
-  const [filteredTotal, orderSettings] = await Promise.all([db.order.count({ where }), getOrderSettings()]);
+  const [filteredTotal, orderSettings, cookieStore] = await Promise.all([db.order.count({ where }), getOrderSettings(), cookies()]);
   const pagination = resolveAdminPagination(filteredTotal, requestedPage, pageSize);
   const orders = await db.order.findMany({
     where,
@@ -48,6 +50,7 @@ export default async function OrdersPage({ searchParams }: { searchParams: Searc
     skip: pagination.skip,
     take: pagination.pageSize,
   });
+  const initialHiddenColumns = parseHiddenColumnsCookie(cookieStore.get(columnVisibilityCookieName("orders"))?.value);
 
   return <BlueprintOrdersView
     orders={orders.map(serializeAdminOrderRow)}
@@ -57,5 +60,6 @@ export default async function OrdersPage({ searchParams }: { searchParams: Searc
     filteredProduct={filteredProduct}
     warningMinutes={orderSettings.orderWarningMinutes}
     pagination={pagination}
+    initialHiddenColumns={initialHiddenColumns}
   />;
 }

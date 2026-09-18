@@ -34,7 +34,7 @@ export function useBulkSelection() {
   return context;
 }
 
-export function AdminBulkEditor({ entity, entityLabel, ids, actions, children, desktopClassName = "hidden md:block", onCompleted, extraAction }: { entity: "products" | "categories" | "brands" | "orders" | "users" | "reviews" | "colors" | "optionTypes" | "promotions" | "contactMessages" | "paymentGateways" | "smsProviders" | "smsCampaigns" | "supportTicketCategories" | "tickets" | "shippingMethods" | "packagingBoxes" | "returns" | "articles" | "articleCategories"; entityLabel: string; ids: string[]; actions: AdminBulkAction[]; children: ReactNode; desktopClassName?: string; onCompleted?: (result: { action: string; ids: string[] }) => void; /** A caller-owned action beside the quick-edit control — e.g. products' own bulk-edit modal trigger. Reads the selection itself via `useBulkSelection`. */ extraAction?: ReactNode }) {
+export function AdminBulkEditor({ entity, entityLabel, ids, actions, children, desktopClassName = "hidden md:block", onCompleted, extraAction, beforeSelectAll }: { entity: "products" | "categories" | "brands" | "orders" | "users" | "reviews" | "colors" | "optionTypes" | "promotions" | "contactMessages" | "paymentGateways" | "smsProviders" | "smsCampaigns" | "supportTicketCategories" | "tickets" | "shippingMethods" | "packagingBoxes" | "returns" | "articles" | "articleCategories"; entityLabel: string; ids: string[]; actions: AdminBulkAction[]; children: ReactNode; desktopClassName?: string; onCompleted?: (result: { action: string; ids: string[] }) => void; /** A caller-owned action beside the quick-edit control — e.g. products' own bulk-edit modal trigger. Reads the selection itself via `useBulkSelection`. */ extraAction?: ReactNode; /** Rendered immediately before the select-all control — e.g. a per-table column-visibility toggle. */ beforeSelectAll?: ReactNode }) {
   const router = useRouter();
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [action, setAction] = useState("");
@@ -84,6 +84,7 @@ export function AdminBulkEditor({ entity, entityLabel, ids, actions, children, d
       <div className={desktopClassName}>
         <div className="flex flex-wrap items-center gap-3 border-b border-[var(--bp-divider)] px-4 py-3">
           <div className="me-auto flex items-center gap-4 text-[13px]">
+            {beforeSelectAll}
             <div className="flex items-center gap-2 border border-[var(--bp-divider)] px-3 py-1.5"><AdminBulkSelectAll /><span>انتخاب همه</span></div>
             <span className="bp-muted flex items-center gap-2">{loading ? <Loader2 size={16} className="animate-spin text-[var(--bp-accent)]" /> : <CheckSquare size={16} className="text-[var(--bp-accent)]" />}{loading ? "در حال اعمال تغییر..." : selected.size ? `${selected.size.toLocaleString("fa-IR")} ${entityLabel} انتخاب شده` : `برای ویرایش سریع، ${entityLabel} را انتخاب کنید`}</span>
           </div>
