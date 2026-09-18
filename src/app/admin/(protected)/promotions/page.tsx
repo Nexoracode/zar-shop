@@ -5,6 +5,7 @@ import { db } from "@/lib/db";
 import { serializePromotion } from "@/modules/promotions/admin";
 import { resolveAdminPagination } from "@/lib/admin-pagination";
 import { parseAdminPaginationRequest } from "@/lib/admin-pagination-server";
+import { readHiddenColumns } from "@/lib/admin-column-visibility-server";
 
 // @next-codemod-ignore Cache Components adoption: this segment temporarily allows blocking.
 // Remove this opt-out after verifying the segment passes validation without it.
@@ -25,7 +26,7 @@ export default async function AdminPromotionsPage({ searchParams }: Context) {
     ...(status ? { isActive: status === "active" } : {}),
     ...(type ? { type } : {}),
   };
-  const filteredTotal = await db.promotion.count({ where });
+  const [filteredTotal, initialHiddenColumns] = await Promise.all([db.promotion.count({ where }), readHiddenColumns("promotions")]);
   const pagination = resolveAdminPagination(filteredTotal, requestedPage, pageSize);
   const promotions = await db.promotion.findMany({
     where,
@@ -35,5 +36,5 @@ export default async function AdminPromotionsPage({ searchParams }: Context) {
     take: pagination.pageSize,
   });
   const items = promotions.map(serializePromotion);
-  return <BlueprintPromotionsView initialItems={items} query={query} status={status} type={type} pagination={pagination} />;
+  return <BlueprintPromotionsView initialItems={items} query={query} status={status} type={type} pagination={pagination} initialHiddenColumns={initialHiddenColumns} />;
 }

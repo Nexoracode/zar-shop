@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { ReturnStatus } from "@generated/prisma/enums";
 import { Eye } from "lucide-react";
 import { AdminBulkCheckbox, AdminBulkEditor, AdminBulkTr } from "@/components/admin-bulk-editor";
+import { AdminColumn, AdminColumnSettingsButton, AdminColumnVisibility } from "@/components/admin-column-visibility";
 import { AdminPagination } from "@/components/admin-pagination";
 import type { resolveAdminPagination } from "@/lib/admin-pagination";
 import { formatDate, formatMoney } from "@/lib/format";
@@ -49,7 +50,18 @@ export function serializeAdminReturnRow(row: {
   };
 }
 
-export function BlueprintReturnsView({ returns, pagination }: { returns: AdminReturnRow[]; pagination: ReturnType<typeof resolveAdminPagination> }) {
+const RETURNS_TABLE_ID = "returns";
+
+const returnColumns = [
+  { id: "orderNumber", label: "شماره سفارش" },
+  { id: "customer", label: "مشتری" },
+  { id: "items", label: "اقلام" },
+  { id: "reason", label: "دلیل مرجوعی" },
+  { id: "status", label: "وضعیت" },
+  { id: "createdAt", label: "تاریخ ثبت" },
+];
+
+export function BlueprintReturnsView({ returns, pagination, initialHiddenColumns }: { returns: AdminReturnRow[]; pagination: ReturnType<typeof resolveAdminPagination>; initialHiddenColumns: string[] }) {
   return (
     <>
       <div className="md:hidden">
@@ -76,47 +88,53 @@ export function BlueprintReturnsView({ returns, pagination }: { returns: AdminRe
         ))}
       </div>
 
-      <AdminBulkEditor entity="returns" entityLabel="مرجوعی" ids={returns.map((row) => row.id)} actions={bulkActions}>
-        <BpTable ariaLabel="فهرست درخواست‌های مرجوعی" minWidth={960}>
-          <thead>
-            <tr>
-              <BpTh className="w-10 text-center"><span className="sr-only">انتخاب</span></BpTh>
-              <BpTh className="w-12">ردیف</BpTh>
-              <BpTh>شماره سفارش</BpTh>
-              <BpTh>مشتری</BpTh>
-              <BpTh>اقلام</BpTh>
-              <BpTh>دلیل مرجوعی</BpTh>
-              <BpTh>وضعیت</BpTh>
-              <BpTh>تاریخ ثبت</BpTh>
-              <BpTh className="text-center">جزئیات</BpTh>
-            </tr>
-          </thead>
-          <tbody>
-            {returns.map((row, index) => (
-              <AdminBulkTr key={row.id} id={row.id}>
-                <BpTd className="w-10 text-center"><AdminBulkCheckbox id={row.id} label={`انتخاب مرجوعی سفارش ${row.orderNumber}`} /></BpTd>
-                <BpTd className="bp-muted w-12">{(pagination.skip + index + 1).toLocaleString("fa-IR")}</BpTd>
-                <BpTd className="font-bold">
-                  <Link href={`/admin/orders/${row.orderId}`} dir="ltr" className="text-[var(--bp-accent)] hover:underline">{row.orderNumber}</Link>
-                </BpTd>
-                <BpTd className="max-w-[200px]">
-                  <span className="block truncate font-bold" title={row.customerName}>{row.customerName}</span>
-                  <span dir="ltr" className="bp-muted block truncate text-right text-[11px]">{row.contact}</span>
-                </BpTd>
-                <BpTd className="text-[13px]">{row.itemCount.toLocaleString("fa-IR")}</BpTd>
-                <BpTd className="max-w-[280px]"><span className="bp-muted block truncate text-[12px]" title={row.reason}>{row.reason}</span></BpTd>
-                <BpTd><BpTag tone={returnStatusTones[row.status]} withDot>{returnStatusLabels[row.status]}</BpTag></BpTd>
-                <BpTd className="bp-muted whitespace-nowrap">{row.createdAt}</BpTd>
-                <BpTd>
-                  <div className="flex items-center justify-center">
-                    <Link href={`/admin/returns/${row.id}`} aria-label={`بررسی درخواست مرجوعی سفارش ${row.orderNumber}`} title="بررسی درخواست" className="bp-btn bp-btn-ghost bp-btn-icon bp-btn-sm"><Eye size={15} strokeWidth={1.5} /></Link>
-                  </div>
-                </BpTd>
-              </AdminBulkTr>
-            ))}
-          </tbody>
-        </BpTable>
-      </AdminBulkEditor>
+      <AdminColumnVisibility tableId={RETURNS_TABLE_ID} columns={returnColumns} initialHidden={initialHiddenColumns}>
+        <AdminBulkEditor entity="returns" entityLabel="مرجوعی" ids={returns.map((row) => row.id)} actions={bulkActions} beforeSelectAll={<AdminColumnSettingsButton />}>
+          <BpTable ariaLabel="فهرست درخواست‌های مرجوعی" minWidth={960}>
+            <thead>
+              <tr>
+                <BpTh className="w-10 text-center"><span className="sr-only">انتخاب</span></BpTh>
+                <BpTh className="w-12">ردیف</BpTh>
+                <AdminColumn id="orderNumber"><BpTh>شماره سفارش</BpTh></AdminColumn>
+                <AdminColumn id="customer"><BpTh>مشتری</BpTh></AdminColumn>
+                <AdminColumn id="items"><BpTh>اقلام</BpTh></AdminColumn>
+                <AdminColumn id="reason"><BpTh>دلیل مرجوعی</BpTh></AdminColumn>
+                <AdminColumn id="status"><BpTh>وضعیت</BpTh></AdminColumn>
+                <AdminColumn id="createdAt"><BpTh>تاریخ ثبت</BpTh></AdminColumn>
+                <BpTh className="text-center">جزئیات</BpTh>
+              </tr>
+            </thead>
+            <tbody>
+              {returns.map((row, index) => (
+                <AdminBulkTr key={row.id} id={row.id}>
+                  <BpTd className="w-10 text-center"><AdminBulkCheckbox id={row.id} label={`انتخاب مرجوعی سفارش ${row.orderNumber}`} /></BpTd>
+                  <BpTd className="bp-muted w-12">{(pagination.skip + index + 1).toLocaleString("fa-IR")}</BpTd>
+                  <AdminColumn id="orderNumber">
+                    <BpTd className="font-bold">
+                      <Link href={`/admin/orders/${row.orderId}`} dir="ltr" className="text-[var(--bp-accent)] hover:underline">{row.orderNumber}</Link>
+                    </BpTd>
+                  </AdminColumn>
+                  <AdminColumn id="customer">
+                    <BpTd className="max-w-[200px]">
+                      <span className="block truncate font-bold" title={row.customerName}>{row.customerName}</span>
+                      <span dir="ltr" className="bp-muted block truncate text-right text-[11px]">{row.contact}</span>
+                    </BpTd>
+                  </AdminColumn>
+                  <AdminColumn id="items"><BpTd className="text-[13px]">{row.itemCount.toLocaleString("fa-IR")}</BpTd></AdminColumn>
+                  <AdminColumn id="reason"><BpTd className="max-w-[280px]"><span className="bp-muted block truncate text-[12px]" title={row.reason}>{row.reason}</span></BpTd></AdminColumn>
+                  <AdminColumn id="status"><BpTd><BpTag tone={returnStatusTones[row.status]} withDot>{returnStatusLabels[row.status]}</BpTag></BpTd></AdminColumn>
+                  <AdminColumn id="createdAt"><BpTd className="bp-muted whitespace-nowrap">{row.createdAt}</BpTd></AdminColumn>
+                  <BpTd>
+                    <div className="flex items-center justify-center">
+                      <Link href={`/admin/returns/${row.id}`} aria-label={`بررسی درخواست مرجوعی سفارش ${row.orderNumber}`} title="بررسی درخواست" className="bp-btn bp-btn-ghost bp-btn-icon bp-btn-sm"><Eye size={15} strokeWidth={1.5} /></Link>
+                    </div>
+                  </BpTd>
+                </AdminBulkTr>
+              ))}
+            </tbody>
+          </BpTable>
+        </AdminBulkEditor>
+      </AdminColumnVisibility>
       <AdminPagination page={pagination.page} pageSize={pagination.pageSize} totalItems={pagination.totalItems} totalPages={pagination.totalPages} />
     </>
   );

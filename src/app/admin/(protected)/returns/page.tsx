@@ -5,6 +5,7 @@ import { AdminEmptyState, AdminPageHeader } from "@/components/admin-ui";
 import { AdminListFilters } from "@/components/admin-list-filters";
 import { resolveAdminPagination } from "@/lib/admin-pagination";
 import { parseAdminPaginationRequest } from "@/lib/admin-pagination-server";
+import { readHiddenColumns } from "@/lib/admin-column-visibility-server";
 import { db } from "@/lib/db";
 import { returnStatusLabels } from "@/modules/admin/labels";
 import { requirePermission } from "@/modules/auth/session";
@@ -43,9 +44,10 @@ export default async function AdminReturnsPage({ searchParams }: { searchParams:
     } : {}),
   };
 
-  const [filteredTotal, statusCounts] = await Promise.all([
+  const [filteredTotal, statusCounts, initialHiddenColumns] = await Promise.all([
     db.return.count({ where }),
     db.return.groupBy({ by: ["status"], _count: { _all: true } }),
+    readHiddenColumns("returns"),
   ]);
   const countFor = (target: ReturnStatus) => statusCounts.find((row) => row.status === target)?._count._all ?? 0;
   const pagination = resolveAdminPagination(filteredTotal, requestedPage, pageSize);
@@ -101,7 +103,7 @@ export default async function AdminReturnsPage({ searchParams }: { searchParams:
             description={query || status ? "فیلترها را تغییر دهید و دوباره جستجو کنید." : "هنوز درخواست مرجوعی ثبت نشده است."}
           />
         ) : (
-          <BlueprintReturnsView returns={returns.map(serializeAdminReturnRow)} pagination={pagination} />
+          <BlueprintReturnsView returns={returns.map(serializeAdminReturnRow)} pagination={pagination} initialHiddenColumns={initialHiddenColumns} />
         )}
       </section>
     </div>

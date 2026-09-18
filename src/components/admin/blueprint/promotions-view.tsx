@@ -9,6 +9,7 @@ import { AdminEmptyState, AdminPageHeader, AdminPrimaryLink, AdminStatusBadge } 
 import { AdminListFilters } from "@/components/admin-list-filters";
 import { AdminPagination } from "@/components/admin-pagination";
 import { AdminBulkCheckbox, AdminBulkEditor, AdminBulkTr } from "@/components/admin-bulk-editor";
+import { AdminColumn, AdminColumnSettingsButton, AdminColumnVisibility } from "@/components/admin-column-visibility";
 import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
 import { requestErrorMessage, requestJson } from "@/lib/api-request";
 import type { PromotionItem } from "@/modules/promotions/admin";
@@ -39,9 +40,19 @@ type Props = {
   status?: "active" | "inactive";
   type?: PromotionItem["type"];
   pagination: { page: number; pageSize: number; totalItems: number; totalPages: number };
+  initialHiddenColumns: string[];
 };
 
-export function BlueprintPromotionsView({ initialItems, query, status, type, pagination }: Props) {
+const PROMOTIONS_TABLE_ID = "promotions";
+
+const promotionColumns = [
+  { id: "titleAndType", label: "عنوان و نوع" },
+  { id: "validity", label: "بازهٔ اعتبار" },
+  { id: "usage", label: "مصرف" },
+  { id: "status", label: "وضعیت" },
+];
+
+export function BlueprintPromotionsView({ initialItems, query, status, type, pagination, initialHiddenColumns }: Props) {
   const router = useRouter();
   const [items, setItems] = useState(initialItems);
   const [prev, setPrev] = useState(initialItems);
@@ -136,56 +147,63 @@ export function BlueprintPromotionsView({ initialItems, query, status, type, pag
               ))}
             </div>
 
-            <AdminBulkEditor
-              entity="promotions"
-              entityLabel="پروموشن"
-              ids={items.map((item) => item.id)}
-              actions={[{ value: "active:on", label: "فعال‌کردن پروموشن‌ها" }, { value: "active:off", label: "غیرفعال‌کردن پروموشن‌ها" }]}
-              onCompleted={({ action, ids }) => { const nextActive = action === "active:on"; setItems((current) => current.map((item) => (ids.includes(item.id) ? { ...item, isActive: nextActive } : item))); }}
-            >
-              <BpTable ariaLabel="فهرست پروموشن‌ها" minWidth={880}>
-                <thead>
-                  <tr>
-                    <BpTh className="w-10 text-center"><span className="sr-only">انتخاب</span></BpTh>
-                    <BpTh>عنوان و نوع</BpTh>
-                    <BpTh>بازهٔ اعتبار</BpTh>
-                    <BpTh>مصرف</BpTh>
-                    <BpTh>وضعیت</BpTh>
-                    <BpTh className="text-center">عملیات</BpTh>
-                  </tr>
-                </thead>
-                <tbody>
-                  {items.map((item) => (
-                    <AdminBulkTr key={item.id} id={item.id}>
-                      <BpTd className="w-10 text-center"><AdminBulkCheckbox id={item.id} label={`انتخاب پروموشن ${item.title}`} /></BpTd>
-                      <BpTd className="max-w-[260px]">
-                        <div className="flex min-w-0 items-center gap-2">
-                          <span className="shrink-0 text-[var(--bp-muted)]">{typeMeta[item.type].icon}</span>
-                          <div className="min-w-0">
-                            <span className="block truncate font-bold" title={item.title}>{item.title}</span>
-                            <span className="bp-muted block truncate text-[11px]">{typeMeta[item.type].label}{item.code ? <span dir="ltr" className="ms-1.5 font-mono">{item.code}</span> : null}</span>
-                            {scopeLabel(item) ? <BpTag tone="accent" className="mt-1">{scopeLabel(item)}</BpTag> : null}
+            <AdminColumnVisibility tableId={PROMOTIONS_TABLE_ID} columns={promotionColumns} initialHidden={initialHiddenColumns}>
+              <AdminBulkEditor
+                entity="promotions"
+                entityLabel="پروموشن"
+                ids={items.map((item) => item.id)}
+                actions={[{ value: "active:on", label: "فعال‌کردن پروموشن‌ها" }, { value: "active:off", label: "غیرفعال‌کردن پروموشن‌ها" }]}
+                onCompleted={({ action, ids }) => { const nextActive = action === "active:on"; setItems((current) => current.map((item) => (ids.includes(item.id) ? { ...item, isActive: nextActive } : item))); }}
+                beforeSelectAll={<AdminColumnSettingsButton />}
+              >
+                <BpTable ariaLabel="فهرست پروموشن‌ها" minWidth={880}>
+                  <thead>
+                    <tr>
+                      <BpTh className="w-10 text-center"><span className="sr-only">انتخاب</span></BpTh>
+                      <AdminColumn id="titleAndType"><BpTh>عنوان و نوع</BpTh></AdminColumn>
+                      <AdminColumn id="validity"><BpTh>بازهٔ اعتبار</BpTh></AdminColumn>
+                      <AdminColumn id="usage"><BpTh>مصرف</BpTh></AdminColumn>
+                      <AdminColumn id="status"><BpTh>وضعیت</BpTh></AdminColumn>
+                      <BpTh className="text-center">عملیات</BpTh>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {items.map((item) => (
+                      <AdminBulkTr key={item.id} id={item.id}>
+                        <BpTd className="w-10 text-center"><AdminBulkCheckbox id={item.id} label={`انتخاب پروموشن ${item.title}`} /></BpTd>
+                        <AdminColumn id="titleAndType">
+                          <BpTd className="max-w-[260px]">
+                            <div className="flex min-w-0 items-center gap-2">
+                              <span className="shrink-0 text-[var(--bp-muted)]">{typeMeta[item.type].icon}</span>
+                              <div className="min-w-0">
+                                <span className="block truncate font-bold" title={item.title}>{item.title}</span>
+                                <span className="bp-muted block truncate text-[11px]">{typeMeta[item.type].label}{item.code ? <span dir="ltr" className="ms-1.5 font-mono">{item.code}</span> : null}</span>
+                                {scopeLabel(item) ? <BpTag tone="accent" className="mt-1">{scopeLabel(item)}</BpTag> : null}
+                              </div>
+                            </div>
+                          </BpTd>
+                        </AdminColumn>
+                        <AdminColumn id="validity"><BpTd className="bp-muted whitespace-nowrap text-[12px]">{formatPersianDateTime(item.startsAt)} تا {formatPersianDateTime(item.endsAt)}</BpTd></AdminColumn>
+                        <AdminColumn id="usage">
+                          <BpTd className="text-[12px]">
+                            {item.usageCount.toLocaleString("fa-IR")} استفاده
+                            {item.rewardCount ? <span className="bp-muted block text-[10px]">{item.rewardCount.toLocaleString("fa-IR")} پاداش صادرشده</span> : null}
+                          </BpTd>
+                        </AdminColumn>
+                        <AdminColumn id="status"><BpTd><AdminStatusBadge tone={item.isActive ? "success" : "neutral"}>{item.isActive ? "فعال" : "غیرفعال"}</AdminStatusBadge></BpTd></AdminColumn>
+                        <BpTd>
+                          <div className="flex items-center justify-center gap-1">
+                            <BpButton isIconOnly size="sm" variant="ghost" isPending={togglingId === item.id} title={item.isActive ? "غیرفعال‌کردن" : "فعال‌کردن"} aria-label={item.isActive ? `غیرفعال‌کردن ${item.title}` : `فعال‌کردن ${item.title}`} onClick={() => void toggle(item)}>{item.isActive ? <ToggleRight size={15} strokeWidth={1.5} className="text-[var(--bp-success)]" /> : <ToggleLeft size={15} strokeWidth={1.5} className="bp-muted" />}</BpButton>
+                            <Link href={`/admin/promotions/${item.id}/edit`} aria-label={`ویرایش ${item.title}`} title="ویرایش" className="bp-btn bp-btn-ghost bp-btn-icon bp-btn-sm"><SquarePen size={15} strokeWidth={1.5} /></Link>
+                            <BpButton isIconOnly size="sm" variant="ghost" className="bp-btn-danger-icon" title="حذف" aria-label={`حذف ${item.title}`} onClick={() => { setDeleteError(""); setDeleting(item); }}><Trash2 size={15} strokeWidth={1.5} /></BpButton>
                           </div>
-                        </div>
-                      </BpTd>
-                      <BpTd className="bp-muted whitespace-nowrap text-[12px]">{formatPersianDateTime(item.startsAt)} تا {formatPersianDateTime(item.endsAt)}</BpTd>
-                      <BpTd className="text-[12px]">
-                        {item.usageCount.toLocaleString("fa-IR")} استفاده
-                        {item.rewardCount ? <span className="bp-muted block text-[10px]">{item.rewardCount.toLocaleString("fa-IR")} پاداش صادرشده</span> : null}
-                      </BpTd>
-                      <BpTd><AdminStatusBadge tone={item.isActive ? "success" : "neutral"}>{item.isActive ? "فعال" : "غیرفعال"}</AdminStatusBadge></BpTd>
-                      <BpTd>
-                        <div className="flex items-center justify-center gap-1">
-                          <BpButton isIconOnly size="sm" variant="ghost" isPending={togglingId === item.id} title={item.isActive ? "غیرفعال‌کردن" : "فعال‌کردن"} aria-label={item.isActive ? `غیرفعال‌کردن ${item.title}` : `فعال‌کردن ${item.title}`} onClick={() => void toggle(item)}>{item.isActive ? <ToggleRight size={15} strokeWidth={1.5} className="text-[var(--bp-success)]" /> : <ToggleLeft size={15} strokeWidth={1.5} className="bp-muted" />}</BpButton>
-                          <Link href={`/admin/promotions/${item.id}/edit`} aria-label={`ویرایش ${item.title}`} title="ویرایش" className="bp-btn bp-btn-ghost bp-btn-icon bp-btn-sm"><SquarePen size={15} strokeWidth={1.5} /></Link>
-                          <BpButton isIconOnly size="sm" variant="ghost" className="bp-btn-danger-icon" title="حذف" aria-label={`حذف ${item.title}`} onClick={() => { setDeleteError(""); setDeleting(item); }}><Trash2 size={15} strokeWidth={1.5} /></BpButton>
-                        </div>
-                      </BpTd>
-                    </AdminBulkTr>
-                  ))}
-                </tbody>
-              </BpTable>
-            </AdminBulkEditor>
+                        </BpTd>
+                      </AdminBulkTr>
+                    ))}
+                  </tbody>
+                </BpTable>
+              </AdminBulkEditor>
+            </AdminColumnVisibility>
             <AdminPagination page={pagination.page} pageSize={pagination.pageSize} totalItems={pagination.totalItems} totalPages={pagination.totalPages} />
           </>
         )}
