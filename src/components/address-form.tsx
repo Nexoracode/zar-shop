@@ -22,12 +22,7 @@ export function AddressForm({ initial, user, onSaved, onCancel, onStepChange }: 
   const formRef = useRef<HTMLFormElement>(null);
   const [step, setStep] = useState<AddressFormStep>(2);
   const selfName = `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim();
-  // "تحویل به خودم" reads the name from the account profile, which guest accounts (and any real
-  // account that skipped the optional name fields at registration) never have — guests in
-  // particular have no way to fill it in later, since profile editing is blocked for them. When
-  // there's no name to show, default to "تحویل به شخص دیگر" so the same form's own name/phone
-  // fields cover it instead of the user hitting a "complete your account" dead end.
-  const [recipientType, setRecipientType] = useState<"SELF" | "OTHER">(initial?.recipientType ?? (selfName ? "SELF" : "OTHER"));
+  const [recipientType, setRecipientType] = useState<"SELF" | "OTHER">(initial?.recipientType ?? "SELF");
   const [provinceId, setProvinceId] = useState(initial?.provinceId ?? "");
   const [cityId, setCityId] = useState(initial?.cityId ?? "");
   const [provinces, setProvinces] = useState<Option[]>([]);
@@ -80,7 +75,11 @@ export function AddressForm({ initial, user, onSaved, onCancel, onStepChange }: 
     setError("");
     const form = new FormData(event.currentTarget);
     const validationErrors = validateAddressForm(readAddressValues(form));
-    const nextRecipientErrors = validateAddressRecipient({ recipientType, recipient: recipientType === "SELF" ? selfName : String(form.get("recipient") ?? ""), phone: recipientType === "SELF" ? user.phone ?? "" : String(form.get("phone") ?? "") });
+    // When the profile already has a name, "تحویل به خودم" needs no input of its own; otherwise
+    // it reuses the same `recipient` field the "OTHER" branch renders, just prefilled empty
+    // instead of with someone else's name.
+    const selfRecipient = selfName || String(form.get("recipient") ?? "");
+    const nextRecipientErrors = validateAddressRecipient({ recipientType, recipient: recipientType === "SELF" ? selfRecipient : String(form.get("recipient") ?? ""), phone: recipientType === "SELF" ? user.phone ?? "" : String(form.get("phone") ?? "") });
     setFieldErrors(validationErrors);
     setRecipientErrors(nextRecipientErrors);
     if (Object.keys(validationErrors).length || Object.keys(nextRecipientErrors).length) return;
@@ -88,7 +87,7 @@ export function AddressForm({ initial, user, onSaved, onCancel, onStepChange }: 
     const payload = {
       title: form.get("title"),
       recipientType,
-      recipient: recipientType === "SELF" ? selfName : form.get("recipient"),
+      recipient: recipientType === "SELF" ? selfRecipient : form.get("recipient"),
       phone: recipientType === "SELF" ? user.phone ?? "" : form.get("phone"),
       provinceId,
       cityId,
@@ -151,7 +150,18 @@ export function AddressForm({ initial, user, onSaved, onCancel, onStepChange }: 
         <TextField name="title" label="نام آدرس" required defaultValue={initial?.title ?? ""} maxLength={addressFieldLimits.title} placeholder="مثال: خانه، محل کار و ..." error={fieldErrors.title} onChange={() => clearFieldError("title")} />
         <div><p className="mb-3 mt-0 text-xs font-medium text-slate-700">سفارش‌های این آدرس را چه کسی تحویل می‌گیرد؟</p><div className="grid grid-cols-2 gap-3"><Button type="button" variant="ghost" aria-pressed={recipientType === "SELF"} onPress={() => { setRecipientType("SELF"); setRecipientErrors({}); }} className="min-h-11 justify-start gap-3 bg-transparent px-0 text-xs font-normal hover:bg-transparent data-[hovered=true]:bg-transparent"><span className={`grid size-5 place-items-center rounded-full border-2 ${recipientType === "SELF" ? "border-[var(--brand-primary)]" : "border-slate-400"}`}>{recipientType === "SELF" && <span className="size-2.5 rounded-full bg-[var(--brand-primary)]" />}</span>تحویل به خودم</Button><Button type="button" variant="ghost" aria-pressed={recipientType === "OTHER"} onPress={() => { setRecipientType("OTHER"); setRecipientErrors({}); }} className="min-h-11 justify-start gap-3 bg-transparent px-0 text-xs font-normal hover:bg-transparent data-[hovered=true]:bg-transparent"><span className={`grid size-5 place-items-center rounded-full border-2 ${recipientType === "OTHER" ? "border-[var(--brand-primary)]" : "border-slate-400"}`}>{recipientType === "OTHER" && <span className="size-2.5 rounded-full bg-[var(--brand-primary)]" />}</span>تحویل به شخص دیگر</Button></div></div>
         {recipientType === "SELF" ? (
-          <div className="rounded-lg bg-[var(--surface-secondary)] px-4 py-3 text-xs leading-6 text-[var(--muted)]">گیرنده: <b className="text-[var(--foreground)]">{selfName || "اطلاعات پروفایل ناقص"}</b>{user.phone && <span className="mr-2" dir="ltr">{user.phone}</span>}{(recipientErrors.recipient || recipientErrors.phone) && <span role="alert" className="mt-1 block text-[var(--danger)]">{recipientErrors.recipient ?? recipientErrors.phone}</span>}</div>
+          selfName ? (
+            <div className="rounded-lg bg-[var(--surface-secondary)] px-4 py-3 text-xs leading-6 text-[var(--muted)]">گیرنده: <b className="text-[var(--foreground)]">{selfName}</b>{user.phone && <span className="mr-2" dir="ltr">{user.phone}</span>}</div>
+          ) : (
+            <TextField
+              name="recipient" label="نام و نام خانوادگی" required
+              defaultValue={initial?.recipientType === "SELF" ? initial.recipient : ""}
+              maxLength={addressFieldLimits.recipient}
+              error={recipientErrors.recipient}
+              hint={user.phone ? <>شماره تماس: <span dir="ltr">{user.phone}</span></> : undefined}
+              onChange={() => clearRecipientError("recipient")}
+            />
+          )
         ) : (
           <div className="grid items-start gap-4 sm:grid-cols-2">
             <TextField name="recipient" label="نام و نام خانوادگی" required defaultValue={initial?.recipientType === "OTHER" ? initial.recipient : ""} maxLength={addressFieldLimits.recipient} error={recipientErrors.recipient} onChange={() => clearRecipientError("recipient")} />
