@@ -7,6 +7,7 @@ import Link from "next/link";
 import { AlertTriangle, ExternalLink, MessageSquareText, Power, ShieldCheck, SquarePen, Trash2 } from "lucide-react";
 import { AdminBulkCheckbox, AdminBulkEditor } from "@/components/admin-bulk-editor";
 import { AdminColumn, AdminColumnSettingsButton, AdminColumnVisibility } from "@/components/admin-column-visibility";
+import { AdminGenericBulkEditButton } from "@/components/admin-generic-bulk-edit";
 import { AdminEmptyState, AdminPanel } from "@/components/admin-ui";
 import { smsProviders, type SmsProviderId } from "@/modules/communications/sms-providers";
 import type { PublicSmsProviderConfig } from "@/modules/communications/sms-config";
@@ -33,6 +34,14 @@ const smsProviderColumns = [
 export function BlueprintSmsProviderManager({ mode, initialConfigs, smsEnabled, onSaved, editingProvider, initialSenderNumber, initialHiddenColumns = [] }: { mode: "list" | "form"; initialConfigs: PublicSmsProviderConfig[]; smsEnabled?: boolean; onSaved?: () => void; /** Set when editing an already-configured provider: locks the provider picker and prefills the sender number. */ editingProvider?: SmsProviderId; initialSenderNumber?: string; initialHiddenColumns?: string[] }) {
   const router = useRouter();
   const [configs, setConfigs] = useState(initialConfigs);
+  // The server list is the source of truth once a mutation settles and `router.refresh()` brings
+  // a fresh copy (e.g. after the bulk-edit modal's own delete); this render-time sync (not an
+  // effect) picks it up without an extra render pass.
+  const [prevInitialConfigs, setPrevInitialConfigs] = useState(initialConfigs);
+  if (initialConfigs !== prevInitialConfigs) {
+    setPrevInitialConfigs(initialConfigs);
+    setConfigs(initialConfigs);
+  }
   const [selectedId, setSelectedId] = useState<SmsProviderId>(editingProvider ?? "FARAZ_SMS");
   const [apiKey, setApiKey] = useState("");
   const [username, setUsername] = useState("");
@@ -120,9 +129,9 @@ export function BlueprintSmsProviderManager({ mode, initialConfigs, smsEnabled, 
                 entity="smsProviders"
                 entityLabel="ارائه‌دهنده"
                 ids={configs.map((item) => item.id)}
-                actions={[{ value: "delete", label: "حذف ارائه‌دهندگان انتخاب‌شده", confirmation: { title: "حذف گروهی ارائه‌دهندگان پیامک", description: "اعتبارنامه‌های رمزنگاری‌شده و تنظیمات اتصال ارائه‌دهندگان انتخاب‌شده حذف خواهند شد.", confirmLabel: "حذف ارائه‌دهندگان" } }]}
-                onCompleted={({ ids }) => setConfigs((current) => current.filter((item) => !ids.includes(item.id)))}
+                actions={[]}
                 beforeSelectAll={<AdminColumnSettingsButton />}
+                extraAction={<AdminGenericBulkEditButton entity="smsProviders" entityLabel="ارائه‌دهنده" changeTypes={[{ value: "delete", label: "حذف ارائه‌دهندگان انتخاب‌شده", confirmation: { title: "حذف گروهی ارائه‌دهندگان پیامک", description: "اعتبارنامه‌های رمزنگاری‌شده و تنظیمات اتصال ارائه‌دهندگان انتخاب‌شده حذف خواهند شد.", confirmLabel: "حذف ارائه‌دهندگان" } }]} />}
               >
                 <BpTable ariaLabel="ارائه‌دهندگان پیامک" minWidth={780}>
                   <thead>

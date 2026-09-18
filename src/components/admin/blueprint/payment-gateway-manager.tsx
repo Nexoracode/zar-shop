@@ -6,6 +6,7 @@ import { toast } from "@heroui/react";
 import { Check, CheckCircle2, Copy, CreditCard, ExternalLink, Plus, ShieldCheck, Trash2 } from "lucide-react";
 import { AdminBulkCheckbox, AdminBulkEditor } from "@/components/admin-bulk-editor";
 import { AdminColumn, AdminColumnSettingsButton, AdminColumnVisibility } from "@/components/admin-column-visibility";
+import { AdminGenericBulkEditButton } from "@/components/admin-generic-bulk-edit";
 import { AdminEmptyState, AdminPanel } from "@/components/admin-ui";
 import { gatewayProviders, type GatewayProviderId } from "@/modules/payments/gateway-providers";
 import type { PublicGatewayConfig } from "@/modules/payments/gateway-config";
@@ -23,6 +24,14 @@ const paymentGatewayColumns = [
 export function BlueprintPaymentGatewayManager({ mode, initialConfigs, appUrl, onSaved, initialHiddenColumns = [] }: { mode: "list" | "form"; initialConfigs: PublicGatewayConfig[]; appUrl?: string; onSaved?: () => void; initialHiddenColumns?: string[] }) {
   const router = useRouter();
   const [configs, setConfigs] = useState(initialConfigs);
+  // The server list is the source of truth once a mutation settles and `router.refresh()` brings
+  // a fresh copy (e.g. after the bulk-edit modal's own delete); this render-time sync (not an
+  // effect) picks it up without an extra render pass.
+  const [prevInitialConfigs, setPrevInitialConfigs] = useState(initialConfigs);
+  if (initialConfigs !== prevInitialConfigs) {
+    setPrevInitialConfigs(initialConfigs);
+    setConfigs(initialConfigs);
+  }
   const [selectedId, setSelectedId] = useState<GatewayProviderId>("ZARINPAL");
   const [credential, setCredential] = useState("");
   const [isSandbox, setIsSandbox] = useState(false);
@@ -109,9 +118,9 @@ export function BlueprintPaymentGatewayManager({ mode, initialConfigs, appUrl, o
                 entity="paymentGateways"
                 entityLabel="درگاه"
                 ids={configs.map((config) => config.id)}
-                actions={[{ value: "delete", label: "حذف درگاه‌های انتخاب‌شده", confirmation: { title: "حذف گروهی درگاه‌ها", description: "اطلاعات اتصال رمزنگاری‌شده درگاه‌های انتخاب‌شده حذف می‌شود و پرداخت از طریق آن‌ها دیگر ممکن نخواهد بود.", confirmLabel: "حذف درگاه‌ها" } }]}
-                onCompleted={({ ids }) => setConfigs((current) => current.filter((item) => !ids.includes(item.id)))}
+                actions={[]}
                 beforeSelectAll={<AdminColumnSettingsButton />}
+                extraAction={<AdminGenericBulkEditButton entity="paymentGateways" entityLabel="درگاه" changeTypes={[{ value: "delete", label: "حذف درگاه‌های انتخاب‌شده", confirmation: { title: "حذف گروهی درگاه‌ها", description: "اطلاعات اتصال رمزنگاری‌شده درگاه‌های انتخاب‌شده حذف می‌شود و پرداخت از طریق آن‌ها دیگر ممکن نخواهد بود.", confirmLabel: "حذف درگاه‌ها" } }]} />}
               >
                 <BpTable ariaLabel="فهرست درگاه‌های پرداخت" minWidth={680}>
                   <thead>
