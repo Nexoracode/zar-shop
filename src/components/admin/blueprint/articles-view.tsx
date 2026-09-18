@@ -5,6 +5,7 @@ import { AdminEmptyState, AdminPageHeader, AdminPrimaryLink } from "@/components
 import { AdminListFilters } from "@/components/admin-list-filters";
 import { AdminPagination } from "@/components/admin-pagination";
 import { AdminBulkCheckbox, AdminBulkEditor, AdminBulkTr } from "@/components/admin-bulk-editor";
+import { AdminColumn, AdminColumnSettingsButton, AdminColumnVisibility } from "@/components/admin-column-visibility";
 import { articleStatusLabels, articleStatusTones } from "@/modules/admin/labels";
 import { formatDate } from "@/lib/format";
 import { ArticleDeleteButton } from "./article-delete-button";
@@ -28,7 +29,17 @@ type Props = {
   counts: { total: number; published: number; drafts: number };
   filters: { query: string; status: string; category: string };
   pagination: { page: number; pageSize: number; totalItems: number; totalPages: number; skip: number };
+  initialHiddenColumns: string[];
 };
+
+const ARTICLES_TABLE_ID = "articles";
+
+const articleColumns = [
+  { id: "article", label: "مقاله" },
+  { id: "category", label: "دسته" },
+  { id: "status", label: "وضعیت" },
+  { id: "publishedAt", label: "تاریخ انتشار" },
+];
 
 function Panel({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return <section className={`bp-frame relative ${className}`}>{children}</section>;
@@ -55,7 +66,7 @@ function RowActions({ article }: { article: ArticleRow }) {
 
 const dateLabel = (article: ArticleRow) => (article.publishedAt ? formatDate(article.publishedAt) : "—");
 
-export function BlueprintArticlesView({ articles, categories, counts, filters, pagination }: Props) {
+export function BlueprintArticlesView({ articles, categories, counts, filters, pagination, initialHiddenColumns }: Props) {
   const bulkActions = [
     { value: "status:PUBLISHED", label: "انتشار مقالات" },
     { value: "status:DRAFT", label: "بازگردانی به پیش‌نویس" },
@@ -108,42 +119,46 @@ export function BlueprintArticlesView({ articles, categories, counts, filters, p
               ))}
             </div>
 
-            <AdminBulkEditor entity="articles" entityLabel="مقاله" ids={articles.map((article) => article.id)} actions={bulkActions}>
-              <BpTable ariaLabel="فهرست مقالات" minWidth={720}>
-                <thead>
-                  <tr>
-                    <BpTh className="w-10 text-center"><span className="sr-only">انتخاب</span></BpTh>
-                    <BpTh className="w-10">#</BpTh>
-                    <BpTh>مقاله</BpTh>
-                    <BpTh>دسته</BpTh>
-                    <BpTh>وضعیت</BpTh>
-                    <BpTh>تاریخ انتشار</BpTh>
-                    <BpTh className="text-center">عملیات</BpTh>
-                  </tr>
-                </thead>
-                <tbody>
-                  {articles.map((article, index) => (
-                    <AdminBulkTr key={article.id} id={article.id}>
-                      <BpTd className="w-10 text-center"><AdminBulkCheckbox id={article.id} label={`انتخاب مقاله ${article.title}`} /></BpTd>
-                      <BpTd className="bp-muted w-10">{(pagination.skip + index + 1).toLocaleString("fa-IR")}</BpTd>
-                      <BpTd className="max-w-[280px]">
-                        <div className="flex min-w-0 items-center gap-2.5">
-                          <Cover article={article} />
-                          <div className="min-w-0">
-                            <strong className="block truncate text-[13px]">{article.title}</strong>
-                            <span dir="ltr" className="bp-muted block truncate text-right font-mono text-[11px]">{article.slug}</span>
-                          </div>
-                        </div>
-                      </BpTd>
-                      <BpTd className="bp-muted max-w-[160px] truncate">{article.category.name}</BpTd>
-                      <BpTd><BpTag tone={articleStatusTones[article.status]} size="md" withDot>{articleStatusLabels[article.status]}</BpTag></BpTd>
-                      <BpTd className="bp-muted">{dateLabel(article)}</BpTd>
-                      <BpTd><RowActions article={article} /></BpTd>
-                    </AdminBulkTr>
-                  ))}
-                </tbody>
-              </BpTable>
-            </AdminBulkEditor>
+            <AdminColumnVisibility tableId={ARTICLES_TABLE_ID} columns={articleColumns} initialHidden={initialHiddenColumns}>
+              <AdminBulkEditor entity="articles" entityLabel="مقاله" ids={articles.map((article) => article.id)} actions={bulkActions} beforeSelectAll={<AdminColumnSettingsButton />}>
+                <BpTable ariaLabel="فهرست مقالات" minWidth={720}>
+                  <thead>
+                    <tr>
+                      <BpTh className="w-10 text-center"><span className="sr-only">انتخاب</span></BpTh>
+                      <BpTh className="w-10">#</BpTh>
+                      <AdminColumn id="article"><BpTh>مقاله</BpTh></AdminColumn>
+                      <AdminColumn id="category"><BpTh>دسته</BpTh></AdminColumn>
+                      <AdminColumn id="status"><BpTh>وضعیت</BpTh></AdminColumn>
+                      <AdminColumn id="publishedAt"><BpTh>تاریخ انتشار</BpTh></AdminColumn>
+                      <BpTh className="text-center">عملیات</BpTh>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {articles.map((article, index) => (
+                      <AdminBulkTr key={article.id} id={article.id}>
+                        <BpTd className="w-10 text-center"><AdminBulkCheckbox id={article.id} label={`انتخاب مقاله ${article.title}`} /></BpTd>
+                        <BpTd className="bp-muted w-10">{(pagination.skip + index + 1).toLocaleString("fa-IR")}</BpTd>
+                        <AdminColumn id="article">
+                          <BpTd className="max-w-[280px]">
+                            <div className="flex min-w-0 items-center gap-2.5">
+                              <Cover article={article} />
+                              <div className="min-w-0">
+                                <strong className="block truncate text-[13px]">{article.title}</strong>
+                                <span dir="ltr" className="bp-muted block truncate text-right font-mono text-[11px]">{article.slug}</span>
+                              </div>
+                            </div>
+                          </BpTd>
+                        </AdminColumn>
+                        <AdminColumn id="category"><BpTd className="bp-muted max-w-[160px] truncate">{article.category.name}</BpTd></AdminColumn>
+                        <AdminColumn id="status"><BpTd><BpTag tone={articleStatusTones[article.status]} size="md" withDot>{articleStatusLabels[article.status]}</BpTag></BpTd></AdminColumn>
+                        <AdminColumn id="publishedAt"><BpTd className="bp-muted">{dateLabel(article)}</BpTd></AdminColumn>
+                        <BpTd><RowActions article={article} /></BpTd>
+                      </AdminBulkTr>
+                    ))}
+                  </tbody>
+                </BpTable>
+              </AdminBulkEditor>
+            </AdminColumnVisibility>
             <AdminPagination page={pagination.page} pageSize={pagination.pageSize} totalItems={pagination.totalItems} totalPages={pagination.totalPages} />
           </>
         ) : (

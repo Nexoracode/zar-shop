@@ -2,6 +2,7 @@ import type { Prisma, ArticleStatus } from "@generated/prisma/client";
 import { db } from "@/lib/db";
 import { resolveAdminPagination } from "@/lib/admin-pagination";
 import { parseAdminPaginationRequest } from "@/lib/admin-pagination-server";
+import { readHiddenColumns } from "@/lib/admin-column-visibility-server";
 import { requirePermission } from "@/modules/auth/session";
 import { BlueprintArticlesView } from "@/components/admin/blueprint/articles-view";
 
@@ -30,7 +31,7 @@ export default async function AdminArticlesPage({ searchParams }: Context) {
 
   const filteredTotal = await db.article.count({ where });
   const pagination = resolveAdminPagination(filteredTotal, requestedPage, pageSize);
-  const [articles, categories, total, published, drafts] = await Promise.all([
+  const [articles, categories, total, published, drafts, initialHiddenColumns] = await Promise.all([
     db.article.findMany({
       where,
       skip: pagination.skip,
@@ -46,6 +47,7 @@ export default async function AdminArticlesPage({ searchParams }: Context) {
     db.article.count(),
     db.article.count({ where: { status: "PUBLISHED" } }),
     db.article.count({ where: { status: "DRAFT" } }),
+    readHiddenColumns("articles"),
   ]);
 
   return (
@@ -59,6 +61,7 @@ export default async function AdminArticlesPage({ searchParams }: Context) {
       counts={{ total, published, drafts }}
       filters={{ query, status: status ?? "", category: categoryId ?? "" }}
       pagination={pagination}
+      initialHiddenColumns={initialHiddenColumns}
     />
   );
 }
