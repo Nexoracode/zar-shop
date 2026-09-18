@@ -8,6 +8,7 @@ import { toast } from "@heroui/react";
 import { FolderTree, GripVertical, Images, SlidersHorizontal, SquarePen, Star, Trash2 } from "lucide-react";
 import { AdminEmptyState, AdminPageHeader, AdminStatusBadge } from "@/components/admin-ui";
 import { AdminBulkCheckbox, AdminBulkEditor, AdminBulkTr } from "@/components/admin-bulk-editor";
+import { AdminColumn, AdminColumnSettingsButton, AdminColumnVisibility } from "@/components/admin-column-visibility";
 import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
 import { MediaPickerDialog } from "@/components/media-picker-dialog";
 import type { MediaChoice } from "@/components/media-library";
@@ -51,7 +52,17 @@ function CategoryThumb({ image, name }: { image: CategoryRow["image"]; name: str
   return <span className="relative grid h-9 w-9 shrink-0 place-items-center overflow-hidden border border-[var(--bp-divider)] bg-white">{image ? <Image src={image.url} alt={image.alt ?? name} fill sizes="36px" className="object-cover" /> : <FolderTree size={15} className="text-[var(--bp-muted)]" />}</span>;
 }
 
-export function BlueprintCategoriesView({ categories }: { categories: CategoryRow[] }) {
+const CATEGORIES_TABLE_ID = "categories";
+
+const categoryColumns = [
+  { id: "category", label: "دسته‌بندی" },
+  { id: "parent", label: "والد" },
+  { id: "products", label: "محصولات" },
+  { id: "children", label: "زیردسته‌ها" },
+  { id: "status", label: "وضعیت" },
+];
+
+export function BlueprintCategoriesView({ categories, initialHiddenColumns }: { categories: CategoryRow[]; initialHiddenColumns: string[] }) {
   const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
   const [items, setItems] = useState(categories);
@@ -338,63 +349,67 @@ export function BlueprintCategoriesView({ categories }: { categories: CategoryRo
                 })}
               </div>
 
-              <AdminBulkEditor entity="categories" entityLabel="دسته‌بندی" ids={visible.map((category) => category.id)} actions={[{ value: "featured:on", label: "نمایش در صفحه اصلی" }, { value: "featured:off", label: "حذف از صفحه اصلی" }, { value: "active:on", label: "فعال‌کردن دسته‌بندی‌ها" }, { value: "active:off", label: "غیرفعال‌کردن دسته‌بندی‌ها" }]}>
-                <p className="m-0 flex items-center gap-1.5 border-b border-[var(--bp-divider)] px-4 py-2 text-[12px] text-[var(--bp-info)]">{filtersActive ? "برای تغییر ترتیب نمایش، ابتدا جستجو و فیلترها را پاک کنید." : "با کشیدن ردیف، ترتیب نمایش دسته‌بندی‌ها را تنظیم کنید."}</p>
-                <BpTable ariaLabel="فهرست دسته‌بندی‌ها" minWidth={760}>
-                  <thead>
-                    <tr>
-                      <BpTh className="w-8 text-center"><span className="sr-only">جابه‌جایی</span></BpTh>
-                      <BpTh className="w-10 text-center"><span className="sr-only">انتخاب</span></BpTh>
-                      <BpTh>دسته‌بندی</BpTh>
-                      <BpTh>والد</BpTh>
-                      <BpTh>محصولات</BpTh>
-                      <BpTh>زیردسته‌ها</BpTh>
-                      <BpTh>وضعیت</BpTh>
-                      <BpTh className="text-center">عملیات</BpTh>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {visible.map((category) => {
-                      const locked = category._count.products > 0 || category._count.children > 0;
-                      return (
-                        <AdminBulkTr
-                          key={category.id}
-                          id={category.id}
-                          draggable={!savingOrder && !filtersActive}
-                          onDragStart={(event) => { event.dataTransfer.effectAllowed = "move"; beginDrag(category.id); }}
-                          onDragOver={(event) => dragOver(event, category.id)}
-                          onDrop={(event) => event.preventDefault()}
-                          onDragEnd={endDrag}
-                          className={draggedId === category.id ? "opacity-50" : undefined}
-                        >
-                          <BpTd className="w-8 text-center"><span aria-hidden="true" title="برای جابه‌جایی بکشید" className="bp-muted inline-flex cursor-grab active:cursor-grabbing"><GripVertical size={15} /></span></BpTd>
-                          <BpTd className="w-10 text-center"><AdminBulkCheckbox id={category.id} label={`انتخاب دسته‌بندی ${category.name}`} /></BpTd>
-                          <BpTd className="max-w-[220px]">
-                            <div className="flex min-w-0 items-center gap-2.5">
-                              <CategoryThumb image={category.image} name={category.name} />
-                              <div className="min-w-0">
-                                <span className="flex items-center gap-1.5 truncate font-bold" title={category.name}>{category.name}{category.featured && <Star size={13} className="shrink-0 fill-[var(--bp-accent)] text-[var(--bp-accent)]" />}</span>
-                                <span dir="ltr" className="bp-muted block truncate text-right font-mono text-[11px]">{category.slug}</span>
+              <AdminColumnVisibility tableId={CATEGORIES_TABLE_ID} columns={categoryColumns} initialHidden={initialHiddenColumns}>
+                <AdminBulkEditor entity="categories" entityLabel="دسته‌بندی" ids={visible.map((category) => category.id)} actions={[{ value: "featured:on", label: "نمایش در صفحه اصلی" }, { value: "featured:off", label: "حذف از صفحه اصلی" }, { value: "active:on", label: "فعال‌کردن دسته‌بندی‌ها" }, { value: "active:off", label: "غیرفعال‌کردن دسته‌بندی‌ها" }]} beforeSelectAll={<AdminColumnSettingsButton />}>
+                  <p className="m-0 flex items-center gap-1.5 border-b border-[var(--bp-divider)] px-4 py-2 text-[12px] text-[var(--bp-info)]">{filtersActive ? "برای تغییر ترتیب نمایش، ابتدا جستجو و فیلترها را پاک کنید." : "با کشیدن ردیف، ترتیب نمایش دسته‌بندی‌ها را تنظیم کنید."}</p>
+                  <BpTable ariaLabel="فهرست دسته‌بندی‌ها" minWidth={760}>
+                    <thead>
+                      <tr>
+                        <BpTh className="w-8 text-center"><span className="sr-only">جابه‌جایی</span></BpTh>
+                        <BpTh className="w-10 text-center"><span className="sr-only">انتخاب</span></BpTh>
+                        <AdminColumn id="category"><BpTh>دسته‌بندی</BpTh></AdminColumn>
+                        <AdminColumn id="parent"><BpTh>والد</BpTh></AdminColumn>
+                        <AdminColumn id="products"><BpTh>محصولات</BpTh></AdminColumn>
+                        <AdminColumn id="children"><BpTh>زیردسته‌ها</BpTh></AdminColumn>
+                        <AdminColumn id="status"><BpTh>وضعیت</BpTh></AdminColumn>
+                        <BpTh className="text-center">عملیات</BpTh>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {visible.map((category) => {
+                        const locked = category._count.products > 0 || category._count.children > 0;
+                        return (
+                          <AdminBulkTr
+                            key={category.id}
+                            id={category.id}
+                            draggable={!savingOrder && !filtersActive}
+                            onDragStart={(event) => { event.dataTransfer.effectAllowed = "move"; beginDrag(category.id); }}
+                            onDragOver={(event) => dragOver(event, category.id)}
+                            onDrop={(event) => event.preventDefault()}
+                            onDragEnd={endDrag}
+                            className={draggedId === category.id ? "opacity-50" : undefined}
+                          >
+                            <BpTd className="w-8 text-center"><span aria-hidden="true" title="برای جابه‌جایی بکشید" className="bp-muted inline-flex cursor-grab active:cursor-grabbing"><GripVertical size={15} /></span></BpTd>
+                            <BpTd className="w-10 text-center"><AdminBulkCheckbox id={category.id} label={`انتخاب دسته‌بندی ${category.name}`} /></BpTd>
+                            <AdminColumn id="category">
+                              <BpTd className="max-w-[220px]">
+                                <div className="flex min-w-0 items-center gap-2.5">
+                                  <CategoryThumb image={category.image} name={category.name} />
+                                  <div className="min-w-0">
+                                    <span className="flex items-center gap-1.5 truncate font-bold" title={category.name}>{category.name}{category.featured && <Star size={13} className="shrink-0 fill-[var(--bp-accent)] text-[var(--bp-accent)]" />}</span>
+                                    <span dir="ltr" className="bp-muted block truncate text-right font-mono text-[11px]">{category.slug}</span>
+                                  </div>
+                                </div>
+                              </BpTd>
+                            </AdminColumn>
+                            <AdminColumn id="parent"><BpTd className="bp-muted max-w-[140px] truncate" title={category.parentName ?? "دسته اصلی"}>{category.parentName ?? "دسته اصلی"}</BpTd></AdminColumn>
+                            <AdminColumn id="products"><BpTd className="text-[var(--bp-text)]">{category._count.products.toLocaleString("fa-IR")}</BpTd></AdminColumn>
+                            <AdminColumn id="children"><BpTd className="text-[var(--bp-text)]">{category._count.children.toLocaleString("fa-IR")}</BpTd></AdminColumn>
+                            <AdminColumn id="status"><BpTd><AdminStatusBadge tone={category.isActive ? "success" : "neutral"}>{category.isActive ? "فعال" : "غیرفعال"}</AdminStatusBadge></BpTd></AdminColumn>
+                            <BpTd>
+                              <div className="flex items-center justify-center gap-1">
+                                <Link href={`/admin/categories/${category.id}/attributes`} aria-label={`ویژگی‌های دسته‌بندی ${category.name}`} title="ویژگی‌های دسته‌بندی" className="bp-btn bp-btn-ghost bp-btn-icon bp-btn-sm"><SlidersHorizontal size={15} strokeWidth={1.5} /></Link>
+                                <BpButton isIconOnly size="sm" variant="ghost" title="ویرایش دسته‌بندی" aria-label={`ویرایش ${category.name}`} onClick={() => startEdit(category)}><SquarePen size={15} strokeWidth={1.5} /></BpButton>
+                                <BpButton isIconOnly size="sm" variant="ghost" title={locked ? "دسته دارای محصول یا زیردسته قابل حذف نیست" : "حذف دسته‌بندی"} className="bp-btn-danger-icon" aria-label={`حذف ${category.name}`} disabled={locked} onClick={() => { setDeleteError(""); setDeleteTarget(category); }}><Trash2 size={15} strokeWidth={1.5} /></BpButton>
                               </div>
-                            </div>
-                          </BpTd>
-                          <BpTd className="bp-muted max-w-[140px] truncate" title={category.parentName ?? "دسته اصلی"}>{category.parentName ?? "دسته اصلی"}</BpTd>
-                          <BpTd className="text-[var(--bp-text)]">{category._count.products.toLocaleString("fa-IR")}</BpTd>
-                          <BpTd className="text-[var(--bp-text)]">{category._count.children.toLocaleString("fa-IR")}</BpTd>
-                          <BpTd><AdminStatusBadge tone={category.isActive ? "success" : "neutral"}>{category.isActive ? "فعال" : "غیرفعال"}</AdminStatusBadge></BpTd>
-                          <BpTd>
-                            <div className="flex items-center justify-center gap-1">
-                              <Link href={`/admin/categories/${category.id}/attributes`} aria-label={`ویژگی‌های دسته‌بندی ${category.name}`} title="ویژگی‌های دسته‌بندی" className="bp-btn bp-btn-ghost bp-btn-icon bp-btn-sm"><SlidersHorizontal size={15} strokeWidth={1.5} /></Link>
-                              <BpButton isIconOnly size="sm" variant="ghost" title="ویرایش دسته‌بندی" aria-label={`ویرایش ${category.name}`} onClick={() => startEdit(category)}><SquarePen size={15} strokeWidth={1.5} /></BpButton>
-                              <BpButton isIconOnly size="sm" variant="ghost" title={locked ? "دسته دارای محصول یا زیردسته قابل حذف نیست" : "حذف دسته‌بندی"} className="bp-btn-danger-icon" aria-label={`حذف ${category.name}`} disabled={locked} onClick={() => { setDeleteError(""); setDeleteTarget(category); }}><Trash2 size={15} strokeWidth={1.5} /></BpButton>
-                            </div>
-                          </BpTd>
-                        </AdminBulkTr>
-                      );
-                    })}
-                  </tbody>
-                </BpTable>
-              </AdminBulkEditor>
+                            </BpTd>
+                          </AdminBulkTr>
+                        );
+                      })}
+                    </tbody>
+                  </BpTable>
+                </AdminBulkEditor>
+              </AdminColumnVisibility>
               </>
               ) : <div className="p-6"><AdminEmptyState title="دسته‌بندی‌ای پیدا نشد" description="هیچ دسته‌بندی‌ای با جستجو و فیلترهای انتخابی مطابقت ندارد." /></div>}
             </>
