@@ -6,6 +6,8 @@ import { AdminListFilters } from "@/components/admin-list-filters";
 import { AdminPagination } from "@/components/admin-pagination";
 import { AdminBulkCheckbox, AdminBulkEditor, AdminBulkTr } from "@/components/admin-bulk-editor";
 import { AdminColumn, AdminColumnSettingsButton, AdminColumnVisibility } from "@/components/admin-column-visibility";
+import { AdminColumnFilter } from "@/components/admin-column-filter";
+import { AdminGenericBulkEditButton } from "@/components/admin-generic-bulk-edit";
 import { articleStatusLabels, articleStatusTones } from "@/modules/admin/labels";
 import { formatDate } from "@/lib/format";
 import { ArticleDeleteButton } from "./article-delete-button";
@@ -67,13 +69,6 @@ function RowActions({ article }: { article: ArticleRow }) {
 const dateLabel = (article: ArticleRow) => (article.publishedAt ? formatDate(article.publishedAt) : "—");
 
 export function BlueprintArticlesView({ articles, categories, counts, filters, pagination, initialHiddenColumns }: Props) {
-  const bulkActions = [
-    { value: "status:PUBLISHED", label: "انتشار مقالات" },
-    { value: "status:DRAFT", label: "بازگردانی به پیش‌نویس" },
-    { value: "status:ARCHIVED", label: "بایگانی مقالات" },
-    { value: "delete", label: "حذف مقالات", confirmation: { title: "حذف گروهی مقالات", description: "مقالات انتخاب‌شده برای همیشه حذف می‌شوند.", confirmLabel: "حذف مقالات" } },
-  ];
-
   return (
     <div className="flex flex-col gap-2">
       <AdminPageHeader
@@ -89,10 +84,7 @@ export function BlueprintArticlesView({ articles, categories, counts, filters, p
           query={filters.query}
           queryLabel="جستجوی مقاله"
           queryPlaceholder="عنوان یا نشانی مقاله"
-          filters={[
-            { name: "status", label: "وضعیت", value: filters.status, options: [{ value: "", label: "همه وضعیت‌ها" }, ...Object.entries(articleStatusLabels).map(([value, label]) => ({ value, label }))] },
-            { name: "category", label: "دسته", value: filters.category, options: [{ value: "", label: "همه دسته‌ها" }, ...categories.map((category) => ({ value: category.id, label: category.name }))] },
-          ]}
+          filters={[]}
         />
       </Panel>
 
@@ -120,15 +112,25 @@ export function BlueprintArticlesView({ articles, categories, counts, filters, p
             </div>
 
             <AdminColumnVisibility tableId={ARTICLES_TABLE_ID} columns={articleColumns} initialHidden={initialHiddenColumns}>
-              <AdminBulkEditor entity="articles" entityLabel="مقاله" ids={articles.map((article) => article.id)} actions={bulkActions} beforeSelectAll={<AdminColumnSettingsButton />}>
+              <AdminBulkEditor
+                entity="articles"
+                entityLabel="مقاله"
+                ids={articles.map((article) => article.id)}
+                actions={[]}
+                beforeSelectAll={<AdminColumnSettingsButton />}
+                extraAction={<AdminGenericBulkEditButton entity="articles" entityLabel="مقاله" changeTypes={[
+                  { value: "status", label: "تغییر وضعیت انتشار", options: [{ value: "status:PUBLISHED", label: "انتشار" }, { value: "status:DRAFT", label: "بازگردانی به پیش‌نویس" }, { value: "status:ARCHIVED", label: "بایگانی" }] },
+                  { value: "delete", label: "حذف مقالات", confirmation: { title: "حذف گروهی مقالات", description: "مقالات انتخاب‌شده برای همیشه حذف می‌شوند.", confirmLabel: "حذف مقالات" } },
+                ]} />}
+              >
                 <BpTable ariaLabel="فهرست مقالات" minWidth={720}>
                   <thead>
                     <tr>
                       <BpTh className="w-10 text-center"><span className="sr-only">انتخاب</span></BpTh>
                       <BpTh className="w-10">#</BpTh>
                       <AdminColumn id="article"><BpTh>مقاله</BpTh></AdminColumn>
-                      <AdminColumn id="category"><BpTh>دسته</BpTh></AdminColumn>
-                      <AdminColumn id="status"><BpTh>وضعیت</BpTh></AdminColumn>
+                      <AdminColumn id="category"><BpTh><span className="inline-flex items-center">دسته<AdminColumnFilter path="/admin/articles" ariaLabel="فیلتر دسته" groups={[{ name: "category", label: "دسته", value: filters.category, options: [{ value: "", label: "همه دسته‌ها" }, ...categories.map((category) => ({ value: category.id, label: category.name }))] }]} /></span></BpTh></AdminColumn>
+                      <AdminColumn id="status"><BpTh><span className="inline-flex items-center">وضعیت<AdminColumnFilter path="/admin/articles" ariaLabel="فیلتر وضعیت" groups={[{ name: "status", label: "وضعیت", value: filters.status, options: [{ value: "", label: "همه وضعیت‌ها" }, ...Object.entries(articleStatusLabels).map(([value, label]) => ({ value, label }))] }]} /></span></BpTh></AdminColumn>
                       <AdminColumn id="publishedAt"><BpTh>تاریخ انتشار</BpTh></AdminColumn>
                       <BpTh className="text-center">عملیات</BpTh>
                     </tr>
