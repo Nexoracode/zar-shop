@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useMemo, useRef, useState, useSyncExternalStore } from "react";
-import { Eye, Settings2 } from "lucide-react";
+import { Eye, Settings } from "lucide-react";
 import { AdminBulkCheckbox, AdminBulkEditor, AdminBulkTr } from "@/components/admin-bulk-editor";
 import { AdminOrderStatusSelect } from "@/components/admin-order-status-select";
 import { formatMoney } from "@/lib/format";
@@ -46,7 +46,7 @@ function ColumnSettings({ hidden, onToggle }: { hidden: Set<string>; onToggle: (
         aria-expanded={open}
         onClick={() => setOpen((current) => !current)}
       >
-        <Settings2 size={15} strokeWidth={1.5} />
+        <Settings size={15} strokeWidth={1.5} />
       </BpButton>
       <BpPopover open={open} anchorRef={triggerRef} onClose={() => setOpen(false)} label="تنظیم ستون‌های جدول" width={210}>
         <p className="bp-muted m-0 mb-2 text-[12px]">نمایش ستون‌ها</p>
