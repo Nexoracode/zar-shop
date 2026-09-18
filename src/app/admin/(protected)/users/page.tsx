@@ -3,7 +3,6 @@ import { UserRole, UserStatus } from "@generated/prisma/enums";
 import { Plus } from "lucide-react";
 import { AdminEmptyState, AdminPageHeader, AdminPanel, AdminPrimaryLink } from "@/components/admin-ui";
 import { db } from "@/lib/db";
-import { userRoleLabels, userStatusLabels } from "@/modules/admin/labels";
 import { AdminListFilters } from "@/components/admin-list-filters";
 import { resolveAdminPagination } from "@/lib/admin-pagination";
 import { parseAdminPaginationRequest } from "@/lib/admin-pagination-server";
@@ -61,13 +60,13 @@ export default async function UsersPage({ searchParams }: { searchParams: Search
       />
 
       <AdminPanel className="mb-5 p-4 sm:p-5">
-        <AdminListFilters path="/admin/users" query={query} queryLabel="جستجوی کاربر" queryPlaceholder="نام، ایمیل یا شماره موبایل" filters={[{ name: "role", label: "نقش کاربر", value: role ?? "", options: [{ value: "", label: "همه نقش‌ها" }, ...roles.map((item) => ({ value: item, label: userRoleLabels[item] }))] }, { name: "status", label: "وضعیت حساب", value: status ?? "", options: [{ value: "", label: "همه وضعیت‌ها" }, ...statuses.map((item) => ({ value: item, label: userStatusLabels[item] }))] }]} />
+        <AdminListFilters path="/admin/users" query={query} queryLabel="جستجوی کاربر" queryPlaceholder="نام، ایمیل یا شماره موبایل" filters={[]} />
       </AdminPanel>
 
       <AdminPanel>
         {!users.length
           ? <AdminEmptyState title="کاربری پیدا نشد" description={query || role || status ? "فیلترها را تغییر دهید و دوباره جستجو کنید." : "هنوز کاربری در فروشگاه ثبت نشده است."} />
-          : <BlueprintUsersView users={users} pagination={pagination} actorId={actor.id} actorRole={actor.role} assignableRoles={assignableRoles} walletEnabled={walletSettings.walletEnabled} initialHiddenColumns={initialHiddenColumns} />}
+          : <BlueprintUsersView users={users} pagination={pagination} actorId={actor.id} actorRole={actor.role} assignableRoles={assignableRoles} walletEnabled={walletSettings.walletEnabled} initialHiddenColumns={initialHiddenColumns} role={role ?? ""} status={status ?? ""} />}
       </AdminPanel>
     </>
   );

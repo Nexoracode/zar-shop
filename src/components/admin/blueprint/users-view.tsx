@@ -4,11 +4,13 @@ import type { Prisma } from "@generated/prisma/client";
 import { AdminStatusBadge } from "@/components/admin-ui";
 import { AdminBulkCheckbox, AdminBulkEditor, AdminBulkTr } from "@/components/admin-bulk-editor";
 import { AdminColumn, AdminColumnSettingsButton, AdminColumnVisibility } from "@/components/admin-column-visibility";
+import { AdminColumnFilter } from "@/components/admin-column-filter";
+import { AdminGenericBulkEditButton } from "@/components/admin-generic-bulk-edit";
 import { AdminPagination } from "@/components/admin-pagination";
 import type { resolveAdminPagination } from "@/lib/admin-pagination";
 import { formatDate } from "@/lib/format";
-import { userStatusLabels, userStatusTones } from "@/modules/admin/labels";
-import type { UserRole } from "@generated/prisma/enums";
+import { userRoleLabels, userStatusLabels, userStatusTones } from "@/modules/admin/labels";
+import { UserRole, UserStatus } from "@generated/prisma/enums";
 import { BpTable, BpTd, BpTh } from "./ui";
 import { BlueprintUserRoleSelect } from "./user-role-select";
 
@@ -16,7 +18,7 @@ type UserRow = Prisma.UserGetPayload<{ include: { _count: { select: { orders: tr
 
 const USERS_TABLE_ID = "users";
 
-export function BlueprintUsersView({ users, pagination, actorId, actorRole, assignableRoles, walletEnabled, initialHiddenColumns }: {
+export function BlueprintUsersView({ users, pagination, actorId, actorRole, assignableRoles, walletEnabled, initialHiddenColumns, role, status }: {
   users: UserRow[];
   pagination: ReturnType<typeof resolveAdminPagination>;
   actorId: string;
@@ -24,6 +26,8 @@ export function BlueprintUsersView({ users, pagination, actorId, actorRole, assi
   assignableRoles: UserRole[];
   walletEnabled: boolean;
   initialHiddenColumns: string[];
+  role: string;
+  status: string;
 }) {
   const columns = [
     { id: "user", label: "کاربر" },
@@ -65,7 +69,14 @@ export function BlueprintUsersView({ users, pagination, actorId, actorRole, assi
       </div>
 
       <AdminColumnVisibility tableId={USERS_TABLE_ID} columns={columns} initialHidden={initialHiddenColumns}>
-        <AdminBulkEditor entity="users" entityLabel="کاربر" ids={users.filter((user) => user.id !== actorId && user.role !== "ADMIN").map((user) => user.id)} actions={[{ value: "status:ACTIVE", label: "فعال‌کردن حساب‌ها" }, { value: "status:SUSPENDED", label: "تعلیق حساب‌ها" }]} beforeSelectAll={<AdminColumnSettingsButton />}>
+        <AdminBulkEditor
+          entity="users"
+          entityLabel="کاربر"
+          ids={users.filter((user) => user.id !== actorId && user.role !== "ADMIN").map((user) => user.id)}
+          actions={[]}
+          beforeSelectAll={<AdminColumnSettingsButton />}
+          extraAction={<AdminGenericBulkEditButton entity="users" entityLabel="کاربر" changeTypes={[{ value: "status", label: "وضعیت حساب", options: [{ value: "status:ACTIVE", label: "فعال‌کردن" }, { value: "status:SUSPENDED", label: "تعلیق" }] }]} />}
+        >
           <BpTable ariaLabel="فهرست کاربران" minWidth={900}>
             <thead>
               <tr>
@@ -73,9 +84,9 @@ export function BlueprintUsersView({ users, pagination, actorId, actorRole, assi
                 <BpTh className="w-10">#</BpTh>
                 <AdminColumn id="user"><BpTh>کاربر</BpTh></AdminColumn>
                 <AdminColumn id="contact"><BpTh>تماس</BpTh></AdminColumn>
-                <AdminColumn id="role"><BpTh>نقش</BpTh></AdminColumn>
+                <AdminColumn id="role"><BpTh><span className="inline-flex items-center">نقش<AdminColumnFilter path="/admin/users" ariaLabel="فیلتر نقش" groups={[{ name: "role", label: "نقش کاربر", value: role, options: [{ value: "", label: "همه نقش‌ها" }, ...Object.values(UserRole).map((item) => ({ value: item, label: userRoleLabels[item] }))] }]} /></span></BpTh></AdminColumn>
                 <AdminColumn id="orders"><BpTh>سفارش‌ها</BpTh></AdminColumn>
-                <AdminColumn id="status"><BpTh>وضعیت</BpTh></AdminColumn>
+                <AdminColumn id="status"><BpTh><span className="inline-flex items-center">وضعیت<AdminColumnFilter path="/admin/users" ariaLabel="فیلتر وضعیت" groups={[{ name: "status", label: "وضعیت حساب", value: status, options: [{ value: "", label: "همه وضعیت‌ها" }, ...Object.values(UserStatus).map((item) => ({ value: item, label: userStatusLabels[item] }))] }]} /></span></BpTh></AdminColumn>
                 <AdminColumn id="joined"><BpTh>عضویت</BpTh></AdminColumn>
                 {walletEnabled && <AdminColumn id="wallet"><BpTh className="text-center">کیف پول</BpTh></AdminColumn>}
               </tr>
