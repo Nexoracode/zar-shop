@@ -4,6 +4,7 @@ import { AdminListFilters } from "@/components/admin-list-filters";
 import { db } from "@/lib/db";
 import { resolveAdminPagination } from "@/lib/admin-pagination";
 import { parseAdminPaginationRequest } from "@/lib/admin-pagination-server";
+import { readHiddenColumns } from "@/lib/admin-column-visibility-server";
 import { auditActionLabel } from "@/modules/audit/audit-log";
 import { requirePermission } from "@/modules/auth/session";
 import { BlueprintAuditLogsView } from "@/components/admin/blueprint/audit-logs-view";
@@ -30,9 +31,10 @@ export default async function AuditLogsPage({ searchParams }: { searchParams: Se
       { actor: { is: { OR: [{ firstName: { contains: query } }, { lastName: { contains: query } }, { phone: { contains: query } }] } } },
     ] } : {}),
   };
-  const [totalItems, actionRows] = await Promise.all([
+  const [totalItems, actionRows, initialHiddenColumns] = await Promise.all([
     db.auditLog.count({ where }),
     db.auditLog.findMany({ select: { action: true }, distinct: ["action"], orderBy: { action: "asc" } }),
+    readHiddenColumns("auditLogs"),
   ]);
   const pagination = resolveAdminPagination(totalItems, requestedPage, pageSize);
   const logs = await db.auditLog.findMany({
@@ -49,7 +51,7 @@ export default async function AuditLogsPage({ searchParams }: { searchParams: Se
     <AdminPanel>
       {!logs.length
         ? <AdminEmptyState title="فعالیتی پیدا نشد" description={query || action ? "فیلترها را تغییر دهید و دوباره جستجو کنید." : "هنوز فعالیت مدیریتی ثبت نشده است."} />
-        : <BlueprintAuditLogsView logs={logs} pagination={pagination} />}
+        : <BlueprintAuditLogsView logs={logs} pagination={pagination} initialHiddenColumns={initialHiddenColumns} />}
     </AdminPanel>
   </>;
 }
