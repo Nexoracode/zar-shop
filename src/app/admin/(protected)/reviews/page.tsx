@@ -16,7 +16,6 @@ export const instant = false;
 
 type SearchParams = Promise<{ q?: string; status?: string; page?: string; pageSize?: string }>;
 const statuses = ["PENDING", "APPROVED", "REJECTED"] as const;
-const labels = { PENDING: "در انتظار بررسی", APPROVED: "تأییدشده", REJECTED: "ردشده" } as const;
 
 export default async function AdminReviewsPage({ searchParams }: { searchParams: SearchParams }) {
   await requirePermission("catalog:manage");
