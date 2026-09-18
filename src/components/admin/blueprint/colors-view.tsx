@@ -6,6 +6,7 @@ import { toast } from "@heroui/react";
 import { GripVertical, Info, SquarePen, Trash2 } from "lucide-react";
 import { AdminEmptyState, AdminPageHeader, AdminStatusBadge } from "@/components/admin-ui";
 import { AdminBulkCheckbox, AdminBulkEditor, AdminBulkTr } from "@/components/admin-bulk-editor";
+import { AdminColumn, AdminColumnSettingsButton, AdminColumnVisibility } from "@/components/admin-column-visibility";
 import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
 import { requestErrorMessage, requestJson } from "@/lib/api-request";
 import { normalizeSearchText } from "@/lib/text-search";
@@ -37,7 +38,16 @@ function ColorSwatchBox({ hex }: { hex: string }) {
   return <span aria-hidden className="bp-frame block h-7 w-7 shrink-0" style={{ background: hex }} />;
 }
 
-export function BlueprintColorsView({ colors }: { colors: ColorItem[] }) {
+const COLORS_TABLE_ID = "colors";
+
+const colorColumns = [
+  { id: "swatch", label: "رنگ" },
+  { id: "name", label: "نام" },
+  { id: "hex", label: "کد" },
+  { id: "status", label: "وضعیت" },
+];
+
+export function BlueprintColorsView({ colors, initialHiddenColumns }: { colors: ColorItem[]; initialHiddenColumns: string[] }) {
   const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
   const [items, setItems] = useState(colors);
@@ -264,52 +274,54 @@ export function BlueprintColorsView({ colors }: { colors: ColorItem[] }) {
                 ))}
               </div>
 
-              <AdminBulkEditor entity="colors" entityLabel="رنگ" ids={visible.map((color) => color.id)} actions={[{ value: "active:on", label: "فعال‌کردن رنگ‌ها" }, { value: "active:off", label: "غیرفعال‌کردن رنگ‌ها" }]}>
-                <p className="m-0 flex items-center gap-1.5 border-b border-[var(--bp-divider)] px-4 py-2 text-[12px] text-[var(--bp-info)]">
-                  <Info size={14} className="shrink-0" aria-hidden />
-                  {filtersActive ? "برای تغییر ترتیب نمایش، ابتدا جستجو و فیلترها را پاک کنید." : "با کشیدن ردیف، ترتیب نمایش رنگ‌ها در فروشگاه را تنظیم کنید."}
-                </p>
-                <BpTable ariaLabel="فهرست رنگ‌ها" minWidth={640}>
-                  <thead>
-                    <tr>
-                      <BpTh className="w-8 text-center"><span className="sr-only">جابه‌جایی</span></BpTh>
-                      <BpTh className="w-10 text-center"><span className="sr-only">انتخاب</span></BpTh>
-                      <BpTh className="w-10">رنگ</BpTh>
-                      <BpTh>نام</BpTh>
-                      <BpTh>کد</BpTh>
-                      <BpTh>وضعیت</BpTh>
-                      <BpTh className="text-center">عملیات</BpTh>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {visible.map((color) => (
-                      <AdminBulkTr
-                        key={color.id}
-                        id={color.id}
-                        draggable={!savingOrder && !filtersActive}
-                        onDragStart={(event) => { event.dataTransfer.effectAllowed = "move"; beginDrag(color.id); }}
-                        onDragOver={(event) => dragOver(event, color.id)}
-                        onDrop={(event) => event.preventDefault()}
-                        onDragEnd={endDrag}
-                        className={draggedId === color.id ? "opacity-50" : undefined}
-                      >
-                        <BpTd className="w-8 text-center"><span aria-hidden="true" title="برای جابه‌جایی بکشید" className="bp-muted inline-flex cursor-grab active:cursor-grabbing"><GripVertical size={15} /></span></BpTd>
-                        <BpTd className="w-10 text-center"><AdminBulkCheckbox id={color.id} label={`انتخاب رنگ ${color.name}`} /></BpTd>
-                        <BpTd><ColorSwatchBox hex={color.hex} /></BpTd>
-                        <BpTd className="max-w-[180px] truncate font-bold" title={color.name}>{color.name}</BpTd>
-                        <BpTd className="bp-muted font-mono"><span dir="ltr">{color.hex}</span></BpTd>
-                        <BpTd><AdminStatusBadge tone={color.isActive ? "success" : "neutral"}>{color.isActive ? "فعال" : "غیرفعال"}</AdminStatusBadge></BpTd>
-                        <BpTd>
-                          <div className="flex items-center justify-center gap-1">
-                            <BpButton isIconOnly size="sm" variant="ghost" title="ویرایش رنگ" aria-label={`ویرایش ${color.name}`} onClick={() => startEdit(color)}><SquarePen size={15} strokeWidth={1.5} /></BpButton>
-                            <BpButton isIconOnly size="sm" variant="ghost" className="bp-btn-danger-icon" title="حذف رنگ" aria-label={`حذف ${color.name}`} onClick={() => { setDeleteError(""); setDeleteTarget(color); }}><Trash2 size={15} strokeWidth={1.5} /></BpButton>
-                          </div>
-                        </BpTd>
-                      </AdminBulkTr>
-                    ))}
-                  </tbody>
-                </BpTable>
-              </AdminBulkEditor>
+              <AdminColumnVisibility tableId={COLORS_TABLE_ID} columns={colorColumns} initialHidden={initialHiddenColumns}>
+                <AdminBulkEditor entity="colors" entityLabel="رنگ" ids={visible.map((color) => color.id)} actions={[{ value: "active:on", label: "فعال‌کردن رنگ‌ها" }, { value: "active:off", label: "غیرفعال‌کردن رنگ‌ها" }]} beforeSelectAll={<AdminColumnSettingsButton />}>
+                  <p className="m-0 flex items-center gap-1.5 border-b border-[var(--bp-divider)] px-4 py-2 text-[12px] text-[var(--bp-info)]">
+                    <Info size={14} className="shrink-0" aria-hidden />
+                    {filtersActive ? "برای تغییر ترتیب نمایش، ابتدا جستجو و فیلترها را پاک کنید." : "با کشیدن ردیف، ترتیب نمایش رنگ‌ها در فروشگاه را تنظیم کنید."}
+                  </p>
+                  <BpTable ariaLabel="فهرست رنگ‌ها" minWidth={640}>
+                    <thead>
+                      <tr>
+                        <BpTh className="w-8 text-center"><span className="sr-only">جابه‌جایی</span></BpTh>
+                        <BpTh className="w-10 text-center"><span className="sr-only">انتخاب</span></BpTh>
+                        <AdminColumn id="swatch"><BpTh className="w-10">رنگ</BpTh></AdminColumn>
+                        <AdminColumn id="name"><BpTh>نام</BpTh></AdminColumn>
+                        <AdminColumn id="hex"><BpTh>کد</BpTh></AdminColumn>
+                        <AdminColumn id="status"><BpTh>وضعیت</BpTh></AdminColumn>
+                        <BpTh className="text-center">عملیات</BpTh>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {visible.map((color) => (
+                        <AdminBulkTr
+                          key={color.id}
+                          id={color.id}
+                          draggable={!savingOrder && !filtersActive}
+                          onDragStart={(event) => { event.dataTransfer.effectAllowed = "move"; beginDrag(color.id); }}
+                          onDragOver={(event) => dragOver(event, color.id)}
+                          onDrop={(event) => event.preventDefault()}
+                          onDragEnd={endDrag}
+                          className={draggedId === color.id ? "opacity-50" : undefined}
+                        >
+                          <BpTd className="w-8 text-center"><span aria-hidden="true" title="برای جابه‌جایی بکشید" className="bp-muted inline-flex cursor-grab active:cursor-grabbing"><GripVertical size={15} /></span></BpTd>
+                          <BpTd className="w-10 text-center"><AdminBulkCheckbox id={color.id} label={`انتخاب رنگ ${color.name}`} /></BpTd>
+                          <AdminColumn id="swatch"><BpTd><ColorSwatchBox hex={color.hex} /></BpTd></AdminColumn>
+                          <AdminColumn id="name"><BpTd className="max-w-[180px] truncate font-bold" title={color.name}>{color.name}</BpTd></AdminColumn>
+                          <AdminColumn id="hex"><BpTd className="bp-muted font-mono"><span dir="ltr">{color.hex}</span></BpTd></AdminColumn>
+                          <AdminColumn id="status"><BpTd><AdminStatusBadge tone={color.isActive ? "success" : "neutral"}>{color.isActive ? "فعال" : "غیرفعال"}</AdminStatusBadge></BpTd></AdminColumn>
+                          <BpTd>
+                            <div className="flex items-center justify-center gap-1">
+                              <BpButton isIconOnly size="sm" variant="ghost" title="ویرایش رنگ" aria-label={`ویرایش ${color.name}`} onClick={() => startEdit(color)}><SquarePen size={15} strokeWidth={1.5} /></BpButton>
+                              <BpButton isIconOnly size="sm" variant="ghost" className="bp-btn-danger-icon" title="حذف رنگ" aria-label={`حذف ${color.name}`} onClick={() => { setDeleteError(""); setDeleteTarget(color); }}><Trash2 size={15} strokeWidth={1.5} /></BpButton>
+                            </div>
+                          </BpTd>
+                        </AdminBulkTr>
+                      ))}
+                    </tbody>
+                  </BpTable>
+                </AdminBulkEditor>
+              </AdminColumnVisibility>
               </>
               ) : <div className="p-6"><AdminEmptyState title="رنگی پیدا نشد" description="هیچ رنگی با جستجو و فیلترهای انتخابی مطابقت ندارد." /></div>}
             </>

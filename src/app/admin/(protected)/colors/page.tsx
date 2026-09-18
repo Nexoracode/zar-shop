@@ -1,5 +1,6 @@
 import { BlueprintColorsView } from "@/components/admin/blueprint/colors-view";
 import { db } from "@/lib/db";
+import { readHiddenColumns } from "@/lib/admin-column-visibility-server";
 import { requirePermission } from "@/modules/auth/session";
 
 // @next-codemod-ignore Cache Components adoption: this segment temporarily allows blocking.
@@ -9,6 +10,9 @@ export const instant = false;
 
 export default async function ColorsPage() {
   await requirePermission("catalog:manage");
-  const colors = await db.color.findMany({ orderBy: [{ sortOrder: "asc" }, { name: "asc" }] });
-  return <BlueprintColorsView colors={colors} />;
+  const [colors, initialHiddenColumns] = await Promise.all([
+    db.color.findMany({ orderBy: [{ sortOrder: "asc" }, { name: "asc" }] }),
+    readHiddenColumns("colors"),
+  ]);
+  return <BlueprintColorsView colors={colors} initialHiddenColumns={initialHiddenColumns} />;
 }

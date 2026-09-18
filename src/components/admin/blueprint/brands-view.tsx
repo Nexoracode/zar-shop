@@ -7,6 +7,7 @@ import { toast } from "@heroui/react";
 import { GripVertical, Images, SquarePen, Tag, Trash2 } from "lucide-react";
 import { AdminEmptyState, AdminPageHeader, AdminStatusBadge } from "@/components/admin-ui";
 import { AdminBulkCheckbox, AdminBulkEditor, AdminBulkTr } from "@/components/admin-bulk-editor";
+import { AdminColumn, AdminColumnSettingsButton, AdminColumnVisibility } from "@/components/admin-column-visibility";
 import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
 import { MediaPickerDialog } from "@/components/media-picker-dialog";
 import type { MediaChoice } from "@/components/media-library";
@@ -46,7 +47,18 @@ function BrandThumb({ logo, name }: { logo: BrandRow["logo"]; name: string }) {
   return <span className="relative grid h-9 w-9 shrink-0 place-items-center overflow-hidden border border-[var(--bp-divider)] bg-white">{logo ? <Image src={logo.url} alt={logo.alt ?? name} fill sizes="36px" className="object-contain p-1" /> : <Tag size={15} className="text-[var(--bp-muted)]" />}</span>;
 }
 
-export function BlueprintBrandsView({ brands }: { brands: BrandRow[] }) {
+const BRANDS_TABLE_ID = "brands";
+
+const brandColumns = [
+  { id: "logo", label: "لوگو" },
+  { id: "name", label: "نام" },
+  { id: "slug", label: "نشانی" },
+  { id: "products", label: "محصولات" },
+  { id: "homepage", label: "صفحه اصلی" },
+  { id: "status", label: "وضعیت" },
+];
+
+export function BlueprintBrandsView({ brands, initialHiddenColumns }: { brands: BrandRow[]; initialHiddenColumns: string[] }) {
   const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
   const [items, setItems] = useState(brands);
@@ -303,53 +315,55 @@ export function BlueprintBrandsView({ brands }: { brands: BrandRow[] }) {
                 ))}
               </div>
 
-              <AdminBulkEditor entity="brands" entityLabel="برند" ids={visible.map((brand) => brand.id)} actions={[{ value: "featured:on", label: "نمایش در صفحه اصلی" }, { value: "featured:off", label: "حذف از صفحه اصلی" }, { value: "active:on", label: "فعال‌کردن برندها" }, { value: "active:off", label: "غیرفعال‌کردن برندها" }]}>
-                <p className="m-0 flex items-center gap-1.5 border-b border-[var(--bp-divider)] px-4 py-2 text-[12px] text-[var(--bp-info)]">{filtersActive ? "برای تغییر ترتیب نمایش، ابتدا جستجو و فیلترها را پاک کنید." : "با کشیدن ردیف، ترتیب نمایش برندها را در «محبوب‌ترین برندها» تنظیم کنید."}</p>
-                <BpTable ariaLabel="فهرست برندها" minWidth={640}>
-                  <thead>
-                    <tr>
-                      <BpTh className="w-8 text-center"><span className="sr-only">جابه‌جایی</span></BpTh>
-                      <BpTh className="w-10 text-center"><span className="sr-only">انتخاب</span></BpTh>
-                      <BpTh className="w-10">لوگو</BpTh>
-                      <BpTh>نام</BpTh>
-                      <BpTh>نشانی</BpTh>
-                      <BpTh>محصولات</BpTh>
-                      <BpTh>صفحه اصلی</BpTh>
-                      <BpTh>وضعیت</BpTh>
-                      <BpTh className="text-center">عملیات</BpTh>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {visible.map((brand) => (
-                      <AdminBulkTr
-                        key={brand.id}
-                        id={brand.id}
-                        draggable={!savingOrder && !filtersActive}
-                        onDragStart={(event) => { event.dataTransfer.effectAllowed = "move"; beginDrag(brand.id); }}
-                        onDragOver={(event) => dragOver(event, brand.id)}
-                        onDrop={(event) => event.preventDefault()}
-                        onDragEnd={endDrag}
-                        className={draggedId === brand.id ? "opacity-50" : undefined}
-                      >
-                        <BpTd className="w-8 text-center"><span aria-hidden="true" title="برای جابه‌جایی بکشید" className="bp-muted inline-flex cursor-grab active:cursor-grabbing"><GripVertical size={15} /></span></BpTd>
-                        <BpTd className="w-10 text-center"><AdminBulkCheckbox id={brand.id} label={`انتخاب برند ${brand.name}`} /></BpTd>
-                        <BpTd><BrandThumb logo={brand.logo} name={brand.name} /></BpTd>
-                        <BpTd className="max-w-[180px] truncate font-bold" title={brand.name}>{brand.name}</BpTd>
-                        <BpTd className="bp-muted font-mono"><span dir="ltr">{brand.slug}</span></BpTd>
-                        <BpTd className="text-[var(--bp-text)]">{brand._count.products.toLocaleString("fa-IR")}</BpTd>
-                        <BpTd>{brand.featured ? <AdminStatusBadge tone="info">نمایش داده می‌شود</AdminStatusBadge> : <span className="bp-muted">—</span>}</BpTd>
-                        <BpTd><AdminStatusBadge tone={brand.isActive ? "success" : "neutral"}>{brand.isActive ? "فعال" : "غیرفعال"}</AdminStatusBadge></BpTd>
-                        <BpTd>
-                          <div className="flex items-center justify-center gap-1">
-                            <BpButton isIconOnly size="sm" variant="ghost" title="ویرایش برند" aria-label={`ویرایش ${brand.name}`} onClick={() => startEdit(brand)}><SquarePen size={15} strokeWidth={1.5} /></BpButton>
-                            <BpButton isIconOnly size="sm" variant="ghost" title={brand._count.products > 0 ? "برند دارای محصول قابل حذف نیست" : "حذف برند"} className="bp-btn-danger-icon" aria-label={`حذف ${brand.name}`} disabled={brand._count.products > 0} onClick={() => { setDeleteError(""); setDeleteTarget(brand); }}><Trash2 size={15} strokeWidth={1.5} /></BpButton>
-                          </div>
-                        </BpTd>
-                      </AdminBulkTr>
-                    ))}
-                  </tbody>
-                </BpTable>
-              </AdminBulkEditor>
+              <AdminColumnVisibility tableId={BRANDS_TABLE_ID} columns={brandColumns} initialHidden={initialHiddenColumns}>
+                <AdminBulkEditor entity="brands" entityLabel="برند" ids={visible.map((brand) => brand.id)} actions={[{ value: "featured:on", label: "نمایش در صفحه اصلی" }, { value: "featured:off", label: "حذف از صفحه اصلی" }, { value: "active:on", label: "فعال‌کردن برندها" }, { value: "active:off", label: "غیرفعال‌کردن برندها" }]} beforeSelectAll={<AdminColumnSettingsButton />}>
+                  <p className="m-0 flex items-center gap-1.5 border-b border-[var(--bp-divider)] px-4 py-2 text-[12px] text-[var(--bp-info)]">{filtersActive ? "برای تغییر ترتیب نمایش، ابتدا جستجو و فیلترها را پاک کنید." : "با کشیدن ردیف، ترتیب نمایش برندها را در «محبوب‌ترین برندها» تنظیم کنید."}</p>
+                  <BpTable ariaLabel="فهرست برندها" minWidth={640}>
+                    <thead>
+                      <tr>
+                        <BpTh className="w-8 text-center"><span className="sr-only">جابه‌جایی</span></BpTh>
+                        <BpTh className="w-10 text-center"><span className="sr-only">انتخاب</span></BpTh>
+                        <AdminColumn id="logo"><BpTh className="w-10">لوگو</BpTh></AdminColumn>
+                        <AdminColumn id="name"><BpTh>نام</BpTh></AdminColumn>
+                        <AdminColumn id="slug"><BpTh>نشانی</BpTh></AdminColumn>
+                        <AdminColumn id="products"><BpTh>محصولات</BpTh></AdminColumn>
+                        <AdminColumn id="homepage"><BpTh>صفحه اصلی</BpTh></AdminColumn>
+                        <AdminColumn id="status"><BpTh>وضعیت</BpTh></AdminColumn>
+                        <BpTh className="text-center">عملیات</BpTh>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {visible.map((brand) => (
+                        <AdminBulkTr
+                          key={brand.id}
+                          id={brand.id}
+                          draggable={!savingOrder && !filtersActive}
+                          onDragStart={(event) => { event.dataTransfer.effectAllowed = "move"; beginDrag(brand.id); }}
+                          onDragOver={(event) => dragOver(event, brand.id)}
+                          onDrop={(event) => event.preventDefault()}
+                          onDragEnd={endDrag}
+                          className={draggedId === brand.id ? "opacity-50" : undefined}
+                        >
+                          <BpTd className="w-8 text-center"><span aria-hidden="true" title="برای جابه‌جایی بکشید" className="bp-muted inline-flex cursor-grab active:cursor-grabbing"><GripVertical size={15} /></span></BpTd>
+                          <BpTd className="w-10 text-center"><AdminBulkCheckbox id={brand.id} label={`انتخاب برند ${brand.name}`} /></BpTd>
+                          <AdminColumn id="logo"><BpTd><BrandThumb logo={brand.logo} name={brand.name} /></BpTd></AdminColumn>
+                          <AdminColumn id="name"><BpTd className="max-w-[180px] truncate font-bold" title={brand.name}>{brand.name}</BpTd></AdminColumn>
+                          <AdminColumn id="slug"><BpTd className="bp-muted font-mono"><span dir="ltr">{brand.slug}</span></BpTd></AdminColumn>
+                          <AdminColumn id="products"><BpTd className="text-[var(--bp-text)]">{brand._count.products.toLocaleString("fa-IR")}</BpTd></AdminColumn>
+                          <AdminColumn id="homepage"><BpTd>{brand.featured ? <AdminStatusBadge tone="info">نمایش داده می‌شود</AdminStatusBadge> : <span className="bp-muted">—</span>}</BpTd></AdminColumn>
+                          <AdminColumn id="status"><BpTd><AdminStatusBadge tone={brand.isActive ? "success" : "neutral"}>{brand.isActive ? "فعال" : "غیرفعال"}</AdminStatusBadge></BpTd></AdminColumn>
+                          <BpTd>
+                            <div className="flex items-center justify-center gap-1">
+                              <BpButton isIconOnly size="sm" variant="ghost" title="ویرایش برند" aria-label={`ویرایش ${brand.name}`} onClick={() => startEdit(brand)}><SquarePen size={15} strokeWidth={1.5} /></BpButton>
+                              <BpButton isIconOnly size="sm" variant="ghost" title={brand._count.products > 0 ? "برند دارای محصول قابل حذف نیست" : "حذف برند"} className="bp-btn-danger-icon" aria-label={`حذف ${brand.name}`} disabled={brand._count.products > 0} onClick={() => { setDeleteError(""); setDeleteTarget(brand); }}><Trash2 size={15} strokeWidth={1.5} /></BpButton>
+                            </div>
+                          </BpTd>
+                        </AdminBulkTr>
+                      ))}
+                    </tbody>
+                  </BpTable>
+                </AdminBulkEditor>
+              </AdminColumnVisibility>
               </>
               ) : <div className="p-6"><AdminEmptyState title="برندی پیدا نشد" description="هیچ برندی با جستجو و فیلترهای انتخابی مطابقت ندارد." /></div>}
             </>
