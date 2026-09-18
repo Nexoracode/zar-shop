@@ -6,6 +6,7 @@ import { toast } from "@heroui/react";
 import { GripVertical, SquarePen, Tag, Trash2 } from "lucide-react";
 import { AdminEmptyState, AdminPageHeader, AdminStatusBadge } from "@/components/admin-ui";
 import { AdminBulkCheckbox, AdminBulkEditor, AdminBulkTr } from "@/components/admin-bulk-editor";
+import { AdminColumn, AdminColumnSettingsButton, AdminColumnVisibility } from "@/components/admin-column-visibility";
 import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
 import { requestErrorMessage, requestJson } from "@/lib/api-request";
 import { normalizeSearchText } from "@/lib/text-search";
@@ -37,7 +38,15 @@ function Panel({ children }: { children: ReactNode }) {
   return <section className="bp-frame relative p-[18px]">{children}</section>;
 }
 
-export function BlueprintSupportTicketCategoriesView({ categories }: { categories: TicketCategoryRow[] }) {
+const SUPPORT_TICKET_CATEGORIES_TABLE_ID = "supportTicketCategories";
+
+const ticketCategoryColumns = [
+  { id: "name", label: "نام" },
+  { id: "tickets", label: "تیکت‌ها" },
+  { id: "status", label: "وضعیت" },
+];
+
+export function BlueprintSupportTicketCategoriesView({ categories, initialHiddenColumns }: { categories: TicketCategoryRow[]; initialHiddenColumns: string[] }) {
   const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
   const [items, setItems] = useState(categories);
@@ -249,47 +258,49 @@ export function BlueprintSupportTicketCategoriesView({ categories }: { categorie
                 ))}
               </div>
 
-              <AdminBulkEditor entity="supportTicketCategories" entityLabel="موضوع" ids={visible.map((category) => category.id)} actions={[{ value: "active:on", label: "فعال‌کردن موضوعات" }, { value: "active:off", label: "غیرفعال‌کردن موضوعات" }]}>
-                <p className="m-0 flex items-center gap-1.5 border-b border-[var(--bp-divider)] px-4 py-2 text-[12px] text-[var(--bp-info)]">{filtersActive ? "برای تغییر ترتیب نمایش، ابتدا جستجو و فیلترها را پاک کنید." : "با کشیدن ردیف، ترتیب نمایش موضوعات را تنظیم کنید."}</p>
-                <BpTable ariaLabel="فهرست موضوعات تیکت" minWidth={520}>
-                  <thead>
-                    <tr>
-                      <BpTh className="w-8 text-center"><span className="sr-only">جابه‌جایی</span></BpTh>
-                      <BpTh className="w-10 text-center"><span className="sr-only">انتخاب</span></BpTh>
-                      <BpTh>نام</BpTh>
-                      <BpTh>تیکت‌ها</BpTh>
-                      <BpTh>وضعیت</BpTh>
-                      <BpTh className="text-center">عملیات</BpTh>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {visible.map((category) => (
-                      <AdminBulkTr
-                        key={category.id}
-                        id={category.id}
-                        draggable={!savingOrder && !filtersActive}
-                        onDragStart={(event) => { event.dataTransfer.effectAllowed = "move"; beginDrag(category.id); }}
-                        onDragOver={(event) => dragOver(event, category.id)}
-                        onDrop={(event) => event.preventDefault()}
-                        onDragEnd={endDrag}
-                        className={draggedId === category.id ? "opacity-50" : undefined}
-                      >
-                        <BpTd className="w-8 text-center"><span aria-hidden="true" title="برای جابه‌جایی بکشید" className="bp-muted inline-flex cursor-grab active:cursor-grabbing"><GripVertical size={15} /></span></BpTd>
-                        <BpTd className="w-10 text-center"><AdminBulkCheckbox id={category.id} label={`انتخاب موضوع ${category.name}`} /></BpTd>
-                        <BpTd className="max-w-[220px] truncate font-bold" title={category.name}>{category.name}</BpTd>
-                        <BpTd className="text-[var(--bp-text)]">{category._count.tickets.toLocaleString("fa-IR")}</BpTd>
-                        <BpTd><AdminStatusBadge tone={category.isActive ? "success" : "neutral"}>{category.isActive ? "فعال" : "غیرفعال"}</AdminStatusBadge></BpTd>
-                        <BpTd>
-                          <div className="flex items-center justify-center gap-1">
-                            <BpButton isIconOnly size="sm" variant="ghost" title="ویرایش موضوع" aria-label={`ویرایش ${category.name}`} onClick={() => startEdit(category)}><SquarePen size={15} strokeWidth={1.5} /></BpButton>
-                            <BpButton isIconOnly size="sm" variant="ghost" title={category._count.tickets > 0 ? "موضوع دارای تیکت قابل حذف نیست" : "حذف موضوع"} className="bp-btn-danger-icon" aria-label={`حذف ${category.name}`} disabled={category._count.tickets > 0} onClick={() => { setDeleteError(""); setDeleteTarget(category); }}><Trash2 size={15} strokeWidth={1.5} /></BpButton>
-                          </div>
-                        </BpTd>
-                      </AdminBulkTr>
-                    ))}
-                  </tbody>
-                </BpTable>
-              </AdminBulkEditor>
+              <AdminColumnVisibility tableId={SUPPORT_TICKET_CATEGORIES_TABLE_ID} columns={ticketCategoryColumns} initialHidden={initialHiddenColumns}>
+                <AdminBulkEditor entity="supportTicketCategories" entityLabel="موضوع" ids={visible.map((category) => category.id)} actions={[{ value: "active:on", label: "فعال‌کردن موضوعات" }, { value: "active:off", label: "غیرفعال‌کردن موضوعات" }]} beforeSelectAll={<AdminColumnSettingsButton />}>
+                  <p className="m-0 flex items-center gap-1.5 border-b border-[var(--bp-divider)] px-4 py-2 text-[12px] text-[var(--bp-info)]">{filtersActive ? "برای تغییر ترتیب نمایش، ابتدا جستجو و فیلترها را پاک کنید." : "با کشیدن ردیف، ترتیب نمایش موضوعات را تنظیم کنید."}</p>
+                  <BpTable ariaLabel="فهرست موضوعات تیکت" minWidth={520}>
+                    <thead>
+                      <tr>
+                        <BpTh className="w-8 text-center"><span className="sr-only">جابه‌جایی</span></BpTh>
+                        <BpTh className="w-10 text-center"><span className="sr-only">انتخاب</span></BpTh>
+                        <AdminColumn id="name"><BpTh>نام</BpTh></AdminColumn>
+                        <AdminColumn id="tickets"><BpTh>تیکت‌ها</BpTh></AdminColumn>
+                        <AdminColumn id="status"><BpTh>وضعیت</BpTh></AdminColumn>
+                        <BpTh className="text-center">عملیات</BpTh>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {visible.map((category) => (
+                        <AdminBulkTr
+                          key={category.id}
+                          id={category.id}
+                          draggable={!savingOrder && !filtersActive}
+                          onDragStart={(event) => { event.dataTransfer.effectAllowed = "move"; beginDrag(category.id); }}
+                          onDragOver={(event) => dragOver(event, category.id)}
+                          onDrop={(event) => event.preventDefault()}
+                          onDragEnd={endDrag}
+                          className={draggedId === category.id ? "opacity-50" : undefined}
+                        >
+                          <BpTd className="w-8 text-center"><span aria-hidden="true" title="برای جابه‌جایی بکشید" className="bp-muted inline-flex cursor-grab active:cursor-grabbing"><GripVertical size={15} /></span></BpTd>
+                          <BpTd className="w-10 text-center"><AdminBulkCheckbox id={category.id} label={`انتخاب موضوع ${category.name}`} /></BpTd>
+                          <AdminColumn id="name"><BpTd className="max-w-[220px] truncate font-bold" title={category.name}>{category.name}</BpTd></AdminColumn>
+                          <AdminColumn id="tickets"><BpTd className="text-[var(--bp-text)]">{category._count.tickets.toLocaleString("fa-IR")}</BpTd></AdminColumn>
+                          <AdminColumn id="status"><BpTd><AdminStatusBadge tone={category.isActive ? "success" : "neutral"}>{category.isActive ? "فعال" : "غیرفعال"}</AdminStatusBadge></BpTd></AdminColumn>
+                          <BpTd>
+                            <div className="flex items-center justify-center gap-1">
+                              <BpButton isIconOnly size="sm" variant="ghost" title="ویرایش موضوع" aria-label={`ویرایش ${category.name}`} onClick={() => startEdit(category)}><SquarePen size={15} strokeWidth={1.5} /></BpButton>
+                              <BpButton isIconOnly size="sm" variant="ghost" title={category._count.tickets > 0 ? "موضوع دارای تیکت قابل حذف نیست" : "حذف موضوع"} className="bp-btn-danger-icon" aria-label={`حذف ${category.name}`} disabled={category._count.tickets > 0} onClick={() => { setDeleteError(""); setDeleteTarget(category); }}><Trash2 size={15} strokeWidth={1.5} /></BpButton>
+                            </div>
+                          </BpTd>
+                        </AdminBulkTr>
+                      ))}
+                    </tbody>
+                  </BpTable>
+                </AdminBulkEditor>
+              </AdminColumnVisibility>
               </>
               ) : <div className="p-6"><AdminEmptyState title="موضوعی پیدا نشد" description="هیچ موضوعی با جستجو و فیلترهای انتخابی مطابقت ندارد." /></div>}
             </>
