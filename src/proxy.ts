@@ -9,7 +9,8 @@ import { getSeoRuleSets } from "@/modules/seo/rules";
 //      gone pages, and `X-Robots-Tag` / canonical `Link` response headers.
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  const isGuarded = pathname.startsWith("/account") || pathname.startsWith("/admin");
+  const isGuarded =
+    pathname.startsWith("/account") || (pathname.startsWith("/admin") && pathname !== "/admin/login");
 
   if (isGuarded && !request.cookies.has(SESSION_COOKIE)) {
     const login = new URL("/login", request.url);
