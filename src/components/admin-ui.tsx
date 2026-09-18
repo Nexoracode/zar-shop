@@ -42,12 +42,13 @@ export function AdminPanel({ children, className = "" }: { children: ReactNode; 
   return <section className={`bp-frame relative ${className}`}>{children}</section>;
 }
 
-export function AdminEmptyState({ title, description }: { title: string; description: string }) {
+export function AdminEmptyState({ title, description, action }: { title: string; description: string; action?: ReactNode }) {
   return (
     <div className="grid place-items-center px-5 py-12 text-center">
       <span className="mb-3 grid h-12 w-12 place-items-center border border-[var(--bp-divider)] text-[var(--bp-muted)]"><PackageOpen size={22} /></span>
       <strong className="text-sm">{title}</strong>
       <span className="bp-muted mt-1 text-xs">{description}</span>
+      {action && <div className="mt-4">{action}</div>}
     </div>
   );
 }

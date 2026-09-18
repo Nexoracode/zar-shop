@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { ImageOff, Layers, Plus, SquarePen, Star, Tag } from "lucide-react";
+import { ImageOff, Layers, Plus, SquarePen, Star, Tag, X } from "lucide-react";
 import { AdminEmptyState, AdminPageHeader, AdminPrimaryLink } from "@/components/admin-ui";
 import { productStatusLabels, productStatusTones } from "@/modules/admin/labels";
 import { AdminListFilters } from "@/components/admin-list-filters";
@@ -16,6 +16,7 @@ import { ProductBulkEditButton } from "@/components/product-bulk-edit-modal";
 import { ProductDeleteButton } from "./product-delete-button";
 import { ProductRowMenu } from "./product-row-menu";
 import { ProductStatusMenu } from "./product-publish-toggle";
+import { BpLinkButton } from "./ui/button";
 import { BpTable, BpTd, BpTh } from "./ui/table";
 import { BpTag } from "./ui/tag";
 
@@ -122,6 +123,8 @@ export function BlueprintProductsView({ products, categories, filters, paginatio
     { name: "discount", label: "وضعیت تخفیف", value: filters.discount, options: [{ value: "", label: "همه تخفیف‌ها" }, { value: "active", label: "دارای تخفیف فعال" }, { value: "upcoming", label: "تخفیف آینده" }, { value: "none", label: "بدون تخفیف" }] },
   ];
 
+  const hasActiveFilters = Boolean(filters.query || filters.status || filters.category || filters.featured || filters.stock || filters.discount);
+
   return (
     <div className="flex flex-col gap-2">
       {/* Redraws the rows the moment any discount opens or closes, so the flags cannot go stale. */}
@@ -203,7 +206,13 @@ export function BlueprintProductsView({ products, categories, filters, paginatio
             </AdminColumnVisibility>
             <AdminPagination page={pagination.page} pageSize={pagination.pageSize} totalItems={pagination.totalItems} totalPages={pagination.totalPages} />
           </>
-        ) : <AdminEmptyState title="محصولی پیدا نشد" description="فیلترها را تغییر دهید یا اولین محصول را ثبت کنید." />}
+        ) : (
+          <AdminEmptyState
+            title="محصولی پیدا نشد"
+            description={hasActiveFilters ? "فیلترها یا جستجو را تغییر دهید و دوباره تلاش کنید." : "هنوز محصولی ثبت نشده است؛ اولین محصول را ثبت کنید."}
+            action={hasActiveFilters ? <BpLinkButton href="/admin/products" variant="secondary" className="gap-2"><X size={14} strokeWidth={1.8} />پاک‌کردن فیلترها و جستجو</BpLinkButton> : undefined}
+          />
+        )}
       </Panel>
     </div>
   );
