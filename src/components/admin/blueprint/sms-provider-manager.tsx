@@ -6,6 +6,7 @@ import { toast } from "@heroui/react";
 import Link from "next/link";
 import { AlertTriangle, ExternalLink, MessageSquareText, Power, ShieldCheck, SquarePen, Trash2 } from "lucide-react";
 import { AdminBulkCheckbox, AdminBulkEditor } from "@/components/admin-bulk-editor";
+import { AdminColumn, AdminColumnSettingsButton, AdminColumnVisibility } from "@/components/admin-column-visibility";
 import { AdminEmptyState, AdminPanel } from "@/components/admin-ui";
 import { smsProviders, type SmsProviderId } from "@/modules/communications/sms-providers";
 import type { PublicSmsProviderConfig } from "@/modules/communications/sms-config";
@@ -20,7 +21,16 @@ function statusLabel(item: PublicSmsProviderConfig) {
   return item.isActive ? "فعال" : item.sendSupported ? "غیرفعال" : "نیازمند قرارداد API";
 }
 
-export function BlueprintSmsProviderManager({ mode, initialConfigs, smsEnabled, onSaved, editingProvider, initialSenderNumber }: { mode: "list" | "form"; initialConfigs: PublicSmsProviderConfig[]; smsEnabled?: boolean; onSaved?: () => void; /** Set when editing an already-configured provider: locks the provider picker and prefills the sender number. */ editingProvider?: SmsProviderId; initialSenderNumber?: string }) {
+const SMS_PROVIDERS_TABLE_ID = "smsProviders";
+
+const smsProviderColumns = [
+  { id: "provider", label: "ارائه‌دهنده" },
+  { id: "credential", label: "شناسه" },
+  { id: "senderNumber", label: "سرشماره" },
+  { id: "status", label: "وضعیت" },
+];
+
+export function BlueprintSmsProviderManager({ mode, initialConfigs, smsEnabled, onSaved, editingProvider, initialSenderNumber, initialHiddenColumns = [] }: { mode: "list" | "form"; initialConfigs: PublicSmsProviderConfig[]; smsEnabled?: boolean; onSaved?: () => void; /** Set when editing an already-configured provider: locks the provider picker and prefills the sender number. */ editingProvider?: SmsProviderId; initialSenderNumber?: string; initialHiddenColumns?: string[] }) {
   const router = useRouter();
   const [configs, setConfigs] = useState(initialConfigs);
   const [selectedId, setSelectedId] = useState<SmsProviderId>(editingProvider ?? "FARAZ_SMS");
@@ -105,49 +115,54 @@ export function BlueprintSmsProviderManager({ mode, initialConfigs, smsEnabled, 
               ))}
             </div>
 
-            <AdminBulkEditor
-              entity="smsProviders"
-              entityLabel="ارائه‌دهنده"
-              ids={configs.map((item) => item.id)}
-              actions={[{ value: "delete", label: "حذف ارائه‌دهندگان انتخاب‌شده", confirmation: { title: "حذف گروهی ارائه‌دهندگان پیامک", description: "اعتبارنامه‌های رمزنگاری‌شده و تنظیمات اتصال ارائه‌دهندگان انتخاب‌شده حذف خواهند شد.", confirmLabel: "حذف ارائه‌دهندگان" } }]}
-              onCompleted={({ ids }) => setConfigs((current) => current.filter((item) => !ids.includes(item.id)))}
-            >
-              <BpTable ariaLabel="ارائه‌دهندگان پیامک" minWidth={780}>
-                <thead>
-                  <tr>
-                    <BpTh className="w-10 text-center"><span className="sr-only">انتخاب</span></BpTh>
-                    <BpTh>ارائه‌دهنده</BpTh>
-                    <BpTh>شناسه</BpTh>
-                    <BpTh>سرشماره</BpTh>
-                    <BpTh>وضعیت</BpTh>
-                    <BpTh className="text-center">عملیات</BpTh>
-                  </tr>
-                </thead>
-                <tbody>
-                  {configs.map((item) => (
-                    <tr key={item.id}>
-                      <BpTd className="w-10 text-center"><AdminBulkCheckbox id={item.id} label={`انتخاب ارائه‌دهنده ${item.displayName}`} /></BpTd>
-                      <BpTd className="font-bold">
-                        <span className="flex min-w-0 items-center gap-2.5">
-                          <span className="grid size-8 shrink-0 place-items-center border border-[var(--bp-accent)] bg-[var(--bp-accent-100)] text-[var(--bp-accent)]"><MessageSquareText size={15} /></span>
-                          <span className="truncate">{item.displayName}</span>
-                        </span>
-                      </BpTd>
-                      <BpTd className="bp-muted font-mono" dir="ltr">{item.credentialMasked}</BpTd>
-                      <BpTd className="bp-muted font-mono" dir="ltr">{item.senderNumber}</BpTd>
-                      <BpTd><BpTag tone={statusTone(item)}>{statusLabel(item)}</BpTag></BpTd>
-                      <BpTd className="text-center">
-                        <div className="flex items-center justify-center gap-1">
-                          <BpLinkButton href={`/admin/settings/notifications/providers/${item.provider}/edit`} variant="ghost" isIconOnly size="sm" aria-label={`ویرایش ${item.displayName}`}><SquarePen size={15} strokeWidth={1.5} /></BpLinkButton>
-                          <BpButton type="button" variant="ghost" isIconOnly size="sm" disabled={!item.sendSupported || item.isActive} isPending={busy === `PATCH-${item.provider}`} aria-label={`فعال‌سازی ${item.displayName}`} onClick={() => void mutate(item.provider, "PATCH")}><Power size={15} strokeWidth={1.5} /></BpButton>
-                          <BpButton type="button" variant="ghost" className="bp-btn-danger-icon" isIconOnly size="sm" isPending={busy === `DELETE-${item.provider}`} aria-label={`حذف ${item.displayName}`} onClick={() => void mutate(item.provider, "DELETE")}><Trash2 size={15} strokeWidth={1.5} /></BpButton>
-                        </div>
-                      </BpTd>
+            <AdminColumnVisibility tableId={SMS_PROVIDERS_TABLE_ID} columns={smsProviderColumns} initialHidden={initialHiddenColumns}>
+              <AdminBulkEditor
+                entity="smsProviders"
+                entityLabel="ارائه‌دهنده"
+                ids={configs.map((item) => item.id)}
+                actions={[{ value: "delete", label: "حذف ارائه‌دهندگان انتخاب‌شده", confirmation: { title: "حذف گروهی ارائه‌دهندگان پیامک", description: "اعتبارنامه‌های رمزنگاری‌شده و تنظیمات اتصال ارائه‌دهندگان انتخاب‌شده حذف خواهند شد.", confirmLabel: "حذف ارائه‌دهندگان" } }]}
+                onCompleted={({ ids }) => setConfigs((current) => current.filter((item) => !ids.includes(item.id)))}
+                beforeSelectAll={<AdminColumnSettingsButton />}
+              >
+                <BpTable ariaLabel="ارائه‌دهندگان پیامک" minWidth={780}>
+                  <thead>
+                    <tr>
+                      <BpTh className="w-10 text-center"><span className="sr-only">انتخاب</span></BpTh>
+                      <AdminColumn id="provider"><BpTh>ارائه‌دهنده</BpTh></AdminColumn>
+                      <AdminColumn id="credential"><BpTh>شناسه</BpTh></AdminColumn>
+                      <AdminColumn id="senderNumber"><BpTh>سرشماره</BpTh></AdminColumn>
+                      <AdminColumn id="status"><BpTh>وضعیت</BpTh></AdminColumn>
+                      <BpTh className="text-center">عملیات</BpTh>
                     </tr>
-                  ))}
-                </tbody>
-              </BpTable>
-            </AdminBulkEditor>
+                  </thead>
+                  <tbody>
+                    {configs.map((item) => (
+                      <tr key={item.id}>
+                        <BpTd className="w-10 text-center"><AdminBulkCheckbox id={item.id} label={`انتخاب ارائه‌دهنده ${item.displayName}`} /></BpTd>
+                        <AdminColumn id="provider">
+                          <BpTd className="font-bold">
+                            <span className="flex min-w-0 items-center gap-2.5">
+                              <span className="grid size-8 shrink-0 place-items-center border border-[var(--bp-accent)] bg-[var(--bp-accent-100)] text-[var(--bp-accent)]"><MessageSquareText size={15} /></span>
+                              <span className="truncate">{item.displayName}</span>
+                            </span>
+                          </BpTd>
+                        </AdminColumn>
+                        <AdminColumn id="credential"><BpTd className="bp-muted font-mono" dir="ltr">{item.credentialMasked}</BpTd></AdminColumn>
+                        <AdminColumn id="senderNumber"><BpTd className="bp-muted font-mono" dir="ltr">{item.senderNumber}</BpTd></AdminColumn>
+                        <AdminColumn id="status"><BpTd><BpTag tone={statusTone(item)}>{statusLabel(item)}</BpTag></BpTd></AdminColumn>
+                        <BpTd className="text-center">
+                          <div className="flex items-center justify-center gap-1">
+                            <BpLinkButton href={`/admin/settings/notifications/providers/${item.provider}/edit`} variant="ghost" isIconOnly size="sm" aria-label={`ویرایش ${item.displayName}`}><SquarePen size={15} strokeWidth={1.5} /></BpLinkButton>
+                            <BpButton type="button" variant="ghost" isIconOnly size="sm" disabled={!item.sendSupported || item.isActive} isPending={busy === `PATCH-${item.provider}`} aria-label={`فعال‌سازی ${item.displayName}`} onClick={() => void mutate(item.provider, "PATCH")}><Power size={15} strokeWidth={1.5} /></BpButton>
+                            <BpButton type="button" variant="ghost" className="bp-btn-danger-icon" isIconOnly size="sm" isPending={busy === `DELETE-${item.provider}`} aria-label={`حذف ${item.displayName}`} onClick={() => void mutate(item.provider, "DELETE")}><Trash2 size={15} strokeWidth={1.5} /></BpButton>
+                          </div>
+                        </BpTd>
+                      </tr>
+                    ))}
+                  </tbody>
+                </BpTable>
+              </AdminBulkEditor>
+            </AdminColumnVisibility>
           </>
         ) : <AdminEmptyState title="ارائه‌دهنده‌ای پیکربندی نشده" description="هنوز هیچ ارائه‌دهنده پیامکی برای فروشگاه ثبت نشده است." />}
       </AdminPanel>

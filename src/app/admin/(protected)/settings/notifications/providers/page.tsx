@@ -7,6 +7,7 @@ import { requirePermission } from "@/modules/auth/session";
 import { getPublicSmsProviderConfigs } from "@/modules/communications/sms-config";
 import { getSmsAccountBalance } from "@/modules/communications/sms-patterns";
 import { getCommunicationSettings } from "@/modules/communications/communication-settings";
+import { readHiddenColumns } from "@/lib/admin-column-visibility-server";
 
 // @next-codemod-ignore Cache Components adoption: this segment temporarily allows blocking.
 // Remove this opt-out after verifying the segment passes validation without it.
@@ -16,7 +17,7 @@ export const instant = false;
 export const metadata: Metadata = { title: "ارائه‌دهندگان پیامک" };
 export default async function SmsProvidersPage() {
   await requirePermission("settings:manage");
-  const [configs, communicationSettings] = await Promise.all([getPublicSmsProviderConfigs(), getCommunicationSettings()]);
+  const [configs, communicationSettings, initialHiddenColumns] = await Promise.all([getPublicSmsProviderConfigs(), getCommunicationSettings(), readHiddenColumns("smsProviders")]);
   const hasActiveFaraz = configs.some((config) => config.provider === "FARAZ_SMS" && config.isActive);
   const balance = hasActiveFaraz ? await getSmsAccountBalance().catch(() => null) : null;
   return <>
@@ -37,6 +38,6 @@ export default async function SmsProvidersPage() {
         <div className="min-w-0"><strong className="block text-[13px]">موجودی حساب فراز اس‌ام‌اس</strong><span className="bp-muted mt-0.5 block text-[12px]">{balance.toLocaleString("fa-IR")} ریال</span></div>
       </div>
     )}
-    <BlueprintSmsProviderManager key={configs.map((config) => config.updatedAt).join("|")} mode="list" initialConfigs={configs} />
+    <BlueprintSmsProviderManager key={configs.map((config) => config.updatedAt).join("|")} mode="list" initialConfigs={configs} initialHiddenColumns={initialHiddenColumns} />
   </>;
 }

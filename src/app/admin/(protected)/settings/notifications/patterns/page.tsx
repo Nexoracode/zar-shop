@@ -4,6 +4,7 @@ import { AdminPageHeader, AdminPrimaryLink } from "@/components/admin-ui";
 import { BlueprintSmsPatternList } from "@/components/admin/blueprint/sms-pattern-manager";
 import { requirePermission } from "@/modules/auth/session";
 import { listSmsPatterns } from "@/modules/communications/sms-patterns";
+import { readHiddenColumns } from "@/lib/admin-column-visibility-server";
 
 // @next-codemod-ignore Cache Components adoption: this segment temporarily allows blocking.
 // Remove this opt-out after verifying the segment passes validation without it.
@@ -18,6 +19,7 @@ export default async function SmsPatternsPage() {
   let loadError: string | null = null;
   try { patterns = await listSmsPatterns(); }
   catch (error) { loadError = error instanceof Error ? error.message : "دریافت پترن‌ها انجام نشد."; }
+  const initialHiddenColumns = await readHiddenColumns("smsPatterns");
 
   return <>
     <AdminPageHeader eyebrow="پیامک و اعلان" title="پترن‌های پیامک" description="پترن‌های تأییدشده حساب فراز اس‌ام‌اس را برای ارسال کد تأیید و پیام‌های خودکار مدیریت کنید." backHref="/admin/settings/notifications" backLabel="بازگشت به پیامک و اعلان" action={<AdminPrimaryLink href="/admin/settings/notifications/patterns/new"><Plus size={17} />افزودن پترن</AdminPrimaryLink>} />
@@ -25,6 +27,6 @@ export default async function SmsPatternsPage() {
       <div className="bp-frame relative flex items-start gap-2.5 border-[var(--bp-danger)] bg-[var(--bp-danger-bg)] p-[16px] text-[var(--bp-danger)]">
         <p className="m-0 text-[13px] leading-6">{loadError}</p>
       </div>
-    ) : <BlueprintSmsPatternList initialPatterns={patterns} />}
+    ) : <BlueprintSmsPatternList initialPatterns={patterns} initialHiddenColumns={initialHiddenColumns} />}
   </>;
 }

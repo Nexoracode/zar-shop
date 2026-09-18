@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "@heroui/react";
 import { FileText, RefreshCw, SquarePen, Trash2 } from "lucide-react";
 import { AdminEmptyState, AdminPanel } from "@/components/admin-ui";
+import { AdminColumn, AdminColumnSettingsButton, AdminColumnVisibility } from "@/components/admin-column-visibility";
 import { smsPatternCategories, type SmsPattern } from "@/modules/communications/sms-pattern-schemas";
 import { smsPatternFieldLimits } from "@/modules/communications/limits";
 import { BpButton, BpInput, BpKicker, BpSelect, BpSwitch, BpTable, BpTag, BpTd, BpTextarea, BpTh } from "./ui";
@@ -279,7 +280,17 @@ function categoryLabel(category: number | null) {
   return smsPatternCategories.find((item) => item.value === category)?.label ?? "—";
 }
 
-export function BlueprintSmsPatternList({ initialPatterns }: { initialPatterns: SmsPattern[] }) {
+const SMS_PATTERNS_TABLE_ID = "smsPatterns";
+
+const smsPatternColumns = [
+  { id: "text", label: "متن پترن" },
+  { id: "code", label: "کد" },
+  { id: "category", label: "دسته" },
+  { id: "vars", label: "متغیرها" },
+  { id: "status", label: "وضعیت" },
+];
+
+export function BlueprintSmsPatternList({ initialPatterns, initialHiddenColumns }: { initialPatterns: SmsPattern[]; initialHiddenColumns: string[] }) {
   const router = useRouter();
   const [patterns, setPatterns] = useState(initialPatterns);
   const [busy, setBusy] = useState<string | null>(null);
@@ -310,66 +321,71 @@ export function BlueprintSmsPatternList({ initialPatterns }: { initialPatterns: 
   }
 
   return (
-    <AdminPanel>
-      <div className="flex items-center justify-between gap-3 border-b border-[var(--bp-row-line)] p-[14px]">
-        <p className="bp-muted m-0 text-[12px]">پترن‌های ثبت‌شده در حساب فراز اس‌ام‌اس شما؛ ساخت پترن جدید تا تأیید اپراتور چند دقیقه زمان می‌برد.</p>
-        <BpButton type="button" variant="secondary" size="sm" isPending={busy === "refresh"} onClick={() => void refresh()} className="gap-2"><RefreshCw size={14} />بروزرسانی</BpButton>
-      </div>
-      {patterns.length ? (
-        <>
-          <div className="md:hidden">
-            {patterns.map((item) => (
-              <article key={item.code} className="border-b border-[var(--bp-row-line)] p-4 last:border-b-0">
-                <div className="flex items-start gap-3">
-                  <span className="grid size-9 shrink-0 place-items-center border border-[var(--bp-accent)] bg-[var(--bp-accent-100)] text-[var(--bp-accent)]"><FileText size={17} /></span>
-                  <div className="min-w-0 flex-1">
-                    <strong className="block truncate text-[13px]">{item.text || item.code}</strong>
-                    <span className="bp-muted block truncate font-mono text-[11px]" dir="ltr">{item.code}</span>
+    <AdminColumnVisibility tableId={SMS_PATTERNS_TABLE_ID} columns={smsPatternColumns} initialHidden={initialHiddenColumns}>
+      <AdminPanel>
+        <div className="flex items-center justify-between gap-3 border-b border-[var(--bp-row-line)] p-[14px]">
+          <p className="bp-muted m-0 text-[12px]">پترن‌های ثبت‌شده در حساب فراز اس‌ام‌اس شما؛ ساخت پترن جدید تا تأیید اپراتور چند دقیقه زمان می‌برد.</p>
+          <div className="flex items-center gap-2">
+            <AdminColumnSettingsButton />
+            <BpButton type="button" variant="secondary" size="sm" isPending={busy === "refresh"} onClick={() => void refresh()} className="gap-2"><RefreshCw size={14} />بروزرسانی</BpButton>
+          </div>
+        </div>
+        {patterns.length ? (
+          <>
+            <div className="md:hidden">
+              {patterns.map((item) => (
+                <article key={item.code} className="border-b border-[var(--bp-row-line)] p-4 last:border-b-0">
+                  <div className="flex items-start gap-3">
+                    <span className="grid size-9 shrink-0 place-items-center border border-[var(--bp-accent)] bg-[var(--bp-accent-100)] text-[var(--bp-accent)]"><FileText size={17} /></span>
+                    <div className="min-w-0 flex-1">
+                      <strong className="block truncate text-[13px]">{item.text || item.code}</strong>
+                      <span className="bp-muted block truncate font-mono text-[11px]" dir="ltr">{item.code}</span>
+                    </div>
+                    <BpTag tone={statusTone(item.status)}>{statusLabel(item.status)}</BpTag>
                   </div>
-                  <BpTag tone={statusTone(item.status)}>{statusLabel(item.status)}</BpTag>
-                </div>
-                <div className="mt-3 grid grid-cols-2 gap-2">
-                  <BpButton type="button" variant="secondary" onClick={() => router.push(`/admin/settings/notifications/patterns/${encodeURIComponent(item.code)}/edit`)} className="gap-2"><SquarePen size={14} />ویرایش</BpButton>
-                  <BpButton type="button" variant="danger" isPending={busy === `delete-${item.code}`} onClick={() => void remove(item.code)} className="gap-2"><Trash2 size={14} />حذف</BpButton>
-                </div>
-              </article>
-            ))}
-          </div>
+                  <div className="mt-3 grid grid-cols-2 gap-2">
+                    <BpButton type="button" variant="secondary" onClick={() => router.push(`/admin/settings/notifications/patterns/${encodeURIComponent(item.code)}/edit`)} className="gap-2"><SquarePen size={14} />ویرایش</BpButton>
+                    <BpButton type="button" variant="danger" isPending={busy === `delete-${item.code}`} onClick={() => void remove(item.code)} className="gap-2"><Trash2 size={14} />حذف</BpButton>
+                  </div>
+                </article>
+              ))}
+            </div>
 
-          <div className="hidden md:block">
-            <BpTable ariaLabel="پترن‌های پیامک" minWidth={860}>
-              <thead>
-                <tr>
-                  <BpTh>متن پترن</BpTh>
-                  <BpTh>کد</BpTh>
-                  <BpTh>دسته</BpTh>
-                  <BpTh>متغیرها</BpTh>
-                  <BpTh>وضعیت</BpTh>
-                  <BpTh className="text-center">عملیات</BpTh>
-                </tr>
-              </thead>
-              <tbody>
-                {patterns.map((item) => (
-                  <tr key={item.code}>
-                    <BpTd className="max-w-72 truncate font-bold">{item.text}</BpTd>
-                    <BpTd className="bp-muted font-mono" dir="ltr">{item.code}</BpTd>
-                    <BpTd className="bp-muted">{categoryLabel(item.category)}</BpTd>
-                    <BpTd className="bp-muted font-mono" dir="ltr">{item.vars.map((variable) => variable.var).join(", ") || "—"}</BpTd>
-                    <BpTd><BpTag tone={statusTone(item.status)}>{statusLabel(item.status)}</BpTag></BpTd>
-                    <BpTd className="text-center">
-                      <div className="flex items-center justify-center gap-1">
-                        <BpButton type="button" variant="ghost" isIconOnly size="sm" aria-label={`ویرایش پترن ${item.code}`} onClick={() => router.push(`/admin/settings/notifications/patterns/${encodeURIComponent(item.code)}/edit`)}><SquarePen size={15} strokeWidth={1.5} /></BpButton>
-                        <BpButton type="button" variant="ghost" className="bp-btn-danger-icon" isIconOnly size="sm" isPending={busy === `delete-${item.code}`} aria-label={`حذف پترن ${item.code}`} onClick={() => void remove(item.code)}><Trash2 size={15} strokeWidth={1.5} /></BpButton>
-                      </div>
-                    </BpTd>
+            <div className="hidden md:block">
+              <BpTable ariaLabel="پترن‌های پیامک" minWidth={860}>
+                <thead>
+                  <tr>
+                    <AdminColumn id="text"><BpTh>متن پترن</BpTh></AdminColumn>
+                    <AdminColumn id="code"><BpTh>کد</BpTh></AdminColumn>
+                    <AdminColumn id="category"><BpTh>دسته</BpTh></AdminColumn>
+                    <AdminColumn id="vars"><BpTh>متغیرها</BpTh></AdminColumn>
+                    <AdminColumn id="status"><BpTh>وضعیت</BpTh></AdminColumn>
+                    <BpTh className="text-center">عملیات</BpTh>
                   </tr>
-                ))}
-              </tbody>
-            </BpTable>
-          </div>
-        </>
-      ) : <AdminEmptyState title="پترنی ثبت نشده" description="هنوز هیچ پترنی در حساب فراز اس‌ام‌اس ثبت نشده است." />}
-    </AdminPanel>
+                </thead>
+                <tbody>
+                  {patterns.map((item) => (
+                    <tr key={item.code}>
+                      <AdminColumn id="text"><BpTd className="max-w-72 truncate font-bold">{item.text}</BpTd></AdminColumn>
+                      <AdminColumn id="code"><BpTd className="bp-muted font-mono" dir="ltr">{item.code}</BpTd></AdminColumn>
+                      <AdminColumn id="category"><BpTd className="bp-muted">{categoryLabel(item.category)}</BpTd></AdminColumn>
+                      <AdminColumn id="vars"><BpTd className="bp-muted font-mono" dir="ltr">{item.vars.map((variable) => variable.var).join(", ") || "—"}</BpTd></AdminColumn>
+                      <AdminColumn id="status"><BpTd><BpTag tone={statusTone(item.status)}>{statusLabel(item.status)}</BpTag></BpTd></AdminColumn>
+                      <BpTd className="text-center">
+                        <div className="flex items-center justify-center gap-1">
+                          <BpButton type="button" variant="ghost" isIconOnly size="sm" aria-label={`ویرایش پترن ${item.code}`} onClick={() => router.push(`/admin/settings/notifications/patterns/${encodeURIComponent(item.code)}/edit`)}><SquarePen size={15} strokeWidth={1.5} /></BpButton>
+                          <BpButton type="button" variant="ghost" className="bp-btn-danger-icon" isIconOnly size="sm" isPending={busy === `delete-${item.code}`} aria-label={`حذف پترن ${item.code}`} onClick={() => void remove(item.code)}><Trash2 size={15} strokeWidth={1.5} /></BpButton>
+                        </div>
+                      </BpTd>
+                    </tr>
+                  ))}
+                </tbody>
+              </BpTable>
+            </div>
+          </>
+        ) : <AdminEmptyState title="پترنی ثبت نشده" description="هنوز هیچ پترنی در حساب فراز اس‌ام‌اس ثبت نشده است." />}
+      </AdminPanel>
+    </AdminColumnVisibility>
   );
 }
 
