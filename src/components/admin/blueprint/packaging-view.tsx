@@ -6,6 +6,8 @@ import { SquarePen } from "lucide-react";
 import { AdminEmptyState, AdminPanel, AdminStatusBadge } from "@/components/admin-ui";
 import { AdminBulkCheckbox, AdminBulkEditor, AdminBulkTr } from "@/components/admin-bulk-editor";
 import { AdminColumn, AdminColumnSettingsButton, AdminColumnVisibility } from "@/components/admin-column-visibility";
+import { AdminColumnFilter } from "@/components/admin-column-filter";
+import { AdminGenericBulkEditButton } from "@/components/admin-generic-bulk-edit";
 import { normalizeSearchText } from "@/lib/text-search";
 import { BpListFilters, BpTable, BpTag, BpTd, BpTh } from "./ui";
 import { PackagingBoxDeleteButton } from "./packaging-box-delete-button";
@@ -67,10 +69,6 @@ export function BlueprintPackagingView({ boxes, initialHiddenColumns }: { boxes:
             onQueryChange={setQuery}
             searchLabel="جستجوی جعبه"
             searchPlaceholder="جستجو بر اساس نام جعبه"
-            filters={[
-              { name: "status", ariaLabel: "وضعیت جعبه", value: statusFilter, onChange: setStatusFilter, options: [{ value: "", label: "همه وضعیت‌ها" }, { value: "active", label: "فعال" }, { value: "inactive", label: "غیرفعال" }] },
-              { name: "default", ariaLabel: "جعبه پیش‌فرض", value: defaultFilter, onChange: setDefaultFilter, options: [{ value: "", label: "پیش‌فرض: همه" }, { value: "yes", label: "جعبه پیش‌فرض" }, { value: "no", label: "غیر پیش‌فرض" }] },
-            ]}
           />
 
           {visible.length ? (
@@ -102,7 +100,14 @@ export function BlueprintPackagingView({ boxes, initialHiddenColumns }: { boxes:
               </div>
 
               <AdminColumnVisibility tableId={PACKAGING_TABLE_ID} columns={packagingColumns} initialHidden={initialHiddenColumns}>
-                <AdminBulkEditor entity="packagingBoxes" entityLabel="جعبه" ids={visible.map((box) => box.id)} actions={[{ value: "active:on", label: "فعال‌کردن جعبه‌ها" }, { value: "active:off", label: "غیرفعال‌کردن جعبه‌ها" }]} beforeSelectAll={<AdminColumnSettingsButton />}>
+                <AdminBulkEditor
+                  entity="packagingBoxes"
+                  entityLabel="جعبه"
+                  ids={visible.map((box) => box.id)}
+                  actions={[]}
+                  beforeSelectAll={<AdminColumnSettingsButton />}
+                  extraAction={<AdminGenericBulkEditButton entity="packagingBoxes" entityLabel="جعبه" changeTypes={[{ value: "active", label: "وضعیت", options: [{ value: "active:on", label: "فعال‌کردن" }, { value: "active:off", label: "غیرفعال‌کردن" }] }]} />}
+                >
                   <BpTable ariaLabel="فهرست جعبه‌های بسته‌بندی" minWidth={880}>
                     <thead>
                       <tr>
@@ -112,8 +117,8 @@ export function BlueprintPackagingView({ boxes, initialHiddenColumns }: { boxes:
                         <AdminColumn id="weight"><BpTh>وزن جعبه</BpTh></AdminColumn>
                         <AdminColumn id="maxWeight"><BpTh>حداکثر وزن محتوا</BpTh></AdminColumn>
                         <AdminColumn id="tapinId"><BpTh>شناسه تاپین</BpTh></AdminColumn>
-                        <AdminColumn id="status"><BpTh>وضعیت</BpTh></AdminColumn>
-                        <AdminColumn id="isDefault"><BpTh>پیش‌فرض</BpTh></AdminColumn>
+                        <AdminColumn id="status"><BpTh><span className="inline-flex items-center">وضعیت<AdminColumnFilter ariaLabel="فیلتر وضعیت" groups={[{ name: "status", label: "وضعیت", value: statusFilter, onChange: setStatusFilter, options: [{ value: "", label: "همه وضعیت‌ها" }, { value: "active", label: "فعال" }, { value: "inactive", label: "غیرفعال" }] }]} /></span></BpTh></AdminColumn>
+                        <AdminColumn id="isDefault"><BpTh><span className="inline-flex items-center">پیش‌فرض<AdminColumnFilter ariaLabel="فیلتر پیش‌فرض" groups={[{ name: "default", label: "جعبه پیش‌فرض", value: defaultFilter, onChange: setDefaultFilter, options: [{ value: "", label: "همه" }, { value: "yes", label: "جعبه پیش‌فرض" }, { value: "no", label: "غیر پیش‌فرض" }] }]} /></span></BpTh></AdminColumn>
                         <BpTh className="text-center">عملیات</BpTh>
                       </tr>
                     </thead>
