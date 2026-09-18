@@ -22,6 +22,13 @@ export function AddressForm({ initial, user, onSaved, onCancel, onStepChange }: 
   const formRef = useRef<HTMLFormElement>(null);
   const [step, setStep] = useState<AddressFormStep>(2);
   const selfName = `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim();
+  // `Address.recipient` is one combined column (see `addressFieldLimits.recipient`); splitting it
+  // into two inputs still has to fit inside it once rejoined, so each half gets room for the
+  // other plus the joining space rather than the full column width.
+  const selfNamePartLimit = Math.floor((addressFieldLimits.recipient - 1) / 2);
+  const [initialSelfFirstName, initialSelfLastName] = initial?.recipientType === "SELF" && !selfName
+    ? (() => { const [first, ...rest] = initial.recipient.split(" "); return [first ?? "", rest.join(" ")]; })()
+    : ["", ""];
   const [recipientType, setRecipientType] = useState<"SELF" | "OTHER">(initial?.recipientType ?? "SELF");
   const [provinceId, setProvinceId] = useState(initial?.provinceId ?? "");
   const [cityId, setCityId] = useState(initial?.cityId ?? "");
@@ -76,9 +83,8 @@ export function AddressForm({ initial, user, onSaved, onCancel, onStepChange }: 
     const form = new FormData(event.currentTarget);
     const validationErrors = validateAddressForm(readAddressValues(form));
     // When the profile already has a name, "تحویل به خودم" needs no input of its own; otherwise
-    // it reuses the same `recipient` field the "OTHER" branch renders, just prefilled empty
-    // instead of with someone else's name.
-    const selfRecipient = selfName || String(form.get("recipient") ?? "");
+    // it collects first/last name as two fields and joins them into the one `recipient` column.
+    const selfRecipient = selfName || `${String(form.get("selfFirstName") ?? "").trim()} ${String(form.get("selfLastName") ?? "").trim()}`.trim();
     const nextRecipientErrors = validateAddressRecipient({ recipientType, recipient: recipientType === "SELF" ? selfRecipient : String(form.get("recipient") ?? ""), phone: recipientType === "SELF" ? user.phone ?? "" : String(form.get("phone") ?? "") });
     setFieldErrors(validationErrors);
     setRecipientErrors(nextRecipientErrors);
@@ -153,14 +159,13 @@ export function AddressForm({ initial, user, onSaved, onCancel, onStepChange }: 
           selfName ? (
             <div className="rounded-lg bg-[var(--surface-secondary)] px-4 py-3 text-xs leading-6 text-[var(--muted)]">گیرنده: <b className="text-[var(--foreground)]">{selfName}</b>{user.phone && <span className="mr-2" dir="ltr">{user.phone}</span>}</div>
           ) : (
-            <TextField
-              name="recipient" label="نام و نام خانوادگی" required
-              defaultValue={initial?.recipientType === "SELF" ? initial.recipient : ""}
-              maxLength={addressFieldLimits.recipient}
-              error={recipientErrors.recipient}
-              hint={user.phone ? <>شماره تماس: <span dir="ltr">{user.phone}</span></> : undefined}
-              onChange={() => clearRecipientError("recipient")}
-            />
+            <div className="grid gap-3">
+              <div className="grid grid-cols-2 gap-3">
+                <TextField name="selfFirstName" label="نام" required defaultValue={initialSelfFirstName} maxLength={selfNamePartLimit} error={recipientErrors.recipient} onChange={() => clearRecipientError("recipient")} />
+                <TextField name="selfLastName" label="نام خانوادگی" required defaultValue={initialSelfLastName} maxLength={selfNamePartLimit} onChange={() => clearRecipientError("recipient")} />
+              </div>
+              {user.phone && <TextField name="selfPhone" label="شماره همراه" value={user.phone} readOnly dir="ltr" />}
+            </div>
           )
         ) : (
           <div className="grid items-start gap-4 sm:grid-cols-2">
