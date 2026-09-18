@@ -1,5 +1,5 @@
 import type { MetadataRoute } from "next";
-import { unstable_cache } from "next/cache";
+import { cacheLife, cacheTag } from "next/cache";
 import { db } from "@/lib/db";
 import { env } from "@/lib/env";
 import { getGeneralStoreSettings } from "@/modules/settings/general-settings";
@@ -7,76 +7,76 @@ import { contentPageMeta, getContentSettings } from "@/modules/settings/content-
 import { SITEMAP_TAG } from "@/modules/seo/revalidate";
 
 // No `changeFrequency` / `priority`: Google ignores both. `lastModified` is `updatedAt` when
-// set, otherwise `createdAt`. Cached for 4 hours and busted by `revalidateTag("sitemap")` on
-// any product / content / SEO-rule change.
-const buildSitemap = unstable_cache(
-  async (): Promise<MetadataRoute.Sitemap> => {
-    const baseUrl = env.APP_URL.replace(/\/$/, "");
+// set, otherwise omitted entirely (Google ignores a missing one too). Cached for 4 hours and
+// busted by `revalidateSitemap()` on any product / content / SEO-rule change.
+async function buildSitemap(): Promise<MetadataRoute.Sitemap> {
+  "use cache";
+  cacheLife({ stale: 60 * 60, revalidate: 60 * 60 * 4, expire: 60 * 60 * 24 });
+  cacheTag(SITEMAP_TAG);
 
-    const [noindex, canonicalSources, gone, redirectSources] = await Promise.all([
-      db.seoNoindex.findMany({ select: { url: true } }).then((rows) => new Set(rows.map((r) => r.url))),
-      db.seoCanonical.findMany({ select: { sourceUrl: true } }).then((rows) => new Set(rows.map((r) => r.sourceUrl))),
-      db.seoGonePage.findMany({ select: { url: true } }).then((rows) => new Set(rows.map((r) => r.url))),
-      db.seoRedirect.findMany({ select: { fromUrl: true } }).then((rows) => new Set(rows.map((r) => r.fromUrl))),
-    ]);
+  const baseUrl = env.APP_URL.replace(/\/$/, "");
 
-    // A URL belongs in the sitemap only if it returns 200, is not noindexed, and is
-    // self-canonical (not pointing its canonical elsewhere).
-    const isEligible = (path: string) =>
-      !noindex.has(path) && !canonicalSources.has(path) && !gone.has(path) && !redirectSources.has(path);
+  const [noindex, canonicalSources, gone, redirectSources] = await Promise.all([
+    db.seoNoindex.findMany({ select: { url: true } }).then((rows) => new Set(rows.map((r) => r.url))),
+    db.seoCanonical.findMany({ select: { sourceUrl: true } }).then((rows) => new Set(rows.map((r) => r.sourceUrl))),
+    db.seoGonePage.findMany({ select: { url: true } }).then((rows) => new Set(rows.map((r) => r.url))),
+    db.seoRedirect.findMany({ select: { fromUrl: true } }).then((rows) => new Set(rows.map((r) => r.fromUrl))),
+  ]);
 
-    const entry = (path: string, lastModified?: Date): MetadataRoute.Sitemap[number] | null =>
-      isEligible(path) ? { url: `${baseUrl}${path === "/" ? "" : path}`, lastModified: lastModified ?? new Date() } : null;
+  // A URL belongs in the sitemap only if it returns 200, is not noindexed, and is
+  // self-canonical (not pointing its canonical elsewhere).
+  const isEligible = (path: string) =>
+    !noindex.has(path) && !canonicalSources.has(path) && !gone.has(path) && !redirectSources.has(path);
 
-    const now = new Date();
-    const [settings, content, products, articles, articleCategories] = await Promise.all([
-      getGeneralStoreSettings(),
-      getContentSettings(),
-      db.product.findMany({
-        where: { status: "ACTIVE" },
-        select: { slug: true, updatedAt: true, createdAt: true },
-        orderBy: { updatedAt: "desc" },
-        take: 50_000,
-      }),
-      db.article.findMany({
-        where: { status: "PUBLISHED", noindex: false, publishedAt: { not: null, lte: now } },
-        select: { slug: true, updatedAt: true, publishedAt: true, createdAt: true },
-        orderBy: { publishedAt: "desc" },
-        take: 50_000,
-      }),
-      db.articleCategory.findMany({ where: { isActive: true }, select: { slug: true, createdAt: true } }),
-    ]);
+  const entry = (path: string, lastModified?: Date): MetadataRoute.Sitemap[number] | null =>
+    isEligible(path) ? { url: `${baseUrl}${path === "/" ? "" : path}`, ...(lastModified ? { lastModified } : {}) } : null;
 
-    const staticEntries = [entry("/"), entry("/products")];
+  const now = new Date();
+  const [settings, content, products, articles, articleCategories] = await Promise.all([
+    getGeneralStoreSettings(),
+    getContentSettings(),
+    db.product.findMany({
+      where: { status: "ACTIVE" },
+      select: { slug: true, updatedAt: true, createdAt: true },
+      orderBy: { updatedAt: "desc" },
+      take: 50_000,
+    }),
+    db.article.findMany({
+      where: { status: "PUBLISHED", noindex: false, publishedAt: { not: null, lte: now } },
+      select: { slug: true, updatedAt: true, publishedAt: true, createdAt: true },
+      orderBy: { publishedAt: "desc" },
+      take: 50_000,
+    }),
+    db.articleCategory.findMany({ where: { isActive: true }, select: { slug: true, createdAt: true } }),
+  ]);
 
-    if (!settings.isStoreActive) {
-      return staticEntries.filter((item): item is NonNullable<typeof item> => item !== null);
-    }
+  const staticEntries = [entry("/"), entry("/products")];
 
-    const pageEntries = content.pages
-      .filter((page) => page.published)
-      .map((page) => entry(`/pages/${contentPageMeta[page.id].slug}`));
+  if (!settings.isStoreActive) {
+    return staticEntries.filter((item): item is NonNullable<typeof item> => item !== null);
+  }
 
-    const faqEntries = content.faqs.some((faq) => faq.enabled) ? [entry("/pages/faq")] : [];
+  const pageEntries = content.pages
+    .filter((page) => page.published)
+    .map((page) => entry(`/pages/${contentPageMeta[page.id].slug}`));
 
-    const productEntries = products.map((product) =>
-      entry(`/products/${product.slug}`, product.updatedAt ?? product.createdAt),
-    );
+  const faqEntries = content.faqs.some((faq) => faq.enabled) ? [entry("/pages/faq")] : [];
 
-    const blogEntries = articles.length
-      ? [
-          entry("/blog"),
-          ...articleCategories.map((category) => entry(`/blog/category/${category.slug}`)),
-          ...articles.map((article) => entry(`/blog/${article.slug}`, article.updatedAt ?? article.publishedAt ?? article.createdAt)),
-        ]
-      : [];
+  const productEntries = products.map((product) =>
+    entry(`/products/${product.slug}`, product.updatedAt ?? product.createdAt),
+  );
 
-    return [...staticEntries, ...pageEntries, ...faqEntries, ...productEntries, ...blogEntries]
-      .filter((item): item is NonNullable<typeof item> => item !== null);
-  },
-  ["sitemap"],
-  { revalidate: 60 * 60 * 4, tags: [SITEMAP_TAG] },
-);
+  const blogEntries = articles.length
+    ? [
+        entry("/blog"),
+        ...articleCategories.map((category) => entry(`/blog/category/${category.slug}`)),
+        ...articles.map((article) => entry(`/blog/${article.slug}`, article.updatedAt ?? article.publishedAt ?? article.createdAt)),
+      ]
+    : [];
+
+  return [...staticEntries, ...pageEntries, ...faqEntries, ...productEntries, ...blogEntries]
+    .filter((item): item is NonNullable<typeof item> => item !== null);
+}
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   return buildSitemap();
