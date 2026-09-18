@@ -10,6 +10,8 @@ import { AdminListFilters } from "@/components/admin-list-filters";
 import { AdminPagination } from "@/components/admin-pagination";
 import { AdminBulkCheckbox, AdminBulkEditor, AdminBulkTr } from "@/components/admin-bulk-editor";
 import { AdminColumn, AdminColumnSettingsButton, AdminColumnVisibility } from "@/components/admin-column-visibility";
+import { AdminColumnFilter } from "@/components/admin-column-filter";
+import { AdminGenericBulkEditButton } from "@/components/admin-generic-bulk-edit";
 import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
 import { requestErrorMessage, requestJson } from "@/lib/api-request";
 import type { PromotionItem } from "@/modules/promotions/admin";
@@ -112,10 +114,7 @@ export function BlueprintPromotionsView({ initialItems, query, status, type, pag
           query={query}
           queryLabel="جستجوی پروموشن"
           queryPlaceholder="عنوان یا کد تخفیف"
-          filters={[
-            { name: "status", label: "وضعیت", value: status ?? "", options: [{ value: "", label: "همه وضعیت‌ها" }, { value: "active", label: "فعال" }, { value: "inactive", label: "غیرفعال" }] },
-            { name: "type", label: "نوع پروموشن", value: type ?? "", options: [{ value: "", label: "همه انواع" }, ...Object.entries(typeMeta).map(([value, meta]) => ({ value, label: meta.label }))] },
-          ]}
+          filters={[]}
         />
       </Panel>
 
@@ -152,18 +151,18 @@ export function BlueprintPromotionsView({ initialItems, query, status, type, pag
                 entity="promotions"
                 entityLabel="پروموشن"
                 ids={items.map((item) => item.id)}
-                actions={[{ value: "active:on", label: "فعال‌کردن پروموشن‌ها" }, { value: "active:off", label: "غیرفعال‌کردن پروموشن‌ها" }]}
-                onCompleted={({ action, ids }) => { const nextActive = action === "active:on"; setItems((current) => current.map((item) => (ids.includes(item.id) ? { ...item, isActive: nextActive } : item))); }}
+                actions={[]}
                 beforeSelectAll={<AdminColumnSettingsButton />}
+                extraAction={<AdminGenericBulkEditButton entity="promotions" entityLabel="پروموشن" changeTypes={[{ value: "active", label: "وضعیت", options: [{ value: "active:on", label: "فعال‌کردن" }, { value: "active:off", label: "غیرفعال‌کردن" }] }]} />}
               >
                 <BpTable ariaLabel="فهرست پروموشن‌ها" minWidth={880}>
                   <thead>
                     <tr>
                       <BpTh className="w-10 text-center"><span className="sr-only">انتخاب</span></BpTh>
-                      <AdminColumn id="titleAndType"><BpTh>عنوان و نوع</BpTh></AdminColumn>
+                      <AdminColumn id="titleAndType"><BpTh><span className="inline-flex items-center">عنوان و نوع<AdminColumnFilter path="/admin/promotions" ariaLabel="فیلتر نوع پروموشن" groups={[{ name: "type", label: "نوع پروموشن", value: type ?? "", options: [{ value: "", label: "همه انواع" }, ...Object.entries(typeMeta).map(([value, meta]) => ({ value, label: meta.label }))] }]} /></span></BpTh></AdminColumn>
                       <AdminColumn id="validity"><BpTh>بازهٔ اعتبار</BpTh></AdminColumn>
                       <AdminColumn id="usage"><BpTh>مصرف</BpTh></AdminColumn>
-                      <AdminColumn id="status"><BpTh>وضعیت</BpTh></AdminColumn>
+                      <AdminColumn id="status"><BpTh><span className="inline-flex items-center">وضعیت<AdminColumnFilter path="/admin/promotions" ariaLabel="فیلتر وضعیت" groups={[{ name: "status", label: "وضعیت", value: status ?? "", options: [{ value: "", label: "همه وضعیت‌ها" }, { value: "active", label: "فعال" }, { value: "inactive", label: "غیرفعال" }] }]} /></span></BpTh></AdminColumn>
                       <BpTh className="text-center">عملیات</BpTh>
                     </tr>
                   </thead>
