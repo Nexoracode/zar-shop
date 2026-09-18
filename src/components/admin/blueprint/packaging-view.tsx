@@ -5,6 +5,7 @@ import { useState } from "react";
 import { SquarePen } from "lucide-react";
 import { AdminEmptyState, AdminPanel, AdminStatusBadge } from "@/components/admin-ui";
 import { AdminBulkCheckbox, AdminBulkEditor, AdminBulkTr } from "@/components/admin-bulk-editor";
+import { AdminColumn, AdminColumnSettingsButton, AdminColumnVisibility } from "@/components/admin-column-visibility";
 import { normalizeSearchText } from "@/lib/text-search";
 import { BpListFilters, BpTable, BpTag, BpTd, BpTh } from "./ui";
 import { PackagingBoxDeleteButton } from "./packaging-box-delete-button";
@@ -30,7 +31,19 @@ function dimensions(box: PackagingBoxRow) {
   return `${box.lengthCm.toLocaleString("fa-IR")} × ${box.widthCm.toLocaleString("fa-IR")} × ${box.heightCm.toLocaleString("fa-IR")} سانتی‌متر`;
 }
 
-export function BlueprintPackagingView({ boxes }: { boxes: PackagingBoxRow[] }) {
+const PACKAGING_TABLE_ID = "packagingBoxes";
+
+const packagingColumns = [
+  { id: "name", label: "نام جعبه" },
+  { id: "dimensions", label: "ابعاد" },
+  { id: "weight", label: "وزن جعبه" },
+  { id: "maxWeight", label: "حداکثر وزن محتوا" },
+  { id: "tapinId", label: "شناسه تاپین" },
+  { id: "status", label: "وضعیت" },
+  { id: "isDefault", label: "پیش‌فرض" },
+];
+
+export function BlueprintPackagingView({ boxes, initialHiddenColumns }: { boxes: PackagingBoxRow[]; initialHiddenColumns: string[] }) {
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [defaultFilter, setDefaultFilter] = useState("");
@@ -88,43 +101,45 @@ export function BlueprintPackagingView({ boxes }: { boxes: PackagingBoxRow[] }) 
                 ))}
               </div>
 
-              <AdminBulkEditor entity="packagingBoxes" entityLabel="جعبه" ids={visible.map((box) => box.id)} actions={[{ value: "active:on", label: "فعال‌کردن جعبه‌ها" }, { value: "active:off", label: "غیرفعال‌کردن جعبه‌ها" }]}>
-                <BpTable ariaLabel="فهرست جعبه‌های بسته‌بندی" minWidth={880}>
-                  <thead>
-                    <tr>
-                      <BpTh className="w-10 text-center"><span className="sr-only">انتخاب</span></BpTh>
-                      <BpTh>نام جعبه</BpTh>
-                      <BpTh>ابعاد</BpTh>
-                      <BpTh>وزن جعبه</BpTh>
-                      <BpTh>حداکثر وزن محتوا</BpTh>
-                      <BpTh>شناسه تاپین</BpTh>
-                      <BpTh>وضعیت</BpTh>
-                      <BpTh>پیش‌فرض</BpTh>
-                      <BpTh className="text-center">عملیات</BpTh>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {visible.map((box) => (
-                      <AdminBulkTr key={box.id} id={box.id}>
-                        <BpTd className="w-10 text-center"><AdminBulkCheckbox id={box.id} label={`انتخاب جعبه ${box.name}`} /></BpTd>
-                        <BpTd className="max-w-[200px] truncate font-bold" title={box.name}>{box.name}</BpTd>
-                        <BpTd className="bp-muted">{dimensions(box)}</BpTd>
-                        <BpTd>{grams(box.weightGrams)}</BpTd>
-                        <BpTd>{grams(box.maxWeightGrams)}</BpTd>
-                        <BpTd>{box.tapinBoxId != null ? <span dir="ltr">{box.tapinBoxId}</span> : <span className="bp-muted">—</span>}</BpTd>
-                        <BpTd><AdminStatusBadge tone={box.isActive ? "success" : "neutral"}>{box.isActive ? "فعال" : "غیرفعال"}</AdminStatusBadge></BpTd>
-                        <BpTd>{box.isDefault ? <BpTag tone="info">پیش‌فرض</BpTag> : <span className="bp-muted">—</span>}</BpTd>
-                        <BpTd>
-                          <div className="flex items-center justify-center gap-1">
-                            <Link href={`/admin/packaging/${box.id}/edit`} title="ویرایش جعبه" aria-label={`ویرایش ${box.name}`} className="bp-btn bp-btn-ghost bp-btn-icon bp-btn-sm"><SquarePen size={15} strokeWidth={1.5} /></Link>
-                            <PackagingBoxDeleteButton id={box.id} name={box.name} />
-                          </div>
-                        </BpTd>
-                      </AdminBulkTr>
-                    ))}
-                  </tbody>
-                </BpTable>
-              </AdminBulkEditor>
+              <AdminColumnVisibility tableId={PACKAGING_TABLE_ID} columns={packagingColumns} initialHidden={initialHiddenColumns}>
+                <AdminBulkEditor entity="packagingBoxes" entityLabel="جعبه" ids={visible.map((box) => box.id)} actions={[{ value: "active:on", label: "فعال‌کردن جعبه‌ها" }, { value: "active:off", label: "غیرفعال‌کردن جعبه‌ها" }]} beforeSelectAll={<AdminColumnSettingsButton />}>
+                  <BpTable ariaLabel="فهرست جعبه‌های بسته‌بندی" minWidth={880}>
+                    <thead>
+                      <tr>
+                        <BpTh className="w-10 text-center"><span className="sr-only">انتخاب</span></BpTh>
+                        <AdminColumn id="name"><BpTh>نام جعبه</BpTh></AdminColumn>
+                        <AdminColumn id="dimensions"><BpTh>ابعاد</BpTh></AdminColumn>
+                        <AdminColumn id="weight"><BpTh>وزن جعبه</BpTh></AdminColumn>
+                        <AdminColumn id="maxWeight"><BpTh>حداکثر وزن محتوا</BpTh></AdminColumn>
+                        <AdminColumn id="tapinId"><BpTh>شناسه تاپین</BpTh></AdminColumn>
+                        <AdminColumn id="status"><BpTh>وضعیت</BpTh></AdminColumn>
+                        <AdminColumn id="isDefault"><BpTh>پیش‌فرض</BpTh></AdminColumn>
+                        <BpTh className="text-center">عملیات</BpTh>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {visible.map((box) => (
+                        <AdminBulkTr key={box.id} id={box.id}>
+                          <BpTd className="w-10 text-center"><AdminBulkCheckbox id={box.id} label={`انتخاب جعبه ${box.name}`} /></BpTd>
+                          <AdminColumn id="name"><BpTd className="max-w-[200px] truncate font-bold" title={box.name}>{box.name}</BpTd></AdminColumn>
+                          <AdminColumn id="dimensions"><BpTd className="bp-muted">{dimensions(box)}</BpTd></AdminColumn>
+                          <AdminColumn id="weight"><BpTd>{grams(box.weightGrams)}</BpTd></AdminColumn>
+                          <AdminColumn id="maxWeight"><BpTd>{grams(box.maxWeightGrams)}</BpTd></AdminColumn>
+                          <AdminColumn id="tapinId"><BpTd>{box.tapinBoxId != null ? <span dir="ltr">{box.tapinBoxId}</span> : <span className="bp-muted">—</span>}</BpTd></AdminColumn>
+                          <AdminColumn id="status"><BpTd><AdminStatusBadge tone={box.isActive ? "success" : "neutral"}>{box.isActive ? "فعال" : "غیرفعال"}</AdminStatusBadge></BpTd></AdminColumn>
+                          <AdminColumn id="isDefault"><BpTd>{box.isDefault ? <BpTag tone="info">پیش‌فرض</BpTag> : <span className="bp-muted">—</span>}</BpTd></AdminColumn>
+                          <BpTd>
+                            <div className="flex items-center justify-center gap-1">
+                              <Link href={`/admin/packaging/${box.id}/edit`} title="ویرایش جعبه" aria-label={`ویرایش ${box.name}`} className="bp-btn bp-btn-ghost bp-btn-icon bp-btn-sm"><SquarePen size={15} strokeWidth={1.5} /></Link>
+                              <PackagingBoxDeleteButton id={box.id} name={box.name} />
+                            </div>
+                          </BpTd>
+                        </AdminBulkTr>
+                      ))}
+                    </tbody>
+                  </BpTable>
+                </AdminBulkEditor>
+              </AdminColumnVisibility>
             </>
           ) : <div className="p-6"><AdminEmptyState title="جعبه‌ای پیدا نشد" description="هیچ جعبه‌ای با جستجو و فیلترهای انتخابی مطابقت ندارد." /></div>}
         </>

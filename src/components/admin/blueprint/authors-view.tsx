@@ -8,6 +8,7 @@ import { Images, SquarePen, Trash2, UserRound } from "lucide-react";
 import { AdminEmptyState, AdminPageHeader } from "@/components/admin-ui";
 import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
 import { MediaPickerDialog } from "@/components/media-picker-dialog";
+import { AdminColumn, AdminColumnSettingsButton, AdminColumnVisibility } from "@/components/admin-column-visibility";
 import type { MediaChoice } from "@/components/media-library";
 import { requestErrorMessage, requestJson } from "@/lib/api-request";
 import { normalizeSearchText } from "@/lib/text-search";
@@ -34,7 +35,15 @@ function AuthorThumb({ avatar, name }: { avatar: AuthorRow["avatar"]; name: stri
   return <span className="relative grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-full border border-[var(--bp-divider)] bg-white">{avatar ? <Image src={avatar.url} alt={avatar.alt ?? name} fill sizes="36px" className="object-cover" /> : <UserRound size={15} className="text-[var(--bp-muted)]" />}</span>;
 }
 
-export function BlueprintAuthorsView({ authors }: { authors: AuthorRow[] }) {
+const AUTHORS_TABLE_ID = "authors";
+
+const authorColumns = [
+  { id: "avatar", label: "آواتار" },
+  { id: "name", label: "نام" },
+  { id: "articles", label: "مقالات" },
+];
+
+export function BlueprintAuthorsView({ authors, initialHiddenColumns }: { authors: AuthorRow[]; initialHiddenColumns: string[] }) {
   const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
   const [query, setQuery] = useState("");
@@ -152,24 +161,24 @@ export function BlueprintAuthorsView({ authors }: { authors: AuthorRow[] }) {
 
         <Panel>
           {authors.length ? (
-            <>
-              <BpListFilters query={query} onQueryChange={setQuery} searchLabel="جستجوی نویسنده" searchPlaceholder="جستجو بر اساس نام نویسنده" filters={[]} />
+            <AdminColumnVisibility tableId={AUTHORS_TABLE_ID} columns={authorColumns} initialHidden={initialHiddenColumns}>
+              <BpListFilters query={query} onQueryChange={setQuery} searchLabel="جستجوی نویسنده" searchPlaceholder="جستجو بر اساس نام نویسنده" filters={[]} trailing={<AdminColumnSettingsButton />} />
               {visible.length ? (
                 <BpTable ariaLabel="فهرست نویسندگان" minWidth={480}>
                   <thead>
                     <tr>
-                      <BpTh className="w-10">آواتار</BpTh>
-                      <BpTh>نام</BpTh>
-                      <BpTh>مقالات</BpTh>
+                      <AdminColumn id="avatar"><BpTh className="w-10">آواتار</BpTh></AdminColumn>
+                      <AdminColumn id="name"><BpTh>نام</BpTh></AdminColumn>
+                      <AdminColumn id="articles"><BpTh>مقالات</BpTh></AdminColumn>
                       <BpTh className="text-center">عملیات</BpTh>
                     </tr>
                   </thead>
                   <tbody>
                     {visible.map((author) => (
                       <tr key={author.id} className="border-b border-[var(--bp-row-line)] last:border-b-0">
-                        <BpTd><AuthorThumb avatar={author.avatar} name={author.name} /></BpTd>
-                        <BpTd className="max-w-[220px] truncate font-bold" title={author.name}>{author.name}</BpTd>
-                        <BpTd className="text-[var(--bp-text)]">{author._count.articles.toLocaleString("fa-IR")}</BpTd>
+                        <AdminColumn id="avatar"><BpTd><AuthorThumb avatar={author.avatar} name={author.name} /></BpTd></AdminColumn>
+                        <AdminColumn id="name"><BpTd className="max-w-[220px] truncate font-bold" title={author.name}>{author.name}</BpTd></AdminColumn>
+                        <AdminColumn id="articles"><BpTd className="text-[var(--bp-text)]">{author._count.articles.toLocaleString("fa-IR")}</BpTd></AdminColumn>
                         <BpTd>
                           <div className="flex items-center justify-center gap-1">
                             <BpButton isIconOnly size="sm" variant="ghost" title="ویرایش نویسنده" aria-label={`ویرایش ${author.name}`} onClick={() => startEdit(author)}><SquarePen size={15} strokeWidth={1.5} /></BpButton>
@@ -181,7 +190,7 @@ export function BlueprintAuthorsView({ authors }: { authors: AuthorRow[] }) {
                   </tbody>
                 </BpTable>
               ) : <div className="p-6"><AdminEmptyState title="نویسنده‌ای پیدا نشد" description="هیچ نویسنده‌ای با جستجوی انتخابی مطابقت ندارد." /></div>}
-            </>
+            </AdminColumnVisibility>
           ) : <AdminEmptyState title="نویسنده‌ای ثبت نشده" description="اولین نویسندهٔ وبلاگ را از فرم کنار جدول ثبت کنید." />}
         </Panel>
       </div>

@@ -7,6 +7,7 @@ import { toast } from "@heroui/react";
 import { GripVertical, SquarePen } from "lucide-react";
 import { AdminEmptyState, AdminPanel, AdminStatusBadge } from "@/components/admin-ui";
 import { AdminBulkCheckbox, AdminBulkEditor, AdminBulkTr } from "@/components/admin-bulk-editor";
+import { AdminColumn, AdminColumnSettingsButton, AdminColumnVisibility } from "@/components/admin-column-visibility";
 import { requestErrorMessage, requestJson } from "@/lib/api-request";
 import { normalizeSearchText } from "@/lib/text-search";
 import { BpListFilters, BpTable, BpTd, BpTh } from "./ui";
@@ -38,7 +39,17 @@ function move<T>(list: T[], from: number, to: number): T[] {
   return next;
 }
 
-export function BlueprintShippingMethodsView({ methods }: { methods: ShippingMethodRow[] }) {
+const SHIPPING_METHODS_TABLE_ID = "shippingMethods";
+
+const shippingMethodColumns = [
+  { id: "method", label: "روش ارسال" },
+  { id: "carrier", label: "شرکت حمل" },
+  { id: "source", label: "منبع نرخ" },
+  { id: "estimatedDays", label: "زمان تحویل" },
+  { id: "status", label: "وضعیت" },
+];
+
+export function BlueprintShippingMethodsView({ methods, initialHiddenColumns }: { methods: ShippingMethodRow[]; initialHiddenColumns: string[] }) {
   const router = useRouter();
   const [items, setItems] = useState(methods);
   // The server list is the source of truth once a mutation settles and `router.refresh()` brings
@@ -170,50 +181,52 @@ export function BlueprintShippingMethodsView({ methods }: { methods: ShippingMet
                 ))}
               </div>
 
-              <AdminBulkEditor entity="shippingMethods" entityLabel="روش ارسال" ids={visible.map((method) => method.id)} actions={[{ value: "active:on", label: "فعال‌کردن روش‌ها" }, { value: "active:off", label: "غیرفعال‌کردن روش‌ها" }]}>
-                <BpTable ariaLabel="فهرست روش‌های ارسال" minWidth={800}>
-                  <thead>
-                    <tr>
-                      <BpTh className="w-8 text-center"><span className="sr-only">جابه‌جایی</span></BpTh>
-                      <BpTh className="w-10 text-center"><span className="sr-only">انتخاب</span></BpTh>
-                      <BpTh>روش ارسال</BpTh>
-                      <BpTh>شرکت حمل</BpTh>
-                      <BpTh>منبع نرخ</BpTh>
-                      <BpTh>زمان تحویل</BpTh>
-                      <BpTh>وضعیت</BpTh>
-                      <BpTh className="text-center">عملیات</BpTh>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {visible.map((method) => (
-                      <AdminBulkTr
-                        key={method.id}
-                        id={method.id}
-                        draggable={!savingOrder && !filtersActive}
-                        onDragStart={(event) => { event.dataTransfer.effectAllowed = "move"; beginDrag(method.id); }}
-                        onDragOver={(event) => dragOver(event, method.id)}
-                        onDrop={(event) => event.preventDefault()}
-                        onDragEnd={endDrag}
-                        className={draggedId === method.id ? "opacity-50" : undefined}
-                      >
-                        <BpTd className="w-8 text-center"><span aria-hidden="true" title="برای جابه‌جایی بکشید" className="bp-muted inline-flex cursor-grab active:cursor-grabbing"><GripVertical size={15} /></span></BpTd>
-                        <BpTd className="w-10 text-center"><AdminBulkCheckbox id={method.id} label={`انتخاب ${method.title}`} /></BpTd>
-                        <BpTd className="max-w-[220px] truncate font-bold" title={method.title}>{method.title}</BpTd>
-                        <BpTd>{method.carrier}</BpTd>
-                        <BpTd className="bp-muted">{sourceLabel(method)}</BpTd>
-                        <BpTd>{method.estimatedDays.toLocaleString("fa-IR")} روز کاری</BpTd>
-                        <BpTd><AdminStatusBadge tone={method.isActive ? "success" : "neutral"}>{method.isActive ? "فعال" : "غیرفعال"}</AdminStatusBadge></BpTd>
-                        <BpTd>
-                          <div className="flex items-center justify-center gap-1">
-                            <Link href={`/admin/shipping-methods/${method.id}/edit`} title="ویرایش روش ارسال" aria-label={`ویرایش ${method.title}`} className="bp-btn bp-btn-ghost bp-btn-icon bp-btn-sm"><SquarePen size={15} strokeWidth={1.5} /></Link>
-                            <ShippingMethodDeleteButton id={method.id} title={method.title} orderCount={method.orderCount} />
-                          </div>
-                        </BpTd>
-                      </AdminBulkTr>
-                    ))}
-                  </tbody>
-                </BpTable>
-              </AdminBulkEditor>
+              <AdminColumnVisibility tableId={SHIPPING_METHODS_TABLE_ID} columns={shippingMethodColumns} initialHidden={initialHiddenColumns}>
+                <AdminBulkEditor entity="shippingMethods" entityLabel="روش ارسال" ids={visible.map((method) => method.id)} actions={[{ value: "active:on", label: "فعال‌کردن روش‌ها" }, { value: "active:off", label: "غیرفعال‌کردن روش‌ها" }]} beforeSelectAll={<AdminColumnSettingsButton />}>
+                  <BpTable ariaLabel="فهرست روش‌های ارسال" minWidth={800}>
+                    <thead>
+                      <tr>
+                        <BpTh className="w-8 text-center"><span className="sr-only">جابه‌جایی</span></BpTh>
+                        <BpTh className="w-10 text-center"><span className="sr-only">انتخاب</span></BpTh>
+                        <AdminColumn id="method"><BpTh>روش ارسال</BpTh></AdminColumn>
+                        <AdminColumn id="carrier"><BpTh>شرکت حمل</BpTh></AdminColumn>
+                        <AdminColumn id="source"><BpTh>منبع نرخ</BpTh></AdminColumn>
+                        <AdminColumn id="estimatedDays"><BpTh>زمان تحویل</BpTh></AdminColumn>
+                        <AdminColumn id="status"><BpTh>وضعیت</BpTh></AdminColumn>
+                        <BpTh className="text-center">عملیات</BpTh>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {visible.map((method) => (
+                        <AdminBulkTr
+                          key={method.id}
+                          id={method.id}
+                          draggable={!savingOrder && !filtersActive}
+                          onDragStart={(event) => { event.dataTransfer.effectAllowed = "move"; beginDrag(method.id); }}
+                          onDragOver={(event) => dragOver(event, method.id)}
+                          onDrop={(event) => event.preventDefault()}
+                          onDragEnd={endDrag}
+                          className={draggedId === method.id ? "opacity-50" : undefined}
+                        >
+                          <BpTd className="w-8 text-center"><span aria-hidden="true" title="برای جابه‌جایی بکشید" className="bp-muted inline-flex cursor-grab active:cursor-grabbing"><GripVertical size={15} /></span></BpTd>
+                          <BpTd className="w-10 text-center"><AdminBulkCheckbox id={method.id} label={`انتخاب ${method.title}`} /></BpTd>
+                          <AdminColumn id="method"><BpTd className="max-w-[220px] truncate font-bold" title={method.title}>{method.title}</BpTd></AdminColumn>
+                          <AdminColumn id="carrier"><BpTd>{method.carrier}</BpTd></AdminColumn>
+                          <AdminColumn id="source"><BpTd className="bp-muted">{sourceLabel(method)}</BpTd></AdminColumn>
+                          <AdminColumn id="estimatedDays"><BpTd>{method.estimatedDays.toLocaleString("fa-IR")} روز کاری</BpTd></AdminColumn>
+                          <AdminColumn id="status"><BpTd><AdminStatusBadge tone={method.isActive ? "success" : "neutral"}>{method.isActive ? "فعال" : "غیرفعال"}</AdminStatusBadge></BpTd></AdminColumn>
+                          <BpTd>
+                            <div className="flex items-center justify-center gap-1">
+                              <Link href={`/admin/shipping-methods/${method.id}/edit`} title="ویرایش روش ارسال" aria-label={`ویرایش ${method.title}`} className="bp-btn bp-btn-ghost bp-btn-icon bp-btn-sm"><SquarePen size={15} strokeWidth={1.5} /></Link>
+                              <ShippingMethodDeleteButton id={method.id} title={method.title} orderCount={method.orderCount} />
+                            </div>
+                          </BpTd>
+                        </AdminBulkTr>
+                      ))}
+                    </tbody>
+                  </BpTable>
+                </AdminBulkEditor>
+              </AdminColumnVisibility>
             </>
           ) : <div className="p-6"><AdminEmptyState title="روشی پیدا نشد" description="هیچ روش ارسالی با جستجو و فیلترهای انتخابی مطابقت ندارد." /></div>}
         </>

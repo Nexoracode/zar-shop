@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { Search, X } from "lucide-react";
 import { BpButton } from "./button";
 import { BpSelect, type BpSelectOption } from "./select";
@@ -19,12 +20,14 @@ export type BpListFilter = {
  * branch of `AdminListFilters`, but driven by local state instead of the URL, since those lists
  * are loaded whole and never paginate.
  */
-export function BpListFilters({ query, onQueryChange, searchLabel, searchPlaceholder, filters = [] }: {
+export function BpListFilters({ query, onQueryChange, searchLabel, searchPlaceholder, filters = [], trailing }: {
   query: string;
   onQueryChange: (value: string) => void;
   searchLabel: string;
   searchPlaceholder: string;
   filters?: BpListFilter[];
+  /** Rendered at the end of the bar — e.g. a column-visibility toggle for a table with no bulk-editor toolbar of its own. */
+  trailing?: ReactNode;
 }) {
   return (
     <div className="flex flex-wrap items-center gap-2 border-b border-[var(--bp-divider)] p-3">
@@ -55,6 +58,7 @@ export function BpListFilters({ query, onQueryChange, searchLabel, searchPlaceho
           options={filter.options}
         />
       ))}
+      {trailing}
     </div>
   );
 }

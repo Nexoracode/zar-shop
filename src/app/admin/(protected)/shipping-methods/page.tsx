@@ -2,6 +2,7 @@ import { Plus } from "lucide-react";
 import { AdminPageHeader, AdminPrimaryLink } from "@/components/admin-ui";
 import { BlueprintShippingMethodsView } from "@/components/admin/blueprint/shipping-methods-view";
 import { db } from "@/lib/db";
+import { readHiddenColumns } from "@/lib/admin-column-visibility-server";
 import { requirePermission } from "@/modules/auth/session";
 
 // @next-codemod-ignore Cache Components adoption: this segment temporarily allows blocking.
@@ -11,10 +12,13 @@ export const instant = false;
 
 export default async function ShippingMethodsPage() {
   await requirePermission("orders:manage");
-  const methods = await db.shippingMethod.findMany({
-    orderBy: [{ sortOrder: "asc" }, { title: "asc" }],
-    include: { _count: { select: { zones: true, orders: true } } },
-  });
+  const [methods, initialHiddenColumns] = await Promise.all([
+    db.shippingMethod.findMany({
+      orderBy: [{ sortOrder: "asc" }, { title: "asc" }],
+      include: { _count: { select: { zones: true, orders: true } } },
+    }),
+    readHiddenColumns("shippingMethods"),
+  ]);
   const rows = methods.map((method) => ({
     id: method.id,
     title: method.title,
@@ -35,6 +39,6 @@ export default async function ShippingMethodsPage() {
       backLabel="بازگشت به تنظیمات ارسال"
       action={<AdminPrimaryLink href="/admin/shipping-methods/new"><Plus size={17} />روش جدید</AdminPrimaryLink>}
     />
-    <BlueprintShippingMethodsView methods={rows} />
+    <BlueprintShippingMethodsView methods={rows} initialHiddenColumns={initialHiddenColumns} />
   </>;
 }
