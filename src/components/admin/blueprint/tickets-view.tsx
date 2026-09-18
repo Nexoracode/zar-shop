@@ -7,6 +7,8 @@ import { AdminListFilters } from "@/components/admin-list-filters";
 import { AdminPagination } from "@/components/admin-pagination";
 import { AdminBulkCheckbox, AdminBulkEditor, AdminBulkTr } from "@/components/admin-bulk-editor";
 import { AdminColumn, AdminColumnSettingsButton, AdminColumnVisibility } from "@/components/admin-column-visibility";
+import { AdminColumnFilter } from "@/components/admin-column-filter";
+import { AdminGenericBulkEditButton } from "@/components/admin-generic-bulk-edit";
 import { ticketStatusLabels, ticketStatusTones, userRoleLabels } from "@/modules/admin/labels";
 import { formatPersianDateTime, BpTable, BpTd, BpTh } from "./ui";
 
@@ -82,11 +84,7 @@ export function BlueprintTicketsView({ tickets, categories, query, status, categ
           query={query}
           queryLabel="جستجوی تیکت"
           queryPlaceholder="موضوع، نام یا شمارهٔ تماس کاربر"
-          filters={[
-            { name: "status", label: "وضعیت", value: status, options: [{ value: "", label: "همه وضعیت‌ها" }, ...Object.entries(ticketStatusLabels).map(([value, label]) => ({ value, label }))] },
-            { name: "categoryId", label: "موضوع", value: categoryId, options: [{ value: "", label: "همه موضوعات" }, ...categories.map((category) => ({ value: category.id, label: category.name }))] },
-            { name: "mine", label: "صف", value: mine ? "true" : "", options: [{ value: "", label: "همهٔ تیکت‌ها" }, { value: "true", label: "فقط تیکت‌های من" }] },
-          ]}
+          filters={[]}
         />
       </section>
 
@@ -112,16 +110,23 @@ export function BlueprintTicketsView({ tickets, categories, query, status, categ
             </div>
 
             <AdminColumnVisibility tableId={TICKETS_TABLE_ID} columns={ticketColumns} initialHidden={initialHiddenColumns}>
-              <AdminBulkEditor entity="tickets" entityLabel="تیکت" ids={tickets.map((ticket) => ticket.id)} actions={[{ value: "status:CLOSED", label: "بستن تیکت‌های انتخاب‌شده" }]} beforeSelectAll={<AdminColumnSettingsButton />}>
+              <AdminBulkEditor
+                entity="tickets"
+                entityLabel="تیکت"
+                ids={tickets.map((ticket) => ticket.id)}
+                actions={[]}
+                beforeSelectAll={<AdminColumnSettingsButton />}
+                extraAction={<AdminGenericBulkEditButton entity="tickets" entityLabel="تیکت" changeTypes={[{ value: "status:CLOSED", label: "بستن تیکت‌های انتخاب‌شده" }]} />}
+              >
                 <BpTable ariaLabel="فهرست تیکت‌ها" minWidth={980}>
                   <thead>
                     <tr>
                       <BpTh className="w-10 text-center"><span className="sr-only">انتخاب</span></BpTh>
                       <AdminColumn id="subject"><BpTh>موضوع و کاربر</BpTh></AdminColumn>
                       <AdminColumn id="lastMessage"><BpTh>آخرین پیام</BpTh></AdminColumn>
-                      <AdminColumn id="category"><BpTh>دسته</BpTh></AdminColumn>
-                      <AdminColumn id="agent"><BpTh>پشتیبان</BpTh></AdminColumn>
-                      <AdminColumn id="status"><BpTh>وضعیت</BpTh></AdminColumn>
+                      <AdminColumn id="category"><BpTh><span className="inline-flex items-center">دسته<AdminColumnFilter path="/admin/tickets" ariaLabel="فیلتر موضوع" groups={[{ name: "categoryId", label: "موضوع", value: categoryId, options: [{ value: "", label: "همه موضوعات" }, ...categories.map((category) => ({ value: category.id, label: category.name }))] }]} /></span></BpTh></AdminColumn>
+                      <AdminColumn id="agent"><BpTh><span className="inline-flex items-center">پشتیبان<AdminColumnFilter path="/admin/tickets" ariaLabel="فیلتر صف" groups={[{ name: "mine", label: "صف", value: mine ? "true" : "", options: [{ value: "", label: "همهٔ تیکت‌ها" }, { value: "true", label: "فقط تیکت‌های من" }] }]} /></span></BpTh></AdminColumn>
+                      <AdminColumn id="status"><BpTh><span className="inline-flex items-center">وضعیت<AdminColumnFilter path="/admin/tickets" ariaLabel="فیلتر وضعیت" groups={[{ name: "status", label: "وضعیت", value: status, options: [{ value: "", label: "همه وضعیت‌ها" }, ...Object.entries(ticketStatusLabels).map(([value, label]) => ({ value, label }))] }]} /></span></BpTh></AdminColumn>
                       <AdminColumn id="updatedAt"><BpTh>آخرین بروزرسانی</BpTh></AdminColumn>
                       <BpTh className="text-center">عملیات</BpTh>
                     </tr>
