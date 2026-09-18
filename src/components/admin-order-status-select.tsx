@@ -33,7 +33,7 @@ export function AdminOrderStatusSelect({ orderId, initialStatus, expiresAt, warn
     }
   }
 
-  return <div className="relative min-w-[108px]">
+  return <div className="relative min-w-16">
     <BpSelect aria-label="تغییر وضعیت سفارش" value={status} disabled={saving} reserveMessage={false} options={options} onChange={(event) => void update(event.target.value)} />
     {saving ? <Spinner size="sm" className="absolute left-2 top-2.5" aria-label="در حال تغییر وضعیت" /> : null}
     {status === "PENDING_PAYMENT" && expiresAt ? <OrderExpiryCountdown expiresAt={expiresAt} warningMinutes={warningMinutes} className="mt-1.5" /> : null}
