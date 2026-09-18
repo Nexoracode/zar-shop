@@ -39,10 +39,25 @@ export function subscribeToHiddenColumns(tableId: string, callback: () => void) 
   };
 }
 
+/**
+ * One cached parse per table, keyed by the raw cookie string.
+ *
+ * `useSyncExternalStore` calls `getSnapshot` more than once per render pass and compares the
+ * results with `Object.is` to detect a torn read; a fresh array on every call never matches
+ * itself, which reads as "the store changed" every single time and loops the component forever.
+ * Returning the same array reference for the same raw cookie value keeps the snapshot stable.
+ */
+const parsedCache = new Map<string, { raw: string; value: string[] }>();
+
 export function getHiddenColumns(tableId: string): string[] {
   const name = cookieName(tableId);
   const match = document.cookie.split("; ").find((entry) => entry.startsWith(`${name}=`));
-  return parseHiddenColumnsCookie(match?.slice(name.length + 1));
+  const raw = match?.slice(name.length + 1) ?? "";
+  const cached = parsedCache.get(tableId);
+  if (cached && cached.raw === raw) return cached.value;
+  const value = parseHiddenColumnsCookie(raw || undefined);
+  parsedCache.set(tableId, { raw, value });
+  return value;
 }
 
 export function setHiddenColumns(tableId: string, hidden: string[]) {
