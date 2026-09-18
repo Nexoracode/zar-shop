@@ -2,10 +2,14 @@
 
 import Link from "next/link";
 import { Eye } from "lucide-react";
+import type { OrderStatus } from "@generated/prisma/enums";
 import { AdminBulkCheckbox, AdminBulkEditor, AdminBulkTr } from "@/components/admin-bulk-editor";
 import { AdminColumn, AdminColumnSettingsButton, AdminColumnVisibility } from "@/components/admin-column-visibility";
+import { AdminColumnFilter } from "@/components/admin-column-filter";
+import { AdminGenericBulkEditButton } from "@/components/admin-generic-bulk-edit";
 import { AdminOrderStatusSelect } from "@/components/admin-order-status-select";
 import { formatMoney } from "@/lib/format";
+import { orderStatusLabels } from "@/modules/admin/labels";
 import { BpTable, BpTd, BpTh } from "./ui";
 import type { AdminOrderRow } from "./orders-view";
 
@@ -20,18 +24,13 @@ const COLUMNS = [
   { id: "createdAt", label: "تاریخ" },
 ];
 
-const bulkActions = [
-  { value: "status:PROCESSING", label: "شروع آماده‌سازی سفارش‌های پرداخت‌شده" },
-  { value: "status:SHIPPED", label: "ثبت ارسال سفارش‌های در حال آماده‌سازی" },
-  { value: "status:DELIVERED", label: "ثبت تحویل سفارش‌های ارسال‌شده" },
-  { value: "status:CANCELLED", label: "لغو سفارش‌های پرداخت‌نشده" },
-];
-
-export function OrdersTable({ orders, pagination, warningMinutes, initialHiddenColumns }: {
+export function OrdersTable({ orders, pagination, warningMinutes, initialHiddenColumns, status, statuses }: {
   orders: AdminOrderRow[];
   pagination: { skip: number };
   warningMinutes: number;
   initialHiddenColumns: string[];
+  status: string;
+  statuses: OrderStatus[];
 }) {
   const statusKey = (order: AdminOrderRow) => `${order.id}:${order.status}:${order.expiresAt ?? "none"}`;
 
@@ -41,8 +40,14 @@ export function OrdersTable({ orders, pagination, warningMinutes, initialHiddenC
         entity="orders"
         entityLabel="سفارش"
         ids={orders.map((order) => order.id)}
-        actions={bulkActions}
+        actions={[]}
         beforeSelectAll={<AdminColumnSettingsButton />}
+        extraAction={<AdminGenericBulkEditButton entity="orders" entityLabel="سفارش" changeTypes={[{ value: "status", label: "تغییر وضعیت", options: [
+          { value: "status:PROCESSING", label: "شروع آماده‌سازی سفارش‌های پرداخت‌شده" },
+          { value: "status:SHIPPED", label: "ثبت ارسال سفارش‌های در حال آماده‌سازی" },
+          { value: "status:DELIVERED", label: "ثبت تحویل سفارش‌های ارسال‌شده" },
+          { value: "status:CANCELLED", label: "لغو سفارش‌های پرداخت‌نشده" },
+        ] }]} />}
       >
         <BpTable ariaLabel="فهرست سفارش‌ها" minWidth={960}>
           <thead>
@@ -53,7 +58,7 @@ export function OrdersTable({ orders, pagination, warningMinutes, initialHiddenC
               <AdminColumn id="customer"><BpTh>مشتری</BpTh></AdminColumn>
               <AdminColumn id="items"><BpTh>اقلام</BpTh></AdminColumn>
               <AdminColumn id="total"><BpTh>مبلغ</BpTh></AdminColumn>
-              <AdminColumn id="status"><BpTh>وضعیت</BpTh></AdminColumn>
+              <AdminColumn id="status"><BpTh><span className="inline-flex items-center">وضعیت<AdminColumnFilter path="/admin/orders" ariaLabel="فیلتر وضعیت" groups={[{ name: "status", label: "وضعیت سفارش", value: status, options: [{ value: "", label: "همه وضعیت‌ها" }, ...statuses.map((item) => ({ value: item, label: orderStatusLabels[item] }))] }]} /></span></BpTh></AdminColumn>
               <AdminColumn id="createdAt"><BpTh>تاریخ</BpTh></AdminColumn>
               <BpTh className="text-center">جزئیات</BpTh>
             </tr>

@@ -6,7 +6,6 @@ import { AdminListFilters } from "@/components/admin-list-filters";
 import { AdminPagination } from "@/components/admin-pagination";
 import { AdminOrderStatusSelect } from "@/components/admin-order-status-select";
 import { formatDate, formatMoney } from "@/lib/format";
-import { orderStatusLabels } from "@/modules/admin/labels";
 import { OrdersTable } from "./orders-table";
 
 export type AdminOrderRow = {
@@ -62,7 +61,7 @@ export function BlueprintOrdersView({ orders, query, status, statuses, filteredP
           query={query}
           queryLabel="جستجوی سفارش"
           queryPlaceholder="شماره سفارش، نام، ایمیل یا موبایل"
-          filters={[{ name: "status", label: "وضعیت سفارش", value: status, options: [{ value: "", label: "همه وضعیت‌ها" }, ...statuses.map((item) => ({ value: item, label: orderStatusLabels[item] }))] }]}
+          filters={[]}
         />
       </Panel>
 
@@ -94,7 +93,7 @@ export function BlueprintOrdersView({ orders, query, status, statuses, filteredP
               ))}
             </div>
 
-            <OrdersTable orders={orders} pagination={pagination} warningMinutes={warningMinutes} initialHiddenColumns={initialHiddenColumns} />
+            <OrdersTable orders={orders} pagination={pagination} warningMinutes={warningMinutes} initialHiddenColumns={initialHiddenColumns} status={status} statuses={statuses} />
             <AdminPagination page={pagination.page} pageSize={pagination.pageSize} totalItems={pagination.totalItems} totalPages={pagination.totalPages} />
           </>
         )}
