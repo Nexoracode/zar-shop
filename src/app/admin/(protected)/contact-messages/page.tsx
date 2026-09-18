@@ -3,6 +3,7 @@ import { AdminEmptyState, AdminPageHeader, AdminPanel } from "@/components/admin
 import { AdminListFilters } from "@/components/admin-list-filters";
 import { resolveAdminPagination } from "@/lib/admin-pagination";
 import { parseAdminPaginationRequest } from "@/lib/admin-pagination-server";
+import { readHiddenColumns } from "@/lib/admin-column-visibility-server";
 import { db } from "@/lib/db";
 import { requirePermission } from "@/modules/auth/session";
 import { BlueprintContactMessagesView } from "@/components/admin/blueprint/contact-messages-view";
@@ -24,9 +25,10 @@ export default async function AdminContactMessagesPage({ searchParams }: { searc
     ...(status ? { isResolved: status === "resolved" } : {}),
     ...(q ? { OR: [{ name: { contains: q } }, { email: { contains: q } }, { subject: { contains: q } }, { message: { contains: q } }] } : {}),
   };
-  const [filteredTotal, openCount] = await Promise.all([
+  const [filteredTotal, openCount, initialHiddenColumns] = await Promise.all([
     db.contactMessage.count({ where }),
     db.contactMessage.count({ where: { isResolved: false } }),
+    readHiddenColumns("contactMessages"),
   ]);
   const pagination = resolveAdminPagination(filteredTotal, requestedPage, pageSize);
   const messages = await db.contactMessage.findMany({ where, orderBy: [{ isResolved: "asc" }, { createdAt: "desc" }], skip: pagination.skip, take: pagination.pageSize });
@@ -44,7 +46,7 @@ export default async function AdminContactMessagesPage({ searchParams }: { searc
       <AdminPanel>
         {!messages.length
           ? <AdminEmptyState title="پیامی پیدا نشد" description="هنوز پیامی از فرم تماس با ما ثبت نشده یا فیلترهای انتخاب‌شده نتیجه‌ای ندارند." />
-          : <BlueprintContactMessagesView messages={messages} pagination={pagination} />}
+          : <BlueprintContactMessagesView messages={messages} pagination={pagination} initialHiddenColumns={initialHiddenColumns} />}
       </AdminPanel>
     </>
   );

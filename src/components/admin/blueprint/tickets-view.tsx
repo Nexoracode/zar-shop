@@ -6,6 +6,7 @@ import { AdminEmptyState, AdminPageHeader, AdminStatusBadge } from "@/components
 import { AdminListFilters } from "@/components/admin-list-filters";
 import { AdminPagination } from "@/components/admin-pagination";
 import { AdminBulkCheckbox, AdminBulkEditor, AdminBulkTr } from "@/components/admin-bulk-editor";
+import { AdminColumn, AdminColumnSettingsButton, AdminColumnVisibility } from "@/components/admin-column-visibility";
 import { ticketStatusLabels, ticketStatusTones, userRoleLabels } from "@/modules/admin/labels";
 import { formatPersianDateTime, BpTable, BpTd, BpTh } from "./ui";
 
@@ -33,7 +34,19 @@ type Props = {
   categoryId: string;
   mine: boolean;
   pagination: { page: number; pageSize: number; totalItems: number; totalPages: number };
+  initialHiddenColumns: string[];
 };
+
+const TICKETS_TABLE_ID = "tickets";
+
+const ticketColumns = [
+  { id: "subject", label: "موضوع و کاربر" },
+  { id: "lastMessage", label: "آخرین پیام" },
+  { id: "category", label: "دسته" },
+  { id: "agent", label: "پشتیبان" },
+  { id: "status", label: "وضعیت" },
+  { id: "updatedAt", label: "آخرین بروزرسانی" },
+];
 
 function Avatar({ name }: { name: string }) {
   return (
@@ -58,7 +71,7 @@ function LastMessagePreview({ lastMessage }: { lastMessage: LastMessage | null }
   );
 }
 
-export function BlueprintTicketsView({ tickets, categories, query, status, categoryId, mine, pagination }: Props) {
+export function BlueprintTicketsView({ tickets, categories, query, status, categoryId, mine, pagination, initialHiddenColumns }: Props) {
   return (
     <div className="flex flex-col gap-2">
       <AdminPageHeader flush title="تیکت‌های پشتیبانی" description="پرسش‌ها و مشکلات مطرح‌شدهٔ کاربران را پاسخ دهید و وضعیت آن‌ها را مدیریت کنید." />
@@ -98,55 +111,61 @@ export function BlueprintTicketsView({ tickets, categories, query, status, categ
               ))}
             </div>
 
-            <AdminBulkEditor entity="tickets" entityLabel="تیکت" ids={tickets.map((ticket) => ticket.id)} actions={[{ value: "status:CLOSED", label: "بستن تیکت‌های انتخاب‌شده" }]}>
-              <BpTable ariaLabel="فهرست تیکت‌ها" minWidth={980}>
-                <thead>
-                  <tr>
-                    <BpTh className="w-10 text-center"><span className="sr-only">انتخاب</span></BpTh>
-                    <BpTh>موضوع و کاربر</BpTh>
-                    <BpTh>آخرین پیام</BpTh>
-                    <BpTh>دسته</BpTh>
-                    <BpTh>پشتیبان</BpTh>
-                    <BpTh>وضعیت</BpTh>
-                    <BpTh>آخرین بروزرسانی</BpTh>
-                    <BpTh className="text-center">عملیات</BpTh>
-                  </tr>
-                </thead>
-                <tbody>
-                  {tickets.map((ticket) => (
-                    <AdminBulkTr key={ticket.id} id={ticket.id}>
-                      <BpTd className="w-10 text-center"><AdminBulkCheckbox id={ticket.id} label={`انتخاب تیکت ${ticket.subject}`} /></BpTd>
-                      <BpTd className="max-w-[220px]">
-                        <div className="flex min-w-0 items-center gap-2.5">
-                          <Avatar name={ticket.customerName} />
-                          <div className="min-w-0">
-                            <span className={`block truncate ${ticket.status === "OPEN" ? "font-extrabold" : "font-bold"}`} title={ticket.subject}>{ticket.subject}</span>
-                            <span className="bp-muted block truncate text-[11px]">{ticket.customerName}</span>
+            <AdminColumnVisibility tableId={TICKETS_TABLE_ID} columns={ticketColumns} initialHidden={initialHiddenColumns}>
+              <AdminBulkEditor entity="tickets" entityLabel="تیکت" ids={tickets.map((ticket) => ticket.id)} actions={[{ value: "status:CLOSED", label: "بستن تیکت‌های انتخاب‌شده" }]} beforeSelectAll={<AdminColumnSettingsButton />}>
+                <BpTable ariaLabel="فهرست تیکت‌ها" minWidth={980}>
+                  <thead>
+                    <tr>
+                      <BpTh className="w-10 text-center"><span className="sr-only">انتخاب</span></BpTh>
+                      <AdminColumn id="subject"><BpTh>موضوع و کاربر</BpTh></AdminColumn>
+                      <AdminColumn id="lastMessage"><BpTh>آخرین پیام</BpTh></AdminColumn>
+                      <AdminColumn id="category"><BpTh>دسته</BpTh></AdminColumn>
+                      <AdminColumn id="agent"><BpTh>پشتیبان</BpTh></AdminColumn>
+                      <AdminColumn id="status"><BpTh>وضعیت</BpTh></AdminColumn>
+                      <AdminColumn id="updatedAt"><BpTh>آخرین بروزرسانی</BpTh></AdminColumn>
+                      <BpTh className="text-center">عملیات</BpTh>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {tickets.map((ticket) => (
+                      <AdminBulkTr key={ticket.id} id={ticket.id}>
+                        <BpTd className="w-10 text-center"><AdminBulkCheckbox id={ticket.id} label={`انتخاب تیکت ${ticket.subject}`} /></BpTd>
+                        <AdminColumn id="subject">
+                          <BpTd className="max-w-[220px]">
+                            <div className="flex min-w-0 items-center gap-2.5">
+                              <Avatar name={ticket.customerName} />
+                              <div className="min-w-0">
+                                <span className={`block truncate ${ticket.status === "OPEN" ? "font-extrabold" : "font-bold"}`} title={ticket.subject}>{ticket.subject}</span>
+                                <span className="bp-muted block truncate text-[11px]">{ticket.customerName}</span>
+                              </div>
+                            </div>
+                          </BpTd>
+                        </AdminColumn>
+                        <AdminColumn id="lastMessage"><BpTd className="max-w-[220px] text-[12px]"><LastMessagePreview lastMessage={ticket.lastMessage} /></BpTd></AdminColumn>
+                        <AdminColumn id="category"><BpTd className="text-[12px]">{ticket.category?.name ?? "—"}</BpTd></AdminColumn>
+                        <AdminColumn id="agent">
+                          <BpTd className="text-[12px]">
+                            {ticket.agentName ? (
+                              <>
+                                <span className="block font-bold">{ticket.agentName}</span>
+                                {ticket.agentRole && <span className="bp-muted block text-[10px]">{userRoleLabels[ticket.agentRole as keyof typeof userRoleLabels]}</span>}
+                              </>
+                            ) : <span className="bp-muted">بدون پشتیبان</span>}
+                          </BpTd>
+                        </AdminColumn>
+                        <AdminColumn id="status"><BpTd><AdminStatusBadge tone={ticketStatusTones[ticket.status]}>{ticketStatusLabels[ticket.status]}</AdminStatusBadge></BpTd></AdminColumn>
+                        <AdminColumn id="updatedAt"><BpTd className="bp-muted whitespace-nowrap text-[12px]">{formatPersianDateTime(ticket.updatedAt)}</BpTd></AdminColumn>
+                        <BpTd>
+                          <div className="flex items-center justify-center">
+                            <Link href={`/admin/tickets/${ticket.id}`} aria-label={`مشاهده تیکت ${ticket.subject}`} title="مشاهده گفتگو" className="bp-btn bp-btn-ghost bp-btn-icon bp-btn-sm"><Eye size={15} strokeWidth={1.5} /></Link>
                           </div>
-                        </div>
-                      </BpTd>
-                      <BpTd className="max-w-[220px] text-[12px]"><LastMessagePreview lastMessage={ticket.lastMessage} /></BpTd>
-                      <BpTd className="text-[12px]">{ticket.category?.name ?? "—"}</BpTd>
-                      <BpTd className="text-[12px]">
-                        {ticket.agentName ? (
-                          <>
-                            <span className="block font-bold">{ticket.agentName}</span>
-                            {ticket.agentRole && <span className="bp-muted block text-[10px]">{userRoleLabels[ticket.agentRole as keyof typeof userRoleLabels]}</span>}
-                          </>
-                        ) : <span className="bp-muted">بدون پشتیبان</span>}
-                      </BpTd>
-                      <BpTd><AdminStatusBadge tone={ticketStatusTones[ticket.status]}>{ticketStatusLabels[ticket.status]}</AdminStatusBadge></BpTd>
-                      <BpTd className="bp-muted whitespace-nowrap text-[12px]">{formatPersianDateTime(ticket.updatedAt)}</BpTd>
-                      <BpTd>
-                        <div className="flex items-center justify-center">
-                          <Link href={`/admin/tickets/${ticket.id}`} aria-label={`مشاهده تیکت ${ticket.subject}`} title="مشاهده گفتگو" className="bp-btn bp-btn-ghost bp-btn-icon bp-btn-sm"><Eye size={15} strokeWidth={1.5} /></Link>
-                        </div>
-                      </BpTd>
-                    </AdminBulkTr>
-                  ))}
-                </tbody>
-              </BpTable>
-            </AdminBulkEditor>
+                        </BpTd>
+                      </AdminBulkTr>
+                    ))}
+                  </tbody>
+                </BpTable>
+              </AdminBulkEditor>
+            </AdminColumnVisibility>
             <AdminPagination page={pagination.page} pageSize={pagination.pageSize} totalItems={pagination.totalItems} totalPages={pagination.totalPages} />
           </>
         )}
