@@ -7,6 +7,8 @@ import { GripVertical, SquarePen, Tag, Trash2 } from "lucide-react";
 import { AdminEmptyState, AdminPageHeader, AdminStatusBadge } from "@/components/admin-ui";
 import { AdminBulkCheckbox, AdminBulkEditor, AdminBulkTr } from "@/components/admin-bulk-editor";
 import { AdminColumn, AdminColumnSettingsButton, AdminColumnVisibility } from "@/components/admin-column-visibility";
+import { AdminColumnFilter } from "@/components/admin-column-filter";
+import { AdminGenericBulkEditButton } from "@/components/admin-generic-bulk-edit";
 import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
 import { requestErrorMessage, requestJson } from "@/lib/api-request";
 import { normalizeSearchText } from "@/lib/text-search";
@@ -224,9 +226,6 @@ export function BlueprintSupportTicketCategoriesView({ categories, initialHidden
                 onQueryChange={setQuery}
                 searchLabel="جستجوی موضوع"
                 searchPlaceholder="جستجو بر اساس نام موضوع"
-                filters={[
-                  { name: "status", ariaLabel: "وضعیت موضوع", value: statusFilter, onChange: setStatusFilter, options: [{ value: "", label: "همه وضعیت‌ها" }, { value: "active", label: "فعال" }, { value: "inactive", label: "غیرفعال" }] },
-                ]}
               />
               {visible.length ? (
               <>
@@ -259,7 +258,14 @@ export function BlueprintSupportTicketCategoriesView({ categories, initialHidden
               </div>
 
               <AdminColumnVisibility tableId={SUPPORT_TICKET_CATEGORIES_TABLE_ID} columns={ticketCategoryColumns} initialHidden={initialHiddenColumns}>
-                <AdminBulkEditor entity="supportTicketCategories" entityLabel="موضوع" ids={visible.map((category) => category.id)} actions={[{ value: "active:on", label: "فعال‌کردن موضوعات" }, { value: "active:off", label: "غیرفعال‌کردن موضوعات" }]} beforeSelectAll={<AdminColumnSettingsButton />}>
+                <AdminBulkEditor
+                  entity="supportTicketCategories"
+                  entityLabel="موضوع"
+                  ids={visible.map((category) => category.id)}
+                  actions={[]}
+                  beforeSelectAll={<AdminColumnSettingsButton />}
+                  extraAction={<AdminGenericBulkEditButton entity="supportTicketCategories" entityLabel="موضوع" changeTypes={[{ value: "active", label: "وضعیت", options: [{ value: "active:on", label: "فعال‌کردن" }, { value: "active:off", label: "غیرفعال‌کردن" }] }]} />}
+                >
                   <p className="m-0 flex items-center gap-1.5 border-b border-[var(--bp-divider)] px-4 py-2 text-[12px] text-[var(--bp-info)]">{filtersActive ? "برای تغییر ترتیب نمایش، ابتدا جستجو و فیلترها را پاک کنید." : "با کشیدن ردیف، ترتیب نمایش موضوعات را تنظیم کنید."}</p>
                   <BpTable ariaLabel="فهرست موضوعات تیکت" minWidth={520}>
                     <thead>
@@ -268,7 +274,7 @@ export function BlueprintSupportTicketCategoriesView({ categories, initialHidden
                         <BpTh className="w-10 text-center"><span className="sr-only">انتخاب</span></BpTh>
                         <AdminColumn id="name"><BpTh>نام</BpTh></AdminColumn>
                         <AdminColumn id="tickets"><BpTh>تیکت‌ها</BpTh></AdminColumn>
-                        <AdminColumn id="status"><BpTh>وضعیت</BpTh></AdminColumn>
+                        <AdminColumn id="status"><BpTh><span className="inline-flex items-center">وضعیت<AdminColumnFilter ariaLabel="فیلتر وضعیت" groups={[{ name: "status", label: "وضعیت", value: statusFilter, onChange: setStatusFilter, options: [{ value: "", label: "همه وضعیت‌ها" }, { value: "active", label: "فعال" }, { value: "inactive", label: "غیرفعال" }] }]} /></span></BpTh></AdminColumn>
                         <BpTh className="text-center">عملیات</BpTh>
                       </tr>
                     </thead>

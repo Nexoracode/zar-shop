@@ -7,6 +7,8 @@ import { GripVertical, SquarePen, Trash2 } from "lucide-react";
 import { AdminEmptyState, AdminPageHeader, AdminStatusBadge } from "@/components/admin-ui";
 import { AdminBulkCheckbox, AdminBulkEditor, AdminBulkTr } from "@/components/admin-bulk-editor";
 import { AdminColumn, AdminColumnSettingsButton, AdminColumnVisibility } from "@/components/admin-column-visibility";
+import { AdminColumnFilter } from "@/components/admin-column-filter";
+import { AdminGenericBulkEditButton } from "@/components/admin-generic-bulk-edit";
 import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
 import { requestErrorMessage, requestJson } from "@/lib/api-request";
 import { normalizeSearchText } from "@/lib/text-search";
@@ -223,13 +225,17 @@ export function BlueprintArticleCategoriesView({ categories, initialHiddenColumn
                 onQueryChange={setQuery}
                 searchLabel="جستجوی دسته"
                 searchPlaceholder="جستجو بر اساس نام یا نشانی دسته"
-                filters={[
-                  { name: "status", ariaLabel: "وضعیت دسته", value: statusFilter, onChange: setStatusFilter, options: [{ value: "", label: "همه وضعیت‌ها" }, { value: "active", label: "فعال" }, { value: "inactive", label: "غیرفعال" }] },
-                ]}
               />
               {visible.length ? (
                 <AdminColumnVisibility tableId={ARTICLE_CATEGORIES_TABLE_ID} columns={articleCategoryColumns} initialHidden={initialHiddenColumns}>
-                  <AdminBulkEditor entity="articleCategories" entityLabel="دسته" ids={visible.map((category) => category.id)} actions={[{ value: "active:on", label: "فعال‌کردن دسته‌ها" }, { value: "active:off", label: "غیرفعال‌کردن دسته‌ها" }]} beforeSelectAll={<AdminColumnSettingsButton />}>
+                  <AdminBulkEditor
+                    entity="articleCategories"
+                    entityLabel="دسته"
+                    ids={visible.map((category) => category.id)}
+                    actions={[]}
+                    beforeSelectAll={<AdminColumnSettingsButton />}
+                    extraAction={<AdminGenericBulkEditButton entity="articleCategories" entityLabel="دسته" changeTypes={[{ value: "active", label: "وضعیت", options: [{ value: "active:on", label: "فعال‌کردن" }, { value: "active:off", label: "غیرفعال‌کردن" }] }]} />}
+                  >
                     <p className="m-0 flex items-center gap-1.5 border-b border-[var(--bp-divider)] px-4 py-2 text-[12px] text-[var(--bp-info)]">{filtersActive ? "برای تغییر ترتیب، ابتدا جستجو و فیلترها را پاک کنید." : "با کشیدن ردیف، ترتیب نمایش دسته‌ها را تنظیم کنید."}</p>
                     <BpTable ariaLabel="فهرست دسته‌های مقالات" minWidth={560}>
                       <thead>
@@ -239,7 +245,7 @@ export function BlueprintArticleCategoriesView({ categories, initialHiddenColumn
                           <AdminColumn id="name"><BpTh>نام</BpTh></AdminColumn>
                           <AdminColumn id="slug"><BpTh>نشانی</BpTh></AdminColumn>
                           <AdminColumn id="articles"><BpTh>مقالات</BpTh></AdminColumn>
-                          <AdminColumn id="status"><BpTh>وضعیت</BpTh></AdminColumn>
+                          <AdminColumn id="status"><BpTh><span className="inline-flex items-center">وضعیت<AdminColumnFilter ariaLabel="فیلتر وضعیت" groups={[{ name: "status", label: "وضعیت", value: statusFilter, onChange: setStatusFilter, options: [{ value: "", label: "همه وضعیت‌ها" }, { value: "active", label: "فعال" }, { value: "inactive", label: "غیرفعال" }] }]} /></span></BpTh></AdminColumn>
                           <BpTh className="text-center">عملیات</BpTh>
                         </tr>
                       </thead>
