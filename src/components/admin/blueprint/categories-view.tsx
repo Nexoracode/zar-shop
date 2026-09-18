@@ -9,6 +9,8 @@ import { FolderTree, GripVertical, Images, SlidersHorizontal, SquarePen, Star, T
 import { AdminEmptyState, AdminPageHeader, AdminStatusBadge } from "@/components/admin-ui";
 import { AdminBulkCheckbox, AdminBulkEditor, AdminBulkTr } from "@/components/admin-bulk-editor";
 import { AdminColumn, AdminColumnSettingsButton, AdminColumnVisibility } from "@/components/admin-column-visibility";
+import { AdminColumnFilter } from "@/components/admin-column-filter";
+import { AdminGenericBulkEditButton } from "@/components/admin-generic-bulk-edit";
 import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
 import { MediaPickerDialog } from "@/components/media-picker-dialog";
 import type { MediaChoice } from "@/components/media-library";
@@ -305,12 +307,6 @@ export function BlueprintCategoriesView({ categories, initialHiddenColumns }: { 
                 onQueryChange={setQuery}
                 searchLabel="جستجوی دسته‌بندی"
                 searchPlaceholder="جستجو بر اساس نام، نشانی یا دسته والد"
-                filters={[
-                  { name: "status", ariaLabel: "وضعیت دسته‌بندی", value: statusFilter, onChange: setStatusFilter, options: [{ value: "", label: "همه وضعیت‌ها" }, { value: "active", label: "فعال" }, { value: "inactive", label: "غیرفعال" }] },
-                  { name: "type", ariaLabel: "نوع دسته‌بندی", value: typeFilter, onChange: setTypeFilter, options: [{ value: "", label: "همه دسته‌ها" }, { value: "root", label: "دسته اصلی" }, { value: "child", label: "زیردسته" }] },
-                  { name: "featured", ariaLabel: "نمایش در صفحه اصلی", value: featuredFilter, onChange: setFeaturedFilter, options: [{ value: "", label: "صفحه اصلی: همه" }, { value: "yes", label: "در صفحه اصلی" }, { value: "no", label: "خارج از صفحه اصلی" }] },
-                  { name: "products", ariaLabel: "محصولات دسته‌بندی", value: productsFilter, onChange: setProductsFilter, options: [{ value: "", label: "محصولات: همه" }, { value: "has", label: "دارای محصول" }, { value: "none", label: "بدون محصول" }] },
-                ]}
               />
               {visible.length ? (
               <>
@@ -350,18 +346,28 @@ export function BlueprintCategoriesView({ categories, initialHiddenColumns }: { 
               </div>
 
               <AdminColumnVisibility tableId={CATEGORIES_TABLE_ID} columns={categoryColumns} initialHidden={initialHiddenColumns}>
-                <AdminBulkEditor entity="categories" entityLabel="دسته‌بندی" ids={visible.map((category) => category.id)} actions={[{ value: "featured:on", label: "نمایش در صفحه اصلی" }, { value: "featured:off", label: "حذف از صفحه اصلی" }, { value: "active:on", label: "فعال‌کردن دسته‌بندی‌ها" }, { value: "active:off", label: "غیرفعال‌کردن دسته‌بندی‌ها" }]} beforeSelectAll={<AdminColumnSettingsButton />}>
+                <AdminBulkEditor
+                  entity="categories"
+                  entityLabel="دسته‌بندی"
+                  ids={visible.map((category) => category.id)}
+                  actions={[]}
+                  beforeSelectAll={<AdminColumnSettingsButton />}
+                  extraAction={<AdminGenericBulkEditButton entity="categories" entityLabel="دسته‌بندی" changeTypes={[
+                    { value: "featured", label: "نمایش در صفحه اصلی", options: [{ value: "featured:on", label: "نمایش در صفحه اصلی" }, { value: "featured:off", label: "حذف از صفحه اصلی" }] },
+                    { value: "active", label: "وضعیت", options: [{ value: "active:on", label: "فعال‌کردن" }, { value: "active:off", label: "غیرفعال‌کردن" }] },
+                  ]} />}
+                >
                   <p className="m-0 flex items-center gap-1.5 border-b border-[var(--bp-divider)] px-4 py-2 text-[12px] text-[var(--bp-info)]">{filtersActive ? "برای تغییر ترتیب نمایش، ابتدا جستجو و فیلترها را پاک کنید." : "با کشیدن ردیف، ترتیب نمایش دسته‌بندی‌ها را تنظیم کنید."}</p>
                   <BpTable ariaLabel="فهرست دسته‌بندی‌ها" minWidth={760}>
                     <thead>
                       <tr>
                         <BpTh className="w-8 text-center"><span className="sr-only">جابه‌جایی</span></BpTh>
                         <BpTh className="w-10 text-center"><span className="sr-only">انتخاب</span></BpTh>
-                        <AdminColumn id="category"><BpTh>دسته‌بندی</BpTh></AdminColumn>
-                        <AdminColumn id="parent"><BpTh>والد</BpTh></AdminColumn>
-                        <AdminColumn id="products"><BpTh>محصولات</BpTh></AdminColumn>
+                        <AdminColumn id="category"><BpTh><span className="inline-flex items-center">دسته‌بندی<AdminColumnFilter ariaLabel="فیلتر صفحه اصلی" groups={[{ name: "featured", label: "نمایش در صفحه اصلی", value: featuredFilter, onChange: setFeaturedFilter, options: [{ value: "", label: "همه" }, { value: "yes", label: "در صفحه اصلی" }, { value: "no", label: "خارج از صفحه اصلی" }] }]} /></span></BpTh></AdminColumn>
+                        <AdminColumn id="parent"><BpTh><span className="inline-flex items-center">والد<AdminColumnFilter ariaLabel="فیلتر نوع دسته‌بندی" groups={[{ name: "type", label: "نوع دسته‌بندی", value: typeFilter, onChange: setTypeFilter, options: [{ value: "", label: "همه دسته‌ها" }, { value: "root", label: "دسته اصلی" }, { value: "child", label: "زیردسته" }] }]} /></span></BpTh></AdminColumn>
+                        <AdminColumn id="products"><BpTh><span className="inline-flex items-center">محصولات<AdminColumnFilter ariaLabel="فیلتر محصولات" groups={[{ name: "products", label: "محصولات دسته‌بندی", value: productsFilter, onChange: setProductsFilter, options: [{ value: "", label: "همه" }, { value: "has", label: "دارای محصول" }, { value: "none", label: "بدون محصول" }] }]} /></span></BpTh></AdminColumn>
                         <AdminColumn id="children"><BpTh>زیردسته‌ها</BpTh></AdminColumn>
-                        <AdminColumn id="status"><BpTh>وضعیت</BpTh></AdminColumn>
+                        <AdminColumn id="status"><BpTh><span className="inline-flex items-center">وضعیت<AdminColumnFilter ariaLabel="فیلتر وضعیت" groups={[{ name: "status", label: "وضعیت", value: statusFilter, onChange: setStatusFilter, options: [{ value: "", label: "همه وضعیت‌ها" }, { value: "active", label: "فعال" }, { value: "inactive", label: "غیرفعال" }] }]} /></span></BpTh></AdminColumn>
                         <BpTh className="text-center">عملیات</BpTh>
                       </tr>
                     </thead>

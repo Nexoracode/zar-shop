@@ -8,6 +8,8 @@ import { GripVertical, Images, SquarePen, Tag, Trash2 } from "lucide-react";
 import { AdminEmptyState, AdminPageHeader, AdminStatusBadge } from "@/components/admin-ui";
 import { AdminBulkCheckbox, AdminBulkEditor, AdminBulkTr } from "@/components/admin-bulk-editor";
 import { AdminColumn, AdminColumnSettingsButton, AdminColumnVisibility } from "@/components/admin-column-visibility";
+import { AdminColumnFilter } from "@/components/admin-column-filter";
+import { AdminGenericBulkEditButton } from "@/components/admin-generic-bulk-edit";
 import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
 import { MediaPickerDialog } from "@/components/media-picker-dialog";
 import type { MediaChoice } from "@/components/media-library";
@@ -276,11 +278,6 @@ export function BlueprintBrandsView({ brands, initialHiddenColumns }: { brands: 
                 onQueryChange={setQuery}
                 searchLabel="جستجوی برند"
                 searchPlaceholder="جستجو بر اساس نام یا نشانی برند"
-                filters={[
-                  { name: "status", ariaLabel: "وضعیت برند", value: statusFilter, onChange: setStatusFilter, options: [{ value: "", label: "همه وضعیت‌ها" }, { value: "active", label: "فعال" }, { value: "inactive", label: "غیرفعال" }] },
-                  { name: "featured", ariaLabel: "نمایش در صفحه اصلی", value: featuredFilter, onChange: setFeaturedFilter, options: [{ value: "", label: "صفحه اصلی: همه" }, { value: "yes", label: "در صفحه اصلی" }, { value: "no", label: "خارج از صفحه اصلی" }] },
-                  { name: "products", ariaLabel: "محصولات برند", value: productsFilter, onChange: setProductsFilter, options: [{ value: "", label: "محصولات: همه" }, { value: "has", label: "دارای محصول" }, { value: "none", label: "بدون محصول" }] },
-                ]}
               />
               {visible.length ? (
               <>
@@ -316,7 +313,17 @@ export function BlueprintBrandsView({ brands, initialHiddenColumns }: { brands: 
               </div>
 
               <AdminColumnVisibility tableId={BRANDS_TABLE_ID} columns={brandColumns} initialHidden={initialHiddenColumns}>
-                <AdminBulkEditor entity="brands" entityLabel="برند" ids={visible.map((brand) => brand.id)} actions={[{ value: "featured:on", label: "نمایش در صفحه اصلی" }, { value: "featured:off", label: "حذف از صفحه اصلی" }, { value: "active:on", label: "فعال‌کردن برندها" }, { value: "active:off", label: "غیرفعال‌کردن برندها" }]} beforeSelectAll={<AdminColumnSettingsButton />}>
+                <AdminBulkEditor
+                  entity="brands"
+                  entityLabel="برند"
+                  ids={visible.map((brand) => brand.id)}
+                  actions={[]}
+                  beforeSelectAll={<AdminColumnSettingsButton />}
+                  extraAction={<AdminGenericBulkEditButton entity="brands" entityLabel="برند" changeTypes={[
+                    { value: "featured", label: "نمایش در صفحه اصلی", options: [{ value: "featured:on", label: "نمایش در صفحه اصلی" }, { value: "featured:off", label: "حذف از صفحه اصلی" }] },
+                    { value: "active", label: "وضعیت", options: [{ value: "active:on", label: "فعال‌کردن" }, { value: "active:off", label: "غیرفعال‌کردن" }] },
+                  ]} />}
+                >
                   <p className="m-0 flex items-center gap-1.5 border-b border-[var(--bp-divider)] px-4 py-2 text-[12px] text-[var(--bp-info)]">{filtersActive ? "برای تغییر ترتیب نمایش، ابتدا جستجو و فیلترها را پاک کنید." : "با کشیدن ردیف، ترتیب نمایش برندها را در «محبوب‌ترین برندها» تنظیم کنید."}</p>
                   <BpTable ariaLabel="فهرست برندها" minWidth={640}>
                     <thead>
@@ -326,9 +333,9 @@ export function BlueprintBrandsView({ brands, initialHiddenColumns }: { brands: 
                         <AdminColumn id="logo"><BpTh className="w-10">لوگو</BpTh></AdminColumn>
                         <AdminColumn id="name"><BpTh>نام</BpTh></AdminColumn>
                         <AdminColumn id="slug"><BpTh>نشانی</BpTh></AdminColumn>
-                        <AdminColumn id="products"><BpTh>محصولات</BpTh></AdminColumn>
-                        <AdminColumn id="homepage"><BpTh>صفحه اصلی</BpTh></AdminColumn>
-                        <AdminColumn id="status"><BpTh>وضعیت</BpTh></AdminColumn>
+                        <AdminColumn id="products"><BpTh><span className="inline-flex items-center">محصولات<AdminColumnFilter ariaLabel="فیلتر محصولات" groups={[{ name: "products", label: "محصولات برند", value: productsFilter, onChange: setProductsFilter, options: [{ value: "", label: "همه" }, { value: "has", label: "دارای محصول" }, { value: "none", label: "بدون محصول" }] }]} /></span></BpTh></AdminColumn>
+                        <AdminColumn id="homepage"><BpTh><span className="inline-flex items-center">صفحه اصلی<AdminColumnFilter ariaLabel="فیلتر صفحه اصلی" groups={[{ name: "featured", label: "نمایش در صفحه اصلی", value: featuredFilter, onChange: setFeaturedFilter, options: [{ value: "", label: "همه" }, { value: "yes", label: "در صفحه اصلی" }, { value: "no", label: "خارج از صفحه اصلی" }] }]} /></span></BpTh></AdminColumn>
+                        <AdminColumn id="status"><BpTh><span className="inline-flex items-center">وضعیت<AdminColumnFilter ariaLabel="فیلتر وضعیت" groups={[{ name: "status", label: "وضعیت", value: statusFilter, onChange: setStatusFilter, options: [{ value: "", label: "همه وضعیت‌ها" }, { value: "active", label: "فعال" }, { value: "inactive", label: "غیرفعال" }] }]} /></span></BpTh></AdminColumn>
                         <BpTh className="text-center">عملیات</BpTh>
                       </tr>
                     </thead>
