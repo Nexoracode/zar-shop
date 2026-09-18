@@ -4,6 +4,8 @@ import { CalendarDays, Eye, Mail, MessageCircle, Phone, User } from "lucide-reac
 import { AdminStatusBadge } from "@/components/admin-ui";
 import { AdminBulkCheckbox, AdminBulkEditor, AdminBulkTr } from "@/components/admin-bulk-editor";
 import { AdminColumn, AdminColumnSettingsButton, AdminColumnVisibility } from "@/components/admin-column-visibility";
+import { AdminColumnFilter } from "@/components/admin-column-filter";
+import { AdminGenericBulkEditButton } from "@/components/admin-generic-bulk-edit";
 import { AdminPagination } from "@/components/admin-pagination";
 import type { resolveAdminPagination } from "@/lib/admin-pagination";
 import { formatDateTime } from "@/lib/format";
@@ -18,7 +20,7 @@ const contactMessageColumns = [
   { id: "status", label: "وضعیت" },
 ];
 
-export function BlueprintContactMessagesView({ messages, pagination, initialHiddenColumns }: { messages: ContactMessage[]; pagination: ReturnType<typeof resolveAdminPagination>; initialHiddenColumns: string[] }) {
+export function BlueprintContactMessagesView({ messages, pagination, initialHiddenColumns, status }: { messages: ContactMessage[]; pagination: ReturnType<typeof resolveAdminPagination>; initialHiddenColumns: string[]; status: string }) {
   return (
     <>
       <div className="divide-y divide-[var(--bp-row-line)] lg:hidden">
@@ -43,7 +45,15 @@ export function BlueprintContactMessagesView({ messages, pagination, initialHidd
       </div>
 
       <AdminColumnVisibility tableId={CONTACT_MESSAGES_TABLE_ID} columns={contactMessageColumns} initialHidden={initialHiddenColumns}>
-        <AdminBulkEditor entity="contactMessages" entityLabel="پیام" ids={messages.map((item) => item.id)} actions={[{ value: "resolved:on", label: "علامت‌گذاری به‌عنوان بررسی‌شده" }, { value: "resolved:off", label: "علامت‌گذاری به‌عنوان بررسی‌نشده" }]} desktopClassName="hidden lg:block" beforeSelectAll={<AdminColumnSettingsButton />}>
+        <AdminBulkEditor
+          entity="contactMessages"
+          entityLabel="پیام"
+          ids={messages.map((item) => item.id)}
+          actions={[]}
+          desktopClassName="hidden lg:block"
+          beforeSelectAll={<AdminColumnSettingsButton />}
+          extraAction={<AdminGenericBulkEditButton entity="contactMessages" entityLabel="پیام" changeTypes={[{ value: "resolved", label: "وضعیت بررسی", options: [{ value: "resolved:on", label: "بررسی‌شده" }, { value: "resolved:off", label: "بررسی‌نشده" }] }]} />}
+        >
           <BpTable ariaLabel="فهرست پیام‌های تماس" minWidth={900}>
             <thead>
               <tr>
@@ -51,7 +61,7 @@ export function BlueprintContactMessagesView({ messages, pagination, initialHidd
                 <AdminColumn id="subject"><BpTh>موضوع و پیام</BpTh></AdminColumn>
                 <AdminColumn id="sender"><BpTh>فرستنده</BpTh></AdminColumn>
                 <AdminColumn id="date"><BpTh>تاریخ</BpTh></AdminColumn>
-                <AdminColumn id="status"><BpTh>وضعیت</BpTh></AdminColumn>
+                <AdminColumn id="status"><BpTh><span className="inline-flex items-center">وضعیت<AdminColumnFilter path="/admin/contact-messages" ariaLabel="فیلتر وضعیت" groups={[{ name: "status", label: "وضعیت", value: status, options: [{ value: "", label: "همه پیام‌ها" }, { value: "open", label: "بررسی‌نشده" }, { value: "resolved", label: "بررسی‌شده" }] }]} /></span></BpTh></AdminColumn>
                 <BpTh className="text-center">عملیات</BpTh>
               </tr>
             </thead>

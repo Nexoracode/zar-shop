@@ -40,13 +40,13 @@ export default async function AdminContactMessagesPage({ searchParams }: { searc
       {openCount > 0 && <div className="mb-5"><AdminPanel className="flex items-center gap-2 p-4 text-xs font-bold text-[var(--warning)]">{openCount.toLocaleString("fa-IR")} پیام هنوز بررسی نشده است.</AdminPanel></div>}
 
       <AdminPanel className="mb-5 p-4 sm:p-5">
-        <AdminListFilters path="/admin/contact-messages" query={q} queryLabel="جستجوی پیام" queryPlaceholder="نام، ایمیل یا متن پیام" filters={[{ name: "status", label: "وضعیت", value: status ?? "", options: [{ value: "", label: "همه پیام‌ها" }, { value: "open", label: "بررسی‌نشده" }, { value: "resolved", label: "بررسی‌شده" }] }]} />
+        <AdminListFilters path="/admin/contact-messages" query={q} queryLabel="جستجوی پیام" queryPlaceholder="نام، ایمیل یا متن پیام" filters={[]} />
       </AdminPanel>
 
       <AdminPanel>
         {!messages.length
           ? <AdminEmptyState title="پیامی پیدا نشد" description="هنوز پیامی از فرم تماس با ما ثبت نشده یا فیلترهای انتخاب‌شده نتیجه‌ای ندارند." />
-          : <BlueprintContactMessagesView messages={messages} pagination={pagination} initialHiddenColumns={initialHiddenColumns} />}
+          : <BlueprintContactMessagesView messages={messages} pagination={pagination} initialHiddenColumns={initialHiddenColumns} status={status ?? ""} />}
       </AdminPanel>
     </>
   );
