@@ -6,6 +6,7 @@ import { toast } from "@heroui/react";
 import { GripVertical, Info, SquarePen, Trash2 } from "lucide-react";
 import { AdminEmptyState, AdminPageHeader, AdminStatusBadge } from "@/components/admin-ui";
 import { AdminBulkCheckbox, AdminBulkEditor, AdminBulkTr } from "@/components/admin-bulk-editor";
+import { AdminColumn, AdminColumnSettingsButton, AdminColumnVisibility } from "@/components/admin-column-visibility";
 import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
 import { requestErrorMessage, requestJson } from "@/lib/api-request";
 import { normalizeSearchText } from "@/lib/text-search";
@@ -62,7 +63,17 @@ function ValuePreview({ values }: { values: OptionValueRow[] }) {
   );
 }
 
-export function BlueprintOptionTypesView({ types, colors }: { types: OptionTypeRow[]; colors: ColorChoice[] }) {
+const OPTION_TYPES_TABLE_ID = "optionTypes";
+
+const optionTypeColumns = [
+  { id: "name", label: "نام" },
+  { id: "kind", label: "نوع" },
+  { id: "values", label: "مقادیر" },
+  { id: "products", label: "محصولات" },
+  { id: "status", label: "وضعیت" },
+];
+
+export function BlueprintOptionTypesView({ types, colors, initialHiddenColumns }: { types: OptionTypeRow[]; colors: ColorChoice[]; initialHiddenColumns: string[] }) {
   const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
   const [items, setItems] = useState(types);
@@ -370,54 +381,56 @@ export function BlueprintOptionTypesView({ types, colors }: { types: OptionTypeR
                 ))}
               </div>
 
-              <AdminBulkEditor entity="optionTypes" entityLabel="نوع تنوع" ids={visible.map((type) => type.id)} actions={[{ value: "active:on", label: "فعال‌کردن نوع‌ها" }, { value: "active:off", label: "غیرفعال‌کردن نوع‌ها" }]}>
-                <p className="m-0 flex items-center gap-1.5 border-b border-[var(--bp-divider)] px-4 py-2 text-[12px] text-[var(--bp-info)]">
-                  <Info size={14} className="shrink-0" aria-hidden />
-                  {filtersActive ? "برای تغییر ترتیب نمایش، ابتدا جستجو و فیلترها را پاک کنید." : "با کشیدن ردیف، ترتیب نمایش نوع‌های تنوع را در فرم محصول تنظیم کنید."}
-                </p>
-                <BpTable ariaLabel="فهرست نوع‌های تنوع" minWidth={760}>
-                  <thead>
-                    <tr>
-                      <BpTh className="w-8 text-center"><span className="sr-only">جابه‌جایی</span></BpTh>
-                      <BpTh className="w-10 text-center"><span className="sr-only">انتخاب</span></BpTh>
-                      <BpTh>نام</BpTh>
-                      <BpTh>نوع</BpTh>
-                      <BpTh>مقادیر</BpTh>
-                      <BpTh>محصولات</BpTh>
-                      <BpTh>وضعیت</BpTh>
-                      <BpTh className="text-center">عملیات</BpTh>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {visible.map((type) => (
-                      <AdminBulkTr
-                        key={type.id}
-                        id={type.id}
-                        draggable={!savingOrder && !filtersActive}
-                        onDragStart={(event) => { event.dataTransfer.effectAllowed = "move"; beginDrag(type.id); }}
-                        onDragOver={(event) => dragOver(event, type.id)}
-                        onDrop={(event) => event.preventDefault()}
-                        onDragEnd={endDrag}
-                        className={draggedId === type.id ? "opacity-50" : undefined}
-                      >
-                        <BpTd className="w-8 text-center"><span aria-hidden="true" title="برای جابه‌جایی بکشید" className="bp-muted inline-flex cursor-grab active:cursor-grabbing"><GripVertical size={15} /></span></BpTd>
-                        <BpTd className="w-10 text-center"><AdminBulkCheckbox id={type.id} label={`انتخاب نوع تنوع ${type.name}`} /></BpTd>
-                        <BpTd className="max-w-[160px] truncate font-bold" title={type.name}>{type.name}</BpTd>
-                        <BpTd className="bp-muted">{kindLabels[type.kind]}</BpTd>
-                        <BpTd className="max-w-[280px]"><ValuePreview values={type.values} /></BpTd>
-                        <BpTd className="text-[var(--bp-text)]">{type.productCount.toLocaleString("fa-IR")}</BpTd>
-                        <BpTd><AdminStatusBadge tone={type.isActive ? "success" : "neutral"}>{type.isActive ? "فعال" : "غیرفعال"}</AdminStatusBadge></BpTd>
-                        <BpTd>
-                          <div className="flex items-center justify-center gap-1">
-                            <BpButton isIconOnly size="sm" variant="ghost" title="ویرایش نوع تنوع" aria-label={`ویرایش ${type.name}`} onClick={() => startEdit(type)}><SquarePen size={15} strokeWidth={1.5} /></BpButton>
-                            <BpButton isIconOnly size="sm" variant="ghost" title={type.productCount > 0 ? "این نوع در محصولی استفاده شده و قابل حذف نیست" : "حذف نوع تنوع"} className="bp-btn-danger-icon" aria-label={`حذف ${type.name}`} disabled={type.productCount > 0} onClick={() => { setDeleteError(""); setDeleteTarget(type); }}><Trash2 size={15} strokeWidth={1.5} /></BpButton>
-                          </div>
-                        </BpTd>
-                      </AdminBulkTr>
-                    ))}
-                  </tbody>
-                </BpTable>
-              </AdminBulkEditor>
+              <AdminColumnVisibility tableId={OPTION_TYPES_TABLE_ID} columns={optionTypeColumns} initialHidden={initialHiddenColumns}>
+                <AdminBulkEditor entity="optionTypes" entityLabel="نوع تنوع" ids={visible.map((type) => type.id)} actions={[{ value: "active:on", label: "فعال‌کردن نوع‌ها" }, { value: "active:off", label: "غیرفعال‌کردن نوع‌ها" }]} beforeSelectAll={<AdminColumnSettingsButton />}>
+                  <p className="m-0 flex items-center gap-1.5 border-b border-[var(--bp-divider)] px-4 py-2 text-[12px] text-[var(--bp-info)]">
+                    <Info size={14} className="shrink-0" aria-hidden />
+                    {filtersActive ? "برای تغییر ترتیب نمایش، ابتدا جستجو و فیلترها را پاک کنید." : "با کشیدن ردیف، ترتیب نمایش نوع‌های تنوع را در فرم محصول تنظیم کنید."}
+                  </p>
+                  <BpTable ariaLabel="فهرست نوع‌های تنوع" minWidth={760}>
+                    <thead>
+                      <tr>
+                        <BpTh className="w-8 text-center"><span className="sr-only">جابه‌جایی</span></BpTh>
+                        <BpTh className="w-10 text-center"><span className="sr-only">انتخاب</span></BpTh>
+                        <AdminColumn id="name"><BpTh>نام</BpTh></AdminColumn>
+                        <AdminColumn id="kind"><BpTh>نوع</BpTh></AdminColumn>
+                        <AdminColumn id="values"><BpTh>مقادیر</BpTh></AdminColumn>
+                        <AdminColumn id="products"><BpTh>محصولات</BpTh></AdminColumn>
+                        <AdminColumn id="status"><BpTh>وضعیت</BpTh></AdminColumn>
+                        <BpTh className="text-center">عملیات</BpTh>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {visible.map((type) => (
+                        <AdminBulkTr
+                          key={type.id}
+                          id={type.id}
+                          draggable={!savingOrder && !filtersActive}
+                          onDragStart={(event) => { event.dataTransfer.effectAllowed = "move"; beginDrag(type.id); }}
+                          onDragOver={(event) => dragOver(event, type.id)}
+                          onDrop={(event) => event.preventDefault()}
+                          onDragEnd={endDrag}
+                          className={draggedId === type.id ? "opacity-50" : undefined}
+                        >
+                          <BpTd className="w-8 text-center"><span aria-hidden="true" title="برای جابه‌جایی بکشید" className="bp-muted inline-flex cursor-grab active:cursor-grabbing"><GripVertical size={15} /></span></BpTd>
+                          <BpTd className="w-10 text-center"><AdminBulkCheckbox id={type.id} label={`انتخاب نوع تنوع ${type.name}`} /></BpTd>
+                          <AdminColumn id="name"><BpTd className="max-w-[160px] truncate font-bold" title={type.name}>{type.name}</BpTd></AdminColumn>
+                          <AdminColumn id="kind"><BpTd className="bp-muted">{kindLabels[type.kind]}</BpTd></AdminColumn>
+                          <AdminColumn id="values"><BpTd className="max-w-[280px]"><ValuePreview values={type.values} /></BpTd></AdminColumn>
+                          <AdminColumn id="products"><BpTd className="text-[var(--bp-text)]">{type.productCount.toLocaleString("fa-IR")}</BpTd></AdminColumn>
+                          <AdminColumn id="status"><BpTd><AdminStatusBadge tone={type.isActive ? "success" : "neutral"}>{type.isActive ? "فعال" : "غیرفعال"}</AdminStatusBadge></BpTd></AdminColumn>
+                          <BpTd>
+                            <div className="flex items-center justify-center gap-1">
+                              <BpButton isIconOnly size="sm" variant="ghost" title="ویرایش نوع تنوع" aria-label={`ویرایش ${type.name}`} onClick={() => startEdit(type)}><SquarePen size={15} strokeWidth={1.5} /></BpButton>
+                              <BpButton isIconOnly size="sm" variant="ghost" title={type.productCount > 0 ? "این نوع در محصولی استفاده شده و قابل حذف نیست" : "حذف نوع تنوع"} className="bp-btn-danger-icon" aria-label={`حذف ${type.name}`} disabled={type.productCount > 0} onClick={() => { setDeleteError(""); setDeleteTarget(type); }}><Trash2 size={15} strokeWidth={1.5} /></BpButton>
+                            </div>
+                          </BpTd>
+                        </AdminBulkTr>
+                      ))}
+                    </tbody>
+                  </BpTable>
+                </AdminBulkEditor>
+              </AdminColumnVisibility>
               </>
               ) : <div className="p-6"><AdminEmptyState title="نوع تنوعی پیدا نشد" description="هیچ نوع تنوعی با جستجو و فیلترهای انتخابی مطابقت ندارد." /></div>}
             </>
