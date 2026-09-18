@@ -8,6 +8,8 @@ import { GripVertical, SquarePen } from "lucide-react";
 import { AdminEmptyState, AdminPanel, AdminStatusBadge } from "@/components/admin-ui";
 import { AdminBulkCheckbox, AdminBulkEditor, AdminBulkTr } from "@/components/admin-bulk-editor";
 import { AdminColumn, AdminColumnSettingsButton, AdminColumnVisibility } from "@/components/admin-column-visibility";
+import { AdminColumnFilter } from "@/components/admin-column-filter";
+import { AdminGenericBulkEditButton } from "@/components/admin-generic-bulk-edit";
 import { requestErrorMessage, requestJson } from "@/lib/api-request";
 import { normalizeSearchText } from "@/lib/text-search";
 import { BpListFilters, BpTable, BpTd, BpTh } from "./ui";
@@ -141,10 +143,6 @@ export function BlueprintShippingMethodsView({ methods, initialHiddenColumns }: 
             onQueryChange={setQuery}
             searchLabel="جستجوی روش ارسال"
             searchPlaceholder="جستجو بر اساس نام روش یا شرکت حمل"
-            filters={[
-              { name: "status", ariaLabel: "وضعیت روش ارسال", value: statusFilter, onChange: setStatusFilter, options: [{ value: "", label: "همه وضعیت‌ها" }, { value: "active", label: "فعال" }, { value: "inactive", label: "غیرفعال" }] },
-              { name: "source", ariaLabel: "منبع نرخ", value: sourceFilter, onChange: setSourceFilter, options: [{ value: "", label: "همه منابع نرخ" }, { value: "TABLE", label: "جدول نرخ فروشگاه" }, { value: "TAPIN", label: "نرخ لحظه‌ای تاپین" }] },
-            ]}
           />
 
           {visible.length ? (
@@ -182,7 +180,14 @@ export function BlueprintShippingMethodsView({ methods, initialHiddenColumns }: 
               </div>
 
               <AdminColumnVisibility tableId={SHIPPING_METHODS_TABLE_ID} columns={shippingMethodColumns} initialHidden={initialHiddenColumns}>
-                <AdminBulkEditor entity="shippingMethods" entityLabel="روش ارسال" ids={visible.map((method) => method.id)} actions={[{ value: "active:on", label: "فعال‌کردن روش‌ها" }, { value: "active:off", label: "غیرفعال‌کردن روش‌ها" }]} beforeSelectAll={<AdminColumnSettingsButton />}>
+                <AdminBulkEditor
+                  entity="shippingMethods"
+                  entityLabel="روش ارسال"
+                  ids={visible.map((method) => method.id)}
+                  actions={[]}
+                  beforeSelectAll={<AdminColumnSettingsButton />}
+                  extraAction={<AdminGenericBulkEditButton entity="shippingMethods" entityLabel="روش ارسال" changeTypes={[{ value: "active", label: "وضعیت", options: [{ value: "active:on", label: "فعال‌کردن" }, { value: "active:off", label: "غیرفعال‌کردن" }] }]} />}
+                >
                   <BpTable ariaLabel="فهرست روش‌های ارسال" minWidth={800}>
                     <thead>
                       <tr>
@@ -190,9 +195,9 @@ export function BlueprintShippingMethodsView({ methods, initialHiddenColumns }: 
                         <BpTh className="w-10 text-center"><span className="sr-only">انتخاب</span></BpTh>
                         <AdminColumn id="method"><BpTh>روش ارسال</BpTh></AdminColumn>
                         <AdminColumn id="carrier"><BpTh>شرکت حمل</BpTh></AdminColumn>
-                        <AdminColumn id="source"><BpTh>منبع نرخ</BpTh></AdminColumn>
+                        <AdminColumn id="source"><BpTh><span className="inline-flex items-center">منبع نرخ<AdminColumnFilter ariaLabel="فیلتر منبع نرخ" groups={[{ name: "source", label: "منبع نرخ", value: sourceFilter, onChange: setSourceFilter, options: [{ value: "", label: "همه منابع نرخ" }, { value: "TABLE", label: "جدول نرخ فروشگاه" }, { value: "TAPIN", label: "نرخ لحظه‌ای تاپین" }] }]} /></span></BpTh></AdminColumn>
                         <AdminColumn id="estimatedDays"><BpTh>زمان تحویل</BpTh></AdminColumn>
-                        <AdminColumn id="status"><BpTh>وضعیت</BpTh></AdminColumn>
+                        <AdminColumn id="status"><BpTh><span className="inline-flex items-center">وضعیت<AdminColumnFilter ariaLabel="فیلتر وضعیت" groups={[{ name: "status", label: "وضعیت", value: statusFilter, onChange: setStatusFilter, options: [{ value: "", label: "همه وضعیت‌ها" }, { value: "active", label: "فعال" }, { value: "inactive", label: "غیرفعال" }] }]} /></span></BpTh></AdminColumn>
                         <BpTh className="text-center">عملیات</BpTh>
                       </tr>
                     </thead>

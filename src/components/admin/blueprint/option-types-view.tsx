@@ -7,6 +7,8 @@ import { GripVertical, Info, SquarePen, Trash2 } from "lucide-react";
 import { AdminEmptyState, AdminPageHeader, AdminStatusBadge } from "@/components/admin-ui";
 import { AdminBulkCheckbox, AdminBulkEditor, AdminBulkTr } from "@/components/admin-bulk-editor";
 import { AdminColumn, AdminColumnSettingsButton, AdminColumnVisibility } from "@/components/admin-column-visibility";
+import { AdminColumnFilter } from "@/components/admin-column-filter";
+import { AdminGenericBulkEditButton } from "@/components/admin-generic-bulk-edit";
 import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
 import { requestErrorMessage, requestJson } from "@/lib/api-request";
 import { normalizeSearchText } from "@/lib/text-search";
@@ -343,10 +345,6 @@ export function BlueprintOptionTypesView({ types, colors, initialHiddenColumns }
                 onQueryChange={setQuery}
                 searchLabel="جستجوی نوع تنوع"
                 searchPlaceholder="جستجو بر اساس نام نوع یا مقادیر آن"
-                filters={[
-                  { name: "kind", ariaLabel: "نوع کنترل", value: kindFilter, onChange: setKindFilter, options: [{ value: "", label: "همه نوع‌ها" }, { value: "SELECT", label: "انتخابی" }, { value: "COLOR", label: "رنگ" }] },
-                  { name: "status", ariaLabel: "وضعیت نوع تنوع", value: statusFilter, onChange: setStatusFilter, options: [{ value: "", label: "همه وضعیت‌ها" }, { value: "active", label: "فعال" }, { value: "inactive", label: "غیرفعال" }] },
-                ]}
               />
               {visible.length ? (
               <>
@@ -382,7 +380,14 @@ export function BlueprintOptionTypesView({ types, colors, initialHiddenColumns }
               </div>
 
               <AdminColumnVisibility tableId={OPTION_TYPES_TABLE_ID} columns={optionTypeColumns} initialHidden={initialHiddenColumns}>
-                <AdminBulkEditor entity="optionTypes" entityLabel="نوع تنوع" ids={visible.map((type) => type.id)} actions={[{ value: "active:on", label: "فعال‌کردن نوع‌ها" }, { value: "active:off", label: "غیرفعال‌کردن نوع‌ها" }]} beforeSelectAll={<AdminColumnSettingsButton />}>
+                <AdminBulkEditor
+                  entity="optionTypes"
+                  entityLabel="نوع تنوع"
+                  ids={visible.map((type) => type.id)}
+                  actions={[]}
+                  beforeSelectAll={<AdminColumnSettingsButton />}
+                  extraAction={<AdminGenericBulkEditButton entity="optionTypes" entityLabel="نوع تنوع" changeTypes={[{ value: "active", label: "وضعیت", options: [{ value: "active:on", label: "فعال‌کردن" }, { value: "active:off", label: "غیرفعال‌کردن" }] }]} />}
+                >
                   <p className="m-0 flex items-center gap-1.5 border-b border-[var(--bp-divider)] px-4 py-2 text-[12px] text-[var(--bp-info)]">
                     <Info size={14} className="shrink-0" aria-hidden />
                     {filtersActive ? "برای تغییر ترتیب نمایش، ابتدا جستجو و فیلترها را پاک کنید." : "با کشیدن ردیف، ترتیب نمایش نوع‌های تنوع را در فرم محصول تنظیم کنید."}
@@ -393,10 +398,10 @@ export function BlueprintOptionTypesView({ types, colors, initialHiddenColumns }
                         <BpTh className="w-8 text-center"><span className="sr-only">جابه‌جایی</span></BpTh>
                         <BpTh className="w-10 text-center"><span className="sr-only">انتخاب</span></BpTh>
                         <AdminColumn id="name"><BpTh>نام</BpTh></AdminColumn>
-                        <AdminColumn id="kind"><BpTh>نوع</BpTh></AdminColumn>
+                        <AdminColumn id="kind"><BpTh><span className="inline-flex items-center">نوع<AdminColumnFilter ariaLabel="فیلتر نوع کنترل" groups={[{ name: "kind", label: "نوع کنترل", value: kindFilter, onChange: setKindFilter, options: [{ value: "", label: "همه نوع‌ها" }, { value: "SELECT", label: "انتخابی" }, { value: "COLOR", label: "رنگ" }] }]} /></span></BpTh></AdminColumn>
                         <AdminColumn id="values"><BpTh>مقادیر</BpTh></AdminColumn>
                         <AdminColumn id="products"><BpTh>محصولات</BpTh></AdminColumn>
-                        <AdminColumn id="status"><BpTh>وضعیت</BpTh></AdminColumn>
+                        <AdminColumn id="status"><BpTh><span className="inline-flex items-center">وضعیت<AdminColumnFilter ariaLabel="فیلتر وضعیت" groups={[{ name: "status", label: "وضعیت", value: statusFilter, onChange: setStatusFilter, options: [{ value: "", label: "همه وضعیت‌ها" }, { value: "active", label: "فعال" }, { value: "inactive", label: "غیرفعال" }] }]} /></span></BpTh></AdminColumn>
                         <BpTh className="text-center">عملیات</BpTh>
                       </tr>
                     </thead>
