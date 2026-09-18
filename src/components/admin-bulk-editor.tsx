@@ -21,7 +21,9 @@ type BulkContextValue = {
 
 const BulkContext = createContext<BulkContextValue | null>(null);
 
-type AdminBulkAction = HeroSelectOption & { confirmation?: { title: string; description: string; confirmLabel?: string } };
+export type AdminBulkAction = HeroSelectOption & { confirmation?: { title: string; description: string; confirmLabel?: string } };
+
+export type AdminBulkEntity = "products" | "categories" | "brands" | "orders" | "users" | "reviews" | "colors" | "optionTypes" | "promotions" | "contactMessages" | "paymentGateways" | "smsProviders" | "smsCampaigns" | "supportTicketCategories" | "tickets" | "shippingMethods" | "packagingBoxes" | "returns" | "articles" | "articleCategories";
 
 /**
  * Exported so a caller-owned action rendered beside the toolbar (via `extraAction`) can read the
@@ -34,7 +36,7 @@ export function useBulkSelection() {
   return context;
 }
 
-export function AdminBulkEditor({ entity, entityLabel, ids, actions, children, desktopClassName = "hidden md:block", onCompleted, extraAction, beforeSelectAll }: { entity: "products" | "categories" | "brands" | "orders" | "users" | "reviews" | "colors" | "optionTypes" | "promotions" | "contactMessages" | "paymentGateways" | "smsProviders" | "smsCampaigns" | "supportTicketCategories" | "tickets" | "shippingMethods" | "packagingBoxes" | "returns" | "articles" | "articleCategories"; entityLabel: string; ids: string[]; actions: AdminBulkAction[]; children: ReactNode; desktopClassName?: string; onCompleted?: (result: { action: string; ids: string[] }) => void; /** A caller-owned action beside the quick-edit control — e.g. products' own bulk-edit modal trigger. Reads the selection itself via `useBulkSelection`. */ extraAction?: ReactNode; /** Rendered immediately before the select-all control — e.g. a per-table column-visibility toggle. */ beforeSelectAll?: ReactNode }) {
+export function AdminBulkEditor({ entity, entityLabel, ids, actions, children, desktopClassName = "hidden md:block", onCompleted, extraAction, beforeSelectAll }: { entity: AdminBulkEntity; entityLabel: string; ids: string[]; actions: AdminBulkAction[]; children: ReactNode; desktopClassName?: string; onCompleted?: (result: { action: string; ids: string[] }) => void; /** A caller-owned action beside the quick-edit control — e.g. products' own bulk-edit modal trigger. Reads the selection itself via `useBulkSelection`. */ extraAction?: ReactNode; /** Rendered immediately before the select-all control — e.g. a per-table column-visibility toggle. */ beforeSelectAll?: ReactNode }) {
   const router = useRouter();
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [action, setAction] = useState("");

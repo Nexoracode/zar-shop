@@ -6,28 +6,42 @@ import { Check, Filter } from "lucide-react";
 import { type HeroSelectOption } from "@/components/hero-select-field";
 import { BpPopover } from "@/components/admin/blueprint/ui/popover";
 
-export type AdminColumnFilterGroup = { name: string; label: string; value: string; options: HeroSelectOption[] };
+export type AdminColumnFilterGroup = {
+  name: string;
+  label: string;
+  value: string;
+  options: HeroSelectOption[];
+  /**
+   * Set this on a config-list table (client-side filtered, local `useState`) instead of `path` —
+   * the group drives its own state directly rather than a URL search param. Leave unset for a
+   * server-driven table, where the group's `name` is the URL param `path` reads.
+   */
+  onChange?: (value: string) => void;
+};
 
 /**
  * A funnel icon beside a table header that opens the filter options for that column, instead of
- * a row of comboboxes above the table. Each entry in `groups` is one URL search param the table
- * already reads server-side (same params `AdminListFilters` used to drive) — a column whose icon
- * covers more than one group (e.g. a "product" column standing in for both "featured" and
- * "discount") lists them as separate labeled sections in the same popover.
+ * a row of comboboxes above the table. By default each entry in `groups` is one URL search param
+ * the table already reads server-side (same params `AdminListFilters` used to drive) — a column
+ * whose icon covers more than one group (e.g. a "product" column standing in for both "featured"
+ * and "discount") lists them as separate labeled sections in the same popover. A group with its
+ * own `onChange` updates local component state instead, for the small config-list tables that
+ * filter client-side; `path` is only required when at least one group relies on the URL.
  */
-export function AdminColumnFilter({ path, groups, ariaLabel }: { path: string; groups: AdminColumnFilterGroup[]; ariaLabel: string }) {
+export function AdminColumnFilter({ path, groups, ariaLabel }: { path?: string; groups: AdminColumnFilterGroup[]; ariaLabel: string }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const triggerRef = useRef<HTMLButtonElement>(null);
   const [open, setOpen] = useState(false);
   const active = groups.some((group) => group.value);
 
-  function choose(name: string, value: string) {
+  function choose(group: AdminColumnFilterGroup, value: string) {
+    if (group.onChange) { group.onChange(value); return; }
     const next = new URLSearchParams(searchParams.toString());
-    if (value) next.set(name, value);
-    else next.delete(name);
+    if (value) next.set(group.name, value);
+    else next.delete(group.name);
     next.delete("page");
-    router.replace(`${path}${next.size ? `?${next.toString()}` : ""}`, { scroll: false });
+    router.replace(`${path ?? ""}${next.size ? `?${next.toString()}` : ""}`, { scroll: false });
   }
 
   return (
@@ -61,7 +75,7 @@ export function AdminColumnFilter({ path, groups, ariaLabel }: { path: string; g
                     <li key={option.value || "__all__"}>
                       <button
                         type="button"
-                        onClick={() => choose(group.name, option.value)}
+                        onClick={() => choose(group, option.value)}
                         className={`flex w-full items-center justify-between gap-2 border border-transparent px-2.5 py-1.5 text-start text-[13px] hover:bg-[var(--bp-hover)] ${selected ? "font-bold text-[var(--bp-accent)]" : ""}`}
                       >
                         {option.label}
