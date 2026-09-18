@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@heroui/react";
 import { Check, ChevronLeft } from "lucide-react";
 import { HeroSelectField } from "@/components/hero-select-field";
@@ -19,6 +20,7 @@ export type AddressFormStep = 2 | 3;
 type Option = { id: string; name: string };
 
 export function AddressForm({ initial, user, onSaved, onCancel, onStepChange }: { initial?: StorefrontAddress | null; user: { firstName: string | null; lastName: string | null; phone: string | null }; onSaved: (address: StorefrontAddress) => void; onCancel: () => void; onStepChange?: (step: AddressFormStep) => void }) {
+  const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
   const [step, setStep] = useState<AddressFormStep>(2);
   const selfName = `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim();
@@ -83,8 +85,12 @@ export function AddressForm({ initial, user, onSaved, onCancel, onStepChange }: 
     const form = new FormData(event.currentTarget);
     const validationErrors = validateAddressForm(readAddressValues(form));
     // When the profile already has a name, "تحویل به خودم" needs no input of its own; otherwise
-    // it collects first/last name as two fields and joins them into the one `recipient` column.
-    const selfRecipient = selfName || `${String(form.get("selfFirstName") ?? "").trim()} ${String(form.get("selfLastName") ?? "").trim()}`.trim();
+    // it collects first/last name as two fields and joins them into the one `recipient` column —
+    // and, since this delivers to the account holder, the same two values fill in the account's
+    // own still-empty name too (see the profile-name PATCH after the address save below).
+    const selfFirstName = String(form.get("selfFirstName") ?? "").trim();
+    const selfLastName = String(form.get("selfLastName") ?? "").trim();
+    const selfRecipient = selfName || `${selfFirstName} ${selfLastName}`.trim();
     const nextRecipientErrors = validateAddressRecipient({ recipientType, recipient: recipientType === "SELF" ? selfRecipient : String(form.get("recipient") ?? ""), phone: recipientType === "SELF" ? user.phone ?? "" : String(form.get("phone") ?? "") });
     setFieldErrors(validationErrors);
     setRecipientErrors(nextRecipientErrors);
@@ -107,6 +113,15 @@ export function AddressForm({ initial, user, onSaved, onCancel, onStepChange }: 
       const response = await fetch(initial ? `/api/account/addresses/${initial.id}` : "/api/account/addresses", { method: initial ? "PATCH" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(initial ? { action: "update", data: payload } : payload) });
       const result = await response.json().catch(() => null);
       if (!response.ok) throw new Error(result?.message ?? "ثبت آدرس انجام نشد.");
+      // Best-effort: the address itself is already saved at this point, so a failure here (a
+      // near-impossible one, since the same two values just passed the same length check) must
+      // not surface as if the address save had failed.
+      if (recipientType === "SELF" && !selfName && selfFirstName && selfLastName) {
+        try {
+          await fetch("/api/account/profile/name", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ firstName: selfFirstName, lastName: selfLastName }) });
+          router.refresh();
+        } catch { /* address save already succeeded; the profile name can be filled in again later */ }
+      }
       onSaved(result.item as StorefrontAddress);
     } catch (reason) { setError(reason instanceof Error ? reason.message : "ثبت آدرس انجام نشد."); }
     finally { setSaving(false); }
@@ -159,12 +174,9 @@ export function AddressForm({ initial, user, onSaved, onCancel, onStepChange }: 
           selfName ? (
             <div className="rounded-lg bg-[var(--surface-secondary)] px-4 py-3 text-xs leading-6 text-[var(--muted)]">گیرنده: <b className="text-[var(--foreground)]">{selfName}</b>{user.phone && <span className="mr-2" dir="ltr">{user.phone}</span>}</div>
           ) : (
-            <div className="grid gap-3">
-              <div className="grid grid-cols-2 gap-3">
-                <TextField name="selfFirstName" label="نام" required defaultValue={initialSelfFirstName} maxLength={selfNamePartLimit} error={recipientErrors.recipient} onChange={() => clearRecipientError("recipient")} />
-                <TextField name="selfLastName" label="نام خانوادگی" required defaultValue={initialSelfLastName} maxLength={selfNamePartLimit} onChange={() => clearRecipientError("recipient")} />
-              </div>
-              {user.phone && <TextField name="selfPhone" label="شماره همراه" value={user.phone} readOnly dir="ltr" />}
+            <div className="grid grid-cols-2 gap-3">
+              <TextField name="selfFirstName" label="نام" required defaultValue={initialSelfFirstName} maxLength={selfNamePartLimit} error={recipientErrors.recipient} onChange={() => clearRecipientError("recipient")} />
+              <TextField name="selfLastName" label="نام خانوادگی" required defaultValue={initialSelfLastName} maxLength={selfNamePartLimit} onChange={() => clearRecipientError("recipient")} />
             </div>
           )
         ) : (

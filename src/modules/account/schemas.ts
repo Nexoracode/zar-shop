@@ -26,6 +26,10 @@ export const profileInputSchema = z.object({
   nationalId: z.union([digits(10), z.literal("")]).transform((value) => value || null),
 });
 
+/** Just the name half of the profile — e.g. for the address form to fill in a still-empty
+ * account name in passing, without touching phone/email/nationalId like the full form does. */
+export const profileNameInputSchema = profileInputSchema.pick({ firstName: true, lastName: true });
+
 export const addressInputSchema = z.object({
   title: z.string().trim().min(2).max(addressFieldLimits.title),
   recipientType: z.enum(["SELF", "OTHER"]),
