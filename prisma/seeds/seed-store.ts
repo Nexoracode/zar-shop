@@ -8,7 +8,7 @@ import type { DevelopmentHomepageMediaSeed, DevelopmentStoreSeed } from "./types
 
 const localDatabaseHosts = new Set(["127.0.0.1", "localhost", "::1"]);
 
-function assertDevelopmentDatabase() {
+export function assertDevelopmentDatabase() {
   const environment = process.env.NODE_ENV;
   const host = process.env.DATABASE_HOST ?? "127.0.0.1";
   if (environment !== "development") {
@@ -19,7 +19,7 @@ function assertDevelopmentDatabase() {
   }
 }
 
-function createClient() {
+export function createClient() {
   return new PrismaClient({
     adapter: new PrismaMariaDb({
       host: process.env.DATABASE_HOST ?? "127.0.0.1",

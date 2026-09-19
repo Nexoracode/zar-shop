@@ -18,6 +18,7 @@
     "db:seed:gold": "tsx prisma/seed.ts gold",
     "db:seed:general": "tsx prisma/seed.ts general",
     "db:seed:general:keep-gallery": "tsx prisma/seed.ts general --keep-gallery",
+    "db:seed:demo": "tsx prisma/seed.ts demo",
     "db:sync-locations": "tsx prisma/sync-locations.ts"
   },
   "dependencies": {
