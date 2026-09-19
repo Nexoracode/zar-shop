@@ -28,6 +28,9 @@ export function selectBox(contentWeightGrams: number, boxes: PackagingBox[]): Pa
  * `ensureDefaultPackagingBox` recreates it if a database ever ends up without one, so a parcel
  * always has a box to go in whatever the admin does to the rest.
  */
+/** Fixed so that two requests restoring it at once collide on the key instead of making two boxes. */
+export const STANDARD_PACKAGING_BOX_ID = "default-packaging-box";
+
 export const STANDARD_PACKAGING_BOX = {
   name: "بسته‌بندی استاندارد",
   lengthCm: 30,

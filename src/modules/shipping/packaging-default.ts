@@ -1,5 +1,5 @@
 import type { PrismaClient } from "@generated/prisma/client";
-import { STANDARD_PACKAGING_BOX } from "@/modules/shipping/packaging";
+import { STANDARD_PACKAGING_BOX, STANDARD_PACKAGING_BOX_ID } from "@/modules/shipping/packaging";
 
 type BoxClient = Pick<PrismaClient, "packagingBox">;
 
@@ -15,5 +15,12 @@ export async function ensureDefaultPackagingBox(client: BoxClient) {
   if (active) return active;
   const inactive = await client.packagingBox.findFirst({ where: { isDefault: true } });
   if (inactive) return client.packagingBox.update({ where: { id: inactive.id }, data: { isActive: true } });
-  return client.packagingBox.create({ data: { ...STANDARD_PACKAGING_BOX } });
+  try {
+    return await client.packagingBox.create({ data: { id: STANDARD_PACKAGING_BOX_ID, ...STANDARD_PACKAGING_BOX } });
+  } catch (error) {
+    // Concurrent checkouts all notice the missing default at once; whoever loses the race finds the row
+    // the winner made (or the standard box, left un-flagged, and promotes it) instead of adding a second.
+    if (!(typeof error === "object" && error && "code" in error && error.code === "P2002")) throw error;
+    return client.packagingBox.update({ where: { id: STANDARD_PACKAGING_BOX_ID }, data: { isDefault: true, isActive: true } });
+  }
 }
