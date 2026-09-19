@@ -13,13 +13,13 @@ import { smsPatternFieldLimits, smsProviderFieldLimits } from "@/modules/communi
  * codes) are never cut: a truncated order number would be wrong, not just short.
  */
 export const smsEventVariables = {
-  orderNumber: { label: "شماره سفارش", kind: "value" },
-  customerName: { label: "نام مشتری", kind: "text" },
-  totalAmount: { label: "مبلغ سفارش (فقط رقم)", kind: "value" },
-  trackingNumber: { label: "کد رهگیری", kind: "value" },
-  storeName: { label: "نام فروشگاه", kind: "text" },
-  productName: { label: "نام محصول", kind: "text" },
-  stock: { label: "موجودی", kind: "value" },
+  orderNumber: { label: "شماره سفارش", kind: "value", sample: "ZG-10245" },
+  customerName: { label: "نام مشتری", kind: "text", sample: "علی رضایی" },
+  totalAmount: { label: "مبلغ سفارش (فقط رقم)", kind: "value", sample: "2500000" },
+  trackingNumber: { label: "کد رهگیری", kind: "value", sample: "24012345678" },
+  storeName: { label: "نام فروشگاه", kind: "text", sample: "فروشگاه" },
+  productName: { label: "نام محصول", kind: "text", sample: "محصول نمونه" },
+  stock: { label: "موجودی", kind: "value", sample: "2" },
 } as const;
 export type SmsEventVariable = keyof typeof smsEventVariables;
 const variableKeys = Object.keys(smsEventVariables) as [SmsEventVariable, ...SmsEventVariable[]];
@@ -124,4 +124,14 @@ export function guessEventVariable(variableName: string, allowed: readonly SmsEv
     ["customerName", /name|customer|user|client|نام|مشتری/],
   ];
   return rules.find(([variable, pattern]) => allowed.includes(variable) && pattern.test(name))?.[0] ?? null;
+}
+
+/** Example values for the admin's preview; the store name is the real one. */
+export function sampleEventValues(storeName: string): Record<SmsEventVariable, string> {
+  return Object.fromEntries(variableKeys.map((key) => [key, key === "storeName" && storeName ? storeName : smsEventVariables[key].sample])) as Record<SmsEventVariable, string>;
+}
+
+/** A pattern's text with each `%variable%` replaced by the sample of the value bound to it. */
+export function previewPatternText(text: string, bindings: SmsEventRule["bindings"], samples: Record<string, string>) {
+  return text.replace(/%([^%\s]+)%/g, (token, name: string) => { const binding = bindings[name]; return binding ? samples[binding.source] ?? token : token; });
 }

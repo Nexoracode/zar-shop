@@ -1,140 +1,60 @@
 "use client";
 
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { toast } from "@heroui/react";
-import { AlertTriangle, Info } from "lucide-react";
+import { AlertTriangle, SlidersHorizontal } from "lucide-react";
 import type { CommunicationSettingsData } from "@/modules/communications/communication-settings";
-import { communicationFieldLimits } from "@/modules/communications/limits";
-import { guessEventVariable, smsEventFlagKey, smsEventIds, smsEventRule, smsEventVariables, smsEvents, type SmsEventId, type SmsEventInfo, type SmsEventRule, type SmsEventVariable } from "@/modules/communications/sms-events";
+import { smsEventFlagKey, smsEventIds, smsEventRule, smsEvents, type SmsEventId, type SmsEventInfo, type SmsEventRule } from "@/modules/communications/sms-events";
 import type { SmsPattern } from "@/modules/communications/sms-pattern-schemas";
-import { BpButton, BpSelect, BpSeg, BpSpinner, BpSwitch, BpTag, BpTextarea } from "./ui";
+import { SmsEventDialog, type SmsEventPatterns } from "./sms-event-dialog";
+import { BpButton, BpKicker, BpSpinner, BpSwitch, BpTag } from "./ui";
 
-type Patterns = { status: "loading" } | { status: "error"; message: string } | { status: "ready"; patterns: SmsPattern[] };
-type Errors = Record<string, string>;
-type VariableRow = { name: string; length: number; type: string };
+const groups = [
+  { audience: "CUSTOMER", title: "پیامک به مشتری" },
+  { audience: "ADMIN", title: "پیامک به مدیر" },
+] as const;
 
-const tokenClass = "border border-[var(--bp-divider)] px-1.5 py-0.5 font-mono text-[11px]";
-
-function patternLabel(pattern: SmsPattern) {
-  const text = pattern.text.length > 40 ? `${pattern.text.slice(0, 40)}…` : pattern.text;
-  return `${text} (${pattern.code})`;
+async function patchSettings(body: unknown) {
+  const response = await fetch("/api/admin/sms/settings", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+  const result = await response.json().catch(() => null);
+  if (!response.ok) throw new Error(result?.message ?? "تنظیمات ذخیره نشد.");
 }
 
-function EventCard({ info, enabled, onEnabled, template, onTemplate, rule, onRule, patterns, storeName, errors, clearError }: {
-  info: SmsEventInfo;
-  enabled: boolean;
-  onEnabled: (value: boolean) => void;
-  template: string;
-  onTemplate: (value: string) => void;
-  rule: SmsEventRule;
-  onRule: (rule: SmsEventRule) => void;
-  patterns: Patterns;
-  storeName: string;
-  errors: Errors;
-  clearError: (key: string) => void;
-}) {
-  const allowed: readonly SmsEventVariable[] = info.variables;
-  const pattern = patterns.status === "ready" ? patterns.patterns.find((item) => item.code === rule.patternCode) : undefined;
-  // The variables to map: the chosen pattern's own, or — when its list cannot be loaded — the ones already saved.
-  const rows: VariableRow[] = pattern ? pattern.vars.map((variable) => ({ name: variable.var, length: variable.length, type: variable.type })) : Object.entries(rule.bindings).map(([name, binding]) => ({ name, length: binding.maxLength, type: "" }));
-
-  function changePattern(code: string) {
-    const chosen = patterns.status === "ready" ? patterns.patterns.find((item) => item.code === code) : undefined;
-    const bindings: SmsEventRule["bindings"] = {};
-    for (const variable of chosen?.vars ?? []) {
-      const source = guessEventVariable(variable.var, allowed);
-      if (source) bindings[variable.var] = { source, maxLength: variable.length };
-    }
-    onRule({ ...rule, patternCode: code, bindings });
-    clearError(`${info.id}:pattern`);
-  }
-
-  function changeBinding(row: VariableRow, source: string) {
-    const bindings = { ...rule.bindings };
-    if (source) bindings[row.name] = { source: source as SmsEventVariable, maxLength: row.length };
-    else delete bindings[row.name];
-    onRule({ ...rule, bindings });
-    clearError(`${info.id}:var:${row.name}`);
-  }
-
-  // Free-form text longer than the variable's declared length is cut before sending — say so up front.
-  function hintFor(row: VariableRow) {
-    const source = rule.bindings[row.name]?.source;
-    if (source === "storeName" && row.length > 0 && storeName.length > row.length) return `نام فروشگاه (${storeName.length.toLocaleString("fa-IR")} نویسه) از طول این متغیر (${row.length.toLocaleString("fa-IR")}) بلندتر است و بریده می‌شود.`;
-    if (source && smsEventVariables[source].kind === "text" && row.length > 0) return `حداکثر ${row.length.toLocaleString("fa-IR")} نویسه؛ بلندتر از آن بریده می‌شود.`;
-    return undefined;
-  }
-
-  const patternOptions = patterns.status === "ready"
-    ? [...(rule.patternCode && !pattern ? [{ value: rule.patternCode, label: `${rule.patternCode} — ذخیره‌شده، در حساب پیدا نشد` }] : []), ...patterns.patterns.map((item) => ({ value: item.code, label: patternLabel(item) }))]
-    : rule.patternCode ? [{ value: rule.patternCode, label: `${rule.patternCode} — ذخیره‌شده` }] : [];
-
+function EventTile({ info, enabled, rule, isPending, onToggle, onEdit }: { info: SmsEventInfo; enabled: boolean; rule: SmsEventRule; isPending: boolean; onToggle: (value: boolean) => void; onEdit: () => void }) {
+  const variableCount = Object.keys(rule.bindings).length;
   return (
-    <section className="bp-frame relative p-[16px]">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-2">
-            <strong className="text-[14px]">{info.label}</strong>
-            <BpTag tone={info.audience === "ADMIN" ? "info" : "neutral"}>{info.audience === "ADMIN" ? "به مدیر" : "به مشتری"}</BpTag>
-          </div>
-          <p className="bp-muted m-0 mt-1 text-[12px]">{info.description}</p>
-        </div>
-        <BpSwitch isSelected={enabled} onChange={onEnabled}>{enabled ? "فعال" : "غیرفعال"}</BpSwitch>
+    <article className={`bp-frame relative flex flex-col gap-2 p-3 transition-opacity ${enabled ? "" : "opacity-65"}`}>
+      <div className="flex items-start justify-between gap-2">
+        <strong className="text-[13px] leading-6">{info.label}</strong>
+        <span className="flex shrink-0 items-center gap-1.5">
+          {isPending && <BpSpinner size={13} />}
+          <BpSwitch isSelected={enabled} isDisabled={isPending} onChange={onToggle}><span className="sr-only">{`فعال بودن پیامک ${info.label}`}</span></BpSwitch>
+        </span>
       </div>
-
-      {enabled && (
-        <div className="mt-3 grid gap-3 border-t border-[var(--bp-divider)] pt-3">
-          <div>
-            <BpSeg label={`روش ارسال ${info.label}`} value={rule.mode} onChange={(mode) => onRule({ ...rule, mode })} options={[{ value: "PATTERN", label: "پترن (فوری)" }, { value: "TEXT", label: "متن ساده" }]} />
-            <p className="bp-muted m-0 mt-2 text-[11px] leading-5">{rule.mode === "PATTERN" ? "با پترن تأییدشده‌ی فراز و بلافاصله ارسال می‌شود." : "فراز پیام‌های متنی را پیش از ارسال توسط اپراتور تأیید می‌کند؛ فوری نیست."}</p>
-          </div>
-
-          {rule.mode === "PATTERN" ? (
-            <div className="grid gap-3">
-              <BpSelect label="پترن" required placeholder={patterns.status === "loading" ? "در حال دریافت پترن‌ها…" : "انتخاب پترن…"} value={rule.patternCode} onChange={(event) => changePattern(event.target.value)} error={errors[`${info.id}:pattern`]} hint={patterns.status === "error" ? patterns.message : "پترن‌های حساب فراز شما"} disabled={patterns.status !== "ready" && patternOptions.length === 0} options={patternOptions} />
-              {rows.map((row) => (
-                <BpSelect
-                  key={row.name}
-                  label={<span>مقدار متغیر <bdo dir="ltr" className="font-mono">{row.name}</bdo></span>}
-                  required
-                  placeholder="انتخاب مقدار…"
-                  value={rule.bindings[row.name]?.source ?? ""}
-                  onChange={(event) => changeBinding(row, event.target.value)}
-                  error={errors[`${info.id}:var:${row.name}`]}
-                  hint={hintFor(row)}
-                  options={allowed.map((variable) => ({ value: variable, label: smsEventVariables[variable].label }))}
-                />
-              ))}
-              {pattern && pattern.vars.length === 0 && <p className="bp-muted m-0 text-[12px]">این پترن متغیری ندارد؛ متن ثابت آن ارسال می‌شود.</p>}
-            </div>
-          ) : (
-            <div className="grid gap-2">
-              <BpTextarea label="متن پیام" required rows={2} maxLength={communicationFieldLimits.template} value={template} onChange={(event) => { onTemplate(event.target.value); clearError(`${info.id}:template`); }} error={errors[`${info.id}:template`]} />
-              <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
-                <span className="bp-muted">متغیرها:</span>
-                {allowed.map((variable) => <bdo key={variable} dir="ltr" className={tokenClass} title={smsEventVariables[variable].label}>{`{${variable}}`}</bdo>)}
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-    </section>
+      <p className="bp-muted m-0 text-[11px] leading-5">{info.description}</p>
+      <div className="mt-auto flex items-center justify-between gap-2 pt-1">
+        {rule.mode === "PATTERN" && rule.patternCode
+          ? <BpTag tone="accent"><span dir="ltr" className="font-mono">{rule.patternCode}</span>{variableCount > 0 && <span> · {variableCount.toLocaleString("fa-IR")} متغیر</span>}</BpTag>
+          : <BpTag tone="neutral">متن ساده</BpTag>}
+        <BpButton variant="ghost" size="sm" onClick={onEdit} className="gap-1.5"><SlidersHorizontal size={13} />تنظیم</BpButton>
+      </div>
+    </article>
   );
 }
 
 /**
- * One place to decide, for every automated message, whether it is sent and how: through a
- * registered Faraz pattern (with each pattern variable bound to an order value) or as plain text.
+ * Every automated message on one screen: switch it on or off, and open its settings to choose a
+ * registered Faraz pattern (each variable bound to an order value) or a plain text. Each change is
+ * saved on its own, so there is no page-wide save to forget.
  */
 export function BlueprintSmsEventsForm({ initialSettings, storeName, providerReady }: { initialSettings: CommunicationSettingsData; storeName: string; providerReady: boolean }) {
-  const formRef = useRef<HTMLFormElement>(null);
   const [flags, setFlags] = useState(() => Object.fromEntries(smsEventIds.map((id) => [id, initialSettings[smsEventFlagKey(id)]])) as Record<SmsEventId, boolean>);
   const [templates, setTemplates] = useState<Record<SmsEventId, string>>(initialSettings.templates);
   const [rules, setRules] = useState(() => Object.fromEntries(smsEventIds.map((id) => [id, smsEventRule(initialSettings.eventRules, id)])) as Record<SmsEventId, SmsEventRule>);
-  const [patterns, setPatterns] = useState<Patterns>(providerReady ? { status: "loading" } : { status: "error", message: "برای انتخاب پترن، ابتدا فراز اس‌ام‌اس را پیکربندی و فعال کنید." });
-  const [errors, setErrors] = useState<Errors>({});
-  const [saving, setSaving] = useState(false);
+  const [patterns, setPatterns] = useState<SmsEventPatterns>(providerReady ? { status: "loading" } : { status: "error", message: "برای انتخاب پترن، ابتدا فراز اس‌ام‌اس را پیکربندی و فعال کنید." });
+  const [pendingId, setPendingId] = useState<SmsEventId | null>(null);
+  const [editingId, setEditingId] = useState<SmsEventId | null>(null);
 
   useEffect(() => {
     if (!providerReady) return;
@@ -150,92 +70,70 @@ export function BlueprintSmsEventsForm({ initialSettings, storeName, providerRea
     return () => { cancelled = true; };
   }, [providerReady]);
 
-  const clearError = (key: string) => setErrors((current) => { if (!(key in current)) return current; const rest = { ...current }; delete rest[key]; return rest; });
-
-  function validate() {
-    const next: Errors = {};
-    for (const info of smsEvents) {
-      if (!flags[info.id]) continue;
-      const rule = rules[info.id];
-      if (rule.mode === "TEXT") {
-        if (!templates[info.id].trim()) next[`${info.id}:template`] = "متن پیام را بنویسید.";
-        continue;
-      }
-      if (!rule.patternCode) { next[`${info.id}:pattern`] = "پترن را انتخاب کنید."; continue; }
-      const pattern = patterns.status === "ready" ? patterns.patterns.find((item) => item.code === rule.patternCode) : undefined;
-      for (const variable of pattern?.vars ?? Object.keys(rule.bindings).map((name) => ({ var: name, type: "" }))) {
-        const binding = rule.bindings[variable.var];
-        if (!binding) next[`${info.id}:var:${variable.var}`] = "مقدار این متغیر را انتخاب کنید.";
-        // A numeric variable rejects a name; a mismatch would only surface when a customer's SMS fails.
-        else if (variable.type === "int" && smsEventVariables[binding.source].kind === "text") next[`${info.id}:var:${variable.var}`] = "این متغیر عددی است؛ مقدار متنی پذیرفته نمی‌شود.";
-      }
+  async function toggle(id: SmsEventId, value: boolean) {
+    setPendingId(id);
+    setFlags((current) => ({ ...current, [id]: value }));
+    try {
+      await patchSettings({ [smsEventFlagKey(id)]: value });
+    } catch (error) {
+      setFlags((current) => ({ ...current, [id]: !value }));
+      toast.danger("ذخیره انجام نشد", { description: error instanceof Error ? error.message : "خطای ناشناخته" });
+    } finally {
+      setPendingId(null);
     }
-    return next;
   }
 
-  async function submit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const found = validate();
-    if (Object.keys(found).length) {
-      setErrors(found);
-      // The first invalid control gets focus once React has rendered its `aria-invalid`.
-      requestAnimationFrame(() => formRef.current?.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus());
-      return;
-    }
-    setSaving(true);
+  async function saveEvent(id: SmsEventId, draft: { rule: SmsEventRule; template: string }) {
+    setPendingId(id);
     try {
-      const body = { ...Object.fromEntries(smsEventIds.map((id) => [smsEventFlagKey(id), flags[id]])), templates, eventRules: rules };
-      const response = await fetch("/api/admin/sms/settings", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
-      const result = await response.json().catch(() => null);
-      if (!response.ok) throw new Error(result?.message ?? "تنظیمات ذخیره نشد.");
-      toast.success("پیامک‌های رویدادها ذخیره شد");
+      await patchSettings({ templates: { [id]: draft.template }, eventRules: { [id]: draft.rule } });
+      setRules((current) => ({ ...current, [id]: draft.rule }));
+      setTemplates((current) => ({ ...current, [id]: draft.template }));
+      setEditingId(null);
+      toast.success("تنظیمات پیامک ذخیره شد");
     } catch (error) {
       toast.danger("ذخیره انجام نشد", { description: error instanceof Error ? error.message : "خطای ناشناخته" });
     } finally {
-      setSaving(false);
+      setPendingId(null);
     }
   }
 
+  const editing = editingId ? smsEvents.find((info) => info.id === editingId) : undefined;
   return (
-    <form ref={formRef} onSubmit={submit} noValidate className="grid gap-2">
+    <div className="grid gap-5">
       {!initialSettings.smsEnabled && (
-        <div className="bp-frame relative flex items-start gap-3 border-[var(--bp-warning)] p-[14px]">
-          <AlertTriangle size={17} className="mt-0.5 shrink-0 text-[var(--bp-warning)]" />
-          <div className="min-w-0 text-[12px] leading-6">
-            <strong className="block text-[13px]">ارسال پیامک هنوز خاموش است</strong>
-            تا کلید «ارسال پیامک فعال باشد» روشن نشود، هیچ‌کدام از این پیامک‌ها ارسال نمی‌شود.
-            <Link href="/admin/settings/notifications/preferences" className="mt-1 block font-bold text-[var(--bp-accent)]">رفتن به تنظیمات پیامک و اعلان ←</Link>
-          </div>
+        <div className="bp-frame relative flex items-start gap-3 border-[var(--bp-warning)] p-3">
+          <AlertTriangle size={16} className="mt-1 shrink-0 text-[var(--bp-warning)]" />
+          <p className="m-0 text-[12px] leading-6">ارسال پیامک هنوز خاموش است و هیچ‌کدام از این پیامک‌ها نمی‌رود. <Link href="/admin/settings/notifications/preferences" className="font-bold text-[var(--bp-accent)]">روشن‌کردن ←</Link></p>
         </div>
       )}
-      <div className="bp-frame relative flex items-start gap-3 p-[14px]">
-        <Info size={16} className="bp-muted mt-1 shrink-0" />
-        <p className="bp-muted m-0 text-[12px] leading-6">هر رویداد را روشن کنید و مشخص کنید چطور ارسال شود. پیامک با پترن فوری می‌رود؛ متن ساده اول باید توسط اپراتور فراز تأیید شود. برای پترن، هر متغیر را به یکی از مقدارهای سفارش وصل می‌کنید.
-          {patterns.status === "loading" && <span className="mr-2 inline-flex items-center gap-1.5 align-middle"><BpSpinner size={12} />دریافت پترن‌ها…</span>}
-          {" "}<Link href="/admin/settings/notifications/patterns" className="font-bold text-[var(--bp-accent)]">مدیریت پترن‌ها ←</Link>
-        </p>
-      </div>
 
-      {smsEvents.map((info) => (
-        <EventCard
-          key={info.id}
-          info={info}
-          enabled={flags[info.id]}
-          onEnabled={(value) => setFlags((current) => ({ ...current, [info.id]: value }))}
-          template={templates[info.id]}
-          onTemplate={(value) => setTemplates((current) => ({ ...current, [info.id]: value }))}
-          rule={rules[info.id]}
-          onRule={(rule) => setRules((current) => ({ ...current, [info.id]: rule }))}
-          patterns={patterns}
-          storeName={storeName}
-          errors={errors}
-          clearError={clearError}
-        />
+      {groups.map((group) => (
+        <section key={group.audience}>
+          <BpKicker>{group.title}</BpKicker>
+          <div className="mt-2 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+            {smsEvents.filter((info) => info.audience === group.audience).map((info) => (
+              <EventTile key={info.id} info={info} enabled={flags[info.id]} rule={rules[info.id]} isPending={pendingId === info.id} onToggle={(value) => void toggle(info.id, value)} onEdit={() => setEditingId(info.id)} />
+            ))}
+          </div>
+        </section>
       ))}
 
-      <section className="bp-frame relative flex justify-start p-[16px]">
-        <BpButton type="submit" variant="primary" isPending={saving}>ذخیره پیامک‌های رویدادها</BpButton>
-      </section>
-    </form>
+      <p className="bp-muted m-0 text-[11px] leading-5">«پترن» فوری ارسال می‌شود؛ «متن ساده» پیش از ارسال توسط اپراتور فراز تأیید می‌شود. <Link href="/admin/settings/notifications/patterns" className="font-bold text-[var(--bp-accent)]">مدیریت پترن‌ها ←</Link></p>
+
+      {editing && (
+        <SmsEventDialog
+          key={editing.id}
+          info={editing}
+          rule={rules[editing.id]}
+          template={templates[editing.id]}
+          patterns={patterns}
+          storeName={storeName}
+          isSaving={pendingId === editing.id}
+          onSave={(draft) => void saveEvent(editing.id, draft)}
+          onClose={() => setEditingId(null)}
+        />
+      )}
+    </div>
   );
 }
