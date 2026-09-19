@@ -42,15 +42,27 @@ export const adminNavGroups: AdminNavGroup[] = [
     ],
   },
   {
-    title: "فروش و مشتریان",
+    title: "سفارش‌ها و پرداخت",
     icon: PackageCheck,
     items: [
       { href: "/admin/orders", label: "سفارش‌ها", icon: PackageCheck, permission: "orders:manage" },
-      { href: "/admin/returns", label: "درخواست‌های مرجوعی", icon: Undo2, permission: "orders:manage" },
       { href: "/admin/payments", label: "پرداخت‌ها", icon: CreditCard, permission: "orders:manage" },
+      { href: "/admin/returns", label: "درخواست‌های مرجوعی", icon: Undo2, permission: "orders:manage" },
       { href: "/admin/promotions", label: "پروموشن‌ها", icon: BadgePercent, permission: "orders:manage" },
+    ],
+  },
+  {
+    title: "ارسال و بسته‌بندی",
+    icon: Truck,
+    items: [
       { href: "/admin/shipping-methods", label: "روش‌های ارسال", icon: Truck, permission: "orders:manage" },
       { href: "/admin/packaging", label: "بسته‌بندی", icon: Package, permission: "settings:manage" },
+    ],
+  },
+  {
+    title: "مشتریان و بازخورد",
+    icon: Users,
+    items: [
       { href: "/admin/users", label: "کاربران", icon: Users, permission: "users:manage" },
       { href: "/admin/reviews", label: "دیدگاه‌ها و امتیازها", icon: MessageSquareText, permission: "catalog:manage" },
       { href: "/admin/contact-messages", label: "پیام‌های تماس", icon: Mail, permission: "orders:manage" },
