@@ -1,6 +1,6 @@
 import { Layers, Tag } from "lucide-react";
 import { formatDateTime } from "@/lib/format";
-import { isProductDiscountActive } from "@/modules/products/discount";
+import { summarizeDiscounts, type DiscountEntry } from "@/modules/products/discount-summary";
 import type { ProductRow } from "@/components/admin/products-list-data";
 import type { BpChartTipRow } from "./ui/chart-tip";
 import { BpHoverCard } from "./ui/hover-card";
@@ -11,24 +11,20 @@ const MAX_PREVIEW_DOTS = 4;
 const faNumber = (value: number) => value.toLocaleString("fa-IR", { maximumFractionDigits: 2 });
 
 /** "۲۰٪" for a percentage discount, "۵۰٬۰۰۰ ریال" for a fixed one. */
-function discountText(product: ProductRow) {
-  const value = Number(product.discountValue ?? 0);
-  return product.discountType === "PERCENT" ? `${faNumber(value)}٪` : `${faNumber(value)} ریال`;
+function amountText(entry: DiscountEntry) {
+  return entry.type === "PERCENT" ? `${faNumber(entry.value)}٪` : `${faNumber(entry.value)} ریال`;
 }
 
-function discountRows(product: ProductRow): BpChartTipRow[] {
-  const rows: BpChartTipRow[] = [{ label: "مقدار", value: discountText(product), color: "var(--bp-danger)" }];
-  if (product.discountStartsAt && product.discountEndsAt) {
-    rows.push({ label: "شروع", value: formatDateTime(product.discountStartsAt), color: "var(--bp-success)" });
-    rows.push({ label: "پایان", value: formatDateTime(product.discountEndsAt), color: "var(--bp-warning)" });
-  } else {
-    rows.push({ label: "مدت", value: "بدون محدودیت زمانی", color: "var(--bp-muted)" });
-  }
-  return rows;
+function windowText(entry: DiscountEntry) {
+  return entry.startsAt && entry.endsAt ? `از ${formatDateTime(entry.startsAt)} تا ${formatDateTime(entry.endsAt)}` : "بدون محدودیت زمانی";
+}
+
+function discountRow(entry: DiscountEntry, color: string): BpChartTipRow {
+  return { label: entry.label, value: amountText(entry), color, note: windowText(entry) };
 }
 
 /** One row per option type: its values as named colour swatches when they are colours, otherwise as plain text. */
-function variantRows(product: ProductRow): BpChartTipRow[] {
+function optionRows(product: ProductRow): BpChartTipRow[] {
   return product.optionTypes.map((optionType) => {
     const values = optionType.values.map((item) => ({ label: item.value.label, color: item.value.color?.hex }));
     return values.some((item) => item.color)
@@ -44,25 +40,53 @@ function previewColors(product: ProductRow) {
 }
 
 /**
- * The small tags under a product's name: an active discount and variants. They open the Blueprint
- * hover card — dated discount details, and each option's values with their colours — so the row
- * itself stays quiet and the name keeps its full width.
+ * A product's variants and discounts, as the tags of the "تنوع و تخفیف" column (and under the name
+ * on the mobile card). Each opens the Blueprint hover card:
+ *
+ * - the discount tag lists every running discount — the product's own and each combination's — with
+ *   its amount and date range, and what is scheduled to start;
+ * - the variants tag lists each option's values (colours with their real swatch) and, when any
+ *   combination is discounted, those discounts too.
+ *
+ * `emptyDash` fills the table cell with a dash when the product has neither.
  */
-export function ProductFlags({ product }: { product: ProductRow }) {
-  const discounted = isProductDiscountActive(product);
+export function ProductFlags({ product, className = "", emptyDash = false }: { product: ProductRow; className?: string; emptyDash?: boolean }) {
+  const discounts = summarizeDiscounts(product);
   const variantCount = product._count.variants;
-  if (!discounted && variantCount === 0) return null;
+  const hasActive = discounts.active.length > 0;
+  const hasUpcoming = discounts.upcoming.length > 0;
+
+  if (!hasActive && !hasUpcoming && variantCount === 0) return emptyDash ? <span className="bp-muted">—</span> : null;
 
   const preview = previewColors(product);
+  const variantDiscounts = [...discounts.active.filter((entry) => entry.scope === "variant").map((entry) => ({ entry, color: "var(--bp-danger)" })), ...discounts.upcoming.filter((entry) => entry.scope === "variant").map((entry) => ({ entry, color: "var(--bp-warning)" }))];
+
+  const discountRows: BpChartTipRow[] = [
+    ...discounts.active.map((entry) => discountRow(entry, "var(--bp-danger)")),
+    ...(hasActive && hasUpcoming ? [{ label: "زمان‌بندی‌شده", section: true }] : []),
+    ...discounts.upcoming.map((entry) => discountRow(entry, "var(--bp-warning)")),
+  ];
+  const discountTagText = hasActive
+    ? (discounts.active.length === 1 ? amountText(discounts.active[0]) : `${faNumber(discounts.active.length)} تخفیف`)
+    : "تخفیف آینده";
+
+  const variantRows: BpChartTipRow[] = [
+    ...optionRows(product),
+    ...(variantDiscounts.length ? [{ label: "تخفیف ترکیب‌ها", section: true }, ...variantDiscounts.map(({ entry, color }) => discountRow(entry, color))] : []),
+  ];
+
   return (
-    <div className="mt-1 flex flex-wrap items-center gap-1">
-      {discounted && (
-        <BpHoverCard label={`تخفیف فعال ${discountText(product)}`} content={{ headingLabel: "تخفیف", heading: "فعال", rows: discountRows(product) }}>
-          <BpTag tone="danger"><Tag size={11} strokeWidth={2} aria-hidden />{discountText(product)}</BpTag>
+    <div className={`flex flex-wrap items-center gap-1 ${className}`.trim()}>
+      {(hasActive || hasUpcoming) && (
+        <BpHoverCard
+          label={hasActive ? `تخفیف فعال ${discountTagText}` : "تخفیف زمان‌بندی‌شده"}
+          content={{ headingLabel: "تخفیف", heading: hasActive ? (discounts.active.length === 1 ? "فعال" : `${faNumber(discounts.active.length)} مورد فعال`) : "به‌زودی", rows: discountRows }}
+        >
+          <BpTag tone={hasActive ? "danger" : "warning"}><Tag size={11} strokeWidth={2} aria-hidden />{discountTagText}</BpTag>
         </BpHoverCard>
       )}
       {variantCount > 0 && (
-        <BpHoverCard label={`${faNumber(variantCount)} ترکیب تنوع`} content={{ headingLabel: "تنوع", heading: `${faNumber(variantCount)} ترکیب`, rows: variantRows(product) }}>
+        <BpHoverCard label={`${faNumber(variantCount)} ترکیب تنوع`} content={{ headingLabel: "تنوع", heading: `${faNumber(variantCount)} ترکیب`, rows: variantRows }}>
           <BpTag tone="info">
             <Layers size={11} strokeWidth={2} aria-hidden />
             {faNumber(variantCount)} تنوع

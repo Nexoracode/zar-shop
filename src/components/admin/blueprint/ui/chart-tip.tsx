@@ -7,7 +7,16 @@ import { useEffect, useLayoutEffect, useRef, useState, type RefObject } from "re
  * that colour, or a run of `swatches` — the named colours of an option, each with its own dot.
  * A swatch without `color` is listed as plain text.
  */
-export type BpChartTipRow = { label: string; value?: string; color?: string; swatches?: Array<{ label: string; color?: string }> };
+export type BpChartTipRow = {
+  label: string;
+  value?: string;
+  color?: string;
+  swatches?: Array<{ label: string; color?: string }>;
+  /** A muted line under the row — the date range of a discount, say. */
+  note?: string;
+  /** Turns the row into a small heading that starts a new group under a rule; only `label` is used. */
+  section?: boolean;
+};
 export type BpChartTipContent = { headingLabel: string; heading: string; rows: BpChartTipRow[] };
 /** The hovered mark's box in viewport pixels — what `getBoundingClientRect()` gives. */
 export type BpChartTipAnchor = { left: number; right: number; top: number; bottom: number };
@@ -23,19 +32,24 @@ export function BpTipCardBody({ content }: { content: BpChartTipContent }) {
     <>
       <div className="bp-chart-tip-head"><span className="bp-chart-tip-muted">{content.headingLabel}:</span><strong>{content.heading}</strong></div>
       <div className="bp-chart-tip-rule" aria-hidden />
-      {content.rows.map((row) => (
-        <div key={row.label} className="bp-chart-tip-row" data-stack={row.swatches ? "true" : undefined}>
-          <span className="bp-chart-tip-key">{row.color && <i aria-hidden className="bp-chart-tip-dot" style={{ background: row.color }} />}{row.label}:</span>
-          {row.swatches ? (
-            <span className="bp-chart-tip-swatches">
-              {row.swatches.map((swatch) => (
-                <span key={swatch.label} className="bp-chart-tip-swatch">
-                  {swatch.color && <i aria-hidden style={{ background: swatch.color }} />}
-                  {swatch.label}
-                </span>
-              ))}
-            </span>
-          ) : <strong style={row.color ? { color: row.color } : undefined}>{row.value}</strong>}
+      {content.rows.map((row, index) => row.section ? (
+        <div key={`${row.label}-${index}`} className="bp-chart-tip-section">{row.label}</div>
+      ) : (
+        <div key={`${row.label}-${index}`}>
+          <div className="bp-chart-tip-row" data-stack={row.swatches ? "true" : undefined}>
+            <span className="bp-chart-tip-key">{row.color && <i aria-hidden className="bp-chart-tip-dot" style={{ background: row.color }} />}{row.label}:</span>
+            {row.swatches ? (
+              <span className="bp-chart-tip-swatches">
+                {row.swatches.map((swatch) => (
+                  <span key={swatch.label} className="bp-chart-tip-swatch">
+                    {swatch.color && <i aria-hidden style={{ background: swatch.color }} />}
+                    {swatch.label}
+                  </span>
+                ))}
+              </span>
+            ) : <strong style={row.color ? { color: row.color } : undefined}>{row.value}</strong>}
+          </div>
+          {row.note && <div className="bp-chart-tip-note">{row.note}</div>}
         </div>
       ))}
     </>

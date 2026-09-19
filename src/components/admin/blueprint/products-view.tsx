@@ -61,12 +61,11 @@ function ProductThumb({ product }: { product: ProductRow }) {
   return <span className="bp-thumb bp-thumb-empty"><ImageOff size={15} strokeWidth={1.6} /></span>;
 }
 
-/** Name cell: the product name, with its flags (discount, variants) as small tags underneath. */
+/** Name cell: the product name, cut to one line (its tooltip appears only when it really is cut). */
 function ProductName({ product }: { product: ProductRow }) {
   return (
     <div className="min-w-0">
       <BpTruncated text={product.name} />
-      <ProductFlags product={product} />
     </div>
   );
 }
@@ -76,6 +75,7 @@ const PRODUCTS_TABLE_ID = "products";
 export function BlueprintProductsView({ products, categories, filters, pagination, lowStockThreshold, storeIndustry, nextDiscountBoundaryAt, initialHiddenColumns }: AdminProductsListData) {
   const columns = [
     { id: "product", label: "محصول" },
+    { id: "offers", label: "تنوع و تخفیف" },
     { id: "category", label: "دسته‌بندی" },
     { id: "brand", label: "برند" },
     { id: "priceOrWeight", label: storeIndustry === "GOLD" ? "وزن (گرم)" : "قیمت (ریال)" },
@@ -89,11 +89,7 @@ export function BlueprintProductsView({ products, categories, filters, paginatio
   const categoryFilter = { name: "category", label: "دسته‌بندی", value: filters.category, options: [{ value: "", label: "همه دسته‌ها" }, ...categories.map((category) => ({ value: category.id, label: category.name }))] };
   const stockFilter = { name: "stock", label: "وضعیت موجودی", value: filters.stock, options: [{ value: "", label: "همه موجودی‌ها" }, { value: "in", label: "موجود" }, { value: "low", label: "کم‌موجود" }, { value: "out", label: "ناموجود" }] };
   const statusFilter = { name: "status", label: "وضعیت محصول", value: filters.status, options: [{ value: "", label: "همه وضعیت‌ها" }, ...Object.entries(productStatusLabels).map(([value, label]) => ({ value, label }))] };
-  // "تخفیف" (discount) shows up as a small tag under the name in the "محصول" cell itself (see
-  // ProductFlags), so that column's funnel carries its filter rather than a column of its own.
-  const productFilters = [
-    { name: "discount", label: "وضعیت تخفیف", value: filters.discount, options: [{ value: "", label: "همه تخفیف‌ها" }, { value: "active", label: "دارای تخفیف فعال" }, { value: "upcoming", label: "تخفیف آینده" }, { value: "none", label: "بدون تخفیف" }] },
-  ];
+  const discountFilter = { name: "discount", label: "وضعیت تخفیف", value: filters.discount, options: [{ value: "", label: "همه تخفیف‌ها" }, { value: "active", label: "دارای تخفیف فعال" }, { value: "upcoming", label: "تخفیف آینده" }, { value: "none", label: "بدون تخفیف" }] };
 
   const hasActiveFilters = Boolean(filters.query || filters.status || filters.category || filters.stock || filters.discount);
 
@@ -130,6 +126,7 @@ export function BlueprintProductsView({ products, categories, filters, paginatio
                     <div className="min-w-0 flex-1">
                       <ProductName product={product} />
                       <span className="bp-muted mt-1 block truncate text-[11px]">{product.category?.name ?? "بدون دسته‌بندی"}{product.brand && ` · ${product.brand.name}`}</span>
+                      <ProductFlags product={product} className="mt-1.5" />
                     </div>
                     <BpTag tone={productStatusTones[product.status]} size="md" withDot>{productStatusLabels[product.status]}</BpTag>
                   </div>
@@ -144,12 +141,13 @@ export function BlueprintProductsView({ products, categories, filters, paginatio
 
             <AdminColumnVisibility tableId={PRODUCTS_TABLE_ID} columns={columns} initialHidden={initialHiddenColumns}>
               <AdminBulkEditor entity="products" entityLabel="محصول" ids={products.map((product) => product.id)} actions={[]} beforeSelectAll={<AdminColumnSettingsButton />} extraAction={<ProductBulkEditButton products={products.map((product) => ({ id: product.id, variantTypeNames: product.optionTypes.map((optionType) => optionType.type.name) }))} categories={categories} />}>
-                <BpTable ariaLabel="فهرست محصولات" minWidth={860}>
+                <BpTable ariaLabel="فهرست محصولات" minWidth={980}>
                   <thead>
                     <tr>
                       <BpTh className="w-10 text-center"><span className="sr-only">انتخاب</span></BpTh>
                       <BpTh className="w-10">#</BpTh>
-                      <AdminColumn id="product"><BpTh><span className="inline-flex items-center">محصول<AdminColumnFilter path="/admin/products" ariaLabel="فیلتر محصول" groups={productFilters} /></span></BpTh></AdminColumn>
+                      <AdminColumn id="product"><BpTh>محصول</BpTh></AdminColumn>
+                      <AdminColumn id="offers"><BpTh><span className="inline-flex items-center">تنوع و تخفیف<AdminColumnFilter path="/admin/products" ariaLabel="فیلتر تخفیف" groups={[discountFilter]} /></span></BpTh></AdminColumn>
                       <AdminColumn id="category"><BpTh><span className="inline-flex items-center">دسته‌بندی<AdminColumnFilter path="/admin/products" ariaLabel="فیلتر دسته‌بندی" groups={[categoryFilter]} /></span></BpTh></AdminColumn>
                       <AdminColumn id="brand"><BpTh>برند</BpTh></AdminColumn>
                       <AdminColumn id="priceOrWeight"><BpTh>{storeIndustry === "GOLD" ? "وزن (گرم)" : "قیمت (ریال)"}</BpTh></AdminColumn>
@@ -164,6 +162,7 @@ export function BlueprintProductsView({ products, categories, filters, paginatio
                         <BpTd className="w-10 text-center"><AdminBulkCheckbox id={product.id} label={`انتخاب محصول ${product.name}`} /></BpTd>
                         <BpTd className="bp-muted w-10">{(pagination.skip + index + 1).toLocaleString("fa-IR")}</BpTd>
                         <AdminColumn id="product"><BpTd className="w-[240px] max-w-[240px]"><div className="flex min-w-0 items-center gap-2.5"><ProductThumb product={product} /><ThumbRule /><ProductName product={product} /></div></BpTd></AdminColumn>
+                        <AdminColumn id="offers"><BpTd className="max-w-[200px]"><ProductFlags product={product} emptyDash /></BpTd></AdminColumn>
                         <AdminColumn id="category"><BpTd className="bp-muted max-w-[180px] truncate">{product.category?.name ?? "بدون دسته‌بندی"}</BpTd></AdminColumn>
                         <AdminColumn id="brand"><BpTd className="bp-muted max-w-[140px] truncate">{product.brand?.name ?? "بدون برند"}</BpTd></AdminColumn>
                         <AdminColumn id="priceOrWeight"><BpTd>{priceLabel(product)}</BpTd></AdminColumn>

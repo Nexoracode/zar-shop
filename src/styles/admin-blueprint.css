@@ -326,6 +326,7 @@
   position: absolute;
   z-index: 5;
   min-width: 156px;
+  max-width: 300px;
   padding: 9px 12px;
   background: var(--bp-card);
   color: var(--bp-text);
@@ -347,6 +348,9 @@
 .bp-chart-tip-key { display: inline-flex; align-items: center; gap: 7px; }
 .bp-chart-tip-dot { display: block; width: 8px; height: 8px; flex: none; border-radius: 50%; }
 .bp-chart-tip-rule { height: 1px; margin: 5px 0 6px; background: var(--bp-divider); }
+/* A muted second line under a row, and a small heading that starts a new group under its own rule. */
+.bp-chart-tip-note { margin: -2px 0 3px; padding-inline-start: 15px; color: var(--bp-muted); font-size: 10.5px; line-height: 1.65; }
+.bp-chart-tip-section { margin: 7px 0 3px; padding-top: 6px; border-top: 1px dashed var(--bp-divider); color: var(--bp-muted); font-size: 11px; font-weight: 700; }
 /* A row of named colours (an option's values): the swatches wrap under the label instead of squeezing beside it. */
 .bp-chart-tip-row[data-stack="true"] { align-items: flex-start; }
 .bp-chart-tip-swatches { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 3px 12px; max-width: 200px; font-weight: 700; }
