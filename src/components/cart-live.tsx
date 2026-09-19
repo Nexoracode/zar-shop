@@ -2,13 +2,13 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { createContext, useCallback, useContext, useState, useTransition } from "react";
+import { createContext, useCallback, useContext, useEffect, useState, useTransition } from "react";
 import type { ReactNode } from "react";
 import { toast } from "@heroui/react";
 import { BadgePercent, ChevronLeft, ShieldCheck, Truck } from "lucide-react";
 import { Card } from "@/components/hero";
 import { formatMoney } from "@/lib/format";
-import { notifyCartUpdated } from "@/components/storefront-cart-link";
+import { listenForCartUpdates, notifyCartUpdated } from "@/components/storefront-cart-link";
 
 /** What the cart page knows about one line when the server rendered it. A null price means it could not be worked out. */
 export type CartLiveLine = { id: string; quantity: number; finalPrice: number | null; originalPrice: number | null; preparationDays: number };
@@ -68,6 +68,14 @@ export function CartLiveProvider({ lines, children }: { lines: CartLiveLine[]; c
       setInFlight((count) => count - 1);
     }
   }, [live, router]);
+
+  // Another tab changed the cart: reload this page's lines from the server. Nothing of this tab's own is in
+  // flight then, so its settled clicks must not linger over what the server now says.
+  useEffect(() => listenForCartUpdates((detail) => {
+    if (!detail.remote) return;
+    if (!live) setOptimistic({});
+    startRefresh(() => router.refresh());
+  }), [live, router]);
 
   const shown = lines.map((line) => ({ ...line, quantity: live && line.id in optimistic ? optimistic[line.id] : line.quantity }));
   const present = shown.filter((line) => line.quantity > 0);

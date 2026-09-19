@@ -7,8 +7,7 @@ import { useRouter } from "next/navigation";
 import { Button, Modal, Spinner, toast } from "@heroui/react";
 import { Check, FileText, Minus, PackageCheck, Plus, Ruler, ShieldCheck, ShoppingCart, Trash2, X } from "lucide-react";
 import { formatMoney } from "@/lib/format";
-import { CART_UPDATED_EVENT, notifyCartUpdated } from "@/components/storefront-cart-link";
-import type { CartUpdatedDetail } from "@/components/storefront-cart-link";
+import { listenForCartUpdates, notifyCartUpdated } from "@/components/storefront-cart-link";
 
 type OptionGuide = { url: string; type: "IMAGE" | "DOCUMENT"; title: string };
 type ProductOption = { id: string; name: string; kind: "COLOR" | "SELECT"; values: Array<{ value: string; stock: number; color: { name: string; hex: string } | null }> };
@@ -36,31 +35,30 @@ const ProductPurchaseContext = createContext<PurchaseState | null>(null);
 /** Marks the cart events this page raises itself, which it must not treat as a change made elsewhere. */
 const PURCHASE_ORIGIN = "product-purchase";
 
-export function ProductPurchaseProvider({ children, initialSelectedOptions = {}, initialCartLines = [] }: { children: ReactNode; initialSelectedOptions?: Record<string, string>; /** Lines the visitor already had in the cart when the page rendered. */ initialCartLines?: Array<CartLine & { selection: Record<string, string> }> }) {
+export function ProductPurchaseProvider({ children, productId, initialSelectedOptions = {}, initialCartLines = [] }: { children: ReactNode; /** Lets a line added in another tab be placed here when this page shows the same product. */ productId?: string; initialSelectedOptions?: Record<string, string>; /** Lines the visitor already had in the cart when the page rendered. */ initialCartLines?: Array<CartLine & { selection: Record<string, string> }> }) {
   const [selectedOptions, setSelectedOptions] = useState(initialSelectedOptions);
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const [cartLines, setCartLines] = useState<CartLines>(() => Object.fromEntries(initialCartLines.map((line) => [cartLineKey(line.selection), { id: line.id, quantity: line.quantity }])));
 
-  // A line changed somewhere else on the page — the header's cart preview — is followed here too, so this
-  // card never keeps claiming a quantity the cart no longer holds.
-  useEffect(() => {
-    const follow = (event: Event) => {
-      const detail = (event as CustomEvent<CartUpdatedDetail>).detail;
-      const change = detail?.change;
-      if (!change || detail.origin === PURCHASE_ORIGIN) return;
-      setCartLines((current) => {
-        const entry = Object.entries(current).find(([, line]) => line.id === change.itemId);
-        if (!entry) return current;
+  // A line changed somewhere else — the header's cart preview, or any other tab — is followed here too,
+  // so this card never keeps claiming a quantity the cart no longer holds.
+  useEffect(() => listenForCartUpdates((detail) => {
+    const change = detail.change;
+    if (!change || detail.origin === PURCHASE_ORIGIN) return;
+    setCartLines((current) => {
+      const known = Object.entries(current).find(([, line]) => line.id === change.itemId);
+      if (change.quantity === null) {
+        if (!known) return current;
         const next = { ...current };
-        if (change.quantity === null) delete next[entry[0]];
-        else next[entry[0]] = { ...entry[1], quantity: change.quantity };
+        delete next[known[0]];
         return next;
-      });
-    };
-    window.addEventListener(CART_UPDATED_EVENT, follow);
-    return () => window.removeEventListener(CART_UPDATED_EVENT, follow);
-  }, []);
+      }
+      // A line this tab has not seen yet can only be placed when the change says which combination it is.
+      const key = known?.[0] ?? (change.productId === productId && change.selection ? cartLineKey(change.selection) : null);
+      return key === null ? current : { ...current, [key]: { id: change.itemId, quantity: change.quantity } };
+    });
+  }), [productId]);
 
   return <ProductPurchaseContext.Provider value={{ selectedOptions, setSelectedOptions, message, setMessage, loading, setLoading, cartLines, setCartLines }}>{children}</ProductPurchaseContext.Provider>;
 }
@@ -134,7 +132,7 @@ export function AddToCart({ productId, options = [], variants = [], optionGuide,
     if (r.status === 401) { router.push("/login?next=/cart"); return; }
     setMsg(data.message ?? "");
     if (r.ok) {
-      if (typeof data.itemCount === "number") notifyCartUpdated(data.itemCount, PURCHASE_ORIGIN);
+      if (typeof data.itemCount === "number") notifyCartUpdated(data.itemCount, PURCHASE_ORIGIN, typeof data.cartItemId === "string" && typeof data.quantity === "number" ? { itemId: data.cartItemId, quantity: data.quantity, productId, selection: selectedOptions } : undefined);
       if (typeof data.quantity === "number" && typeof data.cartItemId === "string") setCartLines((current) => ({ ...current, [key]: { id: data.cartItemId, quantity: data.quantity } }));
       router.refresh();
     }
@@ -160,7 +158,7 @@ export function AddToCart({ productId, options = [], variants = [], optionGuide,
       const result = await response.json().catch(() => null);
       if (!response.ok) throw new Error(result?.message ?? "به‌روزرسانی سبد خرید انجام نشد.");
       if (removing) setCartLines((current) => { const next = { ...current }; delete next[key]; return next; });
-      notifyCartUpdated(result.itemCount ?? 0, PURCHASE_ORIGIN);
+      notifyCartUpdated(result.itemCount ?? 0, PURCHASE_ORIGIN, { itemId: line.id, quantity: removing ? null : line.quantity - 1 });
       router.refresh();
     } catch (error) {
       setCartLines((current) => ({ ...current, [key]: line }));

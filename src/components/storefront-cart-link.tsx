@@ -32,16 +32,45 @@ type CartSummary = {
   currency: "IRR" | "IRT";
 };
 
-/** One line's new quantity, or null once it has been removed. */
-export type CartLineChange = { itemId: string; quantity: number | null };
-export type CartUpdatedDetail = { count?: number; origin?: string; change?: CartLineChange };
+/**
+ * One line's new quantity, or null once it has been removed. `productId` and `selection` are added when the
+ * raiser knows them, so a tab that has never seen the line can still place it (see the product purchase card).
+ */
+export type CartLineChange = { itemId: string; quantity: number | null; productId?: string; selection?: Record<string, string> };
+/** `remote` is set on updates that came from another tab rather than this one. */
+export type CartUpdatedDetail = { count?: number; origin?: string; change?: CartLineChange; remote?: boolean };
+
+// Carries cart updates between tabs of the same browser. Created lazily, and only where BroadcastChannel exists.
+let cartChannel: BroadcastChannel | null | undefined;
+
+function ensureCartChannel() {
+  if (cartChannel !== undefined) return cartChannel;
+  cartChannel = typeof BroadcastChannel === "undefined" ? null : new BroadcastChannel(CART_UPDATED_EVENT);
+  if (cartChannel) {
+    // Replayed as the same window event local listeners already handle, marked so they can tell it apart.
+    cartChannel.onmessage = (message: MessageEvent<Pick<CartUpdatedDetail, "count" | "change">>) => {
+      window.dispatchEvent(new CustomEvent<CartUpdatedDetail>(CART_UPDATED_EVENT, { detail: { count: message.data?.count, change: message.data?.change, remote: true } }));
+    };
+  }
+  return cartChannel;
+}
 
 /**
  * `origin` names whoever raised the event, so it can skip reacting to its own update; `change` says which
  * line moved, so listeners that show single lines (the product page's purchase card) can follow without refetching.
+ * The update is also broadcast to the other tabs — without `origin`, which only means something in this one.
  */
 export function notifyCartUpdated(count: number, origin?: string, change?: CartLineChange) {
   window.dispatchEvent(new CustomEvent<CartUpdatedDetail>(CART_UPDATED_EVENT, { detail: { count, origin, change } }));
+  ensureCartChannel()?.postMessage({ count, change });
+}
+
+/** Subscribes to cart updates from this tab and, through the broadcast channel, from every other one. */
+export function listenForCartUpdates(handler: (detail: CartUpdatedDetail) => void) {
+  ensureCartChannel();
+  const listener = (event: Event) => handler((event as CustomEvent<CartUpdatedDetail>).detail ?? {});
+  window.addEventListener(CART_UPDATED_EVENT, listener);
+  return () => window.removeEventListener(CART_UPDATED_EVENT, listener);
 }
 
 /** The summary as it will look once `itemId` changes to `quantity` (removed when undefined), shown before the server confirms. */
@@ -92,16 +121,13 @@ export function StorefrontCartLink({ initialCount, className = "", iconSize = 21
   }, [count]);
 
   useEffect(() => {
-    const update = (event: Event) => {
-      const detail = (event as CustomEvent<CartUpdatedDetail>).detail;
-      if (detail?.origin === instanceId) return;
-      if (typeof detail?.count === "number") {
+    return listenForCartUpdates((detail) => {
+      if (detail.origin === instanceId) return;
+      if (typeof detail.count === "number") {
         setCount(Math.max(0, detail.count));
         setSummary(null);
       }
-    };
-    window.addEventListener(CART_UPDATED_EVENT, update);
-    return () => window.removeEventListener(CART_UPDATED_EVENT, update);
+    });
   }, [instanceId]);
 
   useEffect(() => {
