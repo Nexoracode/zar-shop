@@ -35,11 +35,16 @@ export async function POST(request: Request) {
 export async function PATCH(request: Request) {
   try {
     const actor = await getPermittedActor("settings:manage"); if (!actor) return NextResponse.json({ message: "دسترسی غیرمجاز است." }, { status: 403 });
-    const { provider } = activeProviderInputSchema.parse(await request.json());
-    if (!smsProviderInfo(provider).sendSupported) return NextResponse.json({ message: "قرارداد API عمومی این ارائه‌دهنده هنوز در پروژه ثبت نشده است." }, { status: 422 });
+    const { provider, isActive } = activeProviderInputSchema.parse(await request.json());
+    if (isActive && !smsProviderInfo(provider).sendSupported) return NextResponse.json({ message: "قرارداد API عمومی این ارائه‌دهنده هنوز در پروژه ثبت نشده است." }, { status: 422 });
     const existing = await db.smsProviderConfig.findUnique({ where: { provider } });
     if (!existing) return NextResponse.json({ message: "ارائه‌دهنده ابتدا باید پیکربندی شود." }, { status: 404 });
-    await db.$transaction(async (tx) => { await tx.smsProviderConfig.updateMany({ data: { isActive: false } }); await tx.smsProviderConfig.update({ where: { provider }, data: { isActive: true } }); await tx.auditLog.create({ data: { actorId: actor.id, action: "SMS_PROVIDER_ACTIVATE", entityType: "SmsProviderConfig", entityId: existing.id, ...auditRequestContext(request, { provider }) } }); });
+    await db.$transaction(async (tx) => {
+      // Activating makes this the only active provider; deactivating just switches this one off.
+      if (isActive) await tx.smsProviderConfig.updateMany({ data: { isActive: false } });
+      await tx.smsProviderConfig.update({ where: { provider }, data: { isActive } });
+      await tx.auditLog.create({ data: { actorId: actor.id, action: isActive ? "SMS_PROVIDER_ACTIVATE" : "SMS_PROVIDER_DEACTIVATE", entityType: "SmsProviderConfig", entityId: existing.id, ...auditRequestContext(request, { provider }) } });
+    });
     return NextResponse.json(await getPublicSmsProviderConfigs());
   } catch (error) { return apiError(error); }
 }

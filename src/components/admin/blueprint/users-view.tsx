@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Wallet } from "lucide-react";
 import type { Prisma } from "@generated/prisma/client";
 import { AdminStatusBadge } from "@/components/admin-ui";
+import { AdminActiveToggle } from "@/components/admin-active-toggle";
 import { AdminBulkCheckbox, AdminBulkEditor, AdminBulkTr } from "@/components/admin-bulk-editor";
 import { AdminColumn, AdminColumnSettingsButton, AdminColumnVisibility } from "@/components/admin-column-visibility";
 import { AdminColumnFilter } from "@/components/admin-column-filter";
@@ -43,6 +44,7 @@ export function BlueprintUsersView({ users, pagination, actorId, actorRole, assi
       <div className="md:hidden">
         {users.map((user) => {
           const fullName = `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim() || "کاربر بدون نام";
+          const locked = user.id === actorId || user.role === "ADMIN";
           return (
             <article key={user.id} className="flex flex-col gap-3 border-b border-[var(--bp-row-line)] p-4 last:border-b-0">
               <div className="flex items-start justify-between gap-3">
@@ -50,7 +52,10 @@ export function BlueprintUsersView({ users, pagination, actorId, actorRole, assi
                   <strong className="block truncate text-[13px]">{fullName}</strong>
                   <span className="bp-muted mt-0.5 block truncate text-[11px]">{user.email ?? "ایمیل ثبت نشده"}</span>
                 </div>
-                <AdminStatusBadge tone={userStatusTones[user.status]}>{userStatusLabels[user.status]}</AdminStatusBadge>
+                <div className="flex shrink-0 items-center gap-1">
+                  <AdminStatusBadge tone={userStatusTones[user.status]}>{userStatusLabels[user.status]}</AdminStatusBadge>
+                  <AdminActiveToggle entity="users" entityLabel="کاربر" id={user.id} name={fullName} isActive={user.status === "ACTIVE"} disabled={locked} disabledTitle="وضعیت این حساب از اینجا قابل تغییر نیست" actionOn="status:ACTIVE" actionOff="status:SUSPENDED" labelOff="تعلیق" doneOn="حساب کاربر فعال شد." doneOff="حساب کاربر تعلیق شد." />
+                </div>
               </div>
               <div className="grid gap-2">
                 <BlueprintUserRoleSelect userId={user.id} value={user.role} roles={user.role === "ADMIN" && actorRole !== "ADMIN" ? ["ADMIN"] : assignableRoles} disabled={user.id === actorId || (user.role === "ADMIN" && actorRole !== "ADMIN")} />
@@ -89,6 +94,7 @@ export function BlueprintUsersView({ users, pagination, actorId, actorRole, assi
                 <AdminColumn id="status"><BpTh><span className="inline-flex items-center">وضعیت<AdminColumnFilter path="/admin/users" ariaLabel="فیلتر وضعیت" groups={[{ name: "status", label: "وضعیت حساب", value: status, options: [{ value: "", label: "همه وضعیت‌ها" }, ...Object.values(UserStatus).map((item) => ({ value: item, label: userStatusLabels[item] }))] }]} /></span></BpTh></AdminColumn>
                 <AdminColumn id="joined"><BpTh>عضویت</BpTh></AdminColumn>
                 {walletEnabled && <AdminColumn id="wallet"><BpTh className="text-center">کیف پول</BpTh></AdminColumn>}
+                <BpTh className="text-center">عملیات</BpTh>
               </tr>
             </thead>
             <tbody>
@@ -124,6 +130,9 @@ export function BlueprintUsersView({ users, pagination, actorId, actorRole, assi
                       </BpTd>
                     </AdminColumn>
                   )}
+                  <BpTd className="text-center">
+                    <AdminActiveToggle entity="users" entityLabel="کاربر" id={user.id} name={fullName} isActive={user.status === "ACTIVE"} disabled={!selectable} disabledTitle="وضعیت این حساب از اینجا قابل تغییر نیست" actionOn="status:ACTIVE" actionOff="status:SUSPENDED" labelOff="تعلیق" doneOn="حساب کاربر فعال شد." doneOff="حساب کاربر تعلیق شد." />
+                  </BpTd>
                 </>;
                 return selectable
                   ? <AdminBulkTr key={user.id} id={user.id}>{cells}</AdminBulkTr>

@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "@heroui/react";
 import Link from "next/link";
-import { AlertTriangle, ExternalLink, MessageSquareText, Power, ShieldCheck, SquarePen, Trash2 } from "lucide-react";
+import { AlertTriangle, ExternalLink, MessageSquareText, ShieldCheck, SquarePen, ToggleLeft, ToggleRight, Trash2 } from "lucide-react";
 import { AdminBulkCheckbox, AdminBulkEditor } from "@/components/admin-bulk-editor";
 import { AdminColumn, AdminColumnSettingsButton, AdminColumnVisibility } from "@/components/admin-column-visibility";
 import { AdminGenericBulkEditButton } from "@/components/admin-generic-bulk-edit";
@@ -84,14 +84,14 @@ export function BlueprintSmsProviderManager({ mode, initialConfigs, smsEnabled, 
     }
   }
 
-  async function mutate(provider: SmsProviderId, method: "PATCH" | "DELETE") {
+  async function mutate(provider: SmsProviderId, method: "PATCH" | "DELETE", isActive = true) {
     setBusy(`${method}-${provider}`);
     try {
-      const response = await fetch(method === "DELETE" ? `/api/admin/sms/providers?provider=${provider}` : "/api/admin/sms/providers", { method, headers: { "Content-Type": "application/json" }, body: method === "PATCH" ? JSON.stringify({ provider }) : undefined });
+      const response = await fetch(method === "DELETE" ? `/api/admin/sms/providers?provider=${provider}` : "/api/admin/sms/providers", { method, headers: { "Content-Type": "application/json" }, body: method === "PATCH" ? JSON.stringify({ provider, isActive }) : undefined });
       const result = await response.json().catch(() => null);
       if (!response.ok) throw new Error(result?.message ?? "عملیات انجام نشد.");
       setConfigs(result);
-      toast.success(method === "PATCH" ? "ارائه‌دهنده فعال شد" : "پیکربندی حذف شد");
+      toast.success(method === "DELETE" ? "پیکربندی حذف شد" : isActive ? "ارائه‌دهنده فعال شد" : "ارائه‌دهنده غیرفعال شد");
     } catch (error) {
       toast.danger("عملیات انجام نشد", { description: error instanceof Error ? error.message : "خطای ناشناخته" });
     } finally {
@@ -117,7 +117,7 @@ export function BlueprintSmsProviderManager({ mode, initialConfigs, smsEnabled, 
                   </div>
                   <div className="mt-3 grid grid-cols-3 gap-2">
                     <BpLinkButton href={`/admin/settings/notifications/providers/${item.provider}/edit`} variant="secondary" className="gap-2"><SquarePen size={14} />ویرایش</BpLinkButton>
-                    <BpButton type="button" variant="secondary" isPending={busy === `PATCH-${item.provider}`} disabled={!item.sendSupported || item.isActive} onClick={() => void mutate(item.provider, "PATCH")} className="gap-2"><Power size={14} />فعال‌سازی</BpButton>
+                    <BpButton type="button" variant="secondary" isPending={busy === `PATCH-${item.provider}`} disabled={!item.sendSupported && !item.isActive} onClick={() => void mutate(item.provider, "PATCH", !item.isActive)} className="gap-2">{item.isActive ? <ToggleRight size={14} className="text-[var(--bp-success)]" /> : <ToggleLeft size={14} className="bp-muted" />}{item.isActive ? "غیرفعال‌سازی" : "فعال‌سازی"}</BpButton>
                     <BpButton type="button" variant="danger" isPending={busy === `DELETE-${item.provider}`} onClick={() => void mutate(item.provider, "DELETE")} className="gap-2"><Trash2 size={14} />حذف</BpButton>
                   </div>
                 </article>
@@ -162,7 +162,7 @@ export function BlueprintSmsProviderManager({ mode, initialConfigs, smsEnabled, 
                         <BpTd className="text-center">
                           <div className="flex items-center justify-center gap-1">
                             <BpLinkButton href={`/admin/settings/notifications/providers/${item.provider}/edit`} variant="ghost" isIconOnly size="sm" aria-label={`ویرایش ${item.displayName}`}><SquarePen size={15} strokeWidth={1.5} /></BpLinkButton>
-                            <BpButton type="button" variant="ghost" isIconOnly size="sm" disabled={!item.sendSupported || item.isActive} isPending={busy === `PATCH-${item.provider}`} aria-label={`فعال‌سازی ${item.displayName}`} onClick={() => void mutate(item.provider, "PATCH")}><Power size={15} strokeWidth={1.5} /></BpButton>
+                            <BpButton type="button" variant="ghost" isIconOnly size="sm" disabled={!item.sendSupported && !item.isActive} isPending={busy === `PATCH-${item.provider}`} title={item.isActive ? "غیرفعال‌سازی" : "فعال‌سازی"} aria-label={`${item.isActive ? "غیرفعال‌سازی" : "فعال‌سازی"} ${item.displayName}`} onClick={() => void mutate(item.provider, "PATCH", !item.isActive)}>{item.isActive ? <ToggleRight size={15} strokeWidth={1.5} className="text-[var(--bp-success)]" /> : <ToggleLeft size={15} strokeWidth={1.5} className="bp-muted" />}</BpButton>
                             <BpButton type="button" variant="ghost" className="bp-btn-danger-icon" isIconOnly size="sm" isPending={busy === `DELETE-${item.provider}`} aria-label={`حذف ${item.displayName}`} onClick={() => void mutate(item.provider, "DELETE")}><Trash2 size={15} strokeWidth={1.5} /></BpButton>
                           </div>
                         </BpTd>

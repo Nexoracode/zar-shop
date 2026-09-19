@@ -58,6 +58,7 @@ const actionLabels: Record<string, string> = {
   PAYMENT_GATEWAY_CONFIG_DELETE: "حذف درگاه پرداخت",
   SMS_PROVIDER_CONFIG_UPSERT: "ثبت یا ویرایش سامانه پیامک",
   SMS_PROVIDER_ACTIVATE: "فعال‌سازی سامانه پیامک",
+  SMS_PROVIDER_DEACTIVATE: "غیرفعال‌سازی سامانه پیامک",
   SMS_PROVIDER_CONFIG_DELETE: "حذف سامانه پیامک",
   SMS_PATTERN_CREATE: "ثبت پترن پیامک",
   SMS_PATTERN_UPDATE: "ویرایش پترن پیامک",

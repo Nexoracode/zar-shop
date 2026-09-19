@@ -29,7 +29,9 @@ export async function getPublicSmsProviderConfigs(): Promise<PublicSmsProviderCo
   return configs.map((config) => ({ id: config.id, provider: smsProviderSchema.parse(config.provider), displayName: config.displayName, credentialMasked: config.credentialMasked, senderNumber: config.senderNumber, isActive: config.isActive, sendSupported: config.provider === "FARAZ_SMS", updatedAt: config.updatedAt.toISOString() }));
 }
 
-export const activeProviderInputSchema = z.object({ provider: smsProviderSchema });
+// `isActive` defaults to true so the original "activate this provider" call shape keeps working;
+// passing `false` switches the provider off (leaving no active provider) instead.
+export const activeProviderInputSchema = z.object({ provider: smsProviderSchema, isActive: z.boolean().default(true) });
 
 // Patterns, balance and other Faraz SMS API calls all need the same active-provider API key —
 // centralized here so callers don't duplicate the lookup + decrypt + credential-shape check.
