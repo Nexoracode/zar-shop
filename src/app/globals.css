@@ -512,6 +512,33 @@ img {
   box-shadow: 0 0 0 1px #785b27;
 }
 
+/* Free-shipping progress: the fill takes the brand gradient and a slow sheen crosses it. The gradient
+   runs start-to-end of the bar; `--free-ship-from/to` are swapped to the success colour once earned. */
+.free-ship { --free-ship-from: var(--brand-primary); --free-ship-to: var(--brand-accent); }
+.free-ship[data-reached="true"] { --free-ship-from: var(--success); --free-ship-to: color-mix(in srgb, var(--success) 65%, white); }
+.free-ship-fill {
+  position: relative;
+  overflow: hidden;
+  background-image: linear-gradient(to left, var(--free-ship-from), var(--free-ship-to));
+}
+.free-ship-fill::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(to left, transparent 0%, rgb(255 255 255 / 45%) 50%, transparent 100%);
+  background-size: 45% 100%;
+  background-repeat: no-repeat;
+  animation: free-ship-sheen 2.4s ease-in-out infinite;
+}
+@keyframes free-ship-sheen {
+  from { background-position: 160% 0; }
+  to { background-position: -60% 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .free-ship-fill::after { animation: none; }
+  .free-ship-fill, .free-ship-truck { transition: none; }
+}
+
 @keyframes zar-toast-left-in {
   from {
     translate: -110% 0;

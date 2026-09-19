@@ -2,10 +2,11 @@
 
 import { useState } from "react";
 import { Button, Card, Spinner } from "@heroui/react";
-import { Check, CreditCard, MapPin, PackageCheck, ShieldCheck } from "lucide-react";
+import { Check, CreditCard, MapPin } from "lucide-react";
 import { InlineAlert } from "@/components/inline-alert";
 import { formatMoney } from "@/lib/format";
 import { OrderExpiryCountdown } from "@/components/order-expiry-countdown";
+import { CheckoutItems, type CheckoutItem } from "@/components/checkout-items";
 import type { StorefrontPaymentMethod, StorefrontPaymentMethodId } from "@/modules/payments/storefront-methods";
 
 type OrderAddress = {
@@ -39,6 +40,7 @@ type Props = {
   quote: Quote;
   currency: "IRR" | "IRT";
   itemCount: number;
+  items: CheckoutItem[];
   methods: StorefrontPaymentMethod[];
   defaultPaymentProvider: string | null;
   expiresAt: string | null;
@@ -50,7 +52,7 @@ type Props = {
 // recomputes a quote or lets the address be edited. It intentionally mirrors CheckoutForm's
 // layout (address card, payment method card, order-summary aside) so resuming an order looks
 // like the same checkout page instead of a distinct flow.
-export function ResumeOrderCheckout({ orderId, orderNumber, address, quote, currency, itemCount, methods, defaultPaymentProvider, expiresAt, warningMinutes }: Props) {
+export function ResumeOrderCheckout({ orderId, orderNumber, address, quote, currency, itemCount, items, methods, defaultPaymentProvider, expiresAt, warningMinutes }: Props) {
   const [paymentProvider, setPaymentProvider] = useState<StorefrontPaymentMethodId | "">((defaultPaymentProvider as StorefrontPaymentMethodId | null) ?? methods[0]?.id ?? "");
   const [isPending, setIsPending] = useState(false);
   const [error, setError] = useState("");
@@ -84,6 +86,8 @@ export function ResumeOrderCheckout({ orderId, orderNumber, address, quote, curr
           </Card.Content>
         </Card>
 
+        <CheckoutItems items={items} currency={currency} />
+
         <Card variant="secondary" className="rounded-xl border border-[var(--border)] bg-[var(--surface)] shadow-sm">
           <Card.Content className="p-4 sm:p-5">
             <div className="mb-4 flex items-start gap-3"><span className="grid size-9 shrink-0 place-items-center rounded-full bg-[var(--brand-primary)]/10 text-[var(--brand-primary)]"><CreditCard size={18} /></span><div><h2 className="m-0 text-base font-bold">روش پرداخت</h2><p className="mb-0 mt-1 text-xs text-[var(--muted)]">پرداخت از طریق درگاه امن بانکی انجام می‌شود.</p></div></div>
@@ -110,8 +114,6 @@ export function ResumeOrderCheckout({ orderId, orderNumber, address, quote, curr
           {error ? <InlineAlert status="danger" className="mt-4">{error}</InlineAlert> : null}
           <Button type="button" fullWidth variant="primary" isPending={isPending} isDisabled={!paymentProvider} onPress={() => void pay()} className="mt-5 min-h-12 gap-2 rounded-lg bg-[var(--brand-primary)] px-5 font-bold text-[var(--brand-primary-foreground)]">{({ isPending: loading }) => <>{loading && <Spinner color="current" size="sm" />}{loading ? "در حال انتقال به درگاه..." : "پرداخت سفارش"}</>}</Button>
         </Card>
-        <Card variant="secondary" className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-3.5 text-xs text-[var(--muted)]"><span className="flex items-center gap-2 font-bold text-[var(--foreground)]"><PackageCheck size={16} />سفارش شما محفوظ است</span><p className="mb-0 mt-1.5 leading-6">این سفارش قبلاً ثبت شده؛ فقط کافی است پرداخت را تکمیل کنید.</p></Card>
-        <div className="flex items-start gap-2 px-2 text-[11px] leading-6 text-[var(--muted)]"><ShieldCheck size={16} className="mt-1 shrink-0" />پرداخت امن و حفاظت از اطلاعات خرید</div>
       </aside>
     </div>
   );

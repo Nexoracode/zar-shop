@@ -5,13 +5,14 @@ import { useRouter } from "next/navigation";
 import { createContext, useCallback, useContext, useEffect, useState, useTransition } from "react";
 import type { ReactNode } from "react";
 import { toast } from "@heroui/react";
-import { BadgePercent, ChevronLeft, ShieldCheck, Truck } from "lucide-react";
+import { BadgePercent, ChevronLeft } from "lucide-react";
 import { Card } from "@/components/hero";
 import { formatMoney } from "@/lib/format";
+import { FreeShippingProgress } from "@/components/free-shipping-progress";
 import { listenForCartUpdates, notifyCartUpdated } from "@/components/storefront-cart-link";
 
 /** What the cart page knows about one line when the server rendered it. A null price means it could not be worked out. */
-export type CartLiveLine = { id: string; quantity: number; finalPrice: number | null; originalPrice: number | null; preparationDays: number };
+export type CartLiveLine = { id: string; quantity: number; finalPrice: number | null; originalPrice: number | null };
 
 type CartLiveState = {
   quantityOf: (id: string) => number;
@@ -19,7 +20,6 @@ type CartLiveState = {
   mutate: (id: string, nextQuantity: number | undefined) => Promise<void>;
   subtotal: number | null;
   merchandiseTotal: number | null;
-  preparationDays: number;
 };
 
 const CartLiveContext = createContext<CartLiveState | null>(null);
@@ -86,7 +86,6 @@ export function CartLiveProvider({ lines, children }: { lines: CartLiveLine[]; c
     mutate,
     subtotal: priceUnavailable ? null : present.reduce((sum, line) => sum + line.originalPrice! * line.quantity, 0),
     merchandiseTotal: priceUnavailable ? null : present.reduce((sum, line) => sum + line.finalPrice! * line.quantity, 0),
-    preparationDays: present.length ? Math.max(...present.map((line) => line.preparationDays)) : 0,
   };
 
   return <CartLiveContext.Provider value={value}>{children}</CartLiveContext.Provider>;
@@ -110,21 +109,18 @@ export function CartLiveHeadline() {
 
 /** The order summary column: totals, checkout link and the free-shipping hint, all following the live quantities. */
 export function CartLiveSummary({ currency, freeShippingThreshold }: { currency: "IRR" | "IRT"; freeShippingThreshold: number | null }) {
-  const { itemCount, subtotal, merchandiseTotal, preparationDays } = useCartLive();
+  const { itemCount, subtotal, merchandiseTotal } = useCartLive();
   if (subtotal === null || merchandiseTotal === null) return null;
   const productDiscount = subtotal - merchandiseTotal;
-  const remainingForFreeShipping = freeShippingThreshold !== null ? Math.max(0, freeShippingThreshold - merchandiseTotal) : null;
 
   return (
     <aside className="grid gap-4 lg:sticky lg:top-24">
       <Card variant="secondary" className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 shadow-sm">
         <dl className="m-0 grid gap-4 text-sm"><div className="flex items-center justify-between gap-4 text-[var(--muted)]"><dt>قیمت کالاها ({itemCount.toLocaleString("fa-IR")})</dt><dd>{formatMoney(subtotal, currency)}</dd></div>{productDiscount > 0 && <div className="flex items-center justify-between gap-4 font-bold text-[var(--danger)]"><dt>تخفیف کالاها</dt><dd>{formatMoney(productDiscount, currency)}</dd></div>}<div className="flex items-center justify-between gap-4 border-t border-[var(--border)] pt-4 font-bold"><dt>جمع سبد خرید</dt><dd>{formatMoney(merchandiseTotal, currency)}</dd></div></dl>
-        <p className="mb-0 mt-4 text-[11px] leading-6 text-[var(--muted)]">هزینه ارسال بر اساس نشانی و تخفیف‌های فعال در مرحله بعد محاسبه می‌شود.</p>
         <Link href="/checkout" className="mt-5 flex min-h-12 w-full items-center justify-center gap-2 rounded-lg bg-[var(--brand-primary)] px-5 text-sm font-bold text-[var(--brand-primary-foreground)] shadow-sm transition hover:brightness-110">ادامه فرایند خرید<ChevronLeft size={18} /></Link>
+        {freeShippingThreshold !== null && <div className="mt-5"><FreeShippingProgress merchandiseTotal={merchandiseTotal} threshold={freeShippingThreshold} currency={currency} /></div>}
         {productDiscount > 0 && <div className="mt-4 flex items-center gap-2 text-[11px] font-bold text-[var(--danger)]"><BadgePercent size={16} />{formatMoney(productDiscount, currency)} سود شما از تخفیف کالاها</div>}
-        <div className="mt-3 flex items-center gap-2 text-[11px] text-[var(--muted)]"><ShieldCheck size={16} />پرداخت امن و حفاظت از اطلاعات خرید</div>
       </Card>
-      {remainingForFreeShipping !== null && <Card variant="secondary" className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 text-xs leading-6 text-[var(--muted)]"><span className="flex items-center gap-2 font-bold text-[var(--foreground)]"><Truck size={17} />ارسال سفارش</span><p className="mb-0 mt-2">{remainingForFreeShipping === 0 ? "سفارش شما مشمول ارسال رایگان است." : `${formatMoney(remainingForFreeShipping, currency)} تا ارسال رایگان فاصله دارید.`}</p><p className="mb-0 mt-1">آماده‌سازی تا {preparationDays.toLocaleString("fa-IR")} روز کاری</p></Card>}
     </aside>
   );
 }

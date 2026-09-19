@@ -47,7 +47,7 @@ export default async function CartPage() {
   });
   const priceUnavailable = pricedItems.some((line) => line.pricing === null);
   // Totals, counts and the free-shipping hint are worked out on the client from these lines, so they follow quantity clicks at once.
-  const liveLines: CartLiveLine[] = pricedItems.map(({ item, pricing }) => ({ id: item.id, quantity: item.quantity, finalPrice: pricing?.finalPrice ?? null, originalPrice: pricing?.originalPrice ?? null, preparationDays: item.product.preparationDays }));
+  const liveLines: CartLiveLine[] = pricedItems.map(({ item, pricing }) => ({ id: item.id, quantity: item.quantity, finalPrice: pricing?.finalPrice ?? null, originalPrice: pricing?.originalPrice ?? null }));
 
   return (
     <main className="min-h-dvh bg-[var(--background)] px-4 pb-[calc(66px+env(safe-area-inset-bottom)+16px)] pt-8 sm:px-6 sm:pt-12 lg:pb-12">

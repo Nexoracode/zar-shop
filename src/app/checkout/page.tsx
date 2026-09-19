@@ -8,6 +8,8 @@ import { requireUser } from "@/modules/auth/session";
 import { db } from "@/lib/db";
 import { getGoldPriceForDisplay } from "@/modules/gold/gold-price.service";
 import { lineUnitPrice } from "@/modules/products/line-pricing";
+import { optionEntries } from "@/modules/products/options";
+import type { CheckoutItem } from "@/components/checkout-items";
 import { baseShippingFee, defaultDeliveryMethod, getCommerceSettings } from "@/modules/settings/commerce-settings";
 import { getGeneralStoreSettings } from "@/modules/settings/general-settings";
 import { getOrderSettings } from "@/modules/settings/order-settings";
@@ -56,7 +58,24 @@ export default async function CheckoutPage() {
         return { title: snapshot.title ?? "", code: snapshot.code ?? null };
       }),
     };
-    const itemCount = await db.orderItem.aggregate({ where: { orderId: pendingOrder.id }, _sum: { quantity: true } }).then((result) => result._sum.quantity ?? 0);
+    const orderItems = await db.orderItem.findMany({ where: { orderId: pendingOrder.id }, orderBy: { id: "asc" }, select: { id: true, productId: true, name: true, quantity: true, selectedOptions: true, unitPrice: true, originalUnitPrice: true } });
+    const orderProducts = await db.product.findMany({ where: { id: { in: orderItems.flatMap((item) => item.productId ? [item.productId] : []) } }, select: { id: true, slug: true, media: { where: { isCover: true }, take: 1, select: { media: { select: { type: true, url: true, alt: true } } } } } });
+    const itemCount = orderItems.reduce((sum, item) => sum + item.quantity, 0);
+    const resumeItems: CheckoutItem[] = orderItems.map((item) => {
+      const product = orderProducts.find((candidate) => candidate.id === item.productId);
+      const cover = product?.media[0]?.media;
+      return {
+        id: item.id,
+        name: item.name,
+        slug: product?.slug ?? null,
+        imageUrl: cover?.type === "IMAGE" ? cover.url : null,
+        imageAlt: cover?.alt ?? item.name,
+        quantity: item.quantity,
+        optionSummary: optionEntries(item.selectedOptions).map(([name, value]) => `${name}: ${value}`),
+        unitPrice: Number(item.unitPrice),
+        originalUnitPrice: Number(item.originalUnitPrice) > Number(item.unitPrice) ? Number(item.originalUnitPrice) : null,
+      };
+    });
     return (
       <>
       <StandaloneTopBar backHref="/cart" backLabel="بازگشت به سبد خرید" />
@@ -71,6 +90,7 @@ export default async function CheckoutPage() {
             quote={quote}
             currency={settings.currency}
             itemCount={itemCount}
+            items={resumeItems}
             methods={paymentMethods}
             defaultPaymentProvider={pendingOrder.payments[0]?.provider ?? null}
             expiresAt={pendingOrder.expiresAt?.toISOString() ?? null}
@@ -83,7 +103,7 @@ export default async function CheckoutPage() {
   }
 
   const [cart, gold, settings, commerceSettings, paymentMethods, addresses, walletSettings] = await Promise.all([
-    db.cart.findUnique({ where: { userId: user.id }, include: { items: { include: { product: { include: { variants: true } } } } } }),
+    db.cart.findUnique({ where: { userId: user.id }, include: { items: { orderBy: { id: "asc" }, include: { product: { include: { variants: true, media: { where: { isCover: true }, include: { media: true }, take: 1 } } } } } } }),
     getGoldPriceForDisplay(),
     getGeneralStoreSettings(),
     getCommerceSettings(),
@@ -105,6 +125,21 @@ export default async function CheckoutPage() {
     const product = item.product;
     const pricing = lineUnitPrice(product, item.selectionKey, rate);
     return { quantity: item.quantity, original: pricing?.originalPrice ?? 0, final: pricing?.finalPrice ?? 0, productId: product.id, categoryId: product.categoryId };
+  });
+  const checkoutItems: CheckoutItem[] = items.map((item, index) => {
+    const product = item.product;
+    const cover = product.media[0]?.media;
+    return {
+      id: item.id,
+      name: product.name,
+      slug: product.slug,
+      imageUrl: cover?.type === "IMAGE" ? cover.url : null,
+      imageAlt: cover?.alt ?? product.name,
+      quantity: item.quantity,
+      optionSummary: optionEntries(item.selectedOptions).map(([name, value]) => `${name}: ${value}`),
+      unitPrice: prices[index].final,
+      originalUnitPrice: prices[index].original > prices[index].final ? prices[index].original : null,
+    };
   });
   const subtotal = prices.reduce((sum, item) => sum + item.original * item.quantity, 0);
   const merchandiseAmount = prices.reduce((sum, item) => sum + item.final * item.quantity, 0);
@@ -129,7 +164,7 @@ export default async function CheckoutPage() {
       <div className="mx-auto w-full max-w-[1280px]">
         {steps}
         <div className="mb-6"><h1 className="m-0 text-xl font-bold sm:text-2xl">تکمیل سفارش</h1><p className="mb-0 mt-2 text-sm text-[var(--muted)]">نشانی، تخفیف و روش پرداخت را بررسی کنید.</p></div>
-        <CheckoutForm settings={commerceSettings} paymentMethods={paymentMethods} currency={settings.currency} itemCount={itemCount} initialQuote={initialQuote} initialAddresses={addresses.map(serializeAddress)} user={{ firstName: user.firstName, lastName: user.lastName, phone: user.phone }} wallet={{ balance: walletBalance, checkoutEnabled: walletUsable }} />
+        <CheckoutForm settings={commerceSettings} paymentMethods={paymentMethods} currency={settings.currency} itemCount={itemCount} items={checkoutItems} initialQuote={initialQuote} initialAddresses={addresses.map(serializeAddress)} user={{ firstName: user.firstName, lastName: user.lastName, phone: user.phone }} wallet={{ balance: walletBalance, checkoutEnabled: walletUsable }} />
       </div>
     </main>
     </>
