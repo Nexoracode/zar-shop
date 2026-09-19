@@ -16,13 +16,17 @@ export type StorefrontPaymentMethod = { id: StorefrontPaymentMethodId; name: str
 // dev default), so a fresh checkout still works before any real gateway is configured.
 // ZIBAL/ASAN_PARDAKHT/TOOMAN can already be registered in the panel but have no PaymentProvider
 // implementation yet, so they stay excluded from checkout until one exists.
+// A registered gateway the admin switched off (`isActive: false`) is not offered either.
 export async function getStorefrontPaymentMethods(): Promise<StorefrontPaymentMethod[]> {
-  const zarinpal = await db.paymentGatewayConfig.findUnique({ where: { provider: "ZARINPAL" }, select: { displayName: true, isSandbox: true } });
+  const zarinpal = await db.paymentGatewayConfig.findFirst({ where: { provider: "ZARINPAL", isActive: true }, select: { displayName: true, isSandbox: true } });
   if (zarinpal) return [{ id: "zarinpal", name: zarinpal.displayName, description: "پرداخت آنلاین با همه کارت‌های عضو شتاب", sandbox: zarinpal.isSandbox }];
   if (env.PAYMENT_PROVIDER === "mock") return [{ id: "mock", name: "درگاه آزمایشی", description: "شبیه‌سازی پرداخت برای محیط توسعه", sandbox: true }];
   return [];
 }
 
+// Deliberately does not check `isActive`: the payment callbacks also resolve the provider here to
+// verify a payment that was started before the gateway was switched off, and that must still work.
+// Starting a *new* payment is gated by `getStorefrontPaymentMethods()` at each call site.
 export async function getStorefrontPaymentProvider(method: string): Promise<PaymentProvider> {
   const parsed = storefrontPaymentMethodSchema.parse(method);
   if (parsed === "mock") {

@@ -49,7 +49,7 @@ export function BlueprintCommerceSettings({ initialSettings, configuredGatewayCo
           <div className="mt-3 grid gap-2.5">
             <OptionCheckbox icon={<CreditCard size={17} />} title="پرداخت آنلاین" description="در صورت غیرفعال‌شدن، ایجاد سفارش و انتقال به درگاه متوقف می‌شود." isSelected={settings.onlinePaymentEnabled} onChange={(value) => set("onlinePaymentEnabled", value)} />
             <div className={`flex items-center justify-between gap-3 border p-3 ${configuredGatewayCount ? "border-[var(--bp-success)] bg-[var(--bp-success-bg)] text-[var(--bp-success)]" : "border-[var(--bp-warning)] bg-[var(--bp-warning-bg)] text-[var(--bp-warning)]"}`}>
-              <span className="flex items-center gap-2 text-[13px] font-bold">{configuredGatewayCount ? <CheckCircle2 size={16} /> : <CreditCard size={16} />}درگاه‌های ثبت‌شده</span>
+              <span className="flex items-center gap-2 text-[13px] font-bold">{configuredGatewayCount ? <CheckCircle2 size={16} /> : <CreditCard size={16} />}درگاه‌های فعال</span>
               <BpTag>{configuredGatewayCount.toLocaleString("fa-IR")} درگاه</BpTag>
             </div>
             <Link href="/admin/settings/payment-gateways" className="bp-btn bp-btn-secondary w-full gap-2"><Plus size={16} />افزودن و مدیریت درگاه</Link>

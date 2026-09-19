@@ -17,6 +17,7 @@ export type PublicGatewayConfig = {
   displayName: string;
   credentialMasked: string;
   isSandbox: boolean;
+  isActive: boolean;
   updatedAt: string;
 };
 
@@ -46,5 +47,5 @@ export function maskGatewayCredential(value: string) {
 
 export async function getPublicGatewayConfigs(): Promise<PublicGatewayConfig[]> {
   const configs = await db.paymentGatewayConfig.findMany({ orderBy: { updatedAt: "desc" } });
-  return configs.map((config) => ({ id: config.id, provider: gatewayProviderSchema.parse(config.provider), displayName: config.displayName, credentialMasked: config.credentialMasked, isSandbox: config.isSandbox, updatedAt: config.updatedAt.toISOString() }));
+  return configs.map((config) => ({ id: config.id, provider: gatewayProviderSchema.parse(config.provider), displayName: config.displayName, credentialMasked: config.credentialMasked, isSandbox: config.isSandbox, isActive: config.isActive, updatedAt: config.updatedAt.toISOString() }));
 }

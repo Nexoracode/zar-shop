@@ -18,7 +18,7 @@ export const getSetupState = cache(async (): Promise<SetupState> => {
       where: { id: STORE_SETTING_ID },
       select: { setupCompletedAt: true, setupStepsDone: true, industry: true, mainLogoMediaId: true, faviconMediaId: true, originProvinceId: true },
     }),
-    db.paymentGatewayConfig.count(),
+    db.paymentGatewayConfig.count({ where: { isActive: true } }),
     db.smsProviderConfig.count(),
     db.shippingMethod.count({ where: { isActive: true } }),
   ]);

@@ -4,6 +4,7 @@ import { useMemo, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "@heroui/react";
 import { Check, CheckCircle2, Copy, CreditCard, ExternalLink, Plus, ShieldCheck, Trash2 } from "lucide-react";
+import { AdminActiveToggle } from "@/components/admin-active-toggle";
 import { AdminBulkCheckbox, AdminBulkEditor } from "@/components/admin-bulk-editor";
 import { AdminColumn, AdminColumnSettingsButton, AdminColumnVisibility } from "@/components/admin-column-visibility";
 import { AdminGenericBulkEditButton } from "@/components/admin-generic-bulk-edit";
@@ -19,6 +20,7 @@ const paymentGatewayColumns = [
   { id: "gateway", label: "درگاه" },
   { id: "credential", label: "شناسه اتصال" },
   { id: "environment", label: "محیط" },
+  { id: "status", label: "وضعیت" },
 ];
 
 export function BlueprintPaymentGatewayManager({ mode, initialConfigs, appUrl, onSaved, initialHiddenColumns = [] }: { mode: "list" | "form"; initialConfigs: PublicGatewayConfig[]; appUrl?: string; onSaved?: () => void; initialHiddenColumns?: string[] }) {
@@ -106,7 +108,11 @@ export function BlueprintPaymentGatewayManager({ mode, initialConfigs, appUrl, o
                       <strong className="block truncate text-[13px]">{config.displayName}</strong>
                       <span className="bp-muted block truncate font-mono text-[11px]" dir="ltr">{config.credentialMasked}</span>
                     </div>
-                    <BpTag tone={config.isSandbox ? "warning" : "success"}>{config.isSandbox ? "آزمایشی" : "اصلی"}</BpTag>
+                    <div className="flex shrink-0 items-center gap-1">
+                      <BpTag tone={config.isActive ? "success" : "neutral"}>{config.isActive ? "فعال" : "غیرفعال"}</BpTag>
+                      <BpTag tone={config.isSandbox ? "warning" : "success"}>{config.isSandbox ? "آزمایشی" : "اصلی"}</BpTag>
+                      <AdminActiveToggle entity="paymentGateways" entityLabel="درگاه" id={config.id} name={config.displayName} isActive={config.isActive} />
+                    </div>
                   </div>
                   <BpButton type="button" variant="danger" fullWidth isPending={deleting === config.provider} onClick={() => void remove(config.provider)} className="mt-3 gap-2"><Trash2 size={14} />حذف درگاه</BpButton>
                 </article>
@@ -120,7 +126,7 @@ export function BlueprintPaymentGatewayManager({ mode, initialConfigs, appUrl, o
                 ids={configs.map((config) => config.id)}
                 actions={[]}
                 beforeSelectAll={<AdminColumnSettingsButton />}
-                extraAction={<AdminGenericBulkEditButton entity="paymentGateways" entityLabel="درگاه" changeTypes={[{ value: "delete", label: "حذف درگاه‌های انتخاب‌شده", confirmation: { title: "حذف گروهی درگاه‌ها", description: "اطلاعات اتصال رمزنگاری‌شده درگاه‌های انتخاب‌شده حذف می‌شود و پرداخت از طریق آن‌ها دیگر ممکن نخواهد بود.", confirmLabel: "حذف درگاه‌ها" } }]} />}
+                extraAction={<AdminGenericBulkEditButton entity="paymentGateways" entityLabel="درگاه" changeTypes={[{ value: "active", label: "وضعیت", options: [{ value: "active:on", label: "فعال‌کردن" }, { value: "active:off", label: "غیرفعال‌کردن" }] }, { value: "delete", label: "حذف درگاه‌های انتخاب‌شده", confirmation: { title: "حذف گروهی درگاه‌ها", description: "اطلاعات اتصال رمزنگاری‌شده درگاه‌های انتخاب‌شده حذف می‌شود و پرداخت از طریق آن‌ها دیگر ممکن نخواهد بود.", confirmLabel: "حذف درگاه‌ها" } }]} />}
               >
                 <BpTable ariaLabel="فهرست درگاه‌های پرداخت" minWidth={680}>
                   <thead>
@@ -129,6 +135,7 @@ export function BlueprintPaymentGatewayManager({ mode, initialConfigs, appUrl, o
                       <AdminColumn id="gateway"><BpTh>درگاه</BpTh></AdminColumn>
                       <AdminColumn id="credential"><BpTh>شناسه اتصال</BpTh></AdminColumn>
                       <AdminColumn id="environment"><BpTh>محیط</BpTh></AdminColumn>
+                      <AdminColumn id="status"><BpTh>وضعیت</BpTh></AdminColumn>
                       <BpTh className="text-center">عملیات</BpTh>
                     </tr>
                   </thead>
@@ -146,8 +153,12 @@ export function BlueprintPaymentGatewayManager({ mode, initialConfigs, appUrl, o
                         </AdminColumn>
                         <AdminColumn id="credential"><BpTd className="bp-muted font-mono" dir="ltr">{config.credentialMasked}</BpTd></AdminColumn>
                         <AdminColumn id="environment"><BpTd><BpTag tone={config.isSandbox ? "warning" : "success"}>{config.isSandbox ? "آزمایشی" : "اصلی"}</BpTag></BpTd></AdminColumn>
+                        <AdminColumn id="status"><BpTd><BpTag tone={config.isActive ? "success" : "neutral"}>{config.isActive ? "فعال" : "غیرفعال"}</BpTag></BpTd></AdminColumn>
                         <BpTd className="text-center">
-                          <BpButton type="button" variant="ghost" className="bp-btn-danger-icon" isIconOnly size="sm" isPending={deleting === config.provider} aria-label={`حذف ${config.displayName}`} onClick={() => void remove(config.provider)}><Trash2 size={15} strokeWidth={1.5} /></BpButton>
+                          <div className="flex items-center justify-center gap-1">
+                            <AdminActiveToggle entity="paymentGateways" entityLabel="درگاه" id={config.id} name={config.displayName} isActive={config.isActive} />
+                            <BpButton type="button" variant="ghost" className="bp-btn-danger-icon" isIconOnly size="sm" isPending={deleting === config.provider} title="حذف" aria-label={`حذف ${config.displayName}`} onClick={() => void remove(config.provider)}><Trash2 size={15} strokeWidth={1.5} /></BpButton>
+                          </div>
                         </BpTd>
                       </tr>
                     ))}

@@ -85,7 +85,7 @@ export default async function AdminSettingSectionPage({ params }: Context) {
     }
     case "commerce": {
       const [settings, gateways] = await Promise.all([getCommerceSettings(), getPublicGatewayConfigs()]);
-      content = <BlueprintCommerceSettings initialSettings={settings} configuredGatewayCount={gateways.length} />;
+      content = <BlueprintCommerceSettings initialSettings={settings} configuredGatewayCount={gateways.filter((gateway) => gateway.isActive).length} />;
       break;
     }
     case "content": {

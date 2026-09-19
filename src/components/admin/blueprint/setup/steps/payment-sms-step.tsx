@@ -30,7 +30,7 @@ export function SetupPaymentSmsStep({ gateways, smsConfigs, appUrl, onSaved }: P
       <section className="bp-frame relative p-[16px]">
         <BpKicker>وضعیت این گام</BpKicker>
         <div className="mt-2 grid gap-1.5">
-          <StatusLine done={gateways.length > 0} label="حداقل یک درگاه پرداخت ثبت شده" />
+          <StatusLine done={gateways.some((gateway) => gateway.isActive)} label="حداقل یک درگاه پرداخت فعال" />
           <StatusLine done={smsConfigs.length > 0} label="حداقل یک ارائه‌دهنده پیامک ثبت شده" />
         </div>
       </section>

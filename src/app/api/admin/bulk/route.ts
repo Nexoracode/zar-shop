@@ -137,8 +137,9 @@ export async function PATCH(request: Request) {
     if (action !== "status:APPROVED" && action !== "status:REJECTED") return NextResponse.json({ message: "عملیات مرجوعی معتبر نیست." }, { status: 422 });
     updated = await bulkUpdateReturnStatus(uniqueIds, action.slice(7) as "APPROVED" | "REJECTED", actor.id);
   } else if (entity === "paymentGateways") {
-    if (action !== "delete") return NextResponse.json({ message: "عملیات درگاه پرداخت معتبر نیست." }, { status: 422 });
-    updated = (await db.paymentGatewayConfig.deleteMany({ where: { id: { in: uniqueIds } } })).count;
+    if (action === "active:on" || action === "active:off") updated = (await db.paymentGatewayConfig.updateMany({ where: { id: { in: uniqueIds } }, data: { isActive: action === "active:on" } })).count;
+    else if (action === "delete") updated = (await db.paymentGatewayConfig.deleteMany({ where: { id: { in: uniqueIds } } })).count;
+    else return NextResponse.json({ message: "عملیات درگاه پرداخت معتبر نیست." }, { status: 422 });
   } else if (entity === "smsProviders") {
     if (action !== "delete") return NextResponse.json({ message: "عملیات ارائه‌دهنده پیامک معتبر نیست." }, { status: 422 });
     updated = (await db.smsProviderConfig.deleteMany({ where: { id: { in: uniqueIds } } })).count;
