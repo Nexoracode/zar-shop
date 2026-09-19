@@ -7,7 +7,9 @@ export type BpDonutSlice = { label: string; value: number; color: string };
 
 const SIZE = 160;
 const THICKNESS = 22;
-const RADIUS = (SIZE - THICKNESS) / 2;
+/** How far a hovered slice swells (see `.bp-donut-slice[data-hot]` in the CSS) — the ring keeps this much room inside the viewBox so nothing is cut. */
+const SWELL = 7;
+const RADIUS = (SIZE - THICKNESS) / 2 - SWELL;
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
 
 /** Each slice's dash length plus where it starts, built with a running total carried through

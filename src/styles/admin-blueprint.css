@@ -302,8 +302,10 @@
 .bp-line-dot { transition: scale 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), background-color 0.15s ease; }
 .bp-line-dot[data-hot="true"] { scale: 1.7; background: var(--bp-accent); }
 /* Donut: the hovered slice thickens, the others step back; its legend row lights up with it. */
-.bp-donut-slice { cursor: pointer; transition: stroke-width 0.22s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.18s ease, filter 0.18s ease; }
-.bp-donut-slice[data-hot="true"] { stroke-width: 29px; filter: brightness(1.12); }
+/* No `filter` here on purpose: on an SVG shape a CSS filter is clipped to the shape's fill box, which
+   cuts off the outer half of a thick stroke as soon as it swells. */
+.bp-donut-slice { cursor: pointer; transition: stroke-width 0.22s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.18s ease; }
+.bp-donut-slice[data-hot="true"] { stroke-width: 29px; }
 .bp-donut-slice[data-dim="true"] { opacity: 0.4; }
 .bp-donut-row { transition: background-color 0.15s ease; }
 .bp-donut-row[data-hot="true"] { background: var(--bp-row-hover); }
