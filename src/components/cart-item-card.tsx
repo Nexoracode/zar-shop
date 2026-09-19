@@ -4,7 +4,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 import { Button } from "@heroui/react";
-import { AlertTriangle, Minus, Plus, ShieldCheck, Trash2, Truck } from "lucide-react";
+import { Minus, Plus, ShieldCheck, Trash2, Truck } from "lucide-react";
+import { InlineAlert } from "@/components/inline-alert";
 import { formatMoney } from "@/lib/format";
 import { CartFlashSalePill } from "@/components/cart-flash-sale-pill";
 import { useCartLine } from "@/components/cart-live";
@@ -53,7 +54,7 @@ export function CartItemCard({ id, name, slug, imageUrl, imageAlt, maxQuantity, 
       <div className="min-w-0">
         {!unavailable && discountEndsAt && originalUnitPrice !== null && originalUnitPrice > unitPrice && <div className="mb-3"><CartFlashSalePill endsAt={discountEndsAt} /></div>}
         <Link href={`/products/${slug}`} className="line-clamp-2 text-sm font-bold leading-7 text-[var(--foreground)] sm:text-base">{name}</Link>
-        {unavailable && <p className="m-0 mt-2 flex items-start gap-2 text-xs font-bold leading-6 text-[var(--danger)]"><AlertTriangle size={16} className="mt-0.5 shrink-0" />این گزینه دیگر قابل خرید نیست؛ لطفاً آن را از سبد حذف کنید.</p>}
+        {unavailable && <InlineAlert compact status="danger" className="mt-3">این گزینه دیگر قابل خرید نیست؛ لطفاً آن را از سبد حذف کنید.</InlineAlert>}
         <div className="mt-3 grid gap-2 text-xs text-[var(--muted)]">
           {optionSummary.map((option) => <span key={option}>{option}</span>)}
           {weight && <span>وزن: {weight}</span>}

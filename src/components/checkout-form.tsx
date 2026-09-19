@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Button, Card, Spinner, toast } from "@heroui/react";
-import { BadgePercent, Check, ChevronLeft, CircleAlert, CreditCard, MapPin, PartyPopper, Ticket, Wallet, X } from "lucide-react";
+import { BadgePercent, Check, ChevronLeft, CreditCard, MapPin, PartyPopper, Ticket, Wallet, X } from "lucide-react";
 import { InlineAlert } from "@/components/inline-alert";
 import { formatMoney } from "@/lib/format";
 import type { CommerceSettings } from "@/modules/settings/commerce-settings";
@@ -190,7 +190,7 @@ export function CheckoutForm({ settings, paymentMethods, currency, itemCount, it
                 <div className="min-w-0 flex-1"><TextField name="couponCode" aria-label="کد تخفیف" value={couponCode} onChange={(event) => { setCouponCode(event.target.value.toUpperCase()); setCouponMessage(""); setCouponError(""); }} dir="rtl" maxLength={promotionFieldLimits.code} reserveMessage={false} controlClassName="text-right uppercase placeholder:text-right" placeholder="کد تخفیف را وارد کنید" /></div>
                 <Button type="button" variant="secondary" isPending={checkingCoupon} isDisabled={!couponCode.trim()} onPress={() => void refreshQuote()} className="min-h-11 shrink-0 rounded-lg px-5 font-bold">اعمال</Button>
               </div>
-              {couponError && <p className="mb-0 mt-3 flex items-start gap-2 text-xs font-bold leading-5 text-[var(--danger)]"><CircleAlert size={15} className="mt-0.5 shrink-0" />{couponError}</p>}
+              {couponError && <InlineAlert compact status="danger" className="mt-3">{couponError}</InlineAlert>}
             </div>
           )}
         </Card>

@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import { createContext, useCallback, useContext, useEffect, useState, useTransition } from "react";
 import type { ReactNode } from "react";
 import { Button, toast } from "@heroui/react";
-import { AlertTriangle, ChevronLeft, Info, PartyPopper } from "lucide-react";
+import { ChevronLeft, Info, PartyPopper } from "lucide-react";
+import { InlineAlert } from "@/components/inline-alert";
 import { Card } from "@/components/hero";
 import { formatMoney } from "@/lib/format";
 import { FreeShippingProgress } from "@/components/free-shipping-progress";
@@ -143,12 +144,12 @@ export function CartLiveSummary({ currency, freeShippingThreshold }: { currency:
         {payableItemCount === 0 ? (
           <>
             <Button isDisabled fullWidth className="mt-5 min-h-12 rounded-lg text-sm font-bold">ادامه فرایند خرید<ChevronLeft size={18} /></Button>
-            <p className="m-0 mt-3 flex items-start gap-2 text-xs font-bold leading-6 text-[var(--danger)]"><AlertTriangle size={16} className="mt-1 shrink-0" />کالای قابل خریدی در سبد نیست؛ موارد ناموجود را حذف کنید.</p>
+            <InlineAlert compact status="danger" className="mt-3">کالای قابل خریدی در سبد نیست؛ موارد ناموجود را حذف کنید.</InlineAlert>
           </>
         ) : (
           <Link href="/checkout" className="mt-5 flex min-h-12 w-full items-center justify-center gap-2 rounded-lg bg-[var(--brand-primary)] px-5 text-sm font-bold text-[var(--brand-primary-foreground)] shadow-sm transition hover:brightness-110">ادامه فرایند خرید<ChevronLeft size={18} /></Link>
         )}
-        {blockedCount > 0 && payableItemCount > 0 && <p className="m-0 mt-3 flex items-start gap-2 text-xs font-bold leading-6 text-[var(--danger)]"><AlertTriangle size={16} className="mt-1 shrink-0" />کالاهای ناموجود در این سفارش حساب نمی‌شوند.</p>}
+        {blockedCount > 0 && payableItemCount > 0 && <InlineAlert compact status="warning" className="mt-3">کالاهای ناموجود در این سفارش حساب نمی‌شوند.</InlineAlert>}
         <p className="m-0 mt-4 flex items-start gap-2 text-xs leading-6 text-[var(--muted)]"><Info size={16} className="mt-1 shrink-0" />مبلغ سفارش هنوز پرداخت نشده است و موجودی کالاها تا زمان ثبت سفارش برای شما رزرو نمی‌شود.</p>
       </Card>
       {freeShippingThreshold !== null && <FreeShippingProgress merchandiseTotal={merchandiseTotal} threshold={freeShippingThreshold} currency={currency} />}
