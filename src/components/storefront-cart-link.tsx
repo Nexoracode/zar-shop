@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button, Popover, Spinner, toast } from "@heroui/react";
 import { Minus, Plus, ShoppingCart, Trash2 } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { formatMoney } from "@/lib/format";
 
 export const CART_UPDATED_EVENT = "storefront:cart-updated";
@@ -32,12 +32,23 @@ type CartSummary = {
   currency: "IRR" | "IRT";
 };
 
-export function notifyCartUpdated(count: number) {
-  window.dispatchEvent(new CustomEvent(CART_UPDATED_EVENT, { detail: { count } }));
+/** `origin` names the cart link that raised the event, so it can skip resetting state it already updated. */
+export function notifyCartUpdated(count: number, origin?: string) {
+  window.dispatchEvent(new CustomEvent(CART_UPDATED_EVENT, { detail: { count, origin } }));
+}
+
+/** The summary as it will look once `itemId` changes to `quantity` (removed when undefined), shown before the server confirms. */
+function withItemQuantity(summary: CartSummary, itemId: string, quantity: number | undefined): CartSummary {
+  const items = summary.items.flatMap((item) => item.id !== itemId ? [item] : quantity === undefined ? [] : [{ ...item, quantity }]);
+  if (summary.total === null || summary.subtotal === null) return { ...summary, items };
+  const subtotal = items.reduce((sum, item) => sum + (item.originalUnitPrice ?? item.unitPrice) * item.quantity, 0);
+  const total = items.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
+  return { ...summary, items, subtotal, total, discount: subtotal - total };
 }
 
 export function StorefrontCartLink({ initialCount, className = "", iconSize = 21, mobile = false, showLabel = false }: { initialCount: number; className?: string; iconSize?: number; mobile?: boolean; showLabel?: boolean }) {
   const router = useRouter();
+  const instanceId = useId();
   const [count, setCount] = useState(initialCount);
   const [isOpen, setIsOpen] = useState(false);
   const [summary, setSummary] = useState<CartSummary | null>(null);
@@ -47,38 +58,44 @@ export function StorefrontCartLink({ initialCount, className = "", iconSize = 21
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const triggerAreaRef = useRef<HTMLDivElement | null>(null);
   const contentRef = useRef<HTMLDivElement | null>(null);
+  // Bumped by every load and every edit, so a response that was overtaken by a newer click never overwrites it.
+  const loadSequence = useRef(0);
 
   const loadSummary = useCallback(async () => {
     if (count === 0) {
       setSummary(null);
       return;
     }
+    const sequence = ++loadSequence.current;
     setLoading(true);
     try {
       const response = await fetch("/api/cart", { cache: "no-store" });
       const result = await response.json().catch(() => null) as CartSummary | { message?: string } | null;
       if (!response.ok) throw new Error(result && "message" in result ? result.message : "خلاصه سبد خرید دریافت نشد.");
+      if (sequence !== loadSequence.current) return;
       const nextSummary = result as CartSummary;
       setSummary(nextSummary);
       setCount(nextSummary.itemCount);
     } catch (error) {
+      if (sequence !== loadSequence.current) return;
       toast.danger("خلاصه سبد خرید دریافت نشد", { description: error instanceof Error ? error.message : "خطای ناشناخته" });
     } finally {
-      setLoading(false);
+      if (sequence === loadSequence.current) setLoading(false);
     }
   }, [count]);
 
   useEffect(() => {
     const update = (event: Event) => {
-      const next = (event as CustomEvent<{ count?: number }>).detail?.count;
-      if (typeof next === "number") {
-        setCount(Math.max(0, next));
+      const detail = (event as CustomEvent<{ count?: number; origin?: string }>).detail;
+      if (detail?.origin === instanceId) return;
+      if (typeof detail?.count === "number") {
+        setCount(Math.max(0, detail.count));
         setSummary(null);
       }
     };
     window.addEventListener(CART_UPDATED_EVENT, update);
     return () => window.removeEventListener(CART_UPDATED_EVENT, update);
-  }, []);
+  }, [instanceId]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -151,8 +168,13 @@ export function StorefrontCartLink({ initialCount, className = "", iconSize = 21
   }
 
   async function mutate(item: CartSummaryItem, nextQuantity: number | undefined, action: "increase" | "decrease") {
+    const previousSummary = summary;
+    loadSequence.current += 1;
+    setLoading(false);
     setPendingItemId(item.id);
     setPendingItemAction(action);
+    // Show the new quantity and totals right away; the server response below only confirms or rolls it back.
+    if (previousSummary) setSummary(withItemQuantity(previousSummary, item.id, nextQuantity));
     try {
       const response = await fetch(nextQuantity === undefined ? `/api/cart?itemId=${encodeURIComponent(item.id)}` : "/api/cart", {
         method: nextQuantity === undefined ? "DELETE" : "PATCH",
@@ -163,12 +185,15 @@ export function StorefrontCartLink({ initialCount, className = "", iconSize = 21
       if (!response.ok) throw new Error(result?.message ?? "به‌روزرسانی سبد خرید انجام نشد.");
       const nextCount = result?.itemCount ?? 0;
       setCount(nextCount);
-      notifyCartUpdated(nextCount);
-      setSummary(null);
-      if (nextCount > 0) await loadSummary();
-      else closePopover();
+      notifyCartUpdated(nextCount, instanceId);
+      if (nextCount === 0) closePopover();
       router.refresh();
+      setPendingItemId(null);
+      setPendingItemAction(null);
+      // Reconcile with the server in the background; the list keeps showing the optimistic state meanwhile.
+      if (nextCount > 0) void loadSummary();
     } catch (error) {
+      setSummary(previousSummary);
       toast.danger("سبد خرید به‌روزرسانی نشد", { description: error instanceof Error ? error.message : "خطای ناشناخته" });
     } finally {
       setPendingItemId(null);

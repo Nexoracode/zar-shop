@@ -5,7 +5,7 @@ import { createContext, useContext, useState } from "react";
 import type { Dispatch, ReactNode, SetStateAction } from "react";
 import { useRouter } from "next/navigation";
 import { Button, Modal, Spinner, toast } from "@heroui/react";
-import { Check, FileText, PackageCheck, Plus, Ruler, ShieldCheck, ShoppingCart, X } from "lucide-react";
+import { Check, FileText, Minus, PackageCheck, Plus, Ruler, ShieldCheck, ShoppingCart, Trash2, X } from "lucide-react";
 import { formatMoney } from "@/lib/format";
 import { notifyCartUpdated } from "@/components/storefront-cart-link";
 
@@ -15,6 +15,10 @@ type ProductOption = { id: string; name: string; kind: "COLOR" | "SELECT"; value
 /** One buyable combination. `selection` is keyed by type name, the same key `options[].id` carries. */
 type PurchasableVariant = { selection: Record<string, string>; price: number | null; originalPrice: number | null; stock: number; available: boolean };
 
+/** A cart line this page added, keyed by the picked combination — each combination is its own line. */
+type CartLine = { id: string; quantity: number };
+type CartLines = Record<string, CartLine>;
+
 type PurchaseState = {
   selectedOptions: Record<string, string>;
   setSelectedOptions: Dispatch<SetStateAction<Record<string, string>>>;
@@ -22,6 +26,8 @@ type PurchaseState = {
   setMessage: Dispatch<SetStateAction<string>>;
   loading: boolean;
   setLoading: Dispatch<SetStateAction<boolean>>;
+  cartLines: CartLines;
+  setCartLines: Dispatch<SetStateAction<CartLines>>;
 };
 
 const ProductPurchaseContext = createContext<PurchaseState | null>(null);
@@ -30,8 +36,13 @@ export function ProductPurchaseProvider({ children, initialSelectedOptions = {} 
   const [selectedOptions, setSelectedOptions] = useState(initialSelectedOptions);
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
+  const [cartLines, setCartLines] = useState<CartLines>({});
 
-  return <ProductPurchaseContext.Provider value={{ selectedOptions, setSelectedOptions, message, setMessage, loading, setLoading }}>{children}</ProductPurchaseContext.Provider>;
+  return <ProductPurchaseContext.Provider value={{ selectedOptions, setSelectedOptions, message, setMessage, loading, setLoading, cartLines, setCartLines }}>{children}</ProductPurchaseContext.Provider>;
+}
+
+function cartLineKey(selectedOptions: Record<string, string>) {
+  return JSON.stringify(Object.entries(selectedOptions).sort(([a], [b]) => a.localeCompare(b)));
 }
 
 /** The combination currently picked, shared with every `AddToCart` instance on the page — so a
@@ -56,7 +67,12 @@ export function AddToCart({ productId, options = [], variants = [], optionGuide,
   const selectedOptions = sharedState?.selectedOptions ?? localSelectedOptions;
   const setSelectedOptions = sharedState?.setSelectedOptions ?? setLocalSelectedOptions;
   const [guideOpen, setGuideOpen] = useState(false);
-  const [addedQuantity, setAddedQuantity] = useState(0);
+  const [localCartLines, setLocalCartLines] = useState<CartLines>({});
+  const [pendingAction, setPendingAction] = useState<"increase" | "decrease" | null>(null);
+  const cartLines = sharedState?.cartLines ?? localCartLines;
+  const setCartLines = sharedState?.setCartLines ?? setLocalCartLines;
+  const lineKey = cartLineKey(selectedOptions);
+  const cartLine = cartLines[lineKey] ?? null;
   /*
    * The combination the current choices name. Price and stock belong to the pairing, not to a
    * value — black is neither cheap nor plentiful on its own, only black in a given size is.
@@ -79,7 +95,9 @@ export function AddToCart({ productId, options = [], variants = [], optionGuide,
       toast.danger("انتخاب تنوع محصول کامل نیست", { description: `لطفاً برای «${missingOption.name}» یکی از مقادیر موجود را انتخاب کنید.`, timeout: 4500 });
       return;
     }
+    const key = lineKey;
     setLoading(true);
+    setPendingAction("increase");
     setMsg("");
     const r = await fetch("/api/cart", {
       method: "POST",
@@ -88,12 +106,44 @@ export function AddToCart({ productId, options = [], variants = [], optionGuide,
     });
     const data = await r.json();
     setLoading(false);
+    setPendingAction(null);
     if (r.status === 401) { router.push("/login?next=/cart"); return; }
     setMsg(data.message ?? "");
     if (r.ok) {
       if (typeof data.itemCount === "number") notifyCartUpdated(data.itemCount);
-      if (typeof data.quantity === "number") setAddedQuantity(data.quantity);
+      if (typeof data.quantity === "number" && typeof data.cartItemId === "string") setCartLines((current) => ({ ...current, [key]: { id: data.cartItemId, quantity: data.quantity } }));
       router.refresh();
+    }
+  }
+
+  /** Steps the line down by one, or removes it at one. A plain decrement shows at once and rolls back on
+   * failure; removal waits for the server so the card never claims the item is gone while it is still there. */
+  async function decrease() {
+    if (!cartLine) return;
+    const key = lineKey;
+    const line = cartLine;
+    const removing = line.quantity <= 1;
+    setLoading(true);
+    setPendingAction("decrease");
+    setMsg("");
+    if (!removing) setCartLines((current) => ({ ...current, [key]: { ...line, quantity: line.quantity - 1 } }));
+    try {
+      const response = await fetch(removing ? `/api/cart?itemId=${encodeURIComponent(line.id)}` : "/api/cart", {
+        method: removing ? "DELETE" : "PATCH",
+        headers: removing ? undefined : { "Content-Type": "application/json" },
+        body: removing ? undefined : JSON.stringify({ cartItemId: line.id, quantity: line.quantity - 1 }),
+      });
+      const result = await response.json().catch(() => null);
+      if (!response.ok) throw new Error(result?.message ?? "به‌روزرسانی سبد خرید انجام نشد.");
+      if (removing) setCartLines((current) => { const next = { ...current }; delete next[key]; return next; });
+      notifyCartUpdated(result.itemCount ?? 0);
+      router.refresh();
+    } catch (error) {
+      setCartLines((current) => ({ ...current, [key]: line }));
+      toast.danger("سبد خرید به‌روزرسانی نشد", { description: error instanceof Error ? error.message : "خطای ناشناخته" });
+    } finally {
+      setLoading(false);
+      setPendingAction(null);
     }
   }
 
@@ -114,7 +164,7 @@ export function AddToCart({ productId, options = [], variants = [], optionGuide,
       >
         {({ isPending }) => <>{isPending && <Spinner color="current" size="sm" />}{disabled ? disabledLabel : optionStockUnavailable ? "تنوع موجودی ندارد" : isPending ? "در حال افزودن..." : "افزودن به سبد"}</>}
       </Button>;
-  const addButton = addedQuantity > 0 ? <div className="grid gap-2"><div className="flex min-h-12 items-center overflow-hidden rounded-lg border border-[var(--brand-primary)] bg-[var(--surface)]"><Button type="button" isIconOnly variant="ghost" isPending={loading} aria-label="افزودن یک عدد دیگر" onPress={() => void add()} className="size-11 min-h-11 min-w-11 text-[var(--brand-primary)]"><Plus size={17} /></Button><span className="grid min-w-9 flex-1 place-items-center text-sm font-bold text-[var(--brand-primary)]">{addedQuantity.toLocaleString("fa-IR")}</span><span className="ml-3 flex items-center gap-1 text-xs font-bold text-[var(--success)]"><Check size={15} />در سبد شما</span></div><Link href="/cart" className="flex min-h-11 items-center justify-center gap-2 rounded-lg bg-[var(--brand-primary)] px-4 text-sm font-bold text-[var(--brand-primary-foreground)]"><ShoppingCart size={17} />مشاهده سبد خرید</Link></div> : primaryAddButton;
+  const addButton = cartLine ? <div className="grid gap-2"><div className="flex min-h-12 items-center overflow-hidden rounded-lg border border-[var(--brand-primary)] bg-[var(--surface)]"><Button type="button" isIconOnly variant="ghost" isPending={loading && pendingAction === "increase"} isDisabled={loading} aria-label="افزودن یک عدد دیگر" onPress={() => void add()} className="size-11 min-h-11 min-w-11 text-[var(--brand-primary)]"><Plus size={17} /></Button><span className="grid min-w-9 place-items-center text-sm font-bold text-[var(--brand-primary)]">{cartLine.quantity.toLocaleString("fa-IR")}</span><Button type="button" isIconOnly variant="ghost" isPending={loading && pendingAction === "decrease"} isDisabled={loading} aria-label={cartLine.quantity <= 1 ? "حذف از سبد خرید" : "کاهش یک عدد"} onPress={() => void decrease()} className="size-11 min-h-11 min-w-11 text-[var(--brand-primary)]">{cartLine.quantity <= 1 ? <Trash2 size={17} /> : <Minus size={17} />}</Button><span className="mr-auto ml-3 flex items-center gap-1 whitespace-nowrap text-xs font-bold text-[var(--success)]"><Check size={15} />در سبد شما</span></div><Link href="/cart" className="flex min-h-11 items-center justify-center gap-2 rounded-lg bg-[var(--brand-primary)] px-4 text-sm font-bold text-[var(--brand-primary-foreground)]"><ShoppingCart size={17} />مشاهده سبد خرید</Link></div> : primaryAddButton;
   const guideModal = optionGuide && <Modal.Backdrop isOpen={guideOpen} onOpenChange={setGuideOpen} variant="blur"><Modal.Container size="lg" placement="center"><Modal.Dialog aria-label="راهنمای انتخاب محصول" dir="rtl" className="mx-3 text-right max-h-[calc(100dvh-32px)] overflow-hidden bg-white"><Modal.Header className="flex-row items-center justify-between border-b border-slate-200 px-5 py-4"><div><Modal.Heading className="text-base font-bold text-slate-900">راهنمای انتخاب</Modal.Heading><p className="mt-1 text-xs text-slate-500">{optionGuide.title}</p></div><Modal.CloseTrigger aria-label="بستن راهنمای انتخاب" className="grid h-9 w-9 place-items-center rounded-lg text-slate-500 hover:bg-slate-100"><X size={18} /></Modal.CloseTrigger></Modal.Header><Modal.Body className="min-h-64 bg-slate-50 p-3 sm:p-5">{optionGuide.type === "IMAGE" ? <div className="relative min-h-[55vh] w-full overflow-hidden rounded-xl bg-white"><Image src={optionGuide.url} alt={optionGuide.title} fill sizes="90vw" className="object-contain" /></div> : <div className="grid gap-3"><iframe src={optionGuide.url} title={optionGuide.title} className="h-[65vh] w-full rounded-xl border border-slate-200 bg-white" /><a href={optionGuide.url} target="_blank" rel="noreferrer" className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-[var(--brand-accent)]/40 bg-white text-sm font-bold text-[var(--brand-accent)] transition-colors hover:border-[var(--brand-accent)] hover:text-[var(--brand-primary)]"><FileText size={16} />باز کردن فایل PDF در صفحه جدید</a></div>}</Modal.Body></Modal.Dialog></Modal.Container></Modal.Backdrop>;
 
   if (layout === "product-detail") return <>

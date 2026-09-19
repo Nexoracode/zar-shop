@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { Button, toast } from "@heroui/react";
 import { Minus, Plus, ShieldCheck, Trash2, Truck } from "lucide-react";
 import { formatMoney } from "@/lib/format";
@@ -28,10 +28,16 @@ type Props = {
 export function CartItemCard({ id, name, slug, imageUrl, imageAlt, quantity, maxQuantity, optionSummary, weight, unitPrice, originalUnitPrice, currency, preparationDays }: Props) {
   const router = useRouter();
   const [pendingAction, setPendingAction] = useState<"increase" | "decrease" | null>(null);
+  // The server page only re-renders after `router.refresh()` lands, which can take seconds. Until then the
+  // shown quantity follows the click (0 = removed); once the refresh settles the server value takes over again.
+  const [optimisticQuantity, setOptimisticQuantity] = useState<number | null>(null);
+  const [isRefreshing, startRefresh] = useTransition();
   const pending = pendingAction !== null;
+  const shownQuantity = optimisticQuantity !== null && (pending || isRefreshing) ? optimisticQuantity : quantity;
 
   async function mutate(nextQuantity: number | undefined, action: "increase" | "decrease") {
     setPendingAction(action);
+    setOptimisticQuantity(nextQuantity ?? 0);
     try {
       const response = await fetch(nextQuantity === undefined ? `/api/cart?itemId=${encodeURIComponent(id)}` : "/api/cart", {
         method: nextQuantity === undefined ? "DELETE" : "PATCH",
@@ -41,13 +47,16 @@ export function CartItemCard({ id, name, slug, imageUrl, imageAlt, quantity, max
       const result = await response.json().catch(() => null);
       if (!response.ok) throw new Error(result?.message ?? "به‌روزرسانی سبد خرید انجام نشد.");
       notifyCartUpdated(result.itemCount ?? 0);
-      router.refresh();
+      startRefresh(() => router.refresh());
     } catch (error) {
+      setOptimisticQuantity(null);
       toast.danger("سبد خرید به‌روزرسانی نشد", { description: error instanceof Error ? error.message : "خطای ناشناخته" });
     } finally {
       setPendingAction(null);
     }
   }
+
+  if (shownQuantity === 0) return null;
 
   return (
     <article className="grid gap-4 border-b border-[var(--border)] p-4 last:border-b-0 sm:grid-cols-[150px_minmax(0,1fr)] sm:p-5">
@@ -64,14 +73,14 @@ export function CartItemCard({ id, name, slug, imageUrl, imageAlt, quantity, max
         </div>
         <div className="mt-5 flex flex-wrap items-end justify-between gap-4">
           <div className="inline-flex h-11 items-center rounded-lg border border-[var(--border)] bg-[var(--surface)] shadow-sm">
-            <Button type="button" isIconOnly variant="ghost" size="sm" isPending={pendingAction === "increase"} isDisabled={pending || quantity >= maxQuantity} aria-label={`افزایش تعداد ${name}`} onPress={() => void mutate(quantity + 1, "increase")} className="size-10 min-h-10 min-w-10 text-[var(--brand-primary)]"><Plus size={16} /></Button>
-            <span className="grid min-w-8 place-items-center text-sm font-bold text-[var(--brand-primary)]">{quantity.toLocaleString("fa-IR")}</span>
-            <Button type="button" isIconOnly variant="ghost" size="sm" isPending={pendingAction === "decrease"} isDisabled={pending} aria-label={quantity === 1 ? `حذف ${name}` : `کاهش تعداد ${name}`} onPress={() => void mutate(quantity === 1 ? undefined : quantity - 1, "decrease")} className="size-10 min-h-10 min-w-10 text-[var(--brand-primary)]">{quantity === 1 ? <Trash2 size={16} /> : <Minus size={16} />}</Button>
+            <Button type="button" isIconOnly variant="ghost" size="sm" isPending={pendingAction === "increase"} isDisabled={pending || shownQuantity >= maxQuantity} aria-label={`افزایش تعداد ${name}`} onPress={() => void mutate(shownQuantity + 1, "increase")} className="size-10 min-h-10 min-w-10 text-[var(--brand-primary)]"><Plus size={16} /></Button>
+            <span className="grid min-w-8 place-items-center text-sm font-bold text-[var(--brand-primary)]">{shownQuantity.toLocaleString("fa-IR")}</span>
+            <Button type="button" isIconOnly variant="ghost" size="sm" isPending={pendingAction === "decrease"} isDisabled={pending} aria-label={shownQuantity === 1 ? `حذف ${name}` : `کاهش تعداد ${name}`} onPress={() => void mutate(shownQuantity === 1 ? undefined : shownQuantity - 1, "decrease")} className="size-10 min-h-10 min-w-10 text-[var(--brand-primary)]">{shownQuantity === 1 ?<Trash2 size={16} /> : <Minus size={16} />}</Button>
           </div>
           <div className="text-left">
-            {originalUnitPrice !== null && originalUnitPrice > unitPrice && <span className="mb-1 block text-xs text-[var(--muted)] line-through">{formatMoney(originalUnitPrice * quantity, currency)}</span>}
-            <strong className="block text-base font-bold text-[var(--foreground)]">{formatMoney(unitPrice * quantity, currency)}</strong>
-            {quantity > 1 && <small className="mt-1 block text-[var(--muted)]">هر عدد {formatMoney(unitPrice, currency)}</small>}
+            {originalUnitPrice !== null && originalUnitPrice > unitPrice && <span className="mb-1 block text-xs text-[var(--muted)] line-through">{formatMoney(originalUnitPrice * shownQuantity, currency)}</span>}
+            <strong className="block text-base font-bold text-[var(--foreground)]">{formatMoney(unitPrice * shownQuantity, currency)}</strong>
+            {shownQuantity > 1 && <small className="mt-1 block text-[var(--muted)]">هر عدد {formatMoney(unitPrice, currency)}</small>}
           </div>
         </div>
       </div>

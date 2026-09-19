@@ -59,12 +59,12 @@ export async function POST(request: Request) {
     const limitMessage = quantityLimitMessage(nextQuantity, product, orderSettings.maxOrderItemQuantity);
     if (limitMessage) return NextResponse.json({ message: limitMessage }, { status: 422 });
     if (!isVariantSnapshotValid(product.variants, selection.selectionKey, nextQuantity)) return NextResponse.json({ message: "موجودی تنوع انتخاب‌شده برای این تعداد کافی نیست." }, { status: 409 });
-    await db.cartItem.upsert({
+    const cartItem = await db.cartItem.upsert({
       where: { cartId_productId_selectionKey: { cartId: cart.id, productId: product.id, selectionKey: selection.selectionKey } },
       create: { cartId: cart.id, productId: product.id, selectionKey: selection.selectionKey, selectedOptions: selection.snapshot ?? undefined, quantity: input.quantity },
       update: { quantity: nextQuantity },
     });
-    return NextResponse.json({ message: "به سبد خرید اضافه شد.", itemCount: await getCartProductCount(user.id, settings.industry), quantity: nextQuantity });
+    return NextResponse.json({ message: "به سبد خرید اضافه شد.", itemCount: await getCartProductCount(user.id, settings.industry), quantity: nextQuantity, cartItemId: cartItem.id });
   } catch (error) { return apiError(error); }
 }
 
