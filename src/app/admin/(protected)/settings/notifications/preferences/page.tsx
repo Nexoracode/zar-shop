@@ -14,7 +14,7 @@ export default async function CommunicationPreferencesPage() {
   await requirePermission("settings:manage");
   const settings = await getCommunicationSettings();
   return <>
-    <AdminPageHeader eyebrow="پیامک و اعلان" title="تنظیمات پیامک و اعلان" description="کانال‌ها، رویدادها و متن پیام‌های سیستمی را مشخص کنید." backHref="/admin/settings/notifications" backLabel="بازگشت به پیامک و اعلان" />
+    <AdminPageHeader eyebrow="پیامک و اعلان" title="تنظیمات پیامک و اعلان" description="کانال‌های پیامک و اعلان و شماره‌ی مدیر را مشخص کنید." backHref="/admin/settings/notifications" backLabel="بازگشت به پیامک و اعلان" />
     <BlueprintCommunicationSettingsForm initialSettings={settings} />
   </>;
 }

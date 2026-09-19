@@ -10,8 +10,10 @@ test("every event has an on/off column, a default template and at least the stor
     assert.ok(settings.templates[id].length > 0, `${id} template`);
   }
   assert.equal(smsEvents.length, smsEventIds.length);
-  assert.ok(smsEventInfo("orderShipped").variables.includes("trackingNumber"));
-  assert.ok(!smsEventInfo("orderCreated").variables.includes("trackingNumber"));
+  const shipped: readonly string[] = smsEventInfo("orderShipped").variables;
+  const created: readonly string[] = smsEventInfo("orderCreated").variables;
+  assert.ok(shipped.includes("trackingNumber"));
+  assert.ok(!created.includes("trackingNumber"));
 });
 
 test("text templates fill known tokens and leave unknown ones as written", () => {
@@ -51,4 +53,7 @@ test("the settings patch accepts one form's slice and rejects a bad one", () => 
   assert.equal(communicationSettingsPatchSchema.safeParse({ orderProcessingSms: true, templates: { orderProcessing: "سفارش آماده می‌شود" } }).success, true);
   assert.equal(communicationSettingsPatchSchema.safeParse({ templates: { orderProcessing: "x".repeat(501) } }).success, false);
   assert.equal(communicationSettingsPatchSchema.safeParse({ smsEnabled: "yes" }).success, false);
+  assert.equal(communicationSettingsPatchSchema.safeParse({ adminPhone: "۰۹۱۲۳۴۵۶۷۸۹" }).data?.adminPhone, "09123456789", "Persian digits are normalized");
+  assert.equal(communicationSettingsPatchSchema.safeParse({ adminPhone: null }).success, true);
+  assert.equal(communicationSettingsPatchSchema.safeParse({ adminPhone: "12345" }).success, false);
 });

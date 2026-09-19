@@ -1,6 +1,7 @@
 import { z } from "zod";
 import type { Prisma } from "@generated/prisma/client";
 import { db } from "@/lib/db";
+import { normalizeNumericValue } from "@/lib/persian-numbers";
 import { communicationFieldLimits } from "@/modules/communications/limits";
 import { smsEventRulesSchema } from "@/modules/communications/sms-events";
 
@@ -34,7 +35,9 @@ export type CommunicationSettingsData = z.infer<typeof communicationSettingsSche
  * a full-object save from one page would otherwise overwrite what the other just stored.
  */
 export const communicationSettingsPatchSchema = z.object({
-  smsEnabled: z.boolean(), inAppEnabled: z.boolean(), adminPhone: z.string().trim().max(communicationFieldLimits.adminPhone).nullable(),
+  smsEnabled: z.boolean(), inAppEnabled: z.boolean(),
+  // The number that receives admin alerts must be a real mobile: it is normalized (Persian digits) and checked here, not just in the form.
+  adminPhone: z.string().trim().transform((value) => normalizeNumericValue(value, false)).pipe(z.string().regex(/^09\d{9}$/, "شماره موبایل باید به‌صورت 09xxxxxxxxx باشد.")).nullable(),
   orderCreatedSms: z.boolean(), paymentSuccessSms: z.boolean(), orderProcessingSms: z.boolean(), orderShippedSms: z.boolean(), orderDeliveredSms: z.boolean(), orderExpiredSms: z.boolean(), orderCancelledSms: z.boolean(), orderRefundedSms: z.boolean(), lowStockAdminSms: z.boolean(),
   templates: z.object({
     orderCreated: templateText, paymentSuccess: templateText, orderProcessing: templateText, orderShipped: templateText, orderDelivered: templateText, orderExpired: templateText, orderCancelled: templateText, orderRefunded: templateText, lowStockAdmin: templateText,
