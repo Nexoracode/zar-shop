@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { BadgePercent, ChevronLeft, PackageOpen, ShieldCheck, ShoppingCart, Truck } from "lucide-react";
+import { ChevronLeft, PackageOpen, ShoppingCart } from "lucide-react";
 import { Card, ChipLabel, ChipRoot } from "@/components/hero";
 import { InlineAlert } from "@/components/inline-alert";
 import { getCurrentUser } from "@/modules/auth/session";
@@ -7,6 +7,8 @@ import { db } from "@/lib/db";
 import { getGoldPriceForDisplay } from "@/modules/gold/gold-price.service";
 import { formatMoney } from "@/lib/format";
 import { CartItemCard } from "@/components/cart-item-card";
+import { CartLiveCount, CartLiveHeadline, CartLiveProvider, CartLiveSummary } from "@/components/cart-live";
+import type { CartLiveLine } from "@/components/cart-live";
 import type { Prisma } from "@generated/prisma/client";
 import { optionEntries } from "@/modules/products/options";
 import { lineUnitPrice } from "@/modules/products/line-pricing";
@@ -44,20 +46,17 @@ export default async function CartPage() {
     return { item, selectedWeight, pricing };
   });
   const priceUnavailable = pricedItems.some((line) => line.pricing === null);
-  const subtotal = priceUnavailable ? null : pricedItems.reduce((sum, line) => sum + line.pricing!.originalPrice * line.item.quantity, 0);
-  const merchandiseTotal = priceUnavailable ? null : pricedItems.reduce((sum, line) => sum + line.pricing!.finalPrice * line.item.quantity, 0);
-  const productDiscount = subtotal === null || merchandiseTotal === null ? null : subtotal - merchandiseTotal;
-  const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
-  const preparationDays = items.length ? Math.max(...items.map((item) => item.product.preparationDays)) : 0;
-  const remainingForFreeShipping = merchandiseTotal !== null && commerceSettings.freeShippingThreshold !== null ? Math.max(0, commerceSettings.freeShippingThreshold - merchandiseTotal) : null;
+  // Totals, counts and the free-shipping hint are worked out on the client from these lines, so they follow quantity clicks at once.
+  const liveLines: CartLiveLine[] = pricedItems.map(({ item, pricing }) => ({ id: item.id, quantity: item.quantity, finalPrice: pricing?.finalPrice ?? null, originalPrice: pricing?.originalPrice ?? null, preparationDays: item.product.preparationDays }));
 
   return (
     <main className="min-h-dvh bg-[var(--background)] px-4 pb-[calc(66px+env(safe-area-inset-bottom)+16px)] pt-8 sm:px-6 sm:pt-12 lg:pb-12">
+      <CartLiveProvider lines={liveLines}>
       <div className="mx-auto w-full max-w-[1280px]">
         <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
           <div>
             <h1 className="m-0 text-xl font-bold sm:text-2xl">سبد خرید شما</h1>
-            <p className="mb-0 mt-2 text-sm text-[var(--muted)]">{itemCount ? `${itemCount.toLocaleString("fa-IR")} کالا در سبد خرید` : "هنوز کالایی انتخاب نکرده‌اید"}</p>
+            <p className="mb-0 mt-2 text-sm text-[var(--muted)]"><CartLiveHeadline /></p>
           </div>
           {hasGoldItems && <ChipRoot variant="soft" className="bg-[var(--surface-secondary)] text-[var(--brand-accent)]"><ChipLabel>نرخ مبنا: {rate === null ? "موقتاً در دسترس نیست" : formatMoney(rate.toString(), settings.currency)}</ChipLabel></ChipRoot>}
         </div>
@@ -71,27 +70,19 @@ export default async function CartPage() {
         ) : (
           <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_340px] xl:grid-cols-[minmax(0,1fr)_380px]">
             <section className="overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-sm" aria-label="اقلام سبد خرید">
-              <div className="flex items-center gap-3 border-b border-[var(--border)] px-5 py-4"><ShoppingCart size={20} className="text-[var(--brand-primary)]" /><strong className="text-sm">کالاهای سبد خرید</strong><span className="text-xs text-[var(--muted)]">({itemCount.toLocaleString("fa-IR")} کالا)</span></div>
+              <div className="flex items-center gap-3 border-b border-[var(--border)] px-5 py-4"><ShoppingCart size={20} className="text-[var(--brand-primary)]" /><strong className="text-sm">کالاهای سبد خرید</strong><span className="text-xs text-[var(--muted)]">(<CartLiveCount /> کالا)</span></div>
               {pricedItems.map(({ item, selectedWeight, pricing }) => {
                 const product = item.product;
                 const cover = product.media[0]?.media;
-                return pricing ? <CartItemCard key={item.id} id={item.id} name={product.name} slug={product.slug} imageUrl={cover?.type === "IMAGE" ? cover.url : null} imageAlt={cover?.alt ?? product.name} quantity={item.quantity} maxQuantity={Math.min(orderSettings.maxOrderItemQuantity, product.stock)} optionSummary={optionEntries(item.selectedOptions).map(([name, value]) => `${name}: ${value}`)} weight={product.storeIndustry === "GOLD" ? `${Number(selectedWeight).toLocaleString("fa-IR", { maximumFractionDigits: 3 })} گرم` : null} unitPrice={pricing.finalPrice} originalUnitPrice={pricing.isActive ? pricing.originalPrice : null} currency={settings.currency} preparationDays={product.preparationDays} /> : <InlineAlert key={item.id} status="warning" className="m-4">قیمت «{product.name}» موقتاً قابل محاسبه نیست.</InlineAlert>;
+                return pricing ? <CartItemCard key={item.id} id={item.id} name={product.name} slug={product.slug} imageUrl={cover?.type === "IMAGE" ? cover.url : null} imageAlt={cover?.alt ?? product.name} maxQuantity={Math.min(orderSettings.maxOrderItemQuantity, product.stock)} optionSummary={optionEntries(item.selectedOptions).map(([name, value]) => `${name}: ${value}`)} weight={product.storeIndustry === "GOLD" ? `${Number(selectedWeight).toLocaleString("fa-IR", { maximumFractionDigits: 3 })} گرم` : null} unitPrice={pricing.finalPrice} originalUnitPrice={pricing.isActive ? pricing.originalPrice : null} currency={settings.currency} preparationDays={product.preparationDays} /> : <InlineAlert key={item.id} status="warning" className="m-4">قیمت «{product.name}» موقتاً قابل محاسبه نیست.</InlineAlert>;
               })}
             </section>
 
-            {priceUnavailable || subtotal === null || merchandiseTotal === null ? <InlineAlert status="warning">نرخ لحظه‌ای طلا موقتاً در دسترس نیست. سبد خرید شما حفظ شده است.</InlineAlert> : <aside className="grid gap-4 lg:sticky lg:top-24">
-              <Card variant="secondary" className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 shadow-sm">
-                <dl className="m-0 grid gap-4 text-sm"><div className="flex items-center justify-between gap-4 text-[var(--muted)]"><dt>قیمت کالاها ({itemCount.toLocaleString("fa-IR")})</dt><dd>{formatMoney(subtotal, settings.currency)}</dd></div>{productDiscount! > 0 && <div className="flex items-center justify-between gap-4 font-bold text-[var(--danger)]"><dt>تخفیف کالاها</dt><dd>{formatMoney(productDiscount!, settings.currency)}</dd></div>}<div className="flex items-center justify-between gap-4 border-t border-[var(--border)] pt-4 font-bold"><dt>جمع سبد خرید</dt><dd>{formatMoney(merchandiseTotal, settings.currency)}</dd></div></dl>
-                <p className="mb-0 mt-4 text-[11px] leading-6 text-[var(--muted)]">هزینه ارسال بر اساس نشانی و تخفیف‌های فعال در مرحله بعد محاسبه می‌شود.</p>
-                <Link href="/checkout" className="mt-5 flex min-h-12 w-full items-center justify-center gap-2 rounded-lg bg-[var(--brand-primary)] px-5 text-sm font-bold text-[var(--brand-primary-foreground)] shadow-sm transition hover:brightness-110">ادامه فرایند خرید<ChevronLeft size={18} /></Link>
-                {productDiscount! > 0 && <div className="mt-4 flex items-center gap-2 text-[11px] font-bold text-[var(--danger)]"><BadgePercent size={16} />{formatMoney(productDiscount!, settings.currency)} سود شما از تخفیف کالاها</div>}
-                <div className="mt-3 flex items-center gap-2 text-[11px] text-[var(--muted)]"><ShieldCheck size={16} />پرداخت امن و حفاظت از اطلاعات خرید</div>
-              </Card>
-              {remainingForFreeShipping !== null && <Card variant="secondary" className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 text-xs leading-6 text-[var(--muted)]"><span className="flex items-center gap-2 font-bold text-[var(--foreground)]"><Truck size={17} />ارسال سفارش</span><p className="mb-0 mt-2">{remainingForFreeShipping === 0 ? "سفارش شما مشمول ارسال رایگان است." : `${formatMoney(remainingForFreeShipping, settings.currency)} تا ارسال رایگان فاصله دارید.`}</p><p className="mb-0 mt-1">آماده‌سازی تا {preparationDays.toLocaleString("fa-IR")} روز کاری</p></Card>}
-            </aside>}
+            {priceUnavailable ? <InlineAlert status="warning">نرخ لحظه‌ای طلا موقتاً در دسترس نیست. سبد خرید شما حفظ شده است.</InlineAlert> : <CartLiveSummary currency={settings.currency} freeShippingThreshold={commerceSettings.freeShippingThreshold} />}
           </div>
         )}
       </div>
+      </CartLiveProvider>
     </main>
   );
 }

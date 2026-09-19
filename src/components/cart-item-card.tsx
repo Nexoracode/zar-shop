@@ -2,12 +2,11 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
-import { Button, toast } from "@heroui/react";
+import { useState } from "react";
+import { Button } from "@heroui/react";
 import { Minus, Plus, ShieldCheck, Trash2, Truck } from "lucide-react";
 import { formatMoney } from "@/lib/format";
-import { notifyCartUpdated } from "@/components/storefront-cart-link";
+import { useCartLine } from "@/components/cart-live";
 
 type Props = {
   id: string;
@@ -15,7 +14,6 @@ type Props = {
   slug: string;
   imageUrl: string | null;
   imageAlt: string;
-  quantity: number;
   maxQuantity: number;
   optionSummary: string[];
   weight: string | null;
@@ -25,32 +23,16 @@ type Props = {
   preparationDays: number;
 };
 
-export function CartItemCard({ id, name, slug, imageUrl, imageAlt, quantity, maxQuantity, optionSummary, weight, unitPrice, originalUnitPrice, currency, preparationDays }: Props) {
-  const router = useRouter();
+export function CartItemCard({ id, name, slug, imageUrl, imageAlt, maxQuantity, optionSummary, weight, unitPrice, originalUnitPrice, currency, preparationDays }: Props) {
+  // The quantity comes from the page-level provider, which shows a click at once and keeps the totals in step (0 = removed).
+  const { quantity: shownQuantity, mutate: mutateLine } = useCartLine(id);
   const [pendingAction, setPendingAction] = useState<"increase" | "decrease" | null>(null);
-  // The server page only re-renders after `router.refresh()` lands, which can take seconds. Until then the
-  // shown quantity follows the click (0 = removed); once the refresh settles the server value takes over again.
-  const [optimisticQuantity, setOptimisticQuantity] = useState<number | null>(null);
-  const [isRefreshing, startRefresh] = useTransition();
   const pending = pendingAction !== null;
-  const shownQuantity = optimisticQuantity !== null && (pending || isRefreshing) ? optimisticQuantity : quantity;
 
   async function mutate(nextQuantity: number | undefined, action: "increase" | "decrease") {
     setPendingAction(action);
-    setOptimisticQuantity(nextQuantity ?? 0);
     try {
-      const response = await fetch(nextQuantity === undefined ? `/api/cart?itemId=${encodeURIComponent(id)}` : "/api/cart", {
-        method: nextQuantity === undefined ? "DELETE" : "PATCH",
-        headers: nextQuantity === undefined ? undefined : { "Content-Type": "application/json" },
-        body: nextQuantity === undefined ? undefined : JSON.stringify({ cartItemId: id, quantity: nextQuantity }),
-      });
-      const result = await response.json().catch(() => null);
-      if (!response.ok) throw new Error(result?.message ?? "به‌روزرسانی سبد خرید انجام نشد.");
-      notifyCartUpdated(result.itemCount ?? 0);
-      startRefresh(() => router.refresh());
-    } catch (error) {
-      setOptimisticQuantity(null);
-      toast.danger("سبد خرید به‌روزرسانی نشد", { description: error instanceof Error ? error.message : "خطای ناشناخته" });
+      await mutateLine(nextQuantity);
     } finally {
       setPendingAction(null);
     }
