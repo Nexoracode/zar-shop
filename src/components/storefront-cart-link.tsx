@@ -32,9 +32,16 @@ type CartSummary = {
   currency: "IRR" | "IRT";
 };
 
-/** `origin` names the cart link that raised the event, so it can skip resetting state it already updated. */
-export function notifyCartUpdated(count: number, origin?: string) {
-  window.dispatchEvent(new CustomEvent(CART_UPDATED_EVENT, { detail: { count, origin } }));
+/** One line's new quantity, or null once it has been removed. */
+export type CartLineChange = { itemId: string; quantity: number | null };
+export type CartUpdatedDetail = { count?: number; origin?: string; change?: CartLineChange };
+
+/**
+ * `origin` names whoever raised the event, so it can skip reacting to its own update; `change` says which
+ * line moved, so listeners that show single lines (the product page's purchase card) can follow without refetching.
+ */
+export function notifyCartUpdated(count: number, origin?: string, change?: CartLineChange) {
+  window.dispatchEvent(new CustomEvent<CartUpdatedDetail>(CART_UPDATED_EVENT, { detail: { count, origin, change } }));
 }
 
 /** The summary as it will look once `itemId` changes to `quantity` (removed when undefined), shown before the server confirms. */
@@ -86,7 +93,7 @@ export function StorefrontCartLink({ initialCount, className = "", iconSize = 21
 
   useEffect(() => {
     const update = (event: Event) => {
-      const detail = (event as CustomEvent<{ count?: number; origin?: string }>).detail;
+      const detail = (event as CustomEvent<CartUpdatedDetail>).detail;
       if (detail?.origin === instanceId) return;
       if (typeof detail?.count === "number") {
         setCount(Math.max(0, detail.count));
@@ -185,7 +192,7 @@ export function StorefrontCartLink({ initialCount, className = "", iconSize = 21
       if (!response.ok) throw new Error(result?.message ?? "به‌روزرسانی سبد خرید انجام نشد.");
       const nextCount = result?.itemCount ?? 0;
       setCount(nextCount);
-      notifyCartUpdated(nextCount, instanceId);
+      notifyCartUpdated(nextCount, instanceId, { itemId: item.id, quantity: nextQuantity ?? null });
       if (nextCount === 0) closePopover();
       router.refresh();
       setPendingItemId(null);

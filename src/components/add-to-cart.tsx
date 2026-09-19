@@ -1,13 +1,14 @@
 "use client";
 import Image from "next/image";
 import Link from "next/link";
-import { createContext, useContext, useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 import type { Dispatch, ReactNode, SetStateAction } from "react";
 import { useRouter } from "next/navigation";
 import { Button, Modal, Spinner, toast } from "@heroui/react";
 import { Check, FileText, Minus, PackageCheck, Plus, Ruler, ShieldCheck, ShoppingCart, Trash2, X } from "lucide-react";
 import { formatMoney } from "@/lib/format";
-import { notifyCartUpdated } from "@/components/storefront-cart-link";
+import { CART_UPDATED_EVENT, notifyCartUpdated } from "@/components/storefront-cart-link";
+import type { CartUpdatedDetail } from "@/components/storefront-cart-link";
 
 type OptionGuide = { url: string; type: "IMAGE" | "DOCUMENT"; title: string };
 type ProductOption = { id: string; name: string; kind: "COLOR" | "SELECT"; values: Array<{ value: string; stock: number; color: { name: string; hex: string } | null }> };
@@ -32,11 +33,34 @@ type PurchaseState = {
 
 const ProductPurchaseContext = createContext<PurchaseState | null>(null);
 
+/** Marks the cart events this page raises itself, which it must not treat as a change made elsewhere. */
+const PURCHASE_ORIGIN = "product-purchase";
+
 export function ProductPurchaseProvider({ children, initialSelectedOptions = {}, initialCartLines = [] }: { children: ReactNode; initialSelectedOptions?: Record<string, string>; /** Lines the visitor already had in the cart when the page rendered. */ initialCartLines?: Array<CartLine & { selection: Record<string, string> }> }) {
   const [selectedOptions, setSelectedOptions] = useState(initialSelectedOptions);
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const [cartLines, setCartLines] = useState<CartLines>(() => Object.fromEntries(initialCartLines.map((line) => [cartLineKey(line.selection), { id: line.id, quantity: line.quantity }])));
+
+  // A line changed somewhere else on the page — the header's cart preview — is followed here too, so this
+  // card never keeps claiming a quantity the cart no longer holds.
+  useEffect(() => {
+    const follow = (event: Event) => {
+      const detail = (event as CustomEvent<CartUpdatedDetail>).detail;
+      const change = detail?.change;
+      if (!change || detail.origin === PURCHASE_ORIGIN) return;
+      setCartLines((current) => {
+        const entry = Object.entries(current).find(([, line]) => line.id === change.itemId);
+        if (!entry) return current;
+        const next = { ...current };
+        if (change.quantity === null) delete next[entry[0]];
+        else next[entry[0]] = { ...entry[1], quantity: change.quantity };
+        return next;
+      });
+    };
+    window.addEventListener(CART_UPDATED_EVENT, follow);
+    return () => window.removeEventListener(CART_UPDATED_EVENT, follow);
+  }, []);
 
   return <ProductPurchaseContext.Provider value={{ selectedOptions, setSelectedOptions, message, setMessage, loading, setLoading, cartLines, setCartLines }}>{children}</ProductPurchaseContext.Provider>;
 }
@@ -110,7 +134,7 @@ export function AddToCart({ productId, options = [], variants = [], optionGuide,
     if (r.status === 401) { router.push("/login?next=/cart"); return; }
     setMsg(data.message ?? "");
     if (r.ok) {
-      if (typeof data.itemCount === "number") notifyCartUpdated(data.itemCount);
+      if (typeof data.itemCount === "number") notifyCartUpdated(data.itemCount, PURCHASE_ORIGIN);
       if (typeof data.quantity === "number" && typeof data.cartItemId === "string") setCartLines((current) => ({ ...current, [key]: { id: data.cartItemId, quantity: data.quantity } }));
       router.refresh();
     }
@@ -136,7 +160,7 @@ export function AddToCart({ productId, options = [], variants = [], optionGuide,
       const result = await response.json().catch(() => null);
       if (!response.ok) throw new Error(result?.message ?? "به‌روزرسانی سبد خرید انجام نشد.");
       if (removing) setCartLines((current) => { const next = { ...current }; delete next[key]; return next; });
-      notifyCartUpdated(result.itemCount ?? 0);
+      notifyCartUpdated(result.itemCount ?? 0, PURCHASE_ORIGIN);
       router.refresh();
     } catch (error) {
       setCartLines((current) => ({ ...current, [key]: line }));
