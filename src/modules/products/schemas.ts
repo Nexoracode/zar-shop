@@ -120,7 +120,6 @@ export const productSchema = z.object({
   minOrderQuantity: z.coerce.number("حداقل سفارش را وارد کنید.").int("حداقل سفارش باید عدد صحیح باشد.").min(1, "حداقل سفارش نمی‌تواند کمتر از ۱ باشد.").max(1000, "حداقل سفارش بیش از حد مجاز است.").default(1),
   maxOrderQuantity: emptyToNull(z.coerce.number("حداکثر سفارش را وارد کنید.").int("حداکثر سفارش باید عدد صحیح باشد.").positive("حداکثر سفارش باید بیشتر از صفر باشد.").max(1000, "حداکثر سفارش بیش از حد مجاز است.")),
   status: z.enum(["DRAFT", "ACTIVE", "ARCHIVED"]).default("DRAFT"),
-  featured: z.boolean().default(false),
   mediaIds: z.array(z.string().cuid("رسانه انتخاب‌شده معتبر نیست.")).max(20, "حداکثر ۲۰ رسانه برای هر محصول مجاز است.").refine((ids) => new Set(ids).size === ids.length, "رسانه تکراری مجاز نیست.").default([]),
   optionTypes: z.array(productOptionTypeSchema)
     .max(5, "حداکثر ۵ نوع تنوع برای هر محصول مجاز است.")

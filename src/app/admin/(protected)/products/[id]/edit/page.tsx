@@ -66,7 +66,6 @@ export default async function EditProductPage({ params }: Context) {
     stock: product.stock,
     preparationDays: product.preparationDays,
     status: product.status,
-    featured: product.featured,
     attributes: parseProductAttributes(product.attributes),
     optionTypes: product.optionTypes.map((row) => ({ typeId: row.typeId, valueIds: row.values.map((entry) => entry.valueId) })),
     variants: product.variants.map((variant) => ({

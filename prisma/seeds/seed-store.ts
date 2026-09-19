@@ -211,7 +211,6 @@ async function createStore(db: PrismaClient, seed: DevelopmentStoreSeed) {
         discountEndsAt: hasDiscount ? new Date("2030-12-31T23:59:59.999Z") : null,
         stock: product.stock,
         preparationDays: 2,
-        featured: product.featured ?? false,
         attributes: product.attributes ?? [],
       },
     });

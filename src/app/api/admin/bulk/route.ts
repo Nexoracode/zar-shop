@@ -38,8 +38,6 @@ export async function PATCH(request: Request) {
       const status = action.slice(7) as ProductStatus;
       if (!productStatuses.has(status)) return NextResponse.json({ message: "وضعیت محصول معتبر نیست." }, { status: 422 });
       updated = (await db.product.updateMany({ where: { id: { in: uniqueIds } }, data: { status } })).count;
-    } else if (action === "featured:on" || action === "featured:off") {
-      updated = (await db.product.updateMany({ where: { id: { in: uniqueIds } }, data: { featured: action === "featured:on" } })).count;
     } else if (action.startsWith("category:")) {
       const categoryId = action.slice(9);
       if (categoryId !== "none" && !await db.category.findUnique({ where: { id: categoryId }, select: { id: true } })) return NextResponse.json({ message: "دسته‌بندی انتخاب‌شده پیدا نشد." }, { status: 404 });

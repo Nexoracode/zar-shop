@@ -44,7 +44,6 @@ export type DevelopmentProductSeed = {
   brandSlug: string;
   description: string;
   stock: number;
-  featured?: boolean;
   fixedPrice?: string;
   weightGrams?: string;
   makingFeePercent?: string;

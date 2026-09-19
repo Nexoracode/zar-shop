@@ -27,7 +27,7 @@ export async function GET(request: Request) {
       db.product.findMany({
         where: productWhere,
         select: { id: true, name: true, slug: true, category: { select: { name: true } } },
-        orderBy: [{ featured: "desc" }, { createdAt: "desc" }],
+        orderBy: { createdAt: "desc" },
         take: query ? 8 : 6,
       }),
       db.category.findMany({

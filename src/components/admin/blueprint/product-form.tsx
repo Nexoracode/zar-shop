@@ -32,7 +32,7 @@ export type EditableProduct = {
   id: string; sku: string; name: string; slug: string; description: string; categoryId: string; brandId: string | null; purity: number; weightGrams: number;
   storeIndustry: "GOLD" | "GENERAL"; makingFeeType: string; makingFeeValue: number; profitPercent: number; taxPercent: number; fixedPrice: number | null; stock: number; preparationDays: number;
   discountType: "PERCENT" | "FIXED" | null; discountValue: number | null; discountStartsAt: string | null; discountEndsAt: string | null;
-  status: "DRAFT" | "ACTIVE" | "ARCHIVED"; featured: boolean; media: MediaChoice[]; optionTypes: ProductTypeDraft[]; variants: VariantDraft[]; optionGuide: MediaChoice | null;
+  status: "DRAFT" | "ACTIVE" | "ARCHIVED"; media: MediaChoice[]; optionTypes: ProductTypeDraft[]; variants: VariantDraft[]; optionGuide: MediaChoice | null;
   shippingWeightGrams: number | null; packageLengthCm: number | null; packageWidthCm: number | null; packageHeightCm: number | null;
   minOrderQuantity: number; maxOrderQuantity: number | null;
   attributes: ProductAttributeValue[];
@@ -87,7 +87,6 @@ export function BlueprintProductForm({ storeIndustry, categories = [], brands = 
   const [brandId, setBrandId] = useState(product?.brandId ?? "");
   const [description, setDescription] = useState(product?.description ?? "");
   const [status, setStatus] = useState<"DRAFT" | "ACTIVE" | "ARCHIVED">(product?.status ?? "DRAFT");
-  const [featured, setFeatured] = useState(product?.featured ?? false);
   const [stock, setStock] = useState(String(product?.stock ?? 1));
   const [preparationDays, setPreparationDays] = useState(String(product?.preparationDays ?? 2));
   const [shippingWeightGrams, setShippingWeightGrams] = useState(product?.shippingWeightGrams != null ? String(product.shippingWeightGrams) : "");
@@ -179,7 +178,7 @@ export function BlueprintProductForm({ storeIndustry, categories = [], brands = 
       discountValue: discountEnabled && discountValue !== "" ? Number(discountValue) : null,
       discountStartsAt: discountEnabled && !discountIsSpecialSale ? discountStartsAt : null,
       discountEndsAt: discountEnabled && !discountIsSpecialSale ? discountEndsAt : null,
-      featured, mediaIds: selectedMedia.map((media) => media.id),
+      mediaIds: selectedMedia.map((media) => media.id),
       optionTypes, variants, optionGuideId: optionGuide?.id ?? null, attributes: currentAttributes,
     };
   }
@@ -468,9 +467,6 @@ export function BlueprintProductForm({ storeIndustry, categories = [], brands = 
             onChange={(value) => setStatus(value)}
             options={[{ value: "ACTIVE", label: "انتشار" }, { value: "DRAFT", label: "پیش‌نویس" }, { value: "ARCHIVED", label: "بایگانی" }]}
           />
-          <div className="mt-3">
-            <BpSwitch isSelected={featured} onChange={setFeatured}>نمایش در محصولات ویژه</BpSwitch>
-          </div>
           <div className="mt-4 grid gap-2">
             <div className="flex items-stretch">
               <BpButton type="submit" variant="primary" isPending={loading} className="bp-split-start flex-1">{loading && pendingLabel ? pendingLabel : (product ? "ذخیره و بازگشت" : "ثبت و بازگشت به لیست")}</BpButton>

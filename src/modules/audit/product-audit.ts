@@ -8,6 +8,8 @@ type ProductAuditSource = Record<string, unknown> & {
 
 export type AuditChange = { path: string; label: string; before: unknown; after: unknown };
 
+// `featured` stays labelled although the product flag is gone: audit entries written before it was
+// removed still carry that field, and should keep reading in Persian rather than as a raw key.
 const productFieldLabels: Record<string, string> = {
   sku: "کد محصول (SKU)", name: "نام محصول", slug: "نشانی محصول", description: "توضیحات",
   status: "وضعیت انتشار", storeIndustry: "نوع فروشگاه", category: "دسته‌بندی", categoryId: "شناسه دسته‌بندی",
@@ -23,7 +25,7 @@ const productFieldLabels: Record<string, string> = {
 const productFields = [
   "sku", "name", "slug", "description", "status", "storeIndustry", "categoryId", "category", "optionGuideId", "optionGuide",
   "purity", "weightGrams", "makingFeeType", "makingFeeValue", "profitPercent", "taxPercent", "fixedPrice", "discountType",
-  "discountValue", "discountStartsAt", "discountEndsAt", "stock", "preparationDays", "featured", "attributes", "media", "optionTypes", "variants",
+  "discountValue", "discountStartsAt", "discountEndsAt", "stock", "preparationDays", "attributes", "media", "optionTypes", "variants",
 ] as const;
 
 function normalize(value: unknown): unknown {

@@ -495,7 +495,6 @@ model Product {
   // Per-product order limits. The store-wide cap in order settings still applies on top.
   minOrderQuantity    Int                  @default(1)
   maxOrderQuantity    Int?
-  featured            Boolean              @default(false)
   attributes          Json?
   createdAt           DateTime             @default(now())
   updatedAt           DateTime             @updatedAt
@@ -516,7 +515,6 @@ model Product {
   @@index([categoryId, status])
   @@index([brandId, status])
   @@index([optionGuideId])
-  @@index([featured, status])
   @@index([discountEndsAt])
   // The storefront catalogue always filters on both at once (`status: ACTIVE`, `storeIndustry`).
   @@index([status, storeIndustry])
@@ -530,8 +528,8 @@ model Brand {
   slug      String      @unique @db.VarChar(120)
   logoId    String?
   isActive  Boolean     @default(true)
-  /// Shown in the homepage's "محبوب‌ترین برندها" carousel — same role `Product.featured` and
-  /// `Category.featured` already play for their own homepage sections.
+  /// Shown in the homepage's "محبوب‌ترین برندها" carousel — same role `Category.featured`
+  /// already plays for its own homepage section.
   featured  Boolean     @default(false)
   sortOrder Int         @default(0)
   createdAt DateTime    @default(now())

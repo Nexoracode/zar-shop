@@ -15,10 +15,9 @@ import { BpSelect, type BpSelectOption } from "@/components/admin/blueprint/ui/s
 import { BpNumberInput } from "@/components/admin/blueprint/ui/number-input";
 import { BpDateTimeField } from "@/components/admin/blueprint/ui/date-time-field";
 
-type ChangeType = "price" | "stock" | "discount" | "scheduledDiscount" | "removeDiscount" | "featured" | "status" | "category";
+type ChangeType = "price" | "stock" | "discount" | "scheduledDiscount" | "removeDiscount" | "status" | "category";
 type AdjustMethod = "set" | "increase" | "decrease";
 type DiscountUnit = "PERCENT" | "FIXED";
-type FeaturedAction = "add" | "remove";
 
 const typeOptions: { value: ChangeType; label: string }[] = [
   { value: "price", label: "تغییر قیمت" },
@@ -26,7 +25,6 @@ const typeOptions: { value: ChangeType; label: string }[] = [
   { value: "discount", label: "تغییر تخفیف" },
   { value: "scheduledDiscount", label: "تخفیف زمان‌بندی‌شده" },
   { value: "removeDiscount", label: "حذف تخفیف" },
-  { value: "featured", label: "محصول ویژه" },
   { value: "status", label: "تغییر وضعیت" },
   { value: "category", label: "تغییر دسته‌بندی" },
 ];
@@ -35,11 +33,6 @@ const typeOptions: { value: ChangeType; label: string }[] = [
 // move rows into, not phrasing a one-click action, so it reads consistently with the rest of the
 // admin rather than inventing new imperative copy just for this modal.
 const statusOptions: { value: ProductStatus; label: string }[] = Object.entries(productStatusLabels).map(([value, label]) => ({ value: value as ProductStatus, label }));
-
-const featuredActionOptions: { value: FeaturedAction; label: string }[] = [
-  { value: "add", label: "افزودن به محصولات ویژه" },
-  { value: "remove", label: "حذف از محصولات ویژه" },
-];
 
 const priceMethodOptions: { value: AdjustMethod; label: string }[] = [
   { value: "set", label: "قیمت جدید" },
@@ -73,7 +66,7 @@ function valueLabel(type: ChangeType, method: AdjustMethod, unit: DiscountUnit) 
  */
 function BulkEditFields({
   type, setType, method, setMethod, unit, setUnit, value, setValue, startsAt, setStartsAt, endsAt, setEndsAt,
-  featuredAction, setFeaturedAction, status, setStatus, categoryId, setCategoryId, categories, isDisabled,
+  status, setStatus, categoryId, setCategoryId, categories, isDisabled,
   valueError, onClearValueError, datesError, onClearDatesError,
 }: {
   type: ChangeType; setType: (value: ChangeType) => void;
@@ -82,7 +75,6 @@ function BulkEditFields({
   value: string; setValue: (value: string) => void;
   startsAt: string | null; setStartsAt: (value: string | null) => void;
   endsAt: string | null; setEndsAt: (value: string | null) => void;
-  featuredAction: FeaturedAction; setFeaturedAction: (value: FeaturedAction) => void;
   status: ProductStatus; setStatus: (value: ProductStatus) => void;
   categoryId: string | null; setCategoryId: (value: string | null) => void;
   categories: { id: string; name: string }[];
@@ -106,9 +98,6 @@ function BulkEditFields({
       {(type === "discount" || type === "scheduledDiscount") && (
         <BpSeg label="واحد تخفیف" fullWidth value={unit} onChange={setUnit} options={unitOptions as BpSegOption<DiscountUnit>[]} />
       )}
-      {type === "featured" && (
-        <BpSeg label="نوع تغییر ویژه" fullWidth value={featuredAction} onChange={setFeaturedAction} options={featuredActionOptions as BpSegOption<FeaturedAction>[]} />
-      )}
       {type === "status" && (
         <BpSeg label="وضعیت جدید" fullWidth value={status} onChange={setStatus} options={statusOptions as BpSegOption<ProductStatus>[]} />
       )}
@@ -120,7 +109,7 @@ function BulkEditFields({
           options={[{ value: "none", label: "بدون دسته‌بندی" }, ...categories.map((category) => ({ value: category.id, label: category.name }))] as BpSelectOption[]}
         />
       )}
-      {type === "removeDiscount" ? removeDiscountNote : (type === "featured" || type === "status" || type === "category") ? null : (
+      {type === "removeDiscount" ? removeDiscountNote : (type === "status" || type === "category") ? null : (
         <BpNumberInput name="value" label={label} value={value} onValueChange={(next) => { setValue(next); onClearValueError(); }} isPrice={isPriceLike} showWords={isPriceLike} error={valueError} disabled={isDisabled} />
       )}
       {type === "scheduledDiscount" && (
@@ -141,7 +130,6 @@ function ProductBulkEditModal({ open, ids, variantTypeNames, variantProductCount
   const [value, setValue] = useState("");
   const [startsAt, setStartsAt] = useState<string | null>(null);
   const [endsAt, setEndsAt] = useState<string | null>(null);
-  const [featuredAction, setFeaturedAction] = useState<FeaturedAction>("add");
   const [status, setStatus] = useState<ProductStatus>("ACTIVE");
   const [categoryId, setCategoryId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -153,7 +141,7 @@ function ProductBulkEditModal({ open, ids, variantTypeNames, variantProductCount
   const fieldsRef = useRef<HTMLDivElement>(null);
 
   function reset() {
-    setType("price"); setMethod("set"); setUnit("PERCENT"); setValue(""); setStartsAt(null); setEndsAt(null); setFeaturedAction("add");
+    setType("price"); setMethod("set"); setUnit("PERCENT"); setValue(""); setStartsAt(null); setEndsAt(null);
     setStatus("ACTIVE"); setCategoryId(null);
     setValueError(undefined); setDatesError(undefined); setFormError("");
   }
@@ -169,7 +157,7 @@ function ProductBulkEditModal({ open, ids, variantTypeNames, variantProductCount
     const amount = Number(value);
     let nextValueError: string | undefined;
     let nextDatesError: string | undefined;
-    if (type !== "removeDiscount" && type !== "featured" && type !== "status" && type !== "category") {
+    if (type !== "removeDiscount" && type !== "status" && type !== "category") {
       if (!value || !Number.isFinite(amount) || amount <= 0) nextValueError = "مقدار را وارد کنید.";
       else if ((type === "discount" || type === "scheduledDiscount") && unit === "PERCENT" && amount > 100) nextValueError = "درصد تخفیف نمی‌تواند بیشتر از ۱۰۰ باشد.";
     }
@@ -199,9 +187,8 @@ function ProductBulkEditModal({ open, ids, variantTypeNames, variantProductCount
           type,
           ...(type === "price" || type === "stock" ? { method } : {}),
           ...(type === "discount" || type === "scheduledDiscount" ? { unit } : {}),
-          ...(type !== "removeDiscount" && type !== "featured" && type !== "status" && type !== "category" ? { value: amount } : {}),
+          ...(type !== "removeDiscount" && type !== "status" && type !== "category" ? { value: amount } : {}),
           ...(type === "scheduledDiscount" ? { startsAt, endsAt } : {}),
-          ...(type === "featured" ? { featuredAction } : {}),
           ...(type === "status" ? { status } : {}),
           ...(type === "category" ? { categoryId } : {}),
         }),
@@ -244,7 +231,6 @@ function ProductBulkEditModal({ open, ids, variantTypeNames, variantProductCount
           value={value} setValue={setValue}
           startsAt={startsAt} setStartsAt={setStartsAt}
           endsAt={endsAt} setEndsAt={setEndsAt}
-          featuredAction={featuredAction} setFeaturedAction={setFeaturedAction}
           status={status} setStatus={setStatus}
           categoryId={categoryId} setCategoryId={setCategoryId}
           categories={categories}
@@ -255,10 +241,10 @@ function ProductBulkEditModal({ open, ids, variantTypeNames, variantProductCount
       </div>
       {/* Combinations carry their own price, stock and discount — the base product's fields stay
          untouched once it has any, so this note keeps the reach of the change from being a surprise.
-         Naming the actual variant types found in the selection beats a generic example. «ویژه»,
-         وضعیت and دسته‌بندی are all product-only and never reach a combination, so this would be
-         misleading for them. */}
-      {type !== "featured" && type !== "status" && type !== "category" && variantProductCount > 0 && (
+         Naming the actual variant types found in the selection beats a generic example. وضعیت and
+         دسته‌بندی are product-only and never reach a combination, so this would be misleading for
+         them. */}
+      {type !== "status" && type !== "category" && variantProductCount > 0 && (
         <p className="bp-muted m-0 text-[11px] leading-6 text-[var(--muted)]">
           {variantProductCount.toLocaleString("fa-IR")} محصول انتخاب‌شده تنوع ({variantTypeNames.join("، ")}) دارند؛ این تغییر روی همهٔ ترکیب‌های آن‌ها اعمال می‌شود.
         </p>

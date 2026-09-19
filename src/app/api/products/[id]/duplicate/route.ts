@@ -56,7 +56,6 @@ export async function POST(request: Request, context: Context) {
           packageHeightCm: original.packageHeightCm,
           minOrderQuantity: original.minOrderQuantity,
           maxOrderQuantity: original.maxOrderQuantity,
-          featured: original.featured,
           attributes: original.attributes ?? undefined,
           sku: `${sku}-${suffix}`,
           slug: `${slug}-${suffix}`,
