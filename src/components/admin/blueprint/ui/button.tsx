@@ -67,7 +67,8 @@ export function BpButton({ variant = "secondary", size, isIconOnly, fullWidth, c
   );
 }
 
-type BpLinkButtonProps = BpButtonStyleProps & { href: string; children: ReactNode; "aria-label"?: string };
+/** `title` is the tooltip text — the admin tooltip layer picks it up from any element inside `.bp-root`. */
+type BpLinkButtonProps = BpButtonStyleProps & { href: string; children: ReactNode; "aria-label"?: string; title?: string };
 
 export function BpLinkButton({ href, variant = "secondary", size, isIconOnly, fullWidth, className, children, ...rest }: BpLinkButtonProps) {
   return (
