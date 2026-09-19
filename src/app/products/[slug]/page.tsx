@@ -21,7 +21,7 @@ import { buildProductAttributeGroups } from "@/modules/products/attributes";
 import { calculateDiscountedPrice, isProductDiscountActive } from "@/modules/products/discount";
 import { productColorIds, productOptionTypeInclude, selectableTypes } from "@/modules/products/variant-selection";
 import { lineUnitPrice } from "@/modules/products/line-pricing";
-import { variantPricing } from "@/modules/products/variants";
+import { findVariant, variantPricing } from "@/modules/products/variants";
 import { calculateProductPrice } from "@/modules/products/pricing";
 import { sanitizeProductDescription } from "@/modules/products/rich-text";
 import { calculateSoldPercent, completedSaleOrderStatuses } from "@/modules/products/sales";
@@ -99,13 +99,19 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
 
   const pickerTypes = selectableTypes(product.optionTypes);
   const colorIds = productColorIds(product.optionTypes);
-  const [colors, soldAggregate, reviewData, initialFavorite, cartCount] = await Promise.all([
+  const [colors, soldAggregate, reviewData, initialFavorite, cartCount, cartItems] = await Promise.all([
     colorIds.length ? db.color.findMany({ where: { id: { in: colorIds }, isActive: true }, select: { id: true, name: true, hex: true } }) : Promise.resolve([]),
     db.orderItem.aggregate({ where: { productId: product.id, order: { status: { in: [...completedSaleOrderStatuses] } } }, _sum: { quantity: true } }),
     getStorefrontProductReviews(product.id, currentUser?.id ?? null),
     currentUser && !currentUser.isGuest ? db.productFavorite.findUnique({ where: { userId_productId: { userId: currentUser.id, productId: product.id } }, select: { id: true } }).then(Boolean) : Promise.resolve(false),
     currentUser ? getCartProductCount(currentUser.id, settings.industry) : Promise.resolve(0),
+    currentUser ? db.cartItem.findMany({ where: { productId: product.id, cart: { userId: currentUser.id } }, select: { id: true, selectionKey: true, quantity: true } }) : Promise.resolve([]),
   ]);
+  // What this visitor already has in the cart for this product, so the purchase card shows it after a reload.
+  const initialCartLines = cartItems.flatMap((item) => {
+    const selection = item.selectionKey === "" ? {} : (findVariant(product.variants, item.selectionKey)?.selection ?? null);
+    return selection === null ? [] : [{ id: item.id, quantity: item.quantity, selection: selection as Record<string, string> }];
+  });
   const soldPercent = calculateSoldPercent(soldAggregate._sum.quantity ?? 0, product.stock);
   const colorsById = new Map(colors.map((color) => [color.id, color]));
   const attributeGroups = buildProductAttributeGroups(product.category?.attributeSchema, product.attributes);
@@ -246,7 +252,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
     } : {}),
   };
 
-  return <ProductPurchaseProvider initialSelectedOptions={initialSelectedOptions}><ProductDetailTopBar productName={product.name} cartCount={cartCount} ticketHref={resolvedTicketHref} /><ProductActivityTracker productId={product.id} enabled={Boolean(currentUser && !currentUser.isGuest)} />{seo.enableProductSchema && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(productJsonLd) }} />}<main className="bg-white px-4 pb-16 pt-5 antialiased sm:px-6 lg:pb-24">
+  return <ProductPurchaseProvider initialSelectedOptions={initialSelectedOptions} initialCartLines={initialCartLines}><ProductDetailTopBar productName={product.name} cartCount={cartCount} ticketHref={resolvedTicketHref} /><ProductActivityTracker productId={product.id} enabled={Boolean(currentUser && !currentUser.isGuest)} />{seo.enableProductSchema && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(productJsonLd) }} />}<main className="bg-white px-4 pb-16 pt-5 antialiased sm:px-6 lg:pb-24">
     <div className="mx-auto w-full max-w-[1440px]">
       <nav className="mb-6 flex flex-wrap items-center gap-2 text-xs text-slate-500" aria-label="مسیر محصول">
         <Link href="/" className="transition hover:text-slate-900">خانه</Link><span>/</span><Link href="/products" className="transition hover:text-slate-900">محصولات</Link>{product.category && <><span>/</span><Link href={`/products?category=${encodeURIComponent(product.category.slug)}`} className="transition hover:text-slate-900">{product.category.name}</Link></>}

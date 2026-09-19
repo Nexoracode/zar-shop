@@ -32,11 +32,11 @@ type PurchaseState = {
 
 const ProductPurchaseContext = createContext<PurchaseState | null>(null);
 
-export function ProductPurchaseProvider({ children, initialSelectedOptions = {} }: { children: ReactNode; initialSelectedOptions?: Record<string, string> }) {
+export function ProductPurchaseProvider({ children, initialSelectedOptions = {}, initialCartLines = [] }: { children: ReactNode; initialSelectedOptions?: Record<string, string>; /** Lines the visitor already had in the cart when the page rendered. */ initialCartLines?: Array<CartLine & { selection: Record<string, string> }> }) {
   const [selectedOptions, setSelectedOptions] = useState(initialSelectedOptions);
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
-  const [cartLines, setCartLines] = useState<CartLines>({});
+  const [cartLines, setCartLines] = useState<CartLines>(() => Object.fromEntries(initialCartLines.map((line) => [cartLineKey(line.selection), { id: line.id, quantity: line.quantity }])));
 
   return <ProductPurchaseContext.Provider value={{ selectedOptions, setSelectedOptions, message, setMessage, loading, setLoading, cartLines, setCartLines }}>{children}</ProductPurchaseContext.Provider>;
 }
