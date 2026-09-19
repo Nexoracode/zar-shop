@@ -70,7 +70,7 @@ export default async function CartPage() {
             <div><span className="mx-auto grid size-24 place-items-center rounded-full bg-[var(--surface-secondary)] text-[var(--muted)]"><PackageOpen size={42} strokeWidth={1.4} /></span><h2 className="mb-0 mt-6 text-lg font-bold">سبد خرید شما خالی است</h2><p className="mx-auto mb-0 mt-2 max-w-md text-sm leading-7 text-[var(--muted)]">می‌توانید برای مشاهده محصولات و انتخاب کالای موردنظر به فروشگاه برگردید.</p><Link href="/products" className="mt-6 inline-flex min-h-11 items-center gap-2 rounded-lg bg-[var(--brand-primary)] px-6 text-sm font-bold text-[var(--brand-primary-foreground)]">مشاهده محصولات<ChevronLeft size={17} /></Link></div>
           </Card>
         ) : (
-          <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_340px] xl:grid-cols-[minmax(0,1fr)_380px]">
+          <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_400px] xl:grid-cols-[minmax(0,1fr)_460px]">
             <section className="overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-sm" aria-label="اقلام سبد خرید">
               <div className="flex items-center gap-3 border-b border-[var(--border)] px-5 py-4"><ShoppingCart size={20} className="text-[var(--brand-primary)]" /><strong className="text-sm">کالاهای سبد خرید</strong><span className="text-xs text-[var(--muted)]">(<CartLiveCount /> کالا)</span></div>
               {pricedItems.map(({ item, selectedWeight, pricing, unavailable }) => {
