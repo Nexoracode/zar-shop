@@ -352,7 +352,7 @@ export function BlueprintProductForm({ storeIndustry, categories = [], brands = 
 
         <Panel title="ارسال و بسته‌بندی" description="ابعاد و وزن بسته آماده ارسال است، نه وزن خود کالا؛ برای محاسبه هزینه ارسال استفاده می‌شود.">
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <BpNumberInput name="shippingWeightGrams" label="وزن بسته (گرم)" value={shippingWeightGrams} error={errors.shippingWeightGrams} onValueChange={(next) => { setShippingWeightGrams(next); clearError("shippingWeightGrams"); }} />
+            <BpNumberInput name="shippingWeightGrams" label="وزن بسته (گرم)" value={shippingWeightGrams} error={errors.shippingWeightGrams} hint="اگر خالی بماند، «وزن پیش‌فرض بسته» از تنظیمات ارسال استفاده می‌شود." onValueChange={(next) => { setShippingWeightGrams(next); clearError("shippingWeightGrams"); }} />
             <BpNumberInput name="packageLengthCm" allowDecimal label="طول (سانتی‌متر)" value={packageLengthCm} error={errors.packageLengthCm} onValueChange={(next) => { setPackageLengthCm(next); clearError("packageLengthCm"); }} />
             <BpNumberInput name="packageWidthCm" allowDecimal label="عرض (سانتی‌متر)" value={packageWidthCm} error={errors.packageWidthCm} onValueChange={(next) => { setPackageWidthCm(next); clearError("packageWidthCm"); }} />
             <BpNumberInput name="packageHeightCm" allowDecimal label="ارتفاع (سانتی‌متر)" value={packageHeightCm} error={errors.packageHeightCm} onValueChange={(next) => { setPackageHeightCm(next); clearError("packageHeightCm"); }} />

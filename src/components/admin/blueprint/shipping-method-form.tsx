@@ -163,7 +163,7 @@ export function BlueprintShippingMethodForm({ provinces, method, onSaved }: { pr
         title="جدول نرخ"
         description={source === "TAPIN"
           ? "این ردیف‌ها نرخ پشتیبان هستند و وقتی سرویس تاپین در دسترس نباشد به‌جای آن استفاده می‌شوند."
-          : "هزینه هر بسته بر اساس استان مقصد و سقف وزن. ردیف بدون استان برای همه مقصدها به‌کار می‌رود."}
+          : "هزینه هر بسته بر اساس استان مقصد و سقف وزن. ردیف بدون استان برای همه مقصدها به‌کار می‌رود. سبدی که از بالاترین سقف وزن سنگین‌تر باشد به چند بسته تقسیم می‌شود و هزینه هر بسته جمع زده می‌شود."}
         action={<BpButton type="button" size="sm" className="gap-1.5" onClick={() => setZones((current) => [...current, { provinceId: null, maxWeightGrams: 1000, price: 0 }])}><Plus size={14} />افزودن ردیف نرخ</BpButton>}
       >
         {errors.zones && (
