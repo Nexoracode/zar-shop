@@ -320,11 +320,6 @@
 .bp-donut-slice[data-dim="true"] { opacity: 0.4; }
 .bp-donut-row { transition: background-color 0.15s ease; }
 .bp-donut-row[data-hot="true"] { background: var(--bp-row-hover); }
-/* Ranked lists: the row under the pointer gets a thicker, brighter bar. */
-.bp-bar-list-row .bp-bar-track { transition: height 0.2s ease; }
-.bp-bar-list-row .bp-bar-fill { transition: filter 0.2s ease; }
-.bp-bar-list-row:hover .bp-bar-track { height: 9px; }
-.bp-bar-list-row:hover .bp-bar-fill { filter: brightness(1.15); }
 /* The card that names the hovered column: heading, a rule, then one coloured row per series. It
    glides from column to column (left/top transition) and scales in when first opened. */
 .bp-chart-tip {
