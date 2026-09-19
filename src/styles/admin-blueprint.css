@@ -276,7 +276,50 @@
 }
 
 /* — dashboard charts — plain CSS shapes, so their corners stay put at any width — */
-.bp-bar { display: block; min-height: 2px; border-radius: 3px 3px 0 0; transition: height 0.3s ease; }
+.bp-bar {
+  display: block;
+  min-height: 2px;
+  border-radius: 3px 3px 0 0;
+  transform-origin: 50% 100%;
+  transition: height 0.3s ease, transform 0.24s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.2s ease;
+}
+/* The hovered column's bars swell forward from their base and brighten. */
+.bp-bar[data-hot="true"] { transform: scale(1.14, 1.025); filter: brightness(1.2) saturate(1.1); }
+/* A soft band behind the whole hovered column, from floor to ceiling. */
+.bp-bar-band {
+  position: absolute;
+  inset: 0 -2px;
+  border-radius: var(--bp-radius-sm);
+  background: color-mix(in srgb, var(--bp-text) 6%, transparent);
+  opacity: 0;
+  transition: opacity 0.16s ease;
+  pointer-events: none;
+}
+.bp-bar-band[data-on="true"] { opacity: 1; }
+/* The card that names the hovered column: heading, a rule, then one coloured row per series. It
+   glides from column to column (left/top transition) and scales in when first opened. */
+.bp-chart-tip {
+  position: absolute;
+  z-index: 5;
+  min-width: 156px;
+  padding: 9px 12px;
+  background: var(--bp-card);
+  color: var(--bp-text);
+  border: 1px solid var(--bp-divider);
+  border-radius: var(--bp-radius);
+  box-shadow: var(--bp-shadow-lg);
+  font-size: 12px;
+  line-height: 1.8;
+  pointer-events: none;
+  transition: left 0.14s ease, top 0.14s ease;
+  animation: bp-chart-tip-in 0.16s cubic-bezier(0.34, 1.4, 0.64, 1);
+}
+@keyframes bp-chart-tip-in { from { opacity: 0; transform: scale(0.92) translateY(4px); } }
+.bp-chart-tip-head, .bp-chart-tip-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.bp-chart-tip-muted { color: var(--bp-muted); }
+.bp-chart-tip-key { display: inline-flex; align-items: center; gap: 7px; }
+.bp-chart-tip-dot { display: block; width: 8px; height: 8px; flex: none; border-radius: 50%; }
+.bp-chart-tip-rule { height: 1px; margin: 5px 0 6px; background: var(--bp-divider); }
 .bp-bar-track { height: 6px; overflow: hidden; border-radius: 3px; background: var(--bp-divider); }
 .bp-bar-fill { display: block; height: 100%; border-radius: 3px; }
 /* — tooltip — one bubble for every `title` / `data-bp-tip` in the panel (see tooltip-layer.tsx).
@@ -346,6 +389,8 @@
 @media (prefers-reduced-motion: reduce) {
   .bp-live-dot::after { animation: none; }
   .bp-bar { transition: none; }
+  .bp-bar[data-hot="true"] { transform: none; }
+  .bp-chart-tip { transition: none; animation: none; }
 }
 
 /* — forms — */
