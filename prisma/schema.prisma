@@ -1122,7 +1122,14 @@ model CommunicationSetting {
   orderShippedSms   Boolean  @default(true)
   orderExpiredSms   Boolean  @default(false)
   lowStockAdminSms  Boolean  @default(false)
+  // The four order stages that arrived with per-event patterns; the columns above predate them.
+  orderProcessingSms Boolean @default(false)
+  orderDeliveredSms  Boolean @default(false)
+  orderCancelledSms  Boolean @default(false)
+  orderRefundedSms   Boolean @default(false)
   templates         Json?
+  /// Per event: send as plain text or through a registered Faraz pattern, and which pattern variable gets which value.
+  eventRules        Json?
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 }

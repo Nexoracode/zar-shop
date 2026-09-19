@@ -1,11 +1,12 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
+import Link from "next/link";
 import { toast } from "@heroui/react";
-import { Bell, MessageSquareText } from "lucide-react";
+import { Bell, ChevronLeft, MessageSquareText } from "lucide-react";
 import type { CommunicationSettingsData } from "@/modules/communications/communication-settings";
 import { communicationFieldLimits } from "@/modules/communications/limits";
-import { BpButton, BpCheckbox, BpInput, BpKicker, BpTextarea } from "./ui";
+import { BpButton, BpCheckbox, BpInput, BpKicker } from "./ui";
 
 function OptionCheckbox({ title, isSelected, onChange }: { title: string; isSelected: boolean; onChange: (value: boolean) => void }) {
   return (
@@ -15,25 +16,18 @@ function OptionCheckbox({ title, isSelected, onChange }: { title: string; isSele
   );
 }
 
-const events = [
-  ["orderCreatedSms", "ثبت سفارش", "orderCreated"],
-  ["paymentSuccessSms", "پرداخت موفق", "paymentSuccess"],
-  ["orderShippedSms", "ارسال سفارش", "orderShipped"],
-  ["orderExpiredSms", "انقضای سفارش", "orderExpired"],
-  ["lowStockAdminSms", "هشدار موجودی کم مدیر", "lowStockAdmin"],
-] as const;
-
+/** The channel switches only. What each event sends, and how, lives on the events page. */
 export function BlueprintCommunicationSettingsForm({ initialSettings }: { initialSettings: CommunicationSettingsData }) {
   const [settings, setSettings] = useState(initialSettings);
   const [saving, setSaving] = useState(false);
   const set = <Key extends keyof CommunicationSettingsData>(key: Key, value: CommunicationSettingsData[Key]) => setSettings((current) => ({ ...current, [key]: value }));
-  const template = (key: keyof CommunicationSettingsData["templates"], value: string) => setSettings((current) => ({ ...current, templates: { ...current.templates, [key]: value } }));
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setSaving(true);
     try {
-      const response = await fetch("/api/admin/sms/settings", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(settings) });
+      // Only this form's own fields: the events page saves the rest, and neither overwrites the other.
+      const response = await fetch("/api/admin/sms/settings", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ smsEnabled: settings.smsEnabled, inAppEnabled: settings.inAppEnabled, adminPhone: settings.adminPhone }) });
       const result = await response.json().catch(() => null);
       if (!response.ok) throw new Error(result?.message ?? "تنظیمات ذخیره نشد.");
       setSettings(result);
@@ -47,34 +41,21 @@ export function BlueprintCommunicationSettingsForm({ initialSettings }: { initia
 
   return (
     <form onSubmit={submit} className="grid gap-2">
-      <div className="grid items-start gap-2 lg:grid-cols-[minmax(220px,0.7fr)_minmax(0,1.3fr)]">
-        <section className="bp-frame relative p-[16px]">
-          <div className="flex items-center gap-2"><Bell size={16} className="text-[var(--bp-accent)]" /><BpKicker>کانال‌ها</BpKicker></div>
-          <div className="mt-3 grid gap-2.5">
-            <OptionCheckbox title="ارسال پیامک فعال باشد" isSelected={settings.smsEnabled} onChange={(value) => set("smsEnabled", value)} />
-            <OptionCheckbox title="اعلان داخل پنل فعال باشد" isSelected={settings.inAppEnabled} onChange={(value) => set("inAppEnabled", value)} />
-            <BpInput label="شماره مدیر" dir="ltr" maxLength={communicationFieldLimits.adminPhone} value={settings.adminPhone ?? ""} onChange={(event) => set("adminPhone", event.target.value || null)} placeholder="0912..." />
-          </div>
-        </section>
-
-        <section className="bp-frame relative p-[16px]">
-          <div className="flex items-center gap-2"><MessageSquareText size={16} className="text-[var(--bp-accent)]" /><BpKicker>رویدادها و متن پیام‌ها</BpKicker></div>
-          <p className="bp-muted m-0 mt-1 text-[12px] leading-6">برای هر رویداد مشخص کنید پیامک ارسال شود و متن با متغیرهایی مثل <code dir="ltr">{"{orderNumber}"}</code> جایگزین می‌شود.</p>
-          <div className="mt-3 grid gap-2.5">
-            {events.map(([flag, label, key]) => (
-              <div key={flag} className="grid gap-2 border border-[var(--bp-divider)] bg-[var(--bp-bg)] p-3">
-                <OptionCheckbox title={label} isSelected={settings[flag]} onChange={(value) => set(flag, value)} />
-                <BpTextarea label="متن پیام" rows={2} maxLength={communicationFieldLimits.template} value={settings.templates[key]} onChange={(event) => template(key, event.target.value)} />
-              </div>
-            ))}
-          </div>
-        </section>
-      </div>
-
-      <section className="bp-frame relative flex flex-col gap-3 p-[16px] sm:flex-row sm:items-center sm:justify-between">
-        <p className="bp-muted m-0 text-[12px]">متغیرهای قابل استفاده: <code dir="ltr">{"{orderNumber}"}</code>، <code dir="ltr">{"{productName}"}</code> و <code dir="ltr">{"{stock}"}</code></p>
-        <BpButton type="submit" variant="primary" isPending={saving}>ذخیره تنظیمات</BpButton>
+      <section className="bp-frame relative p-[16px]">
+        <div className="flex items-center gap-2"><Bell size={16} className="text-[var(--bp-accent)]" /><BpKicker>کانال‌ها</BpKicker></div>
+        <div className="mt-3 grid gap-2.5 md:grid-cols-2">
+          <OptionCheckbox title="ارسال پیامک فعال باشد" isSelected={settings.smsEnabled} onChange={(value) => set("smsEnabled", value)} />
+          <OptionCheckbox title="اعلان داخل پنل فعال باشد" isSelected={settings.inAppEnabled} onChange={(value) => set("inAppEnabled", value)} />
+          <BpInput label="شماره مدیر" hint="پیامک‌های ویژه‌ی مدیر، مثل هشدار موجودی کم، به این شماره می‌رود" dir="ltr" maxLength={communicationFieldLimits.adminPhone} value={settings.adminPhone ?? ""} onChange={(event) => set("adminPhone", event.target.value || null)} placeholder="0912..." />
+        </div>
+        <div className="mt-3 flex justify-start"><BpButton type="submit" variant="primary" isPending={saving}>ذخیره تنظیمات</BpButton></div>
       </section>
+
+      <Link href="/admin/settings/notifications/events" className="bp-frame group relative flex items-center gap-3 p-[14px] transition hover:border-[var(--bp-accent)]">
+        <span className="grid size-9 shrink-0 place-items-center border border-[var(--bp-divider)] text-[var(--bp-accent)]"><MessageSquareText size={17} /></span>
+        <div className="min-w-0 flex-1"><strong className="block text-[13px]">پیامک‌های رویدادها</strong><span className="bp-muted mt-0.5 block text-[11px]">برای هر مرحله‌ی سفارش مشخص کنید پیامک بره یا نه، و با کدام پترن یا متن</span></div>
+        <ChevronLeft size={16} className="bp-muted shrink-0 transition group-hover:-translate-x-0.5 group-hover:text-[var(--bp-accent)]" />
+      </Link>
     </form>
   );
 }

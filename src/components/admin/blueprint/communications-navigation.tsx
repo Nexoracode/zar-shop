@@ -1,10 +1,11 @@
 import Link from "next/link";
-import { BellRing, ChevronLeft, FileText, MessageSquarePlus, Settings2, type LucideIcon } from "lucide-react";
+import { BellRing, ChevronLeft, FileText, ListChecks, MessageSquarePlus, Settings2, type LucideIcon } from "lucide-react";
 
 const items: { href: string; title: string; description: string; icon: LucideIcon }[] = [
   { href: "/admin/settings/notifications/providers", title: "ارائه‌دهندگان پیامک", description: "اتصال فراز اس‌ام‌اس، وضعیت حساب و ارسال آزمایشی", icon: Settings2 },
   { href: "/admin/settings/notifications/patterns", title: "پترن‌های پیامک", description: "ساخت، ویرایش و حذف پترن‌های تأییدشده فراز اس‌ام‌اس", icon: FileText },
-  { href: "/admin/settings/notifications/preferences", title: "تنظیمات پیامک و اعلان", description: "کانال‌ها، رویدادها و متن پیام‌های خودکار", icon: BellRing },
+  { href: "/admin/settings/notifications/events", title: "پیامک‌های رویدادها", description: "انتخاب پترن یا متن برای هر مرحله‌ی سفارش", icon: ListChecks },
+  { href: "/admin/settings/notifications/preferences", title: "تنظیمات پیامک و اعلان", description: "کانال‌های پیامک و اعلان و شماره مدیر", icon: BellRing },
   { href: "/admin/settings/notifications/manual", title: "ارسال دستی پیامک", description: "انتخاب مخاطبان هدف و مشاهده تاریخچه ارسال", icon: MessageSquarePlus },
 ];
 

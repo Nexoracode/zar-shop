@@ -6,6 +6,7 @@ import { getCommunicationSettings } from "@/modules/communications/communication
 import { getGeneralStoreSettings } from "@/modules/settings/general-settings";
 import { smsAudienceSchema, type SmsAudience } from "@/modules/communications/sms-audiences";
 import { smsFieldLimits } from "@/modules/communications/limits";
+import { buildPatternAttributes, renderSmsTemplate, smsEventFlagKey, smsEventInfo, smsEventRule, type SmsEventId } from "@/modules/communications/sms-events";
 import { FarazApiError, sendRequestIdOf } from "@/modules/communications/faraz-client";
 import { normalizeIranPhone, sendFarazPatternSms, sendFarazSampleSms, sendFarazSimpleSms } from "@/modules/communications/faraz-messaging";
 
@@ -31,11 +32,14 @@ function audienceWhere(audience: SmsAudience) {
 
 export async function countSmsAudience(audience: SmsAudience) { return db.user.count({ where: audienceWhere(audience) }); }
 
+function farazApiKeyOf(provider: { credentialsEncrypted: string }) {
+  return z.object({ apiKey: z.string().min(1) }).parse(decryptSmsCredentials(provider.credentialsEncrypted)).apiKey;
+}
+
 // Free-text sends go through Faraz's "simple" endpoint, which holds every message for operator
 // approval before it goes out (see faraz-messaging.ts).
 async function sendWithFaraz(provider: { senderNumber: string; credentialsEncrypted: string }, recipients: string[], message: string) {
-  const credentials = z.object({ apiKey: z.string().min(1) }).parse(decryptSmsCredentials(provider.credentialsEncrypted));
-  return sendFarazSimpleSms(credentials.apiKey, provider.senderNumber, recipients, message);
+  return sendFarazSimpleSms(farazApiKeyOf(provider), provider.senderNumber, recipients, message);
 }
 
 // OTP codes go through Faraz SMS's registered-pattern API instead of the free-text "simple"
@@ -46,21 +50,53 @@ async function sendWithFaraz(provider: { senderNumber: string; credentialsEncryp
 // so `attributes` arrives pre-built from the admin-configured provider rather than assuming any
 // fixed variable names here — purpose-specific copy isn't possible here, that only lives in the
 // SmsCampaign audit record via otpMessages below.
-function sendOtpWithFarazPattern(apiKey: string, patternCode: string, lineNumber: string, recipient: string, attributes: Record<string, string>) {
+function sendWithFarazPattern(apiKey: string, patternCode: string, lineNumber: string, recipient: string, attributes: Record<string, string>) {
   return sendFarazPatternSms(apiKey, { patternCode, lineNumber, recipient, attributes });
 }
 
-export async function sendAutomatedSms(event: "orderCreated" | "paymentSuccess" | "orderShipped" | "orderExpired" | "lowStockAdmin", phone: string | null | undefined, variables: Record<string, string | number>) {
+// The values an event's message can use. Callers only know the order number (or product); the
+// customer's name, the amount and the tracking number are read from the order here so no caller
+// has to load them just to feed an SMS.
+async function resolveEventValues(event: SmsEventId, given: Record<string, string | number>) {
+  const general = await getGeneralStoreSettings();
+  const values: Record<string, string> = { storeName: general.storeName };
+  for (const [name, value] of Object.entries(given)) values[name] = String(value);
+  const wanted: readonly string[] = smsEventInfo(event).variables;
+  if (values.orderNumber && ["customerName", "totalAmount", "trackingNumber"].some((name) => wanted.includes(name) && !(name in values))) {
+    const order = await db.order.findUnique({ where: { orderNumber: values.orderNumber }, select: { total: true, trackingNumber: true, user: { select: { firstName: true, lastName: true } } } });
+    if (order) {
+      values.customerName ??= [order.user.firstName, order.user.lastName].filter(Boolean).join(" ") || "مشتری گرامی";
+      // Amounts are stored in rials; the store shows them in its configured currency.
+      values.totalAmount ??= String(Math.round(Number(order.total) / (general.currency === "IRT" ? 10 : 1)));
+      values.trackingNumber ??= order.trackingNumber ?? "-";
+    }
+  }
+  return values;
+}
+
+/**
+ * An event goes out either as free text (held by Faraz for operator approval) or through the
+ * registered pattern the admin bound to it (instant). Both respect the channel switch and the
+ * event's own on/off switch.
+ */
+export async function sendAutomatedSms(event: SmsEventId, phone: string | null | undefined, variables: Record<string, string | number>) {
   if (!phone) return false;
   const settings = await getCommunicationSettings();
-  const enabled = { orderCreated: settings.orderCreatedSms, paymentSuccess: settings.paymentSuccessSms, orderShipped: settings.orderShippedSms, orderExpired: settings.orderExpiredSms, lowStockAdmin: settings.lowStockAdminSms }[event];
-  if (!settings.smsEnabled || !enabled) return false;
+  if (!settings.smsEnabled || !settings[smsEventFlagKey(event)]) return false;
   const recipient = normalizeIranPhone(phone); if (!recipient) return false;
   const provider = await db.smsProviderConfig.findFirst({ where: { isActive: true, provider: "FARAZ_SMS" } }); if (!provider) return false;
-  const message = settings.templates[event].replace(/\{([A-Za-z]+)\}/g, (token, key: string) => key in variables ? String(variables[key]) : token);
+  const values = await resolveEventValues(event, variables);
+  const rule = smsEventRule(settings.eventRules, event);
+  const attributes = rule.mode === "PATTERN" && rule.patternCode ? buildPatternAttributes(rule.bindings, values) : null;
+  const message = attributes ? `پترن ${rule.patternCode}: ${Object.entries(attributes).map(([name, value]) => `${name}=${value}`).join("، ")}` : renderSmsTemplate(settings.templates[event], values);
   const campaign = await db.smsCampaign.create({ data: { provider: provider.provider, audience: `SYSTEM_${event.toUpperCase()}`, message, recipientCount: 1, status: "SENDING" } });
-  try { const result = await sendWithFaraz(provider, [recipient], message); await db.smsCampaign.update({ where: { id: campaign.id }, data: { status: "SENT", successfulCount: 1, providerData: result ?? undefined } }); return true; }
-  catch (error) { await db.smsCampaign.update({ where: { id: campaign.id }, data: { status: "FAILED", failedCount: 1, errorMessage: error instanceof Error ? error.message : "خطای ناشناخته" } }); return false; }
+  try {
+    const result = attributes
+      ? await sendWithFarazPattern(farazApiKeyOf(provider), rule.patternCode, provider.senderNumber, recipient, attributes)
+      : await sendWithFaraz(provider, [recipient], message);
+    await db.smsCampaign.update({ where: { id: campaign.id }, data: { status: "SENT", successfulCount: 1, providerData: result ?? undefined } });
+    return true;
+  } catch (error) { await db.smsCampaign.update({ where: { id: campaign.id }, data: { status: "FAILED", failedCount: 1, errorMessage: error instanceof Error ? error.message : "خطای ناشناخته" } }); return false; }
 }
 
 const otpMessages: Record<PhoneOtpPurpose, (code: string) => string> = {
@@ -84,7 +120,7 @@ export async function sendPhoneOtpCode(phone: string | null | undefined, code: s
   const attributes: Record<string, string> = { [credentials.otpCodeVariable]: code };
   if (credentials.otpNameVariable) attributes[credentials.otpNameVariable] = storeName;
   const campaign = await db.smsCampaign.create({ data: { provider: provider.provider, audience: `SYSTEM_PHONE_OTP_${purpose}`, message, recipientCount: 1, status: "SENDING" } });
-  try { const result = await sendOtpWithFarazPattern(credentials.apiKey, credentials.otpPatternCode, provider.senderNumber, recipient, attributes); await db.smsCampaign.update({ where: { id: campaign.id }, data: { status: "SENT", successfulCount: 1, providerData: result ?? undefined } }); return true; }
+  try { const result = await sendWithFarazPattern(credentials.apiKey, credentials.otpPatternCode, provider.senderNumber, recipient, attributes); await db.smsCampaign.update({ where: { id: campaign.id }, data: { status: "SENT", successfulCount: 1, providerData: result ?? undefined } }); return true; }
   catch (error) { await db.smsCampaign.update({ where: { id: campaign.id }, data: { status: "FAILED", failedCount: 1, errorMessage: error instanceof Error ? error.message : "خطای ناشناخته" } }); return false; }
 }
 

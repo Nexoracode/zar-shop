@@ -2,6 +2,7 @@ import type { Prisma } from "@generated/prisma/client";
 import type { OrderStatus } from "@generated/prisma/enums";
 import { db } from "@/lib/db";
 import type { auditRequestContext } from "@/modules/audit/request-context";
+import type { SmsEventId } from "@/modules/communications/sms-events";
 import { sendAutomatedSms } from "@/modules/communications/sms-service";
 import { InventoryUnavailableError, releaseInventory, reserveInventory } from "@/modules/orders/inventory";
 import { canAdminMoveOrder } from "@/modules/orders/order-status-transitions";
@@ -12,6 +13,16 @@ import { notifyWalletCredited } from "@/modules/notifications/wallet-notificatio
 type AuditContext = ReturnType<typeof auditRequestContext>;
 
 const inventoryReleasingStatuses = new Set<OrderStatus>(["EXPIRED", "CANCELLED", "REFUNDED"]);
+
+/** The customer SMS a status change triggers, when the store has switched that event on. */
+const orderStatusSmsEvents: Partial<Record<OrderStatus, SmsEventId>> = {
+  PROCESSING: "orderProcessing",
+  SHIPPED: "orderShipped",
+  DELIVERED: "orderDelivered",
+  EXPIRED: "orderExpired",
+  CANCELLED: "orderCancelled",
+  REFUNDED: "orderRefunded",
+};
 
 export function orderStatusHoldsInventory(status: OrderStatus) {
   return !inventoryReleasingStatuses.has(status);
@@ -124,8 +135,9 @@ export async function updateOrderStatusByAdmin(input: {
       });
       return { ...updated, inventoryAction, walletRefunded, orderNumber: order.orderNumber, customerPhone: order.user.phone, customerId: order.userId, changed: true };
     });
-    if (result.changed && input.status === "SHIPPED") {
-      try { await sendAutomatedSms("orderShipped", result.customerPhone, { orderNumber: result.orderNumber }); } catch (error) { console.error("[sms] Order-shipped notification failed.", error); }
+    const smsEvent = orderStatusSmsEvents[input.status];
+    if (result.changed && smsEvent) {
+      try { await sendAutomatedSms(smsEvent, result.customerPhone, { orderNumber: result.orderNumber }); } catch (error) { console.error(`[sms] ${smsEvent} notification failed.`, error); }
     }
     if (result.changed && result.walletRefunded > 0) {
       try { await notifyWalletCredited(db, { userId: result.customerId, amount: result.walletRefunded, reason: `بازگشت اعتبار سفارش ${result.orderNumber}`, dedupeKey: `order-refund:${input.orderId}` }); } catch (error) { console.error("[notifications] Wallet-refund notification failed.", error); }

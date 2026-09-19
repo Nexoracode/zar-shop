@@ -1,6 +1,6 @@
 import type { LucideIcon } from "lucide-react";
 import {
-  Bell, BellRing, Boxes, CreditCard, FileQuestion, LayoutDashboard, Images, ListTree, MessageSquarePlus,
+  Bell, BellRing, Boxes, CreditCard, FileQuestion, LayoutDashboard, Images, ListChecks, ListTree, MessageSquarePlus,
   Megaphone, Palette, Plus, Search, Settings2, Store, Truck,
 } from "lucide-react";
 import type { UserRole } from "@generated/prisma/enums";
@@ -104,7 +104,8 @@ const settingsEntries: AdminSearchEntry[] = [
   { id: "settings-content", title: "محتوا و سوالات متداول", description: "FAQ و صفحات راهنما و قوانین", href: "/admin/settings/content", group: "محتوا و دیده‌شدن", icon: FileQuestion, keywords: ["سوالات متداول", "قوانین", "حریم خصوصی", "درباره ما", "شرایط استفاده"], settingsSection: "content" },
   { id: "settings-seo", title: "SEO حرفه‌ای", description: "موتورهای جستجو و ساختار فنی صفحات", href: "/admin/settings/seo", group: "محتوا و دیده‌شدن", icon: Search, keywords: ["سئو", "متا", "گوگل", "ایندکس"], settingsSection: "seo" },
   { id: "settings-notifications", title: "پیامک و اعلان", description: "ارائه‌دهندگان، پیام‌های خودکار و ارسال‌های دستی", href: "/admin/settings/notifications", group: "محتوا و دیده‌شدن", icon: Bell, keywords: ["اس ام اس", "پیامک", "نوتیفیکیشن"], settingsSection: "notifications" },
-  { id: "settings-notifications-preferences", title: "تنظیمات پیامک و اعلان", description: "کانال‌ها، رویدادها و متن پیام‌های خودکار", href: "/admin/settings/notifications/preferences", group: "محتوا و دیده‌شدن", icon: BellRing, keywords: ["متن پیامک", "قالب پیامک", "رویداد پیامک"], settingsSection: "notifications" },
+  { id: "settings-notifications-events", title: "پیامک‌های رویدادها", description: "انتخاب پترن یا متن برای هر مرحله‌ی سفارش", href: "/admin/settings/notifications/events", group: "محتوا و دیده‌شدن", icon: ListChecks, keywords: ["پترن سفارش", "پیامک سفارش", "در حال آماده سازی", "پرداخت موفق", "انقضای سفارش", "قالب پیامک"], settingsSection: "notifications" },
+  { id: "settings-notifications-preferences", title: "تنظیمات پیامک و اعلان", description: "کانال‌های پیامک و اعلان و شماره مدیر", href: "/admin/settings/notifications/preferences", group: "محتوا و دیده‌شدن", icon: BellRing, keywords: ["شماره مدیر", "اعلان پنل"], settingsSection: "notifications" },
   { id: "settings-notifications-providers", title: "ارائه‌دهندگان پیامک", description: "اتصال فراز اس‌ام‌اس، وضعیت حساب و ارسال آزمایشی", href: "/admin/settings/notifications/providers", group: "محتوا و دیده‌شدن", icon: Settings2, keywords: ["فراز پیامک", "ایران اس ام اس", "سرشماره"], settingsSection: "notifications" },
   { id: "settings-notifications-manual", title: "ارسال دستی پیامک", description: "انتخاب مخاطبان هدف و مشاهده تاریخچه ارسال", href: "/admin/settings/notifications/manual", group: "محتوا و دیده‌شدن", icon: MessageSquarePlus, keywords: ["پیامک گروهی", "ارسال پیامک تبلیغاتی"], settingsSection: "notifications" },
 ];
