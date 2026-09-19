@@ -3,9 +3,7 @@
 import { useRef, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { LogIn, ShieldCheck } from "lucide-react";
-import type { UserRole } from "@generated/prisma/enums";
 import { loginSchema, authFieldLimits } from "@/modules/auth/schemas";
-import { isAdminRole } from "@/modules/auth/permissions";
 import { normalizeNumericValue } from "@/lib/persian-numbers";
 import { BpButton, BpInput } from "./ui";
 
@@ -41,20 +39,16 @@ export function AdminLoginForm() {
 
     setSubmitting(true);
     try {
-      const response = await fetch("/api/auth/login", {
+      // Its own endpoint: only this sign-in opens the admin window on the session, and it refuses a
+      // non-staff account before any session is created.
+      const response = await fetch("/api/admin/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(parsed.data),
       });
-      const result = await response.json().catch(() => null) as { message?: string; user?: { role: UserRole } } | null;
+      const result = await response.json().catch(() => null) as { message?: string } | null;
       if (!response.ok) {
         setFormError(result?.message ?? "ورود انجام نشد؛ دوباره تلاش کنید.");
-        passwordRef.current?.focus();
-        return;
-      }
-      if (!result?.user || !isAdminRole(result.user.role)) {
-        await fetch("/api/auth/logout", { method: "POST" });
-        setFormError("این حساب دسترسی به پنل مدیریت را ندارد.");
         passwordRef.current?.focus();
         return;
       }

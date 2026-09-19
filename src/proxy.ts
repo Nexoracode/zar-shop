@@ -13,6 +13,8 @@ export async function proxy(request: NextRequest) {
     pathname.startsWith("/account") || (pathname.startsWith("/admin") && pathname !== "/admin/login");
 
   if (isGuarded && !request.cookies.has(SESSION_COOKIE)) {
+    // Staff sign in on their own page; the customer login can't open the panel any more.
+    if (pathname.startsWith("/admin")) return NextResponse.redirect(new URL("/admin/login", request.url));
     const login = new URL("/login", request.url);
     login.searchParams.set("next", pathname);
     return NextResponse.redirect(login);

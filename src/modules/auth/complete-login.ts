@@ -11,8 +11,12 @@ import { getOrderSettings } from "@/modules/settings/order-settings";
  * guest cart into the account being signed into, records lastLoginAt, audit-logs an admin
  * login, and creates the session cookie. Credential/code verification happens before this
  * is called — this only ever runs once the caller is certain the sign-in is legitimate.
+ *
+ * `elevated` is set only by the dedicated admin sign-in route: it opens the admin window on the
+ * new session and is what gets audited as ADMIN_LOGIN. A staff account signing in on the
+ * storefront gets a customer-level session and no such audit entry.
  */
-export async function completeLogin(request: Request, user: { id: string; role: UserRole }) {
+export async function completeLogin(request: Request, user: { id: string; role: UserRole }, options: { elevated?: boolean } = {}) {
   const previousUser = await getCurrentUser();
   // A guest cart is created lazily on first add-to-cart; signing into a real account must
   // not silently strand it, so fold it into the account being signed into before the guest
@@ -21,11 +25,11 @@ export async function completeLogin(request: Request, user: { id: string; role: 
   const orderSettings = mergeGuestCart ? await getOrderSettings() : null;
   await db.$transaction(async (tx) => {
     await tx.user.update({ where: { id: user.id }, data: { lastLoginAt: new Date() } });
-    if (isAdminRole(user.role)) await tx.auditLog.create({ data: { actorId: user.id, action: "ADMIN_LOGIN", entityType: "Session", entityId: user.id, ...auditRequestContext(request) } });
+    if (options.elevated && isAdminRole(user.role)) await tx.auditLog.create({ data: { actorId: user.id, action: "ADMIN_LOGIN", entityType: "Session", entityId: user.id, ...auditRequestContext(request) } });
     if (mergeGuestCart && previousUser && orderSettings) {
       await mergeGuestCartIntoUser(tx, previousUser.id, user.id, orderSettings.maxOrderItemQuantity);
       await tx.session.deleteMany({ where: { userId: previousUser.id } });
     }
   });
-  await createSession(user.id);
+  await createSession(user.id, { elevated: options.elevated && isAdminRole(user.role) });
 }

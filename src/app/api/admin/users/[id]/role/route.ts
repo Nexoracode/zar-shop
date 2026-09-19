@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { getCurrentUser } from "@/modules/auth/session";
-import { hasPermission } from "@/modules/auth/permissions";
+import { hasPermission, isAdminRole } from "@/modules/auth/permissions";
 import { assignableUserRoles } from "@/modules/users/schemas";
 import { auditRequestContext } from "@/modules/audit/request-context";
 
@@ -28,8 +28,14 @@ export async function PATCH(request: Request, context: Context) {
     return NextResponse.json({ message: "نقش انتخاب‌شده معتبر نیست." }, { status: 422 });
   }
 
-  const target = await db.user.findUnique({ where: { id }, select: { id: true, role: true } });
+  const target = await db.user.findUnique({ where: { id }, select: { id: true, role: true, passwordHash: true } });
   if (!target) return NextResponse.json({ message: "کاربر پیدا نشد." }, { status: 404 });
+
+  // The panel only opens with the staff password (never an SMS code), so a customer who signed up
+  // OTP-only would be handed a role they can't use. Better to say so now than have them locked out.
+  if (isAdminRole(parsed.data.role) && !isAdminRole(target.role) && !target.passwordHash) {
+    return NextResponse.json({ message: "این کاربر هنوز رمز عبور ندارد و نمی‌تواند وارد پنل شود؛ از او بخواهید از «فراموشی رمز عبور» یک رمز تعیین کند." }, { status: 409 });
+  }
 
   // A non-ADMIN actor only reaches here via `users:manage` (held by USER_MANAGER), which is
   // scoped to user accounts, not to the other domain-manager roles. It may only move a user

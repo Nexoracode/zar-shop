@@ -211,6 +211,10 @@ model Session {
   tokenHash String   @unique @db.Char(64)
   userId    String
   expiresAt DateTime
+  // Staff only get admin power while this window is open (see modules/auth/admin-elevation.ts);
+  // a plain storefront sign-in leaves both null, so the session is customer-level.
+  adminSince DateTime?
+  adminUntil DateTime?
   createdAt DateTime @default(now())
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
