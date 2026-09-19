@@ -74,15 +74,18 @@ export function variantPricing(variant: StoredVariant | null, product: {
   discountStartsAt: Date | null;
   discountEndsAt: Date | null;
 }) {
+  // A combination that has a discount of its own brings its own schedule with it — even when that
+  // schedule is "none", which is a فروش ویژه. Falling back to the product's window field by field would
+  // hand it the product's (possibly long-finished) dates and switch its discount off.
+  const ownDiscount = variant && (variant.discountType != null || variant.discountValue != null) ? variant : null;
   return {
     weightGrams: (variant?.weightGrams ?? product.weightGrams).toString(),
     fixedPrice: variant?.price != null ? Number(variant.price) : product.fixedPrice != null ? Number(product.fixedPrice) : null,
     discountType: variant?.discountType ?? product.discountType,
     discountValue: variant?.discountValue ?? product.discountValue,
-    // A combination's own window travels with its own type/value; one with neither reads the
-    // product's, exactly like the amount already does.
-    discountStartsAt: variant?.discountStartsAt ?? product.discountStartsAt,
-    discountEndsAt: variant?.discountEndsAt ?? product.discountEndsAt,
+    // One with no discount at all reads the product's, window included, exactly like the amount does.
+    discountStartsAt: ownDiscount ? ownDiscount.discountStartsAt : product.discountStartsAt,
+    discountEndsAt: ownDiscount ? ownDiscount.discountEndsAt : product.discountEndsAt,
   };
 }
 

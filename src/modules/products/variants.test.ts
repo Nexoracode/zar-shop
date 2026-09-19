@@ -145,3 +145,20 @@ test("a combination with no discount of its own reads the product's window", () 
   assert.equal(resolved.discountStartsAt?.toISOString(), product.discountStartsAt.toISOString());
   assert.equal(resolved.discountEndsAt?.toISOString(), product.discountEndsAt.toISOString());
 });
+
+test("a combination on special sale keeps having no window instead of inheriting the product's finished one", () => {
+  const product = {
+    weightGrams: "0", fixedPrice: "1000000",
+    discountType: "PERCENT" as const, discountValue: "15",
+    discountStartsAt: new Date("2026-01-01"), discountEndsAt: new Date("2026-01-31"),
+  };
+  const variant = {
+    selectionKey: "k", selection: {}, price: null, weightGrams: null,
+    discountType: "PERCENT" as const, discountValue: "20", discountStartsAt: null, discountEndsAt: null,
+    stock: 1, isActive: true,
+  };
+  const resolved = variantPricing(variant, product);
+  assert.equal(resolved.discountValue, "20");
+  assert.equal(resolved.discountStartsAt, null);
+  assert.equal(resolved.discountEndsAt, null);
+});
