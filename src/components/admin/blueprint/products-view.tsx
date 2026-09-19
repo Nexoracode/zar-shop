@@ -60,7 +60,7 @@ function ProductThumb({ product }: { product: ProductRow }) {
   return <span className="bp-thumb bp-thumb-empty"><ImageOff size={15} strokeWidth={1.6} /></span>;
 }
 
-/** Name cell: the product name, with its flags (featured, discount, variants) as small tags underneath. */
+/** Name cell: the product name, with its flags (discount, variants) as small tags underneath. */
 function ProductName({ product }: { product: ProductRow }) {
   return (
     <div className="min-w-0">

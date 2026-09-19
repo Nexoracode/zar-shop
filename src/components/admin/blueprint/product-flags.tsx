@@ -1,4 +1,4 @@
-import { Layers, Star, Tag } from "lucide-react";
+import { Layers, Tag } from "lucide-react";
 import { formatDateTime } from "@/lib/format";
 import { isProductDiscountActive } from "@/modules/products/discount";
 import type { ProductRow } from "@/components/admin/products-list-data";
@@ -44,19 +44,18 @@ function previewColors(product: ProductRow) {
 }
 
 /**
- * The small tags under a product's name: featured, an active discount, and variants. The discount
- * and variants tags open the Blueprint hover card — dated discount details, and each option's
- * values with their colours — so the row itself stays quiet and the name keeps its full width.
+ * The small tags under a product's name: an active discount and variants. They open the Blueprint
+ * hover card — dated discount details, and each option's values with their colours — so the row
+ * itself stays quiet and the name keeps its full width.
  */
 export function ProductFlags({ product }: { product: ProductRow }) {
   const discounted = isProductDiscountActive(product);
   const variantCount = product._count.variants;
-  if (!product.featured && !discounted && variantCount === 0) return null;
+  if (!discounted && variantCount === 0) return null;
 
   const preview = previewColors(product);
   return (
     <div className="mt-1 flex flex-wrap items-center gap-1">
-      {product.featured && <BpTag tone="accent"><Star size={11} strokeWidth={2} className="fill-current" aria-hidden />ویژه</BpTag>}
       {discounted && (
         <BpHoverCard label={`تخفیف فعال ${discountText(product)}`} content={{ headingLabel: "تخفیف", heading: "فعال", rows: discountRows(product) }}>
           <BpTag tone="danger"><Tag size={11} strokeWidth={2} aria-hidden />{discountText(product)}</BpTag>
