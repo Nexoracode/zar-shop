@@ -296,6 +296,22 @@
   pointer-events: none;
 }
 .bp-bar-band[data-on="true"] { opacity: 1; }
+/* Line chart: a dashed guide through the hovered point, and the point itself swells. `scale` is its
+   own property, so it composes with the Tailwind translate that centres the dot. */
+.bp-line-guide { position: absolute; inset-block: 8px; width: 0; border-inline-start: 1px dashed var(--bp-accent); opacity: 0.55; transform: translateX(-0.5px); }
+.bp-line-dot { transition: scale 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), background-color 0.15s ease; }
+.bp-line-dot[data-hot="true"] { scale: 1.7; background: var(--bp-accent); }
+/* Donut: the hovered slice thickens, the others step back; its legend row lights up with it. */
+.bp-donut-slice { cursor: pointer; transition: stroke-width 0.22s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.18s ease, filter 0.18s ease; }
+.bp-donut-slice[data-hot="true"] { stroke-width: 29px; filter: brightness(1.12); }
+.bp-donut-slice[data-dim="true"] { opacity: 0.4; }
+.bp-donut-row { transition: background-color 0.15s ease; }
+.bp-donut-row[data-hot="true"] { background: var(--bp-row-hover); }
+/* Ranked lists: the row under the pointer gets a thicker, brighter bar. */
+.bp-bar-list-row .bp-bar-track { transition: height 0.2s ease; }
+.bp-bar-list-row .bp-bar-fill { transition: filter 0.2s ease; }
+.bp-bar-list-row:hover .bp-bar-track { height: 9px; }
+.bp-bar-list-row:hover .bp-bar-fill { filter: brightness(1.15); }
 /* The card that names the hovered column: heading, a rule, then one coloured row per series. It
    glides from column to column (left/top transition) and scales in when first opened. */
 .bp-chart-tip {
@@ -379,8 +395,16 @@
 
 /* Province map: hairlines in the card colour separate neighbours; the label carries a halo so it
    stays readable over any fill in either theme. */
-.bp-map-shape { stroke: var(--bp-card); stroke-width: 1.1; stroke-linejoin: round; transition: opacity 0.15s ease; }
-.bp-map-shape:hover { opacity: 0.8 !important; }
+.bp-map-shape {
+  stroke: var(--bp-card);
+  stroke-width: 1.1;
+  stroke-linejoin: round;
+  transform-box: fill-box;
+  transform-origin: center;
+  transition: transform 0.24s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.2s ease, stroke 0.15s ease;
+}
+/* The hovered province swells from its own centre, brightens and takes an accent outline. */
+.bp-map-shape[data-hot="true"] { transform: scale(1.045); filter: brightness(1.14) saturate(1.1); stroke: var(--bp-accent); stroke-width: 1.6; opacity: 1 !important; }
 .bp-map-label { fill: var(--bp-text); stroke: var(--bp-card); stroke-width: 3; paint-order: stroke; stroke-linejoin: round; font: 700 11px var(--bp-font); pointer-events: none; }
 /* A pulsing dot for "live" figures such as visitors online right now. */
 .bp-live-dot { position: relative; display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--bp-success); }
@@ -391,6 +415,9 @@
   .bp-bar { transition: none; }
   .bp-bar[data-hot="true"] { transform: none; }
   .bp-chart-tip { transition: none; animation: none; }
+  .bp-line-dot, .bp-donut-slice, .bp-map-shape { transition: none; }
+  .bp-line-dot[data-hot="true"] { scale: 1; }
+  .bp-map-shape[data-hot="true"] { transform: none; }
 }
 
 /* — forms — */

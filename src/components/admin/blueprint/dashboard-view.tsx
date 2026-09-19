@@ -102,6 +102,7 @@ export function BlueprintDashboardView({ isFullAdmin, activeProducts, customers,
                   ariaLabel="نمودار روند فروش ۱۴ روز اخیر"
                   data={salesTrend.map((point) => ({ label: point.label, value: Number(point.total) }))}
                   money
+                  valueLabel="فروش"
                 />
               ) : <Empty title="هنوز فروشی ثبت نشده است" description="روند فروش پس از اولین سفارش موفق نمایش داده می‌شود." />}
             </div>
@@ -114,6 +115,7 @@ export function BlueprintDashboardView({ isFullAdmin, activeProducts, customers,
               {orderStatusBreakdown.length ? (
                 <BpDonutChart
                   ariaLabel="نمودار توزیع وضعیت سفارش‌ها"
+                  categoryLabel="وضعیت"
                   data={orderStatusBreakdown.map((group) => ({ label: orderStatusLabels[group.status], value: group.count, color: toneColor[orderStatusTones[group.status]] }))}
                 />
               ) : <Empty title="هنوز سفارشی ثبت نشده است" description="توزیع وضعیت پس از ثبت اولین سفارش نمایش داده می‌شود." />}

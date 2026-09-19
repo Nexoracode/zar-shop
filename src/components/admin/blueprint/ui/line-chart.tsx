@@ -1,7 +1,8 @@
 "use client";
 
-import { useId } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { formatMoney } from "@/lib/format";
+import { BpChartTip, type BpChartTipAnchor } from "./chart-tip";
 
 export type BpLineChartPoint = { label: string; value: number };
 
@@ -19,8 +20,11 @@ const PLOT_HEIGHT = HEIGHT - PADDING_TOP - PADDING_BOTTOM;
  * already does. The viewBox is a fixed logical size and stretches to the container's width, so
  * dot markers get a hair of horizontal-only distortion at very narrow widths — imperceptible at
  * the radius used here.
+ *
+ * Hovering anywhere along a day draws a guide through its point, swells the point and opens the
+ * shared chart card (`BpChartTip`). A touch tap toggles it, since there is no hover.
  */
-export function BpLineChart({ data, money = false, ariaLabel }: { data: BpLineChartPoint[]; /** Format each point's tooltip value as money instead of a plain number. */ money?: boolean; ariaLabel: string }) {
+export function BpLineChart({ data, money = false, ariaLabel, categoryLabel = "تاریخ", valueLabel = "مقدار" }: { data: BpLineChartPoint[]; /** Format each point's tooltip value as money instead of a plain number. */ money?: boolean; ariaLabel: string; /** The label in front of the hovered category in the card's heading. */ categoryLabel?: string; /** What the plotted number is called in the card's row. */ valueLabel?: string }) {
   const gradientId = useId();
   // A plain callback prop cannot cross from the server-rendered dashboard into this client
   // component, so the formatting choice travels as a flag instead.
@@ -41,9 +45,35 @@ export function BpLineChart({ data, money = false, ariaLabel }: { data: BpLineCh
   // Every label would collide on 14+ points; thin them out but always keep the first and last.
   const labelStep = Math.max(1, Math.ceil(data.length / 6));
 
+  const [hover, setHover] = useState<{ index: number; anchor: BpChartTipAnchor } | null>(null);
+  const plotRef = useRef<HTMLDivElement>(null);
+
+  function focusPoint(index: number) {
+    const plot = plotRef.current;
+    const point = points[index];
+    if (!plot || !point) return;
+    const box = plot.getBoundingClientRect();
+    const x = box.left + (point.x / WIDTH) * box.width;
+    const y = box.top + (point.y / HEIGHT) * box.height;
+    setHover({ index, anchor: { left: x - 5, right: x + 5, top: y - 5, bottom: y + 5 } });
+  }
+
+  // A tap elsewhere puts the card away on touch screens, where nothing else would.
+  useEffect(() => {
+    if (!hover) return;
+    function onPointerDown(event: PointerEvent) {
+      if (event.target instanceof Node && plotRef.current?.contains(event.target)) return;
+      setHover(null);
+    }
+    document.addEventListener("pointerdown", onPointerDown);
+    return () => document.removeEventListener("pointerdown", onPointerDown);
+  }, [hover]);
+
+  const active = hover ? points[hover.index] : null;
+
   return (
     <div className="w-full">
-      <div className="relative w-full" style={{ height: HEIGHT }}>
+      <div ref={plotRef} className="relative w-full" style={{ height: HEIGHT }}>
         <svg viewBox={`0 0 ${WIDTH} ${HEIGHT}`} width="100%" height={HEIGHT} preserveAspectRatio="none" role="img" aria-label={ariaLabel} className="block">
           <defs>
             <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
@@ -62,15 +92,38 @@ export function BpLineChart({ data, money = false, ariaLabel }: { data: BpLineCh
             with `preserveAspectRatio="none"`, so an SVG circle renders as a horizontal ellipse at
             any width past the logical 600. A CSS circle keeps its shape whatever the scale. */}
         <div className="pointer-events-none absolute inset-0">
-          {points.map((point) => (
+          {active && <span aria-hidden className="bp-line-guide" style={{ left: `${(active.x / WIDTH) * 100}%` }} />}
+          {points.map((point, index) => (
             <span
               key={point.label}
-              title={`${point.label}\nمقدار: ${format(point.value)}`}
+              data-hot={hover?.index === index}
               style={{ left: `${(point.x / WIDTH) * 100}%`, top: `${(point.y / HEIGHT) * 100}%` }}
-              className="pointer-events-auto absolute h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-[var(--bp-accent)] bg-[var(--bp-card)]"
+              className="bp-line-dot absolute h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-[var(--bp-accent)] bg-[var(--bp-card)]"
             />
           ))}
         </div>
+        {/* One full-height strip per point, so the whole day is a hover target — not only its 8px dot. */}
+        <div className="absolute inset-0" onPointerLeave={(event) => { if (event.pointerType !== "touch") setHover(null); }}>
+          {points.map((point, index) => {
+            const half = (stepX || PLOT_WIDTH) / 2;
+            return (
+              <span
+                key={point.label}
+                className="absolute inset-y-0"
+                style={{ left: `${((point.x - half) / WIDTH) * 100}%`, width: `${((half * 2) / WIDTH) * 100}%` }}
+                onPointerEnter={(event) => { if (event.pointerType !== "touch") focusPoint(index); }}
+                onPointerDown={(event) => { if (event.pointerType === "touch") { if (hover?.index === index) setHover(null); else focusPoint(index); } }}
+              />
+            );
+          })}
+        </div>
+        {hover && active && (
+          <BpChartTip
+            containerRef={plotRef}
+            anchor={hover.anchor}
+            content={{ headingLabel: categoryLabel, heading: active.label, rows: [{ label: valueLabel, value: format(active.value), color: "var(--bp-accent)" }] }}
+          />
+        )}
       </div>
       {/* The plot runs left→right by index (oldest → newest). `flex-row-reverse` cancels the RTL
           row direction so DOM order 0..N also lays out left→right and each label sits under its own

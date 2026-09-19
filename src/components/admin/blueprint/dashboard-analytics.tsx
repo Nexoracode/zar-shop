@@ -55,7 +55,7 @@ function toSlices(slices: CountSlice[], label: (key: string) => string, limit = 
   return rest > 0 ? [...result, { label: "سایر", value: rest, color: "var(--bp-muted)" }] : result;
 }
 
-function DonutPanel({ kicker, title, icon: Icon, slices, centerLabel }: { kicker: string; title: string; icon: React.ComponentType<{ size?: number; strokeWidth?: number; className?: string }>; slices: BpDonutSlice[]; centerLabel: string }) {
+function DonutPanel({ kicker, title, icon: Icon, slices, centerLabel, categoryLabel }: { kicker: string; title: string; icon: React.ComponentType<{ size?: number; strokeWidth?: number; className?: string }>; slices: BpDonutSlice[]; centerLabel: string; /** What one slice is, for the hover card's heading ("مرورگر: Chrome"). */ categoryLabel: string }) {
   return (
     <Panel className="p-[18px]">
       <div className="flex items-start justify-between gap-3">
@@ -66,7 +66,7 @@ function DonutPanel({ kicker, title, icon: Icon, slices, centerLabel }: { kicker
         <Icon size={17} strokeWidth={1.5} className="mt-0.5 flex-none text-[var(--bp-muted)]" />
       </div>
       <div className="mt-4">
-        {slices.length ? <BpDonutChart ariaLabel={`نمودار ${kicker}`} data={slices} centerLabel={centerLabel} /> : <Empty title="هنوز دیتایی ثبت نشده" description="پس از اولین بازدید نمایش داده می‌شود." />}
+        {slices.length ? <BpDonutChart ariaLabel={`نمودار ${kicker}`} data={slices} centerLabel={centerLabel} categoryLabel={categoryLabel} /> :<Empty title="هنوز دیتایی ثبت نشده" description="پس از اولین بازدید نمایش داده می‌شود." />}
       </div>
     </Panel>
   );
@@ -100,9 +100,9 @@ export function DashboardTraffic({ visitors }: { visitors: VisitorAnalytics }) {
       </Panel>
 
       <div className="grid gap-2 lg:grid-cols-3">
-        <DonutPanel kicker="مرورگرها" title={`سهم هر مرورگر در ${visitors.periodDays.toLocaleString("fa-IR")} روز اخیر`} icon={Globe} centerLabel="بازدید" slices={toSlices(visitors.browsers, (key) => key)} />
-        <DonutPanel kicker="دستگاه‌ها" title="موبایل، رایانه و تبلت" icon={Users} centerLabel="بازدید" slices={toSlices(visitors.devices, (key) => deviceLabels[key] ?? key, 3)} />
-        <DonutPanel kicker="منابع ترافیک ورودی" title="بازدیدکنندگان از کجا می‌آیند" icon={Eye} centerLabel="بازدید" slices={toSlices(visitors.sources, (key) => (key ? key : "مستقیم (Direct)"), 4)} />
+        <DonutPanel kicker="مرورگرها" title={`سهم هر مرورگر در ${visitors.periodDays.toLocaleString("fa-IR")} روز اخیر`} icon={Globe} centerLabel="بازدید" categoryLabel="مرورگر" slices={toSlices(visitors.browsers, (key) => key)} />
+        <DonutPanel kicker="دستگاه‌ها" title="موبایل، رایانه و تبلت" icon={Users} centerLabel="بازدید" categoryLabel="دستگاه" slices={toSlices(visitors.devices, (key) => deviceLabels[key] ?? key, 3)} />
+        <DonutPanel kicker="منابع ترافیک ورودی" title="بازدیدکنندگان از کجا می‌آیند" icon={Eye} centerLabel="بازدید" categoryLabel="منبع" slices={toSlices(visitors.sources, (key) => (key ? key : "مستقیم (Direct)"), 4)} />
       </div>
     </>
   );
@@ -168,6 +168,7 @@ export function DashboardPayments({ insights, periodDays }: { insights: Dashboar
       title={`پرداخت‌های موفق ${periodDays.toLocaleString("fa-IR")} روز اخیر`}
       icon={CreditCard}
       centerLabel="پرداخت"
+      categoryLabel="روش"
       slices={toSlices(insights.payments.map((row) => ({ key: row.provider, count: row.count })), (key) => paymentLabels[key.toLowerCase()] ?? key)}
     />
   );
