@@ -8,6 +8,7 @@ import { AdminEmptyState, AdminPageHeader, AdminStatusBadge } from "@/components
 import { AdminBulkCheckbox, AdminBulkEditor, AdminBulkTr } from "@/components/admin-bulk-editor";
 import { AdminColumn, AdminColumnSettingsButton, AdminColumnVisibility } from "@/components/admin-column-visibility";
 import { AdminColumnFilter } from "@/components/admin-column-filter";
+import { AdminActiveToggle } from "@/components/admin-active-toggle";
 import { AdminGenericBulkEditButton } from "@/components/admin-generic-bulk-edit";
 import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
 import { requestErrorMessage, requestJson } from "@/lib/api-request";
@@ -371,6 +372,7 @@ export function BlueprintOptionTypesView({ types, colors, initialHiddenColumns }
                     <div className="flex items-center justify-between gap-2">
                       <span className="bp-muted text-[11px]">{type.productCount.toLocaleString("fa-IR")} محصول</span>
                       <div className="flex items-center gap-1">
+                        <AdminActiveToggle entity="optionTypes" entityLabel="نوع تنوع" id={type.id} name={type.name} isActive={type.isActive} />
                         <BpButton isIconOnly size="sm" variant="ghost" aria-label={`ویرایش ${type.name}`} onClick={() => startEdit(type)}><SquarePen size={15} strokeWidth={1.5} /></BpButton>
                         <BpButton isIconOnly size="sm" variant="ghost" className="bp-btn-danger-icon" aria-label={`حذف ${type.name}`} disabled={type.productCount > 0} onClick={() => { setDeleteError(""); setDeleteTarget(type); }}><Trash2 size={15} strokeWidth={1.5} /></BpButton>
                       </div>
@@ -426,6 +428,7 @@ export function BlueprintOptionTypesView({ types, colors, initialHiddenColumns }
                           <AdminColumn id="status"><BpTd><AdminStatusBadge tone={type.isActive ? "success" : "neutral"}>{type.isActive ? "فعال" : "غیرفعال"}</AdminStatusBadge></BpTd></AdminColumn>
                           <BpTd>
                             <div className="flex items-center justify-center gap-1">
+                              <AdminActiveToggle entity="optionTypes" entityLabel="نوع تنوع" id={type.id} name={type.name} isActive={type.isActive} />
                               <BpButton isIconOnly size="sm" variant="ghost" title="ویرایش نوع تنوع" aria-label={`ویرایش ${type.name}`} onClick={() => startEdit(type)}><SquarePen size={15} strokeWidth={1.5} /></BpButton>
                               <BpButton isIconOnly size="sm" variant="ghost" title={type.productCount > 0 ? "این نوع در محصولی استفاده شده و قابل حذف نیست" : "حذف نوع تنوع"} className="bp-btn-danger-icon" aria-label={`حذف ${type.name}`} disabled={type.productCount > 0} onClick={() => { setDeleteError(""); setDeleteTarget(type); }}><Trash2 size={15} strokeWidth={1.5} /></BpButton>
                             </div>

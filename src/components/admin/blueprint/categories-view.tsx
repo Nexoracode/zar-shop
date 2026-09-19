@@ -10,6 +10,7 @@ import { AdminEmptyState, AdminPageHeader, AdminStatusBadge } from "@/components
 import { AdminBulkCheckbox, AdminBulkEditor, AdminBulkTr } from "@/components/admin-bulk-editor";
 import { AdminColumn, AdminColumnSettingsButton, AdminColumnVisibility } from "@/components/admin-column-visibility";
 import { AdminColumnFilter } from "@/components/admin-column-filter";
+import { AdminActiveToggle } from "@/components/admin-active-toggle";
 import { AdminGenericBulkEditButton } from "@/components/admin-generic-bulk-edit";
 import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
 import { MediaPickerDialog } from "@/components/media-picker-dialog";
@@ -336,6 +337,7 @@ export function BlueprintCategoriesView({ categories, initialHiddenColumns }: { 
                         <span className="bp-muted">{category._count.products.toLocaleString("fa-IR")} محصول · {category._count.children.toLocaleString("fa-IR")} زیردسته</span>
                         <div className="flex items-center gap-1">
                           <Link href={`/admin/categories/${category.id}/attributes`} aria-label={`ویژگی‌های دسته‌بندی ${category.name}`} className="bp-btn bp-btn-ghost bp-btn-icon bp-btn-sm"><SlidersHorizontal size={15} strokeWidth={1.5} /></Link>
+                          <AdminActiveToggle entity="categories" entityLabel="دسته‌بندی" id={category.id} name={category.name} isActive={category.isActive} />
                           <BpButton isIconOnly size="sm" variant="ghost" aria-label={`ویرایش ${category.name}`} onClick={() => startEdit(category)}><SquarePen size={15} strokeWidth={1.5} /></BpButton>
                           <BpButton isIconOnly size="sm" variant="ghost" className="bp-btn-danger-icon" aria-label={`حذف ${category.name}`} disabled={locked} onClick={() => { setDeleteError(""); setDeleteTarget(category); }}><Trash2 size={15} strokeWidth={1.5} /></BpButton>
                         </div>
@@ -405,6 +407,7 @@ export function BlueprintCategoriesView({ categories, initialHiddenColumns }: { 
                             <BpTd>
                               <div className="flex items-center justify-center gap-1">
                                 <Link href={`/admin/categories/${category.id}/attributes`} aria-label={`ویژگی‌های دسته‌بندی ${category.name}`} title="ویژگی‌های دسته‌بندی" className="bp-btn bp-btn-ghost bp-btn-icon bp-btn-sm"><SlidersHorizontal size={15} strokeWidth={1.5} /></Link>
+                                <AdminActiveToggle entity="categories" entityLabel="دسته‌بندی" id={category.id} name={category.name} isActive={category.isActive} />
                                 <BpButton isIconOnly size="sm" variant="ghost" title="ویرایش دسته‌بندی" aria-label={`ویرایش ${category.name}`} onClick={() => startEdit(category)}><SquarePen size={15} strokeWidth={1.5} /></BpButton>
                                 <BpButton isIconOnly size="sm" variant="ghost" title={locked ? "دسته دارای محصول یا زیردسته قابل حذف نیست" : "حذف دسته‌بندی"} className="bp-btn-danger-icon" aria-label={`حذف ${category.name}`} disabled={locked} onClick={() => { setDeleteError(""); setDeleteTarget(category); }}><Trash2 size={15} strokeWidth={1.5} /></BpButton>
                               </div>

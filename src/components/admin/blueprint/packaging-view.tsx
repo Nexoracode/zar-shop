@@ -7,6 +7,7 @@ import { AdminEmptyState, AdminPanel, AdminStatusBadge } from "@/components/admi
 import { AdminBulkCheckbox, AdminBulkEditor, AdminBulkTr } from "@/components/admin-bulk-editor";
 import { AdminColumn, AdminColumnSettingsButton, AdminColumnVisibility } from "@/components/admin-column-visibility";
 import { AdminColumnFilter } from "@/components/admin-column-filter";
+import { AdminActiveToggle } from "@/components/admin-active-toggle";
 import { AdminGenericBulkEditButton } from "@/components/admin-generic-bulk-edit";
 import { normalizeSearchText } from "@/lib/text-search";
 import { BpListFilters, BpTable, BpTag, BpTd, BpTh } from "./ui";
@@ -91,6 +92,7 @@ export function BlueprintPackagingView({ boxes, initialHiddenColumns }: { boxes:
                     <div className="flex items-center justify-between gap-2">
                       {box.isDefault ? <BpTag tone="info">پیش‌فرض</BpTag> : <span />}
                       <div className="flex items-center gap-1">
+                        <AdminActiveToggle entity="packagingBoxes" entityLabel="جعبه" id={box.id} name={box.name} isActive={box.isActive} />
                         <Link href={`/admin/packaging/${box.id}/edit`} aria-label={`ویرایش ${box.name}`} className="bp-btn bp-btn-ghost bp-btn-icon bp-btn-sm"><SquarePen size={15} strokeWidth={1.5} /></Link>
                         <PackagingBoxDeleteButton id={box.id} name={box.name} />
                       </div>
@@ -135,6 +137,7 @@ export function BlueprintPackagingView({ boxes, initialHiddenColumns }: { boxes:
                           <AdminColumn id="isDefault"><BpTd>{box.isDefault ? <BpTag tone="info">پیش‌فرض</BpTag> : <span className="bp-muted">—</span>}</BpTd></AdminColumn>
                           <BpTd>
                             <div className="flex items-center justify-center gap-1">
+                              <AdminActiveToggle entity="packagingBoxes" entityLabel="جعبه" id={box.id} name={box.name} isActive={box.isActive} />
                               <Link href={`/admin/packaging/${box.id}/edit`} title="ویرایش جعبه" aria-label={`ویرایش ${box.name}`} className="bp-btn bp-btn-ghost bp-btn-icon bp-btn-sm"><SquarePen size={15} strokeWidth={1.5} /></Link>
                               <PackagingBoxDeleteButton id={box.id} name={box.name} />
                             </div>

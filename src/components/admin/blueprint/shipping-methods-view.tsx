@@ -9,6 +9,7 @@ import { AdminEmptyState, AdminPanel, AdminStatusBadge } from "@/components/admi
 import { AdminBulkCheckbox, AdminBulkEditor, AdminBulkTr } from "@/components/admin-bulk-editor";
 import { AdminColumn, AdminColumnSettingsButton, AdminColumnVisibility } from "@/components/admin-column-visibility";
 import { AdminColumnFilter } from "@/components/admin-column-filter";
+import { AdminActiveToggle } from "@/components/admin-active-toggle";
 import { AdminGenericBulkEditButton } from "@/components/admin-generic-bulk-edit";
 import { requestErrorMessage, requestJson } from "@/lib/api-request";
 import { normalizeSearchText } from "@/lib/text-search";
@@ -171,6 +172,7 @@ export function BlueprintShippingMethodsView({ methods, initialHiddenColumns }: 
                     <div className="flex items-center justify-between gap-2">
                       <span className="bp-muted text-[11px]">{method.estimatedDays.toLocaleString("fa-IR")} روز کاری</span>
                       <div className="flex items-center gap-1">
+                        <AdminActiveToggle entity="shippingMethods" entityLabel="روش ارسال" id={method.id} name={method.title} isActive={method.isActive} />
                         <Link href={`/admin/shipping-methods/${method.id}/edit`} aria-label={`ویرایش ${method.title}`} className="bp-btn bp-btn-ghost bp-btn-icon bp-btn-sm"><SquarePen size={15} strokeWidth={1.5} /></Link>
                         <ShippingMethodDeleteButton id={method.id} title={method.title} orderCount={method.orderCount} />
                       </div>
@@ -222,6 +224,7 @@ export function BlueprintShippingMethodsView({ methods, initialHiddenColumns }: 
                           <AdminColumn id="status"><BpTd><AdminStatusBadge tone={method.isActive ? "success" : "neutral"}>{method.isActive ? "فعال" : "غیرفعال"}</AdminStatusBadge></BpTd></AdminColumn>
                           <BpTd>
                             <div className="flex items-center justify-center gap-1">
+                              <AdminActiveToggle entity="shippingMethods" entityLabel="روش ارسال" id={method.id} name={method.title} isActive={method.isActive} />
                               <Link href={`/admin/shipping-methods/${method.id}/edit`} title="ویرایش روش ارسال" aria-label={`ویرایش ${method.title}`} className="bp-btn bp-btn-ghost bp-btn-icon bp-btn-sm"><SquarePen size={15} strokeWidth={1.5} /></Link>
                               <ShippingMethodDeleteButton id={method.id} title={method.title} orderCount={method.orderCount} />
                             </div>

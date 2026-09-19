@@ -8,6 +8,7 @@ import { AdminEmptyState, AdminPageHeader, AdminStatusBadge } from "@/components
 import { AdminBulkCheckbox, AdminBulkEditor, AdminBulkTr } from "@/components/admin-bulk-editor";
 import { AdminColumn, AdminColumnSettingsButton, AdminColumnVisibility } from "@/components/admin-column-visibility";
 import { AdminColumnFilter } from "@/components/admin-column-filter";
+import { AdminActiveToggle } from "@/components/admin-active-toggle";
 import { AdminGenericBulkEditButton } from "@/components/admin-generic-bulk-edit";
 import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
 import { requestErrorMessage, requestJson } from "@/lib/api-request";
@@ -249,6 +250,7 @@ export function BlueprintSupportTicketCategoriesView({ categories, initialHidden
                     <div className="flex items-center justify-between gap-2">
                       <span className="bp-muted text-[11px]">{category._count.tickets.toLocaleString("fa-IR")} تیکت</span>
                       <div className="flex items-center gap-1">
+                        <AdminActiveToggle entity="supportTicketCategories" entityLabel="موضوع" id={category.id} name={category.name} isActive={category.isActive} />
                         <BpButton isIconOnly size="sm" variant="ghost" aria-label={`ویرایش ${category.name}`} onClick={() => startEdit(category)}><SquarePen size={15} strokeWidth={1.5} /></BpButton>
                         <BpButton isIconOnly size="sm" variant="ghost" className="bp-btn-danger-icon" aria-label={`حذف ${category.name}`} disabled={category._count.tickets > 0} onClick={() => { setDeleteError(""); setDeleteTarget(category); }}><Trash2 size={15} strokeWidth={1.5} /></BpButton>
                       </div>
@@ -297,6 +299,7 @@ export function BlueprintSupportTicketCategoriesView({ categories, initialHidden
                           <AdminColumn id="status"><BpTd><AdminStatusBadge tone={category.isActive ? "success" : "neutral"}>{category.isActive ? "فعال" : "غیرفعال"}</AdminStatusBadge></BpTd></AdminColumn>
                           <BpTd>
                             <div className="flex items-center justify-center gap-1">
+                              <AdminActiveToggle entity="supportTicketCategories" entityLabel="موضوع" id={category.id} name={category.name} isActive={category.isActive} />
                               <BpButton isIconOnly size="sm" variant="ghost" title="ویرایش موضوع" aria-label={`ویرایش ${category.name}`} onClick={() => startEdit(category)}><SquarePen size={15} strokeWidth={1.5} /></BpButton>
                               <BpButton isIconOnly size="sm" variant="ghost" title={category._count.tickets > 0 ? "موضوع دارای تیکت قابل حذف نیست" : "حذف موضوع"} className="bp-btn-danger-icon" aria-label={`حذف ${category.name}`} disabled={category._count.tickets > 0} onClick={() => { setDeleteError(""); setDeleteTarget(category); }}><Trash2 size={15} strokeWidth={1.5} /></BpButton>
                             </div>

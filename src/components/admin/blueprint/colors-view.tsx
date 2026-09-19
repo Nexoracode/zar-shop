@@ -8,6 +8,7 @@ import { AdminEmptyState, AdminPageHeader, AdminStatusBadge } from "@/components
 import { AdminBulkCheckbox, AdminBulkEditor, AdminBulkTr } from "@/components/admin-bulk-editor";
 import { AdminColumn, AdminColumnSettingsButton, AdminColumnVisibility } from "@/components/admin-column-visibility";
 import { AdminColumnFilter } from "@/components/admin-column-filter";
+import { AdminActiveToggle } from "@/components/admin-active-toggle";
 import { AdminGenericBulkEditButton } from "@/components/admin-generic-bulk-edit";
 import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
 import { requestErrorMessage, requestJson } from "@/lib/api-request";
@@ -266,6 +267,7 @@ export function BlueprintColorsView({ colors, initialHiddenColumns }: { colors: 
                       <AdminStatusBadge tone={color.isActive ? "success" : "neutral"}>{color.isActive ? "فعال" : "غیرفعال"}</AdminStatusBadge>
                     </div>
                     <div className="flex items-center justify-end gap-1">
+                      <AdminActiveToggle entity="colors" entityLabel="رنگ" id={color.id} name={color.name} isActive={color.isActive} />
                       <BpButton isIconOnly size="sm" variant="ghost" aria-label={`ویرایش ${color.name}`} onClick={() => startEdit(color)}><SquarePen size={15} strokeWidth={1.5} /></BpButton>
                       <BpButton isIconOnly size="sm" variant="ghost" className="bp-btn-danger-icon" aria-label={`حذف ${color.name}`} onClick={() => { setDeleteError(""); setDeleteTarget(color); }}><Trash2 size={15} strokeWidth={1.5} /></BpButton>
                     </div>
@@ -318,6 +320,7 @@ export function BlueprintColorsView({ colors, initialHiddenColumns }: { colors: 
                           <AdminColumn id="status"><BpTd><AdminStatusBadge tone={color.isActive ? "success" : "neutral"}>{color.isActive ? "فعال" : "غیرفعال"}</AdminStatusBadge></BpTd></AdminColumn>
                           <BpTd>
                             <div className="flex items-center justify-center gap-1">
+                              <AdminActiveToggle entity="colors" entityLabel="رنگ" id={color.id} name={color.name} isActive={color.isActive} />
                               <BpButton isIconOnly size="sm" variant="ghost" title="ویرایش رنگ" aria-label={`ویرایش ${color.name}`} onClick={() => startEdit(color)}><SquarePen size={15} strokeWidth={1.5} /></BpButton>
                               <BpButton isIconOnly size="sm" variant="ghost" className="bp-btn-danger-icon" title="حذف رنگ" aria-label={`حذف ${color.name}`} onClick={() => { setDeleteError(""); setDeleteTarget(color); }}><Trash2 size={15} strokeWidth={1.5} /></BpButton>
                             </div>
