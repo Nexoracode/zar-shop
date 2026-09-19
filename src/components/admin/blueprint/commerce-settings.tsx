@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useState, type FormEvent } from "react";
+import { useRef, useState, type FormEvent } from "react";
 import { toast } from "@heroui/react";
-import { CheckCircle2, CreditCard, MapPin, Plus, Truck } from "lucide-react";
+import { CheckCircle2, CreditCard, Gift, MapPin, Plus, Truck } from "lucide-react";
 import type { CommerceSettings as CommerceSettingsData } from "@/modules/settings/commerce-settings";
+import { commerceSettingsLimits } from "@/modules/settings/settings-limits";
 import { BpButton, BpCheckbox, BpKicker, BpNumberInput, BpTag } from "./ui";
 import { BlueprintShippingOriginPicker } from "./shipping-origin-picker";
 
@@ -22,15 +23,31 @@ function OptionCheckbox({ icon, title, description, isSelected, onChange }: { ic
 export function BlueprintCommerceSettings({ initialSettings, configuredGatewayCount }: { initialSettings: CommerceSettingsData; configuredGatewayCount: number }) {
   const [settings, setSettings] = useState(initialSettings);
   const [saving, setSaving] = useState(false);
+  const formRef = useRef<HTMLFormElement>(null);
+  // The threshold is edited apart from the rest: switching free shipping off stores `null`, but the amount typed
+  // stays here so switching it back on does not lose it.
+  const [freeShippingEnabled, setFreeShippingEnabled] = useState(initialSettings.freeShippingThreshold !== null);
+  const [freeShippingAmount, setFreeShippingAmount] = useState(String(initialSettings.freeShippingThreshold ?? commerceSettingsLimits.defaultFreeShippingThreshold));
+  const [freeShippingError, setFreeShippingError] = useState<string | null>(null);
   const set = <Key extends keyof CommerceSettingsData>(key: Key, value: CommerceSettingsData[Key]) => setSettings((current) => ({ ...current, [key]: value }));
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (freeShippingEnabled && !(Number(freeShippingAmount) >= 1)) {
+      setFreeShippingError("حداقل مبلغ ارسال رایگان را بیشتر از صفر وارد کنید.");
+      requestAnimationFrame(() => formRef.current?.querySelector<HTMLElement>("[data-field=freeShippingThreshold]")?.focus());
+      return;
+    }
+    setFreeShippingError(null);
     setSaving(true);
     try {
-      const response = await fetch("/api/admin/settings/commerce", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(settings) });
+      const response = await fetch("/api/admin/settings/commerce", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...settings, freeShippingThreshold: freeShippingEnabled ? Number(freeShippingAmount) : null }) });
       const result = await response.json().catch(() => null);
-      if (!response.ok) throw new Error(result?.message ?? "ذخیره تنظیمات ارسال و پرداخت انجام نشد.");
+      if (!response.ok) {
+        const fieldError = result?.issues?.freeShippingThreshold?.[0];
+        if (fieldError) setFreeShippingError(fieldError);
+        throw new Error(result?.message ?? "ذخیره تنظیمات ارسال و پرداخت انجام نشد.");
+      }
       setSettings(result as CommerceSettingsData);
       toast.success("تنظیمات ارسال و پرداخت ذخیره شد", { description: "روش‌های تحویل و محاسبه هزینه روی checkout اعمال شدند." });
     } catch (reason) {
@@ -41,7 +58,7 @@ export function BlueprintCommerceSettings({ initialSettings, configuredGatewayCo
   }
 
   return (
-    <form onSubmit={submit} className="grid gap-2">
+    <form ref={formRef} onSubmit={submit} noValidate className="grid gap-2">
       <div className="grid items-start gap-2 lg:grid-cols-[minmax(260px,0.82fr)_minmax(0,1.18fr)]">
         <section className="bp-frame relative p-[16px]">
           <BpKicker>روش‌های پرداخت</BpKicker>
@@ -67,6 +84,16 @@ export function BlueprintCommerceSettings({ initialSettings, configuredGatewayCo
               <div className="mt-2.5 grid gap-2.5 2xl:grid-cols-2">
                 <OptionCheckbox icon={<Truck size={17} />} title="ارسال بیمه‌شده" description="هزینه پس از دریافت نشانی و بر اساس وزن مرسوله محاسبه می‌شود." isSelected={settings.insuredShippingEnabled} onChange={(value) => set("insuredShippingEnabled", value)} />
                 <OptionCheckbox icon={<MapPin size={17} />} title="تحویل حضوری" description="مشتری سفارش پرداخت‌شده را بدون هزینه ارسال از فروشگاه تحویل می‌گیرد." isSelected={settings.inStorePickupEnabled} onChange={(value) => set("inStorePickupEnabled", value)} />
+              </div>
+            </div>
+            <div className="border border-[var(--bp-divider)] bg-[var(--bp-bg)] p-3">
+              <strong className="block text-[13px]">ارسال رایگان</strong>
+              <p className="bp-muted m-0 mt-1 text-[11px] leading-5">وقتی جمع کالاهای سبد به این مبلغ برسد، هزینه ارسال حذف می‌شود و مشتری در سبد خرید نوار پیشرفت تا ارسال رایگان را می‌بیند.</p>
+              <div className="mt-2.5 grid gap-2.5">
+                <OptionCheckbox icon={<Gift size={17} />} title="ارسال رایگان بالاتر از مبلغ مشخص" description="با خاموش‌کردنش ارسال رایگان و نوار پیشرفت سبد غیرفعال می‌شود." isSelected={freeShippingEnabled} onChange={(value) => { setFreeShippingEnabled(value); setFreeShippingError(null); }} />
+                {freeShippingEnabled && (
+                  <BpNumberInput name="freeShippingThreshold" label="حداقل مبلغ خرید (ریال)" isPrice required value={freeShippingAmount} error={freeShippingError} onValueChange={(value) => { if (value.length <= String(commerceSettingsLimits.maxAmount).length) { setFreeShippingAmount(value); setFreeShippingError(null); } }} wrapperClassName="sm:max-w-[320px]" />
+                )}
               </div>
             </div>
             <div className="border border-[var(--bp-divider)] bg-[var(--bp-bg)] p-3">

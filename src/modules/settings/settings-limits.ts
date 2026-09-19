@@ -43,3 +43,6 @@ export const walletSettingsLimits = {
 export const walletFieldLimits = {
   adjustmentReason: 191,
 } as const;
+
+/** Ceiling for a shipping fee or the free-shipping threshold, in rials. Read by the schema and by the form's input, so they cannot drift. */
+export const commerceSettingsLimits = { maxAmount: 999_999_999_999_999, defaultFreeShippingThreshold: 100_000_000 } as const;

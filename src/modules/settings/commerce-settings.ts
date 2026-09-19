@@ -1,12 +1,13 @@
 import { cache } from "react";
 import { z } from "zod";
 import { db } from "@/lib/db";
+import { commerceSettingsLimits } from "@/modules/settings/settings-limits";
 import { STORE_SETTING_ID } from "@/modules/settings/store-settings";
 
 export const commerceSettingsSchema = z.object({
   onlinePaymentEnabled: z.boolean(),
-  defaultShippingFee: z.coerce.number().int().min(0).max(999_999_999_999_999),
-  freeShippingThreshold: z.union([z.null(), z.coerce.number().int().min(1).max(999_999_999_999_999)]),
+  defaultShippingFee: z.coerce.number().int().min(0).max(commerceSettingsLimits.maxAmount),
+  freeShippingThreshold: z.union([z.null(), z.coerce.number().int().min(1, "حداقل مبلغ ارسال رایگان باید بیشتر از صفر باشد.").max(commerceSettingsLimits.maxAmount)]),
   preparationDays: z.coerce.number().int().min(0).max(90),
   insuredShippingEnabled: z.boolean(),
   inStorePickupEnabled: z.boolean(),
@@ -28,7 +29,7 @@ export type CommerceSettings = z.infer<typeof commerceSettingsSchema>;
 export const commerceSettingsDefaults: CommerceSettings = {
   onlinePaymentEnabled: true,
   defaultShippingFee: 0,
-  freeShippingThreshold: 100_000_000,
+  freeShippingThreshold: commerceSettingsLimits.defaultFreeShippingThreshold,
   preparationDays: 2,
   insuredShippingEnabled: true,
   inStorePickupEnabled: true,
