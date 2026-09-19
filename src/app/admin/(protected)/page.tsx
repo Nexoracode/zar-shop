@@ -1,4 +1,6 @@
 import { db } from "@/lib/db";
+import { conversionRate, getDashboardAttention, getDashboardInsights } from "@/modules/admin/dashboard-insights";
+import { getVisitorAnalytics } from "@/modules/analytics/visitor-stats";
 import { requirePermission } from "@/modules/auth/session";
 import { getCatalogSettings } from "@/modules/settings/catalog-settings";
 import { BlueprintDashboardView } from "@/components/admin/blueprint/dashboard-view";
@@ -55,6 +57,14 @@ export default async function AdminPage() {
     isFullAdmin ? db.order.groupBy({ by: ["status"], _count: { _all: true } }) : Promise.resolve([]),
   ]);
 
+  // Traffic and the 30-day sales breakdown are store-wide figures, so — like the catalogue and
+  // customer numbers above — only a full admin loads them.
+  const [visitors, insights, attention] = await Promise.all([
+    isFullAdmin ? getVisitorAnalytics() : Promise.resolve(null),
+    isFullAdmin ? getDashboardInsights() : Promise.resolve(null),
+    getDashboardAttention(actor.role),
+  ]);
+
   const dayTotals = new Map<string, number>();
   for (let offset = 0; offset < SALES_TREND_DAYS; offset += 1) {
     const day = new Date(trendStart);
@@ -92,6 +102,10 @@ export default async function AdminPage() {
     lowStockProducts,
     salesTrend,
     orderStatusBreakdown,
+    visitors,
+    insights,
+    conversion: visitors && insights ? conversionRate(insights.periodOrders, visitors.periodVisitors) : null,
+    attention,
   };
 
   return <BlueprintDashboardView {...data} />;

@@ -4,6 +4,7 @@ import { SitePromoBanner } from "@/components/site-promo-banner";
 import { AppChrome } from "@/components/app-chrome";
 import { AppToasts } from "@/components/app-toasts";
 import { RouteProgressBar } from "@/components/route-progress-bar";
+import { SiteTracker } from "@/components/site-tracker";
 import { getCurrentUser } from "@/modules/auth/session";
 import { getGeneralStoreSettings, isStorefrontAvailable } from "@/modules/settings/general-settings";
 import { getHomepageSettings } from "@/modules/settings/homepage-settings";
@@ -55,6 +56,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
     <html lang="fa" dir="rtl" data-theme="zar" data-scroll-behavior="smooth">
       <body style={brandCssVariables(brandSettings)}>
         <RouteProgressBar />
+        <SiteTracker />
         <AppChrome
           header={<><SitePromoBanner settings={homepageSettings} /><StorefrontHeader settings={settings} brand={brandSettings} user={user} menuItems={homepageSettings.menuItems} /></>}
           footer={<StorefrontFooter settings={settings} brand={brandSettings} />}

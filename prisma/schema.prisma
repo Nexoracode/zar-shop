@@ -619,6 +619,37 @@ model ProductFavorite {
   @@index([productId])
 }
 
+enum VisitorDevice {
+  MOBILE
+  DESKTOP
+  TABLET
+}
+
+/// One storefront page view, appended by /api/track. `visitorId` is a random first-party cookie
+/// value — never an IP address or anything tied to a user account — so the store's traffic
+/// stats stay anonymous. Pruned after `PAGE_VIEW_RETENTION_DAYS` (modules/analytics/tracking.ts).
+model PageView {
+  id           String        @id @default(cuid())
+  visitorId    String        @db.VarChar(32)
+  path         String        @db.VarChar(255)
+  /// Host of the page that linked here, or null for a direct visit / one from the store itself.
+  referrerHost String?       @db.VarChar(120)
+  browser      String        @db.VarChar(30)
+  device       VisitorDevice
+  createdAt    DateTime      @default(now())
+
+  @@index([createdAt])
+  @@index([visitorId, createdAt])
+}
+
+/// Last time each visitor was seen (page view or heartbeat) — what "online now" counts.
+model VisitorPresence {
+  visitorId  String   @id @db.VarChar(32)
+  lastSeenAt DateTime
+
+  @@index([lastSeenAt])
+}
+
 model ProductVisit {
   id         String   @id @default(cuid())
   userId     String

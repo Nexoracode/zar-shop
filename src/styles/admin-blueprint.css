@@ -275,6 +275,19 @@
   .bp-spinner { animation-duration: 2s; }
 }
 
+/* — dashboard charts — plain CSS shapes, so their corners stay put at any width — */
+.bp-bar { display: block; min-height: 2px; border-radius: 3px 3px 0 0; transition: height 0.3s ease; }
+.bp-bar-track { height: 6px; overflow: hidden; border-radius: 3px; background: var(--bp-divider); }
+.bp-bar-fill { display: block; height: 100%; border-radius: 3px; }
+/* A pulsing dot for "live" figures such as visitors online right now. */
+.bp-live-dot { position: relative; display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--bp-success); }
+.bp-live-dot::after { content: ""; position: absolute; inset: 0; border-radius: 50%; background: inherit; animation: bp-ping 1.6s cubic-bezier(0, 0, 0.2, 1) infinite; }
+@keyframes bp-ping { 75%, 100% { transform: scale(2.6); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .bp-live-dot::after { animation: none; }
+  .bp-bar { transition: none; }
+}
+
 /* — forms — */
 /* `min-width: 0`: as a flex/grid item, this otherwise takes its automatic minimum size from its
    content's own min-content — and a percentage width on a descendant (the message span below)

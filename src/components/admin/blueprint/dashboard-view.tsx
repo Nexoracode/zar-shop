@@ -1,9 +1,11 @@
 import Link from "next/link";
-import { ArrowLeft, Boxes, CircleDollarSign, FolderTree, Images, PackagePlus, ShoppingBag, TriangleAlert, Users } from "lucide-react";
+import { ArrowLeft, Boxes, CircleDollarSign, Eye, FolderTree, Images, PackagePlus, Percent, ReceiptText, ShoppingBag, TrendingUp, TriangleAlert, UserPlus, Users } from "lucide-react";
 import { formatDate, formatMoney } from "@/lib/format";
 import { orderStatusLabels, orderStatusTones, type AdminTone } from "@/modules/admin/labels";
+import { growthPercent, INSIGHT_PERIOD_DAYS } from "@/modules/admin/dashboard-insights";
 import { AdminBulkCheckbox, AdminBulkEditor } from "@/components/admin-bulk-editor";
 import type { AdminDashboardData } from "@/components/admin/dashboard-data";
+import { DashboardAttentionPanel, DashboardPayments, DashboardSalesBreakdown, DashboardTraffic, Empty, Kpi, Panel } from "./dashboard-analytics";
 import { BpKicker } from "./ui/card";
 import { BpDonutChart } from "./ui/donut-chart";
 import { BpLineChart } from "./ui/line-chart";
@@ -19,27 +21,41 @@ const toneColor: Record<AdminTone, string> = {
   gold: "var(--bp-warning)",
 };
 
-function Panel({ children, className = "" }: { children: React.ReactNode; className?: string }) {
-  return <section className={`bp-frame relative overflow-hidden ${className}`}>{children}</section>;
-}
+type KpiItem = React.ComponentProps<typeof Kpi>;
 
-function Empty({ title, description }: { title: string; description: string }) {
+function KpiGrid({ items, columns = 4 }: { items: KpiItem[]; columns?: 2 | 4 }) {
   return (
-    <div className="grid place-items-center px-5 py-12 text-center">
-      <strong className="text-sm">{title}</strong>
-      <span className="bp-muted mt-1 text-xs">{description}</span>
+    <div className={`grid grid-cols-1 gap-2 sm:grid-cols-2 ${columns === 4 ? "xl:grid-cols-4" : "xl:grid-cols-2"}`}>
+      {items.map((item) => <Kpi key={item.label} {...item} />)}
     </div>
   );
 }
 
-export function BlueprintDashboardView({ isFullAdmin, activeProducts, customers, actionableOrders, revenueTotal, lowStockThreshold, recentOrders, lowStockProducts, salesTrend, orderStatusBreakdown }: AdminDashboardData) {
-  const kpis = [
-    { label: "مجموع فروش موفق", value: formatMoney(revenueTotal), hint: "سفارش‌های پرداخت‌شده و تکمیل‌شده", icon: CircleDollarSign, compact: true },
-    { label: "سفارش نیازمند رسیدگی", value: actionableOrders.toLocaleString("fa-IR"), hint: "پرداخت‌شده یا در حال آماده‌سازی", icon: ShoppingBag },
+export function BlueprintDashboardView({ isFullAdmin, activeProducts, customers, actionableOrders, revenueTotal, lowStockThreshold, recentOrders, lowStockProducts, salesTrend, orderStatusBreakdown, visitors, insights, conversion, attention }: AdminDashboardData) {
+  const days = INSIGHT_PERIOD_DAYS.toLocaleString("fa-IR");
+  const totalRevenueKpi: KpiItem = { label: "مجموع فروش موفق", value: formatMoney(revenueTotal), hint: "سفارش‌های پرداخت‌شده و تکمیل‌شده", icon: CircleDollarSign, compact: true };
+  const actionableKpi: KpiItem = { label: "سفارش نیازمند رسیدگی", value: actionableOrders.toLocaleString("fa-IR"), hint: "پرداخت‌شده یا در حال آماده‌سازی", icon: ShoppingBag };
+
+  const visitorKpis: KpiItem[] = visitors ? [
+    { label: "کاربران آنلاین", value: visitors.online.toLocaleString("fa-IR"), hint: "فعال در ۵ دقیقهٔ اخیر", icon: Users, live: true },
+    { label: "بازدید امروز", value: visitors.todayViews.toLocaleString("fa-IR"), hint: "کل صفحات مشاهده‌شده", icon: Eye },
+    { label: "افراد امروز", value: visitors.todayVisitors.toLocaleString("fa-IR"), hint: "بازدیدکنندگان یکتا", icon: Users },
+    { label: "نرخ تبدیل", value: conversion === null ? "—" : `${conversion.toLocaleString("fa-IR")}٪`, hint: `سفارش موفق به بازدیدکننده در ${days} روز اخیر`, icon: Percent },
+  ] : [];
+
+  const salesKpis: KpiItem[] = insights ? [
+    { label: "فروش امروز", value: formatMoney(insights.todayRevenue), hint: `${insights.todayOrders.toLocaleString("fa-IR")} سفارش موفق`, icon: CircleDollarSign, compact: true },
+    { label: `فروش ${days} روز اخیر`, value: formatMoney(insights.periodRevenue), hint: `نسبت به ${days} روز قبل از آن`, icon: TrendingUp, compact: true, growth: growthPercent(Number(insights.periodRevenue), Number(insights.previousPeriodRevenue)) },
+    { label: "میانگین ارزش سفارش", value: formatMoney(insights.periodOrders > 0 ? Math.round(Number(insights.periodRevenue) / insights.periodOrders).toString() : "0"), hint: `${insights.periodOrders.toLocaleString("fa-IR")} سفارش در ${days} روز اخیر`, icon: ReceiptText, compact: true },
+    totalRevenueKpi,
+  ] : [];
+
+  const overviewKpis: KpiItem[] = [
+    actionableKpi,
     { label: "محصول منتشرشده", value: activeProducts.toLocaleString("fa-IR"), hint: "قابل مشاهده در فروشگاه", icon: Boxes },
     { label: "مشتری ثبت‌نام‌شده", value: customers.toLocaleString("fa-IR"), hint: "حساب‌های مشتری فعال و غیرفعال", icon: Users },
+    { label: "مشتری جدید", value: (insights?.newCustomers ?? 0).toLocaleString("fa-IR"), hint: `ثبت‌نام در ${days} روز اخیر`, icon: UserPlus },
   ];
-  const visibleKpis = isFullAdmin ? kpis : kpis.slice(0, 2);
 
   const shortcuts = [
     { href: "/admin/products/new", label: "ثبت محصول جدید", description: "مشخصات، قیمت‌گذاری و تصاویر", icon: PackagePlus },
@@ -57,18 +73,19 @@ export function BlueprintDashboardView({ isFullAdmin, activeProducts, customers,
         <p className="bp-muted mb-0 mt-1 max-w-2xl text-[13px]">وضعیت فروش، سفارش‌ها و موجودی محصولات را یک‌جا دنبال کنید.</p>
       </header>
 
-      <div className={`grid grid-cols-1 gap-2 sm:grid-cols-2 ${isFullAdmin ? "xl:grid-cols-4" : "xl:grid-cols-2"}`}>
-        {visibleKpis.map(({ label, value, hint, icon: Icon, compact }) => (
-          <Panel key={label} className="p-[18px]">
-            <div className="flex items-start justify-between gap-3">
-              <BpKicker>{label}</BpKicker>
-              <Icon size={17} strokeWidth={1.5} className="flex-none text-[var(--bp-accent)]" />
-            </div>
-            <strong className={`mt-2 block truncate font-bold tracking-[-0.02em] ${compact ? "text-lg" : "text-[26px]"}`}>{value}</strong>
-            <p className="bp-muted mb-0 mt-1 truncate text-[11px]">{hint}</p>
-          </Panel>
-        ))}
-      </div>
+      {isFullAdmin && visitors && (
+        <section className="grid gap-2" aria-label="آمار بازدید فروشگاه">
+          <KpiGrid items={visitorKpis} />
+          <DashboardTraffic visitors={visitors} />
+        </section>
+      )}
+
+      {isFullAdmin ? (
+        <section className="grid gap-2" aria-label="آمار فروش">
+          <KpiGrid items={salesKpis} />
+          <KpiGrid items={overviewKpis} />
+        </section>
+      ) : <KpiGrid columns={2} items={[totalRevenueKpi, actionableKpi]} />}
 
       {isFullAdmin && (
         <div className="grid gap-2 xl:grid-cols-[minmax(0,1.55fr)_minmax(280px,0.75fr)]">
@@ -104,6 +121,16 @@ export function BlueprintDashboardView({ isFullAdmin, activeProducts, customers,
           </Panel>
         </div>
       )}
+
+      {isFullAdmin && insights ? (
+        <section className="grid gap-2" aria-label="پراکندگی و پرفروش‌ها">
+          <DashboardSalesBreakdown insights={insights} periodDays={INSIGHT_PERIOD_DAYS} />
+          <div className="grid gap-2 xl:grid-cols-2">
+            <DashboardPayments insights={insights} periodDays={INSIGHT_PERIOD_DAYS} />
+            <DashboardAttentionPanel attention={attention} />
+          </div>
+        </section>
+      ) : <DashboardAttentionPanel attention={attention} />}
 
       <div className={`grid gap-2 ${isFullAdmin ? "xl:grid-cols-[minmax(0,1.55fr)_minmax(280px,0.75fr)]" : "grid-cols-1"}`}>
         <Panel>

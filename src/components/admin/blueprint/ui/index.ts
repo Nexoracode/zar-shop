@@ -1,4 +1,6 @@
 export { BpAsyncMultiSelect, type BpAsyncMultiSelectHit } from "./async-multi-select";
+export { BpBarChart, type BpBarChartPoint, type BpBarSeries } from "./bar-chart";
+export { BpBarList, type BpBarListItem } from "./bar-list";
 export { BpButton, BpLinkButton, BpSpinner, type BpButtonVariant } from "./button";
 export { BpCard, BpCardTitle, BpKicker } from "./card";
 export { BpCheckbox } from "./checkbox";

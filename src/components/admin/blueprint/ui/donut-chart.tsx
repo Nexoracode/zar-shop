@@ -18,7 +18,7 @@ function layoutSlices(data: BpDonutSlice[], total: number) {
 }
 
 /** A minimal inline-SVG donut chart, same no-library reasoning as `BpLineChart`. */
-export function BpDonutChart({ data, ariaLabel }: { data: BpDonutSlice[]; ariaLabel: string }) {
+export function BpDonutChart({ data, ariaLabel, centerLabel = "سفارش" }: { data: BpDonutSlice[]; ariaLabel: string; /** The word under the total in the ring's centre. */ centerLabel?: string }) {
   const total = data.reduce((sum, slice) => sum + slice.value, 0) || 1;
   const segments = layoutSlices(data, total);
 
@@ -43,7 +43,7 @@ export function BpDonutChart({ data, ariaLabel }: { data: BpDonutSlice[]; ariaLa
           </circle>
         ))}
         <text x={SIZE / 2} y={SIZE / 2 - 4} textAnchor="middle" className="fill-[var(--bp-text)]" style={{ font: "700 20px var(--bp-font)" }}>{total.toLocaleString("fa-IR")}</text>
-        <text x={SIZE / 2} y={SIZE / 2 + 16} textAnchor="middle" className="fill-[var(--bp-muted)]" style={{ font: "400 11px var(--bp-font)" }}>سفارش</text>
+        <text x={SIZE / 2} y={SIZE / 2 + 16} textAnchor="middle" className="fill-[var(--bp-muted)]" style={{ font: "400 11px var(--bp-font)" }}>{centerLabel}</text>
       </svg>
       <ul className="m-0 grid w-full min-w-0 list-none gap-1.5 p-0">
         {data.map((slice) => (
