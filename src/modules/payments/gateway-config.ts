@@ -11,6 +11,17 @@ export const gatewayConfigInputSchema = z.object({
   isSandbox: z.boolean().default(false),
 });
 
+/**
+ * Editing an already-registered gateway: the credential is only replaced when a new one is sent
+ * (the stored one is encrypted and never shown, so leaving it blank keeps it), and the sandbox flag
+ * is only touched when sent. At least one of the two must be present.
+ */
+export const gatewayConfigUpdateSchema = z.object({
+  provider: gatewayProviderSchema,
+  credential: z.string().trim().min(4, "شناسه اتصال باید حداقل ۴ نویسه باشد.").max(gatewayFieldLimits.credential).optional(),
+  isSandbox: z.boolean().optional(),
+}).refine((value) => value.credential !== undefined || value.isSandbox !== undefined, "تغییری برای ذخیره ارسال نشده است.");
+
 export type PublicGatewayConfig = {
   id: string;
   provider: GatewayProviderId;

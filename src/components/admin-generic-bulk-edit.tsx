@@ -3,15 +3,17 @@
 import { useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "@heroui/react";
-import { ListChecks } from "lucide-react";
+import { ListChecks, Power } from "lucide-react";
 import { AdminDialog, AdminDialogButton } from "@/components/admin/admin-dialog";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
 import { useBulkSelection, type AdminBulkEntity } from "@/components/admin-bulk-editor";
 import { requestErrorMessage, requestJson } from "@/lib/api-request";
 import { BpButton } from "@/components/admin/blueprint/ui/button";
 import { BpSelect, type BpSelectOption } from "@/components/admin/blueprint/ui/select";
 
-type AdminBulkConfirmation = { title: string; description: string; confirmLabel?: string };
+/** `tone: "warning"` marks a reversible switch-off (orange card, no trash icon); the default is a destructive confirmation. */
+type AdminBulkConfirmation = { title: string; description: string; confirmLabel?: string; tone?: "danger" | "warning" };
 
 /** A second-level choice under a change type, e.g. "روشن" under "نمایش ویژه". */
 export type AdminBulkChangeOption = { value: string; label: string; confirmation?: AdminBulkConfirmation };
@@ -124,13 +126,30 @@ function AdminGenericBulkEditModal({ open, entity, entityLabel, ids, changeTypes
           )}
         </div>
       </AdminDialog>
+      {/* A destructive confirmation (delete) gets the red card; a reversible one (switch off) the orange one. */}
       <DeleteConfirmDialog
-        open={Boolean(pendingAction)}
+        open={Boolean(pendingAction) && pendingAction?.confirmation.tone !== "warning"}
         title={pendingAction?.confirmation.title}
         itemLabel="موارد انتخاب‌شده"
         itemName={`${ids.length.toLocaleString("fa-IR")} ${entityLabel}`}
         confirmLabel={pendingAction?.confirmation.confirmLabel ?? "تأیید عملیات"}
         description={pendingAction?.confirmation.description ?? ""}
+        loading={loading}
+        onClose={() => setPendingAction(null)}
+        onConfirm={() => { if (pendingAction) void apply(pendingAction.value); }}
+      />
+      <ConfirmDialog
+        open={pendingAction?.confirmation.tone === "warning"}
+        tone="warning"
+        title={pendingAction?.confirmation.title ?? ""}
+        subtitle="هر زمان بخواهید می‌توانید دوباره فعالشان کنید."
+        itemLabel="موارد انتخاب‌شده"
+        itemName={`${ids.length.toLocaleString("fa-IR")} ${entityLabel}`}
+        confirmLabel={pendingAction?.confirmation.confirmLabel ?? "تأیید عملیات"}
+        loadingLabel="در حال اعمال..."
+        description={pendingAction?.confirmation.description ?? ""}
+        icon={<Power size={24} strokeWidth={1.7} />}
+        confirmIcon={<Power size={15} strokeWidth={1.7} />}
         loading={loading}
         onClose={() => setPendingAction(null)}
         onConfirm={() => { if (pendingAction) void apply(pendingAction.value); }}

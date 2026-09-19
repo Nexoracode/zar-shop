@@ -4,11 +4,11 @@ import { useMemo, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "@heroui/react";
 import Link from "next/link";
-import { AlertTriangle, ExternalLink, MessageSquareText, ShieldCheck, SquarePen, ToggleLeft, ToggleRight, Trash2 } from "lucide-react";
+import { AlertTriangle, ExternalLink, MessageSquareText, Power, ShieldCheck, SquarePen, ToggleLeft, ToggleRight, Trash2 } from "lucide-react";
 import { AdminBulkCheckbox, AdminBulkEditor } from "@/components/admin-bulk-editor";
 import { AdminColumn, AdminColumnSettingsButton, AdminColumnVisibility } from "@/components/admin-column-visibility";
 import { AdminGenericBulkEditButton } from "@/components/admin-generic-bulk-edit";
-import { AdminDialog, AdminDialogButton } from "@/components/admin/admin-dialog";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
 import { AdminEmptyState, AdminPanel } from "@/components/admin-ui";
 import { smsProviders, type SmsProviderId } from "@/modules/communications/sms-providers";
@@ -195,28 +195,21 @@ export function BlueprintSmsProviderManager({ mode, initialConfigs, smsEnabled, 
           onClose={() => setDeleting(null)}
           onConfirm={() => void confirmDelete()}
         />
-        <AdminDialog
+        <ConfirmDialog
           open={Boolean(deactivating)}
-          ariaLabel="غیرفعال‌سازی ارائه‌دهنده پیامک"
-          isBusy={busy !== null}
+          tone="warning"
+          title="غیرفعال‌سازی ارائه‌دهندهٔ پیامک"
+          subtitle="هر زمان بخواهید می‌توانید دوباره فعالش کنید."
+          itemName={deactivating?.displayName}
+          confirmLabel="غیرفعال‌سازی"
+          loadingLabel="در حال غیرفعال‌سازی..."
+          description="با غیرفعال‌شدن این ارائه‌دهنده هیچ پیامکی، از جمله کد یک‌بارمصرف ورود و ثبت‌نام، ارسال نمی‌شود تا ارائه‌دهنده‌ای را دوباره فعال کنید."
+          icon={<Power size={24} strokeWidth={1.7} />}
+          confirmIcon={<Power size={15} strokeWidth={1.7} />}
+          loading={busy === `PATCH-${deactivating?.provider}`}
           onClose={() => setDeactivating(null)}
-          title={<span className="flex items-center gap-2"><AlertTriangle size={17} className="text-[var(--warning)]" />غیرفعال‌سازی ارائه‌دهنده پیامک</span>}
-          actions={<>
-            <AdminDialogButton variant="danger" isPending={busy === `PATCH-${deactivating?.provider}`} onPress={() => void confirmDeactivate()}>غیرفعال‌سازی</AdminDialogButton>
-            <AdminDialogButton variant="secondary" isDisabled={busy !== null} onPress={() => setDeactivating(null)}>انصراف</AdminDialogButton>
-          </>}
-        >
-          {deactivating && (
-            <div className="border border-[var(--border)] bg-[var(--surface-secondary)] p-3">
-              <span className="block text-[11px] font-bold text-[var(--muted)]">مورد انتخاب‌شده</span>
-              <strong className="mt-1 block truncate text-sm">{deactivating.displayName}</strong>
-            </div>
-          )}
-          <div className="flex items-start gap-2.5 border border-[var(--warning)] bg-[var(--warning)]/10 p-3 text-[var(--warning)]">
-            <AlertTriangle size={15} className="mt-0.5 shrink-0" />
-            <p className="m-0 text-xs leading-6">با غیرفعال‌شدن این ارائه‌دهنده هیچ پیامکی، از جمله کد یک‌بارمصرف ورود و ثبت‌نام، ارسال نمی‌شود تا ارائه‌دهنده‌ای را دوباره فعال کنید.</p>
-          </div>
-        </AdminDialog>
+          onConfirm={() => void confirmDeactivate()}
+        />
       </AdminPanel>
     );
   }

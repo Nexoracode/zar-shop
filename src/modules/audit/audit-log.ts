@@ -55,6 +55,7 @@ const actionLabels: Record<string, string> = {
   CONTENT_SETTINGS_UPDATE: "ویرایش محتوا و FAQ",
   COMMUNICATION_SETTINGS_UPDATE: "ویرایش تنظیمات پیامک",
   PAYMENT_GATEWAY_CONFIG_UPSERT: "ثبت یا ویرایش درگاه پرداخت",
+  PAYMENT_GATEWAY_CONFIG_UPDATE: "ویرایش درگاه پرداخت",
   PAYMENT_GATEWAY_CONFIG_DELETE: "حذف درگاه پرداخت",
   SMS_PROVIDER_CONFIG_UPSERT: "ثبت یا ویرایش سامانه پیامک",
   SMS_PROVIDER_ACTIVATE: "فعال‌سازی سامانه پیامک",

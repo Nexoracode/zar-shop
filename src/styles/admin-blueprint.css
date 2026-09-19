@@ -815,6 +815,12 @@ select.bp-input { appearance: none; padding-inline-end: 28px; }
   background: var(--bp-danger-bg);
   box-shadow: 0 0 0 7px color-mix(in srgb, var(--bp-danger) 9%, transparent), 0 0 0 15px color-mix(in srgb, var(--bp-danger) 4%, transparent);
 }
+/* A reversible switch-off (deactivate, not delete) takes the warning colour instead of red. */
+.bp-dialog-confirm-warning .bp-confirm-icon {
+  color: var(--bp-warning);
+  background: var(--bp-warning-bg);
+  box-shadow: 0 0 0 7px color-mix(in srgb, var(--bp-warning) 10%, transparent), 0 0 0 15px color-mix(in srgb, var(--bp-warning) 5%, transparent);
+}
 .bp-dialog-confirm .bp-dialog-body { margin-top: calc(var(--bp-space-2) * -1); color: var(--bp-muted); font-size: 13px; opacity: 1; }
 .bp-confirm-item {
   display: grid;

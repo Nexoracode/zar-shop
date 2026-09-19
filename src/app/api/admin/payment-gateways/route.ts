@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { apiError } from "@/lib/http";
 import { getPermittedActor } from "@/modules/auth/session";
-import { gatewayConfigInputSchema, getPublicGatewayConfigs, encryptGatewayCredential, maskGatewayCredential } from "@/modules/payments/gateway-config";
+import { gatewayConfigInputSchema, gatewayConfigUpdateSchema, getPublicGatewayConfigs, encryptGatewayCredential, maskGatewayCredential } from "@/modules/payments/gateway-config";
 import { gatewayProviders } from "@/modules/payments/gateway-providers";
 import { auditRequestContext } from "@/modules/audit/request-context";
 
@@ -26,6 +26,35 @@ export async function POST(request: Request) {
       await transaction.auditLog.create({ data: { actorId: actor.id, action: "PAYMENT_GATEWAY_CONFIG_UPSERT", entityType: "PaymentGatewayConfig", entityId: config.id, ...auditRequestContext(request, { provider: input.provider, isSandbox: input.isSandbox }) } });
     });
     return NextResponse.json(await getPublicGatewayConfigs(), { status: 201 });
+  } catch (error) { return apiError(error); }
+}
+
+export async function PATCH(request: Request) {
+  try {
+    const actor = await getPermittedActor("settings:manage");
+    if (!actor) return NextResponse.json({ message: "دسترسی غیرمجاز است." }, { status: 403 });
+    const input = gatewayConfigUpdateSchema.parse(await request.json());
+    const existing = await db.paymentGatewayConfig.findUnique({ where: { provider: input.provider } });
+    if (!existing) return NextResponse.json({ message: "درگاه پیدا نشد." }, { status: 404 });
+    await db.$transaction(async (transaction) => {
+      await transaction.paymentGatewayConfig.update({
+        where: { provider: input.provider },
+        data: {
+          ...(input.credential ? { credentialEncrypted: encryptGatewayCredential(input.credential), credentialMasked: maskGatewayCredential(input.credential) } : {}),
+          ...(input.isSandbox !== undefined ? { isSandbox: input.isSandbox } : {}),
+        },
+      });
+      await transaction.auditLog.create({
+        data: {
+          actorId: actor.id,
+          action: "PAYMENT_GATEWAY_CONFIG_UPDATE",
+          entityType: "PaymentGatewayConfig",
+          entityId: existing.id,
+          ...auditRequestContext(request, { provider: input.provider, credentialChanged: Boolean(input.credential), previousIsSandbox: existing.isSandbox, isSandbox: input.isSandbox ?? existing.isSandbox }),
+        },
+      });
+    });
+    return NextResponse.json(await getPublicGatewayConfigs());
   } catch (error) { return apiError(error); }
 }
 
