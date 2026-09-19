@@ -7,6 +7,7 @@ import { BpBarChart } from "./ui/bar-chart";
 import { BpBarList } from "./ui/bar-list";
 import { BpKicker } from "./ui/card";
 import { BpDonutChart, type BpDonutSlice } from "./ui/donut-chart";
+import { BpProvinceMap } from "./ui/province-map";
 import { BpTag } from "./ui/tag";
 
 export function Panel({ children, className = "" }: { children: React.ReactNode; className?: string }) {
@@ -112,22 +113,28 @@ export function DashboardSalesBreakdown({ insights, periodDays }: { insights: Da
   const days = periodDays.toLocaleString("fa-IR");
   return (
     <>
-      <div className="grid gap-2 xl:grid-cols-2">
+      <div className="grid gap-2 xl:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
         <Panel className="p-[18px]">
           <div className="flex items-start justify-between gap-3">
             <div>
-              <BpKicker>پراکندگی سفارش‌ها</BpKicker>
+              <BpKicker>نقشهٔ پراکندگی سفارش‌ها</BpKicker>
               <div className="bp-card-title mt-0.5">فروش به تفکیک استان در {days} روز اخیر</div>
             </div>
             <MapPin size={17} strokeWidth={1.5} className="mt-0.5 flex-none text-[var(--bp-muted)]" />
           </div>
           <div className="mt-4">
             {insights.provinces.length ? (
-              <BpBarList
-                ariaLabel="استان‌های پرفروش"
-                items={insights.provinces.map((row) => ({ label: row.province, value: Number(row.revenue), valueLabel: formatMoney(row.revenue), hint: `${row.orders.toLocaleString("fa-IR")} سفارش` }))}
-              />
-            ) : <Empty title="هنوز سفارشی ثبت نشده است" description="استان‌های پرفروش پس از اولین سفارش موفق نمایش داده می‌شوند." />}
+              <div className="grid items-center gap-6 md:grid-cols-[minmax(0,1fr)_minmax(0,0.85fr)]">
+                <BpProvinceMap
+                  ariaLabel="نقشهٔ استان‌های ایران بر اساس فروش"
+                  data={insights.provinces.map((row) => ({ province: row.province, value: Number(row.revenue), valueLabel: formatMoney(row.revenue), hint: `${row.orders.toLocaleString("fa-IR")} سفارش` }))}
+                />
+                <BpBarList
+                  ariaLabel="استان‌های پرفروش"
+                  items={insights.provinces.slice(0, 8).map((row) => ({ label: row.province, value: Number(row.revenue), valueLabel: formatMoney(row.revenue), hint: `${row.orders.toLocaleString("fa-IR")} سفارش` }))}
+                />
+              </div>
+            ) : <Empty title="هنوز سفارشی ثبت نشده است" description="نقشهٔ فروش استان‌ها پس از اولین سفارش موفق نمایش داده می‌شود." />}
           </div>
         </Panel>
 

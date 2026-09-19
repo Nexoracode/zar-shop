@@ -65,7 +65,7 @@ export async function getDashboardInsights(now = new Date()): Promise<DashboardI
       SELECT JSON_UNQUOTE(JSON_EXTRACT(shippingAddress, '$.province')) AS province, COUNT(*) AS orders, SUM(total) AS revenue
       FROM \`Order\`
       WHERE status IN (${Prisma.join(successful)}) AND createdAt >= ${periodStart}
-      GROUP BY province ORDER BY revenue DESC LIMIT 12`),
+      GROUP BY province ORDER BY revenue DESC LIMIT 40`),
     db.payment.groupBy({
       by: ["provider"],
       where: { status: "SUCCESS", paidAt: { gte: periodStart } },

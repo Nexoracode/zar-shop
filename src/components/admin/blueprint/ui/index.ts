@@ -18,6 +18,7 @@ export { BpMultiSelect, type BpMultiSelectOption, type BpMultiSelectToken } from
 export { BpNumberInput } from "./number-input";
 export { BpPagination } from "./pagination";
 export { BpPopover } from "./popover";
+export { BpProvinceMap, type BpProvinceMapDatum } from "./province-map";
 export { BpSeg, type BpSegOption } from "./seg";
 export { BpSelect, type BpSelectOption } from "./select";
 export { BpSwitch } from "./switch";
