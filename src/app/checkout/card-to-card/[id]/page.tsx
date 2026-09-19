@@ -63,7 +63,7 @@ export default async function CardToCardPaymentPage({ params }: { params: Promis
 
   return (
     <>
-      <StandaloneTopBar backHref={underReview ? `/account/orders/${order.id}` : "/checkout"} backLabel={underReview ? "بازگشت به سفارش" : "بازگشت به روش‌های پرداخت"} />
+      <StandaloneTopBar backHref={underReview ? `/account/orders/${order.id}` : "/checkout"} backLabel={underReview ? "سفارش" : "روش‌های پرداخت"} />
       <main className="min-h-[calc(100dvh-4rem)] bg-[var(--background)] px-4 py-8 sm:px-6 sm:py-12">
         <div className="mx-auto w-full max-w-[1280px]">
           <CheckoutSteps />

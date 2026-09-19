@@ -74,7 +74,7 @@ export default async function CheckoutPage() {
     });
     return (
       <>
-      <StandaloneTopBar backHref="/cart" backLabel="بازگشت به سبد خرید" />
+      <StandaloneTopBar backHref="/cart" backLabel="سبد خرید" />
       <main className="min-h-[calc(100dvh-4rem)] bg-[var(--background)] px-4 py-8 sm:px-6 sm:py-12">
         <div className="mx-auto w-full max-w-[1280px]">
           <CheckoutSteps />
@@ -119,7 +119,7 @@ export default async function CheckoutPage() {
   const needsGoldRate = payableItems.some((item) => item.product.storeIndustry === "GOLD" && item.product.fixedPrice === null);
   const rate = gold?.pricePerGram18 ?? null;
 
-  if (needsGoldRate && rate === null) return <><StandaloneTopBar backHref="/cart" backLabel="بازگشت به سبد خرید" /><main className="min-h-[calc(100dvh-4rem)] bg-[var(--background)] px-4 py-12 sm:px-6"><div className="mx-auto max-w-3xl"><InlineAlert status="warning">نرخ لحظه‌ای طلا موقتاً در دسترس نیست. سفارش شما ثبت نشده و سبد خرید محفوظ است.</InlineAlert></div></main></>;
+  if (needsGoldRate && rate === null) return <><StandaloneTopBar backHref="/cart" backLabel="سبد خرید" /><main className="min-h-[calc(100dvh-4rem)] bg-[var(--background)] px-4 py-12 sm:px-6"><div className="mx-auto max-w-3xl"><InlineAlert status="warning">نرخ لحظه‌ای طلا موقتاً در دسترس نیست. سفارش شما ثبت نشده و سبد خرید محفوظ است.</InlineAlert></div></main></>;
 
   const linePrices = lines.map(({ item, unavailable }) => ({ item, unavailable, pricing: lineUnitPrice(item.product, item.selectionKey, rate) }));
   const prices = linePrices.filter((line) => !line.unavailable).map(({ item, pricing }) => ({ quantity: item.quantity, original: pricing?.originalPrice ?? 0, final: pricing?.finalPrice ?? 0, productId: item.product.id, categoryId: item.product.categoryId }));
@@ -159,7 +159,7 @@ export default async function CheckoutPage() {
 
   return (
     <>
-    <StandaloneTopBar backHref="/cart" backLabel="بازگشت به سبد خرید" />
+    <StandaloneTopBar backHref="/cart" backLabel="سبد خرید" />
     <main className="min-h-[calc(100dvh-4rem)] bg-[var(--background)] px-4 py-8 sm:px-6 sm:py-12">
       <div className="mx-auto w-full max-w-[1280px]">
         <CheckoutSteps />
