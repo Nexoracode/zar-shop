@@ -18,6 +18,7 @@ import { ProductStatusMenu } from "./product-publish-toggle";
 import { BpLinkButton } from "./ui/button";
 import { BpTable, BpTd, BpTh } from "./ui/table";
 import { BpTag } from "./ui/tag";
+import { BpTruncated } from "./ui/truncated-text";
 
 function Panel({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return <section className={`bp-frame relative ${className}`}>{children}</section>;
@@ -64,7 +65,7 @@ function ProductThumb({ product }: { product: ProductRow }) {
 function ProductName({ product }: { product: ProductRow }) {
   return (
     <div className="min-w-0">
-      <span className="block truncate" title={product.name}>{product.name}</span>
+      <BpTruncated text={product.name} />
       <ProductFlags product={product} />
     </div>
   );
@@ -163,8 +164,8 @@ export function BlueprintProductsView({ products, categories, filters, paginatio
                         <BpTd className="w-10 text-center"><AdminBulkCheckbox id={product.id} label={`انتخاب محصول ${product.name}`} /></BpTd>
                         <BpTd className="bp-muted w-10">{(pagination.skip + index + 1).toLocaleString("fa-IR")}</BpTd>
                         <AdminColumn id="product"><BpTd className="w-[240px] max-w-[240px]"><div className="flex min-w-0 items-center gap-2.5"><ProductThumb product={product} /><ThumbRule /><ProductName product={product} /></div></BpTd></AdminColumn>
-                        <AdminColumn id="category"><BpTd className="bp-muted max-w-[180px] truncate" title={product.category?.name ?? "بدون دسته‌بندی"}>{product.category?.name ?? "بدون دسته‌بندی"}</BpTd></AdminColumn>
-                        <AdminColumn id="brand"><BpTd className="bp-muted max-w-[140px] truncate" title={product.brand?.name ?? "بدون برند"}>{product.brand?.name ?? "بدون برند"}</BpTd></AdminColumn>
+                        <AdminColumn id="category"><BpTd className="bp-muted max-w-[180px] truncate">{product.category?.name ?? "بدون دسته‌بندی"}</BpTd></AdminColumn>
+                        <AdminColumn id="brand"><BpTd className="bp-muted max-w-[140px] truncate">{product.brand?.name ?? "بدون برند"}</BpTd></AdminColumn>
                         <AdminColumn id="priceOrWeight"><BpTd>{priceLabel(product)}</BpTd></AdminColumn>
                         <AdminColumn id="stock"><BpTd className={product.stock <= lowStockThreshold ? "font-bold text-[var(--bp-danger)]" : ""}>{product.stock.toLocaleString("fa-IR")}</BpTd></AdminColumn>
                         <AdminColumn id="status"><BpTd><BpTag tone={productStatusTones[product.status]} size="md" withDot>{productStatusLabels[product.status]}</BpTag></BpTd></AdminColumn>
