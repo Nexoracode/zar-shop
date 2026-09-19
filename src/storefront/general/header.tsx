@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { Bell, LayoutDashboard } from "lucide-react";
+import { Bell } from "lucide-react";
 import type { User } from "@generated/prisma/client";
 import { db } from "@/lib/db";
 import { formatMoney } from "@/lib/format";
@@ -65,7 +65,6 @@ export async function GeneralHeader({ settings, brand, user, menuItems }: Props)
           <StorefrontAccountMenu user={user ? { firstName: user.firstName, lastName: user.lastName, email: user.email, phone: user.phone, isGuest: user.isGuest } : null} walletBalance={walletBalance} />
           <span className="mx-2 h-6 w-px bg-slate-200" />
           <StorefrontCartLink initialCount={cartCount} className="grid size-10 place-items-center rounded-lg transition hover:bg-[var(--brand-primary)]/8" />
-          {user?.role !== "CUSTOMER" && user && <Link href="/admin" aria-label="پنل مدیریت"><LayoutDashboard size={20} /></Link>}
         </div>
       </div>
       <GeneralHeaderMenuRow categories={categories} menuItems={menuItems} deliveryPicker={<DeliveryAddressPicker initialAddresses={addresses} authenticated={Boolean(user)} user={{ firstName: user?.firstName ?? null, lastName: user?.lastName ?? null, phone: user?.phone ?? null }} compact />} />

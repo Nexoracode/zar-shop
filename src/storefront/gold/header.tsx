@@ -2,7 +2,6 @@ import Image from "next/image";
 import Link from "next/link";
 import {
   Bell,
-  LayoutDashboard,
   WalletCards,
 } from "lucide-react";
 import type { User } from "@generated/prisma/client";
@@ -83,7 +82,7 @@ export async function GoldHeader({ settings, brand, user, menuItems }: { setting
         <nav className="mr-10 flex h-full min-w-0 items-center gap-9 overflow-hidden text-sm" aria-label="منوی اصلی فروشگاه">
           {menuItems.map((item) => <Link key={item.id} href={item.href} className="flex h-full shrink-0 items-center border-b-2 border-transparent transition hover:border-[var(--success)] hover:text-[var(--success)]">{item.label}</Link>)}
         </nav>
-        <div className="mr-auto flex items-center gap-5 text-[#555]"><StorefrontSearch /><span className="h-7 w-px bg-[#ddd]" />{user && !user.isGuest && <StorefrontNotificationBell initialUnread={notifUnread} />}<StorefrontAccountMenu user={user ? { firstName: user.firstName, lastName: user.lastName, email: user.email, phone: user.phone, isGuest: user.isGuest } : null} walletBalance={walletBalance} /><StorefrontCartLink initialCount={cartCount} iconSize={22} />{user?.role !== "CUSTOMER" && user && <Link href="/admin" aria-label="پنل مدیریت"><LayoutDashboard size={20} /></Link>}</div>
+        <div className="mr-auto flex items-center gap-5 text-[#555]"><StorefrontSearch /><span className="h-7 w-px bg-[#ddd]" />{user && !user.isGuest && <StorefrontNotificationBell initialUnread={notifUnread} />}<StorefrontAccountMenu user={user ? { firstName: user.firstName, lastName: user.lastName, email: user.email, phone: user.phone, isGuest: user.isGuest } : null} walletBalance={walletBalance} /><StorefrontCartLink initialCount={cartCount} iconSize={22} /></div>
       </div>
 
       <div className="flex h-8 items-center justify-between bg-[#fdf9f2] px-4 text-[0.64rem] lg:hidden">
