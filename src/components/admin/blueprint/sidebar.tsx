@@ -51,11 +51,14 @@ export function BlueprintSidebar({ role, industry, mobileOpen, onCloseMobile, in
    * reader has not chosen yet, so the group holding the current route opens on its own and a
    * deep link never lands on a collapsed menu.
    */
-  const [openGroup, setOpenGroup] = useState<string | null | undefined>(undefined);
+  type OpenGroup = string | null | undefined;
+  const [railOpenGroup, setRailOpenGroup] = useState<OpenGroup>(undefined);
+  // The drawer keeps its own, or a tap in it would also open the (CSS-hidden) desktop rail's flyout for that group.
+  const [drawerOpenGroup, setDrawerOpenGroup] = useState<OpenGroup>(undefined);
   const serverSnapshot = useCallback(() => initialCollapsed, [initialCollapsed]);
   const isCollapsed = useSyncExternalStore(subscribeToSidebarCollapsed, getSidebarCollapsed, serverSnapshot);
 
-  function isGroupOpen(group: (typeof groups)[number], collapsed: boolean) {
+  function isGroupOpen(group: (typeof groups)[number], collapsed: boolean, openGroup: OpenGroup) {
     // Collapsed, "open" means a flyout is showing, and one of those has to be asked for — the
     // route-follows fallback would pop a panel open on every page load.
     if (openGroup === undefined) return !collapsed && group.items.some((item) => isAdminNavItemActive(item.href, pathname));
@@ -66,7 +69,7 @@ export function BlueprintSidebar({ role, industry, mobileOpen, onCloseMobile, in
    * The rail's icon-only mode is a desktop preference. The mobile drawer has the room and no hover
    * tooltips, so it always renders the full menu whatever the rail was last left at.
    */
-  const renderNav = (collapsed: boolean) => (
+  const renderNav = (collapsed: boolean, openGroup: OpenGroup, setOpenGroup: (group: OpenGroup) => void) => (
     <nav aria-label="منوی اصلی مدیریت" className="bp-scroll flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto">
       {groups.map((group) => {
         // A one-item group (the dashboard) is a plain link, not an accordion.
@@ -87,8 +90,8 @@ export function BlueprintSidebar({ role, industry, mobileOpen, onCloseMobile, in
             group={group}
             pathname={pathname}
             collapsed={collapsed}
-            open={isGroupOpen(group, collapsed)}
-            onToggle={() => setOpenGroup(isGroupOpen(group, collapsed) ? null : group.title)}
+            open={isGroupOpen(group, collapsed, openGroup)}
+            onToggle={() => setOpenGroup(isGroupOpen(group, collapsed, openGroup) ? null : group.title)}
             onClose={() => setOpenGroup(null)}
             onNavigate={onCloseMobile}
           />
@@ -112,7 +115,7 @@ export function BlueprintSidebar({ role, industry, mobileOpen, onCloseMobile, in
           height: "calc(100dvh - var(--admin-sticky-top, 0px))",
         }}
       >
-        {renderNav(isCollapsed)}
+        {renderNav(isCollapsed, railOpenGroup, setRailOpenGroup)}
       </aside>
 
       {/* Mobile drawer */}
@@ -123,7 +126,7 @@ export function BlueprintSidebar({ role, industry, mobileOpen, onCloseMobile, in
               <strong className="text-sm">منوی مدیریت</strong>
               <BpButton isIconOnly aria-label="بستن منوی مدیریت" onClick={onCloseMobile}><X size={17} /></BpButton>
             </div>
-            {renderNav(false)}
+            {renderNav(false, drawerOpenGroup, setDrawerOpenGroup)}
           </aside>
         </div>
       )}
