@@ -1,8 +1,10 @@
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { env } from "@/lib/env";
+import { CARD_TO_CARD_PROVIDER } from "@/modules/payments/card-to-card-shared";
 import { decryptGatewayCredential } from "@/modules/payments/gateway-config";
 import { getPaymentProvider, ZarinpalPaymentProvider, type PaymentProvider } from "@/modules/payments/payment-provider";
+import { cardToCardDestination, getCardToCardSettings } from "@/modules/settings/card-to-card-settings";
 
 export const storefrontPaymentMethodSchema = z.enum(["mock", "zarinpal"]);
 export type StorefrontPaymentMethodId = z.infer<typeof storefrontPaymentMethodSchema>;
@@ -22,6 +24,29 @@ export async function getStorefrontPaymentMethods(): Promise<StorefrontPaymentMe
   if (zarinpal) return [{ id: "zarinpal", name: zarinpal.displayName, description: "پرداخت آنلاین با همه کارت‌های عضو شتاب", sandbox: zarinpal.isSandbox }];
   if (env.PAYMENT_PROVIDER === "mock") return [{ id: "mock", name: "درگاه آزمایشی", description: "شبیه‌سازی پرداخت برای محیط توسعه", sandbox: true }];
   return [];
+}
+
+/**
+ * What the order checkout offers: the online gateways above plus card-to-card when the admin has
+ * switched it on and filled in a destination card. Kept apart from `getStorefrontPaymentMethods`
+ * because the wallet top-up shares that one and a top-up has no manual-review step, so it must
+ * never be offered a transfer.
+ */
+export const checkoutPaymentMethodSchema = z.enum(["mock", "zarinpal", CARD_TO_CARD_PROVIDER]);
+export type CheckoutPaymentMethodId = z.infer<typeof checkoutPaymentMethodSchema>;
+export type CheckoutPaymentMethod = Omit<StorefrontPaymentMethod, "id"> & { id: CheckoutPaymentMethodId };
+
+export async function getCheckoutPaymentMethods(): Promise<CheckoutPaymentMethod[]> {
+  const [gateways, cardToCard] = await Promise.all([getStorefrontPaymentMethods(), getCardToCardSettings()]);
+  const destination = cardToCardDestination(cardToCard);
+  return destination
+    ? [...gateways, { id: CARD_TO_CARD_PROVIDER, name: "کارت‌به‌کارت", description: "واریز به کارت فروشگاه و ارسال رسید یا اطلاعات پرداخت", sandbox: false }]
+    : gateways;
+}
+
+/** Card-to-card is settled by an admin, not a gateway: it skips the `online payment` switch and `getStorefrontPaymentProvider`. */
+export function isCardToCardMethod(method: string): boolean {
+  return method === CARD_TO_CARD_PROVIDER;
 }
 
 // Deliberately does not check `isActive`: the payment callbacks also resolve the provider here to

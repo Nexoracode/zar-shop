@@ -207,16 +207,16 @@ model User {
 }
 
 model Session {
-  id        String   @id @default(cuid())
-  tokenHash String   @unique @db.Char(64)
-  userId    String
-  expiresAt DateTime
+  id         String    @id @default(cuid())
+  tokenHash  String    @unique @db.Char(64)
+  userId     String
+  expiresAt  DateTime
   // Staff only get admin power while this window is open (see modules/auth/admin-elevation.ts);
   // a plain storefront sign-in leaves both null, so the session is customer-level.
   adminSince DateTime?
   adminUntil DateTime?
-  createdAt DateTime @default(now())
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt  DateTime  @default(now())
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([expiresAt])
@@ -762,6 +762,13 @@ model StoreSetting {
   walletTopupEnabled            Boolean               @default(true)
   walletMinTopup                Decimal               @default(50000) @db.Decimal(18, 0)
   walletMaxTopup                Decimal               @default(50000000) @db.Decimal(18, 0)
+  // Card-to-card payment: the store's own destination card, shown to the customer on the transfer
+  // page. Nothing is offered at checkout until it is switched on AND a holder + card are filled in.
+  cardToCardEnabled             Boolean               @default(false)
+  cardToCardHolderName          String?               @db.VarChar(120)
+  cardToCardCardNumber          String?               @db.VarChar(16)
+  cardToCardSheba               String?               @db.VarChar(24)
+  cardToCardBankName            String?               @db.VarChar(80)
   faqItems                      Json?
   contentPages                  Json?
   // Technical SEO settings (default meta, indexing kill-switch, product schema toggle).
@@ -1111,25 +1118,25 @@ model SmsProviderConfig {
 }
 
 model CommunicationSetting {
-  id                String   @id @default("main")
-  smsEnabled        Boolean  @default(false)
-  inAppEnabled      Boolean  @default(true)
-  adminPhone        String?  @db.VarChar(20)
-  orderCreatedSms   Boolean  @default(false)
-  paymentSuccessSms Boolean  @default(true)
-  orderShippedSms   Boolean  @default(true)
-  orderExpiredSms   Boolean  @default(false)
-  lowStockAdminSms  Boolean  @default(false)
+  id                 String   @id @default("main")
+  smsEnabled         Boolean  @default(false)
+  inAppEnabled       Boolean  @default(true)
+  adminPhone         String?  @db.VarChar(20)
+  orderCreatedSms    Boolean  @default(false)
+  paymentSuccessSms  Boolean  @default(true)
+  orderShippedSms    Boolean  @default(true)
+  orderExpiredSms    Boolean  @default(false)
+  lowStockAdminSms   Boolean  @default(false)
   // The four order stages that arrived with per-event patterns; the columns above predate them.
-  orderProcessingSms Boolean @default(false)
-  orderDeliveredSms  Boolean @default(false)
-  orderCancelledSms  Boolean @default(false)
-  orderRefundedSms   Boolean @default(false)
-  templates         Json?
+  orderProcessingSms Boolean  @default(false)
+  orderDeliveredSms  Boolean  @default(false)
+  orderCancelledSms  Boolean  @default(false)
+  orderRefundedSms   Boolean  @default(false)
+  templates          Json?
   /// Per event: send as plain text or through a registered Faraz pattern, and which pattern variable gets which value.
-  eventRules        Json?
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  eventRules         Json?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
 }
 
 model SmsCampaign {
@@ -1254,25 +1261,50 @@ model OrderItem {
 }
 
 model Payment {
-  id           String        @id @default(cuid())
-  orderId      String
-  provider     String        @db.VarChar(50)
-  authority    String?       @unique @db.VarChar(191)
-  referenceId  String?       @unique @db.VarChar(191)
-  amount       Decimal       @db.Decimal(18, 0)
-  status       PaymentStatus @default(INITIATED)
-  providerData Json?
+  id                String             @id @default(cuid())
+  orderId           String
+  provider          String             @db.VarChar(50)
+  authority         String?            @unique @db.VarChar(191)
+  referenceId       String?            @unique @db.VarChar(191)
+  amount            Decimal            @db.Decimal(18, 0)
+  status            PaymentStatus      @default(INITIATED)
+  providerData      Json?
   // The storefront origin (scheme + host) the shopper was actually on when this payment was
   // started — captured once at creation since the gateway's callback is a plain browser
   // navigation with no reliable "where did this come from" header of its own, and re-deriving
   // it from the callback request would be exactly as unreliable as the bug this column fixes.
-  returnOrigin String?       @db.VarChar(255)
-  paidAt       DateTime?
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
-  order        Order         @relation(fields: [orderId], references: [id])
+  returnOrigin      String?            @db.VarChar(255)
+  paidAt            DateTime?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  order             Order              @relation(fields: [orderId], references: [id])
+  /// Card-to-card only: what the customer sent as proof of the transfer, awaiting an admin.
+  cardTransferProof CardTransferProof?
 
   @@index([orderId, status])
+}
+
+/// The proof of a card-to-card transfer, one per attempt (`Payment`). The customer sends either a
+/// receipt image or the source card + tracking code (never both, never neither). The payment stays
+/// `PENDING` until an admin approves it (→ `SUCCESS`, order `PAID`) or rejects it (→ `FAILED`, with
+/// `rejectionReason`, and the customer may submit a fresh attempt).
+model CardTransferProof {
+  id                  String    @id @default(cuid())
+  paymentId           String    @unique
+  payment             Payment   @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  receiptUrl          String?   @db.Text
+  receiptStorageKey   String?   @unique @db.VarChar(191)
+  receiptMimeType     String?   @db.VarChar(100)
+  receiptSizeBytes    Int?
+  receiptOriginalName String?   @db.VarChar(191)
+  sourceCardNumber    String?   @db.VarChar(16)
+  trackingCode        String?   @db.VarChar(30)
+  submittedAt         DateTime  @default(now())
+  reviewedAt          DateTime?
+  reviewedById        String?
+  rejectionReason     String?   @db.VarChar(500)
+
+  @@index([trackingCode])
 }
 
 model Invoice {

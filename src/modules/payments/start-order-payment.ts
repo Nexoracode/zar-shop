@@ -1,6 +1,8 @@
 import { db } from "@/lib/db";
 import { expirePendingOrders } from "@/modules/orders/expiration";
-import { getStorefrontPaymentMethods, getStorefrontPaymentProvider, type StorefrontPaymentMethodId } from "@/modules/payments/storefront-methods";
+import { beginCardToCardPayment, CardTransferError } from "@/modules/payments/card-to-card";
+import { CARD_TO_CARD_PROVIDER } from "@/modules/payments/card-to-card-shared";
+import { getStorefrontPaymentMethods, getStorefrontPaymentProvider, isCardToCardMethod, type CheckoutPaymentMethodId } from "@/modules/payments/storefront-methods";
 import { getCommerceSettings } from "@/modules/settings/commerce-settings";
 import { getOrderSettings, orderExpiresAt } from "@/modules/settings/order-settings";
 
@@ -11,7 +13,16 @@ export class PendingOrderPaymentError extends Error {
   }
 }
 
-export async function startPendingOrderPayment(input: { orderId: string; userId: string; paymentProvider: StorefrontPaymentMethodId; origin: string }) {
+export async function startPendingOrderPayment(input: { orderId: string; userId: string; paymentProvider: CheckoutPaymentMethodId; origin: string }) {
+  // Card-to-card has no gateway hop: "starting" it just opens the transfer page for this order.
+  if (isCardToCardMethod(input.paymentProvider)) {
+    try {
+      return await beginCardToCardPayment({ orderId: input.orderId, userId: input.userId, origin: input.origin });
+    } catch (error) {
+      if (error instanceof CardTransferError) throw new PendingOrderPaymentError(error.message, error.statusCode);
+      throw error;
+    }
+  }
   await expirePendingOrders();
   const [commerceSettings, orderSettings, methods] = await Promise.all([getCommerceSettings(), getOrderSettings(), getStorefrontPaymentMethods()]);
   if (!commerceSettings.onlinePaymentEnabled) throw new PendingOrderPaymentError("پرداخت آنلاین موقتاً غیرفعال است.", 503);
@@ -28,6 +39,11 @@ export async function startPendingOrderPayment(input: { orderId: string; userId:
   // still legitimately owe its gateway share, so only a settled *gateway* payment closes it here.
   if (order.payments.some((payment) => payment.provider !== "wallet" && (payment.status === "SUCCESS" || payment.status === "REFUNDED"))) {
     throw new PendingOrderPaymentError("پرداخت این سفارش قبلاً تعیین تکلیف شده است.", 409);
+  }
+
+  // A transfer already waiting on the store must not race a second payment for the same order.
+  if (order.payments.some((payment) => payment.provider === CARD_TO_CARD_PROVIDER && payment.status === "PENDING")) {
+    throw new PendingOrderPaymentError("رسید کارت‌به‌کارت شما در حال بررسی است؛ تا مشخص‌شدن نتیجه، پرداخت دیگری انجام ندهید.", 409);
   }
 
   const provider = await getStorefrontPaymentProvider(input.paymentProvider);

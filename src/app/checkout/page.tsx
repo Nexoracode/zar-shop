@@ -1,7 +1,7 @@
 import { isCartLineUnavailable } from "@/modules/cart/line-availability";
 import { redirect } from "next/navigation";
-import { CreditCard, MapPin, ShoppingCart } from "lucide-react";
 import { CheckoutForm } from "@/components/checkout-form";
+import { CheckoutSteps } from "@/components/checkout-steps";
 import { InlineAlert } from "@/components/inline-alert";
 import { ResumeOrderCheckout } from "@/components/resume-order-checkout";
 import { StandaloneTopBar } from "@/components/standalone-top-bar";
@@ -16,7 +16,7 @@ import { getGeneralStoreSettings } from "@/modules/settings/general-settings";
 import { getOrderSettings } from "@/modules/settings/order-settings";
 import { expirePendingOrders } from "@/modules/orders/expiration";
 import { resolveCheckoutPromotions } from "@/modules/promotions/service";
-import { getStorefrontPaymentMethods } from "@/modules/payments/storefront-methods";
+import { getCheckoutPaymentMethods } from "@/modules/payments/storefront-methods";
 import { serializeAddress } from "@/modules/account/addresses";
 import { getWalletSettings } from "@/modules/settings/wallet-settings";
 import { ensureWallet } from "@/modules/wallet/wallet";
@@ -25,11 +25,6 @@ import { ensureWallet } from "@/modules/wallet/wallet";
 // see the caching migration plan for scope.
 export const instant = false;
 
-// This row's three labels + two dividers don't fit a narrow phone at full size; scrolling
-// horizontally within the row itself (rather than letting it force the whole page wider) keeps
-// document.documentElement.scrollWidth matching the real viewport width, same fix pattern as
-// account-sidebar.tsx and referral-share.tsx.
-const steps = <div className="scrollbar-hide -mx-4 mb-7 flex items-center justify-center gap-2 overflow-x-auto px-4 text-xs sm:gap-4 sm:text-sm" aria-label="مراحل خرید"><span className="flex shrink-0 items-center gap-2 whitespace-nowrap text-[var(--muted)]"><ShoppingCart size={18} />سبد خرید</span><span className="h-px w-8 shrink-0 bg-[var(--border)] sm:w-16" /><strong className="flex shrink-0 items-center gap-2 whitespace-nowrap text-[var(--brand-primary)]"><MapPin size={18} />ارسال و پرداخت</strong><span className="h-px w-8 shrink-0 bg-[var(--border)] sm:w-16" /><span className="flex shrink-0 items-center gap-2 whitespace-nowrap text-[var(--muted)]"><CreditCard size={18} />تکمیل خرید</span></div>;
 
 export default async function CheckoutPage() {
   const user = await requireUser();
@@ -44,7 +39,7 @@ export default async function CheckoutPage() {
     orderBy: { createdAt: "desc" },
   });
   if (pendingOrder) {
-    const [settings, paymentMethods, orderSettings] = await Promise.all([getGeneralStoreSettings(), getStorefrontPaymentMethods(), getOrderSettings()]);
+    const [settings, paymentMethods, orderSettings] = await Promise.all([getGeneralStoreSettings(), getCheckoutPaymentMethods(), getOrderSettings()]);
     const address = pendingOrder.shippingAddress as { title: string; recipient: string; phone: string; province: string; city: string; postalCode: string; addressLine: string; plaque: string; unit: string | null };
     const quote = {
       subtotal: Number(pendingOrder.subtotal),
@@ -82,7 +77,7 @@ export default async function CheckoutPage() {
       <StandaloneTopBar backHref="/cart" backLabel="بازگشت به سبد خرید" />
       <main className="min-h-[calc(100dvh-4rem)] bg-[var(--background)] px-4 py-8 sm:px-6 sm:py-12">
         <div className="mx-auto w-full max-w-[1280px]">
-          {steps}
+          <CheckoutSteps />
           <div className="mb-6"><h1 className="m-0 text-xl font-bold sm:text-2xl">تکمیل سفارش</h1><p className="mb-0 mt-2 text-sm text-[var(--muted)]">سفارش <b dir="ltr">{pendingOrder.orderNumber}</b> قبلاً ثبت شده؛ فقط پرداخت آن باقی مانده است.</p></div>
           <ResumeOrderCheckout
             orderId={pendingOrder.id}
@@ -108,7 +103,7 @@ export default async function CheckoutPage() {
     getGoldPriceForDisplay(),
     getGeneralStoreSettings(),
     getCommerceSettings(),
-    getStorefrontPaymentMethods(),
+    getCheckoutPaymentMethods(),
     db.address.findMany({ where: { userId: user.id, type: "SHIPPING" }, orderBy: [{ isDefault: "desc" }, { lastUsedAt: "desc" }, { createdAt: "desc" }], include: { provinceRef: true, cityRef: true } }),
     getWalletSettings(),
   ]);
@@ -167,7 +162,7 @@ export default async function CheckoutPage() {
     <StandaloneTopBar backHref="/cart" backLabel="بازگشت به سبد خرید" />
     <main className="min-h-[calc(100dvh-4rem)] bg-[var(--background)] px-4 py-8 sm:px-6 sm:py-12">
       <div className="mx-auto w-full max-w-[1280px]">
-        {steps}
+        <CheckoutSteps />
         <div className="mb-6"><h1 className="m-0 text-xl font-bold sm:text-2xl">تکمیل سفارش</h1><p className="mb-0 mt-2 text-sm text-[var(--muted)]">نشانی، تخفیف و روش پرداخت را بررسی کنید.</p></div>
         <CheckoutForm settings={commerceSettings} paymentMethods={paymentMethods} currency={settings.currency} itemCount={itemCount} items={checkoutItems} initialQuote={initialQuote} initialAddresses={addresses.map(serializeAddress)} user={{ firstName: user.firstName, lastName: user.lastName, phone: user.phone }} wallet={{ balance: walletBalance, checkoutEnabled: walletUsable }} />
       </div>

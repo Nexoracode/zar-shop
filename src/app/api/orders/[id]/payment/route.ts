@@ -3,10 +3,10 @@ import { z } from "zod";
 import { apiError, getRequestOrigin } from "@/lib/http";
 import { getCurrentUser } from "@/modules/auth/session";
 import { PaymentProviderError } from "@/modules/payments/payment-provider";
-import { storefrontPaymentMethodSchema } from "@/modules/payments/storefront-methods";
+import { checkoutPaymentMethodSchema } from "@/modules/payments/storefront-methods";
 import { PendingOrderPaymentError, startPendingOrderPayment } from "@/modules/payments/start-order-payment";
 
-const bodySchema = z.object({ paymentProvider: storefrontPaymentMethodSchema });
+const bodySchema = z.object({ paymentProvider: checkoutPaymentMethodSchema });
 
 export async function POST(request: Request, context: { params: Promise<{ id: string }> }) {
   try {

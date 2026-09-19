@@ -10,7 +10,7 @@ import { AdminGenericBulkEditButton } from "@/components/admin-generic-bulk-edit
 import { AdminOrderStatusSelect } from "@/components/admin-order-status-select";
 import { formatMoney } from "@/lib/format";
 import { orderStatusLabels } from "@/modules/admin/labels";
-import { BpTable, BpTd, BpTh } from "./ui";
+import { BpTable, BpTag, BpTd, BpTh } from "./ui";
 import type { AdminOrderRow } from "./orders-view";
 
 const TABLE_ID = "orders";
@@ -77,7 +77,7 @@ export function OrdersTable({ orders, pagination, warningMinutes, initialHiddenC
                 </AdminColumn>
                 <AdminColumn id="items"><BpTd className="text-[var(--bp-text)]">{order.itemsCount.toLocaleString("fa-IR")}</BpTd></AdminColumn>
                 <AdminColumn id="total"><BpTd className="font-bold text-[var(--bp-text)]">{formatMoney(order.total)}</BpTd></AdminColumn>
-                <AdminColumn id="status"><BpTd><AdminOrderStatusSelect key={statusKey(order)} orderId={order.id} initialStatus={order.status} expiresAt={order.expiresAt} warningMinutes={warningMinutes} /></BpTd></AdminColumn>
+                <AdminColumn id="status"><BpTd><AdminOrderStatusSelect key={statusKey(order)} orderId={order.id} initialStatus={order.status} expiresAt={order.awaitingTransferReview ? null : order.expiresAt} warningMinutes={warningMinutes} />{order.awaitingTransferReview && <BpTag tone="warning" withDot className="mt-1.5">کارت‌به‌کارت در انتظار تأیید</BpTag>}</BpTd></AdminColumn>
                 <AdminColumn id="createdAt"><BpTd className="bp-muted whitespace-nowrap">{order.createdAt}</BpTd></AdminColumn>
                 <BpTd>
                   <div className="flex items-center justify-center">

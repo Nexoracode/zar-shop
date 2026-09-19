@@ -18,6 +18,8 @@ export type AdminOrderRow = {
   status: OrderStatus;
   expiresAt: string | null;
   createdAt: string;
+  /** A card-to-card proof is with the store, waiting for a decision. */
+  awaitingTransferReview: boolean;
 };
 
 export type AdminOrdersListData = {
@@ -111,6 +113,8 @@ export function serializeAdminOrderRow(order: {
   createdAt: Date;
   user: { firstName: string | null; lastName: string | null; email: string | null; phone: string | null };
   _count: { items: number };
+  /** Only the card-to-card payments still `PENDING` (a proof waiting for review). */
+  payments: { id: string }[];
 }): AdminOrderRow {
   return {
     id: order.id,
@@ -122,5 +126,6 @@ export function serializeAdminOrderRow(order: {
     status: order.status,
     expiresAt: order.expiresAt?.toISOString() ?? null,
     createdAt: formatDate(order.createdAt),
+    awaitingTransferReview: order.payments.length > 0,
   };
 }

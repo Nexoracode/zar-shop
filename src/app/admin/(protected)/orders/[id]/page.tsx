@@ -28,7 +28,7 @@ export default async function OrderDetailsPage({ params }: { params: PageParams 
           },
         },
       },
-      payments: { orderBy: { createdAt: "desc" } },
+      payments: { orderBy: { createdAt: "desc" }, include: { cardTransferProof: true } },
       invoice: true,
       promotionRedemptions: { include: { promotion: { select: { title: true, type: true, code: true } } } },
     },

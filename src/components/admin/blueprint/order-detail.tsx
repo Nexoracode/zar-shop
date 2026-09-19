@@ -1,24 +1,27 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { Prisma } from "@generated/prisma/client";
-import { CalendarDays, CreditCard, FileText, MapPin, Package, TriangleAlert, Truck, UserRound } from "lucide-react";
+import { ArrowLeftRight, CalendarDays, CreditCard, FileText, MapPin, Package, TriangleAlert, Truck, UserRound } from "lucide-react";
 import { AdminPageHeader, AdminStatusBadge } from "@/components/admin-ui";
 import { AdminOrderTrackingField } from "@/components/admin-order-tracking-field";
+import { BlueprintCardTransferReview } from "@/components/admin/blueprint/card-transfer-review";
 import { BpLinkButton } from "@/components/admin/blueprint/ui/button";
 import { formatDateTime, formatMoney } from "@/lib/format";
 import {
   orderStatusLabels,
   orderStatusTones,
-  paymentStatusLabels,
+  paymentStatusLabel,
   paymentStatusTones,
 } from "@/modules/admin/labels";
+import { paymentProviderLabel } from "@/modules/payments/admin-payments";
+import { CARD_TO_CARD_PROVIDER, type AdminCardTransfer } from "@/modules/payments/card-to-card-shared";
 import { optionEntries } from "@/modules/products/options";
 
 type OrderDetail = Prisma.OrderGetPayload<{
   include: {
     user: true;
     items: { include: { product: { select: { slug: true; media: { include: { media: true } } } } } };
-    payments: true;
+    payments: { include: { cardTransferProof: true } };
     invoice: true;
     promotionRedemptions: { include: { promotion: { select: { title: true; type: true; code: true } } } };
   };
@@ -63,6 +66,22 @@ export function BlueprintOrderDetail({ order, industry }: { order: OrderDetail; 
   const customerName = [order.user.firstName, order.user.lastName].filter(Boolean).join(" ") || "کاربر بدون نام";
   const address = readShippingAddress(order.shippingAddress);
   const successfulPayment = order.payments.find((payment) => payment.status === "SUCCESS");
+  // Every card-to-card attempt that reached the store, newest first — the one waiting for a decision leads.
+  const cardTransfers: AdminCardTransfer[] = order.payments.flatMap((payment) => {
+    const proof = payment.cardTransferProof;
+    if (payment.provider !== CARD_TO_CARD_PROVIDER || !proof) return [];
+    return [{
+      paymentId: payment.id,
+      status: payment.status,
+      amount: payment.amount.toString(),
+      submittedAt: proof.submittedAt.toISOString(),
+      receipt: proof.receiptUrl ? { url: proof.receiptUrl, name: proof.receiptOriginalName } : null,
+      sourceCardNumber: proof.sourceCardNumber,
+      trackingCode: proof.trackingCode,
+      rejectionReason: proof.rejectionReason,
+      reviewedAt: proof.reviewedAt?.toISOString() ?? null,
+    }];
+  });
   const itemsCount = order.items.reduce((sum, item) => sum + item.quantity, 0);
 
   return (
@@ -96,6 +115,15 @@ export function BlueprintOrderDetail({ order, industry }: { order: OrderDetail; 
 
       <div className="grid items-start gap-2 xl:grid-cols-[minmax(0,1fr)_360px]">
         <div className="flex min-w-0 flex-col gap-2">
+          {cardTransfers.length > 0 && (
+            <Panel>
+              <PanelHead icon={<ArrowLeftRight size={17} />} title="پرداخت کارت‌به‌کارت" />
+              <div className="grid gap-2 p-4">
+                {cardTransfers.map((transfer) => <BlueprintCardTransferReview key={transfer.paymentId} orderId={order.id} transfer={transfer} />)}
+              </div>
+            </Panel>
+          )}
+
           <Panel>
             <PanelHead icon={<Package size={17} />} title="محصولات سفارش" />
             <div>
@@ -138,10 +166,10 @@ export function BlueprintOrderDetail({ order, industry }: { order: OrderDetail; 
                         <span className="bp-muted block text-[11px]">تراکنش شماره {(index + 1).toLocaleString("fa-IR")}</span>
                         <strong className="mt-0.5 block text-[13px]">{formatMoney(payment.amount.toString())}</strong>
                       </div>
-                      <AdminStatusBadge tone={paymentStatusTones[payment.status]}>{paymentStatusLabels[payment.status]}</AdminStatusBadge>
+                      <AdminStatusBadge tone={paymentStatusTones[payment.status]}>{paymentStatusLabel(payment.provider, payment.status)}</AdminStatusBadge>
                     </div>
                     <dl className="grid gap-2 border-t border-[var(--bp-divider)] p-3 sm:grid-cols-2 xl:grid-cols-4">
-                      <Field label="درگاه پرداخت" value={payment.provider} />
+                      <Field label="درگاه پرداخت" value={paymentProviderLabel(payment.provider)} />
                       <Field label="زمان ایجاد تراکنش" value={formatDateTime(payment.createdAt)} />
                       <Field label="زمان پرداخت" value={payment.paidAt ? formatDateTime(payment.paidAt) : "—"} />
                       <Field label="شناسه مرجع" value={payment.referenceId ?? "—"} ltr />

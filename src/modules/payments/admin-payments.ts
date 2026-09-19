@@ -14,6 +14,7 @@ export const PAYMENT_STATUS_FILTERS = ["SUCCESS", "PENDING", "FAILED", "REFUNDED
  * map the ones we know and fall back to the raw value for anything new. */
 export function paymentProviderLabel(provider: string) {
   switch (provider.toLowerCase()) {
+    case "card_to_card": return "کارت‌به‌کارت";
     case "manual": return "ثبت دستی";
     case "zarinpal": return "زرین‌پال";
     case "zibal": return "زیبال";

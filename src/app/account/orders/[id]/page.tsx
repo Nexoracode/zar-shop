@@ -12,9 +12,10 @@ import { StatusBadge } from "@/components/status-badge";
 import { db } from "@/lib/db";
 import { maskCardNumber } from "@/modules/account/bank-card";
 import { formatDate, formatMoney } from "@/lib/format";
-import { orderStatusLabels, paymentStatusLabels, returnStatusLabels, returnStatusTones } from "@/modules/admin/labels";
+import { orderStatusLabels, paymentProviderTitle, paymentStatusLabel, returnStatusLabels, returnStatusTones } from "@/modules/admin/labels";
 import { requireUser } from "@/modules/auth/session";
 import { expirePendingOrders } from "@/modules/orders/expiration";
+import { CARD_TO_CARD_PROVIDER, cardToCardPagePath } from "@/modules/payments/card-to-card-shared";
 import { activeReturnStatuses, evaluateReturnEligibility } from "@/modules/orders/returns";
 import { optionEntries } from "@/modules/products/options";
 import { getGeneralStoreSettings } from "@/modules/settings/general-settings";
@@ -62,7 +63,7 @@ export default async function OrderDetailPage({ params, searchParams }: { params
       where: { id, userId: user.id },
       include: {
         invoice: { select: { id: true } },
-        payments: { orderBy: { createdAt: "desc" } },
+        payments: { orderBy: { createdAt: "desc" }, include: { cardTransferProof: { select: { rejectionReason: true } } } },
         items: {
           include: {
             product: {
@@ -105,12 +106,12 @@ export default async function OrderDetailPage({ params, searchParams }: { params
   const delivery = deliveryState(order.status);
   const paymentHistory: AccountPaymentHistoryItem[] = order.payments.map((item) => ({
     id: item.id,
-    status: paymentStatusLabels[item.status],
+    status: paymentStatusLabel(item.provider, item.status),
     statusClassName: paymentStatusClasses[item.status] ?? "text-[var(--muted)]",
     amount: formatMoney(item.amount.toString(), settings.currency),
     date: formatDate(item.createdAt),
     referenceId: item.referenceId,
-    gateway: item.provider === "wallet" ? "پرداخت از کیف پول" : item.provider === "zarinpal" ? "پرداخت اینترنتی زرین‌پال" : "پرداخت اینترنتی",
+    gateway: paymentProviderTitle(item.provider),
     isSuccessful: item.status === "SUCCESS",
   }));
 
@@ -121,6 +122,17 @@ export default async function OrderDetailPage({ params, searchParams }: { params
     cancelled: { tone: "warning" as const, title: "پرداخت ناتمام ماند", body: <>این سفارش تا پایان مهلت پرداخت برای شما نگه داشته می‌شود.{canRetryPayment ? <> <Link href="/checkout" className="font-bold text-[var(--warning)] hover:underline">پرداخت سفارش</Link></> : null}</> },
     review: { tone: "info" as const, title: "در حال بررسی پرداخت", body: <>پرداخت شما ثبت شده و تأیید نهایی به‌صورت خودکار در حال انجام است؛ تا چند دقیقهٔ دیگر وضعیت به‌روزرسانی می‌شود. لطفاً دوباره پرداخت نکنید.</> },
   };
+  // A card-to-card order is paid by a person, not a redirect, so where it stands is read from its own
+  // payment rather than from a `?payment=` result the gateway would have sent back.
+  const cardPayment = order.status === "PENDING_PAYMENT" ? order.payments.find((item) => item.provider === CARD_TO_CARD_PROVIDER) : undefined;
+  const cardTransferLink = (label: string, tone: string) => <Link href={cardToCardPagePath(order.id)} className={`font-bold hover:underline ${tone}`}>{label}</Link>;
+  const cardNotice = cardPayment?.status === "PENDING"
+    ? { tone: "info" as const, title: "پرداخت کارت‌به‌کارت در انتظار تأیید فروشگاه است", body: <>رسید یا اطلاعات پرداخت شما دریافت شده و پس از بررسی، وضعیت سفارش به‌روزرسانی می‌شود. تا آن زمان پرداخت دیگری انجام ندهید. {cardTransferLink("مشاهدهٔ وضعیت پرداخت", "text-[var(--info)]")}</> }
+    : cardPayment?.status === "INITIATED"
+      ? { tone: "warning" as const, title: "واریز کارت‌به‌کارت شما هنوز ثبت نشده", body: <>پس از واریز مبلغ، رسید یا اطلاعات پرداخت را ارسال کنید. {cardTransferLink("ادامهٔ پرداخت", "text-[var(--warning)]")}</> }
+      : cardPayment?.status === "FAILED"
+        ? { tone: "danger" as const, title: "پرداخت کارت‌به‌کارت تأیید نشد", body: <>{cardPayment.cardTransferProof?.rejectionReason ? <>{cardPayment.cardTransferProof.rejectionReason} </> : null}{cardTransferLink("ارسال دوبارهٔ رسید یا اطلاعات پرداخت", "text-[var(--danger)]")}</> }
+        : null;
   const resultBanner = paymentResult && paymentResult in paymentResultBanners
     ? paymentResultBanners[paymentResult as keyof typeof paymentResultBanners]
     : null;
@@ -135,6 +147,12 @@ export default async function OrderDetailPage({ params, searchParams }: { params
       </div>
     </header>
 
+    {cardNotice && (
+      <div className="px-4 pt-4 sm:px-6">
+        <AccountNotice tone={cardNotice.tone} title={cardNotice.title}>{cardNotice.body}</AccountNotice>
+      </div>
+    )}
+
     {resultBanner && (
       <div className="px-4 pt-4 sm:px-6">
         <AccountNotice tone={resultBanner.tone} title={resultBanner.title}>{resultBanner.body}</AccountNotice>
@@ -147,7 +165,7 @@ export default async function OrderDetailPage({ params, searchParams }: { params
     </section>
 
     <section className="grid gap-3 border-b border-[var(--border)] px-4 py-4 sm:px-6">
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-sm"><span className="text-[var(--muted)]">مبلغ</span><b>{formatMoney(order.total.toString(), settings.currency)}</b><span className="text-slate-300">•</span><span className="text-[var(--muted)]">{payment?.provider === "zarinpal" ? "پرداخت اینترنتی زرین‌پال" : "پرداخت اینترنتی"}</span>{payment ? <span className={paymentStatusClasses[payment.status]}>{paymentStatusLabels[payment.status]}</span> : null}<span className="basis-full text-xs text-[var(--muted)]">هزینه ارسال {formatMoney(order.shipping.toString(), settings.currency)}</span></div>
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-sm"><span className="text-[var(--muted)]">مبلغ</span><b>{formatMoney(order.total.toString(), settings.currency)}</b><span className="text-slate-300">•</span><span className="text-[var(--muted)]">{payment ? paymentProviderTitle(payment.provider) : "پرداخت اینترنتی"}</span>{payment ? <span className={paymentStatusClasses[payment.status]}>{paymentStatusLabel(payment.provider, payment.status)}</span> : null}<span className="basis-full text-xs text-[var(--muted)]">هزینه ارسال {formatMoney(order.shipping.toString(), settings.currency)}</span></div>
       <AccountPaymentHistory items={paymentHistory} />
     </section>
 

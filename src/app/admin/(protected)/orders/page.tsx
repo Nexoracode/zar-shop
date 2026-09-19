@@ -5,6 +5,7 @@ import { resolveAdminPagination } from "@/lib/admin-pagination";
 import { parseAdminPaginationRequest } from "@/lib/admin-pagination-server";
 import { readHiddenColumns } from "@/lib/admin-column-visibility-server";
 import { requirePermission } from "@/modules/auth/session";
+import { CARD_TO_CARD_PROVIDER } from "@/modules/payments/card-to-card-shared";
 import { getOrderSettings } from "@/modules/settings/order-settings";
 import { BlueprintOrdersView, serializeAdminOrderRow } from "@/components/admin/blueprint/orders-view";
 
@@ -44,7 +45,7 @@ export default async function OrdersPage({ searchParams }: { searchParams: Searc
   const pagination = resolveAdminPagination(filteredTotal, requestedPage, pageSize);
   const orders = await db.order.findMany({
     where,
-    include: { user: true, _count: { select: { items: true } } },
+    include: { user: true, _count: { select: { items: true } }, payments: { where: { provider: CARD_TO_CARD_PROVIDER, status: "PENDING" }, select: { id: true }, take: 1 } },
     orderBy: { createdAt: "desc" },
     skip: pagination.skip,
     take: pagination.pageSize,

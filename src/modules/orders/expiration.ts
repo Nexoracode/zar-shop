@@ -1,9 +1,17 @@
 import { db } from "@/lib/db";
+import { CARD_TO_CARD_PROVIDER } from "@/modules/payments/card-to-card-shared";
 import { getOrderSettings } from "@/modules/settings/order-settings";
 import { sendAutomatedSms } from "@/modules/communications/sms-service";
 import { releaseInventory } from "@/modules/orders/inventory";
 import { refundOrderWallet } from "@/modules/wallet/wallet";
 import { notifyWalletCredited } from "@/modules/notifications/wallet-notifications";
+
+/**
+ * A card-to-card payment whose proof an admin has yet to review keeps its order open however long
+ * that takes — the customer has already paid and must not lose the order (and its reserved stock)
+ * to a payment window they were never late for. A rejection restarts the window.
+ */
+const notAwaitingTransferReview = { NOT: { payments: { some: { provider: CARD_TO_CARD_PROVIDER, status: "PENDING" } } } } as const;
 
 export type ExpirationRunResult = { inspected: number; expired: number; cancelled: number; notified: number };
 
@@ -13,7 +21,7 @@ export async function expirePendingOrders(now = new Date()): Promise<ExpirationR
   if (!settings.orderExpirationEnabled) return result;
 
   const candidates = await db.order.findMany({
-    where: { status: "PENDING_PAYMENT", expiresAt: { lte: now }, expirationHandledAt: null, payments: { none: { provider: { not: "wallet" }, status: "SUCCESS" } } },
+    where: { status: "PENDING_PAYMENT", expiresAt: { lte: now }, expirationHandledAt: null, payments: { none: { provider: { not: "wallet" }, status: "SUCCESS" } }, ...notAwaitingTransferReview },
     select: { id: true, orderNumber: true, userId: true, walletAmount: true, inventoryReserved: true, items: true, user: { select: { phone: true } } },
     take: 100,
     orderBy: { expiresAt: "asc" },
@@ -28,7 +36,7 @@ export async function expirePendingOrders(now = new Date()): Promise<ExpirationR
     const handled = await db.$transaction(async (transaction) => {
       const nextStatus = settings.orderExpirationAction === "EXPIRE" ? "EXPIRED" : settings.orderExpirationAction === "CANCEL" ? "CANCELLED" : undefined;
       const updated = await transaction.order.updateMany({
-        where: { id: order.id, status: "PENDING_PAYMENT", expiresAt: { lte: now }, expirationHandledAt: null, payments: { none: { provider: { not: "wallet" }, status: "SUCCESS" } } },
+        where: { id: order.id, status: "PENDING_PAYMENT", expiresAt: { lte: now }, expirationHandledAt: null, payments: { none: { provider: { not: "wallet" }, status: "SUCCESS" } }, ...notAwaitingTransferReview },
         data: {
           ...(nextStatus ? { status: nextStatus, expiredAt: now } : {}),
           ...(nextStatus && settings.releaseReservedInventory && order.inventoryReserved ? { inventoryReserved: false } : {}),

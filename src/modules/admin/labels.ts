@@ -32,6 +32,27 @@ export const paymentStatusLabels: Record<PaymentStatus, string> = {
   REFUNDED: "بازپرداخت‌شده",
 };
 
+/**
+ * A payment's status as a person should read it. Card-to-card is the one method whose PENDING
+ * does not mean "started at a gateway": it means the proof is with the store, waiting to be reviewed.
+ */
+export function paymentStatusLabel(provider: string, status: PaymentStatus) {
+  if (provider === "card_to_card") {
+    if (status === "PENDING") return "در انتظار تأیید فروشگاه";
+    if (status === "INITIATED") return "در انتظار واریز و ارسال رسید";
+    if (status === "FAILED") return "ردشده";
+  }
+  return paymentStatusLabels[status];
+}
+
+/** How a customer-facing screen names the way an order was (or is being) paid. */
+export function paymentProviderTitle(provider: string) {
+  if (provider === "wallet") return "پرداخت از کیف پول";
+  if (provider === "card_to_card") return "پرداخت کارت‌به‌کارت";
+  if (provider === "zarinpal") return "پرداخت اینترنتی زرین‌پال";
+  return "پرداخت اینترنتی";
+}
+
 export const returnStatusLabels: Record<ReturnStatus, string> = {
   PENDING: "در انتظار بررسی",
   APPROVED: "تأییدشده",

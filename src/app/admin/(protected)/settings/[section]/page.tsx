@@ -4,16 +4,18 @@ import { BlueprintGeneralSettings } from "@/components/admin/blueprint/general-s
 import { BlueprintBrandingSettings } from "@/components/admin/blueprint/branding-settings";
 import { BlueprintOrderSettings } from "@/components/admin/blueprint/order-settings";
 import { BlueprintCatalogSettings } from "@/components/admin/blueprint/catalog-settings";
+import { BlueprintCardToCardSettings } from "@/components/admin/blueprint/card-to-card-settings";
 import { BlueprintCommerceSettings } from "@/components/admin/blueprint/commerce-settings";
 import { BlueprintContentSettings } from "@/components/admin/blueprint/content-settings";
 import { BlueprintSeoSettings } from "@/components/admin/blueprint/seo-settings";
 import { BlueprintWalletSettings } from "@/components/admin/blueprint/wallet-settings";
 import { AdminPageHeader } from "@/components/admin-ui";
-import { settingsSectionPermission } from "@/modules/auth/permissions";
+import { hasPermission, settingsSectionPermission } from "@/modules/auth/permissions";
 import { requirePermission } from "@/modules/auth/session";
 import { getBrandSettings } from "@/modules/settings/brand-settings";
 import { getCatalogSettings } from "@/modules/settings/catalog-settings";
 // getBrandSettings stays: the branding section still edits the brand settings row.
+import { cardToCardDestination, getCardToCardSettings } from "@/modules/settings/card-to-card-settings";
 import { getCommerceSettings } from "@/modules/settings/commerce-settings";
 import { getContentSettings } from "@/modules/settings/content-settings";
 import { getGeneralStoreSettings } from "@/modules/settings/general-settings";
@@ -37,6 +39,7 @@ const sectionMeta = {
   commerce: { title: "تنظیمات ارسال و پرداخت", description: "روش‌های تحویل سفارش و وضعیت درگاه پرداخت" },
   content: { title: "تنظیمات محتوا و سوالات متداول", description: "مدیریت FAQ و صفحات راهنما و قوانین فروشگاه" },
   seo: { title: "SEO حرفه‌ای", description: "تنظیمات دیده‌شدن فروشگاه و ساختار فنی صفحات برای موتورهای جستجو" },
+  "card-to-card": { title: "کارت‌به‌کارت", description: "کارت مقصد پرداخت‌های کارت‌به‌کارت و فعال‌سازی این روش در تسویه‌حساب" },
   wallet: { title: "کیف پول و دعوت دوستان", description: "اعتبار داخل فروشگاه، پرداخت با کیف پول و پاداش دعوت دوستان" },
 } as const;
 
@@ -60,7 +63,7 @@ export default async function AdminSettingSectionPage({ params }: Context) {
   const { section } = await params;
   // The section itself decides the permission: catalog/orders/commerce belong to the
   // matching manager role, everything else is store-wide configuration (ADMIN only).
-  await requirePermission(settingsSectionPermission(section));
+  const actor = await requirePermission(settingsSectionPermission(section));
   const meta = await getPageMeta(section);
   if (!meta) notFound();
 
@@ -84,8 +87,8 @@ export default async function AdminSettingSectionPage({ params }: Context) {
       break;
     }
     case "commerce": {
-      const [settings, gateways] = await Promise.all([getCommerceSettings(), getPublicGatewayConfigs()]);
-      content = <BlueprintCommerceSettings initialSettings={settings} configuredGatewayCount={gateways.filter((gateway) => gateway.isActive).length} />;
+      const [settings, gateways, cardToCard] = await Promise.all([getCommerceSettings(), getPublicGatewayConfigs(), getCardToCardSettings()]);
+      content = <BlueprintCommerceSettings initialSettings={settings} configuredGatewayCount={gateways.filter((gateway) => gateway.isActive).length} cardToCardActive={cardToCardDestination(cardToCard) !== null} canManageCardToCard={hasPermission(actor.role, "settings:manage")} />;
       break;
     }
     case "content": {
@@ -94,6 +97,10 @@ export default async function AdminSettingSectionPage({ params }: Context) {
     }
     case "seo": {
       content = <BlueprintSeoSettings initialSettings={await getSeoSettings()} />;
+      break;
+    }
+    case "card-to-card": {
+      content = <BlueprintCardToCardSettings initialSettings={await getCardToCardSettings()} />;
       break;
     }
     case "wallet": {

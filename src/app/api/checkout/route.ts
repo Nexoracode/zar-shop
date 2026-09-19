@@ -8,7 +8,8 @@ import { calculateProductPrice } from "@/modules/products/pricing";
 import { optionEntries } from "@/modules/products/options";
 import { findVariant, isVariantSnapshotValid, variantPricing } from "@/modules/products/variants";
 import { isCartLineUnavailable } from "@/modules/cart/line-availability";
-import { getStorefrontPaymentMethods, getStorefrontPaymentProvider, storefrontPaymentMethodSchema } from "@/modules/payments/storefront-methods";
+import { cardToCardPagePath } from "@/modules/payments/card-to-card-shared";
+import { checkoutPaymentMethodSchema, getCheckoutPaymentMethods, getStorefrontPaymentProvider, isCardToCardMethod } from "@/modules/payments/storefront-methods";
 import { PaymentProviderError } from "@/modules/payments/payment-provider";
 import type { Prisma } from "@generated/prisma/client";
 import { calculateDiscountedPrice } from "@/modules/products/discount";
@@ -33,7 +34,7 @@ type CheckoutLine = { item: ItemWithProduct; p: ItemWithProduct["product"]; part
 const checkoutSchema = z.object({
   addressId: z.string().cuid(),
   couponCode: z.string().trim().max(64).optional().default(""),
-  paymentProvider: storefrontPaymentMethodSchema,
+  paymentProvider: checkoutPaymentMethodSchema,
   /** Apply the customer's wallet credit against the total; the amount is recomputed server-side. */
   useWallet: z.boolean().default(false),
 });
@@ -45,9 +46,11 @@ export async function POST(request: Request) {
     if (!user) return NextResponse.json({ message: "ابتدا وارد حساب شوید." }, { status: 401 });
     if (!isStorefrontAvailable(generalSettings, user.role)) return NextResponse.json({ message: "فروشگاه در حال حاضر امکان ثبت سفارش ندارد." }, { status: 503 });
     if (user.isGuest && !generalSettings.guestCheckout) return NextResponse.json({ message: "برای ادامه خرید وارد حساب شوید." }, { status: 403 });
-    if (!commerceSettings.onlinePaymentEnabled) return NextResponse.json({ message: "پرداخت آنلاین موقتاً غیرفعال است." }, { status: 503 });
     const input = checkoutSchema.parse(await request.json());
     const { couponCode, paymentProvider, addressId } = input;
+    // The "online payment" switch governs the bank gateways; a card-to-card transfer is settled by an admin and stays available.
+    const cardToCard = isCardToCardMethod(paymentProvider);
+    if (!commerceSettings.onlinePaymentEnabled && !cardToCard) return NextResponse.json({ message: "پرداخت آنلاین موقتاً غیرفعال است." }, { status: 503 });
     const walletSettings = await getWalletSettings();
     const useWallet = input.useWallet && !user.isGuest && walletSettings.walletEnabled && walletSettings.walletCheckoutEnabled;
     const deliveryMethod = defaultDeliveryMethod(commerceSettings);
@@ -70,9 +73,9 @@ export async function POST(request: Request) {
       unit: selectedAddress.unit,
       floor: selectedAddress.floor,
     };
-    const availableMethods = await getStorefrontPaymentMethods();
+    const availableMethods = await getCheckoutPaymentMethods();
     if (!availableMethods.some((method) => method.id === paymentProvider)) return NextResponse.json({ message: "روش پرداخت انتخاب‌شده در دسترس نیست." }, { status: 422 });
-    const selectedPaymentProvider = await getStorefrontPaymentProvider(paymentProvider);
+    const selectedPaymentProvider = cardToCard ? null : await getStorefrontPaymentProvider(paymentProvider);
     const cart = await db.cart.findUnique({ where: { userId: user.id }, include: { items: { include: { product: { include: { variants: true } } } } } });
     if (!cart?.items.length) return NextResponse.json({ message: "سبد خرید خالی است." }, { status: 409 });
     if (cart.items.some((item) => item.product.storeIndustry !== generalSettings.industry)) {
@@ -251,17 +254,19 @@ export async function POST(request: Request) {
     try {
       const origin = getRequestOrigin(request);
       const payment = await db.payment.create({ data: { orderId: order.id, provider: paymentProvider, amount: result.gatewayDue, status: "INITIATED", returnOrigin: origin } });
-      const paymentRequest = await selectedPaymentProvider.request({
+      // A gateway hands back an authority and a redirect; a card-to-card payment has neither — it
+      // stays INITIATED until the customer sends proof, and the "gateway" is our own transfer page.
+      const paymentRequest = selectedPaymentProvider ? await selectedPaymentProvider.request({
         amount: result.gatewayDue,
         orderId: order.id,
         callbackUrl: `${origin}/api/payment/callback`,
         description: `پرداخت سفارش ${order.orderNumber}`,
         mobile: user.phone ?? address.phone,
         email: user.isGuest ? undefined : (user.email ?? undefined),
-      });
+      }) : { authority: null, redirectUrl: cardToCardPagePath(order.id) };
       await db.$transaction(async (transaction) => {
         const paymentStartedAt = new Date();
-        await transaction.payment.update({ where: { id: payment.id }, data: { authority: paymentRequest.authority, status: "PENDING" } });
+        if (paymentRequest.authority) await transaction.payment.update({ where: { id: payment.id }, data: { authority: paymentRequest.authority, status: "PENDING" } });
         if (orderSettings.orderExpirationStart === "PAYMENT_STARTED_AT") await transaction.order.update({ where: { id: order.id }, data: { expiresAt: orderExpiresAt(orderSettings, paymentStartedAt) } });
         await transaction.cartItem.deleteMany({ where: { cartId: cart.id } });
       });

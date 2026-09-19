@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { apiError } from "@/lib/http";
 import { auditRequestContext } from "@/modules/audit/request-context";
 import { getCurrentUser } from "@/modules/auth/session";
+import { CARD_TO_CARD_PROVIDER } from "@/modules/payments/card-to-card-shared";
 import { AdminOrderStatusError, updateOrderStatusByAdmin } from "@/modules/orders/admin-status";
 
 // A customer may only self-cancel while an order is still unpaid; once it's PAID or beyond,
@@ -17,6 +18,9 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
     if (order.status !== "PENDING_PAYMENT") {
       return NextResponse.json({ message: "این سفارش پرداخت شده یا در حال پردازش است و از این بخش قابل لغو نیست." }, { status: 409 });
     }
+    // A transfer the store is still reviewing means the money may already have moved; only an admin can close that order.
+    const underReview = await db.payment.count({ where: { orderId: order.id, provider: CARD_TO_CARD_PROVIDER, status: "PENDING" } });
+    if (underReview > 0) return NextResponse.json({ message: "پرداخت کارت‌به‌کارت این سفارش در حال بررسی است و تا مشخص‌شدن نتیجه قابل لغو نیست." }, { status: 409 });
     const result = await updateOrderStatusByAdmin({ orderId: order.id, status: "CANCELLED", actorId: user.id, audit: auditRequestContext(request, { cancelledByCustomer: true }) });
     return NextResponse.json(result);
   } catch (error) {

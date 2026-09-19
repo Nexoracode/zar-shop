@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRef, useState, type FormEvent } from "react";
 import { toast } from "@heroui/react";
-import { CheckCircle2, CreditCard, Gift, MapPin, Plus, Truck } from "lucide-react";
+import { ArrowLeftRight, CheckCircle2, CreditCard, Gift, MapPin, Plus, Truck } from "lucide-react";
 import type { CommerceSettings as CommerceSettingsData } from "@/modules/settings/commerce-settings";
 import { commerceSettingsLimits } from "@/modules/settings/settings-limits";
 import { BpButton, BpCheckbox, BpKicker, BpNumberInput, BpTag } from "./ui";
@@ -20,7 +20,7 @@ function OptionCheckbox({ icon, title, description, isSelected, onChange }: { ic
   );
 }
 
-export function BlueprintCommerceSettings({ initialSettings, configuredGatewayCount }: { initialSettings: CommerceSettingsData; configuredGatewayCount: number }) {
+export function BlueprintCommerceSettings({ initialSettings, configuredGatewayCount, cardToCardActive, canManageCardToCard }: { initialSettings: CommerceSettingsData; configuredGatewayCount: number; cardToCardActive: boolean; canManageCardToCard: boolean }) {
   const [settings, setSettings] = useState(initialSettings);
   const [saving, setSaving] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
@@ -64,13 +64,17 @@ export function BlueprintCommerceSettings({ initialSettings, configuredGatewayCo
           <BpKicker>روش‌های پرداخت</BpKicker>
           <p className="bp-muted m-0 mt-1 text-[12px] leading-6">درگاه‌ها و ترتیب نمایش در تسویه حساب</p>
           <div className="mt-3 grid gap-2.5">
-            <OptionCheckbox icon={<CreditCard size={17} />} title="پرداخت آنلاین" description="در صورت غیرفعال‌شدن، ایجاد سفارش و انتقال به درگاه متوقف می‌شود." isSelected={settings.onlinePaymentEnabled} onChange={(value) => set("onlinePaymentEnabled", value)} />
+            <OptionCheckbox icon={<CreditCard size={17} />} title="پرداخت آنلاین" description="در صورت غیرفعال‌شدن، ثبت سفارش با درگاه‌های بانکی متوقف می‌شود؛ کارت‌به‌کارت تحت تأثیر این کلید نیست." isSelected={settings.onlinePaymentEnabled} onChange={(value) => set("onlinePaymentEnabled", value)} />
             <div className={`flex items-center justify-between gap-3 border p-3 ${configuredGatewayCount ? "border-[var(--bp-success)] bg-[var(--bp-success-bg)] text-[var(--bp-success)]" : "border-[var(--bp-warning)] bg-[var(--bp-warning-bg)] text-[var(--bp-warning)]"}`}>
               <span className="flex items-center gap-2 text-[13px] font-bold">{configuredGatewayCount ? <CheckCircle2 size={16} /> : <CreditCard size={16} />}درگاه‌های فعال</span>
               <BpTag>{configuredGatewayCount.toLocaleString("fa-IR")} درگاه</BpTag>
             </div>
             <Link href="/admin/settings/payment-gateways" className="bp-btn bp-btn-secondary w-full gap-2"><Plus size={16} />افزودن و مدیریت درگاه</Link>
-            <p className="bp-muted m-0 border border-[var(--bp-divider)] bg-[var(--bp-bg)] p-3 text-[12px] leading-6">کارت‌به‌کارت و پرداخت حضوری تا زمان پیاده‌سازی تأیید دستی و رسید پرداخت، به مشتری نمایش داده نمی‌شوند.</p>
+            <div className={`flex items-center justify-between gap-3 border p-3 ${cardToCardActive ? "border-[var(--bp-success)] bg-[var(--bp-success-bg)] text-[var(--bp-success)]" : "border-[var(--bp-divider)] bg-[var(--bp-bg)]"}`}>
+              <span className="flex items-center gap-2 text-[13px] font-bold">{cardToCardActive ? <CheckCircle2 size={16} /> : <ArrowLeftRight size={16} />}کارت‌به‌کارت</span>
+              <BpTag>{cardToCardActive ? "فعال" : "غیرفعال"}</BpTag>
+            </div>
+            {canManageCardToCard && <Link href="/admin/settings/card-to-card" className="bp-btn bp-btn-secondary w-full gap-2"><ArrowLeftRight size={16} />تنظیم کارت‌به‌کارت</Link>}
           </div>
         </section>
 
