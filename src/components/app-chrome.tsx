@@ -13,8 +13,9 @@ export function AppChrome({ header, footer, children, storefrontAvailable, maint
   // Login/register/forgot-password and checkout are bare, single-purpose screens rather
   // than storefront browsing pages, so they render standalone (same as /admin and
   // /invoices) with their own minimal top bar instead of the full store header/footer.
-  // /cart stays a normal storefront page — only checkout itself gets this treatment.
-  const isBareStandalonePage = pathname === "/login" || pathname === "/register" || pathname === "/forgot-password" || pathname === "/checkout";
+  // /cart stays a normal storefront page — only checkout itself gets this treatment, and that
+  // includes the steps that hang off it (the card-to-card transfer page under /checkout/).
+  const isBareStandalonePage = pathname === "/login" || pathname === "/register" || pathname === "/forgot-password" || pathname === "/checkout" || pathname.startsWith("/checkout/");
   const isStandalone = pathname.startsWith("/admin") || pathname.startsWith("/invoices/") || isBareStandalonePage;
   const isAuthPath = pathname.startsWith("/login") || pathname.startsWith("/register") || pathname.startsWith("/account");
   // The account area is a self-contained, app-like section with its own sidebar; the marketing
