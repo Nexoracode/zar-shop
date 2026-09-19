@@ -16,7 +16,7 @@ import { getGeneralStoreSettings, isStorefrontAvailable } from "@/modules/settin
 import { getOrderSettings, orderExpiresAt } from "@/modules/settings/order-settings";
 import { expirePendingOrders } from "@/modules/orders/expiration";
 import { baseShippingFee, defaultDeliveryMethod, estimatedReadyAt, getCommerceSettings, qualifiesForFreeShipping } from "@/modules/settings/commerce-settings";
-import { chargeableCartWeight, quoteForMethod } from "@/modules/shipping/quote";
+import { chargeableCartWeight, resolveShippingQuote } from "@/modules/shipping/quote";
 import { sendAutomatedSms } from "@/modules/communications/sms-service";
 import { InventoryUnavailableError, releaseInventory, reserveInventory } from "@/modules/orders/inventory";
 import { getWalletSettings } from "@/modules/settings/wallet-settings";
@@ -33,8 +33,6 @@ const checkoutSchema = z.object({
   addressId: z.string().cuid(),
   couponCode: z.string().trim().max(64).optional().default(""),
   paymentProvider: storefrontPaymentMethodSchema,
-  /** Which delivery option the customer picked; its price is recomputed here, never trusted. */
-  shippingMethodId: z.union([z.null(), z.string().cuid()]).default(null),
   /** Apply the customer's wallet credit against the total; the amount is recomputed server-side. */
   useWallet: z.boolean().default(false),
 });
@@ -48,7 +46,7 @@ export async function POST(request: Request) {
     if (user.isGuest && !generalSettings.guestCheckout) return NextResponse.json({ message: "برای ادامه خرید وارد حساب شوید." }, { status: 403 });
     if (!commerceSettings.onlinePaymentEnabled) return NextResponse.json({ message: "پرداخت آنلاین موقتاً غیرفعال است." }, { status: 503 });
     const input = checkoutSchema.parse(await request.json());
-    const { couponCode, paymentProvider, addressId, shippingMethodId } = input;
+    const { couponCode, paymentProvider, addressId } = input;
     const walletSettings = await getWalletSettings();
     const useWallet = input.useWallet && !user.isGuest && walletSettings.walletEnabled && walletSettings.walletCheckoutEnabled;
     const deliveryMethod = defaultDeliveryMethod(commerceSettings);
@@ -129,11 +127,13 @@ export async function POST(request: Request) {
       const inventoryItems = lines.map(({ item, p }) => ({ productId: p.id, quantity: item.quantity, selectionKey: item.selectionKey }));
       await reserveInventory(tx, inventoryItems);
       /*
-       * Priced here rather than taken from the request: the browser's number is a display, and
-       * an order total has to be one the server worked out for itself.
+       * The customer is not asked which carrier to use: the cheapest option the store can price for
+       * this cart and address is applied. It is priced here rather than taken from the request — an
+       * order total has to be one the server worked out for itself — and when no option can be
+       * priced the flat fee stands in.
        */
-      const chosen = shippingMethodId && selectedAddress.provinceId && !qualifiesForFreeShipping(commerceSettings, merchandiseAmount)
-        ? await quoteForMethod(shippingMethodId, {
+      const chosen = deliveryMethod === "INSURED_SHIPPING" && selectedAddress.provinceId && !qualifiesForFreeShipping(commerceSettings, merchandiseAmount)
+        ? await resolveShippingQuote({
           lines: [],
           weightGrams: chargeableCartWeight(lines.map(({ item, p }) => ({
             shippingWeightGrams: p.shippingWeightGrams,
@@ -146,9 +146,6 @@ export async function POST(request: Request) {
           destination: { provinceId: selectedAddress.provinceId, cityId: selectedAddress.cityId },
         })
         : null;
-      if (shippingMethodId && !chosen && !qualifiesForFreeShipping(commerceSettings, merchandiseAmount)) {
-        throw new Error("روش ارسال انتخاب‌شده برای این سفارش در دسترس نیست.");
-      }
       const shippingFee = chosen ? chosen.price : baseShippingFee(commerceSettings, merchandiseAmount, deliveryMethod);
       const promotions = await resolveCheckoutPromotions(tx, {
         userId: user.id, couponCode, merchandiseAmount, shippingFee, city: address.city,

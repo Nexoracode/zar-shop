@@ -1,6 +1,8 @@
 import { db } from "@/lib/db";
 import { cartParcelWeight, chargeableWeightGrams, volumetricWeightGrams, type ParcelLine } from "@/modules/shipping/parcel";
 import { selectBox } from "@/modules/shipping/packaging";
+import { ensureDefaultPackagingBox } from "@/modules/shipping/packaging-default";
+import { pickCheapestOption } from "@/modules/shipping/selection";
 import { fetchTapinRate } from "@/modules/shipping/tapin-rates";
 import { tableRate, type ZoneRate } from "@/modules/shipping/zone-rates";
 
@@ -69,7 +71,7 @@ function toZoneRates(zones: MethodRow["zones"]): ZoneRate[] {
  * say so — quoting zero would be a promise the store cannot keep.
  */
 export async function getShippingQuotes(input: QuoteInput & { weightGrams: number }): Promise<ShippingQuote[]> {
-  const [methods, origin, destination, boxes] = await Promise.all([
+  const [methods, origin, destination, loadedBoxes] = await Promise.all([
     db.shippingMethod.findMany({
       where: { isActive: true },
       orderBy: [{ sortOrder: "asc" }, { title: "asc" }],
@@ -82,9 +84,19 @@ export async function getShippingQuotes(input: QuoteInput & { weightGrams: numbe
     db.packagingBox.findMany({ where: { isActive: true }, orderBy: { maxWeightGrams: "asc" } }),
   ]);
 
+  // The store always keeps a default box; if a database has lost it, restore it rather than quote without one.
+  let boxes = loadedBoxes;
+  if (!boxes.some((candidate) => candidate.isDefault)) {
+    await ensureDefaultPackagingBox(db);
+    boxes = await db.packagingBox.findMany({ where: { isActive: true }, orderBy: { maxWeightGrams: "asc" } });
+  }
+
   const canAskCarrier = Boolean(origin?.originProvince && origin.originCity && destination?.province);
-  // Which of our boxes this parcel goes in, so the carrier is quoted for the right box size.
-  const tapinBoxId = selectBox(input.weightGrams, boxes)?.tapinBoxId ?? 1;
+  // Which of our boxes this parcel goes in: it sets the box size the carrier is quoted for, and the
+  // empty box's own weight travels with the contents (the admin form promises exactly that).
+  const box = selectBox(input.weightGrams, boxes);
+  const tapinBoxId = box?.tapinBoxId ?? 1;
+  const parcelWeightGrams = input.weightGrams + (box?.weightGrams ?? 0);
   const quotes: ShippingQuote[] = [];
 
   for (const method of methods as MethodRow[]) {
@@ -95,7 +107,7 @@ export async function getShippingQuotes(input: QuoteInput & { weightGrams: numbe
     if (method.source === "TAPIN" && method.rateType && canAskCarrier) {
       const rate = await fetchTapinRate({
         rateType: method.rateType,
-        weightGrams: input.weightGrams,
+        weightGrams: parcelWeightGrams,
         declaredValue: input.declaredValue,
         orderType: method.orderType,
         from: { provinceCode: origin!.originProvince!.externalId, cityCode: origin!.originCity!.externalId },
@@ -109,7 +121,7 @@ export async function getShippingQuotes(input: QuoteInput & { weightGrams: numbe
     }
 
     // Either the method prices itself from the table, or the carrier could not be reached.
-    if (price === null) price = tableRate(zones, input.destination.provinceId, input.weightGrams);
+    if (price === null) price = tableRate(zones, input.destination.provinceId, parcelWeightGrams);
     if (price === null) continue;
 
     quotes.push({ methodId: method.id, title: method.title, carrier: method.carrier, price, estimatedDays: method.estimatedDays, source });
@@ -127,4 +139,14 @@ export async function getShippingQuotes(input: QuoteInput & { weightGrams: numbe
 export async function quoteForMethod(methodId: string, input: QuoteInput & { weightGrams: number }) {
   const quotes = await getShippingQuotes(input);
   return quotes.find((quote) => quote.methodId === methodId) ?? null;
+}
+
+/**
+ * The delivery option the checkout applies without asking: the cheapest one the store can price
+ * for this cart and destination, or null when none can (the flat fee then stands in).
+ *
+ * Like `quoteForMethod` it is recomputed on the server, so the browser never has a say in the price.
+ */
+export async function resolveShippingQuote(input: QuoteInput & { weightGrams: number }) {
+  return pickCheapestOption(await getShippingQuotes(input));
 }

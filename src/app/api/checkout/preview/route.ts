@@ -6,7 +6,7 @@ import { getCurrentUser } from "@/modules/auth/session";
 import { getGoldPriceForDisplay } from "@/modules/gold/gold-price.service";
 import { lineUnitPrice } from "@/modules/products/line-pricing";
 import { baseShippingFee, defaultDeliveryMethod, getCommerceSettings, qualifiesForFreeShipping } from "@/modules/settings/commerce-settings";
-import { chargeableCartWeight, quoteForMethod } from "@/modules/shipping/quote";
+import { chargeableCartWeight, resolveShippingQuote } from "@/modules/shipping/quote";
 import { getGeneralStoreSettings, isStorefrontAvailable } from "@/modules/settings/general-settings";
 import { PromotionValidationError, resolveCheckoutPromotions } from "@/modules/promotions/service";
 import { getWalletSettings } from "@/modules/settings/wallet-settings";
@@ -15,8 +15,6 @@ import { ensureWallet } from "@/modules/wallet/wallet";
 const schema = z.object({
   couponCode: z.string().trim().max(64).default(""),
   addressId: z.string().cuid(),
-  /** Absent until the customer has picked one; the flat fee stands in until then. */
-  shippingMethodId: z.union([z.null(), z.string().cuid()]).default(null),
   useWallet: z.boolean().default(false),
 });
 
@@ -47,10 +45,10 @@ export async function POST(request: Request) {
     const subtotal = prices.reduce((sum, item) => sum + item.original * item.quantity, 0);
     const merchandiseAmount = prices.reduce((sum, item) => sum + item.final * item.quantity, 0);
     const productDiscount = subtotal - merchandiseAmount;
-    // The picked method decides the fee; the flat rate stands in before a choice is made, and a
-    // cart over the free-shipping threshold pays nothing either way.
-    const chosen = input.shippingMethodId && address.provinceId && !qualifiesForFreeShipping(commerceSettings, merchandiseAmount)
-      ? await quoteForMethod(input.shippingMethodId, {
+    // The fee is the cheapest option the store can price for this cart and address; the flat rate stands
+    // in when none can be, and a cart over the free-shipping threshold pays nothing either way.
+    const chosen = defaultDeliveryMethod(commerceSettings) === "INSURED_SHIPPING" && address.provinceId && !qualifiesForFreeShipping(commerceSettings, merchandiseAmount)
+      ? await resolveShippingQuote({
         lines: [],
         weightGrams: chargeableCartWeight(cart.items.map((item) => ({
           shippingWeightGrams: item.product.shippingWeightGrams,

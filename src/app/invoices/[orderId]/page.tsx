@@ -147,7 +147,7 @@ export default async function InvoicePage({ params, searchParams }: { params: Pr
             {Number(order.productDiscount) > 0 && <div className="flex justify-between border-b border-slate-200 px-3 py-2"><dt>تخفیف محصولات</dt><dd>{money(order.productDiscount.toString())}</dd></div>}
             {Number(order.promotionDiscount) > 0 && <div className="flex justify-between border-b border-slate-200 px-3 py-2"><dt>تخفیف پروموشن</dt><dd>{money(order.promotionDiscount.toString())}</dd></div>}
             {Number(order.shippingDiscount) > 0 && <div className="flex justify-between border-b border-slate-200 px-3 py-2"><dt>تخفیف ارسال</dt><dd>{money(order.shippingDiscount.toString())}</dd></div>}
-            <div className="flex justify-between border-b border-slate-200 px-3 py-2"><dt>ارسال</dt><dd>{money(order.shipping.toString())}</dd></div>
+            <div className="flex justify-between border-b border-slate-200 px-3 py-2"><dt>ارسال و بسته‌بندی</dt><dd>{money(order.shipping.toString())}</dd></div>
             {isGold && Number(order.tax) > 0 && <div className="flex justify-between border-b border-slate-200 px-3 py-2 text-slate-500"><dt>مالیات لحاظ‌شده در قیمت</dt><dd>{money(order.tax.toString())}</dd></div>}
             <div className={`flex justify-between px-3 py-2.5 font-bold ${isGold ? "bg-amber-50 text-[#6f5220]" : "bg-sky-50 text-[#173b68]"}`}><dt>مبلغ نهایی</dt><dd>{money(order.total.toString())}</dd></div>
           </dl>

@@ -12,7 +12,6 @@ import type { StorefrontAddress } from "@/components/address-form";
 import { notifyCartUpdated } from "@/components/storefront-cart-link";
 import { promotionFieldLimits } from "@/modules/promotions/schemas";
 import { TextField } from "@/components/form-field";
-import { ShippingMethodPicker } from "@/components/shipping-method-picker";
 
 type Quote = { subtotal: number; productDiscount: number; merchandiseAmount: number; promotionDiscount: number; shipping: number; shippingDiscount: number; total: number; walletBalance: number; walletApplied: number; payable: number; applications: Array<{ title: string; code: string | null; discountAmount: number; shippingDiscount: number }> };
 
@@ -23,7 +22,6 @@ const optionClass = (selected: boolean) =>
 export function CheckoutForm({ settings, paymentMethods, currency, itemCount, initialQuote, initialAddresses, user, wallet }: { settings: CommerceSettings; paymentMethods: StorefrontPaymentMethod[]; currency: "IRR" | "IRT"; itemCount: number; initialQuote: Quote; initialAddresses: StorefrontAddress[]; user: { firstName: string | null; lastName: string | null; phone: string | null }; wallet: { balance: number; checkoutEnabled: boolean } }) {
   const formRef = useRef<HTMLFormElement>(null);
   const [paymentProvider, setPaymentProvider] = useState(paymentMethods[0]?.id ?? "");
-  const [shippingMethodId, setShippingMethodId] = useState<string | null>(null);
   const [couponCode, setCouponCode] = useState("");
   const walletAvailable = wallet.checkoutEnabled && wallet.balance > 0;
   const [useWallet, setUseWallet] = useState(walletAvailable);
@@ -45,11 +43,20 @@ export function CheckoutForm({ settings, paymentMethods, currency, itemCount, in
     return () => window.removeEventListener(ADDRESS_UPDATED_EVENT, update);
   }, []);
 
-  async function refreshQuote(nextCoupon = couponCode, nextMethodId = shippingMethodId, nextUseWallet = useWallet) {
+  // Shipping is worked out by the server from the address, so the total follows whichever one is chosen —
+  // including the first, which the server page could only price with the flat fee.
+  const selectedAddressId = selectedAddress?.id ?? null;
+  useEffect(() => {
+    if (selectedAddressId) void refreshQuote();
+    // Only the address should trigger this; the coupon and wallet choices refresh on their own actions.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedAddressId]);
+
+  async function refreshQuote(nextCoupon = couponCode, nextUseWallet = useWallet) {
     setCheckingCoupon(true); setCouponError(""); setCouponMessage("");
     if (!selectedAddress) { setCouponError("ابتدا نشانی تحویل را ثبت و انتخاب کنید."); setCheckingCoupon(false); return; }
     try {
-      const response = await fetch("/api/checkout/preview", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ couponCode: nextCoupon, addressId: selectedAddress.id, shippingMethodId: nextMethodId, useWallet: nextUseWallet }) });
+      const response = await fetch("/api/checkout/preview", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ couponCode: nextCoupon, addressId: selectedAddress.id, useWallet: nextUseWallet }) });
       const result = await response.json().catch(() => null);
       if (!response.ok) throw new Error(result?.message ?? "بررسی تخفیف انجام نشد.");
       setQuote(result as Quote);
@@ -69,7 +76,7 @@ export function CheckoutForm({ settings, paymentMethods, currency, itemCount, in
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault(); setLoading(true); setError("");
     if (!selectedAddress) { setError("برای ثبت سفارش ابتدا نشانی تحویل را اضافه و انتخاب کنید."); setLoading(false); return; }
-    const body = { addressId: selectedAddress.id, paymentProvider, couponCode, shippingMethodId, useWallet };
+    const body = { addressId: selectedAddress.id, paymentProvider, couponCode, useWallet };
     const response = await fetch("/api/checkout", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
     const data = await response.json().catch(() => null);
     if (!response.ok) { setError(data?.message ?? "ثبت سفارش ناموفق بود."); setLoading(false); return; }
@@ -92,13 +99,6 @@ export function CheckoutForm({ settings, paymentMethods, currency, itemCount, in
           </Card.Content>
         </Card>
 
-        <ShippingMethodPicker
-          addressId={selectedAddress?.id ?? null}
-          currency={currency}
-          selectedMethodId={shippingMethodId}
-          onSelect={(methodId) => { setShippingMethodId(methodId); void refreshQuote(couponCode, methodId); }}
-        />
-
         <Card variant="secondary" className="rounded-xl border border-[var(--border)] bg-[var(--surface)] shadow-sm">
           <Card.Content className="p-4 sm:p-5">
             <div className="mb-4 flex items-start gap-3">
@@ -115,7 +115,7 @@ export function CheckoutForm({ settings, paymentMethods, currency, itemCount, in
                 <Button
                   type="button"
                   variant="secondary"
-                  onPress={() => { const next = !useWallet; setUseWallet(next); void refreshQuote(couponCode, shippingMethodId, next); }}
+                  onPress={() => { const next = !useWallet; setUseWallet(next); void refreshQuote(couponCode, next); }}
                   className={optionClass(useWallet)}
                 >
                   <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-[var(--surface-secondary)] text-[var(--brand-primary)]"><Wallet size={17} /></span>
@@ -162,7 +162,7 @@ export function CheckoutForm({ settings, paymentMethods, currency, itemCount, in
       </div>
 
       <aside className="grid min-w-0 gap-4 lg:sticky lg:top-24">
-        <Card variant="secondary" className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4 shadow-sm"><div className="mb-4 flex items-center justify-between"><strong className="text-base font-bold">خلاصه سفارش</strong><span className="text-xs text-[var(--muted)]">{itemCount.toLocaleString("fa-IR")} کالا</span></div><dl className="m-0 grid gap-3 text-[13px]"><div className="flex justify-between gap-4 text-[var(--muted)]"><dt>قیمت کالاها</dt><dd>{formatMoney(quote.subtotal, currency)}</dd></div>{quote.productDiscount > 0 && <div className="flex justify-between gap-4 font-bold text-[var(--danger)]"><dt>تخفیف کالاها</dt><dd>{formatMoney(quote.productDiscount, currency)}</dd></div>}{quote.promotionDiscount > 0 && <div className="flex justify-between gap-4 font-bold text-[var(--success)]"><dt>کد تخفیف</dt><dd>{formatMoney(quote.promotionDiscount, currency)}</dd></div>}<div className="flex justify-between gap-4 text-[var(--muted)]"><dt>هزینه ارسال</dt><dd>{quote.shipping === 0 ? "رایگان" : formatMoney(quote.shipping, currency)}</dd></div>{quote.shippingDiscount > 0 && <div className="flex justify-between gap-4 font-bold text-[var(--success)]"><dt>تخفیف ارسال</dt><dd>{formatMoney(quote.shippingDiscount, currency)}</dd></div>}{quote.walletApplied > 0 && <div className="flex justify-between gap-4 font-bold text-[var(--success)]"><dt>از کیف پول</dt><dd>− {formatMoney(quote.walletApplied, currency)}</dd></div>}<div className="flex justify-between gap-4 border-t border-[var(--border)] pt-4 text-base font-bold"><dt>{quote.walletApplied > 0 ? "مبلغ قابل پرداخت در درگاه" : "مبلغ قابل پرداخت"}</dt><dd>{formatMoney(quote.payable, currency)}</dd></div></dl>{quote.applications.length > 0 && <div className="mt-4 grid gap-2">{quote.applications.map((application) => <div key={`${application.title}-${application.code ?? "auto"}`} className="rounded-lg bg-[color-mix(in_srgb,var(--success)_12%,transparent)] px-3 py-2 text-xs text-[var(--success)]"><strong>{application.title}</strong>{application.code && <span className="mr-2" dir="ltr">{application.code}</span>}</div>)}</div>}{error && <InlineAlert status="danger" className="mt-4">{error}</InlineAlert>}{!settings.onlinePaymentEnabled && <InlineAlert status="warning" className="mt-4">پرداخت آنلاین موقتاً غیرفعال است.</InlineAlert>}<Button type="submit" fullWidth variant="primary" isPending={loading} isDisabled={!settings.onlinePaymentEnabled || !paymentProvider || checkingCoupon || !selectedAddress} className="mt-5 min-h-12 gap-2 rounded-lg bg-[var(--brand-primary)] px-5 font-bold text-[var(--brand-primary-foreground)]">{({ isPending }) => <>{isPending && <Spinner color="current" size="sm" />}{isPending ? "در حال ثبت سفارش..." : quote.payable <= 0 ? "ثبت و پرداخت با کیف پول" : "ثبت سفارش و پرداخت"}<ChevronLeft size={18} /></>}</Button><div className="mt-4 flex items-start gap-2 text-[11px] leading-6 text-[var(--muted)]"><ShieldCheck size={16} className="mt-1 shrink-0" />با ثبت سفارش، اطلاعات و مبلغ نهایی در سمت سرور کنترل و سپس به درگاه منتقل می‌شود.</div></Card>
+        <Card variant="secondary" className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4 shadow-sm"><div className="mb-4 flex items-center justify-between"><strong className="text-base font-bold">خلاصه سفارش</strong><span className="text-xs text-[var(--muted)]">{itemCount.toLocaleString("fa-IR")} کالا</span></div><dl className="m-0 grid gap-3 text-[13px]"><div className="flex justify-between gap-4 text-[var(--muted)]"><dt>قیمت کالاها</dt><dd>{formatMoney(quote.subtotal, currency)}</dd></div>{quote.productDiscount > 0 && <div className="flex justify-between gap-4 font-bold text-[var(--danger)]"><dt>تخفیف کالاها</dt><dd>{formatMoney(quote.productDiscount, currency)}</dd></div>}{quote.promotionDiscount > 0 && <div className="flex justify-between gap-4 font-bold text-[var(--success)]"><dt>کد تخفیف</dt><dd>{formatMoney(quote.promotionDiscount, currency)}</dd></div>}<div className="flex justify-between gap-4 text-[var(--muted)]"><dt>هزینه ارسال و بسته‌بندی</dt><dd>{quote.shipping === 0 ? "رایگان" : formatMoney(quote.shipping, currency)}</dd></div>{quote.shippingDiscount > 0 && <div className="flex justify-between gap-4 font-bold text-[var(--success)]"><dt>تخفیف ارسال</dt><dd>{formatMoney(quote.shippingDiscount, currency)}</dd></div>}{quote.walletApplied > 0 && <div className="flex justify-between gap-4 font-bold text-[var(--success)]"><dt>از کیف پول</dt><dd>− {formatMoney(quote.walletApplied, currency)}</dd></div>}<div className="flex justify-between gap-4 border-t border-[var(--border)] pt-4 text-base font-bold"><dt>{quote.walletApplied > 0 ? "مبلغ قابل پرداخت در درگاه" : "مبلغ قابل پرداخت"}</dt><dd>{formatMoney(quote.payable, currency)}</dd></div></dl>{quote.applications.length > 0 && <div className="mt-4 grid gap-2">{quote.applications.map((application) => <div key={`${application.title}-${application.code ?? "auto"}`} className="rounded-lg bg-[color-mix(in_srgb,var(--success)_12%,transparent)] px-3 py-2 text-xs text-[var(--success)]"><strong>{application.title}</strong>{application.code && <span className="mr-2" dir="ltr">{application.code}</span>}</div>)}</div>}{error && <InlineAlert status="danger" className="mt-4">{error}</InlineAlert>}{!settings.onlinePaymentEnabled && <InlineAlert status="warning" className="mt-4">پرداخت آنلاین موقتاً غیرفعال است.</InlineAlert>}<Button type="submit" fullWidth variant="primary" isPending={loading} isDisabled={!settings.onlinePaymentEnabled || !paymentProvider || checkingCoupon || !selectedAddress} className="mt-5 min-h-12 gap-2 rounded-lg bg-[var(--brand-primary)] px-5 font-bold text-[var(--brand-primary-foreground)]">{({ isPending }) => <>{isPending && <Spinner color="current" size="sm" />}{isPending ? "در حال ثبت سفارش..." : quote.payable <= 0 ? "ثبت و پرداخت با کیف پول" : "ثبت سفارش و پرداخت"}<ChevronLeft size={18} /></>}</Button><div className="mt-4 flex items-start gap-2 text-[11px] leading-6 text-[var(--muted)]"><ShieldCheck size={16} className="mt-1 shrink-0" />با ثبت سفارش، اطلاعات و مبلغ نهایی در سمت سرور کنترل و سپس به درگاه منتقل می‌شود.</div></Card>
         <Card variant="secondary" className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-3.5 text-xs text-[var(--muted)]"><span className="flex items-center gap-2 font-bold text-[var(--foreground)]"><PackageCheck size={16} />سفارش شما محفوظ است</span><p className="mb-0 mt-1.5 leading-6">موجودی پس از ثبت سفارش تا پایان مهلت پرداخت برای شما رزرو می‌شود.</p></Card>
       </aside>
     </form>
