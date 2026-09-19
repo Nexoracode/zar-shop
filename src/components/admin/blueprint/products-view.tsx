@@ -48,7 +48,7 @@ function RowActions({ product }: { product: ProductRow }) {
   );
 }
 
-/** Native `title` rather than a tooltip component — the Blueprint rules keep these controls light. */
+/** A plain multi-line `title`: the panel's tooltip layer lays it out as a heading with label/value rows. */
 function discountTooltip(product: ProductRow) {
   if (!product.discountStartsAt || !product.discountEndsAt) return "تخفیف فعال";
   return `تخفیف فعال

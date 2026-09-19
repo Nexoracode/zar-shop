@@ -38,8 +38,8 @@ export function BpDonutChart({ data, ariaLabel, centerLabel = "سفارش" }: { 
             strokeDasharray={`${dash} ${CIRCUMFERENCE - dash}`}
             strokeDashoffset={dashOffset}
             transform={`rotate(-90 ${SIZE / 2} ${SIZE / 2})`}
+            data-bp-tip={`${slice.label}\nتعداد: ${slice.value.toLocaleString("fa-IR")}\nسهم: ${Math.round((slice.value / total) * 100).toLocaleString("fa-IR")}٪`}
           >
-            <title>{`${slice.label}: ${slice.value.toLocaleString("fa-IR")}`}</title>
           </circle>
         ))}
         <text x={SIZE / 2} y={SIZE / 2 - 4} textAnchor="middle" className="fill-[var(--bp-text)]" style={{ font: "700 20px var(--bp-font)" }}>{total.toLocaleString("fa-IR")}</text>

@@ -32,7 +32,7 @@ export function BpBarChart({ data, series, ariaLabel, height = 220 }: { data: Bp
           ))}
           <div className="absolute inset-0 flex items-end justify-between gap-1">
             {data.map((point) => (
-              <div key={point.label} className="flex h-full min-w-0 flex-1 items-end justify-center gap-[3px]" title={`${point.label} — ${series.map((item) => `${item.label}: ${(point.values[item.key] ?? 0).toLocaleString("fa-IR")}`).join("، ")}`}>
+              <div key={point.label} className="flex h-full min-w-0 flex-1 items-end justify-center gap-[3px]" title={[point.label, ...series.map((item) => `${item.label}: ${(point.values[item.key] ?? 0).toLocaleString("fa-IR")}`)].join("\n")}>
                 {series.map((item) => {
                   const value = point.values[item.key] ?? 0;
                   return <span key={item.key} className="bp-bar w-full max-w-[16px]" style={{ height: `${(value / ceiling) * 100}%`, background: `linear-gradient(180deg, ${item.color}, color-mix(in srgb, ${item.color} 55%, transparent))` }} />;

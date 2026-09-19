@@ -65,7 +65,7 @@ export function BpLineChart({ data, money = false, ariaLabel }: { data: BpLineCh
           {points.map((point) => (
             <span
               key={point.label}
-              title={`${point.label}: ${format(point.value)}`}
+              title={`${point.label}\nمقدار: ${format(point.value)}`}
               style={{ left: `${(point.x / WIDTH) * 100}%`, top: `${(point.y / HEIGHT) * 100}%` }}
               className="pointer-events-auto absolute h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-[var(--bp-accent)] bg-[var(--bp-card)]"
             />

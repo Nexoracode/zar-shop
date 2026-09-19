@@ -279,6 +279,61 @@
 .bp-bar { display: block; min-height: 2px; border-radius: 3px 3px 0 0; transition: height 0.3s ease; }
 .bp-bar-track { height: 6px; overflow: hidden; border-radius: 3px; background: var(--bp-divider); }
 .bp-bar-fill { display: block; height: 100%; border-radius: 3px; }
+/* — tooltip — one bubble for every `title` / `data-bp-tip` in the panel (see tooltip-layer.tsx).
+   A card-coloured plate with a hairline, a short accent rail on the reading edge and a small
+   pointer toward its control, so it reads as part of the same drawing as the frames around it.
+   `pointer-events: none` keeps it from ever stealing the hover it belongs to. */
+.bp-root.bp-tooltip {
+  position: fixed;
+  z-index: 400;
+  max-width: 272px;
+  min-width: 0;
+  padding: 8px 12px 8px 12px;
+  padding-inline-start: 22px;
+  background: var(--bp-card);
+  color: var(--bp-text);
+  border: 1px solid var(--bp-divider);
+  border-radius: var(--bp-radius);
+  box-shadow: var(--bp-shadow-lg);
+  font-size: 12px;
+  line-height: 1.75;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(4px) scale(0.97);
+  transform-origin: 50% 100%;
+  transition: opacity 0.14s ease, transform 0.14s ease;
+}
+.bp-root.bp-tooltip[data-side="bottom"] { transform: translateY(-4px) scale(0.97); transform-origin: 50% 0; }
+.bp-root.bp-tooltip[data-shown="true"] { opacity: 1; transform: none; }
+.bp-tooltip::before {
+  content: "";
+  position: absolute;
+  inset-block: 9px;
+  inset-inline-start: 9px;
+  width: 2px;
+  border-radius: 2px;
+  background: var(--bp-accent);
+}
+.bp-tooltip-arrow {
+  position: absolute;
+  width: 9px;
+  height: 9px;
+  background: var(--bp-card);
+  border: 1px solid var(--bp-divider);
+  transform: rotate(45deg);
+}
+.bp-tooltip[data-side="top"] .bp-tooltip-arrow { bottom: -5px; border-top-color: transparent; border-left-color: transparent; }
+.bp-tooltip[data-side="bottom"] .bp-tooltip-arrow { top: -5px; border-bottom-color: transparent; border-right-color: transparent; }
+.bp-tip-title { font-weight: 700; font-size: 12px; }
+.bp-tip-text { overflow-wrap: anywhere; }
+.bp-tip-row { display: flex; align-items: baseline; justify-content: space-between; gap: 14px; }
+.bp-tip-key { flex: none; color: var(--bp-muted); }
+.bp-tip-value { min-width: 0; font-weight: 700; text-align: end; overflow-wrap: anywhere; }
+.bp-tip-title + .bp-tip-row { margin-top: 3px; padding-top: 4px; border-top: 1px dashed var(--bp-divider); }
+@media (prefers-reduced-motion: reduce) {
+  .bp-root.bp-tooltip { transition: none; transform: none; }
+}
+
 /* Province map: hairlines in the card colour separate neighbours; the label carries a halo so it
    stays readable over any fill in either theme. */
 .bp-map-shape { stroke: var(--bp-card); stroke-width: 1.1; stroke-linejoin: round; transition: opacity 0.15s ease; }

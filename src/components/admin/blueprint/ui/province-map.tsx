@@ -23,12 +23,10 @@ export function BpProvinceMap({ data, ariaLabel }: { data: BpProvinceMapDatum[];
           const entry = placed.get(shape.name);
           const strength = entry ? mapIntensity(entry.value, peak) : 0;
           const fill = entry ? `color-mix(in srgb, var(--bp-accent) ${Math.round(24 + strength * 76)}%, var(--bp-divider))` : "var(--bp-divider)";
-          const tooltip = entry ? `${shape.name} — ${entry.rows.map((row) => `${row.valueLabel}${row.hint ? ` (${row.hint})` : ""}`).join("، ")}` : `${shape.name} — بدون فروش`;
-          return (
-            <path key={shape.name} d={shape.d} className="bp-map-shape" style={{ fill, opacity: entry ? 1 : 0.55 }}>
-              <title>{tooltip}</title>
-            </path>
-          );
+          const tooltip = entry
+            ? [shape.name, ...entry.rows.flatMap((row) => [`فروش: ${row.valueLabel}`, ...(row.hint ? [`تعداد: ${row.hint}`] : [])])].join("\n")
+            : `${shape.name}\nوضعیت: بدون فروش`;
+          return <path key={shape.name} d={shape.d} className="bp-map-shape" style={{ fill, opacity: entry ? 1 : 0.55 }} data-bp-tip={tooltip} />;
         })}
         {IRAN_PROVINCE_SHAPES.filter((shape) => labelled.has(shape.name)).map((shape) => (
           <text key={shape.name} x={shape.cx} y={shape.cy} textAnchor="middle" dominantBaseline="middle" className="bp-map-label" aria-hidden>{shape.name}</text>

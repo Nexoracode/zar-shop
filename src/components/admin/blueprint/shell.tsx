@@ -16,6 +16,7 @@ import { BlueprintSidebar } from "./sidebar";
 import { BpButton } from "./ui/button";
 import { BpPopover } from "./ui/popover";
 import { BpTag } from "./ui/tag";
+import { AdminTooltipLayer } from "./ui/tooltip-layer";
 
 type AdminUser = { firstName: string | null; lastName: string | null; email: string | null; role: UserRole };
 
@@ -77,6 +78,7 @@ export function BlueprintShell({ user, showGoldPrice, goldPrice, goldFetchedAt, 
   return (
     <div ref={shellRef} dir="rtl" data-theme={theme === "dark" ? "zar-dark" : "zar"} className="bp-root flex min-h-dvh flex-col">
       <AdminSessionKeeper />
+      <AdminTooltipLayer />
       {/* Full-width, above the rail too — like WordPress's own admin bar, not scoped to the
           content column the way it used to be. */}
       <header ref={headerRef} className="bp-dark-bar sticky top-0 z-40 grid h-12 flex-none grid-cols-[auto_1fr_auto] items-center gap-3 border-b border-[var(--bp-sidebar-border)] px-3 sm:px-4">
