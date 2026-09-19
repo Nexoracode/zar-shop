@@ -1,7 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { ShoppingBag } from "lucide-react";
-import { InlineAlert } from "@/components/inline-alert";
+import { AlertTriangle, ShoppingBag } from "lucide-react";
 import { Card } from "@heroui/react";
 import { formatMoney } from "@/lib/format";
 
@@ -53,7 +52,7 @@ export function CheckoutItems({ items, currency, editHref }: { items: CheckoutIt
                 <div className="min-w-0 flex-1">
                   {item.slug ? <Link href={`/products/${item.slug}`}>{name}</Link> : name}
                   {item.optionSummary.length > 0 && <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-[11px] text-[var(--muted)]">{item.optionSummary.map((option) => <span key={option}>{option}</span>)}</div>}
-                  {item.unavailable && <InlineAlert compact status="danger" className="mt-2">دیگر موجود نیست و در این سفارش حساب نمی‌شود.</InlineAlert>}
+                  {item.unavailable && <p className="m-0 mt-1 flex items-start gap-1.5 text-[11px] font-bold leading-5 text-[var(--danger)]"><AlertTriangle size={13} className="mt-0.5 shrink-0" />دیگر موجود نیست و در این سفارش حساب نمی‌شود.</p>}
                   <span className="mt-1.5 inline-flex rounded-md bg-[var(--surface-secondary)] px-2 py-0.5 text-[11px] font-bold text-[var(--muted)]">{item.quantity.toLocaleString("fa-IR")} عدد</span>
                 </div>
                 {item.unavailable ? <strong className="shrink-0 text-[13px] font-bold text-[var(--danger)]">ناموجود</strong> : (
