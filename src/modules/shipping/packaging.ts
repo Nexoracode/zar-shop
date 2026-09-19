@@ -22,3 +22,29 @@ export function selectBox(contentWeightGrams: number, boxes: PackagingBox[]): Pa
   if (fitting.length > 0) return fitting[0];
   return active.find((box) => box.isDefault) ?? null;
 }
+
+/**
+ * The box every store always has. It is created by the migration (and the development seed), and
+ * `ensureDefaultPackagingBox` recreates it if a database ever ends up without one, so a parcel
+ * always has a box to go in whatever the admin does to the rest.
+ */
+export const STANDARD_PACKAGING_BOX = {
+  name: "بسته‌بندی استاندارد",
+  lengthCm: 30,
+  widthCm: 20,
+  heightCm: 15,
+  weightGrams: 150,
+  maxWeightGrams: 5000,
+  tapinBoxId: null,
+  isDefault: true,
+  isActive: true,
+  sortOrder: 0,
+} as const;
+
+/** Why a change to a box would leave the store without a usable default, or null when it would not. */
+export function defaultBoxChangeBlocker(existing: { isDefault: boolean }, next: { isDefault: boolean; isActive: boolean }): string | null {
+  if (!existing.isDefault) return null;
+  if (!next.isDefault) return "فروشگاه همیشه باید یک جعبه پیش‌فرض داشته باشد؛ ابتدا جعبه دیگری را پیش‌فرض کنید.";
+  if (!next.isActive) return "جعبه پیش‌فرض باید فعال بماند؛ ابتدا جعبه دیگری را پیش‌فرض کنید.";
+  return null;
+}

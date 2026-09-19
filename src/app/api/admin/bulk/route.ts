@@ -116,6 +116,10 @@ export async function PATCH(request: Request) {
     updated = (await db.shippingMethod.updateMany({ where: { id: { in: uniqueIds } }, data: { isActive: action === "active:on" } })).count;
   } else if (entity === "packagingBoxes") {
     if (action !== "active:on" && action !== "active:off") return NextResponse.json({ message: "عملیات جعبه بسته‌بندی معتبر نیست." }, { status: 422 });
+    // The default box has to stay usable, so it can never be switched off from here.
+    if (action === "active:off" && (await db.packagingBox.count({ where: { id: { in: uniqueIds }, isDefault: true } })) > 0) {
+      return NextResponse.json({ message: "جعبه پیش‌فرض باید فعال بماند؛ ابتدا جعبه دیگری را پیش‌فرض کنید." }, { status: 422 });
+    }
     updated = (await db.packagingBox.updateMany({ where: { id: { in: uniqueIds } }, data: { isActive: action === "active:on" } })).count;
   } else if (entity === "contactMessages") {
     if (action !== "resolved:on" && action !== "resolved:off") return NextResponse.json({ message: "عملیات پیام تماس معتبر نیست." }, { status: 422 });

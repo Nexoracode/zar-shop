@@ -92,9 +92,9 @@ export function BlueprintPackagingView({ boxes, initialHiddenColumns }: { boxes:
                     <div className="flex items-center justify-between gap-2">
                       {box.isDefault ? <BpTag tone="info">پیش‌فرض</BpTag> : <span />}
                       <div className="flex items-center gap-1">
-                        <AdminActiveToggle entity="packagingBoxes" entityLabel="جعبه" id={box.id} name={box.name} isActive={box.isActive} />
+                        <AdminActiveToggle entity="packagingBoxes" entityLabel="جعبه" id={box.id} name={box.name} isActive={box.isActive} disabled={box.isDefault} disabledTitle="جعبه پیش‌فرض باید فعال بماند" />
                         <Link href={`/admin/packaging/${box.id}/edit`} aria-label={`ویرایش ${box.name}`} className="bp-btn bp-btn-ghost bp-btn-icon bp-btn-sm"><SquarePen size={15} strokeWidth={1.5} /></Link>
-                        <PackagingBoxDeleteButton id={box.id} name={box.name} />
+                        {!box.isDefault && <PackagingBoxDeleteButton id={box.id} name={box.name} />}
                       </div>
                     </div>
                   </article>
@@ -137,9 +137,9 @@ export function BlueprintPackagingView({ boxes, initialHiddenColumns }: { boxes:
                           <AdminColumn id="isDefault"><BpTd>{box.isDefault ? <BpTag tone="info">پیش‌فرض</BpTag> : <span className="bp-muted">—</span>}</BpTd></AdminColumn>
                           <BpTd>
                             <div className="flex items-center justify-center gap-1">
-                              <AdminActiveToggle entity="packagingBoxes" entityLabel="جعبه" id={box.id} name={box.name} isActive={box.isActive} />
+                              <AdminActiveToggle entity="packagingBoxes" entityLabel="جعبه" id={box.id} name={box.name} isActive={box.isActive} disabled={box.isDefault} disabledTitle="جعبه پیش‌فرض باید فعال بماند" />
                               <Link href={`/admin/packaging/${box.id}/edit`} title="ویرایش جعبه" aria-label={`ویرایش ${box.name}`} className="bp-btn bp-btn-ghost bp-btn-icon bp-btn-sm"><SquarePen size={15} strokeWidth={1.5} /></Link>
-                              <PackagingBoxDeleteButton id={box.id} name={box.name} />
+                              {!box.isDefault && <PackagingBoxDeleteButton id={box.id} name={box.name} />}
                             </div>
                           </BpTd>
                         </AdminBulkTr>

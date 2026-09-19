@@ -4,6 +4,7 @@ import { PrismaClient } from "../../generated/prisma/client";
 import type { StoreIndustry } from "../../generated/prisma/enums";
 import { generalStoreSeed } from "./general.seed";
 import { goldStoreSeed } from "./gold.seed";
+import { STANDARD_PACKAGING_BOX } from "../../src/modules/shipping/packaging";
 import type { DevelopmentHomepageMediaSeed, DevelopmentStoreSeed } from "./types";
 
 const localDatabaseHosts = new Set(["127.0.0.1", "localhost", "::1"]);
@@ -304,6 +305,8 @@ export async function seedDevelopmentStore(industry: StoreIndustry, options: { k
   try {
     await clearDevelopmentData(db, { keepGallery });
     await createStore(db, seed);
+    // The wipe above clears packaging too; the store always has a default box, so put it back.
+    await db.packagingBox.create({ data: { ...STANDARD_PACKAGING_BOX } });
     const [categoryCount, brandCount, productCount, productsWithoutBrand, industries, setting] = await Promise.all([
       db.category.count(),
       db.brand.count(),

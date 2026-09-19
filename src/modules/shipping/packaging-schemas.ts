@@ -51,6 +51,9 @@ export const packagingBoxSchema = z
     sortOrder: z.coerce.number().int().min(0).max(1000).default(0),
   })
   .superRefine((box, ctx) => {
+    if (box.isDefault && !box.isActive) {
+      ctx.addIssue({ code: "custom", path: ["isActive"], message: "جعبه پیش‌فرض باید فعال باشد." });
+    }
     if (box.weightGrams >= box.maxWeightGrams) {
       ctx.addIssue({
         code: "custom",

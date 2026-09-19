@@ -47,6 +47,8 @@ export function BlueprintPackagingBoxForm({ box }: { box?: BoxDraft }) {
   const [tapinBoxId, setTapinBoxId] = useState(box?.tapinBoxId != null ? String(box.tapinBoxId) : "");
   const [isActive, setIsActive] = useState(box?.isActive ?? true);
   const [isDefault, setIsDefault] = useState(box?.isDefault ?? false);
+  // The store must always keep a default box, so one that holds the flag cannot give it up here.
+  const wasDefault = box?.isDefault ?? false;
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
 
@@ -125,12 +127,12 @@ export function BlueprintPackagingBoxForm({ box }: { box?: BoxDraft }) {
       <Panel title="وضعیت">
         <div className="grid gap-4">
           <div>
-            <BpSwitch isSelected={isActive} onChange={setIsActive}>فعال</BpSwitch>
-            <p className="bp-muted m-0 mt-1.5 text-[12px]">جعبه غیرفعال هنگام محاسبه هزینه ارسال در نظر گرفته نمی‌شود.</p>
+            <BpSwitch isSelected={isActive} onChange={setIsActive} isDisabled={isDefault}>فعال</BpSwitch>
+            <p className="bp-muted m-0 mt-1.5 text-[12px]">{isDefault ? "جعبه پیش‌فرض همیشه فعال است." : "جعبه غیرفعال هنگام محاسبه هزینه ارسال در نظر گرفته نمی‌شود."}</p>
           </div>
           <div>
-            <BpSwitch isSelected={isDefault} onChange={setIsDefault}>جعبه پیش‌فرض</BpSwitch>
-            <p className="bp-muted m-0 mt-1.5 text-[12px]">اگر هیچ جعبه‌ای با وزن مناسب یافت نشد، این جعبه انتخاب می‌شود.</p>
+            <BpSwitch isSelected={isDefault} onChange={(selected) => { setIsDefault(selected); if (selected) setIsActive(true); }} isDisabled={wasDefault}>جعبه پیش‌فرض</BpSwitch>
+            <p className="bp-muted m-0 mt-1.5 text-[12px]">{wasDefault ? "فروشگاه همیشه یک جعبه پیش‌فرض دارد؛ برای تغییر، همان را روی جعبه دیگری فعال کنید." : "اگر هیچ جعبه‌ای با وزن مناسب یافت نشد، این جعبه انتخاب می‌شود."}</p>
           </div>
         </div>
       </Panel>

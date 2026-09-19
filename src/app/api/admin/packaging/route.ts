@@ -25,9 +25,12 @@ export async function POST(request: Request) {
     if (!actor) return NextResponse.json({ message: "دسترسی غیرمجاز است." }, { status: 403 });
     const data = packagingBoxSchema.parse(await request.json());
     const created = await db.$transaction(async (tx) => {
+      // The store must always have a default: the first box (or any box created while none is left) becomes it.
+      const hasDefault = (await tx.packagingBox.count({ where: { isDefault: true, isActive: true } })) > 0;
+      const asDefault = data.isDefault || !hasDefault;
       // One default at a time: a new default box demotes whichever box held the flag before.
-      if (data.isDefault) await tx.packagingBox.updateMany({ where: { isDefault: true }, data: { isDefault: false } });
-      const row = await tx.packagingBox.create({ data });
+      if (asDefault) await tx.packagingBox.updateMany({ where: { isDefault: true }, data: { isDefault: false } });
+      const row = await tx.packagingBox.create({ data: { ...data, isDefault: asDefault, isActive: asDefault ? true : data.isActive } });
       await tx.auditLog.create({ data: { actorId: actor.id, action: "PACKAGING_BOX_CREATE", entityType: "PackagingBox", entityId: row.id, ...auditRequestContext(request, { name: row.name, maxWeightGrams: row.maxWeightGrams }) } });
       return row;
     });
