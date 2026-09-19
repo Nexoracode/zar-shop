@@ -97,6 +97,18 @@ export function StorefrontCartLink({ initialCount, className = "", iconSize = 21
   // Bumped by every load and every edit, so a response that was overtaken by a newer click never overwrites it.
   const loadSequence = useRef(0);
 
+  // Pages stay mounted (hidden) while the visitor is elsewhere, with their listeners off — so a cart change
+  // made in the meantime is only known through the fresh count the server renders on return.
+  const [syncedInitialCount, setSyncedInitialCount] = useState(initialCount);
+  if (initialCount !== syncedInitialCount) {
+    setSyncedInitialCount(initialCount);
+    // Already in step after our own edit; only a change made while this page was away needs adopting.
+    if (initialCount !== count) {
+      setCount(initialCount);
+      setSummary(null);
+    }
+  }
+
   const loadSummary = useCallback(async () => {
     if (count === 0) {
       setSummary(null);

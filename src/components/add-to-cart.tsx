@@ -39,7 +39,18 @@ export function ProductPurchaseProvider({ children, productId, initialSelectedOp
   const [selectedOptions, setSelectedOptions] = useState(initialSelectedOptions);
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
-  const [cartLines, setCartLines] = useState<CartLines>(() => Object.fromEntries(initialCartLines.map((line) => [cartLineKey(line.selection), { id: line.id, quantity: line.quantity }])));
+  const serverCartLines: CartLines = Object.fromEntries(initialCartLines.map((line) => [cartLineKey(line.selection), { id: line.id, quantity: line.quantity }]));
+  const [cartLines, setCartLines] = useState<CartLines>(serverCartLines);
+  // This page stays mounted (hidden) while the visitor is elsewhere, and its listeners are off then — so a
+  // change made in the cart page never reaches `cartLines`. Coming back re-renders it with fresh server data;
+  // adopting that keeps the card from showing the quantity the visitor left. A payload that lands while a
+  // request of ours is running is stale by definition and is dropped.
+  const serverSignature = JSON.stringify(Object.entries(serverCartLines).sort(([a], [b]) => a.localeCompare(b)));
+  const [syncedSignature, setSyncedSignature] = useState(serverSignature);
+  if (serverSignature !== syncedSignature) {
+    setSyncedSignature(serverSignature);
+    if (!loading) setCartLines(serverCartLines);
+  }
 
   // A line changed somewhere else — the header's cart preview, or any other tab — is followed here too,
   // so this card never keeps claiming a quantity the cart no longer holds.
