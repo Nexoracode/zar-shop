@@ -36,7 +36,7 @@ export function unlockBodyScroll() {
   if (openDialogCount === 0) document.body.style.overflow = scrollLockPreviousOverflow;
 }
 
-export function BpDialog({ open, title, description, onClose, children, actions, labelledBy, size = "sm" }: {
+export function BpDialog({ open, title, description, onClose, children, actions, labelledBy, size = "sm", className = "" }: {
   open: boolean;
   title?: ReactNode;
   description?: ReactNode;
@@ -46,6 +46,8 @@ export function BpDialog({ open, title, description, onClose, children, actions,
   labelledBy?: string;
   /** How wide the panel gets. Tall content scrolls inside the body, never the whole panel. */
   size?: BpDialogSize;
+  /** Extra class on the panel, for a dialog with a look of its own (the delete confirmation). */
+  className?: string;
 }) {
   const panelRef = useRef<HTMLDivElement>(null);
   // Read through a ref so the effects below depend on `open` alone. Callers pass an inline
@@ -78,7 +80,7 @@ export function BpDialog({ open, title, description, onClose, children, actions,
       dir="rtl"
       onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}
     >
-      <div ref={panelRef} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby={labelledBy} className={`bp-dialog bp-dialog-${size} bp-frame`} dir="rtl">
+      <div ref={panelRef} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby={labelledBy} className={`bp-dialog bp-dialog-${size} bp-frame ${className}`.trim()} dir="rtl">
         {title && <div className="bp-dialog-title" id={labelledBy}>{title}</div>}
         {description && <p className="bp-dialog-body">{description}</p>}
         {children && <div className="bp-dialog-content">{children}</div>}

@@ -9,13 +9,15 @@ import { BpDialog, type BpDialogSize } from "./blueprint/ui/dialog";
  * boundary carries `dir="rtl"`. Dialog bodies should be written against the theme variables
  * (`--surface`, `--border`, `--muted`, `--accent`), not hard-coded palette utilities.
  */
-export function AdminDialog({ open, title, description, size = "sm", isBusy = false, labelledBy, onClose, actions, children }: {
+export function AdminDialog({ open, title, description, size = "sm", className, isBusy = false, labelledBy, onClose, actions, children }: {
   open: boolean;
   title: ReactNode;
   /** Plain-text name for assistive tech, since `title` may be markup. */
   ariaLabel?: string;
   description?: ReactNode;
   size?: BpDialogSize;
+  /** Extra class on the panel, for a dialog with a look of its own. */
+  className?: string;
   /** While an action is in flight the dialog refuses to close. */
   isBusy?: boolean;
   labelledBy?: string;
@@ -28,7 +30,7 @@ export function AdminDialog({ open, title, description, size = "sm", isBusy = fa
   const close = () => { if (!isBusy) onClose(); };
 
   return (
-    <BpDialog open={open} size={size} title={title} description={description} labelledBy={titleId} onClose={close} actions={actions}>
+    <BpDialog open={open} size={size} className={className} title={title} description={description} labelledBy={titleId} onClose={close} actions={actions}>
       {children}
     </BpDialog>
   );

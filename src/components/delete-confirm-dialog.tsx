@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertTriangle, Trash2 } from "lucide-react";
+import { AlertTriangle, CircleAlert, Trash2 } from "lucide-react";
 import { AdminDialog, AdminDialogButton } from "@/components/admin/admin-dialog";
 
 type Props = {
@@ -15,8 +15,10 @@ type Props = {
 };
 
 /**
- * Confirmation before a destructive admin action. The body is written against the theme
- * variables, so the same markup reads correctly in both admin templates.
+ * Confirmation before a destructive admin action. A centred card: a soft red medallion with the
+ * trash icon, the title, the item being deleted, what will be lost, and two equal buttons — delete
+ * (on the reading side) and cancel. Its look lives in `.bp-dialog-confirm` (admin-blueprint.css); the
+ * shared dialog itself is unchanged.
  */
 export function DeleteConfirmDialog({
   open,
@@ -34,24 +36,24 @@ export function DeleteConfirmDialog({
       ariaLabel={title}
       isBusy={loading}
       onClose={onClose}
-      title={<span className="flex items-center gap-2"><Trash2 size={17} className="text-[var(--danger)]" />{title}</span>}
+      className="bp-dialog-confirm"
+      title={<><span className="bp-confirm-icon" aria-hidden><Trash2 size={24} strokeWidth={1.7} /></span><span>{title}</span></>}
       description="این عملیات قابل بازگشت نیست."
       actions={<>
-        <AdminDialogButton variant="danger" isPending={loading} onPress={onConfirm}>{loading ? "در حال حذف..." : "حذف"}</AdminDialogButton>
-        <AdminDialogButton variant="secondary" isDisabled={loading} onPress={onClose}>انصراف</AdminDialogButton>
+        <AdminDialogButton variant="danger" isPending={loading} onPress={onConfirm} className="bp-btn-block gap-2">{!loading && <Trash2 size={15} strokeWidth={1.7} />}{loading ? "در حال حذف..." : "حذف"}</AdminDialogButton>
+        <AdminDialogButton variant="secondary" isDisabled={loading} onPress={onClose} className="bp-btn-block">انصراف</AdminDialogButton>
       </>}
     >
-      {error && <p className="m-0 border border-[var(--danger)] bg-[var(--danger)]/10 p-3 text-xs leading-6 text-[var(--danger)]">{error}</p>}
+      {error && (
+        <p role="alert" className="bp-confirm-note bp-confirm-note-danger m-0"><CircleAlert size={15} className="mt-[3px] shrink-0" aria-hidden /><span>{error}</span></p>
+      )}
       {itemName && (
-        <div className="border border-[var(--border)] bg-[var(--surface-secondary)] p-3">
-          <span className="block text-[11px] font-bold text-[var(--muted)]">مورد انتخاب‌شده</span>
-          <strong className="mt-1 block truncate text-sm">{itemName}</strong>
+        <div className="bp-confirm-item">
+          <small>مورد انتخاب‌شده</small>
+          <strong>{itemName}</strong>
         </div>
       )}
-      <div className="flex items-start gap-2.5 border border-[var(--warning)] bg-[var(--warning)]/10 p-3 text-[var(--warning)]">
-        <AlertTriangle size={15} className="mt-0.5 shrink-0" />
-        <p className="m-0 text-xs leading-6">{description}</p>
-      </div>
+      <p className="bp-confirm-note m-0"><AlertTriangle size={15} className="mt-[3px] shrink-0" aria-hidden /><span>{description}</span></p>
     </AdminDialog>
   );
 }
