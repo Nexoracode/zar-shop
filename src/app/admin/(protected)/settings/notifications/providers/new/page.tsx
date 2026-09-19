@@ -4,6 +4,7 @@ import { BlueprintSmsProviderManager } from "@/components/admin/blueprint/sms-pr
 import { requirePermission } from "@/modules/auth/session";
 import { getPublicSmsProviderConfigs } from "@/modules/communications/sms-config";
 import { getCommunicationSettings } from "@/modules/communications/communication-settings";
+import { getGeneralStoreSettings } from "@/modules/settings/general-settings";
 
 // @next-codemod-ignore Cache Components adoption: this segment temporarily allows blocking.
 // Remove this opt-out after verifying the segment passes validation without it.
@@ -13,9 +14,9 @@ export const instant = false;
 export const metadata: Metadata = { title: "افزودن ارائه‌دهنده پیامک" };
 export default async function NewSmsProviderPage() {
   await requirePermission("settings:manage");
-  const [configs, communicationSettings] = await Promise.all([getPublicSmsProviderConfigs(), getCommunicationSettings()]);
+  const [configs, communicationSettings, general] = await Promise.all([getPublicSmsProviderConfigs(), getCommunicationSettings(), getGeneralStoreSettings()]);
   return <>
     <AdminPageHeader eyebrow="پیامک و اعلان" title="افزودن ارائه‌دهنده پیامک" description="سامانه پیامکی را انتخاب و اطلاعات وب‌سرویس را امن ثبت کنید." backHref="/admin/settings/notifications/providers" backLabel="بازگشت به ارائه‌دهندگان" />
-    <BlueprintSmsProviderManager mode="form" initialConfigs={configs} smsEnabled={communicationSettings.smsEnabled} />
+    <BlueprintSmsProviderManager mode="form" initialConfigs={configs} smsEnabled={communicationSettings.smsEnabled} storeName={general.storeName} />
   </>;
 }

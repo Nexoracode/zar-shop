@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { AlertTriangle, Plus, Wallet } from "lucide-react";
+import { AlertTriangle, Plus } from "lucide-react";
 import { AdminPageHeader, AdminPrimaryLink } from "@/components/admin-ui";
+import { BlueprintSmsAccountOverview } from "@/components/admin/blueprint/sms-account-overview";
 import { BlueprintSmsProviderManager } from "@/components/admin/blueprint/sms-provider-manager";
 import { requirePermission } from "@/modules/auth/session";
 import { getPublicSmsProviderConfigs } from "@/modules/communications/sms-config";
-import { getSmsAccountBalance } from "@/modules/communications/sms-patterns";
 import { getCommunicationSettings } from "@/modules/communications/communication-settings";
+import { getGeneralStoreSettings } from "@/modules/settings/general-settings";
 import { readHiddenColumns } from "@/lib/admin-column-visibility-server";
 
 // @next-codemod-ignore Cache Components adoption: this segment temporarily allows blocking.
@@ -17,12 +18,11 @@ export const instant = false;
 export const metadata: Metadata = { title: "ارائه‌دهندگان پیامک" };
 export default async function SmsProvidersPage() {
   await requirePermission("settings:manage");
-  const [configs, communicationSettings, initialHiddenColumns] = await Promise.all([getPublicSmsProviderConfigs(), getCommunicationSettings(), readHiddenColumns("smsProviders")]);
-  const hasActiveFaraz = configs.some((config) => config.provider === "FARAZ_SMS" && config.isActive);
-  const balance = hasActiveFaraz ? await getSmsAccountBalance().catch(() => null) : null;
+  const [configs, communicationSettings, general, initialHiddenColumns] = await Promise.all([getPublicSmsProviderConfigs(), getCommunicationSettings(), getGeneralStoreSettings(), readHiddenColumns("smsProviders")]);
+  const faraz = configs.find((config) => config.provider === "FARAZ_SMS") ?? null;
   return <>
-    <AdminPageHeader eyebrow="پیامک و اعلان" title="ارائه‌دهندگان پیامک" description="اطلاعات اتصال و ارائه‌دهنده فعال ارسال را مدیریت کنید." backHref="/admin/settings/notifications" backLabel="بازگشت به پیامک و اعلان" action={<AdminPrimaryLink href="/admin/settings/notifications/providers/new"><Plus size={17} />افزودن ارائه‌دهنده</AdminPrimaryLink>} />
-    {hasActiveFaraz && !communicationSettings.smsEnabled && (
+    <AdminPageHeader eyebrow="پیامک و اعلان" title="ارائه‌دهندگان پیامک" description="اطلاعات اتصال، وضعیت حساب و ارائه‌دهنده فعال ارسال را مدیریت کنید." backHref="/admin/settings/notifications" backLabel="بازگشت به پیامک و اعلان" action={<AdminPrimaryLink href="/admin/settings/notifications/providers/new"><Plus size={17} />افزودن ارائه‌دهنده</AdminPrimaryLink>} />
+    {faraz?.isActive && !communicationSettings.smsEnabled && (
       <div className="bp-frame relative mb-2 flex items-start gap-3 border-[var(--bp-warning)] p-[14px]">
         <AlertTriangle size={17} className="mt-0.5 shrink-0 text-[var(--bp-warning)]" />
         <div className="min-w-0 text-[12px] leading-6">
@@ -32,12 +32,8 @@ export default async function SmsProvidersPage() {
         </div>
       </div>
     )}
-    {balance !== null && (
-      <div className="bp-frame relative mb-2 flex items-center gap-3 p-[14px]">
-        <span className="grid size-9 shrink-0 place-items-center border border-[var(--bp-accent)] bg-[var(--bp-accent-100)] text-[var(--bp-accent)]"><Wallet size={17} /></span>
-        <div className="min-w-0"><strong className="block text-[13px]">موجودی حساب فراز اس‌ام‌اس</strong><span className="bp-muted mt-0.5 block text-[12px]">{balance.toLocaleString("fa-IR")} ریال</span></div>
-      </div>
-    )}
+    {/* Loaded in the browser after the page renders, so a slow or failing Faraz never blocks this page. */}
+    {faraz && <BlueprintSmsAccountOverview config={faraz} storeName={general.storeName} />}
     <BlueprintSmsProviderManager key={configs.map((config) => config.updatedAt).join("|")} mode="list" initialConfigs={configs} initialHiddenColumns={initialHiddenColumns} />
   </>;
 }

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { apiError } from "@/lib/http";
 import { getPermittedActor } from "@/modules/auth/session";
-import { activeProviderInputSchema, encryptSmsCredentials, getPublicSmsProviderConfigs, maskSmsCredential } from "@/modules/communications/sms-config";
+import { activeProviderInputSchema, encryptSmsCredentials, getPublicSmsProviderConfigs, getStoredFarazCredentials, maskSmsCredential } from "@/modules/communications/sms-config";
 import { smsProviderInfo, smsProviderInputSchema, smsProviderSchema } from "@/modules/communications/sms-providers";
 import { auditRequestContext } from "@/modules/audit/request-context";
 
@@ -15,8 +15,11 @@ export async function POST(request: Request) {
   try {
     const actor = await getPermittedActor("settings:manage"); if (!actor) return NextResponse.json({ message: "دسترسی غیرمجاز است." }, { status: 403 });
     const input = smsProviderInputSchema.parse(await request.json()); const info = smsProviderInfo(input.provider);
-    const credentials = input.provider === "FARAZ_SMS" ? { apiKey: input.apiKey, otpPatternCode: input.otpPatternCode, otpCodeVariable: input.otpCodeVariable, otpNameVariable: input.otpNameVariable } : { username: input.username, password: input.password };
-    const maskSource = input.provider === "FARAZ_SMS" ? input.apiKey : input.username;
+    // An edit may leave the key blank to keep the stored one; a first save has nothing to fall back to.
+    const apiKey = input.provider === "FARAZ_SMS" ? input.apiKey || (await getStoredFarazCredentials())?.apiKey : undefined;
+    if (input.provider === "FARAZ_SMS" && !apiKey) return NextResponse.json({ message: "اطلاعات ارسال‌شده معتبر نیست.", issues: { apiKey: ["API Key را وارد کنید."] } }, { status: 422 });
+    const credentials = input.provider === "FARAZ_SMS" ? { apiKey, otpPatternCode: input.otpPatternCode, otpCodeVariable: input.otpCodeVariable, otpNameVariable: input.otpNameVariable || undefined } : { username: input.username, password: input.password };
+    const maskSource = input.provider === "FARAZ_SMS" ? apiKey! : input.username;
     await db.$transaction(async (tx) => {
       // A config activates itself when nothing else (no *other* provider) is active — otherwise
       // saving it silently does nothing (sendPhoneOtpCode only ever looks at the active provider)

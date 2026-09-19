@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { useMemo, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "@heroui/react";
 import Link from "next/link";
@@ -12,9 +12,9 @@ import { AdminDialog, AdminDialogButton } from "@/components/admin/admin-dialog"
 import { AdminEmptyState, AdminPanel } from "@/components/admin-ui";
 import { smsProviders, type SmsProviderId } from "@/modules/communications/sms-providers";
 import type { PublicSmsProviderConfig } from "@/modules/communications/sms-config";
-import type { SmsPattern } from "@/modules/communications/sms-pattern-schemas";
 import { smsProviderFieldLimits } from "@/modules/communications/limits";
-import { BpButton, BpInput, BpKicker, BpLinkButton, BpSelect, BpTable, BpTag, BpTd, BpTh } from "./ui";
+import { BlueprintFarazProviderForm } from "./sms-faraz-provider-form";
+import { BpButton, BpInput, BpKicker, BpLinkButton, BpTable, BpTag, BpTd, BpTh } from "./ui";
 
 function statusTone(item: PublicSmsProviderConfig) {
   return item.isActive ? "success" : item.sendSupported ? "neutral" : "warning";
@@ -32,7 +32,7 @@ const smsProviderColumns = [
   { id: "status", label: "وضعیت" },
 ];
 
-export function BlueprintSmsProviderManager({ mode, initialConfigs, smsEnabled, onSaved, editingProvider, initialSenderNumber, initialHiddenColumns = [] }: { mode: "list" | "form"; initialConfigs: PublicSmsProviderConfig[]; smsEnabled?: boolean; onSaved?: () => void; /** Set when editing an already-configured provider: locks the provider picker and prefills the sender number. */ editingProvider?: SmsProviderId; initialSenderNumber?: string; initialHiddenColumns?: string[] }) {
+export function BlueprintSmsProviderManager({ mode, initialConfigs, smsEnabled, storeName = "", onSaved, editingProvider, initialSenderNumber, initialHiddenColumns = [] }: { mode: "list" | "form"; initialConfigs: PublicSmsProviderConfig[]; smsEnabled?: boolean; /** The store name, so the Faraz form can warn when it is longer than a pattern variable allows. */ storeName?: string; onSaved?: () => void; /** Set when editing an already-configured provider: locks the provider picker and prefills the saved settings. */ editingProvider?: SmsProviderId; initialSenderNumber?: string; initialHiddenColumns?: string[] }) {
   const router = useRouter();
   const [configs, setConfigs] = useState(initialConfigs);
   // The server list is the source of truth once a mutation settles and `router.refresh()` brings
@@ -44,34 +44,20 @@ export function BlueprintSmsProviderManager({ mode, initialConfigs, smsEnabled, 
     setConfigs(initialConfigs);
   }
   const [selectedId, setSelectedId] = useState<SmsProviderId>(editingProvider ?? "FARAZ_SMS");
-  const [apiKey, setApiKey] = useState("");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [senderNumber, setSenderNumber] = useState(initialSenderNumber ?? "");
-  const [otpPatternCode, setOtpPatternCode] = useState("");
-  const [otpCodeVariable, setOtpCodeVariable] = useState("");
-  const [otpNameVariable, setOtpNameVariable] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
   const [deactivating, setDeactivating] = useState<PublicSmsProviderConfig | null>(null);
-  const [existingPatterns, setExistingPatterns] = useState<SmsPattern[]>([]);
   const selected = useMemo(() => smsProviders.find((item) => item.id === selectedId)!, [selectedId]);
-  const hasSavedFarazKey = initialConfigs.some((config) => config.provider === "FARAZ_SMS");
-  const selectedPattern = existingPatterns.find((pattern) => pattern.code === otpPatternCode) ?? null;
-
-  // Once an API key is already saved, offer a shortcut to pick a pattern already created (via
-  // the patterns page) instead of copy-pasting its code by hand.
-  useEffect(() => {
-    if (mode !== "form" || selectedId !== "FARAZ_SMS" || !hasSavedFarazKey) return;
-    let cancelled = false;
-    fetch("/api/admin/sms/patterns").then((response) => response.ok ? response.json() : []).then((result) => { if (!cancelled) setExistingPatterns(Array.isArray(result) ? result : []); }).catch(() => {});
-    return () => { cancelled = true; };
-  }, [mode, selectedId, hasSavedFarazKey]);
+  const existingFaraz = initialConfigs.find((config) => config.provider === "FARAZ_SMS") ?? null;
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setBusy("save");
     try {
-      const body = selectedId === "FARAZ_SMS" ? { provider: selectedId, apiKey, senderNumber, otpPatternCode, otpCodeVariable, otpNameVariable: otpNameVariable || undefined } : { provider: selectedId, username, password, senderNumber };
+      // Faraz has its own form (BlueprintFarazProviderForm); this submit only serves the others.
+      const body = { provider: selectedId, username, password, senderNumber };
       const response = await fetch("/api/admin/sms/providers", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
       const result = await response.json().catch(() => null);
       if (!response.ok) throw new Error(result?.message ?? "پیکربندی ذخیره نشد.");
@@ -247,6 +233,10 @@ export function BlueprintSmsProviderManager({ mode, initialConfigs, smsEnabled, 
         </div>
       </section>
 
+      {selectedId === "FARAZ_SMS" ? (
+        // Keyed by the saved config so a refreshed server copy remounts it with the new values.
+        <BlueprintFarazProviderForm key={existingFaraz?.updatedAt ?? "new"} existing={existingFaraz} storeName={storeName} onSaved={onSaved} />
+      ) : (
       <form onSubmit={submit} className="grid items-start gap-2 lg:grid-cols-2">
         <section className="bp-frame relative p-[16px]">
           <div className="flex items-center gap-3">
@@ -274,50 +264,14 @@ export function BlueprintSmsProviderManager({ mode, initialConfigs, smsEnabled, 
           <BpKicker>اطلاعات اتصال</BpKicker>
           <p className="bp-muted m-0 mt-1 text-[12px]">اعتبارنامه رمزنگاری می‌شود و بعداً کامل نمایش داده نخواهد شد.</p>
           <div className="mt-3 grid gap-3">
-            {selectedId === "FARAZ_SMS" ? (
-              <>
-                <BpInput label="API Key" secret required maxLength={smsProviderFieldLimits.apiKey} value={apiKey} onChange={(event) => setApiKey(event.target.value)} dir="ltr" />
-                {existingPatterns.length > 0 ? (
-                  <BpSelect
-                    label="پترن کد تأیید (OTP)"
-                    hint="از صفحه پترن‌های پیامک ساخته یا اینجا انتخاب کنید"
-                    placeholder="انتخاب پترن…"
-                    value={otpPatternCode}
-                    onChange={(event) => {
-                      const code = event.target.value;
-                      setOtpPatternCode(code);
-                      const found = existingPatterns.find((pattern) => pattern.code === code);
-                      setOtpCodeVariable(found?.vars.length === 1 ? found.vars[0].var : "");
-                      setOtpNameVariable("");
-                    }}
-                    options={existingPatterns.map((pattern) => ({ value: pattern.code, label: `${pattern.text.slice(0, 40)} (${pattern.code})` }))}
-                  />
-                ) : (
-                  <BpInput label="کد پترن کد تأیید (OTP)" hint="کد پترنی که در صفحه پترن‌های پیامک ساختید" required dir="ltr" maxLength={smsProviderFieldLimits.otpPatternCode} value={otpPatternCode} onChange={(event) => setOtpPatternCode(event.target.value)} placeholder="SJ3FgPrE0C" />
-                )}
-                {selectedPattern && selectedPattern.vars.length > 0 ? (
-                  <>
-                    <BpSelect label="متغیر کد تأیید" required value={otpCodeVariable} onChange={(event) => setOtpCodeVariable(event.target.value)} placeholder="انتخاب کنید" options={selectedPattern.vars.map((variable) => ({ value: variable.var, label: variable.var }))} />
-                    <BpSelect label="متغیر نام فروشگاه" hint="اختیاری؛ اگر پترن جای نام فروشگاه هم دارد" value={otpNameVariable} onChange={(event) => setOtpNameVariable(event.target.value)} placeholder="هیچ‌کدام" options={selectedPattern.vars.map((variable) => ({ value: variable.var, label: variable.var }))} />
-                  </>
-                ) : (
-                  <>
-                    <BpInput label="نام متغیر کد تأیید" hint="همان نامی که هنگام ساخت پترن برای این متغیر گذاشتید" required dir="ltr" maxLength={smsProviderFieldLimits.otpVariableName} value={otpCodeVariable} onChange={(event) => setOtpCodeVariable(event.target.value)} placeholder="otp" />
-                    <BpInput label="نام متغیر نام فروشگاه" hint="اختیاری؛ اگر پترن جای نام فروشگاه هم دارد" dir="ltr" maxLength={smsProviderFieldLimits.otpVariableName} value={otpNameVariable} onChange={(event) => setOtpNameVariable(event.target.value)} placeholder="name" />
-                  </>
-                )}
-              </>
-            ) : (
-              <>
-                <BpInput label="نام کاربری" required dir="ltr" maxLength={smsProviderFieldLimits.username} value={username} onChange={(event) => setUsername(event.target.value)} />
-                <BpInput label="رمز وب‌سرویس" required type="password" dir="ltr" maxLength={smsProviderFieldLimits.password} value={password} onChange={(event) => setPassword(event.target.value)} />
-              </>
-            )}
+            <BpInput label="نام کاربری" required dir="ltr" maxLength={smsProviderFieldLimits.username} value={username} onChange={(event) => setUsername(event.target.value)} />
+            <BpInput label="رمز وب‌سرویس" required type="password" dir="ltr" maxLength={smsProviderFieldLimits.password} value={password} onChange={(event) => setPassword(event.target.value)} />
             <BpInput label="سرشماره ارسال" required dir="ltr" maxLength={smsProviderFieldLimits.senderNumber} value={senderNumber} onChange={(event) => setSenderNumber(event.target.value)} placeholder="90008361" />
             <BpButton type="submit" variant="primary" fullWidth isPending={busy === "save"}>ذخیره پیکربندی</BpButton>
           </div>
         </section>
       </form>
+      )}
     </div>
   );
 }

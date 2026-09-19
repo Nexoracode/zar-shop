@@ -5,6 +5,7 @@ import { BlueprintSmsProviderManager } from "@/components/admin/blueprint/sms-pr
 import { requirePermission } from "@/modules/auth/session";
 import { getPublicSmsProviderConfigs } from "@/modules/communications/sms-config";
 import { getCommunicationSettings } from "@/modules/communications/communication-settings";
+import { getGeneralStoreSettings } from "@/modules/settings/general-settings";
 import { smsProviderSchema } from "@/modules/communications/sms-providers";
 
 // @next-codemod-ignore Cache Components adoption: this segment temporarily allows blocking.
@@ -20,12 +21,12 @@ export default async function EditSmsProviderPage({ params }: { params: Promise<
   const parsedProvider = smsProviderSchema.safeParse(rawProvider);
   if (!parsedProvider.success) notFound();
 
-  const [configs, communicationSettings] = await Promise.all([getPublicSmsProviderConfigs(), getCommunicationSettings()]);
+  const [configs, communicationSettings, general] = await Promise.all([getPublicSmsProviderConfigs(), getCommunicationSettings(), getGeneralStoreSettings()]);
   const existing = configs.find((config) => config.provider === parsedProvider.data);
   if (!existing) notFound();
 
   return <>
-    <AdminPageHeader eyebrow="پیامک و اعلان" title={`ویرایش ${existing.displayName}`} description="اعتبارنامه اتصال رمزنگاری‌شده است و باید دوباره وارد شود؛ سرشماره فعلی از پیش پر شده است." backHref="/admin/settings/notifications/providers" backLabel="بازگشت به ارائه‌دهندگان" />
-    <BlueprintSmsProviderManager mode="form" initialConfigs={configs} smsEnabled={communicationSettings.smsEnabled} editingProvider={existing.provider} initialSenderNumber={existing.senderNumber} />
+    <AdminPageHeader eyebrow="پیامک و اعلان" title={`ویرایش ${existing.displayName}`} description={existing.sendSupported ? "مقادیر ذخیره‌شده از پیش پر شده‌اند؛ کلید API رمزنگاری‌شده است و فقط برای تغییر آن باید دوباره وارد شود." : "اعتبارنامه اتصال رمزنگاری‌شده است و باید دوباره وارد شود؛ سرشماره فعلی از پیش پر شده است."} backHref="/admin/settings/notifications/providers" backLabel="بازگشت به ارائه‌دهندگان" />
+    <BlueprintSmsProviderManager mode="form" initialConfigs={configs} smsEnabled={communicationSettings.smsEnabled} storeName={general.storeName} editingProvider={existing.provider} initialSenderNumber={existing.senderNumber} />
   </>;
 }

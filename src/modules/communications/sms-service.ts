@@ -1,11 +1,13 @@
 import { z } from "zod";
 import { db } from "@/lib/db";
 import type { PhoneOtpPurpose } from "@generated/prisma/enums";
-import { decryptSmsCredentials } from "@/modules/communications/sms-config";
+import { decryptSmsCredentials, getStoredFarazCredentials } from "@/modules/communications/sms-config";
 import { getCommunicationSettings } from "@/modules/communications/communication-settings";
 import { getGeneralStoreSettings } from "@/modules/settings/general-settings";
 import { smsAudienceSchema, type SmsAudience } from "@/modules/communications/sms-audiences";
 import { smsFieldLimits } from "@/modules/communications/limits";
+import { FarazApiError, sendRequestIdOf } from "@/modules/communications/faraz-client";
+import { normalizeIranPhone, sendFarazPatternSms, sendFarazSampleSms, sendFarazSimpleSms } from "@/modules/communications/faraz-messaging";
 
 const smsMessageSchema = z.string().trim().min(3).max(smsFieldLimits.message);
 export const iranMobileSchema = z.string().trim().transform((value) => value.replace(/[۰-۹]/g, (digit) => String("۰۱۲۳۴۵۶۷۸۹".indexOf(digit))).replace(/[٠-٩]/g, (digit) => String("٠١٢٣٤٥٦٧٨٩".indexOf(digit)))).pipe(z.string().regex(/^09\d{9}$/));
@@ -29,21 +31,11 @@ function audienceWhere(audience: SmsAudience) {
 
 export async function countSmsAudience(audience: SmsAudience) { return db.user.count({ where: audienceWhere(audience) }); }
 
-// Faraz SMS's current API (docs.farazsms.com) lives on api.iranpayamak.com and takes recipient
-// numbers with the local leading zero (09xxxxxxxxx), not the +98 form their older ippanel-based
-// API used.
-function normalizeIranPhone(value: string) {
-  const digits = value.replace(/[۰-۹]/g, (digit) => String("۰۱۲۳۴۵۶۷۸۹".indexOf(digit))).replace(/[٠-٩]/g, (digit) => String("٠١٢٣٤٥٦٧٨٩".indexOf(digit))).replace(/\D/g, "");
-  const local = digits.startsWith("0098") ? digits.slice(4) : digits.startsWith("98") ? digits.slice(2) : digits.startsWith("0") ? digits.slice(1) : digits;
-  return /^9\d{9}$/.test(local) ? `0${local}` : null;
-}
-
+// Free-text sends go through Faraz's "simple" endpoint, which holds every message for operator
+// approval before it goes out (see faraz-messaging.ts).
 async function sendWithFaraz(provider: { senderNumber: string; credentialsEncrypted: string }, recipients: string[], message: string) {
   const credentials = z.object({ apiKey: z.string().min(1) }).parse(decryptSmsCredentials(provider.credentialsEncrypted));
-  const response = await fetch("https://api.iranpayamak.com/ws/v1/sms/simple", { method: "POST", headers: { "Content-Type": "application/json", "Api-Key": credentials.apiKey }, body: JSON.stringify({ text: message, line_number: provider.senderNumber, recipients, number_format: "english" }), signal: AbortSignal.timeout(15000) });
-  const result = await response.json().catch(() => null);
-  if (!response.ok) throw new Error(`ارسال پیامک با خطای ${response.status.toLocaleString("fa-IR")} مواجه شد.`);
-  return result;
+  return sendFarazSimpleSms(credentials.apiKey, provider.senderNumber, recipients, message);
 }
 
 // OTP codes go through Faraz SMS's registered-pattern API instead of the free-text "simple"
@@ -54,16 +46,8 @@ async function sendWithFaraz(provider: { senderNumber: string; credentialsEncryp
 // so `attributes` arrives pre-built from the admin-configured provider rather than assuming any
 // fixed variable names here — purpose-specific copy isn't possible here, that only lives in the
 // SmsCampaign audit record via otpMessages below.
-async function sendOtpWithFarazPattern(apiKey: string, patternCode: string, lineNumber: string, recipient: string, attributes: Record<string, string>) {
-  const response = await fetch("https://api.iranpayamak.com/ws/v1/sms/pattern", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "Api-Key": apiKey },
-    body: JSON.stringify({ code: patternCode, recipient, line_number: lineNumber, number_format: "english", attributes }),
-    signal: AbortSignal.timeout(15000),
-  });
-  const result = await response.json().catch(() => null);
-  if (!response.ok) throw new Error(`ارسال پیامک با خطای ${response.status.toLocaleString("fa-IR")} مواجه شد.`);
-  return result;
+function sendOtpWithFarazPattern(apiKey: string, patternCode: string, lineNumber: string, recipient: string, attributes: Record<string, string>) {
+  return sendFarazPatternSms(apiKey, { patternCode, lineNumber, recipient, attributes });
 }
 
 export async function sendAutomatedSms(event: "orderCreated" | "paymentSuccess" | "orderShipped" | "orderExpired" | "lowStockAdmin", phone: string | null | undefined, variables: Record<string, string | number>) {
@@ -102,6 +86,29 @@ export async function sendPhoneOtpCode(phone: string | null | undefined, code: s
   const campaign = await db.smsCampaign.create({ data: { provider: provider.provider, audience: `SYSTEM_PHONE_OTP_${purpose}`, message, recipientCount: 1, status: "SENDING" } });
   try { const result = await sendOtpWithFarazPattern(credentials.apiKey, credentials.otpPatternCode, provider.senderNumber, recipient, attributes); await db.smsCampaign.update({ where: { id: campaign.id }, data: { status: "SENT", successfulCount: 1, providerData: result ?? undefined } }); return true; }
   catch (error) { await db.smsCampaign.update({ where: { id: campaign.id }, data: { status: "FAILED", failedCount: 1, errorMessage: error instanceof Error ? error.message : "خطای ناشناخته" } }); return false; }
+}
+
+export const smsTestSchema = z.discriminatedUnion("kind", [
+  z.object({ kind: z.literal("SAMPLE") }),
+  z.object({ kind: z.literal("PATTERN"), phone: iranMobileSchema }),
+]);
+
+// A configuration check, not customer traffic: it runs against the *saved* Faraz config even when
+// it is not the active provider yet, ignores the "sending enabled" switch, and leaves no campaign
+// record (the route writes an audit entry instead).
+export async function sendSmsTest(input: z.infer<typeof smsTestSchema>) {
+  const stored = await getStoredFarazCredentials();
+  if (!stored) throw new FarazApiError("ابتدا فراز اس‌ام‌اس را پیکربندی و ذخیره کنید.", 422);
+  const storeName = (await getGeneralStoreSettings()).storeName;
+  if (input.kind === "SAMPLE") {
+    const result = await sendFarazSampleSms(stored.apiKey, stored.senderNumber, `پیامک آزمایشی ${storeName}: اتصال به فراز اس‌ام‌اس برقرار است.`);
+    return { sendRequestId: sendRequestIdOf(result) };
+  }
+  if (!stored.otp) throw new FarazApiError("پترن کد تأیید هنوز در پیکربندی ثبت نشده است.", 422);
+  const attributes: Record<string, string> = { [stored.otp.codeVariable]: "12345" };
+  if (stored.otp.nameVariable) attributes[stored.otp.nameVariable] = storeName;
+  const result = await sendFarazPatternSms(stored.apiKey, { patternCode: stored.otp.patternCode, lineNumber: stored.senderNumber, recipient: normalizeIranPhone(input.phone) ?? input.phone, attributes });
+  return { sendRequestId: sendRequestIdOf(result) };
 }
 
 export async function sendManualSms(input: z.infer<typeof manualSmsSchema>, actorId: string) {

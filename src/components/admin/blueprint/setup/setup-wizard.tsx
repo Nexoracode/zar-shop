@@ -120,7 +120,7 @@ export function SetupWizard({ state, storeName, basics, contact, brand, origin, 
         {current === "basics" && <SetupBasicsStep initial={basics} onSaved={savedAndNext} />}
         {current === "contact" && <SetupContactStep initial={contact} onSaved={savedAndNext} />}
         {current === "brand" && <SetupBrandStep initial={brand} onSaved={savedAndNext} />}
-        {current === "payment-sms" && <SetupPaymentSmsStep gateways={gateways} smsConfigs={smsConfigs} appUrl={appUrl} onSaved={refresh} />}
+        {current === "payment-sms" && <SetupPaymentSmsStep gateways={gateways} smsConfigs={smsConfigs} appUrl={appUrl} storeName={storeName} onSaved={refresh} />}
         {current === "shipping" && (
           <SetupShippingStep
             provinces={provinces}

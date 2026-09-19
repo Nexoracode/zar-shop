@@ -11,6 +11,7 @@ type Props = {
   gateways: PublicGatewayConfig[];
   smsConfigs: PublicSmsProviderConfig[];
   appUrl: string;
+  storeName: string;
   onSaved: () => void;
 };
 
@@ -24,7 +25,7 @@ function StatusLine({ done, label }: { done: boolean; label: string }) {
   );
 }
 
-export function SetupPaymentSmsStep({ gateways, smsConfigs, appUrl, onSaved }: Props) {
+export function SetupPaymentSmsStep({ gateways, smsConfigs, appUrl, storeName, onSaved }: Props) {
   return (
     <div className="grid gap-3">
       <section className="bp-frame relative p-[16px]">
@@ -47,7 +48,7 @@ export function SetupPaymentSmsStep({ gateways, smsConfigs, appUrl, onSaved }: P
         <BpKicker>ارائه‌دهنده پیامک</BpKicker>
         <p className="bp-muted m-0 mt-1 text-[12px] leading-6">کد تأیید ورود و ثبت‌نام مشتریان از طریق همین ارائه‌دهنده ارسال می‌شود.</p>
         <div className="mt-3">
-          <BlueprintSmsProviderManager mode="form" initialConfigs={smsConfigs} onSaved={onSaved} />
+          <BlueprintSmsProviderManager mode="form" initialConfigs={smsConfigs} storeName={storeName} onSaved={onSaved} />
         </div>
       </section>
     </div>
