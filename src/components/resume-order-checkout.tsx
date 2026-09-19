@@ -86,8 +86,6 @@ export function ResumeOrderCheckout({ orderId, orderNumber, address, quote, curr
           </Card.Content>
         </Card>
 
-        <CheckoutItems items={items} currency={currency} />
-
         <Card variant="secondary" className="rounded-xl border border-[var(--border)] bg-[var(--surface)] shadow-sm">
           <Card.Content className="p-4 sm:p-5">
             <div className="mb-4 flex items-start gap-3"><span className="grid size-9 shrink-0 place-items-center rounded-full bg-[var(--brand-primary)]/10 text-[var(--brand-primary)]"><CreditCard size={18} /></span><div><h2 className="m-0 text-base font-bold">روش پرداخت</h2><p className="mb-0 mt-1 text-xs text-[var(--muted)]">پرداخت از طریق درگاه امن بانکی انجام می‌شود.</p></div></div>
@@ -114,6 +112,7 @@ export function ResumeOrderCheckout({ orderId, orderNumber, address, quote, curr
           {error ? <InlineAlert status="danger" className="mt-4">{error}</InlineAlert> : null}
           <Button type="button" fullWidth variant="primary" isPending={isPending} isDisabled={!paymentProvider} onPress={() => void pay()} className="mt-5 min-h-12 gap-2 rounded-lg bg-[var(--brand-primary)] px-5 font-bold text-[var(--brand-primary-foreground)]">{({ isPending: loading }) => <>{loading && <Spinner color="current" size="sm" />}{loading ? "در حال انتقال به درگاه..." : "پرداخت سفارش"}</>}</Button>
         </Card>
+        <CheckoutItems items={items} currency={currency} />
       </aside>
     </div>
   );

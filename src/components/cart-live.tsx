@@ -118,9 +118,9 @@ export function CartLiveSummary({ currency, freeShippingThreshold }: { currency:
       <Card variant="secondary" className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 shadow-sm">
         <dl className="m-0 grid gap-4 text-sm"><div className="flex items-center justify-between gap-4 text-[var(--muted)]"><dt>قیمت کالاها ({itemCount.toLocaleString("fa-IR")})</dt><dd>{formatMoney(subtotal, currency)}</dd></div>{productDiscount > 0 && <div className="flex items-center justify-between gap-4 font-bold text-[var(--danger)]"><dt>تخفیف کالاها</dt><dd>{formatMoney(productDiscount, currency)}</dd></div>}<div className="flex items-center justify-between gap-4 border-t border-[var(--border)] pt-4 font-bold"><dt>جمع سبد خرید</dt><dd>{formatMoney(merchandiseTotal, currency)}</dd></div></dl>
         <Link href="/checkout" className="mt-5 flex min-h-12 w-full items-center justify-center gap-2 rounded-lg bg-[var(--brand-primary)] px-5 text-sm font-bold text-[var(--brand-primary-foreground)] shadow-sm transition hover:brightness-110">ادامه فرایند خرید<ChevronLeft size={18} /></Link>
-        {freeShippingThreshold !== null && <div className="mt-5"><FreeShippingProgress merchandiseTotal={merchandiseTotal} threshold={freeShippingThreshold} currency={currency} /></div>}
         {productDiscount > 0 && <div className="mt-4 flex items-center gap-2 text-[11px] font-bold text-[var(--danger)]"><BadgePercent size={16} />{formatMoney(productDiscount, currency)} سود شما از تخفیف کالاها</div>}
       </Card>
+      {freeShippingThreshold !== null && <FreeShippingProgress merchandiseTotal={merchandiseTotal} threshold={freeShippingThreshold} currency={currency} />}
     </aside>
   );
 }
