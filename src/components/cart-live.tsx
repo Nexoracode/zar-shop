@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { createContext, useCallback, useContext, useEffect, useState, useTransition } from "react";
 import type { ReactNode } from "react";
 import { toast } from "@heroui/react";
-import { BadgePercent, ChevronLeft } from "lucide-react";
+import { ChevronLeft, Info, PartyPopper } from "lucide-react";
 import { Card } from "@/components/hero";
 import { formatMoney } from "@/lib/format";
 import { FreeShippingProgress } from "@/components/free-shipping-progress";
@@ -116,9 +116,25 @@ export function CartLiveSummary({ currency, freeShippingThreshold }: { currency:
   return (
     <aside className="grid gap-4 lg:sticky lg:top-24">
       <Card variant="secondary" className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 shadow-sm">
-        <dl className="m-0 grid gap-4 text-sm"><div className="flex items-center justify-between gap-4 text-[var(--muted)]"><dt>قیمت کالاها ({itemCount.toLocaleString("fa-IR")})</dt><dd>{formatMoney(subtotal, currency)}</dd></div>{productDiscount > 0 && <div className="flex items-center justify-between gap-4 font-bold text-[var(--danger)]"><dt>تخفیف کالاها</dt><dd>{formatMoney(productDiscount, currency)}</dd></div>}<div className="flex items-center justify-between gap-4 border-t border-[var(--border)] pt-4 font-bold"><dt>جمع سبد خرید</dt><dd>{formatMoney(merchandiseTotal, currency)}</dd></div></dl>
+        <h2 className="m-0 text-base font-bold">جزئیات پرداخت</h2>
+        <dl className="m-0 mt-5 grid gap-3 text-sm">
+          <div className="flex items-center justify-between gap-4 text-[var(--muted)]"><dt>مجموع قیمت کالاها ({itemCount.toLocaleString("fa-IR")} کالا)</dt><dd className="m-0 tabular-nums">{formatMoney(subtotal, currency)}</dd></div>
+          {productDiscount > 0 && (
+            <div className="flex items-center justify-between gap-4 rounded-lg px-3 py-2.5 font-bold text-[var(--success)]" style={{ backgroundColor: "color-mix(in srgb, var(--success) 12%, transparent)" }}>
+              <dt className="flex items-center gap-2"><PartyPopper size={16} />سود شما از خرید</dt>
+              <dd className="m-0 tabular-nums">{formatMoney(productDiscount, currency)}</dd>
+            </div>
+          )}
+          <div className="flex items-center justify-between gap-4 font-bold">
+            <dt>مجموع سبد خرید</dt>
+            <dd className="m-0 flex items-center gap-2 tabular-nums">
+              {productDiscount > 0 && <span className="text-xs font-normal text-[var(--muted)] line-through">{formatMoney(subtotal, currency)}</span>}
+              <span className="text-base">{formatMoney(merchandiseTotal, currency)}</span>
+            </dd>
+          </div>
+        </dl>
         <Link href="/checkout" className="mt-5 flex min-h-12 w-full items-center justify-center gap-2 rounded-lg bg-[var(--brand-primary)] px-5 text-sm font-bold text-[var(--brand-primary-foreground)] shadow-sm transition hover:brightness-110">ادامه فرایند خرید<ChevronLeft size={18} /></Link>
-        {productDiscount > 0 && <div className="mt-4 flex items-center gap-2 text-[11px] font-bold text-[var(--danger)]"><BadgePercent size={16} />{formatMoney(productDiscount, currency)} سود شما از تخفیف کالاها</div>}
+        <p className="m-0 mt-4 flex items-start gap-2 text-xs leading-6 text-[var(--muted)]"><Info size={16} className="mt-1 shrink-0" />مبلغ سفارش هنوز پرداخت نشده است و موجودی کالاها تا زمان ثبت سفارش برای شما رزرو نمی‌شود.</p>
       </Card>
       {freeShippingThreshold !== null && <FreeShippingProgress merchandiseTotal={merchandiseTotal} threshold={freeShippingThreshold} currency={currency} />}
     </aside>

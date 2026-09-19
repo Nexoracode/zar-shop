@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-function splitRemaining(milliseconds: number) {
+export function splitRemaining(milliseconds: number) {
   const total = Math.max(0, Math.floor(milliseconds / 1000));
   return {
     days: Math.floor(total / 86_400),
@@ -12,10 +12,26 @@ function splitRemaining(milliseconds: number) {
   };
 }
 
-const pad = (value: number) => value.toLocaleString("fa-IR", { minimumIntegerDigits: 2, useGrouping: false });
+export const pad = (value: number) => value.toLocaleString("fa-IR", { minimumIntegerDigits: 2, useGrouping: false });
 
 function Cell({ value }: { value: string }) {
   return <span className="grid size-[26px] shrink-0 place-items-center rounded-[4px] bg-white text-[13px] font-bold tabular-nums text-[var(--foreground)]">{value}</span>;
+}
+
+/**
+ * Milliseconds until `endsAt`, ticking every second — or null until the component has mounted. The clock
+ * is only read inside the effect, never while rendering: a `Date.now()` during render is a different
+ * value on the server, in the prerender and after hydration (Next refuses to prerender it).
+ */
+export function useRemainingMs(endsAt: string) {
+  const [remaining, setRemaining] = useState<number | null>(null);
+  useEffect(() => {
+    const update = () => setRemaining(new Date(endsAt).getTime() - Date.now());
+    update();
+    const timer = window.setInterval(update, 1_000);
+    return () => window.clearInterval(timer);
+  }, [endsAt]);
+  return remaining;
 }
 
 /**
@@ -25,19 +41,10 @@ function Cell({ value }: { value: string }) {
  * reloads the section when it hits zero.
  */
 export function FlashSaleCountdown({ endsAt, className = "" }: { endsAt: string; className?: string }) {
-  // The clock is only read inside the effect, never while rendering: a `Date.now()` during render
-  // is a different value on the server, in the prerender and after hydration (Next refuses to
-  // prerender it), so the first pass shows zeroed digits on every side and the interval takes
-  // over once mounted. Same approach as `OrderExpiryCountdown`.
-  const [remaining, setRemaining] = useState<number | null>(null);
+  // The first pass shows zeroed digits on every side and the interval takes over once mounted.
+  // Same approach as `OrderExpiryCountdown`.
+  const remaining = useRemainingMs(endsAt);
   const hydrated = remaining !== null;
-
-  useEffect(() => {
-    const update = () => setRemaining(new Date(endsAt).getTime() - Date.now());
-    update();
-    const timer = window.setInterval(update, 1_000);
-    return () => window.clearInterval(timer);
-  }, [endsAt]);
 
   if (remaining !== null && remaining <= 0) return null;
   const { days, hours, minutes, seconds } = splitRemaining(remaining ?? 0);

@@ -68,10 +68,12 @@ export function lineUnitPrice(product: PricedProduct, selectionKey: string, gold
 
   // A combination with its own discount also brings its own window; one with neither reads the
   // product's, so a shop can still discount one colour without restating when the sale runs.
-  return calculateDiscountedPrice(base, {
+  const pricing = calculateDiscountedPrice(base, {
     discountType: resolved.discountType,
     discountValue: resolved.discountValue,
     discountStartsAt: resolved.discountStartsAt,
     discountEndsAt: resolved.discountEndsAt,
   });
+  // When the sale ends, for the cart's countdown — null for a فروش ویژه (no window) or no sale.
+  return { ...pricing, discountEndsAt: pricing.isActive ? resolved.discountEndsAt : null };
 }
