@@ -15,7 +15,7 @@ import type { AdminProductsListData } from "@/components/admin/products-list-dat
 // See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
 export const instant = false;
 
-type Context = { searchParams: Promise<{ q?: string; status?: string; category?: string; featured?: string; stock?: string; discount?: string; page?: string; pageSize?: string }> };
+type Context = { searchParams: Promise<{ q?: string; status?: string; category?: string; stock?: string; discount?: string; page?: string; pageSize?: string }> };
 
 export default async function AdminProducts({ searchParams }: Context) {
   await requirePermission("catalog:manage");
@@ -23,7 +23,6 @@ export default async function AdminProducts({ searchParams }: Context) {
   const params = await searchParams;
   const query = params.q?.trim() ?? "";
   const status = (["DRAFT", "ACTIVE", "ARCHIVED"] as const).includes(params.status as ProductStatus) ? params.status as ProductStatus : undefined;
-  const featured = params.featured === "yes" || params.featured === "no" ? params.featured : undefined;
   const stockFilter = (["out", "low", "in"] as const).includes(params.stock as "out" | "low" | "in") ? params.stock as "out" | "low" | "in" : undefined;
   const discountFilter = (["active", "upcoming", "none"] as const).includes(params.discount as "active" | "upcoming" | "none") ? params.discount as "active" | "upcoming" | "none" : undefined;
   const { requestedPage, pageSize } = await parseAdminPaginationRequest(params);
@@ -49,7 +48,6 @@ export default async function AdminProducts({ searchParams }: Context) {
     ...(query ? { OR: [{ name: { contains: query } }, { sku: { contains: query } }, { slug: { contains: query } }] } : {}),
     ...(status ? { status } : {}),
     ...(params.category ? { categoryId: params.category } : {}),
-    ...(featured ? { featured: featured === "yes" } : {}),
     ...(stockFilter === "out" ? { stock: { lte: 0 } } : stockFilter === "low" ? { stock: { gt: 0, lte: lowStockThreshold } } : stockFilter === "in" ? { stock: { gt: lowStockThreshold } } : {}),
     ...(discountFilter === "active" ? activeDiscount : discountFilter === "upcoming" ? upcomingDiscount : discountFilter === "none" ? noDiscount : {}),
   };
@@ -72,7 +70,7 @@ export default async function AdminProducts({ searchParams }: Context) {
     products,
     categories,
     counts: { total, active, drafts },
-    filters: { query, status: status ?? "", category: params.category ?? "", featured: featured ?? "", stock: stockFilter ?? "", discount: discountFilter ?? "" },
+    filters: { query, status: status ?? "", category: params.category ?? "", stock: stockFilter ?? "", discount: discountFilter ?? "" },
     pagination,
     lowStockThreshold,
     storeIndustry,

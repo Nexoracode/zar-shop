@@ -23,8 +23,8 @@ export type AdminColumnFilterGroup = {
  * A funnel icon beside a table header that opens the filter options for that column, instead of
  * a row of comboboxes above the table. By default each entry in `groups` is one URL search param
  * the table already reads server-side (same params `AdminListFilters` used to drive) — a column
- * whose icon covers more than one group (e.g. a "product" column standing in for both "featured"
- * and "discount") lists them as separate labeled sections in the same popover. A group with its
+ * whose icon covers more than one group (e.g. a column standing in for two related filters)
+ * lists them as separate labeled sections in the same popover. A group with its
  * own `onChange` updates local component state instead, for the small config-list tables that
  * filter client-side; `path` is only required when at least one group relies on the URL.
  */

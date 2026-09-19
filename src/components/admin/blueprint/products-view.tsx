@@ -88,15 +88,13 @@ export function BlueprintProductsView({ products, categories, filters, paginatio
   const categoryFilter = { name: "category", label: "دسته‌بندی", value: filters.category, options: [{ value: "", label: "همه دسته‌ها" }, ...categories.map((category) => ({ value: category.id, label: category.name }))] };
   const stockFilter = { name: "stock", label: "وضعیت موجودی", value: filters.stock, options: [{ value: "", label: "همه موجودی‌ها" }, { value: "in", label: "موجود" }, { value: "low", label: "کم‌موجود" }, { value: "out", label: "ناموجود" }] };
   const statusFilter = { name: "status", label: "وضعیت محصول", value: filters.status, options: [{ value: "", label: "همه وضعیت‌ها" }, ...Object.entries(productStatusLabels).map(([value, label]) => ({ value, label }))] };
-  // "ویژه" (featured) and "تخفیف" (discount) show up as small tags under the name in the "محصول"
-  // cell itself (see ProductFlags), so its funnel covers both rather than inventing columns
-  // neither flag has.
+  // "تخفیف" (discount) shows up as a small tag under the name in the "محصول" cell itself (see
+  // ProductFlags), so that column's funnel carries its filter rather than a column of its own.
   const productFilters = [
-    { name: "featured", label: "نمایش ویژه", value: filters.featured, options: [{ value: "", label: "همه محصولات" }, { value: "yes", label: "محصولات ویژه" }, { value: "no", label: "محصولات عادی" }] },
     { name: "discount", label: "وضعیت تخفیف", value: filters.discount, options: [{ value: "", label: "همه تخفیف‌ها" }, { value: "active", label: "دارای تخفیف فعال" }, { value: "upcoming", label: "تخفیف آینده" }, { value: "none", label: "بدون تخفیف" }] },
   ];
 
-  const hasActiveFilters = Boolean(filters.query || filters.status || filters.category || filters.featured || filters.stock || filters.discount);
+  const hasActiveFilters = Boolean(filters.query || filters.status || filters.category || filters.stock || filters.discount);
 
   return (
     <div className="flex flex-col gap-2">
