@@ -43,32 +43,35 @@ function previewColors(product: ProductRow) {
  * A product's variants and discounts, as the tags of the "تنوع و تخفیف" column (and under the name
  * on the mobile card). Each opens the Blueprint hover card:
  *
- * - the discount tag lists every running discount — the product's own and each combination's — with
- *   its amount and date range, and what is scheduled to start;
+ * - the discount tag is for a discount on the product itself (running, or scheduled to start) and
+ *   its card gives the amount and the dates;
  * - the variants tag lists each option's values (colours with their real swatch) and, when any
- *   combination is discounted, those discounts too.
+ *   combination has a discount of its own, those discounts — so a discount that lives on a
+ *   combination is shown there and never as a tag of its own.
  *
  * `emptyDash` fills the table cell with a dash when the product has neither.
  */
 export function ProductFlags({ product, className = "", emptyDash = false }: { product: ProductRow; className?: string; emptyDash?: boolean }) {
   const discounts = summarizeDiscounts(product);
   const variantCount = product._count.variants;
-  const hasActive = discounts.active.length > 0;
-  const hasUpcoming = discounts.upcoming.length > 0;
+  const ownActive = discounts.active.find((entry) => entry.scope === "product");
+  const ownUpcoming = discounts.upcoming.find((entry) => entry.scope === "product");
+  const own = ownActive ?? ownUpcoming;
 
-  if (!hasActive && !hasUpcoming && variantCount === 0) return emptyDash ? <span className="bp-muted">—</span> : null;
+  if (!own && variantCount === 0) return emptyDash ? <span className="bp-muted">—</span> : null;
 
   const preview = previewColors(product);
   const variantDiscounts = [...discounts.active.filter((entry) => entry.scope === "variant").map((entry) => ({ entry, color: "var(--bp-danger)" })), ...discounts.upcoming.filter((entry) => entry.scope === "variant").map((entry) => ({ entry, color: "var(--bp-warning)" }))];
 
-  const discountRows: BpChartTipRow[] = [
-    ...discounts.active.map((entry) => discountRow(entry, "var(--bp-danger)")),
-    ...(hasActive && hasUpcoming ? [{ label: "زمان‌بندی‌شده", section: true }] : []),
-    ...discounts.upcoming.map((entry) => discountRow(entry, "var(--bp-warning)")),
-  ];
-  const discountTagText = hasActive
-    ? (discounts.active.length === 1 ? amountText(discounts.active[0]) : `${faNumber(discounts.active.length)} تخفیف`)
-    : "تخفیف آینده";
+  const ownColor = ownActive ? "var(--bp-danger)" : "var(--bp-warning)";
+  const ownRows: BpChartTipRow[] = own
+    ? [
+      { label: "مقدار", value: amountText(own), color: ownColor },
+      ...(own.startsAt && own.endsAt
+        ? [{ label: "شروع", value: formatDateTime(own.startsAt), color: "var(--bp-success)" }, { label: "پایان", value: formatDateTime(own.endsAt), color: "var(--bp-warning)" }]
+        : [{ label: "مدت", value: "بدون محدودیت زمانی", color: "var(--bp-muted)" }]),
+    ]
+    : [];
 
   const variantRows: BpChartTipRow[] = [
     ...optionRows(product),
@@ -77,12 +80,12 @@ export function ProductFlags({ product, className = "", emptyDash = false }: { p
 
   return (
     <div className={`flex flex-wrap items-center gap-1 ${className}`.trim()}>
-      {(hasActive || hasUpcoming) && (
+      {own && (
         <BpHoverCard
-          label={hasActive ? `تخفیف فعال ${discountTagText}` : "تخفیف زمان‌بندی‌شده"}
-          content={{ headingLabel: "تخفیف", heading: hasActive ? (discounts.active.length === 1 ? "فعال" : `${faNumber(discounts.active.length)} مورد فعال`) : "به‌زودی", rows: discountRows }}
+          label={ownActive ? `تخفیف فعال ${amountText(own)}` : `تخفیف ${amountText(own)} زمان‌بندی‌شده`}
+          content={{ headingLabel: "تخفیف", heading: ownActive ? "فعال" : "به‌زودی", rows: ownRows }}
         >
-          <BpTag tone={hasActive ? "danger" : "warning"}><Tag size={11} strokeWidth={2} aria-hidden />{discountTagText}</BpTag>
+          <BpTag tone={ownActive ? "danger" : "warning"}><Tag size={11} strokeWidth={2} aria-hidden />{amountText(own)}</BpTag>
         </BpHoverCard>
       )}
       {variantCount > 0 && (
