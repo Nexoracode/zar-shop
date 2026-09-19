@@ -9,10 +9,19 @@ const SHOW_DELAY_MS = 380;
 const WARM_WINDOW_MS = 800;
 const WARM_DELAY_MS = 60;
 const FOCUS_DELAY_MS = 140;
+/**
+ * The first sweep over the page waits this long after mount. React hydrates the server-rendered
+ * `title` attributes as they are; rewriting one before its subtree has hydrated would read as a
+ * mismatch. Anything hovered before then is still adopted on the spot (see `adoptChain`).
+ */
+const FIRST_SWEEP_DELAY_MS = 1500;
 const GAP = 10;
 const EDGE = 8;
 const ARROW_INSET = 16;
-const TIP_ATTRIBUTE = "data-bp-tip";
+const TIP = "data-bp-tip";
+/** Marks a `data-bp-tip` that was derived from a `title`, so it can follow that `title` when React changes or drops it. */
+const AUTO = "data-bp-tip-auto";
+const NOT_TITLED = new Set(["IFRAME", "OBJECT", "EMBED", "STYLE", "LINK", "SCRIPT", "META", "HTML", "HEAD", "BODY"]);
 
 type Anchor = { text: string; rect: DOMRect };
 type Placement = { top: number; left: number; side: "top" | "bottom"; arrowX: number };
@@ -20,21 +29,61 @@ type Placement = { top: number; left: number; side: "top" | "bottom"; arrowX: nu
 const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), Math.max(min, max));
 
 /**
+ * Moves an element's `title` into `data-bp-tip` and leaves `title=""` behind.
+ *
+ * The browser's bubble cannot be switched off, and stripping a title only while it is hovered is
+ * too late — the browser has usually decided on its bubble by the time a script reacts. So the
+ * title is taken away up front. An EMPTY title (rather than none) is deliberate: it shows nothing
+ * and, unlike a missing one, stops the browser reaching up to a titled ancestor. It also keeps
+ * React's view of the DOM intact, and lets a later change by React show up as an attribute
+ * mutation: a new `title` is adopted again, and a removed one takes its derived tip with it.
+ */
+function adopt(element: Element) {
+  if (NOT_TITLED.has(element.tagName.toUpperCase())) return;
+  const title = element.getAttribute("title");
+  if (title === null) {
+    if (element.hasAttribute(AUTO)) { element.removeAttribute(TIP); element.removeAttribute(AUTO); }
+    return;
+  }
+  if (title === "" || !element.closest(".bp-root") || element.closest(".bp-tooltip")) return;
+  const text = title.trim();
+  element.setAttribute("title", "");
+  if (!text) return;
+  // An explicit `data-bp-tip` belongs to whoever wrote it; only a tip derived from a title is replaced.
+  if (element.hasAttribute(TIP) && !element.hasAttribute(AUTO)) return;
+  element.setAttribute(TIP, text);
+  element.setAttribute(AUTO, "");
+  // A control that relied on its title as its only name (an icon-only button) keeps one.
+  if (!element.hasAttribute("aria-label") && !element.hasAttribute("aria-labelledby") && !element.textContent?.trim()) {
+    element.setAttribute("aria-label", text.replace(/\s*\n\s*/g, "، "));
+  }
+}
+
+function adoptTree(root: ParentNode) {
+  if (root instanceof Element) adopt(root);
+  root.querySelectorAll("[title]").forEach(adopt);
+}
+
+/** Adopts the titles from `start` up to the page root and returns the innermost element with tooltip text. */
+function adoptChain(start: EventTarget | null): Element | null {
+  const first = start instanceof Element ? start : null;
+  if (!first || first.closest(".bp-tooltip") || !first.closest(".bp-root")) return null;
+  let found: Element | null = null;
+  for (let node: Element | null = first; node && node !== document.body; node = node.parentElement) {
+    adopt(node);
+    if (!found && node.getAttribute(TIP)?.trim()) found = node;
+  }
+  return found;
+}
+
+/**
  * The admin panel's tooltip, for every `title="…"` and `data-bp-tip="…"` inside `.bp-root`.
  *
- * A browser offers no switch for its own bubble, so it is kept from ever appearing by leaving it
- * nothing to show: while the pointer is over an element, the `title` of that element AND of every
- * ancestor up to the admin root is set aside (a browser falls back to a titled ancestor when the
- * hovered element has none). The titles come back only once the pointer has moved off them — not
- * when our own tooltip closes on a click or scroll, which is when a native bubble used to slip
- * through under a still-resting pointer. A MutationObserver re-checks whatever sits under the
- * pointer whenever the DOM changes, so an element re-rendered beneath a motionless mouse (a row
- * refreshed after a toggle, a `title` React sets again) is silenced too.
- *
- * Multi-line text is laid out as a heading with label/value rows (see `parseTooltipText`). SVG
- * shapes, which cannot use `title=`, opt in through `data-bp-tip`. Touch input is ignored —
- * there is no hover to wait for — and every tooltip disappears on click, scroll, Escape and when
- * the pointer leaves the window.
+ * Titles are adopted up front (see `adopt`) so the browser's own bubble has nothing to show, and a
+ * MutationObserver keeps that true for whatever React renders later. Multi-line text is laid out
+ * as a heading with label/value rows (see `parseTooltipText`). SVG shapes, which cannot use
+ * `title=`, opt in through `data-bp-tip`. Touch input is ignored — there is no hover to wait for
+ * — and every tooltip disappears on click, scroll, Escape and when the pointer leaves the window.
  */
 export function AdminTooltipLayer() {
   const tooltipId = useId();
@@ -44,54 +93,14 @@ export function AdminTooltipLayer() {
   const [shown, setShown] = useState(false);
 
   useEffect(() => {
-    /** Titles set aside while the pointer is over them, keyed by their element. */
-    const stash = new Map<Element, string>();
     let host: Element | null = null;
     let visible = false;
     let describedBy: string | null = null;
     /** The element whose tooltip a click/Escape closed — it stays quiet until the pointer leaves it. */
     let dismissed: Element | null = null;
     let timer: number | undefined;
-    let frame = 0;
     let closedAt = 0;
-    let pointer: { x: number; y: number } | null = null;
-
-    const inRoot = (element: Element) => Boolean(element.closest(".bp-root")) && !element.closest(".bp-tooltip");
-
-    /** Puts back every set-aside title outside `keep`, unless the element was given a fresh one meanwhile. */
-    function restore(keep?: Set<Element>) {
-      for (const [element, text] of stash) {
-        if (keep?.has(element)) continue;
-        if (!element.hasAttribute("title")) element.setAttribute("title", text);
-        stash.delete(element);
-      }
-    }
-
-    /**
-     * Silences the native bubble for everything from `start` up to the page root and returns the
-     * innermost element that has tooltip text (or null). Titles of elements the pointer has left
-     * are restored on the way.
-     */
-    function silence(start: Element | null): Element | null {
-      if (!start || !inRoot(start)) { restore(); return null; }
-      const chain = new Set<Element>();
-      let found: Element | null = null;
-      for (let node: Element | null = start; node && node !== document.body; node = node.parentElement) {
-        chain.add(node);
-        const title = node.getAttribute("title");
-        if (title !== null) { stash.set(node, title); node.removeAttribute("title"); }
-        if (!found && (node.getAttribute(TIP_ATTRIBUTE)?.trim() || stash.get(node)?.trim())) found = node;
-      }
-      restore(chain);
-      return found;
-    }
-
-    const textOf = (element: Element) => element.getAttribute(TIP_ATTRIBUTE)?.trim() || stash.get(element)?.trim() || "";
-
-    function syncToPointer() {
-      const under = pointer ? document.elementFromPoint(pointer.x, pointer.y) : null;
-      silence(under);
-    }
+    let observer: MutationObserver | null = null;
 
     function hide() {
       window.clearTimeout(timer);
@@ -109,7 +118,7 @@ export function AdminTooltipLayer() {
 
     function reveal() {
       const current = host;
-      const text = current ? textOf(current) : "";
+      const text = current?.getAttribute(TIP)?.trim();
       if (!current || !current.isConnected || !text) { hide(); return; }
       const rect = current.getBoundingClientRect();
       if (rect.width === 0 && rect.height === 0) { hide(); return; }
@@ -132,8 +141,7 @@ export function AdminTooltipLayer() {
 
     const onPointerOver = (event: PointerEvent) => {
       if (event.pointerType === "touch") return;
-      pointer = { x: event.clientX, y: event.clientY };
-      const next = silence(event.target instanceof Element ? event.target : null);
+      const next = adoptChain(event.target);
       if (!next) { dismissed = null; hide(); return; }
       if (next === host) return;
       if (next === dismissed) { hide(); return; }
@@ -142,58 +150,55 @@ export function AdminTooltipLayer() {
     };
     const onPointerOut = (event: PointerEvent) => {
       if (event.relatedTarget) return;
-      pointer = null;
       dismissed = null;
       hide();
-      restore();
     };
     const onFocusIn = (event: FocusEvent) => {
       const target = event.target instanceof HTMLElement ? event.target : null;
-      const next = silence(target);
+      const next = adoptChain(target);
       if (next && target?.matches(":focus-visible")) open(next, FOCUS_DELAY_MS);
-    };
-    const onFocusOut = () => {
-      hide();
-      syncToPointer();
     };
     const onKeyDown = (event: KeyboardEvent) => { if (event.key === "Escape") dismiss(); };
     const onVisibility = () => {
       if (document.visibilityState === "visible") return;
-      pointer = null;
       dismissed = null;
       hide();
-      restore();
     };
 
-    const observer = new MutationObserver(() => {
-      if (frame) return;
-      frame = window.requestAnimationFrame(() => { frame = 0; syncToPointer(); });
-    });
-    observer.observe(document.body, { subtree: true, childList: true, attributes: true, attributeFilter: ["title"] });
+    // From the first sweep on, whatever React adds or changes is adopted as it happens.
+    const sweep = window.setTimeout(() => {
+      adoptTree(document.body);
+      observer = new MutationObserver((records) => {
+        for (const record of records) {
+          if (record.type === "attributes") adopt(record.target as Element);
+          else record.addedNodes.forEach((node) => { if (node instanceof Element) adoptTree(node); });
+        }
+      });
+      observer.observe(document.body, { subtree: true, childList: true, attributes: true, attributeFilter: ["title"] });
+    }, FIRST_SWEEP_DELAY_MS);
 
     document.addEventListener("pointerover", onPointerOver);
     document.addEventListener("pointerout", onPointerOut);
     document.addEventListener("pointerdown", dismiss);
     document.addEventListener("focusin", onFocusIn);
-    document.addEventListener("focusout", onFocusOut);
+    document.addEventListener("focusout", hide);
     document.addEventListener("keydown", onKeyDown);
     document.addEventListener("visibilitychange", onVisibility);
     window.addEventListener("scroll", hide, { capture: true, passive: true });
     window.addEventListener("resize", hide);
     return () => {
-      observer.disconnect();
-      window.cancelAnimationFrame(frame);
+      window.clearTimeout(sweep);
+      observer?.disconnect();
       document.removeEventListener("pointerover", onPointerOver);
       document.removeEventListener("pointerout", onPointerOut);
       document.removeEventListener("pointerdown", dismiss);
       document.removeEventListener("focusin", onFocusIn);
-      document.removeEventListener("focusout", onFocusOut);
+      document.removeEventListener("focusout", hide);
       document.removeEventListener("keydown", onKeyDown);
       document.removeEventListener("visibilitychange", onVisibility);
       window.removeEventListener("scroll", hide, { capture: true });
       window.removeEventListener("resize", hide);
       hide();
-      restore();
     };
   }, [tooltipId]);
 
