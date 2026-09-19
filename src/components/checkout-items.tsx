@@ -26,8 +26,8 @@ export type CheckoutItem = {
 export function CheckoutItems({ items, currency, editHref }: { items: CheckoutItem[]; currency: "IRR" | "IRT"; /** Where the cart can still be edited; omitted once the order is already placed. */ editHref?: string }) {
   const count = items.reduce((sum, item) => sum + (item.unavailable ? 0 : item.quantity), 0);
   return (
-    <Card variant="secondary" className="rounded-xl border border-[var(--border)] bg-[var(--surface)] shadow-sm">
-      <Card.Content className="p-4 sm:p-5">
+    <Card variant="secondary" className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-sm">
+      <Card.Content className="p-5">
         <div className="mb-4 flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
           <div className="flex min-w-0 items-start gap-3">
             <span className="grid size-9 shrink-0 place-items-center rounded-full bg-[var(--brand-primary)]/10 text-[var(--brand-primary)]"><ShoppingBag size={18} /></span>
