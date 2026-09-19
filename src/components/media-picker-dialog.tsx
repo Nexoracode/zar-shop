@@ -6,7 +6,8 @@ import { toast } from "@heroui/react";
 import { Check, FileText, Film, ImageIcon, RefreshCw, Search, Trash2, TriangleAlert, Upload, X } from "lucide-react";
 import type { MediaChoice, MediaScope } from "@/components/media-library";
 import { BpButton } from "@/components/admin/blueprint/ui/button";
-import { BpDialog, lockBodyScroll, unlockBodyScroll } from "@/components/admin/blueprint/ui/dialog";
+import { lockBodyScroll, unlockBodyScroll } from "@/components/admin/blueprint/ui/dialog";
+import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
 import { MediaDetailsPanel, type MediaDetails } from "@/components/admin/media-details-panel";
 import { mediaUsageCount, type MediaUsageCounts } from "@/modules/media/usage";
 import { readImageDimensions } from "@/modules/media/image-dimensions";
@@ -329,15 +330,15 @@ export function MediaPickerDialog({ open, scope, multiple = false, allowedTypes,
           </div>
         </footer>
 
-        <BpDialog
+        <DeleteConfirmDialog
           open={Boolean(pendingDelete)}
           title="حذف رسانه از گالری"
-          description={`فایل «${pendingDelete?.title ?? ""}» از گالری و فضای FTP حذف می‌شود و امکان بازیابی آن وجود ندارد.`}
+          itemName={pendingDelete?.title}
+          confirmLabel="حذف فایل"
+          description="فایل از گالری و فضای FTP حذف می‌شود و امکان بازیابی آن وجود ندارد."
+          loading={Boolean(deletingId)}
           onClose={() => { if (!deletingId) setPendingDelete(null); }}
-          actions={<>
-            <BpButton disabled={Boolean(deletingId)} onClick={() => setPendingDelete(null)}>انصراف</BpButton>
-            <BpButton variant="danger" isPending={Boolean(deletingId)} onClick={() => { if (pendingDelete) void remove(pendingDelete); }}>حذف فایل</BpButton>
-          </>}
+          onConfirm={() => { if (pendingDelete) void remove(pendingDelete); }}
         />
       </div>
   );

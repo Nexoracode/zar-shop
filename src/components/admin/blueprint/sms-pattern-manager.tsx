@@ -6,6 +6,7 @@ import { toast } from "@heroui/react";
 import { FileText, RefreshCw, SquarePen, Trash2 } from "lucide-react";
 import { AdminEmptyState, AdminPanel } from "@/components/admin-ui";
 import { AdminColumn, AdminColumnSettingsButton, AdminColumnVisibility } from "@/components/admin-column-visibility";
+import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
 import { smsPatternCategories, type SmsPattern } from "@/modules/communications/sms-pattern-schemas";
 import { smsPatternFieldLimits } from "@/modules/communications/limits";
 import { BpButton, BpInput, BpKicker, BpSelect, BpSwitch, BpTable, BpTag, BpTd, BpTextarea, BpTh } from "./ui";
@@ -294,6 +295,7 @@ export function BlueprintSmsPatternList({ initialPatterns, initialHiddenColumns 
   const router = useRouter();
   const [patterns, setPatterns] = useState(initialPatterns);
   const [busy, setBusy] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState<SmsPattern | null>(null);
 
   async function refresh() {
     setBusy("refresh");
@@ -308,7 +310,6 @@ export function BlueprintSmsPatternList({ initialPatterns, initialHiddenColumns 
   }
 
   async function remove(code: string) {
-    if (!window.confirm("این پترن برای همیشه از حساب فراز اس‌ام‌اس حذف می‌شود. ادامه می‌دهید؟")) return;
     setBusy(`delete-${code}`);
     try {
       const response = await fetch(`/api/admin/sms/patterns/${encodeURIComponent(code)}`, { method: "DELETE" });
@@ -318,6 +319,12 @@ export function BlueprintSmsPatternList({ initialPatterns, initialHiddenColumns 
     } catch (error) {
       toast.danger("حذف انجام نشد", { description: error instanceof Error ? error.message : "خطای ناشناخته" });
     } finally { setBusy(null); }
+  }
+
+  async function confirmDelete() {
+    if (!deleting) return;
+    await remove(deleting.code);
+    setDeleting(null);
   }
 
   return (
@@ -345,7 +352,7 @@ export function BlueprintSmsPatternList({ initialPatterns, initialHiddenColumns 
                   </div>
                   <div className="mt-3 grid grid-cols-2 gap-2">
                     <BpButton type="button" variant="secondary" onClick={() => router.push(`/admin/settings/notifications/patterns/${encodeURIComponent(item.code)}/edit`)} className="gap-2"><SquarePen size={14} />ویرایش</BpButton>
-                    <BpButton type="button" variant="danger" isPending={busy === `delete-${item.code}`} onClick={() => void remove(item.code)} className="gap-2"><Trash2 size={14} />حذف</BpButton>
+                    <BpButton type="button" variant="danger" isPending={busy === `delete-${item.code}`} onClick={() => setDeleting(item)} className="gap-2"><Trash2 size={14} />حذف</BpButton>
                   </div>
                 </article>
               ))}
@@ -374,7 +381,7 @@ export function BlueprintSmsPatternList({ initialPatterns, initialHiddenColumns 
                       <BpTd className="text-center">
                         <div className="flex items-center justify-center gap-1">
                           <BpButton type="button" variant="ghost" isIconOnly size="sm" aria-label={`ویرایش پترن ${item.code}`} onClick={() => router.push(`/admin/settings/notifications/patterns/${encodeURIComponent(item.code)}/edit`)}><SquarePen size={15} strokeWidth={1.5} /></BpButton>
-                          <BpButton type="button" variant="ghost" className="bp-btn-danger-icon" isIconOnly size="sm" isPending={busy === `delete-${item.code}`} aria-label={`حذف پترن ${item.code}`} onClick={() => void remove(item.code)}><Trash2 size={15} strokeWidth={1.5} /></BpButton>
+                          <BpButton type="button" variant="ghost" className="bp-btn-danger-icon" isIconOnly size="sm" isPending={busy === `delete-${item.code}`} aria-label={`حذف پترن ${item.code}`} onClick={() => setDeleting(item)}><Trash2 size={15} strokeWidth={1.5} /></BpButton>
                         </div>
                       </BpTd>
                     </tr>
@@ -384,6 +391,16 @@ export function BlueprintSmsPatternList({ initialPatterns, initialHiddenColumns 
             </div>
           </>
         ) : <AdminEmptyState title="پترنی ثبت نشده" description="هنوز هیچ پترنی در حساب فراز اس‌ام‌اس ثبت نشده است." />}
+        <DeleteConfirmDialog
+          open={Boolean(deleting)}
+          title="حذف پترن پیامک"
+          itemName={deleting?.text || deleting?.code}
+          confirmLabel="حذف پترن"
+          description="این پترن برای همیشه از حساب فراز اس‌ام‌اس شما حذف می‌شود."
+          loading={busy === `delete-${deleting?.code}`}
+          onClose={() => setDeleting(null)}
+          onConfirm={() => void confirmDelete()}
+        />
       </AdminPanel>
     </AdminColumnVisibility>
   );

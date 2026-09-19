@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { toast } from "@heroui/react";
 import { ExternalLink, Loader2, Plus, Trash2 } from "lucide-react";
+import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
 import { requestErrorMessage, requestJson } from "@/lib/api-request";
 import type { SeoSettings } from "@/modules/settings/seo-settings";
 import { BpButton, BpCheckbox, BpInput, BpKicker, BpTabs, BpTag, BpTextarea } from "./ui";
@@ -46,6 +47,7 @@ function SeoRuleList({ title, description, endpoint, pair, sourceLabel, targetLa
   const [target, setTarget] = useState("");
   const [adding, setAdding] = useState(false);
   const [removing, setRemoving] = useState<string | null>(null);
+  const [pendingRemoval, setPendingRemoval] = useState<RuleRow | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -97,6 +99,12 @@ function SeoRuleList({ title, description, endpoint, pair, sourceLabel, targetLa
     }
   }
 
+  async function confirmRemoval() {
+    if (!pendingRemoval) return;
+    await remove(pendingRemoval);
+    setPendingRemoval(null);
+  }
+
   return (
     <section className="bp-frame relative p-[16px]">
       <BpKicker>{title}</BpKicker>
@@ -122,7 +130,7 @@ function SeoRuleList({ title, description, endpoint, pair, sourceLabel, targetLa
                 <span dir="ltr" className="min-w-0 flex-1 truncate font-mono">
                   {row[sourceKey]}{targetKey && <span className="bp-muted"> ← {row[targetKey]}</span>}
                 </span>
-                <BpButton type="button" isIconOnly size="sm" variant="ghost" className="bp-btn-danger-icon" aria-label={`حذف ${row[sourceKey]}`} isPending={removing === row.id} onClick={() => void remove(row)}>
+                <BpButton type="button" isIconOnly size="sm" variant="ghost" className="bp-btn-danger-icon" aria-label={`حذف ${row[sourceKey]}`} isPending={removing === row.id} onClick={() => setPendingRemoval(row)}>
                   <Trash2 size={14} />
                 </BpButton>
               </li>
@@ -130,6 +138,16 @@ function SeoRuleList({ title, description, endpoint, pair, sourceLabel, targetLa
           </ul>
         )}
       </div>
+      <DeleteConfirmDialog
+        open={Boolean(pendingRemoval)}
+        title="حذف قاعده"
+        itemName={pendingRemoval?.[sourceKey]}
+        confirmLabel="حذف قاعده"
+        description="این قاعده حذف می‌شود و دیگر روی نشانی اعمال نخواهد شد."
+        loading={removing !== null && removing === pendingRemoval?.id}
+        onClose={() => setPendingRemoval(null)}
+        onConfirm={() => void confirmRemoval()}
+      />
     </section>
   );
 }

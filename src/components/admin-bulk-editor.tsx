@@ -3,11 +3,11 @@
 import { createContext, useContext, useMemo, useState, type HTMLAttributes, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "@heroui/react";
-import { CheckSquare, Loader2, TriangleAlert } from "lucide-react";
+import { CheckSquare, Loader2 } from "lucide-react";
 import { type HeroSelectOption } from "@/components/hero-select-field";
 import { AdminTableRefreshButton } from "@/components/admin-table-refresh";
 import { requestErrorMessage, requestJson } from "@/lib/api-request";
-import { AdminDialog, AdminDialogButton } from "@/components/admin/admin-dialog";
+import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
 import { BpCheckbox } from "@/components/admin/blueprint/ui/checkbox";
 import { BpSelect } from "@/components/admin/blueprint/ui/select";
 
@@ -98,20 +98,17 @@ export function AdminBulkEditor({ entity, entityLabel, ids, actions, children, d
         </div>
         {children}
       </div>
-      <AdminDialog
+      <DeleteConfirmDialog
         open={Boolean(pendingAction)}
-        ariaLabel={pendingAction?.confirmation?.title ?? "تأیید عملیات گروهی"}
-        isBusy={loading}
+        title={pendingAction?.confirmation?.title}
+        itemLabel="موارد انتخاب‌شده"
+        itemName={`${selected.size.toLocaleString("fa-IR")} ${entityLabel}`}
+        confirmLabel={pendingAction?.confirmation?.confirmLabel ?? "تأیید عملیات"}
+        description={pendingAction?.confirmation?.description ?? ""}
+        loading={loading}
         onClose={() => { setPendingAction(null); setAction(""); }}
-        title={<span className="flex items-center gap-2"><TriangleAlert size={17} className="text-[var(--danger)]" />{pendingAction?.confirmation?.title}</span>}
-        actions={<>
-          <AdminDialogButton variant="danger" isPending={loading} onPress={() => { if (pendingAction) void apply(pendingAction.value).then((success) => { if (success) setPendingAction(null); }); }}>{pendingAction?.confirmation?.confirmLabel ?? "تأیید عملیات"}</AdminDialogButton>
-          <AdminDialogButton variant="secondary" isDisabled={loading} onPress={() => { setPendingAction(null); setAction(""); }}>انصراف</AdminDialogButton>
-        </>}
-      >
-        <p className="m-0 text-sm leading-7 text-[var(--muted)]">{pendingAction?.confirmation?.description}</p>
-        <strong className="text-sm">{selected.size.toLocaleString("fa-IR")} {entityLabel} انتخاب شده است.</strong>
-      </AdminDialog>
+        onConfirm={() => { if (pendingAction) void apply(pendingAction.value).then((success) => { if (success) setPendingAction(null); }); }}
+      />
     </BulkContext.Provider>
   );
 }

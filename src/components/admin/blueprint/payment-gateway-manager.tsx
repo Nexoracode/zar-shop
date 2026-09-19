@@ -8,6 +8,7 @@ import { AdminActiveToggle } from "@/components/admin-active-toggle";
 import { AdminBulkCheckbox, AdminBulkEditor } from "@/components/admin-bulk-editor";
 import { AdminColumn, AdminColumnSettingsButton, AdminColumnVisibility } from "@/components/admin-column-visibility";
 import { AdminGenericBulkEditButton } from "@/components/admin-generic-bulk-edit";
+import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
 import { AdminEmptyState, AdminPanel } from "@/components/admin-ui";
 import { gatewayProviders, type GatewayProviderId } from "@/modules/payments/gateway-providers";
 import type { PublicGatewayConfig } from "@/modules/payments/gateway-config";
@@ -39,6 +40,7 @@ export function BlueprintPaymentGatewayManager({ mode, initialConfigs, appUrl, o
   const [isSandbox, setIsSandbox] = useState(false);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState<GatewayProviderId | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<PublicGatewayConfig | null>(null);
   const [callbackCopied, setCallbackCopied] = useState(false);
   const selected = useMemo(() => gatewayProviders.find((provider) => provider.id === selectedId)!, [selectedId]);
   const callbackUrl = appUrl ? `${appUrl.replace(/\/$/, "")}/api/payment/callback` : null;
@@ -90,6 +92,12 @@ export function BlueprintPaymentGatewayManager({ mode, initialConfigs, appUrl, o
     }
   }
 
+  async function confirmDelete() {
+    if (!pendingDelete) return;
+    await remove(pendingDelete.provider);
+    setPendingDelete(null);
+  }
+
   if (mode === "list") {
     return (
       <AdminPanel>
@@ -114,7 +122,7 @@ export function BlueprintPaymentGatewayManager({ mode, initialConfigs, appUrl, o
                       <AdminActiveToggle entity="paymentGateways" entityLabel="درگاه" id={config.id} name={config.displayName} isActive={config.isActive} />
                     </div>
                   </div>
-                  <BpButton type="button" variant="danger" fullWidth isPending={deleting === config.provider} onClick={() => void remove(config.provider)} className="mt-3 gap-2"><Trash2 size={14} />حذف درگاه</BpButton>
+                  <BpButton type="button" variant="danger" fullWidth isPending={deleting === config.provider} onClick={() => setPendingDelete(config)} className="mt-3 gap-2"><Trash2 size={14} />حذف درگاه</BpButton>
                 </article>
               ))}
             </div>
@@ -157,7 +165,7 @@ export function BlueprintPaymentGatewayManager({ mode, initialConfigs, appUrl, o
                         <BpTd className="text-center">
                           <div className="flex items-center justify-center gap-1">
                             <AdminActiveToggle entity="paymentGateways" entityLabel="درگاه" id={config.id} name={config.displayName} isActive={config.isActive} />
-                            <BpButton type="button" variant="ghost" className="bp-btn-danger-icon" isIconOnly size="sm" isPending={deleting === config.provider} title="حذف" aria-label={`حذف ${config.displayName}`} onClick={() => void remove(config.provider)}><Trash2 size={15} strokeWidth={1.5} /></BpButton>
+                            <BpButton type="button" variant="ghost" className="bp-btn-danger-icon" isIconOnly size="sm" isPending={deleting === config.provider} title="حذف" aria-label={`حذف ${config.displayName}`} onClick={() => setPendingDelete(config)}><Trash2 size={15} strokeWidth={1.5} /></BpButton>
                           </div>
                         </BpTd>
                       </tr>
@@ -168,6 +176,16 @@ export function BlueprintPaymentGatewayManager({ mode, initialConfigs, appUrl, o
             </AdminColumnVisibility>
           </>
         ) : <AdminEmptyState title="درگاهی ثبت نشده" description="هنوز هیچ درگاه پرداختی برای فروشگاه ثبت نشده است." />}
+        <DeleteConfirmDialog
+          open={Boolean(pendingDelete)}
+          title="حذف درگاه پرداخت"
+          itemName={pendingDelete?.displayName}
+          confirmLabel="حذف درگاه"
+          description="اطلاعات اتصال رمزنگاری‌شدهٔ این درگاه حذف می‌شود و پرداخت از طریق آن دیگر ممکن نخواهد بود."
+          loading={deleting !== null && deleting === pendingDelete?.provider}
+          onClose={() => setPendingDelete(null)}
+          onConfirm={() => void confirmDelete()}
+        />
       </AdminPanel>
     );
   }

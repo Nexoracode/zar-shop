@@ -3,8 +3,9 @@
 import { useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "@heroui/react";
-import { ListChecks, TriangleAlert } from "lucide-react";
+import { ListChecks } from "lucide-react";
 import { AdminDialog, AdminDialogButton } from "@/components/admin/admin-dialog";
+import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
 import { useBulkSelection, type AdminBulkEntity } from "@/components/admin-bulk-editor";
 import { requestErrorMessage, requestJson } from "@/lib/api-request";
 import { BpButton } from "@/components/admin/blueprint/ui/button";
@@ -123,20 +124,17 @@ function AdminGenericBulkEditModal({ open, entity, entityLabel, ids, changeTypes
           )}
         </div>
       </AdminDialog>
-      <AdminDialog
+      <DeleteConfirmDialog
         open={Boolean(pendingAction)}
-        ariaLabel={pendingAction?.confirmation.title ?? "تأیید عملیات"}
-        isBusy={loading}
+        title={pendingAction?.confirmation.title}
+        itemLabel="موارد انتخاب‌شده"
+        itemName={`${ids.length.toLocaleString("fa-IR")} ${entityLabel}`}
+        confirmLabel={pendingAction?.confirmation.confirmLabel ?? "تأیید عملیات"}
+        description={pendingAction?.confirmation.description ?? ""}
+        loading={loading}
         onClose={() => setPendingAction(null)}
-        title={<span className="flex items-center gap-2"><TriangleAlert size={17} className="text-[var(--danger)]" />{pendingAction?.confirmation.title}</span>}
-        actions={<>
-          <AdminDialogButton variant="danger" isPending={loading} onPress={() => { if (pendingAction) void apply(pendingAction.value); }}>{pendingAction?.confirmation.confirmLabel ?? "تأیید عملیات"}</AdminDialogButton>
-          <AdminDialogButton variant="secondary" isDisabled={loading} onPress={() => setPendingAction(null)}>انصراف</AdminDialogButton>
-        </>}
-      >
-        <p className="m-0 text-sm leading-7 text-[var(--muted)]">{pendingAction?.confirmation.description}</p>
-        <strong className="text-sm">{ids.length.toLocaleString("fa-IR")} {entityLabel} انتخاب شده است.</strong>
-      </AdminDialog>
+        onConfirm={() => { if (pendingAction) void apply(pendingAction.value); }}
+      />
     </>
   );
 }

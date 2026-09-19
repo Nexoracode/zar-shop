@@ -9,6 +9,7 @@ import { AdminBulkCheckbox, AdminBulkEditor } from "@/components/admin-bulk-edit
 import { AdminColumn, AdminColumnSettingsButton, AdminColumnVisibility } from "@/components/admin-column-visibility";
 import { AdminGenericBulkEditButton } from "@/components/admin-generic-bulk-edit";
 import { AdminDialog, AdminDialogButton } from "@/components/admin/admin-dialog";
+import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
 import { AdminEmptyState, AdminPanel } from "@/components/admin-ui";
 import { smsProviders, type SmsProviderId } from "@/modules/communications/sms-providers";
 import type { PublicSmsProviderConfig } from "@/modules/communications/sms-config";
@@ -49,6 +50,7 @@ export function BlueprintSmsProviderManager({ mode, initialConfigs, smsEnabled, 
   const [senderNumber, setSenderNumber] = useState(initialSenderNumber ?? "");
   const [busy, setBusy] = useState<string | null>(null);
   const [deactivating, setDeactivating] = useState<PublicSmsProviderConfig | null>(null);
+  const [deleting, setDeleting] = useState<PublicSmsProviderConfig | null>(null);
   const selected = useMemo(() => smsProviders.find((item) => item.id === selectedId)!, [selectedId]);
   const existingFaraz = initialConfigs.find((config) => config.provider === "FARAZ_SMS") ?? null;
 
@@ -100,6 +102,12 @@ export function BlueprintSmsProviderManager({ mode, initialConfigs, smsEnabled, 
     setDeactivating(null);
   }
 
+  async function confirmDelete() {
+    if (!deleting) return;
+    await mutate(deleting.provider, "DELETE");
+    setDeleting(null);
+  }
+
   if (mode === "list") {
     return (
       <AdminPanel>
@@ -119,7 +127,7 @@ export function BlueprintSmsProviderManager({ mode, initialConfigs, smsEnabled, 
                   <div className="mt-3 grid grid-cols-3 gap-2">
                     <BpLinkButton href={`/admin/settings/notifications/providers/${item.provider}/edit`} variant="secondary" className="gap-2"><SquarePen size={14} />ویرایش</BpLinkButton>
                     <BpButton type="button" variant="secondary" isPending={busy === `PATCH-${item.provider}`} disabled={!item.sendSupported && !item.isActive} onClick={() => toggleActive(item)} className="gap-2">{item.isActive ? <ToggleRight size={14} className="text-[var(--bp-success)]" /> : <ToggleLeft size={14} className="bp-muted" />}{item.isActive ? "غیرفعال‌سازی" : "فعال‌سازی"}</BpButton>
-                    <BpButton type="button" variant="danger" isPending={busy === `DELETE-${item.provider}`} onClick={() => void mutate(item.provider, "DELETE")} className="gap-2"><Trash2 size={14} />حذف</BpButton>
+                    <BpButton type="button" variant="danger" isPending={busy === `DELETE-${item.provider}`} onClick={() => setDeleting(item)} className="gap-2"><Trash2 size={14} />حذف</BpButton>
                   </div>
                 </article>
               ))}
@@ -164,7 +172,7 @@ export function BlueprintSmsProviderManager({ mode, initialConfigs, smsEnabled, 
                           <div className="flex items-center justify-center gap-1">
                             <BpLinkButton href={`/admin/settings/notifications/providers/${item.provider}/edit`} variant="ghost" isIconOnly size="sm" aria-label={`ویرایش ${item.displayName}`}><SquarePen size={15} strokeWidth={1.5} /></BpLinkButton>
                             <BpButton type="button" variant="ghost" isIconOnly size="sm" disabled={!item.sendSupported && !item.isActive} isPending={busy === `PATCH-${item.provider}`} title={item.isActive ? "غیرفعال‌سازی" : "فعال‌سازی"} aria-label={`${item.isActive ? "غیرفعال‌سازی" : "فعال‌سازی"} ${item.displayName}`} onClick={() => toggleActive(item)}>{item.isActive ? <ToggleRight size={15} strokeWidth={1.5} className="text-[var(--bp-success)]" /> : <ToggleLeft size={15} strokeWidth={1.5} className="bp-muted" />}</BpButton>
-                            <BpButton type="button" variant="ghost" className="bp-btn-danger-icon" isIconOnly size="sm" isPending={busy === `DELETE-${item.provider}`} aria-label={`حذف ${item.displayName}`} onClick={() => void mutate(item.provider, "DELETE")}><Trash2 size={15} strokeWidth={1.5} /></BpButton>
+                            <BpButton type="button" variant="ghost" className="bp-btn-danger-icon" isIconOnly size="sm" isPending={busy === `DELETE-${item.provider}`} aria-label={`حذف ${item.displayName}`} onClick={() => setDeleting(item)}><Trash2 size={15} strokeWidth={1.5} /></BpButton>
                           </div>
                         </BpTd>
                       </tr>
@@ -175,6 +183,18 @@ export function BlueprintSmsProviderManager({ mode, initialConfigs, smsEnabled, 
             </AdminColumnVisibility>
           </>
         ) : <AdminEmptyState title="ارائه‌دهنده‌ای پیکربندی نشده" description="هنوز هیچ ارائه‌دهنده پیامکی برای فروشگاه ثبت نشده است." />}
+        <DeleteConfirmDialog
+          open={Boolean(deleting)}
+          title="حذف ارائه‌دهندهٔ پیامک"
+          itemName={deleting?.displayName}
+          confirmLabel="حذف ارائه‌دهنده"
+          description={deleting?.isActive
+            ? "اعتبارنامه‌های رمزنگاری‌شده و تنظیمات اتصال حذف می‌شود. این ارائه‌دهنده هم‌اکنون فعال است؛ با حذف آن هیچ پیامکی، از جمله کد یک‌بارمصرف ورود، ارسال نمی‌شود تا ارائه‌دهندهٔ دیگری را فعال کنید."
+            : "اعتبارنامه‌های رمزنگاری‌شده و تنظیمات اتصال این ارائه‌دهنده حذف می‌شود."}
+          loading={busy === `DELETE-${deleting?.provider}`}
+          onClose={() => setDeleting(null)}
+          onConfirm={() => void confirmDelete()}
+        />
         <AdminDialog
           open={Boolean(deactivating)}
           ariaLabel="غیرفعال‌سازی ارائه‌دهنده پیامک"

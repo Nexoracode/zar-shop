@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { Button, Card, toast } from "@heroui/react";
 import { CreditCard, Trash2, Wallet } from "lucide-react";
+import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
 import { TextField } from "@/components/form-field";
 import {
   detectBankName,
@@ -32,6 +33,7 @@ export function RefundSettings({ initial }: { initial: RefundSettingsValue }) {
   const [errors, setErrors] = useState<Errors>({});
   const [saving, setSaving] = useState(false);
   const [savedCard, setSavedCard] = useState(initial.bankCardNumber);
+  const [confirmingRemoval, setConfirmingRemoval] = useState(false);
 
   const bankName = useMemo(() => detectBankName(cardDigits), [cardDigits]);
 
@@ -162,7 +164,7 @@ export function RefundSettings({ initial }: { initial: RefundSettingsValue }) {
             onChange={(event) => { setShebaDigits(normalizeSheba(event.target.value)); clear("sheba"); }}
           />
           {savedCard && (
-            <button type="button" onClick={() => void removeCard()} disabled={saving} className="mt-1 inline-flex w-fit items-center gap-1.5 text-[11px] font-bold text-[var(--danger)] transition hover:underline">
+            <button type="button" onClick={() => setConfirmingRemoval(true)} disabled={saving} className="mt-1 inline-flex w-fit items-center gap-1.5 text-[11px] font-bold text-[var(--danger)] transition hover:underline">
               <Trash2 size={13} />حذف کارت ثبت‌شده
             </button>
           )}
@@ -174,6 +176,17 @@ export function RefundSettings({ initial }: { initial: RefundSettingsValue }) {
           ذخیرهٔ تنظیمات
         </Button>
       </div>
+
+      <DeleteConfirmDialog
+        open={confirmingRemoval}
+        title="حذف کارت بانکی"
+        itemName={cardDigits ? cardDigits : undefined}
+        confirmLabel="حذف کارت"
+        description="کارت و شمارهٔ شبای ثبت‌شده حذف می‌شود و روش بازپرداخت به کیف پول برمی‌گردد."
+        loading={saving}
+        onClose={() => setConfirmingRemoval(false)}
+        onConfirm={() => { void removeCard().then(() => setConfirmingRemoval(false)); }}
+      />
     </Card>
   );
 }

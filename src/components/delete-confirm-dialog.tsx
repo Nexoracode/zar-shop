@@ -7,6 +7,10 @@ type Props = {
   open: boolean;
   title?: string;
   itemName?: string;
+  /** The small caption above `itemName`; "موارد انتخاب‌شده" reads better for a bulk delete. */
+  itemLabel?: string;
+  /** The delete button's text — "حذف فایل", "حذف درگاه"… */
+  confirmLabel?: string;
   description: string;
   error?: string;
   loading?: boolean;
@@ -24,6 +28,8 @@ export function DeleteConfirmDialog({
   open,
   title = "تأیید حذف",
   itemName,
+  itemLabel = "مورد انتخاب‌شده",
+  confirmLabel = "حذف",
   description,
   error,
   loading = false,
@@ -40,7 +46,7 @@ export function DeleteConfirmDialog({
       title={<><span className="bp-confirm-icon" aria-hidden><Trash2 size={24} strokeWidth={1.7} /></span><span>{title}</span></>}
       description="این عملیات قابل بازگشت نیست."
       actions={<>
-        <AdminDialogButton variant="danger" isPending={loading} onPress={onConfirm} className="bp-btn-block gap-2">{!loading && <Trash2 size={15} strokeWidth={1.7} />}{loading ? "در حال حذف..." : "حذف"}</AdminDialogButton>
+        <AdminDialogButton variant="danger" isPending={loading} onPress={onConfirm} className="bp-btn-block gap-2">{!loading && <Trash2 size={15} strokeWidth={1.7} />}{loading ? "در حال حذف..." : confirmLabel}</AdminDialogButton>
         <AdminDialogButton variant="secondary" isDisabled={loading} onPress={onClose} className="bp-btn-block">انصراف</AdminDialogButton>
       </>}
     >
@@ -49,7 +55,7 @@ export function DeleteConfirmDialog({
       )}
       {itemName && (
         <div className="bp-confirm-item">
-          <small>مورد انتخاب‌شده</small>
+          <small>{itemLabel}</small>
           <strong>{itemName}</strong>
         </div>
       )}
