@@ -80,7 +80,7 @@ export function BlueprintSidebar({ role, industry, mobileOpen, onCloseMobile, in
           const active = isAdminNavItemActive(item.href, pathname);
           const Icon = item.icon;
           return (
-            <Link key={item.href} href={item.href} onClick={onCloseMobile} data-active={active} className="bp-nav-item" title={collapsed ? item.label : undefined}>
+            <Link key={item.href} href={item.href} onClick={onCloseMobile} data-active={active} className="bp-nav-item" aria-label={collapsed ? item.label : undefined}>
               <Icon size={18} strokeWidth={1.5} className="flex-none" />
               {!collapsed && <span>{shortLabel(item.label)}</span>}
             </Link>
@@ -169,7 +169,6 @@ function NavGroup({ group, pathname, collapsed, open, onToggle, onClose, onNavig
       onClick={() => { onNavigate(); if (collapsed) onClose(); }}
       data-active={isAdminNavItemActive(item.href, pathname)}
       className="bp-nav-item bp-nav-sub"
-      title={item.label}
     >
       <span>{shortLabel(item.label)}</span>
     </Link>
@@ -184,7 +183,7 @@ function NavGroup({ group, pathname, collapsed, open, onToggle, onClose, onNavig
         data-active={collapsed && groupActive}
         aria-expanded={open}
         aria-haspopup={collapsed ? "dialog" : undefined}
-        title={collapsed ? group.title : undefined}
+        aria-label={collapsed ? group.title : undefined}
         onClick={onToggle}
       >
         <GroupIcon size={18} strokeWidth={1.5} className="flex-none" />
