@@ -4,19 +4,23 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createContext, useCallback, useContext, useEffect, useState, useTransition } from "react";
 import type { ReactNode } from "react";
-import { toast } from "@heroui/react";
-import { ChevronLeft, Info, PartyPopper } from "lucide-react";
+import { Button, toast } from "@heroui/react";
+import { AlertTriangle, ChevronLeft, Info, PartyPopper } from "lucide-react";
 import { Card } from "@/components/hero";
 import { formatMoney } from "@/lib/format";
 import { FreeShippingProgress } from "@/components/free-shipping-progress";
 import { listenForCartUpdates, notifyCartUpdated } from "@/components/storefront-cart-link";
 
 /** What the cart page knows about one line when the server rendered it. A null price means it could not be worked out. */
-export type CartLiveLine = { id: string; quantity: number; finalPrice: number | null; originalPrice: number | null };
+export type CartLiveLine = { id: string; quantity: number; finalPrice: number | null; originalPrice: number | null; /** The combination was removed or is out of stock: the line stays visible so it can be removed, but is not counted or sold. */ unavailable: boolean };
 
 type CartLiveState = {
   quantityOf: (id: string) => number;
   itemCount: number;
+  /** Items that can actually be bought — what the summary counts and totals. */
+  payableItemCount: number;
+  /** Lines that can no longer be bought; checkout stays closed until they are removed. */
+  blockedCount: number;
   mutate: (id: string, nextQuantity: number | undefined) => Promise<void>;
   subtotal: number | null;
   merchandiseTotal: number | null;
@@ -79,13 +83,16 @@ export function CartLiveProvider({ lines, children }: { lines: CartLiveLine[]; c
 
   const shown = lines.map((line) => ({ ...line, quantity: live && line.id in optimistic ? optimistic[line.id] : line.quantity }));
   const present = shown.filter((line) => line.quantity > 0);
-  const priceUnavailable = present.some((line) => line.finalPrice === null || line.originalPrice === null);
+  const payable = present.filter((line) => !line.unavailable);
+  const priceUnavailable = payable.some((line) => line.finalPrice === null || line.originalPrice === null);
   const value: CartLiveState = {
     quantityOf: (id) => shown.find((line) => line.id === id)?.quantity ?? 0,
     itemCount: present.reduce((sum, line) => sum + line.quantity, 0),
+    payableItemCount: payable.reduce((sum, line) => sum + line.quantity, 0),
+    blockedCount: present.length - payable.length,
     mutate,
-    subtotal: priceUnavailable ? null : present.reduce((sum, line) => sum + line.originalPrice! * line.quantity, 0),
-    merchandiseTotal: priceUnavailable ? null : present.reduce((sum, line) => sum + line.finalPrice! * line.quantity, 0),
+    subtotal: priceUnavailable ? null : payable.reduce((sum, line) => sum + line.originalPrice! * line.quantity, 0),
+    merchandiseTotal: priceUnavailable ? null : payable.reduce((sum, line) => sum + line.finalPrice! * line.quantity, 0),
   };
 
   return <CartLiveContext.Provider value={value}>{children}</CartLiveContext.Provider>;
@@ -109,7 +116,7 @@ export function CartLiveHeadline() {
 
 /** The order summary column: totals, checkout link and the free-shipping hint, all following the live quantities. */
 export function CartLiveSummary({ currency, freeShippingThreshold }: { currency: "IRR" | "IRT"; freeShippingThreshold: number | null }) {
-  const { itemCount, subtotal, merchandiseTotal } = useCartLive();
+  const { payableItemCount, blockedCount, subtotal, merchandiseTotal } = useCartLive();
   if (subtotal === null || merchandiseTotal === null) return null;
   const productDiscount = subtotal - merchandiseTotal;
 
@@ -118,7 +125,7 @@ export function CartLiveSummary({ currency, freeShippingThreshold }: { currency:
       <Card variant="secondary" className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 shadow-sm">
         <h2 className="m-0 text-base font-bold">جزئیات پرداخت</h2>
         <dl className="m-0 mt-5 grid gap-3 text-sm">
-          <div className="flex items-center justify-between gap-4 text-[var(--muted)]"><dt>مجموع قیمت کالاها ({itemCount.toLocaleString("fa-IR")} کالا)</dt><dd className="m-0 tabular-nums">{formatMoney(subtotal, currency)}</dd></div>
+          <div className="flex items-center justify-between gap-4 text-[var(--muted)]"><dt>مجموع قیمت کالاها ({payableItemCount.toLocaleString("fa-IR")} کالا)</dt><dd className="m-0 tabular-nums">{formatMoney(subtotal, currency)}</dd></div>
           {productDiscount > 0 && (
             <div className="flex items-center justify-between gap-4 rounded-lg px-3 py-2.5 font-bold text-[var(--success)]" style={{ backgroundColor: "color-mix(in srgb, var(--success) 12%, transparent)" }}>
               <dt className="flex items-center gap-2"><PartyPopper size={16} />سود شما از خرید</dt>
@@ -133,7 +140,14 @@ export function CartLiveSummary({ currency, freeShippingThreshold }: { currency:
             </dd>
           </div>
         </dl>
-        <Link href="/checkout" className="mt-5 flex min-h-12 w-full items-center justify-center gap-2 rounded-lg bg-[var(--brand-primary)] px-5 text-sm font-bold text-[var(--brand-primary-foreground)] shadow-sm transition hover:brightness-110">ادامه فرایند خرید<ChevronLeft size={18} /></Link>
+        {blockedCount > 0 ? (
+          <>
+            <Button isDisabled fullWidth className="mt-5 min-h-12 rounded-lg text-sm font-bold">ادامه فرایند خرید<ChevronLeft size={18} /></Button>
+            <p className="m-0 mt-3 flex items-start gap-2 text-xs font-bold leading-6 text-[var(--danger)]"><AlertTriangle size={16} className="mt-1 shrink-0" />برای ادامه، کالاهایی را که دیگر قابل خرید نیستند از سبد حذف کنید.</p>
+          </>
+        ) : (
+          <Link href="/checkout" className="mt-5 flex min-h-12 w-full items-center justify-center gap-2 rounded-lg bg-[var(--brand-primary)] px-5 text-sm font-bold text-[var(--brand-primary-foreground)] shadow-sm transition hover:brightness-110">ادامه فرایند خرید<ChevronLeft size={18} /></Link>
+        )}
         <p className="m-0 mt-4 flex items-start gap-2 text-xs leading-6 text-[var(--muted)]"><Info size={16} className="mt-1 shrink-0" />مبلغ سفارش هنوز پرداخت نشده است و موجودی کالاها تا زمان ثبت سفارش برای شما رزرو نمی‌شود.</p>
       </Card>
       {freeShippingThreshold !== null && <FreeShippingProgress merchandiseTotal={merchandiseTotal} threshold={freeShippingThreshold} currency={currency} />}
