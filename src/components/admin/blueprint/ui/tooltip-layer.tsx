@@ -14,39 +14,27 @@ const EDGE = 8;
 const ARROW_INSET = 16;
 const TIP_ATTRIBUTE = "data-bp-tip";
 
-type Target = { host: Element; text: string; title: string | null; describedBy: string | null };
 type Anchor = { text: string; rect: DOMRect };
 type Placement = { top: number; left: number; side: "top" | "bottom"; arrowX: number };
 
 const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), Math.max(min, max));
 
-function tipTextOf(element: Element) {
-  const own = element.getAttribute(TIP_ATTRIBUTE)?.trim();
-  if (own) return own;
-  return element.getAttribute("title")?.trim() || null;
-}
-
-/** The nearest element (starting at `start`) that carries tooltip text, provided it lives inside the admin root. */
-function findHost(start: EventTarget | null): Element | null {
-  let node = start instanceof Element ? start : null;
-  for (let depth = 0; node && depth < 8; depth += 1, node = node.parentElement) {
-    if (node.classList.contains("bp-tooltip")) return null;
-    if (tipTextOf(node)) return node.closest(".bp-root") ? node : null;
-  }
-  return null;
-}
-
 /**
  * The admin panel's tooltip, for every `title="…"` and `data-bp-tip="…"` inside `.bp-root`.
  *
- * The browser's own bubble is plain, slow and unstyled, and the panel has ~180 of them, so rather
- * than editing each call site this one listener takes over: while a control is hovered (or
- * keyboard-focused) its `title` is set aside so the native bubble stays quiet, and restored the
- * moment the tooltip closes. Multi-line text is laid out as a heading with label/value rows (see
- * `parseTooltipText`). SVG shapes, which cannot use `title=`, opt in through `data-bp-tip`.
+ * A browser offers no switch for its own bubble, so it is kept from ever appearing by leaving it
+ * nothing to show: while the pointer is over an element, the `title` of that element AND of every
+ * ancestor up to the admin root is set aside (a browser falls back to a titled ancestor when the
+ * hovered element has none). The titles come back only once the pointer has moved off them — not
+ * when our own tooltip closes on a click or scroll, which is when a native bubble used to slip
+ * through under a still-resting pointer. A MutationObserver re-checks whatever sits under the
+ * pointer whenever the DOM changes, so an element re-rendered beneath a motionless mouse (a row
+ * refreshed after a toggle, a `title` React sets again) is silenced too.
  *
- * Touch input is ignored — there is no hover to wait for — and every tooltip disappears on click,
- * scroll, Escape and when the pointer leaves the window.
+ * Multi-line text is laid out as a heading with label/value rows (see `parseTooltipText`). SVG
+ * shapes, which cannot use `title=`, opt in through `data-bp-tip`. Touch input is ignored —
+ * there is no hover to wait for — and every tooltip disappears on click, scroll, Escape and when
+ * the pointer leaves the window.
  */
 export function AdminTooltipLayer() {
   const tooltipId = useId();
@@ -56,78 +44,156 @@ export function AdminTooltipLayer() {
   const [shown, setShown] = useState(false);
 
   useEffect(() => {
-    let target: Target | null = null;
+    /** Titles set aside while the pointer is over them, keyed by their element. */
+    const stash = new Map<Element, string>();
+    let host: Element | null = null;
+    let visible = false;
+    let describedBy: string | null = null;
+    /** The element whose tooltip a click/Escape closed — it stays quiet until the pointer leaves it. */
+    let dismissed: Element | null = null;
     let timer: number | undefined;
+    let frame = 0;
     let closedAt = 0;
+    let pointer: { x: number; y: number } | null = null;
 
-    function release() {
+    const inRoot = (element: Element) => Boolean(element.closest(".bp-root")) && !element.closest(".bp-tooltip");
+
+    /** Puts back every set-aside title outside `keep`, unless the element was given a fresh one meanwhile. */
+    function restore(keep?: Set<Element>) {
+      for (const [element, text] of stash) {
+        if (keep?.has(element)) continue;
+        if (!element.hasAttribute("title")) element.setAttribute("title", text);
+        stash.delete(element);
+      }
+    }
+
+    /**
+     * Silences the native bubble for everything from `start` up to the page root and returns the
+     * innermost element that has tooltip text (or null). Titles of elements the pointer has left
+     * are restored on the way.
+     */
+    function silence(start: Element | null): Element | null {
+      if (!start || !inRoot(start)) { restore(); return null; }
+      const chain = new Set<Element>();
+      let found: Element | null = null;
+      for (let node: Element | null = start; node && node !== document.body; node = node.parentElement) {
+        chain.add(node);
+        const title = node.getAttribute("title");
+        if (title !== null) { stash.set(node, title); node.removeAttribute("title"); }
+        if (!found && (node.getAttribute(TIP_ATTRIBUTE)?.trim() || stash.get(node)?.trim())) found = node;
+      }
+      restore(chain);
+      return found;
+    }
+
+    const textOf = (element: Element) => element.getAttribute(TIP_ATTRIBUTE)?.trim() || stash.get(element)?.trim() || "";
+
+    function syncToPointer() {
+      const under = pointer ? document.elementFromPoint(pointer.x, pointer.y) : null;
+      silence(under);
+    }
+
+    function hide() {
       window.clearTimeout(timer);
-      if (!target) return;
-      const { host, title, describedBy } = target;
-      target = null;
-      if (title !== null && !host.hasAttribute("title")) host.setAttribute("title", title);
-      if (describedBy) host.setAttribute("aria-describedby", describedBy); else host.removeAttribute("aria-describedby");
-      closedAt = Date.now();
+      if (host) {
+        if (describedBy) host.setAttribute("aria-describedby", describedBy); else host.removeAttribute("aria-describedby");
+      }
+      if (visible) closedAt = Date.now();
+      host = null;
+      visible = false;
+      describedBy = null;
       setShown(false);
       setAnchor(null);
       setPlacement(null);
     }
 
     function reveal() {
-      const current = target;
-      if (!current || !current.host.isConnected) { release(); return; }
-      const rect = current.host.getBoundingClientRect();
-      if (rect.width === 0 && rect.height === 0) { release(); return; }
-      current.host.setAttribute("aria-describedby", [current.describedBy, tooltipId].filter(Boolean).join(" "));
-      setAnchor({ text: current.text, rect });
+      const current = host;
+      const text = current ? textOf(current) : "";
+      if (!current || !current.isConnected || !text) { hide(); return; }
+      const rect = current.getBoundingClientRect();
+      if (rect.width === 0 && rect.height === 0) { hide(); return; }
+      describedBy = current.getAttribute("aria-describedby");
+      current.setAttribute("aria-describedby", [describedBy, tooltipId].filter(Boolean).join(" "));
+      visible = true;
+      setAnchor({ text, rect });
     }
 
-    function engage(host: Element, delay: number) {
-      if (target?.host === host) return;
-      release();
-      const text = tipTextOf(host);
-      if (!text) return;
-      // Set the native bubble aside for as long as ours can appear, whichever attribute supplied the text.
-      const title = host.getAttribute("title");
-      if (title !== null) host.removeAttribute("title");
-      target = { host, text, title, describedBy: host.getAttribute("aria-describedby") };
+    function open(next: Element, delay: number) {
+      hide();
+      host = next;
       timer = window.setTimeout(reveal, delay);
+    }
+
+    function dismiss() {
+      if (host) dismissed = host;
+      hide();
     }
 
     const onPointerOver = (event: PointerEvent) => {
       if (event.pointerType === "touch") return;
-      const host = findHost(event.target);
-      if (host) engage(host, Date.now() - closedAt < WARM_WINDOW_MS ? WARM_DELAY_MS : SHOW_DELAY_MS);
-      else release();
+      pointer = { x: event.clientX, y: event.clientY };
+      const next = silence(event.target instanceof Element ? event.target : null);
+      if (!next) { dismissed = null; hide(); return; }
+      if (next === host) return;
+      if (next === dismissed) { hide(); return; }
+      dismissed = null;
+      open(next, Date.now() - closedAt < WARM_WINDOW_MS ? WARM_DELAY_MS : SHOW_DELAY_MS);
     };
-    const onPointerOut = (event: PointerEvent) => { if (!event.relatedTarget) release(); };
+    const onPointerOut = (event: PointerEvent) => {
+      if (event.relatedTarget) return;
+      pointer = null;
+      dismissed = null;
+      hide();
+      restore();
+    };
     const onFocusIn = (event: FocusEvent) => {
-      const host = findHost(event.target);
-      if (host instanceof HTMLElement && host.matches(":focus-visible")) engage(host, FOCUS_DELAY_MS);
+      const target = event.target instanceof HTMLElement ? event.target : null;
+      const next = silence(target);
+      if (next && target?.matches(":focus-visible")) open(next, FOCUS_DELAY_MS);
     };
-    const onKeyDown = (event: KeyboardEvent) => { if (event.key === "Escape") release(); };
-    const onVisibility = () => { if (document.visibilityState !== "visible") release(); };
+    const onFocusOut = () => {
+      hide();
+      syncToPointer();
+    };
+    const onKeyDown = (event: KeyboardEvent) => { if (event.key === "Escape") dismiss(); };
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") return;
+      pointer = null;
+      dismissed = null;
+      hide();
+      restore();
+    };
+
+    const observer = new MutationObserver(() => {
+      if (frame) return;
+      frame = window.requestAnimationFrame(() => { frame = 0; syncToPointer(); });
+    });
+    observer.observe(document.body, { subtree: true, childList: true, attributes: true, attributeFilter: ["title"] });
 
     document.addEventListener("pointerover", onPointerOver);
     document.addEventListener("pointerout", onPointerOut);
-    document.addEventListener("pointerdown", release);
+    document.addEventListener("pointerdown", dismiss);
     document.addEventListener("focusin", onFocusIn);
-    document.addEventListener("focusout", release);
+    document.addEventListener("focusout", onFocusOut);
     document.addEventListener("keydown", onKeyDown);
     document.addEventListener("visibilitychange", onVisibility);
-    window.addEventListener("scroll", release, { capture: true, passive: true });
-    window.addEventListener("resize", release);
+    window.addEventListener("scroll", hide, { capture: true, passive: true });
+    window.addEventListener("resize", hide);
     return () => {
+      observer.disconnect();
+      window.cancelAnimationFrame(frame);
       document.removeEventListener("pointerover", onPointerOver);
       document.removeEventListener("pointerout", onPointerOut);
-      document.removeEventListener("pointerdown", release);
+      document.removeEventListener("pointerdown", dismiss);
       document.removeEventListener("focusin", onFocusIn);
-      document.removeEventListener("focusout", release);
+      document.removeEventListener("focusout", onFocusOut);
       document.removeEventListener("keydown", onKeyDown);
       document.removeEventListener("visibilitychange", onVisibility);
-      window.removeEventListener("scroll", release, { capture: true });
-      window.removeEventListener("resize", release);
-      release();
+      window.removeEventListener("scroll", hide, { capture: true });
+      window.removeEventListener("resize", hide);
+      hide();
+      restore();
     };
   }, [tooltipId]);
 
@@ -137,19 +203,16 @@ export function AdminTooltipLayer() {
     if (!anchor) return;
     const tip = tipRef.current;
     if (!tip) return;
-    function place(current: HTMLDivElement, at: Anchor) {
-      const width = current.offsetWidth;
-      const height = current.offsetHeight;
-      const { rect } = at;
-      const roomAbove = rect.top - EDGE;
-      const roomBelow = window.innerHeight - rect.bottom - EDGE;
-      const side = roomAbove >= height + GAP || roomAbove >= roomBelow ? "top" : "bottom";
-      const top = side === "top" ? rect.top - height - GAP : rect.bottom + GAP;
-      const centre = rect.left + rect.width / 2;
-      const left = clamp(centre - width / 2, EDGE, window.innerWidth - width - EDGE);
-      setPlacement({ top: clamp(top, EDGE, window.innerHeight - height - EDGE), left, side, arrowX: clamp(centre - left, ARROW_INSET, width - ARROW_INSET) });
-    }
-    place(tip, anchor);
+    const width = tip.offsetWidth;
+    const height = tip.offsetHeight;
+    const { rect } = anchor;
+    const roomAbove = rect.top - EDGE;
+    const roomBelow = window.innerHeight - rect.bottom - EDGE;
+    const side = roomAbove >= height + GAP || roomAbove >= roomBelow ? "top" : "bottom";
+    const top = side === "top" ? rect.top - height - GAP : rect.bottom + GAP;
+    const centre = rect.left + rect.width / 2;
+    const left = clamp(centre - width / 2, EDGE, window.innerWidth - width - EDGE);
+    setPlacement({ top: clamp(top, EDGE, window.innerHeight - height - EDGE), left, side, arrowX: clamp(centre - left, ARROW_INSET, width - ARROW_INSET) });
   }, [anchor]);
 
   useEffect(() => {
