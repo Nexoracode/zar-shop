@@ -9,7 +9,7 @@ import { InlineAlert } from "@/components/inline-alert";
 import { ProductCard } from "@/components/product-card";
 import { ViewAllProductCard } from "@/components/view-all-product-card";
 import { DiscountExpiryRefresh } from "@/components/discount-expiry-refresh";
-import { earliestDiscountExpiry } from "@/modules/products/discount-window";
+import { discountEndMoments } from "@/modules/products/discount-window";
 import type { StorefrontProductFeed, StorefrontProductSort } from "@/modules/products/storefront-feed-contract";
 
 const filters: Array<{ id: StorefrontProductSort; label: string; mobile: boolean }> = [
@@ -78,7 +78,7 @@ export function HomepageProductFeed({ initialFeed, industry = "GOLD" }: Props) {
           <DragScrollRow key={`${feed.sort}-${feed.pagination.page}`} ariaLabel="محصولات فروشگاه" showNavigation={industry === "GENERAL"} className="flex w-full min-w-0 max-w-full gap-4 overflow-x-auto pb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {feed.items.map((product, index) => <div key={product.id} className="w-[calc(50%-8px)] min-w-[calc(50%-8px)] snap-start sm:w-[220px] sm:min-w-[220px] lg:w-[224px] lg:min-w-[224px]"><ProductCard {...product} storefrontVariant="gallery" imageTone={index % 4} /></div>)}
             {industry === "GENERAL" && <div className="w-[calc(50%-8px)] min-w-[calc(50%-8px)] snap-start sm:w-[220px] sm:min-w-[220px] lg:w-[224px] lg:min-w-[224px]"><ViewAllProductCard href="/products" /></div>}
-            <DiscountExpiryRefresh at={earliestDiscountExpiry(feed.items)} />
+            <DiscountExpiryRefresh moments={discountEndMoments(feed.items)} />
           </DragScrollRow>
         ) : <div className="grid h-[260px] place-items-center rounded-[7px] bg-[#f8f8f8] text-sm text-[#777]">محصولی برای نمایش وجود ندارد.</div>}
       </div>

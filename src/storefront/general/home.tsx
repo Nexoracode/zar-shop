@@ -15,7 +15,7 @@ import { StorefrontImageTiles } from "@/components/storefront-image-tiles";
 import { ViewAllProductCard } from "@/components/view-all-product-card";
 import { db } from "@/lib/db";
 import { getLatestPublishedArticles } from "@/modules/articles/service";
-import { earliestDiscountExpiry } from "@/modules/products/discount-window";
+import { earliestDiscountEnd } from "@/modules/products/discount-window";
 import { getStorefrontFlashDeals, getStorefrontProductFeed } from "@/modules/products/storefront-feed";
 import type { StorefrontProductCardItem } from "@/modules/products/storefront-feed-contract";
 import { getHomepageSettings, type HomepageLayoutItemId } from "@/modules/settings/homepage-settings";
@@ -70,7 +70,9 @@ export async function GeneralHome() {
   const sectionState = new Map(homepage.sections.map((section) => [section.id, section.enabled]));
   const sectionOrder = new Map(homepage.sections.map((section, index) => [section.id, index]));
   const sectionProps = (id: HomepageLayoutItemId) => ({ hidden: sectionState.get(id) === false, style: { order: sectionOrder.get(id) ?? homepage.sections.length } });
-  const flashDealsExpiry = earliestDiscountExpiry(flashDeals);
+  // `getStorefrontFlashDeals` only returns discounts still running, so the earliest end is ahead of
+  // now — no clock needed here (a `Date.now()` while rendering can't be prerendered).
+  const flashDealsExpiry = earliestDiscountEnd(flashDeals);
 
   return <main className="flex flex-col gap-4 overflow-hidden bg-[#f4f5f7] pb-[78px] pt-3 lg:gap-6 lg:pb-8">
     <section {...sectionProps("HERO")} className="bg-white"><StorefrontHeroSlider slides={heroSlides} contentMode={homepage.heroContentMode} title={homepage.heroTitle} description={homepage.heroDescription} buttonLabel={homepage.heroButtonLabel} /></section>

@@ -1,8 +1,6 @@
 "use client";
 
-import { useEffect, useState, useSyncExternalStore } from "react";
-
-const noopSubscribe = () => () => undefined;
+import { useEffect, useState } from "react";
 
 function splitRemaining(milliseconds: number) {
   const total = Math.max(0, Math.floor(milliseconds / 1000));
@@ -27,11 +25,12 @@ function Cell({ value }: { value: string }) {
  * reloads the section when it hits zero.
  */
 export function FlashSaleCountdown({ endsAt, className = "" }: { endsAt: string; className?: string }) {
-  const [remaining, setRemaining] = useState(() => new Date(endsAt).getTime() - Date.now());
-  // Server render and client hydration read `Date.now()` a moment apart; gate the real digits
-  // behind `hydrated` so the first client pass matches the server markup, then let the interval
-  // take over. Same guard as `OrderExpiryCountdown`.
-  const hydrated = useSyncExternalStore(noopSubscribe, () => true, () => false);
+  // The clock is only read inside the effect, never while rendering: a `Date.now()` during render
+  // is a different value on the server, in the prerender and after hydration (Next refuses to
+  // prerender it), so the first pass shows zeroed digits on every side and the interval takes
+  // over once mounted. Same approach as `OrderExpiryCountdown`.
+  const [remaining, setRemaining] = useState<number | null>(null);
+  const hydrated = remaining !== null;
 
   useEffect(() => {
     const update = () => setRemaining(new Date(endsAt).getTime() - Date.now());
@@ -40,8 +39,8 @@ export function FlashSaleCountdown({ endsAt, className = "" }: { endsAt: string;
     return () => window.clearInterval(timer);
   }, [endsAt]);
 
-  if (hydrated && remaining <= 0) return null;
-  const { days, hours, minutes, seconds } = splitRemaining(remaining);
+  if (remaining !== null && remaining <= 0) return null;
+  const { days, hours, minutes, seconds } = splitRemaining(remaining ?? 0);
 
   return (
     <div className={`flex items-center gap-[2px] ${className}`} dir="ltr" aria-label="زمان باقی‌مانده تا پایان پیشنهاد">

@@ -3,7 +3,7 @@ import Link from "next/link";
 import { ChevronLeft, ShoppingBag } from "lucide-react";
 import type { StorefrontProductCardItem } from "@/modules/products/storefront-feed-contract";
 import { DiscountExpiryRefresh } from "@/components/discount-expiry-refresh";
-import { earliestDiscountExpiry } from "@/modules/products/discount-window";
+import { discountEndMoments } from "@/modules/products/discount-window";
 
 const itemsPerColumn = 3;
 
@@ -31,5 +31,5 @@ export function HomepageBestSellers({ products }: { products: StorefrontProductC
         })}
       </div>)}
     </div>
-  <DiscountExpiryRefresh at={earliestDiscountExpiry(rankedProducts)} /></section>;
+  <DiscountExpiryRefresh moments={discountEndMoments(rankedProducts)} /></section>;
 }

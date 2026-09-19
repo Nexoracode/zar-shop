@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ProductCard, ProductCardSkeleton } from "@/components/product-card";
 import { DiscountExpiryRefresh } from "@/components/discount-expiry-refresh";
-import { earliestDiscountExpiry } from "@/modules/products/discount-window";
+import { discountEndMoments } from "@/modules/products/discount-window";
 import type { StorefrontProductCardItem } from "@/modules/products/storefront-feed-contract";
 
 type StorefrontCatalogGridProps = {
@@ -60,7 +60,7 @@ export function StorefrontCatalogGrid({ initialItems, initialPage, totalPages, p
     <div className="mt-5 grid grid-cols-2 border-r border-t border-slate-200 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
       {items.map((product) => <ProductCard key={product.id} {...product} storefrontVariant="catalog" />)}
       {isLoading && Array.from({ length: pageSize }).map((_, index) => <ProductCardSkeleton key={`skeleton-${index}`} />)}
-      <DiscountExpiryRefresh at={earliestDiscountExpiry(items)} />
+      <DiscountExpiryRefresh moments={discountEndMoments(items)} />
       {!items.length && !isLoading && <div className="col-span-full grid min-h-72 place-items-center border-b border-l border-slate-200 px-4 text-center text-sm text-slate-500">محصولی مطابق فیلترهای انتخاب‌شده پیدا نشد.</div>}
       {hasMore && <div ref={sentinelRef} aria-hidden="true" className="col-span-full h-px" />}
     </div>

@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Button, Modal, ProgressBar } from "@heroui/react";
 import { ChevronLeft, ChevronRight, Ellipsis, ImageIcon, Info, List, Play, X } from "lucide-react";
 import { useSelectedProductOptions } from "@/components/add-to-cart";
@@ -33,7 +33,6 @@ type ProductDetailGalleryProps = {
   compareItem?: CompareItem;
 };
 
-const noopSubscribe = () => () => undefined;
 
 function formatCountdown(endAt: string | null | undefined, now: number) {
   if (!endAt) return null;
@@ -91,16 +90,15 @@ export function ProductDetailGallery({ media, productName, productCode, ticketHr
   const hasDiscount = activeDiscount?.hasDiscount ?? false;
   const discountEndsAt = activeDiscount?.discountEndsAt ?? null;
   const [selectedId, setSelectedId] = useState(media[0]?.id ?? "");
-  const [now, setNow] = useState(() => Date.now());
-  // `now` is computed at both server-render and client-hydration time, so it differs by
-  // however long that gap takes; gating the countdown behind `hydrated` (false during SSR
-  // and the client's first hydration pass, true right after) keeps the rendered text
-  // identical between the two instead of racing a real timestamp against itself.
-  const hydrated = useSyncExternalStore(noopSubscribe, () => true, () => false);
+  // The clock is only read inside effects, never while rendering: a `Date.now()` during render
+  // differs between the server, the prerender and hydration (and Next refuses to prerender it).
+  // `now` stays null until the effect below first sets it, so the countdown text is absent on
+  // every first pass and identical between the server and the client.
+  const [now, setNow] = useState<number | null>(null);
   const selectedIndex = Math.max(0, media.findIndex((item) => item.id === selectedId));
   const selected = media[selectedIndex] ?? media[0];
   const previewMedia = useMemo(() => media.slice(0, 5), [media]);
-  const countdown = hydrated ? formatCountdown(discountEndsAt, now) : null;
+  const countdown = now !== null ? formatCountdown(discountEndsAt, now) : null;
   // Known at server-render time already, unlike `countdown` — a "فروش ویژه" has no window to
   // wait on, so its badge does not have to hold for hydration the way the countdown text does.
   const hasSchedule = Boolean(discountEndsAt);
@@ -131,10 +129,13 @@ export function ProductDetailGallery({ media, productName, productCode, ticketHr
       router.refresh();
     }
 
+    // First reading right after mount (the countdown is blank until `now` is set), then every second.
+    const first = window.setTimeout(check, 0);
     const timer = window.setInterval(check, 1000);
     function onVisible() { if (document.visibilityState === "visible") check(); }
     document.addEventListener("visibilitychange", onVisible);
     return () => {
+      window.clearTimeout(first);
       window.clearInterval(timer);
       document.removeEventListener("visibilitychange", onVisible);
     };
