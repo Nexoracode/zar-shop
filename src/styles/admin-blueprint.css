@@ -155,6 +155,17 @@
    here — this sheet is unlayered and that is a Tailwind utility — so the exception is stated. */
 .bp-root .rich-text-content:focus,
 .bp-root .rich-text-content:focus-visible { outline: none; }
+/* The rich text body's typography is written for the light storefront (dark headings, cream quote
+   and table fills). Inside the admin it must follow the blueprint tokens instead, or headings and
+   quotes vanish into the dark surface. `pre` keeps its own dark block, which reads on both themes. */
+.bp-root .rich-text-content :is(h1, h2, h3, h4, h5, h6, th) { color: var(--bp-text); }
+.bp-root .rich-text-content blockquote { border-right-color: var(--bp-accent); background: var(--bp-surface); color: var(--bp-label); }
+.bp-root .rich-text-content :not(pre) > code { background: var(--bp-hover); color: var(--bp-danger); }
+.bp-root .rich-text-content a { color: var(--bp-accent); }
+.bp-root .rich-text-content hr { border-top-color: var(--bp-divider); }
+.bp-root .rich-text-content :is(th, td) { border-color: var(--bp-divider); }
+.bp-root .rich-text-content th { background: var(--bp-surface); }
+.bp-root .rich-text-editor-content [data-resize-handle] { border-color: var(--bp-bg); }
 .bp-root ::selection { background: color-mix(in srgb, var(--bp-accent) 30%, transparent); }
 /* Anchors reset to the inherited colour — except the ones styled as buttons, which would
    otherwise outrank `.bp-btn*` on specificity and lose their own foreground. */

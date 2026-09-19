@@ -208,9 +208,9 @@ export function RichTextEditor({ value, onChange }: Props) {
   return <div
     // `position` is set inline: the admin sheet is unlayered and can outrank Tailwind's `fixed`.
     style={fullscreen ? { position: "fixed", inset: 0, zIndex: 190 } : undefined}
-    className={`overflow-hidden border border-slate-200 bg-white shadow-sm ${fullscreen ? "flex flex-col rounded-none" : "rounded-2xl"}`}
+    className={`overflow-hidden border border-[var(--bp-divider)] bg-[var(--bp-bg)] shadow-sm ${fullscreen ? "flex flex-col rounded-none" : "rounded-[var(--bp-radius)]"}`}
   >
-    <div className="sticky top-0 z-20 grid gap-2 border-b border-slate-200 bg-slate-50/95 p-2.5 backdrop-blur">
+    <div className="sticky top-0 z-20 grid gap-2 border-b border-[var(--bp-divider)] bg-[var(--bp-surface)] p-2.5">
       {/*
         What is always out is what writing a product description actually needs. Everything else
         — typography, colour, alignment, tables, code — sits behind the toggle so the common case
@@ -284,8 +284,8 @@ export function RichTextEditor({ value, onChange }: Props) {
         <MoreToolsToggle expanded={showAllTools} onToggle={() => setShowAllTools((current) => !current)} />
       </div>
     </div>
-    <EditorContent editor={editor} className={`rich-text-editor-content bg-white ${fullscreen ? "min-h-0 flex-1 overflow-y-auto" : "min-h-80"}`} />
-    <div className="flex items-center justify-between border-t border-slate-100 bg-slate-50 px-4 py-2 text-[11px] text-slate-400"><span>برای تغییر اندازه تصویر، آن را انتخاب کنید و دستگیره‌ها را بکشید.</span><span>{marks.characters.toLocaleString("fa-IR")} نویسه</span></div>
+    <EditorContent editor={editor} className={`rich-text-editor-content bg-[var(--bp-bg)] text-[var(--bp-text)] ${fullscreen ? "min-h-0 flex-1 overflow-y-auto" : "min-h-80"}`} />
+    <div className="flex items-center justify-between border-t border-[var(--bp-divider)] bg-[var(--bp-surface)] px-4 py-2 text-[11px] text-[var(--bp-muted)]"><span>برای تغییر اندازه تصویر، آن را انتخاب کنید و دستگیره‌ها را بکشید.</span><span>{marks.characters.toLocaleString("fa-IR")} نویسه</span></div>
 
     <LinkDialog
       open={linkOpen}
@@ -320,7 +320,7 @@ function Tool({ editor: _editor, label, icon, active, disabled, run }: { editor:
   // The tooltip goes on a wrapper: HeroUI's Button does not forward `title`, and an icon-only
   // toolbar needs something to name its buttons on hover.
   return <span title={label} className="inline-flex">
-    <Button type="button" size="sm" isIconOnly variant={active ? "primary" : "ghost"} isDisabled={disabled} onPress={run} aria-label={label} className={`h-9 min-h-9 w-9 min-w-9 rounded-lg ${active ? "bg-[var(--accent)] text-[var(--accent-foreground)]" : "text-slate-600 hover:bg-white"}`}>{icon}</Button>
+    <Button type="button" size="sm" isIconOnly variant={active ? "primary" : "ghost"} isDisabled={disabled} onPress={run} aria-label={label} className={`h-9 min-h-9 w-9 min-w-9 rounded-lg ${active ? "bg-[var(--accent)] text-[var(--accent-foreground)]" : "text-[var(--bp-label)] hover:bg-[var(--bp-hover)]"}`}>{icon}</Button>
   </span>;
 }
 
@@ -364,7 +364,7 @@ function TableOpIcon({ shape: Shape, badge }: { shape: LucideIcon; badge: "add" 
   );
 }
 
-function Divider() { return <span className="mx-1 h-6 w-px bg-slate-200" aria-hidden="true" />; }
+function Divider() { return <span className="mx-1 h-6 w-px bg-[var(--bp-divider)]" aria-hidden="true" />; }
 
 /**
  * A toolbar colour control. It reads the colour off the selection rather than holding one of
