@@ -1,9 +1,12 @@
 import { getPermittedActor } from "@/modules/auth/session";
 import { resolveReportPeriod } from "@/modules/reports/report-range";
-import { buildSalesReportCsv, getSalesReport } from "@/modules/reports/sales-report";
+import { getSalesReport } from "@/modules/reports/sales-report";
+import { buildSalesReportWorkbook } from "@/modules/reports/sales-report-xlsx";
+
+const XLSX_TYPE = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 
 /**
- * The report's CSV export. A GET route rather than a Server Action so the response can carry
+ * The report's Excel export. A GET route rather than a Server Action so the response can carry
  * `Content-Disposition: attachment` and the browser saves it as a file; the client button drives
  * it through `fetch` so it can show an in-flight spinner. ADMIN-only, same as the page.
  */
@@ -18,14 +21,15 @@ export async function GET(request: Request) {
     to: searchParams.get("to") ?? undefined,
   });
   const report = await getSalesReport(period);
-  // Leading BOM (U+FEFF) so Excel opens the Persian text as UTF-8.
-  const body = "\uFEFF" + buildSalesReportCsv(report);
-  const stamp = new Date().toISOString().slice(0, 10);
+  const generatedAt = new Date();
+  const workbook = buildSalesReportWorkbook(report, generatedAt);
+  const stamp = generatedAt.toISOString().slice(0, 10);
 
-  return new Response(body, {
+  return new Response(new Uint8Array(workbook), {
     headers: {
-      "Content-Type": "text/csv; charset=utf-8",
-      "Content-Disposition": `attachment; filename="sales-report-${stamp}.csv"`,
+      "Content-Type": XLSX_TYPE,
+      "Content-Disposition": `attachment; filename="sales-report-${stamp}.xlsx"`,
+      "Content-Length": String(workbook.length),
       "Cache-Control": "no-store",
     },
   });

@@ -8,7 +8,7 @@ import { formatMoney } from "@/lib/format";
 import { requirePermission } from "@/modules/auth/session";
 import { DEFAULT_REPORT_RANGE, resolveReportPeriod, type ReportPeriod } from "@/modules/reports/report-range";
 import { getSalesReport, type SalesReport } from "@/modules/reports/sales-report";
-import { ExportCsvButton } from "./export-csv-button";
+import { ExportExcelButton } from "./export-excel-button";
 import { ReportSkeleton } from "./report-skeleton";
 import { ReportsFilterBar } from "./reports-filter-bar";
 
@@ -41,7 +41,7 @@ export default async function ReportsPage({ searchParams }: { searchParams: Sear
         eyebrow="گزارش‌ها"
         title="گزارش مالی"
         description="فروش، سفارش‌ها و پرفروش‌ترین محصولات و دسته‌بندی‌ها را در بازه دلخواه ببینید."
-        action={<ExportCsvButton params={exportParams} />}
+        action={<ExportExcelButton params={exportParams} />}
       />
 
       <section className="bp-frame relative mb-2">
