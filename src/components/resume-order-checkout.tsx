@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Button, Card, Spinner } from "@heroui/react";
-import { Check, CreditCard, MapPin } from "lucide-react";
+import { Check, CreditCard, MapPin, PartyPopper } from "lucide-react";
 import { InlineAlert } from "@/components/inline-alert";
 import { formatMoney } from "@/lib/format";
 import { OrderExpiryCountdown } from "@/components/order-expiry-countdown";
@@ -73,7 +73,7 @@ export function ResumeOrderCheckout({ orderId, orderNumber, address, quote, curr
   }
 
   return (
-    <div className="grid min-w-0 items-start gap-5 lg:grid-cols-[minmax(0,1fr)_400px] xl:grid-cols-[minmax(0,1fr)_460px]" dir="rtl">
+    <div className="grid min-w-0 items-start gap-5 lg:grid-cols-[minmax(0,1fr)_380px] xl:grid-cols-[minmax(0,1fr)_420px]" dir="rtl">
       <div className="grid min-w-0 gap-5">
         <Card variant="secondary" className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-sm">
           <Card.Content className="p-5">
@@ -102,7 +102,7 @@ export function ResumeOrderCheckout({ orderId, orderNumber, address, quote, curr
           <p className="mb-3 mt-0 text-xs text-[var(--muted)]">سفارش <b dir="ltr">{orderNumber}</b></p>
           <dl className="m-0 grid gap-3 text-[13px]">
             <div className="flex justify-between gap-4 text-[var(--muted)]"><dt>قیمت کالاها</dt><dd>{formatMoney(quote.subtotal, currency)}</dd></div>
-            {quote.productDiscount > 0 && <div className="flex justify-between gap-4 font-bold text-[var(--danger)]"><dt>تخفیف کالاها</dt><dd>{formatMoney(quote.productDiscount, currency)}</dd></div>}
+            {quote.productDiscount > 0 && <div className="flex items-center justify-between gap-4 rounded-lg px-3 py-2.5 font-bold text-[var(--success)]" style={{ backgroundColor: "color-mix(in srgb, var(--success) 12%, transparent)" }}><dt className="flex items-center gap-2"><PartyPopper size={16} />سود شما از خرید</dt><dd className="m-0 tabular-nums">{formatMoney(quote.productDiscount, currency)}</dd></div>}
             {quote.promotionDiscount > 0 && <div className="flex justify-between gap-4 font-bold text-[var(--success)]"><dt>کد تخفیف</dt><dd>{formatMoney(quote.promotionDiscount, currency)}</dd></div>}
             <div className="flex justify-between gap-4 text-[var(--muted)]"><dt>هزینه ارسال و بسته‌بندی</dt><dd>{quote.shipping === 0 ? "رایگان" : formatMoney(quote.shipping, currency)}</dd></div>
             {quote.shippingDiscount > 0 && <div className="flex justify-between gap-4 font-bold text-[var(--success)]"><dt>تخفیف ارسال</dt><dd>{formatMoney(quote.shippingDiscount, currency)}</dd></div>}

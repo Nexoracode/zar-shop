@@ -35,7 +35,7 @@ export default function CartLoading() {
           <div className={`${bar} mt-2 h-5 w-36`} />
         </div>
 
-        <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_400px] xl:grid-cols-[minmax(0,1fr)_460px]">
+        <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_380px] xl:grid-cols-[minmax(0,1fr)_420px]">
           <section className="overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-sm">
             <div className="flex items-center gap-3 border-b border-[var(--border)] px-5 py-4">
               <div className={`${bar} size-5`} />

@@ -1,5 +1,5 @@
-// Mirrors the checkout page block for block — top bar, steps, heading, the four cards of the form and the
-// summary column, with the same columns, radius and padding as the cart — so nothing shifts on arrival.
+// Mirrors the checkout page block for block — top bar, steps, heading, the three cards of the form and the
+// summary and coupon column, with the same columns, radius and padding as the cart — so nothing shifts on arrival.
 const bar = "animate-pulse rounded-md bg-[var(--surface-secondary)]";
 const card = "rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 shadow-sm";
 
@@ -58,7 +58,7 @@ export default function CheckoutLoading() {
             <div className={`${bar} mt-2 h-5 w-64 max-w-full`} />
           </div>
 
-          <div className="grid min-w-0 items-start gap-5 lg:grid-cols-[minmax(0,1fr)_400px] xl:grid-cols-[minmax(0,1fr)_460px]">
+          <div className="grid min-w-0 items-start gap-5 lg:grid-cols-[minmax(0,1fr)_380px] xl:grid-cols-[minmax(0,1fr)_420px]">
             <div className="grid min-w-0 gap-5">
               <div className={card}>
                 <CardHeader titleWidth="w-32" />
@@ -73,10 +73,6 @@ export default function CheckoutLoading() {
                 <CardHeader titleWidth="w-24" />
                 <div className="grid gap-2"><OptionRow /><OptionRow /></div>
               </div>
-              <div className={card}>
-                <div className="mb-4 flex items-center gap-2"><div className={`${bar} size-[18px]`} /><div className={`${bar} h-5 w-24`} /></div>
-                <div className="h-11 w-full animate-pulse rounded-lg border border-[var(--border)] bg-[var(--surface-secondary)] sm:w-[46%]" />
-              </div>
             </div>
 
             <aside className="grid min-w-0 gap-5 lg:sticky lg:top-24">
@@ -88,6 +84,10 @@ export default function CheckoutLoading() {
                   <div className="flex justify-between gap-4 border-t border-[var(--border)] pt-4"><div className={`${bar} h-5 w-32`} /><div className={`${bar} h-5 w-32`} /></div>
                 </div>
                 <div className={`${bar} mt-5 min-h-12 w-full rounded-lg`} />
+              </div>
+              <div className={card}>
+                <CardHeader titleWidth="w-24" />
+                <div className="flex gap-2"><div className="h-11 flex-1 animate-pulse rounded-lg border border-[var(--border)] bg-[var(--surface-secondary)]" /><div className={`${bar} h-11 w-20 rounded-lg`} /></div>
               </div>
             </aside>
           </div>

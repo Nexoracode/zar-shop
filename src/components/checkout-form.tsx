@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Button, Card, Spinner, toast } from "@heroui/react";
-import { BadgePercent, Check, ChevronLeft, CreditCard, MapPin, Wallet, X } from "lucide-react";
+import { BadgePercent, Check, ChevronLeft, CircleAlert, CreditCard, MapPin, PartyPopper, Ticket, Wallet, X } from "lucide-react";
 import { InlineAlert } from "@/components/inline-alert";
 import { formatMoney } from "@/lib/format";
 import type { CommerceSettings } from "@/modules/settings/commerce-settings";
@@ -87,10 +87,11 @@ export function CheckoutForm({ settings, paymentMethods, currency, itemCount, it
     window.setTimeout(() => window.location.assign(data.redirectUrl), 400);
   }
 
-  const couponHasResult = Boolean(couponCode && (couponMessage || couponError));
+  // Applied once the server accepted the code; typing again (which clears the message) reopens the field.
+  const couponApplied = Boolean(couponCode.trim() && couponMessage && !couponError);
 
   return (
-    <form ref={formRef} onSubmit={submit} className="grid min-w-0 items-start gap-5 lg:grid-cols-[minmax(0,1fr)_400px] xl:grid-cols-[minmax(0,1fr)_460px]" dir="rtl">
+    <form ref={formRef} onSubmit={submit} className="grid min-w-0 items-start gap-5 lg:grid-cols-[minmax(0,1fr)_380px] xl:grid-cols-[minmax(0,1fr)_420px]" dir="rtl">
       <div className="grid min-w-0 gap-5">
         <Card variant="secondary" className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-sm">
           <Card.Content className="p-5">
@@ -161,11 +162,38 @@ export function CheckoutForm({ settings, paymentMethods, currency, itemCount, it
           </Card.Content>
         </Card>
 
-        <Card variant="secondary" className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-sm"><Card.Content className="p-5"><div className="mb-4 flex items-center gap-2"><BadgePercent size={18} className="text-[var(--brand-primary)]" /><h2 className="m-0 text-base font-bold">کد تخفیف</h2></div><div className="relative w-full sm:w-[46%]"><TextField name="couponCode" aria-label="کد تخفیف" value={couponCode} onChange={(event) => { setCouponCode(event.target.value.toUpperCase()); setCouponMessage(""); setCouponError(""); }} dir="rtl" maxLength={promotionFieldLimits.code} reserveMessage={false} controlClassName="pl-24 text-right uppercase placeholder:text-right" placeholder="کد تخفیف را وارد کنید" />{couponHasResult ? <Button type="button" isIconOnly variant="ghost" isDisabled={checkingCoupon} aria-label="حذف کد تخفیف" onPress={clearCoupon} className="absolute left-2 top-1/2 z-10 size-8 min-h-8 min-w-8 -translate-y-1/2 bg-transparent text-[var(--muted)] hover:bg-transparent hover:text-[var(--danger)] data-[hovered=true]:bg-transparent"><X size={15} /></Button> : <Button type="button" variant="ghost" isPending={checkingCoupon} isDisabled={!couponCode.trim()} onPress={() => void refreshQuote()} className="absolute left-2 top-1/2 z-10 h-8 min-h-8 -translate-y-1/2 bg-transparent px-2 text-sm font-medium text-[var(--brand-primary)] hover:bg-transparent data-[disabled=true]:cursor-not-allowed data-[hovered=true]:bg-transparent">بررسی</Button>}</div>{couponMessage && <p className="mb-0 mt-3 flex items-center gap-2 text-xs font-bold text-[var(--success)]"><Check size={15} />{couponMessage}</p>}{couponError && <p className="mb-0 mt-3 text-xs font-bold text-[var(--danger)]">{couponError}</p>}</Card.Content></Card>
       </div>
 
       <aside className="grid min-w-0 gap-5 lg:sticky lg:top-24">
-        <Card variant="secondary" className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 shadow-sm"><div className="mb-4 flex items-center justify-between"><strong className="text-base font-bold">خلاصه سفارش</strong><span className="text-xs text-[var(--muted)]">{itemCount.toLocaleString("fa-IR")} کالا</span></div><dl className="m-0 grid gap-3 text-[13px]"><div className="flex justify-between gap-4 text-[var(--muted)]"><dt>قیمت کالاها</dt><dd>{formatMoney(quote.subtotal, currency)}</dd></div>{quote.productDiscount > 0 && <div className="flex justify-between gap-4 font-bold text-[var(--danger)]"><dt>تخفیف کالاها</dt><dd>{formatMoney(quote.productDiscount, currency)}</dd></div>}{quote.promotionDiscount > 0 && <div className="flex justify-between gap-4 font-bold text-[var(--success)]"><dt>کد تخفیف</dt><dd>{formatMoney(quote.promotionDiscount, currency)}</dd></div>}<div className="flex justify-between gap-4 text-[var(--muted)]"><dt>هزینه ارسال و بسته‌بندی</dt><dd>{quote.shipping === 0 ? "رایگان" : formatMoney(quote.shipping, currency)}</dd></div>{quote.shippingDiscount > 0 && <div className="flex justify-between gap-4 font-bold text-[var(--success)]"><dt>تخفیف ارسال</dt><dd>{formatMoney(quote.shippingDiscount, currency)}</dd></div>}{quote.walletApplied > 0 && <div className="flex justify-between gap-4 font-bold text-[var(--success)]"><dt>از کیف پول</dt><dd>− {formatMoney(quote.walletApplied, currency)}</dd></div>}<div className="flex justify-between gap-4 border-t border-[var(--border)] pt-4 text-base font-bold"><dt>{quote.walletApplied > 0 ? "مبلغ قابل پرداخت در درگاه" : "مبلغ قابل پرداخت"}</dt><dd>{formatMoney(quote.payable, currency)}</dd></div></dl>{quote.applications.length > 0 && <div className="mt-4 grid gap-2">{quote.applications.map((application) => <div key={`${application.title}-${application.code ?? "auto"}`} className="rounded-lg bg-[color-mix(in_srgb,var(--success)_12%,transparent)] px-3 py-2 text-xs text-[var(--success)]"><strong>{application.title}</strong>{application.code && <span className="mr-2" dir="ltr">{application.code}</span>}</div>)}</div>}{error && <InlineAlert status="danger" className="mt-4">{error}</InlineAlert>}{!settings.onlinePaymentEnabled && <InlineAlert status="warning" className="mt-4">پرداخت آنلاین موقتاً غیرفعال است.</InlineAlert>}<Button type="submit" fullWidth variant="primary" isPending={loading} isDisabled={!settings.onlinePaymentEnabled || !paymentProvider || checkingCoupon || !selectedAddress} className="mt-5 min-h-12 gap-2 rounded-lg bg-[var(--brand-primary)] px-5 font-bold text-[var(--brand-primary-foreground)]">{({ isPending }) => <>{isPending && <Spinner color="current" size="sm" />}{isPending ? "در حال ثبت سفارش..." : quote.payable <= 0 ? "ثبت و پرداخت با کیف پول" : "ثبت سفارش و پرداخت"}<ChevronLeft size={18} /></>}</Button></Card>
+        <Card variant="secondary" className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 shadow-sm"><div className="mb-4 flex items-center justify-between"><strong className="text-base font-bold">خلاصه سفارش</strong><span className="text-xs text-[var(--muted)]">{itemCount.toLocaleString("fa-IR")} کالا</span></div><dl className="m-0 grid gap-3 text-[13px]"><div className="flex justify-between gap-4 text-[var(--muted)]"><dt>قیمت کالاها</dt><dd>{formatMoney(quote.subtotal, currency)}</dd></div>{quote.productDiscount > 0 && <div className="flex items-center justify-between gap-4 rounded-lg px-3 py-2.5 font-bold text-[var(--success)]" style={{ backgroundColor: "color-mix(in srgb, var(--success) 12%, transparent)" }}><dt className="flex items-center gap-2"><PartyPopper size={16} />سود شما از خرید</dt><dd className="m-0 tabular-nums">{formatMoney(quote.productDiscount, currency)}</dd></div>}{quote.promotionDiscount > 0 && <div className="flex justify-between gap-4 font-bold text-[var(--success)]"><dt>کد تخفیف</dt><dd>{formatMoney(quote.promotionDiscount, currency)}</dd></div>}<div className="flex justify-between gap-4 text-[var(--muted)]"><dt>هزینه ارسال و بسته‌بندی</dt><dd>{quote.shipping === 0 ? "رایگان" : formatMoney(quote.shipping, currency)}</dd></div>{quote.shippingDiscount > 0 && <div className="flex justify-between gap-4 font-bold text-[var(--success)]"><dt>تخفیف ارسال</dt><dd>{formatMoney(quote.shippingDiscount, currency)}</dd></div>}{quote.walletApplied > 0 && <div className="flex justify-between gap-4 font-bold text-[var(--success)]"><dt>از کیف پول</dt><dd>− {formatMoney(quote.walletApplied, currency)}</dd></div>}<div className="flex justify-between gap-4 border-t border-[var(--border)] pt-4 text-base font-bold"><dt>{quote.walletApplied > 0 ? "مبلغ قابل پرداخت در درگاه" : "مبلغ قابل پرداخت"}</dt><dd>{formatMoney(quote.payable, currency)}</dd></div></dl>{quote.applications.length > 0 && <div className="mt-4 grid gap-2">{quote.applications.map((application) => <div key={`${application.title}-${application.code ?? "auto"}`} className="rounded-lg bg-[color-mix(in_srgb,var(--success)_12%,transparent)] px-3 py-2 text-xs text-[var(--success)]"><strong>{application.title}</strong>{application.code && <span className="mr-2" dir="ltr">{application.code}</span>}</div>)}</div>}{error && <InlineAlert status="danger" className="mt-4">{error}</InlineAlert>}{!settings.onlinePaymentEnabled && <InlineAlert status="warning" className="mt-4">پرداخت آنلاین موقتاً غیرفعال است.</InlineAlert>}<Button type="submit" fullWidth variant="primary" isPending={loading} isDisabled={!settings.onlinePaymentEnabled || !paymentProvider || checkingCoupon || !selectedAddress} className="mt-5 min-h-12 gap-2 rounded-lg bg-[var(--brand-primary)] px-5 font-bold text-[var(--brand-primary-foreground)]">{({ isPending }) => <>{isPending && <Spinner color="current" size="sm" />}{isPending ? "در حال ثبت سفارش..." : quote.payable <= 0 ? "ثبت و پرداخت با کیف پول" : "ثبت سفارش و پرداخت"}<ChevronLeft size={18} /></>}</Button></Card>
+
+        <Card variant="secondary" className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 shadow-sm">
+          <div className="flex items-start gap-3">
+            <span className="grid size-9 shrink-0 place-items-center rounded-full bg-[var(--brand-primary)]/10 text-[var(--brand-primary)]"><BadgePercent size={18} /></span>
+            <div className="min-w-0">
+              <h2 className="m-0 text-base font-bold">کد تخفیف</h2>
+              <p className="mb-0 mt-1 text-xs leading-5 text-[var(--muted)]">کد تخفیف یا هدیه دارید؟ اینجا وارد کنید تا از مبلغ سفارش کم شود.</p>
+            </div>
+          </div>
+          {couponApplied ? (
+            <div className="mt-4 flex items-center gap-3 rounded-xl border border-dashed border-[var(--success)] px-3 py-2.5" style={{ backgroundColor: "color-mix(in srgb, var(--success) 8%, transparent)" }}>
+              <span className="grid size-8 shrink-0 place-items-center rounded-full bg-[var(--success)] text-white"><Ticket size={16} /></span>
+              <div className="min-w-0 flex-1">
+                <strong dir="ltr" className="block truncate text-left font-mono text-sm tracking-wider text-[var(--success)]">{couponCode}</strong>
+                <span className="block text-xs font-bold text-[var(--success)]">{quote.promotionDiscount > 0 ? `${formatMoney(quote.promotionDiscount, currency)} تخفیف اعمال شد` : couponMessage}</span>
+              </div>
+              <Button type="button" isIconOnly variant="ghost" isDisabled={checkingCoupon} aria-label="حذف کد تخفیف" onPress={clearCoupon} className="size-8 min-h-8 min-w-8 shrink-0 text-[var(--muted)] hover:text-[var(--danger)]"><X size={16} /></Button>
+            </div>
+          ) : (
+            <div className="mt-4" onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); if (couponCode.trim() && !checkingCoupon) void refreshQuote(); } }}>
+              <div className="flex items-start gap-2">
+                <div className="min-w-0 flex-1"><TextField name="couponCode" aria-label="کد تخفیف" value={couponCode} onChange={(event) => { setCouponCode(event.target.value.toUpperCase()); setCouponMessage(""); setCouponError(""); }} dir="rtl" maxLength={promotionFieldLimits.code} reserveMessage={false} controlClassName="text-right uppercase placeholder:text-right" placeholder="کد تخفیف را وارد کنید" /></div>
+                <Button type="button" variant="secondary" isPending={checkingCoupon} isDisabled={!couponCode.trim()} onPress={() => void refreshQuote()} className="min-h-11 shrink-0 rounded-lg px-5 font-bold">اعمال</Button>
+              </div>
+              {couponError && <p className="mb-0 mt-3 flex items-start gap-2 text-xs font-bold leading-5 text-[var(--danger)]"><CircleAlert size={15} className="mt-0.5 shrink-0" />{couponError}</p>}
+            </div>
+          )}
+        </Card>
       </aside>
     </form>
   );
