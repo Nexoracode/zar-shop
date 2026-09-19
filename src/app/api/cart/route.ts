@@ -78,7 +78,10 @@ export async function PATCH(request: Request) {
     if (!item) return NextResponse.json({ message: "این قلم در سبد خرید پیدا نشد." }, { status: 404 });
     const limitMessage = quantityLimitMessage(input.quantity, item.product, orderSettings.maxOrderItemQuantity);
     if (limitMessage) return NextResponse.json({ message: limitMessage }, { status: 422 });
-    if (item.product.stock < input.quantity || !isVariantSnapshotValid(item.product.variants, item.selectionKey, input.quantity)) return NextResponse.json({ message: "موجودی کالا برای این تعداد کافی نیست." }, { status: 409 });
+    // Only asking for more needs stock. Lowering a quantity must always work: a line whose combination was
+    // removed or sold down after it was added would otherwise be stuck at its size, unable even to shrink.
+    const isIncrease = input.quantity > item.quantity;
+    if (isIncrease && (item.product.stock < input.quantity || !isVariantSnapshotValid(item.product.variants, item.selectionKey, input.quantity))) return NextResponse.json({ message: "موجودی کالا برای این تعداد کافی نیست." }, { status: 409 });
     await db.cartItem.update({ where: { id: item.id }, data: { quantity: input.quantity } });
     return NextResponse.json({ message: "تعداد کالا به‌روزرسانی شد.", itemCount: await getCartProductCount(user.id, settings.industry) });
   } catch (error) { return apiError(error); }
