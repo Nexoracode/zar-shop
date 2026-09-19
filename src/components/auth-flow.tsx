@@ -46,7 +46,9 @@ async function postJson(url: string, body: unknown) {
 
 // Everyone lands on their storefront profile. A staff account signed in here only gets a
 // customer-level session; the panel has its own sign-in at /admin/login.
-const POST_LOGIN_DESTINATION = "/account";
+function postLoginDestination() {
+  return "/account";
+}
 
 // SMS delivery failures (503, see OtpSendFailedError) are transient infrastructure noise, not
 // something wrong with what the user typed — a toast fits that better than pinning the message
@@ -145,7 +147,7 @@ export function AuthFlow() {
     // A full browser navigation (not router.push) so the freshly-set session cookie is always
     // picked up on the very next request — client-side transitions can otherwise reuse an
     // already-fetched (pre-login) router cache entry for the destination route.
-    window.location.assign(POST_LOGIN_DESTINATION);
+    window.location.assign(postLoginDestination());
   }
 
   async function requestLoginOtp() {
@@ -178,7 +180,7 @@ export function AuthFlow() {
     setLoading(false);
     if (!ok) { setFieldErrors({ code: result?.message ?? "کد وارد شده نادرست است." }); return; }
     toast.success("ورود موفق بود", { description: "با موفقیت وارد حساب کاربری شدید.", timeout: 4000 });
-    window.location.assign(POST_LOGIN_DESTINATION);
+    window.location.assign(postLoginDestination());
   }
 
   async function submitRegisterOtp(event: FormEvent<HTMLFormElement>) {
