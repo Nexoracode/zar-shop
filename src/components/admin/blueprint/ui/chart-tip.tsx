@@ -1,6 +1,6 @@
 "use client";
 
-import { useLayoutEffect, useRef, useState, type RefObject } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type RefObject } from "react";
 
 /**
  * One line of the card: a label (with a colour dot when `color` is given) and either a value, in
@@ -55,6 +55,14 @@ export function BpTipCardBody({ content }: { content: BpChartTipContent }) {
 export function BpChartTip({ content, anchor, containerRef }: { content: BpChartTipContent; anchor: BpChartTipAnchor; containerRef: RefObject<HTMLElement | null> }) {
   const cardRef = useRef<HTMLDivElement>(null);
   const [position, setPosition] = useState<{ left: number; top: number } | null>(null);
+  // Off for the first placement, on afterwards — see `.bp-chart-tip[data-glide]` in the CSS.
+  const [glide, setGlide] = useState(false);
+
+  useEffect(() => {
+    if (!position || glide) return;
+    const frame = window.requestAnimationFrame(() => setGlide(true));
+    return () => window.cancelAnimationFrame(frame);
+  }, [position, glide]);
 
   useLayoutEffect(() => {
     const card = cardRef.current;
@@ -81,7 +89,7 @@ export function BpChartTip({ content, anchor, containerRef }: { content: BpChart
   }, [anchor, content, containerRef]);
 
   return (
-    <div ref={cardRef} dir="rtl" className="bp-chart-tip" style={{ left: position?.left ?? 0, top: position?.top ?? 0, visibility: position ? undefined : "hidden" }}>
+    <div ref={cardRef} dir="rtl" className="bp-chart-tip" data-glide={glide} style={{ left: position?.left ?? 0, top: position?.top ?? 0, visibility: position ? undefined : "hidden" }}>
       <BpTipCardBody content={content} />
     </div>
   );

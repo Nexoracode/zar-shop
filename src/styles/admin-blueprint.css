@@ -335,9 +335,12 @@
   font-size: 12px;
   line-height: 1.8;
   pointer-events: none;
-  transition: left 0.14s ease, top 0.14s ease;
   animation: bp-chart-tip-in 0.16s cubic-bezier(0.34, 1.4, 0.64, 1);
 }
+/* Gliding from one mark to the next is switched on only once the card has been placed. A card is
+   first laid out at 0,0 and then moved to its spot; with a transition already on left/top, that
+   first move would visibly fly in from the corner of the screen. */
+.bp-chart-tip[data-glide="true"] { transition: left 0.14s ease, top 0.14s ease; }
 @keyframes bp-chart-tip-in { from { opacity: 0; transform: scale(0.92) translateY(4px); } }
 .bp-chart-tip-head, .bp-chart-tip-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
 .bp-chart-tip-muted { color: var(--bp-muted); }
