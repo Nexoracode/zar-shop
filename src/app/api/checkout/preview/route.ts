@@ -5,6 +5,7 @@ import { apiError } from "@/lib/http";
 import { getCurrentUser } from "@/modules/auth/session";
 import { getGoldPriceForDisplay } from "@/modules/gold/gold-price.service";
 import { lineUnitPrice } from "@/modules/products/line-pricing";
+import { isCartLineUnavailable } from "@/modules/cart/line-availability";
 import { baseShippingFee, defaultDeliveryMethod, getCommerceSettings, qualifiesForFreeShipping } from "@/modules/settings/commerce-settings";
 import { chargeableCartWeight, resolveShippingQuote } from "@/modules/shipping/quote";
 import { getGeneralStoreSettings, isStorefrontAvailable } from "@/modules/settings/general-settings";
@@ -34,10 +35,13 @@ export async function POST(request: Request) {
     if (!isStorefrontAvailable(generalSettings, user.role)) return NextResponse.json({ message: "فروشگاه در حال حاضر امکان بررسی سفارش را ندارد." }, { status: 503 });
     if (!cart?.items.length) return NextResponse.json({ message: "سبد خرید خالی است." }, { status: 409 });
     if (cart.items.some((item) => item.product.storeIndustry !== generalSettings.industry)) return NextResponse.json({ message: "بعضی کالاهای سبد با قالب فعلی فروشگاه سازگار نیستند." }, { status: 409 });
-    const needsGoldRate = cart.items.some((item) => item.product.storeIndustry === "GOLD" && item.product.fixedPrice === null);
+    // A line that can no longer be bought is left out of the quote, exactly as it is left out of the order.
+    const payableItems = cart.items.filter((item) => !isCartLineUnavailable(item.product, item.selectionKey));
+    if (!payableItems.length) return NextResponse.json({ message: "هیچ کالای قابل خریدی در سبد خرید نیست." }, { status: 409 });
+    const needsGoldRate = payableItems.some((item) => item.product.storeIndustry === "GOLD" && item.product.fixedPrice === null);
     const rate = gold?.pricePerGram18 ?? null;
     if (needsGoldRate && rate === null) return NextResponse.json({ message: "نرخ لحظه‌ای طلا موقتاً در دسترس نیست." }, { status: 503 });
-    const prices = cart.items.map((item) => {
+    const prices = payableItems.map((item) => {
       const product = item.product;
       const pricing = lineUnitPrice(product, item.selectionKey, rate);
       return { quantity: item.quantity, original: pricing?.originalPrice ?? 0, final: pricing?.finalPrice ?? 0, productId: product.id, categoryId: product.categoryId };
@@ -50,7 +54,7 @@ export async function POST(request: Request) {
     const chosen = defaultDeliveryMethod(commerceSettings) === "INSURED_SHIPPING" && address.provinceId && !qualifiesForFreeShipping(commerceSettings, merchandiseAmount)
       ? await resolveShippingQuote({
         lines: [],
-        weightGrams: chargeableCartWeight(cart.items.map((item) => ({
+        weightGrams: chargeableCartWeight(payableItems.map((item) => ({
           shippingWeightGrams: item.product.shippingWeightGrams,
           packageLengthCm: item.product.packageLengthCm === null ? null : Number(item.product.packageLengthCm),
           packageWidthCm: item.product.packageWidthCm === null ? null : Number(item.product.packageWidthCm),

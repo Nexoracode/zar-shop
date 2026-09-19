@@ -12,7 +12,8 @@ import type { CartLiveLine } from "@/components/cart-live";
 import type { Prisma } from "@generated/prisma/client";
 import { optionEntries } from "@/modules/products/options";
 import { lineUnitPrice } from "@/modules/products/line-pricing";
-import { findVariant, isVariantSnapshotValid, variantPricing } from "@/modules/products/variants";
+import { findVariant, variantPricing } from "@/modules/products/variants";
+import { isCartLineUnavailable } from "@/modules/cart/line-availability";
 import { getGeneralStoreSettings } from "@/modules/settings/general-settings";
 import { getCommerceSettings } from "@/modules/settings/commerce-settings";
 import { getOrderSettings } from "@/modules/settings/order-settings";
@@ -44,7 +45,7 @@ export default async function CartPage() {
     const pricing = lineUnitPrice(product, item.selectionKey, rate);
     const selectedWeight = variantPricing(item.selectionKey ? findVariant(product.variants, item.selectionKey) : null, product).weightGrams;
     // The combination this line was added with may have been removed or emptied since; it is kept so it can be removed, but never sold.
-    const unavailable = !isVariantSnapshotValid(product.variants, item.selectionKey, 1);
+    const unavailable = isCartLineUnavailable(product, item.selectionKey);
     return { item, selectedWeight, pricing, unavailable };
   });
   const priceUnavailable = pricedItems.some((line) => line.pricing === null);

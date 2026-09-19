@@ -1,3 +1,4 @@
+import { isCartLineUnavailable } from "@/modules/cart/line-availability";
 import { redirect } from "next/navigation";
 import { CreditCard, MapPin, ShoppingCart } from "lucide-react";
 import { CheckoutForm } from "@/components/checkout-form";
@@ -116,19 +117,22 @@ export default async function CheckoutPage() {
   if (!cart?.items.length) redirect("/cart");
   const items = cart.items.filter((item) => item.product.storeIndustry === settings.industry);
   if (!items.length) redirect("/cart");
-  const needsGoldRate = items.some((item) => item.product.storeIndustry === "GOLD" && item.product.fixedPrice === null);
+  // Lines that can no longer be bought are still listed (so nothing seems to vanish) but are never priced into the order.
+  const lines = items.map((item) => ({ item, unavailable: isCartLineUnavailable(item.product, item.selectionKey) }));
+  const payableItems = lines.filter((line) => !line.unavailable).map((line) => line.item);
+  if (!payableItems.length) redirect("/cart");
+  const needsGoldRate = payableItems.some((item) => item.product.storeIndustry === "GOLD" && item.product.fixedPrice === null);
   const rate = gold?.pricePerGram18 ?? null;
 
   if (needsGoldRate && rate === null) return <><StandaloneTopBar backHref="/cart" backLabel="بازگشت به سبد خرید" /><main className="min-h-[calc(100dvh-4rem)] bg-[var(--background)] px-4 py-12 sm:px-6"><div className="mx-auto max-w-3xl"><InlineAlert status="warning">نرخ لحظه‌ای طلا موقتاً در دسترس نیست. سفارش شما ثبت نشده و سبد خرید محفوظ است.</InlineAlert></div></main></>;
 
-  const prices = items.map((item) => {
-    const product = item.product;
-    const pricing = lineUnitPrice(product, item.selectionKey, rate);
-    return { quantity: item.quantity, original: pricing?.originalPrice ?? 0, final: pricing?.finalPrice ?? 0, productId: product.id, categoryId: product.categoryId };
-  });
-  const checkoutItems: CheckoutItem[] = items.map((item, index) => {
+  const linePrices = lines.map(({ item, unavailable }) => ({ item, unavailable, pricing: lineUnitPrice(item.product, item.selectionKey, rate) }));
+  const prices = linePrices.filter((line) => !line.unavailable).map(({ item, pricing }) => ({ quantity: item.quantity, original: pricing?.originalPrice ?? 0, final: pricing?.finalPrice ?? 0, productId: item.product.id, categoryId: item.product.categoryId }));
+  const checkoutItems: CheckoutItem[] = linePrices.map(({ item, unavailable, pricing }) => {
     const product = item.product;
     const cover = product.media[0]?.media;
+    const original = pricing?.originalPrice ?? 0;
+    const final = pricing?.finalPrice ?? 0;
     return {
       id: item.id,
       name: product.name,
@@ -137,8 +141,9 @@ export default async function CheckoutPage() {
       imageAlt: cover?.alt ?? product.name,
       quantity: item.quantity,
       optionSummary: optionEntries(item.selectedOptions).map(([name, value]) => `${name}: ${value}`),
-      unitPrice: prices[index].final,
-      originalUnitPrice: prices[index].original > prices[index].final ? prices[index].original : null,
+      unitPrice: final,
+      originalUnitPrice: original > final ? original : null,
+      unavailable,
     };
   });
   const subtotal = prices.reduce((sum, item) => sum + item.original * item.quantity, 0);
@@ -155,7 +160,7 @@ export default async function CheckoutPage() {
   const total = merchandiseAmount - promotions.promotionDiscount + shipping;
   const walletApplied = walletUsable ? Math.min(walletBalance, total) : 0;
   const initialQuote = { subtotal, productDiscount, merchandiseAmount, promotionDiscount: promotions.promotionDiscount, shipping, shippingDiscount: promotions.shippingDiscount, total, walletBalance, walletApplied, payable: total - walletApplied, applications: promotions.applications.map((item) => ({ title: item.title, code: item.code, discountAmount: item.discountAmount, shippingDiscount: item.shippingDiscount })) };
-  const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
+  const itemCount = payableItems.reduce((sum, item) => sum + item.quantity, 0);
 
   return (
     <>

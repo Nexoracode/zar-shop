@@ -1,4 +1,5 @@
 import { db } from "@/lib/db";
+import { isCartLineUnavailable } from "@/modules/cart/line-availability";
 import { lineUnitPrice } from "@/modules/products/line-pricing";
 import { getGoldPriceForDisplay } from "@/modules/gold/gold-price.service";
 import { getGeneralStoreSettings } from "@/modules/settings/general-settings";
@@ -10,12 +11,12 @@ export function countDistinctCartProducts(items: ReadonlyArray<{ productId: stri
 }
 
 export async function getCartProductCount(userId: string, storeIndustry: StoreIndustry) {
-  const products = await db.cartItem.findMany({
+  // The header badge counts what can be bought, so it agrees with the totals — a line whose combination is gone is not counted.
+  const items = await db.cartItem.findMany({
     where: { cart: { userId }, product: { storeIndustry } },
-    distinct: ["productId"],
-    select: { productId: true },
+    select: { productId: true, selectionKey: true, product: { select: { status: true, stock: true, variants: true } } },
   });
-  return products.length;
+  return countDistinctCartProducts(items.filter((item) => !isCartLineUnavailable(item.product, item.selectionKey)));
 }
 
 export async function getCartSummary(userId: string) {
@@ -32,7 +33,8 @@ export async function getCartSummary(userId: string) {
       },
     }),
   ]);
-  const cartItems = (cart?.items ?? []).filter((item) => item.product.storeIndustry === settings.industry);
+  // Lines that can no longer be bought are not part of what the customer would pay for.
+  const cartItems = (cart?.items ?? []).filter((item) => item.product.storeIndustry === settings.industry && !isCartLineUnavailable(item.product, item.selectionKey));
   const needsGoldRate = cartItems.some((item) => item.product.storeIndustry === "GOLD" && item.product.fixedPrice === null);
   const gold = needsGoldRate ? await getGoldPriceForDisplay() : null;
   const rate = gold?.pricePerGram18 ?? null;

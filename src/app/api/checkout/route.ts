@@ -7,6 +7,7 @@ import { getGoldPrice } from "@/modules/gold/gold-price.service";
 import { calculateProductPrice } from "@/modules/products/pricing";
 import { optionEntries } from "@/modules/products/options";
 import { findVariant, isVariantSnapshotValid, variantPricing } from "@/modules/products/variants";
+import { isCartLineUnavailable } from "@/modules/cart/line-availability";
 import { getStorefrontPaymentMethods, getStorefrontPaymentProvider, storefrontPaymentMethodSchema } from "@/modules/payments/storefront-methods";
 import { PaymentProviderError } from "@/modules/payments/payment-provider";
 import type { Prisma } from "@generated/prisma/client";
@@ -77,7 +78,10 @@ export async function POST(request: Request) {
     if (cart.items.some((item) => item.product.storeIndustry !== generalSettings.industry)) {
       return NextResponse.json({ message: "نوع بعضی محصولات سبد خرید با قالب فعلی فروشگاه سازگار نیست؛ لطفاً سبد خرید را بازبینی کنید." }, { status: 409 });
     }
-    const needsGoldRate = cart.items.some((item) => item.product.storeIndustry === "GOLD");
+    // A line that can no longer be bought is not an error: it is simply not part of the order (the cart shows it as unavailable).
+    const payableItems = cart.items.filter((item) => !isCartLineUnavailable(item.product, item.selectionKey));
+    if (!payableItems.length) return NextResponse.json({ message: "هیچ کالای قابل خریدی در سبد خرید نیست." }, { status: 409 });
+    const needsGoldRate = payableItems.some((item) => item.product.storeIndustry === "GOLD");
     let rate = "0";
     if (needsGoldRate) {
       try {
@@ -91,7 +95,7 @@ export async function POST(request: Request) {
         );
       }
     }
-    const lines: CheckoutLine[] = cart.items.map((item: ItemWithProduct) => {
+    const lines: CheckoutLine[] = payableItems.map((item: ItemWithProduct) => {
       const p = item.product;
       if (item.quantity > orderSettings.maxOrderItemQuantity) throw new Error(`حداکثر تعداد مجاز برای هر قلم ${orderSettings.maxOrderItemQuantity.toLocaleString("fa-IR")} عدد است.`);
       if (p.status !== "ACTIVE" || p.stock < item.quantity) throw new Error(`موجودی ${p.name} کافی نیست.`);
