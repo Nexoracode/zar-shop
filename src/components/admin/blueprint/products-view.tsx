@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { ImageOff, Layers, Plus, SquarePen, Star, Tag, X } from "lucide-react";
+import { ImageOff, Plus, SquarePen, X } from "lucide-react";
 import { AdminEmptyState, AdminPageHeader, AdminPrimaryLink } from "@/components/admin-ui";
 import { productStatusLabels, productStatusTones } from "@/modules/admin/labels";
 import { AdminListFilters } from "@/components/admin-list-filters";
@@ -8,12 +8,11 @@ import { AdminColumnFilter } from "@/components/admin-column-filter";
 import { AdminPagination } from "@/components/admin-pagination";
 import { AdminBulkCheckbox, AdminBulkEditor, AdminBulkTr } from "@/components/admin-bulk-editor";
 import { AdminColumn, AdminColumnSettingsButton, AdminColumnVisibility } from "@/components/admin-column-visibility";
-import { isProductDiscountActive } from "@/modules/products/discount";
 import { DiscountExpiryRefresh } from "@/components/discount-expiry-refresh";
-import { formatDateTime } from "@/lib/format";
 import type { AdminProductsListData, ProductRow } from "@/components/admin/products-list-data";
 import { ProductBulkEditButton } from "@/components/product-bulk-edit-modal";
 import { ProductDeleteButton } from "./product-delete-button";
+import { ProductFlags } from "./product-flags";
 import { ProductRowMenu } from "./product-row-menu";
 import { ProductStatusMenu } from "./product-publish-toggle";
 import { BpLinkButton } from "./ui/button";
@@ -48,22 +47,6 @@ function RowActions({ product }: { product: ProductRow }) {
   );
 }
 
-/** A plain multi-line `title`: the panel's tooltip layer lays it out as a heading with label/value rows. */
-function discountTooltip(product: ProductRow) {
-  if (!product.discountStartsAt || !product.discountEndsAt) return "تخفیف فعال";
-  return `تخفیف فعال
-از ${formatDateTime(product.discountStartsAt)}
-تا ${formatDateTime(product.discountEndsAt)}`;
-}
-
-/** One line per type, its own values after a colon — the same multi-line `title` shape as `discountTooltip`. */
-function variantTooltip(product: ProductRow) {
-  if (!product.optionTypes.length) return `${product._count.variants.toLocaleString("fa-IR")} ترکیب تنوع`;
-  return product.optionTypes
-    .map((optionType) => `${optionType.type.name}: ${optionType.values.map((item) => item.value.label).join("، ")}`)
-    .join("\n");
-}
-
 /** Sets the picture apart from the words, so the two do not read as one run of content. */
 function ThumbRule() {
   return <span aria-hidden className="h-7 w-px shrink-0 self-center bg-[var(--bp-divider)]" />;
@@ -77,14 +60,12 @@ function ProductThumb({ product }: { product: ProductRow }) {
   return <span className="bp-thumb bp-thumb-empty"><ImageOff size={15} strokeWidth={1.6} /></span>;
 }
 
-/** Name cell: the product name with bare inline glyphs for its flags. */
+/** Name cell: the product name, with its flags (featured, discount, variants) as small tags underneath. */
 function ProductName({ product }: { product: ProductRow }) {
   return (
-    <div className="flex min-w-0 items-baseline gap-[7px]">
-      <span className="truncate" title={product.name}>{product.name}</span>
-      {product.featured && <Star size={14} strokeWidth={2} className="shrink-0 translate-y-0.5 fill-[var(--bp-accent)] text-[var(--bp-accent)]" aria-label="محصول ویژه" />}
-      {isProductDiscountActive(product) && <span title={discountTooltip(product)} className="shrink-0 translate-y-0.5 cursor-help leading-none text-[var(--bp-danger)]"><Tag size={14} strokeWidth={1.9} aria-label={discountTooltip(product)} /></span>}
-      {product._count.variants > 0 && <span title={variantTooltip(product)} className="shrink-0 translate-y-0.5 cursor-help leading-none text-[var(--bp-accent)]"><Layers size={14} strokeWidth={1.9} aria-label={variantTooltip(product)} /></span>}
+    <div className="min-w-0">
+      <span className="block truncate" title={product.name}>{product.name}</span>
+      <ProductFlags product={product} />
     </div>
   );
 }
@@ -107,8 +88,9 @@ export function BlueprintProductsView({ products, categories, filters, paginatio
   const categoryFilter = { name: "category", label: "دسته‌بندی", value: filters.category, options: [{ value: "", label: "همه دسته‌ها" }, ...categories.map((category) => ({ value: category.id, label: category.name }))] };
   const stockFilter = { name: "stock", label: "وضعیت موجودی", value: filters.stock, options: [{ value: "", label: "همه موجودی‌ها" }, { value: "in", label: "موجود" }, { value: "low", label: "کم‌موجود" }, { value: "out", label: "ناموجود" }] };
   const statusFilter = { name: "status", label: "وضعیت محصول", value: filters.status, options: [{ value: "", label: "همه وضعیت‌ها" }, ...Object.entries(productStatusLabels).map(([value, label]) => ({ value, label }))] };
-  // "ویژه" (featured) and "تخفیف" (discount) show up as icons inside the "محصول" cell itself
-  // (see ProductName), so its funnel covers both rather than inventing columns neither flag has.
+  // "ویژه" (featured) and "تخفیف" (discount) show up as small tags under the name in the "محصول"
+  // cell itself (see ProductFlags), so its funnel covers both rather than inventing columns
+  // neither flag has.
   const productFilters = [
     { name: "featured", label: "نمایش ویژه", value: filters.featured, options: [{ value: "", label: "همه محصولات" }, { value: "yes", label: "محصولات ویژه" }, { value: "no", label: "محصولات عادی" }] },
     { name: "discount", label: "وضعیت تخفیف", value: filters.discount, options: [{ value: "", label: "همه تخفیف‌ها" }, { value: "active", label: "دارای تخفیف فعال" }, { value: "upcoming", label: "تخفیف آینده" }, { value: "none", label: "بدون تخفیف" }] },

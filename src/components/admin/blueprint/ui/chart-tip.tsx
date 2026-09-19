@@ -2,7 +2,12 @@
 
 import { useLayoutEffect, useRef, useState, type RefObject } from "react";
 
-export type BpChartTipRow = { label: string; value: string; color: string };
+/**
+ * One line of the card: a label (with a colour dot when `color` is given) and either a value, in
+ * that colour, or a run of `swatches` — the named colours of an option, each with its own dot.
+ * A swatch without `color` is listed as plain text.
+ */
+export type BpChartTipRow = { label: string; value?: string; color?: string; swatches?: Array<{ label: string; color?: string }> };
 export type BpChartTipContent = { headingLabel: string; heading: string; rows: BpChartTipRow[] };
 /** The hovered mark's box in viewport pixels — what `getBoundingClientRect()` gives. */
 export type BpChartTipAnchor = { left: number; right: number; top: number; bottom: number };
@@ -11,6 +16,31 @@ const GAP = 10;
 const MARGIN = 6;
 
 const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), Math.max(min, max));
+
+/** The card's contents — heading, a rule, then the rows. Shared by the chart card and the hover card of table flags. */
+export function BpTipCardBody({ content }: { content: BpChartTipContent }) {
+  return (
+    <>
+      <div className="bp-chart-tip-head"><span className="bp-chart-tip-muted">{content.headingLabel}:</span><strong>{content.heading}</strong></div>
+      <div className="bp-chart-tip-rule" aria-hidden />
+      {content.rows.map((row) => (
+        <div key={row.label} className="bp-chart-tip-row" data-stack={row.swatches ? "true" : undefined}>
+          <span className="bp-chart-tip-key">{row.color && <i aria-hidden className="bp-chart-tip-dot" style={{ background: row.color }} />}{row.label}:</span>
+          {row.swatches ? (
+            <span className="bp-chart-tip-swatches">
+              {row.swatches.map((swatch) => (
+                <span key={swatch.label} className="bp-chart-tip-swatch">
+                  {swatch.color && <i aria-hidden style={{ background: swatch.color }} />}
+                  {swatch.label}
+                </span>
+              ))}
+            </span>
+          ) : <strong style={row.color ? { color: row.color } : undefined}>{row.value}</strong>}
+        </div>
+      ))}
+    </>
+  );
+}
 
 /**
  * The card every Blueprint chart opens on hover: a heading naming the mark ("تاریخ: ۲۱ شهریور"),
@@ -52,14 +82,7 @@ export function BpChartTip({ content, anchor, containerRef }: { content: BpChart
 
   return (
     <div ref={cardRef} dir="rtl" className="bp-chart-tip" style={{ left: position?.left ?? 0, top: position?.top ?? 0, visibility: position ? undefined : "hidden" }}>
-      <div className="bp-chart-tip-head"><span className="bp-chart-tip-muted">{content.headingLabel}:</span><strong>{content.heading}</strong></div>
-      <div className="bp-chart-tip-rule" aria-hidden />
-      {content.rows.map((row) => (
-        <div key={row.label} className="bp-chart-tip-row">
-          <span className="bp-chart-tip-key"><i aria-hidden className="bp-chart-tip-dot" style={{ background: row.color }} />{row.label}:</span>
-          <strong style={{ color: row.color }}>{row.value}</strong>
-        </div>
-      ))}
+      <BpTipCardBody content={content} />
     </div>
   );
 }
