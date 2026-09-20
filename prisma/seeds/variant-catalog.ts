@@ -1,4 +1,4 @@
-import type { PrismaClient } from "../../generated/prisma/client";
+import type { Prisma } from "../../generated/prisma/client";
 import { syncProductMirror } from "../../src/modules/products/variant-write";
 import { buildCombinations, type VariantSelection } from "../../src/modules/products/variant-combinations";
 import { variantSelectionKey } from "../../src/modules/products/variants";
@@ -34,7 +34,7 @@ function discountFor(spec: DevelopmentVariantProductSeed, selection: VariantSele
  * from the product's and the combination's position, so a reseed always gives the same catalogue.
  */
 export async function createVariantCatalog(
-  db: PrismaClient,
+  db: Prisma.TransactionClient,
   seed: DevelopmentStoreSeed,
   context: { categoryIds: Map<string, string>; brandIds: Map<string, string>; resolveMediaId: (key: string | undefined) => string | null; now: Date },
 ) {

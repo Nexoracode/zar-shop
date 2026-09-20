@@ -19,6 +19,7 @@
     "db:seed:general": "tsx prisma/seed.ts general",
     "db:seed:general:keep-gallery": "tsx prisma/seed.ts general --keep-gallery",
     "db:seed:demo": "tsx prisma/seed.ts demo",
+    "db:seed:vercel": "tsx prisma/seed-vercel.ts",
     "db:sync-locations": "tsx prisma/sync-locations.ts"
   },
   "dependencies": {

@@ -196,9 +196,12 @@ async function seedOrders(db: PrismaClient, now: Date, random: () => number) {
  * Optional development-only data for demoing the admin dashboard on an otherwise empty store:
  * a month of storefront traffic, online visitors, and ~two months of orders with payments.
  * It adds to the current database instead of resetting it, and replaces only its own earlier rows.
+ *
+ * It refuses anything but a local development database unless `allowRemote` is set, which only the
+ * hosted-demo build (prisma/seed-vercel.ts) does, and only when its deployment asks for it.
  */
-export async function seedDemoAnalytics() {
-  assertDevelopmentDatabase();
+export async function seedDemoAnalytics(options: { allowRemote?: boolean } = {}) {
+  if (!options.allowRemote) assertDevelopmentDatabase();
   const db = createClient();
   const now = new Date();
   const random = mulberry32(20260919);

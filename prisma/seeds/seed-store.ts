@@ -1,6 +1,6 @@
 import { hash } from "bcryptjs";
 import { PrismaMariaDb } from "@prisma/adapter-mariadb";
-import { PrismaClient } from "../../generated/prisma/client";
+import { PrismaClient, type Prisma } from "../../generated/prisma/client";
 import type { StoreIndustry } from "../../generated/prisma/enums";
 import { generalStoreSeed } from "./general.seed";
 import { goldStoreSeed } from "./gold.seed";
@@ -127,20 +127,24 @@ function generalHomepageSettings(menuItems: Array<{ id: string; label: string; h
   };
 }
 
-async function createStore(db: PrismaClient, seed: DevelopmentStoreSeed) {
+// Takes a transaction client too, so a sample store added to a live database lands whole or not at all.
+async function createStore(db: Prisma.TransactionClient, seed: DevelopmentStoreSeed) {
   const adminEmail = process.env.ADMIN_EMAIL ?? "admin@example.com";
   const adminPhone = process.env.ADMIN_PHONE ?? "09120000000";
-  await db.user.create({
-    data: {
-      email: adminEmail,
-      phone: adminPhone,
-      firstName: "مدیر",
-      lastName: "فروشگاه",
-      role: "ADMIN",
-      status: "ACTIVE",
-      passwordHash: await hash(process.env.ADMIN_PASSWORD ?? "ChangeMe123!", 12),
-    },
-  });
+  // A database that already has its admin (the production build creates one first) keeps it.
+  if (!(await db.user.findFirst({ where: { role: "ADMIN" }, select: { id: true } }))) {
+    await db.user.create({
+      data: {
+        email: adminEmail,
+        phone: adminPhone,
+        firstName: "مدیر",
+        lastName: "فروشگاه",
+        role: "ADMIN",
+        status: "ACTIVE",
+        passwordHash: await hash(process.env.ADMIN_PASSWORD ?? "ChangeMe123!", 12),
+      },
+    });
+  }
 
   // Media rows are created first so category/product/homepage slots below can reference the
   // real ids that only exist once these rows are actually inserted.
@@ -248,36 +252,35 @@ async function createStore(db: PrismaClient, seed: DevelopmentStoreSeed) {
 
   const brandLogoId = resolveMediaId(seed.brandLogoKey);
   const resolvedHomepageMedia = resolveHomepageMedia(seed.homepage, resolveMediaId);
-  await db.storeSetting.create({
-    data: {
-      id: "main",
-      industry: seed.industry,
-      storeName: seed.storeName,
-      tagline: seed.tagline,
-      shortDescription: seed.shortDescription,
-      menuCategoryIds: rootMenuItems,
-      homepageSections: homepageSections(),
-      homepageTreasureCards: emptyTreasureCards(),
-      homepageLicenses: emptyLicenses(),
-      homepageHeroSlides: [],
-      generalHomepageSettings: seed.industry === "GENERAL" ? generalHomepageSettings(rootMenuItems, resolvedHomepageMedia) : undefined,
-      heroContentMode: "WITH_CONTENT",
-      heroTitle: seed.industry === "GOLD" ? "درخشش ماندگار، انتخابی مطمئن" : "خرید ساده، انتخاب مطمئن",
-      heroDescription: seed.industry === "GOLD" ? "جدیدترین زیورآلات طلا با قیمت لحظه‌ای و تضمین اصالت" : "محصولات کاربردی با قیمت شفاف و موجودی به‌روز",
-      heroButtonLabel: "مشاهده محصولات",
-      heroButtonHref: "/products",
-      brandPrimaryColor: seed.industry === "GOLD" ? "#1C3155" : "#2563EB",
-      brandAccentColor: seed.industry === "GOLD" ? "#B5904C" : "#0F766E",
-      brandBackgroundColor: seed.industry === "GOLD" ? "#F7F6F3" : "#F6F7F9",
-      brandDangerColor: "#B8423A",
-      liveGoldPrice: seed.industry === "GOLD",
-      orderNumberPrefix: seed.industry === "GOLD" ? "ZG" : "GS",
-      mainLogoMediaId: brandLogoId,
-      darkLogoMediaId: brandLogoId,
-      faviconMediaId: brandLogoId,
-      socialImageMediaId: brandLogoId,
-    },
-  });
+  const settingFields: Omit<Prisma.StoreSettingUncheckedCreateInput, "id"> = {
+    industry: seed.industry,
+    storeName: seed.storeName,
+    tagline: seed.tagline,
+    shortDescription: seed.shortDescription,
+    menuCategoryIds: rootMenuItems,
+    homepageSections: homepageSections(),
+    homepageTreasureCards: emptyTreasureCards(),
+    homepageLicenses: emptyLicenses(),
+    homepageHeroSlides: [],
+    generalHomepageSettings: seed.industry === "GENERAL" ? generalHomepageSettings(rootMenuItems, resolvedHomepageMedia) : undefined,
+    heroContentMode: "WITH_CONTENT",
+    heroTitle: seed.industry === "GOLD" ? "درخشش ماندگار، انتخابی مطمئن" : "خرید ساده، انتخاب مطمئن",
+    heroDescription: seed.industry === "GOLD" ? "جدیدترین زیورآلات طلا با قیمت لحظه‌ای و تضمین اصالت" : "محصولات کاربردی با قیمت شفاف و موجودی به‌روز",
+    heroButtonLabel: "مشاهده محصولات",
+    heroButtonHref: "/products",
+    brandPrimaryColor: seed.industry === "GOLD" ? "#1C3155" : "#2563EB",
+    brandAccentColor: seed.industry === "GOLD" ? "#B5904C" : "#0F766E",
+    brandBackgroundColor: seed.industry === "GOLD" ? "#F7F6F3" : "#F6F7F9",
+    brandDangerColor: "#B8423A",
+    liveGoldPrice: seed.industry === "GOLD",
+    orderNumberPrefix: seed.industry === "GOLD" ? "ZG" : "GS",
+    mainLogoMediaId: brandLogoId,
+    darkLogoMediaId: brandLogoId,
+    faviconMediaId: brandLogoId,
+    socialImageMediaId: brandLogoId,
+  };
+  // Upserted so a settings row that already exists (the wizard may have made one) is filled in.
+  await db.storeSetting.upsert({ where: { id: "main" }, create: { id: "main", ...settingFields }, update: settingFields });
 
   if (seed.industry === "GOLD") {
     await db.goldPrice.create({ data: { pricePerGram18: "48500000", source: "development-seed", fetchedAt: new Date() } });
@@ -350,6 +353,28 @@ export async function seedDevelopmentStore(industry: StoreIndustry, options: { k
       throw new Error("Development seed verification failed.");
     }
     console.info(`[seed] ${industry}${keepGallery ? " (gallery preserved)" : ""}: ${categoryCount} categories, ${brandCount} brands and ${productCount} products created${variantCatalog.products ? ` (${variantCatalog.products} sold by combination: ${variantCatalog.variants} combinations, ${variantCatalog.colors} colours, ${variantCatalog.optionTypes} option types)` : ""}.`);
+  } finally {
+    await db.$disconnect();
+  }
+}
+
+/**
+ * Adds the sample store to a hosted demo database (see prisma/seed-vercel.ts) — and does nothing at
+ * all when the database already has a catalogue, so a redeploy never touches what is there. Unlike
+ * `seedDevelopmentStore` it wipes nothing and is not tied to a local host; the caller is what makes
+ * it safe, by running it only when the deployment explicitly asks for demo data.
+ *
+ * The store is written in one transaction: a build that fails halfway leaves the database empty, so
+ * the next build tries again instead of finding a half-made catalogue and skipping it for good.
+ */
+export async function seedSampleStoreIfEmpty(industry: StoreIndustry) {
+  const db = createClient();
+  const seed = industry === "GOLD" ? goldStoreSeed : generalStoreSeed;
+  try {
+    const counts = await Promise.all([db.product.count(), db.category.count(), db.brand.count(), db.color.count(), db.optionType.count(), db.article.count()]);
+    if (counts.some((count) => count > 0)) return { seeded: false as const };
+    const variantCatalog = await db.$transaction((tx) => createStore(tx, seed), { timeout: 120_000, maxWait: 30_000 });
+    return { seeded: true as const, products: seed.products.length + variantCatalog.products, variantCatalog };
   } finally {
     await db.$disconnect();
   }
