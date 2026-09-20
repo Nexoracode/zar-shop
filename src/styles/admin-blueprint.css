@@ -842,10 +842,8 @@ select.bp-input { appearance: none; padding-inline-end: 28px; }
 .bp-dialog-body { font-size: 14px; opacity: 0.85; margin: 0; }
 .bp-dialog-actions { display: flex; justify-content: flex-end; gap: var(--bp-space-2); margin-top: var(--bp-space-2); }
 
-/* — combinations modal — the heading, the tab strip and the table each sit in their own band,
-     divided by a hairline, instead of running together down the panel — */
+/* — combinations modal — a hairline sets the heading apart; the tab strip stays with the table it switches — */
 .bp-dialog-split .bp-dialog-body { padding-bottom: var(--bp-space-3); border-bottom: 1px solid var(--bp-divider); }
-.bp-split-tabs { padding-bottom: var(--bp-space-3); margin-bottom: var(--bp-space-3); border-bottom: 1px solid var(--bp-divider); }
 
 /* — delete confirmation — a centred card with its own look; the shared dialog above is untouched.
    The medallion's two soft rings echo the accent rail the tooltips use, in the danger colour. — */
