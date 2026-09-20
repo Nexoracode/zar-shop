@@ -85,7 +85,7 @@ export default async function PaymentDetailPage({ params }: Context) {
           <section className="bp-frame relative overflow-hidden">
             <div className="flex items-center gap-2 border-b border-[var(--bp-divider)] px-[18px] py-4">
               <ListChecks size={16} className="text-[var(--bp-accent)]" />
-              <h2 className="m-0 text-[13px] font-bold">اقلام سفارش</h2>
+              <div role="heading" aria-level={2} className="text-[13px] font-bold">اقلام سفارش</div>
               <span className="bp-muted text-[11px]">{order.items.length.toLocaleString("fa-IR")} قلم</span>
             </div>
             {order.items.length ? (
@@ -119,7 +119,7 @@ export default async function PaymentDetailPage({ params }: Context) {
           </section>
 
           <section className="bp-frame relative p-[18px]">
-            <div className="mb-3 flex items-center gap-2"><FileText size={16} className="text-[var(--bp-accent)]" /><h2 className="m-0 text-[13px] font-bold">داده خام درگاه</h2></div>
+            <div className="mb-3 flex items-center gap-2"><FileText size={16} className="text-[var(--bp-accent)]" /><div role="heading" aria-level={2} className="text-[13px] font-bold">داده خام درگاه</div></div>
             {providerData != null ? (
               <pre dir="ltr" className="m-0 max-h-96 overflow-auto whitespace-pre-wrap break-words border border-[var(--bp-divider)] bg-[var(--bp-bg)] p-3 text-left font-mono text-[11px] leading-6">
                 {JSON.stringify(providerData, null, 2)}
@@ -132,7 +132,7 @@ export default async function PaymentDetailPage({ params }: Context) {
 
         <aside className="grid content-start gap-4">
           <section className="bp-frame relative p-[18px]">
-            <div className="mb-3 flex items-center gap-2"><ShoppingBag size={16} className="text-[var(--bp-accent)]" /><h2 className="m-0 text-[13px] font-bold">سفارش مرتبط</h2></div>
+            <div className="mb-3 flex items-center gap-2"><ShoppingBag size={16} className="text-[var(--bp-accent)]" /><div role="heading" aria-level={2} className="text-[13px] font-bold">سفارش مرتبط</div></div>
             <dl className="grid gap-3">
               <div className="min-w-0">
                 <span className="bp-muted block text-[11px] font-bold">شماره سفارش</span>
@@ -152,7 +152,7 @@ export default async function PaymentDetailPage({ params }: Context) {
           </section>
 
           <section className="bp-frame relative p-[18px]">
-            <div className="mb-3 flex items-center gap-2"><UserRound size={16} className="text-[var(--bp-accent)]" /><h2 className="m-0 text-[13px] font-bold">مشتری</h2></div>
+            <div className="mb-3 flex items-center gap-2"><UserRound size={16} className="text-[var(--bp-accent)]" /><div role="heading" aria-level={2} className="text-[13px] font-bold">مشتری</div></div>
             <dl className="grid gap-3">
               <DetailItem label="نام" value={customerName} />
               <DetailItem label="شماره همراه" value={order.user.phone ?? "ثبت نشده"} ltr />
@@ -162,7 +162,7 @@ export default async function PaymentDetailPage({ params }: Context) {
           </section>
 
           <section className="bp-frame relative p-[18px]">
-            <div className="mb-3 flex items-center gap-2"><Clock3 size={16} className="text-[var(--bp-accent)]" /><h2 className="m-0 text-[13px] font-bold">زمان‌ها</h2></div>
+            <div className="mb-3 flex items-center gap-2"><Clock3 size={16} className="text-[var(--bp-accent)]" /><div role="heading" aria-level={2} className="text-[13px] font-bold">زمان‌ها</div></div>
             <dl className="grid gap-3">
               <DetailItem label="ایجاد تراکنش" value={formatDateTime(payment.createdAt)} />
               <DetailItem label="آخرین به‌روزرسانی" value={formatDateTime(payment.updatedAt)} />
@@ -172,7 +172,7 @@ export default async function PaymentDetailPage({ params }: Context) {
 
           {order.invoice && (
             <section className="bp-frame relative p-[18px]">
-              <div className="mb-3 flex items-center gap-2"><Wallet size={16} className="text-[var(--bp-accent)]" /><h2 className="m-0 text-[13px] font-bold">فاکتور</h2></div>
+              <div className="mb-3 flex items-center gap-2"><Wallet size={16} className="text-[var(--bp-accent)]" /><div role="heading" aria-level={2} className="text-[13px] font-bold">فاکتور</div></div>
               <dl className="grid gap-3">
                 <DetailItem label="شماره فاکتور" value={order.invoice.invoiceNumber} ltr />
                 <DetailItem label="وضعیت فاکتور" value={order.invoice.status === "ISSUED" ? "صادرشده" : "باطل‌شده"} />
@@ -183,7 +183,7 @@ export default async function PaymentDetailPage({ params }: Context) {
 
           {siblingPayments.length > 0 && (
             <section className="bp-frame relative p-[18px]">
-              <div className="mb-3 flex items-center gap-2"><CreditCard size={16} className="text-[var(--bp-accent)]" /><h2 className="m-0 text-[13px] font-bold">سایر تراکنش‌های این سفارش</h2></div>
+              <div className="mb-3 flex items-center gap-2"><CreditCard size={16} className="text-[var(--bp-accent)]" /><div role="heading" aria-level={2} className="text-[13px] font-bold">سایر تراکنش‌های این سفارش</div></div>
               <ul className="m-0 grid list-none gap-2 p-0">
                 {siblingPayments.map((row) => (
                   <li key={row.id}>

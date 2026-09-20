@@ -32,7 +32,7 @@ function Panel({ title, description, children }: { title: string; description?: 
   return (
     <section className="bp-frame relative">
       <div className="border-b border-[var(--bp-divider)] px-4 py-3">
-        <h2 className="m-0 text-[14px] font-bold">{title}</h2>
+        <div role="heading" aria-level={2} className="text-[14px] font-bold">{title}</div>
         {description && <p className="bp-muted m-0 mt-1 text-[12px] leading-5">{description}</p>}
       </div>
       <div className="p-4">{children}</div>

@@ -135,7 +135,7 @@ export function SetupWizard({ state, storeName, basics, contact, brand, origin, 
         {/* Says up front what this is, how long it is, and that nothing is lost by stopping halfway. */}
         <section className="bp-frame flex flex-wrap items-center gap-x-6 gap-y-3 p-5">
           <div className="min-w-0 flex-1 basis-[280px]">
-            <h1 className="m-0 text-[18px] font-bold">فروشگاه‌تان را برای فروش آماده کنید</h1>
+            <div role="heading" aria-level={1} className="text-[18px] font-bold">فروشگاه‌تان را برای فروش آماده کنید</div>
             <p className="bp-muted m-0 mt-1.5 text-[12.5px] leading-7">
               فقط {total.toLocaleString("fa-IR")} گام کوتاه مانده. روی هر صفحه فقط یک کار دارید و دکمهٔ پایین صفحه آن را ذخیره می‌کند و شما را به گام بعد می‌برد؛ هر وقت خواستید می‌توانید برگردید.
               تا پایان همهٔ گام‌ها، فروشگاه برای مشتری‌ها بسته می‌ماند.
@@ -193,7 +193,7 @@ export function SetupWizard({ state, storeName, basics, contact, brand, origin, 
           <div className="bp-frame relative min-w-0">
             <header className="p-5">
               <span className="bp-muted text-[11px] font-bold">گام {(currentIndex + 1).toLocaleString("fa-IR")} از {STEP_ORDER.length.toLocaleString("fa-IR")}</span>
-              <h2 className="m-0 mt-1 text-[17px] font-bold">{meta.label}</h2>
+              <div role="heading" aria-level={2} className="mt-1 text-[17px] font-bold">{meta.label}</div>
               <p className="bp-muted m-0 mt-1.5 text-[12.5px] leading-7">{meta.intro}</p>
             </header>
 

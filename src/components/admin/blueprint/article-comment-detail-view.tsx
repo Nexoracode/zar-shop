@@ -29,7 +29,7 @@ function SectionHeader({ icon, title, description, count }: { icon: ReactNode; t
     <div className="flex items-start gap-3 border-b border-[var(--bp-divider)] p-[18px]">
       <span className="grid size-9 shrink-0 place-items-center border border-[var(--bp-divider)] text-[var(--bp-accent)]">{icon}</span>
       <div className="min-w-0 flex-1">
-        <h2 className="m-0 text-[13px] font-bold">{title}</h2>
+        <div role="heading" aria-level={2} className="text-[13px] font-bold">{title}</div>
         {description && <p className="bp-muted m-0 mt-1 text-[12px] leading-5">{description}</p>}
       </div>
       {typeof count === "number" && <BpTag>{count.toLocaleString("fa-IR")}</BpTag>}

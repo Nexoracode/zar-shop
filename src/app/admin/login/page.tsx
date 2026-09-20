@@ -32,7 +32,7 @@ export default async function AdminLoginPage() {
               <span className="grid size-9 shrink-0 place-items-center rounded-xl border border-[var(--bp-accent)] bg-[var(--bp-accent-100)] text-[var(--bp-accent)]"><ShieldCheck size={18} /></span>
               <strong className="text-[15px] font-bold">{general.storeName}</strong>
             </div>
-            <h1 className="m-0 text-[22px] font-bold">ورود به پنل مدیریت</h1>
+            <div role="heading" aria-level={1} className="text-[22px] font-bold">ورود به پنل مدیریت</div>
             <p className="bp-muted m-0 mt-2 text-[13px] leading-6">با شماره موبایل و رمز عبور کارکنان وارد شوید.</p>
             <div className="mt-8"><AdminLoginForm /></div>
           </div>

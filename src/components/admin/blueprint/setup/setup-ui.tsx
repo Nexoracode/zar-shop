@@ -21,7 +21,7 @@ export function SetupSection({ title, description, status, optional = false, chi
     <section className="grid gap-3 border-t border-[var(--bp-divider)] p-5">
       <header className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <h3 className="m-0 text-[14px] font-bold">{title}</h3>
+          <div role="heading" aria-level={3} className="text-[14px] font-bold">{title}</div>
           {description && <p className="bp-muted m-0 mt-1 text-[12px] leading-6">{description}</p>}
         </div>
         {status && <BpTag tone={status === "done" ? "success" : "warning"} withDot>{status === "done" ? "کامل" : "لازم است"}</BpTag>}

@@ -65,7 +65,7 @@ export default async function AdminReturnDetailPage({ params }: Context) {
         <div className="grid content-start gap-4">
           <div className="grid gap-4 sm:grid-cols-2">
             <section className="bp-frame relative p-[18px]">
-              <div className="mb-3 flex items-center gap-2"><UserRound size={16} className="text-[var(--bp-accent)]" /><h2 className="m-0 text-[13px] font-bold">مشتری</h2></div>
+              <div className="mb-3 flex items-center gap-2"><UserRound size={16} className="text-[var(--bp-accent)]" /><div role="heading" aria-level={2} className="text-[13px] font-bold">مشتری</div></div>
               <dl className="grid gap-3">
                 <DetailItem label="نام" value={customerName} />
                 <DetailItem label="شماره همراه" value={returnRequest.user.phone ?? "ثبت نشده"} ltr />
@@ -74,7 +74,7 @@ export default async function AdminReturnDetailPage({ params }: Context) {
             </section>
 
             <section className="bp-frame relative p-[18px]">
-              <div className="mb-3 flex items-center gap-2"><ShoppingBag size={16} className="text-[var(--bp-accent)]" /><h2 className="m-0 text-[13px] font-bold">سفارش مرتبط</h2></div>
+              <div className="mb-3 flex items-center gap-2"><ShoppingBag size={16} className="text-[var(--bp-accent)]" /><div role="heading" aria-level={2} className="text-[13px] font-bold">سفارش مرتبط</div></div>
               <dl className="grid gap-3">
                 <div className="min-w-0">
                   <span className="bp-muted block text-[11px] font-bold">شماره سفارش</span>
@@ -89,7 +89,7 @@ export default async function AdminReturnDetailPage({ params }: Context) {
           </div>
 
           <section className="bp-frame relative p-[18px]">
-            <div className="mb-3 flex items-center gap-2">{isCardRefund ? <CreditCard size={16} className="text-[var(--bp-accent)]" /> : <Wallet size={16} className="text-[var(--bp-accent)]" />}<h2 className="m-0 text-[13px] font-bold">روش بازگرداندن وجه</h2></div>
+            <div className="mb-3 flex items-center gap-2">{isCardRefund ? <CreditCard size={16} className="text-[var(--bp-accent)]" /> : <Wallet size={16} className="text-[var(--bp-accent)]" />}<div role="heading" aria-level={2} className="text-[13px] font-bold">روش بازگرداندن وجه</div></div>
             <dl className="grid gap-3 sm:grid-cols-2">
               <DetailItem label="روش انتخابی مشتری" value={isCardRefund ? "واریز به کارت بانکی" : "افزودن به کیف پول"} />
               <DetailItem label={returnRequest.refundedAt ? "مبلغ بازگردانده‌شده" : "مبلغ قابل بازگشت"} value={formatMoney(refundAmount.toString())} />
@@ -108,7 +108,7 @@ export default async function AdminReturnDetailPage({ params }: Context) {
           </section>
 
           <section className="bp-frame relative p-[18px]">
-            <div className="mb-3 flex items-center gap-2"><ClipboardList size={16} className="text-[var(--bp-accent)]" /><h2 className="m-0 text-[13px] font-bold">دلیل مرجوعی</h2></div>
+            <div className="mb-3 flex items-center gap-2"><ClipboardList size={16} className="text-[var(--bp-accent)]" /><div role="heading" aria-level={2} className="text-[13px] font-bold">دلیل مرجوعی</div></div>
             <p className="m-0 whitespace-pre-wrap break-words text-[13px] leading-8">{returnRequest.reason}</p>
           </section>
 
@@ -116,7 +116,7 @@ export default async function AdminReturnDetailPage({ params }: Context) {
             <section className="bp-frame relative p-[18px]">
               <div className="mb-3 flex items-center gap-2">
                 <Paperclip size={16} className="text-[var(--bp-accent)]" />
-                <h2 className="m-0 text-[13px] font-bold">عکس و فیلم پیوست مشتری</h2>
+                <div role="heading" aria-level={2} className="text-[13px] font-bold">عکس و فیلم پیوست مشتری</div>
                 <span className="bp-muted text-[11px]">{returnRequest.attachments.length.toLocaleString("fa-IR")} فایل</span>
               </div>
               <div className="flex flex-wrap gap-3">
@@ -137,7 +137,7 @@ export default async function AdminReturnDetailPage({ params }: Context) {
           <section className="bp-frame relative overflow-hidden">
             <div className="flex items-center gap-2 border-b border-[var(--bp-divider)] px-[18px] py-4">
               <ListChecks size={16} className="text-[var(--bp-accent)]" />
-              <h2 className="m-0 text-[13px] font-bold">اقلام درخواست‌شده برای مرجوعی</h2>
+              <div role="heading" aria-level={2} className="text-[13px] font-bold">اقلام درخواست‌شده برای مرجوعی</div>
               <span className="bp-muted text-[11px]">{returnRequest.items.length.toLocaleString("fa-IR")} قلم</span>
             </div>
             {returnRequest.items.length ? (

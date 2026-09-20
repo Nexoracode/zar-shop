@@ -78,7 +78,7 @@ export default async function AdminGoldPricePage() {
         </section>
 
         <section className="bp-frame relative p-[18px]">
-          <div className="mb-3 flex items-center gap-2"><Settings2 size={16} className="text-[var(--bp-accent)]" /><h2 className="m-0 text-[13px] font-bold">تنظیمات کش نرخ</h2></div>
+          <div className="mb-3 flex items-center gap-2"><Settings2 size={16} className="text-[var(--bp-accent)]" /><div role="heading" aria-level={2} className="text-[13px] font-bold">تنظیمات کش نرخ</div></div>
           <dl className="grid gap-3">
             <div className="flex items-center justify-between gap-2">
               <dt className="bp-muted text-[12px]">مدت اعتبار کش</dt>
@@ -113,7 +113,7 @@ export default async function AdminGoldPricePage() {
       <section className="bp-frame relative overflow-hidden">
         <div className="flex items-center gap-2 border-b border-[var(--bp-divider)] px-[18px] py-4">
           <Clock3 size={16} className="text-[var(--bp-accent)]" />
-          <h2 className="m-0 text-[13px] font-bold">۴۸ رکورد اخیر</h2>
+          <div role="heading" aria-level={2} className="text-[13px] font-bold">۴۸ رکورد اخیر</div>
           <span className="bp-muted text-[11px]">{history.length.toLocaleString("fa-IR")} رکورد</span>
         </div>
         {history.length ? (

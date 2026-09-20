@@ -54,7 +54,7 @@ export function ReturnStatusPanel({ returnId, status, adminNote, noteMaxLength, 
   return (
     <section className="bp-frame relative p-[18px]">
       <div className="mb-3 flex items-center justify-between gap-2">
-        <h2 className="m-0 text-[13px] font-bold">مدیریت درخواست</h2>
+        <div role="heading" aria-level={2} className="text-[13px] font-bold">مدیریت درخواست</div>
         <BpTag tone={returnStatusTones[status]} withDot>{returnStatusLabels[status]}</BpTag>
       </div>
 

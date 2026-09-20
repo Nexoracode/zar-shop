@@ -115,7 +115,7 @@ function AuditMetadataPanel({ metadata }: { metadata: unknown }) {
 
   return (
     <section className="bp-frame relative p-[18px]">
-      <div className="mb-4 flex items-center gap-2"><Fingerprint size={16} className="text-[var(--bp-accent)]" /><h2 className="m-0 text-[14px] font-bold">شرح کامل فعالیت</h2></div>
+      <div className="mb-4 flex items-center gap-2"><Fingerprint size={16} className="text-[var(--bp-accent)]" /><div role="heading" aria-level={2} className="text-[14px] font-bold">شرح کامل فعالیت</div></div>
       {typeof details.summary === "string" && <p className="mb-4 border border-[var(--bp-warning)] bg-[var(--bp-warning-bg)] p-3 text-[13px] font-bold leading-7 text-[var(--bp-warning)]">{details.summary}</p>}
       {subject && (
         <div className="mb-4 border border-[var(--bp-divider)] p-3">
@@ -173,7 +173,7 @@ export function BlueprintAuditLogDetailView({ log }: { log: AuditLogDetail }) {
 
       <aside className="grid content-start gap-4">
         <section className="bp-frame relative p-[18px]">
-          <div className="mb-3 flex items-center gap-2"><UserRound size={16} className="text-[var(--bp-accent)]" /><h2 className="m-0 text-[13px] font-bold">کاربر پنل</h2></div>
+          <div className="mb-3 flex items-center gap-2"><UserRound size={16} className="text-[var(--bp-accent)]" /><div role="heading" aria-level={2} className="text-[13px] font-bold">کاربر پنل</div></div>
           <dl className="grid gap-3">
             <DetailItem label="نام" value={auditActorName(log.actor)} />
             <DetailItem label="شماره همراه" value={log.actor?.phone ?? "ثبت نشده"} ltr />
@@ -182,7 +182,7 @@ export function BlueprintAuditLogDetailView({ log }: { log: AuditLogDetail }) {
           </dl>
         </section>
         <section className="bp-frame relative p-[18px]">
-          <div className="mb-3 flex items-center gap-2"><Clock3 size={16} className="text-[var(--bp-accent)]" /><h2 className="m-0 text-[13px] font-bold">زمان و مبدأ</h2></div>
+          <div className="mb-3 flex items-center gap-2"><Clock3 size={16} className="text-[var(--bp-accent)]" /><div role="heading" aria-level={2} className="text-[13px] font-bold">زمان و مبدأ</div></div>
           <dl className="grid gap-3">
             <DetailItem label="زمان ثبت" value={formatDateTime(log.createdAt)} />
             <DetailItem label="نشانی IP" value={log.ipAddress ?? "ثبت نشده"} ltr />
