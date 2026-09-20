@@ -112,8 +112,6 @@ export function BlueprintOrderDetail({ order, industry, optionColors = {}, warni
         <Stat icon={<CalendarDays size={14} />} label="آماده‌سازی تخمینی" value={order.estimatedReadyAt ? formatDateTime(order.estimatedReadyAt) : `${order.preparationDaysSnapshot.toLocaleString("fa-IR")} روز`} />
       </section>
 
-      {order.deliveryMethod === "INSURED_SHIPPING" && <AdminOrderTrackingField orderId={order.id} initialTrackingNumber={order.trackingNumber} />}
-
       <div className="grid items-start gap-2 xl:grid-cols-[minmax(0,1fr)_360px]">
         <div className="flex min-w-0 flex-col gap-2">
           {cardTransfers.length > 0 && (
@@ -191,6 +189,7 @@ export function BlueprintOrderDetail({ order, industry, optionColors = {}, warni
         </div>
 
         <aside className="flex min-w-0 flex-col gap-2">
+          {order.deliveryMethod === "INSURED_SHIPPING" && <AdminOrderTrackingField orderId={order.id} initialTrackingNumber={order.trackingNumber} />}
           <Panel className="p-4">
             <h2 className="m-0 mb-3 flex items-center gap-2 text-[14px] font-bold"><UserRound size={17} className="text-[var(--bp-muted)]" /> اطلاعات خریدار</h2>
             <dl className="grid gap-2">
