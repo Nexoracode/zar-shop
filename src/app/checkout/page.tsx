@@ -10,6 +10,7 @@ import { db } from "@/lib/db";
 import { getGoldPriceForDisplay } from "@/modules/gold/gold-price.service";
 import { lineUnitPrice } from "@/modules/products/line-pricing";
 import { optionEntries } from "@/modules/products/options";
+import { loadOptionColors } from "@/modules/products/option-colors";
 import type { CheckoutItem } from "@/components/checkout-items";
 import { baseShippingFee, defaultDeliveryMethod, getCommerceSettings } from "@/modules/settings/commerce-settings";
 import { getGeneralStoreSettings } from "@/modules/settings/general-settings";
@@ -57,6 +58,7 @@ export default async function CheckoutPage() {
     const orderItems = await db.orderItem.findMany({ where: { orderId: pendingOrder.id }, orderBy: { id: "asc" }, select: { id: true, productId: true, name: true, quantity: true, selectedOptions: true, unitPrice: true, originalUnitPrice: true } });
     const orderProducts = await db.product.findMany({ where: { id: { in: orderItems.flatMap((item) => item.productId ? [item.productId] : []) } }, select: { id: true, slug: true, media: { where: { isCover: true }, take: 1, select: { media: { select: { type: true, url: true, alt: true } } } } } });
     const itemCount = orderItems.reduce((sum, item) => sum + item.quantity, 0);
+    const resumeOptionColors = await loadOptionColors(orderItems.map((item) => item.selectedOptions));
     const resumeItems: CheckoutItem[] = orderItems.map((item) => {
       const product = orderProducts.find((candidate) => candidate.id === item.productId);
       const cover = product?.media[0]?.media;
@@ -68,6 +70,7 @@ export default async function CheckoutPage() {
         imageAlt: cover?.alt ?? item.name,
         quantity: item.quantity,
         optionSummary: optionEntries(item.selectedOptions).map(([name, value]) => `${name}: ${value}`),
+        optionColors: resumeOptionColors,
         unitPrice: Number(item.unitPrice),
         originalUnitPrice: Number(item.originalUnitPrice) > Number(item.unitPrice) ? Number(item.originalUnitPrice) : null,
       };
@@ -123,6 +126,7 @@ export default async function CheckoutPage() {
 
   const linePrices = lines.map(({ item, unavailable }) => ({ item, unavailable, pricing: lineUnitPrice(item.product, item.selectionKey, rate) }));
   const prices = linePrices.filter((line) => !line.unavailable).map(({ item, pricing }) => ({ quantity: item.quantity, original: pricing?.originalPrice ?? 0, final: pricing?.finalPrice ?? 0, productId: item.product.id, categoryId: item.product.categoryId }));
+  const optionColors = await loadOptionColors(linePrices.map(({ item }) => item.selectedOptions));
   const checkoutItems: CheckoutItem[] = linePrices.map(({ item, unavailable, pricing }) => {
     const product = item.product;
     const cover = product.media[0]?.media;
@@ -136,6 +140,7 @@ export default async function CheckoutPage() {
       imageAlt: cover?.alt ?? product.name,
       quantity: item.quantity,
       optionSummary: optionEntries(item.selectedOptions).map(([name, value]) => `${name}: ${value}`),
+      optionColors,
       unitPrice: final,
       originalUnitPrice: original > final ? original : null,
       unavailable,

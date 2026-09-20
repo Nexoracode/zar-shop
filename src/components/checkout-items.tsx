@@ -13,6 +13,8 @@ export type CheckoutItem = {
   imageAlt: string;
   quantity: number;
   optionSummary: string[];
+  /** The swatch colour of a colour choice, keyed by its entry in `optionSummary` («رنگ: مشکی»). */
+  optionColors?: Record<string, string>;
   unitPrice: number;
   originalUnitPrice: number | null;
   /** No longer for sale: shown so the customer is not surprised, but not counted or charged. */
@@ -51,7 +53,7 @@ export function CheckoutItems({ items, currency, editHref }: { items: CheckoutIt
                 {item.slug ? <Link href={`/products/${item.slug}`} className="shrink-0">{image}</Link> : image}
                 <div className="min-w-0 flex-1">
                   {item.slug ? <Link href={`/products/${item.slug}`}>{name}</Link> : name}
-                  {item.optionSummary.length > 0 && <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-[11px] text-[var(--muted)]">{item.optionSummary.map((option) => <span key={option}>{option}</span>)}</div>}
+                  {item.optionSummary.length > 0 && <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-[11px] text-[var(--muted)]">{item.optionSummary.map((option) => <span key={option} className="inline-flex items-center gap-1.5">{option}{item.optionColors?.[option] && <i aria-hidden className="size-3 shrink-0 rounded-full border border-black/15" style={{ backgroundColor: item.optionColors[option] }} />}</span>)}</div>}
                   {item.unavailable && <p className="m-0 mt-1 flex items-start gap-1.5 text-[11px] font-bold leading-5 text-[var(--danger)]"><AlertTriangle size={13} className="mt-0.5 shrink-0" />دیگر موجود نیست و در این سفارش حساب نمی‌شود.</p>}
                   <span className="mt-1.5 inline-flex rounded-md bg-[var(--surface-secondary)] px-2 py-0.5 text-[11px] font-bold text-[var(--muted)]">{item.quantity.toLocaleString("fa-IR")} عدد</span>
                 </div>
