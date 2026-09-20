@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useRef, useState } from "react";
+import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "@heroui/react";
 import { ArrowLeft, ChevronDown, FileText, GripVertical, Images, Info, Trash2 } from "lucide-react";
@@ -110,6 +110,11 @@ export function BlueprintProductForm({ storeIndustry, categories = [], brands = 
   const formRef = useRef<HTMLFormElement>(null);
   const saveMenuTriggerRef = useRef<HTMLButtonElement>(null);
   const [loading, setLoading] = useState(false);
+  // Navigating away after a save is a transition, so the button keeps spinning until the next page
+  // is actually up. It must not stay on `loading` for that: the page is kept alive behind the
+  // list, and coming back to it would still find the save button stuck in its pending state.
+  const [navigating, startNavigation] = useTransition();
+  const busy = loading || navigating;
   const [saveMenuOpen, setSaveMenuOpen] = useState(false);
   // Whichever trigger started the save — the main button or a menu item — so the spinner sits
   // next to that same wording instead of always the main button's own label.
@@ -305,8 +310,11 @@ export function BlueprintProductForm({ storeIndustry, categories = [], brands = 
             body: JSON.stringify({ ...validation.data, sku: `${validation.data.sku}-${suffix}`, slug: `${validation.data.slug}-${suffix}`, name: `${validation.data.name} (کپی)`, status: "DRAFT" }),
           }, { fallbackMessage: "تکثیر محصول انجام نشد." });
           toast.success("یک نسخه تکثیرشده از محصول ساخته شد");
-          router.push(`/admin/products/${duplicate.id}/edit`);
-          router.refresh();
+          setLoading(false);
+          startNavigation(() => {
+            router.push(`/admin/products/${duplicate.id}/edit`);
+            router.refresh();
+          });
         } catch (reason) {
           toast.danger("تکثیر محصول انجام نشد", { description: requestErrorMessage(reason, "ارتباط با سرور برقرار نشد.") });
           setLoading(false);
@@ -314,8 +322,11 @@ export function BlueprintProductForm({ storeIndustry, categories = [], brands = 
         return;
       }
 
-      router.push(afterSave === "list" ? "/admin/products" : afterSave === "new" ? "/admin/products/new" : `/admin/products/${id}/${afterSave}`);
-      router.refresh();
+      setLoading(false);
+      startNavigation(() => {
+        router.push(afterSave === "list" ? "/admin/products" : afterSave === "new" ? "/admin/products/new" : `/admin/products/${id}/${afterSave}`);
+        router.refresh();
+      });
     } catch (reason) {
       toast.danger("ذخیره محصول انجام نشد", { description: requestErrorMessage(reason, "ارتباط با سرور برقرار نشد.") });
       setLoading(false);
@@ -539,14 +550,14 @@ export function BlueprintProductForm({ storeIndustry, categories = [], brands = 
           />
           <div className="mt-4 grid gap-2">
             <div className="flex items-stretch">
-              <BpButton type="submit" variant="primary" isPending={loading} className="bp-split-start flex-1">{loading && pendingLabel ? pendingLabel : (product ? "ذخیره و بازگشت" : "ثبت و بازگشت به لیست")}</BpButton>
+              <BpButton type="submit" variant="primary" isPending={busy} className="bp-split-start flex-1">{busy && pendingLabel ? pendingLabel : (product ? "ذخیره و بازگشت" : "ثبت و بازگشت به لیست")}</BpButton>
               <span aria-hidden className="w-px shrink-0 bg-white/25" />
               <BpButton
                 ref={saveMenuTriggerRef}
                 type="button"
                 isIconOnly
                 variant="primary"
-                disabled={loading}
+                disabled={busy}
                 aria-label="گزینه‌های بیشتر ذخیره"
                 aria-haspopup="menu"
                 aria-expanded={saveMenuOpen}
@@ -566,7 +577,7 @@ export function BlueprintProductForm({ storeIndustry, categories = [], brands = 
                       <button
                         type="button"
                         role="menuitem"
-                        disabled={loading}
+                        disabled={busy}
                         onClick={() => { setSaveMenuOpen(false); setPendingLabel(action.label); void submit(action.value); }}
                         className="w-full border border-transparent px-3 py-2 text-start text-[13px] hover:bg-[var(--bp-hover)] disabled:cursor-not-allowed disabled:opacity-50"
                       >
