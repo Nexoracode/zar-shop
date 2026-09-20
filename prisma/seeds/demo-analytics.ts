@@ -2,7 +2,6 @@ import type { OrderStatus, VisitorDevice } from "../../generated/prisma/enums";
 import type { PrismaClient } from "../../generated/prisma/client";
 import { calculateDiscountedPrice } from "../../src/modules/products/discount";
 import { isDefaultSelection } from "../../src/modules/products/variant-combinations";
-import { seedDemoCatalog } from "./demo-catalog";
 import { assertDevelopmentDatabase, createClient } from "./seed-store";
 
 // Everything this script writes is tagged so a re-run replaces it without touching real data:
@@ -204,12 +203,10 @@ export async function seedDemoAnalytics() {
   const now = new Date();
   const random = mulberry32(20260919);
   try {
-    // The sample catalogue goes first, so the traffic and orders below include its products.
-    const catalog = await seedDemoCatalog(db, now, random);
     const slugs = (await db.product.findMany({ where: { status: "ACTIVE" }, select: { slug: true }, take: 25 })).map((product) => product.slug);
     const views = await seedTraffic(db, slugs, now, random);
     const orders = await seedOrders(db, now, random);
-    console.info(`[seed:demo] ${catalog.products} variant products (${catalog.variants} combinations, ${catalog.colors} colours, ${catalog.types} option types), ${views} page views and ${orders} orders created.${catalog.skipped ? ` (Sample catalogue skipped: ${catalog.skipped}.)` : ""}${orders === 0 ? " (No active products found — run db:seed:general first to get demo orders.)" : ""}`);
+    console.info(`[seed:demo] ${views} page views and ${orders} orders created.${orders === 0 ? " (No active products found — run db:seed:general first to get demo orders.)" : ""}`);
   } finally {
     await db.$disconnect();
   }

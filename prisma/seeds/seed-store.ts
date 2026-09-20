@@ -4,6 +4,7 @@ import { PrismaClient } from "../../generated/prisma/client";
 import type { StoreIndustry } from "../../generated/prisma/enums";
 import { generalStoreSeed } from "./general.seed";
 import { goldStoreSeed } from "./gold.seed";
+import { createVariantCatalog } from "./variant-catalog";
 import { STANDARD_PACKAGING_BOX } from "../../src/modules/shipping/packaging";
 import type { DevelopmentHomepageMediaSeed, DevelopmentStoreSeed } from "./types";
 
@@ -242,6 +243,9 @@ async function createStore(db: PrismaClient, seed: DevelopmentStoreSeed) {
     }
   }
 
+  // Products sold by combination come with the colour and option libraries they draw from.
+  const variantCatalog = await createVariantCatalog(db, seed, { categoryIds, brandIds, resolveMediaId, now: new Date() });
+
   const brandLogoId = resolveMediaId(seed.brandLogoKey);
   const resolvedHomepageMedia = resolveHomepageMedia(seed.homepage, resolveMediaId);
   await db.storeSetting.create({
@@ -315,6 +319,8 @@ async function createStore(db: PrismaClient, seed: DevelopmentStoreSeed) {
       },
     });
   }
+
+  return variantCatalog;
 }
 
 export async function seedDevelopmentStore(industry: StoreIndustry, options: { keepGallery?: boolean } = {}) {
@@ -324,21 +330,26 @@ export async function seedDevelopmentStore(industry: StoreIndustry, options: { k
   const seed = industry === "GOLD" ? goldStoreSeed : generalStoreSeed;
   try {
     await clearDevelopmentData(db, { keepGallery });
-    await createStore(db, seed);
+    const variantCatalog = await createStore(db, seed);
     // The wipe above clears packaging too; the store always has a default box, so put it back.
     await db.packagingBox.create({ data: { ...STANDARD_PACKAGING_BOX } });
-    const [categoryCount, brandCount, productCount, productsWithoutBrand, industries, setting] = await Promise.all([
+    const [categoryCount, brandCount, productCount, variantRowCount, productsWithoutBrand, industries, setting] = await Promise.all([
       db.category.count(),
       db.brand.count(),
       db.product.count(),
+      db.productVariant.count(),
       db.product.count({ where: { brandId: null } }),
       db.product.groupBy({ by: ["storeIndustry"], _count: { _all: true } }),
       db.storeSetting.findUnique({ where: { id: "main" }, select: { industry: true } }),
     ]);
-    if (categoryCount !== seed.categories.length || brandCount !== seed.brands.length || productCount !== seed.products.length || productsWithoutBrand > 0 || industries.length !== 1 || industries[0].storeIndustry !== industry || setting?.industry !== industry) {
+    // Every product is sold through variants: a plain product has one default variant, and a product
+    // sold by combination has one per combination.
+    const expectedProducts = seed.products.length + (seed.variantProducts?.length ?? 0);
+    const expectedVariantRows = seed.products.length + variantCatalog.variants;
+    if (categoryCount !== seed.categories.length || brandCount !== seed.brands.length || productCount !== expectedProducts || variantRowCount !== expectedVariantRows || productsWithoutBrand > 0 || industries.length !== 1 || industries[0].storeIndustry !== industry || setting?.industry !== industry) {
       throw new Error("Development seed verification failed.");
     }
-    console.info(`[seed] ${industry}${keepGallery ? " (gallery preserved)" : ""}: ${categoryCount} categories, ${brandCount} brands and ${productCount} products created.`);
+    console.info(`[seed] ${industry}${keepGallery ? " (gallery preserved)" : ""}: ${categoryCount} categories, ${brandCount} brands and ${productCount} products created${variantCatalog.products ? ` (${variantCatalog.products} sold by combination: ${variantCatalog.variants} combinations, ${variantCatalog.colors} colours, ${variantCatalog.optionTypes} option types)` : ""}.`);
   } finally {
     await db.$disconnect();
   }

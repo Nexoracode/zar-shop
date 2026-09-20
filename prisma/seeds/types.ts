@@ -52,6 +52,44 @@ export type DevelopmentProductSeed = {
   media?: Array<{ key: string; isCover?: boolean }>;
 };
 
+/** A colour in the shared colour library (`Color`). */
+export type DevelopmentColorSeed = { name: string; hex: string };
+
+/** A kind of variation (`OptionType`). A COLOR type's `values` are colour names from the colour library. */
+export type DevelopmentOptionTypeSeed = { name: string; kind: "COLOR" | "SELECT"; values: readonly string[] };
+
+/** A discount on the combinations that contain every value in `match`; `window` says when it runs, relative to the day the seed runs. */
+export type DevelopmentVariantDiscountSeed = {
+  match: Readonly<Record<string, string>>;
+  percent: number;
+  /** "running" has an end date, "open" is a standing sale with no window, "upcoming" is scheduled to start. */
+  window: "running" | "open" | "upcoming";
+};
+
+/**
+ * A general-shop product sold by combination — one row per pairing of the chosen option values,
+ * each with its own price, discount and stock. Every type it names must be in `optionTypes`.
+ */
+export type DevelopmentVariantProductSeed = {
+  sku: string;
+  name: string;
+  slug: string;
+  categorySlug: string;
+  brandSlug: string;
+  description: string;
+  /** Base price in rials; a combination adds the surcharge of each value it is made of. */
+  price: number;
+  types: ReadonlyArray<{ type: string; values: readonly string[] }>;
+  /** Percent added to a combination's price for a value, keyed by that value's label. */
+  surcharge?: Readonly<Record<string, number>>;
+  discounts?: readonly DevelopmentVariantDiscountSeed[];
+  /** Combinations with no stock left. */
+  soldOut?: ReadonlyArray<Readonly<Record<string, string>>>;
+  /** Combinations that exist but are switched off. */
+  switchedOff?: ReadonlyArray<Readonly<Record<string, string>>>;
+  media?: Array<{ key: string; isCover?: boolean }>;
+};
+
 export type DevelopmentHomepageMediaSeed = {
   heroContentMode?: "WITH_CONTENT" | "IMAGE_ONLY";
   heroDesktopKey?: string;
@@ -95,6 +133,10 @@ export type DevelopmentStoreSeed = {
   categories: readonly DevelopmentCategorySeed[];
   brands: readonly DevelopmentBrandSeed[];
   products: readonly DevelopmentProductSeed[];
+  /** The colour and option libraries, and products sold by combination (general shops only). */
+  colors?: readonly DevelopmentColorSeed[];
+  optionTypes?: readonly DevelopmentOptionTypeSeed[];
+  variantProducts?: readonly DevelopmentVariantProductSeed[];
   media?: readonly DevelopmentMediaSeed[];
   brandLogoKey?: string;
   homepage?: DevelopmentHomepageMediaSeed;

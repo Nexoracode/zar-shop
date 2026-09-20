@@ -1,3 +1,4 @@
+import { generalColorSeed, generalOptionTypeSeed, generalVariantProductSeed } from "./general-variants";
 import type { DevelopmentArticleCategorySeed, DevelopmentArticleSeed, DevelopmentAuthorSeed, DevelopmentBrandSeed, DevelopmentCategorySeed, DevelopmentMediaSeed, DevelopmentStoreSeed } from "./types";
 
 // Snapshot of prisma\zar-shop's real MediaAsset table (and every category/product/homepage
@@ -389,6 +390,9 @@ export const generalStoreSeed: DevelopmentStoreSeed = {
     { sku: "DEV-GEN-012", name: "ست مراقبت پوست روزانه", slug: "daily-skincare-set", categorySlug: "beauty-health", brandSlug: "poustnaz", description: "ست آزمایشی مراقبت روزانه پوست شامل سه محصول.", stock: 14, fixedPrice: "34200000", discountPercent: "12", media: [{ key: "product-media-12", isCover: true }, { key: "product-media-04" }] },
     { sku: "DEV-GEN-013", name: "گوشی موبایل اپل مدل iPhone 17 CH دو سیم‌کارت ظرفیت ۲۵۶ گیگابایت و رم ۸ گیگابایت", slug: "apple-iphone-17-ch-256gb-8gb", categorySlug: "mobile-phones", brandSlug: "apple", description: "گوشی پرچم‌دار اپل با تراشه A19، نمایشگر LTPO Super Retina XDR OLED و دوربین دوگانه.", stock: 4, fixedPrice: "2859990000", attributes: iphone17Attributes, media: [{ key: "product-media-14", isCover: true }, { key: "product-media-17" }, { key: "product-media-05" }] },
   ],
+  colors: generalColorSeed,
+  optionTypes: generalOptionTypeSeed,
+  variantProducts: generalVariantProductSeed,
   media: generalMediaSeed,
   brandLogoKey: "brand-logo",
   homepage: {
