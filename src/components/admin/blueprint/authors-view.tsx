@@ -169,7 +169,7 @@ export function BlueprintAuthorsView({ authors, initialHiddenColumns }: { author
         <Panel>
           {authors.length ? (
             <AdminColumnVisibility tableId={AUTHORS_TABLE_ID} columns={authorColumns} initialHidden={initialHiddenColumns}>
-              <BpListFilters query={query} onQueryChange={setQuery} searchLabel="جستجوی نویسنده" searchPlaceholder="جستجو بر اساس نام نویسنده" filters={[]} trailing={<AdminColumnSettingsButton />} />
+              <BpListFilters query={query} onQueryChange={setQuery} searchLabel="جستجوی نویسنده" searchPlaceholder="جستجو بر اساس نام نویسنده" filters={[]} leading={<AdminColumnSettingsButton />} />
               {visible.length ? (
                 <BpTable ariaLabel="فهرست نویسندگان" minWidth={480}>
                   <thead>

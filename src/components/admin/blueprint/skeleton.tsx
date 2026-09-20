@@ -369,7 +369,7 @@ export function BpSplitPaneSkeleton({ listRows = 8, editorSections = 3 }: { list
 }
 
 /** Client config list with the compact form beside the table (brands, categories, colours…). */
-export function BpFormBesideTableSkeleton({ columns = 7, rows = 6, form = ["field", "field", "switch"], leading = 2, rowHeight = 45, filterTrailing = false }: { columns?: number; rows?: number; /** The side form's controls, top to bottom. */ form?: FormPart[]; leading?: number; rowHeight?: number; /** A column-settings button at the end of the search bar, for the list with no bulk toolbar. */ filterTrailing?: boolean }) {
+export function BpFormBesideTableSkeleton({ columns = 7, rows = 6, form = ["field", "field", "switch"], leading = 2, rowHeight = 45, filterLeading = false }: { columns?: number; rows?: number; /** The side form's controls, top to bottom. */ form?: FormPart[]; leading?: number; rowHeight?: number; /** A column-settings button at the start of the search bar, for the list with no bulk toolbar. */ filterLeading?: boolean }) {
   return (
     <div className="flex animate-pulse flex-col gap-2" aria-hidden>
       <BpPageHeaderSkeleton flush />
@@ -384,12 +384,12 @@ export function BpFormBesideTableSkeleton({ columns = 7, rows = 6, form = ["fiel
         </aside>
         <Frame>
           <div className="flex flex-wrap items-center gap-2 border-b border-[var(--bp-divider)] p-3">
+            {filterLeading && <BpBar className="size-9 shrink-0" />}
             <BpBar className="h-9 w-full min-w-[180px] sm:w-auto sm:min-w-[220px] sm:flex-1" />
-            {filterTrailing && <BpBar className="size-9 shrink-0" />}
           </div>
           <MobileCardsSkeleton rows={3} hideFrom="md" />
           <div className="hidden md:block">
-            {!filterTrailing && <BpBulkToolbarSkeleton />}
+            {!filterLeading && <BpBulkToolbarSkeleton />}
             <BpTableSkeleton columns={columns} rows={rows} minWidth={640} leading={leading} trailing rowHeight={rowHeight} />
           </div>
         </Frame>

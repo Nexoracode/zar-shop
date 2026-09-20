@@ -20,17 +20,18 @@ export type BpListFilter = {
  * branch of `AdminListFilters`, but driven by local state instead of the URL, since those lists
  * are loaded whole and never paginate.
  */
-export function BpListFilters({ query, onQueryChange, searchLabel, searchPlaceholder, filters = [], trailing }: {
+export function BpListFilters({ query, onQueryChange, searchLabel, searchPlaceholder, filters = [], leading }: {
   query: string;
   onQueryChange: (value: string) => void;
   searchLabel: string;
   searchPlaceholder: string;
   filters?: BpListFilter[];
-  /** Rendered at the end of the bar — e.g. a column-visibility toggle for a table with no bulk-editor toolbar of its own. */
-  trailing?: ReactNode;
+  /** Rendered at the start of the bar, before the search field — e.g. a column-visibility toggle for a table with no bulk-editor toolbar of its own, where it sits in the same corner as it does on the other tables. */
+  leading?: ReactNode;
 }) {
   return (
     <div className="flex flex-wrap items-center gap-2 border-b border-[var(--bp-divider)] p-3">
+      {leading}
       <div className="relative w-full min-w-[180px] sm:w-auto sm:min-w-[220px] sm:flex-1">
         <Search className="pointer-events-none absolute start-2.5 top-1/2 z-10 -translate-y-1/2 text-[var(--bp-muted)]" size={15} />
         <input
@@ -58,7 +59,6 @@ export function BpListFilters({ query, onQueryChange, searchLabel, searchPlaceho
           options={filter.options}
         />
       ))}
-      {trailing}
     </div>
   );
 }
