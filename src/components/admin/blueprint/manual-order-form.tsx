@@ -48,7 +48,9 @@ function SearchField({ value, onChange, placeholder, ariaLabel, loading, childre
       <div className="relative">
         <Search className="pointer-events-none absolute start-2.5 top-1/2 z-10 -translate-y-1/2 text-[var(--bp-muted)]" size={15} aria-hidden />
         <input type="search" value={value} onChange={(event) => onChange(event.target.value)} aria-label={ariaLabel} placeholder={placeholder} className="bp-input bp-input-search" />
-        {loading && <span className="absolute end-2.5 top-1/2 -translate-y-1/2 text-[var(--bp-accent)]"><BpSpinner size={14} /></span>}
+        {loading
+          ? <span className="absolute end-2.5 top-1/2 -translate-y-1/2 text-[var(--bp-accent)]"><BpSpinner size={14} /></span>
+          : value ? <BpButton type="button" isIconOnly size="sm" variant="ghost" aria-label="پاک‌کردن جستجو" onClick={() => onChange("")} className="absolute end-1 top-1/2 z-20 h-7 min-h-7 w-7 min-w-7 -translate-y-1/2"><X size={14} /></BpButton> : null}
       </div>
       {children}
     </div>
