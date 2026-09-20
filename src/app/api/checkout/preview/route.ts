@@ -8,7 +8,6 @@ import { lineUnitPrice } from "@/modules/products/line-pricing";
 import { isCartLineUnavailable } from "@/modules/cart/line-availability";
 import { baseShippingFee, defaultDeliveryMethod, getCommerceSettings, qualifiesForFreeShipping } from "@/modules/settings/commerce-settings";
 import { chargeableCartWeight, resolveShippingQuote } from "@/modules/shipping/quote";
-import { freeShippingReason } from "@/modules/shipping/free-shipping";
 import { getGeneralStoreSettings, isStorefrontAvailable } from "@/modules/settings/general-settings";
 import { PromotionValidationError, resolveCheckoutPromotions } from "@/modules/promotions/service";
 import { getWalletSettings } from "@/modules/settings/wallet-settings";
@@ -87,11 +86,6 @@ export async function POST(request: Request) {
       shipping,
       shippingDiscount: promotions.shippingDiscount,
       shippingMethodTitle: chosen?.title ?? null,
-      shippingFree: freeShippingReason({
-        shipping, deliveryMethod: defaultDeliveryMethod(commerceSettings), freeShippingThreshold: commerceSettings.freeShippingThreshold, merchandiseAmount,
-        shippingDiscount: promotions.shippingDiscount, promotionTitle: promotions.applications.find((item) => item.shippingDiscount > 0)?.title,
-        methodTitle: chosen?.title, methodPrice: chosen?.price,
-      }),
       total,
       walletBalance,
       walletApplied,

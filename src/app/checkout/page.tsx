@@ -10,7 +10,6 @@ import { db } from "@/lib/db";
 import { getGoldPriceForDisplay } from "@/modules/gold/gold-price.service";
 import { lineUnitPrice } from "@/modules/products/line-pricing";
 import { optionEntries } from "@/modules/products/options";
-import { freeShippingReason } from "@/modules/shipping/free-shipping";
 import { loadOptionColors } from "@/modules/products/option-colors";
 import type { CheckoutItem } from "@/components/checkout-items";
 import { baseShippingFee, defaultDeliveryMethod, getCommerceSettings } from "@/modules/settings/commerce-settings";
@@ -41,7 +40,7 @@ export default async function CheckoutPage() {
     orderBy: { createdAt: "desc" },
   });
   if (pendingOrder) {
-    const [settings, paymentMethods, orderSettings, resumeCommerceSettings] = await Promise.all([getGeneralStoreSettings(), getCheckoutPaymentMethods(), getOrderSettings(), getCommerceSettings()]);
+    const [settings, paymentMethods, orderSettings] = await Promise.all([getGeneralStoreSettings(), getCheckoutPaymentMethods(), getOrderSettings()]);
     const address = pendingOrder.shippingAddress as { title: string; recipient: string; phone: string; province: string; city: string; postalCode: string; addressLine: string; plaque: string; unit: string | null };
     const quote = {
       subtotal: Number(pendingOrder.subtotal),
@@ -49,11 +48,6 @@ export default async function CheckoutPage() {
       promotionDiscount: Number(pendingOrder.promotionDiscount),
       shipping: Number(pendingOrder.shipping),
       shippingDiscount: Number(pendingOrder.shippingDiscount),
-      shippingFree: freeShippingReason({
-        shipping: Number(pendingOrder.shipping), deliveryMethod: pendingOrder.deliveryMethod, freeShippingThreshold: resumeCommerceSettings.freeShippingThreshold, merchandiseAmount: Number(pendingOrder.subtotal) - Number(pendingOrder.productDiscount),
-        shippingDiscount: Number(pendingOrder.shippingDiscount), promotionTitle: (pendingOrder.promotionRedemptions.find((redemption) => Number(redemption.shippingDiscount) > 0)?.snapshot as { title?: string } | undefined)?.title,
-        methodTitle: pendingOrder.shippingMethodTitle, methodPrice: 0,
-      }),
       total: Number(pendingOrder.total),
       walletApplied: Number(pendingOrder.walletAmount),
       applications: pendingOrder.promotionRedemptions.map((redemption) => {
@@ -165,8 +159,7 @@ export default async function CheckoutPage() {
   const shipping = Math.max(0, shippingFee - promotions.shippingDiscount);
   const total = merchandiseAmount - promotions.promotionDiscount + shipping;
   const walletApplied = walletUsable ? Math.min(walletBalance, total) : 0;
-  const shippingFree = freeShippingReason({ shipping, deliveryMethod, freeShippingThreshold: commerceSettings.freeShippingThreshold, merchandiseAmount, shippingDiscount: promotions.shippingDiscount, promotionTitle: promotions.applications.find((item) => item.shippingDiscount > 0)?.title });
-  const initialQuote = { subtotal, productDiscount, merchandiseAmount, promotionDiscount: promotions.promotionDiscount, shipping, shippingDiscount: promotions.shippingDiscount, shippingFree, total, walletBalance, walletApplied, payable: total - walletApplied, applications: promotions.applications.map((item) => ({ title: item.title, code: item.code, discountAmount: item.discountAmount, shippingDiscount: item.shippingDiscount })) };
+  const initialQuote = { subtotal, productDiscount, merchandiseAmount, promotionDiscount: promotions.promotionDiscount, shipping, shippingDiscount: promotions.shippingDiscount, total, walletBalance, walletApplied, payable: total - walletApplied, applications: promotions.applications.map((item) => ({ title: item.title, code: item.code, discountAmount: item.discountAmount, shippingDiscount: item.shippingDiscount })) };
   const itemCount = payableItems.reduce((sum, item) => sum + item.quantity, 0);
 
   return (
