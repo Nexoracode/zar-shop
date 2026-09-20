@@ -161,7 +161,6 @@ export function AddToCart({ productId, options = [], variants = [], optionGuide,
   const selectedVariant = variants.find((variant) => options.every((option) => variant.selection[option.id] === selectedOptions[option.id])) ?? null;
   // Out of stock as a pairing counts too: black and XL can each be in stock somewhere and still not together.
   const optionStockUnavailable = options.length > 0 && (!variants.some((variant) => variant.available) || (selectedVariant !== null && !selectedVariant.available));
-  const selectedColorValue = options.filter((option) => option.kind === "COLOR").flatMap((option) => option.values.filter((item) => selectedOptions[option.id] === item.value)).find((item) => item.color);
   const flashEndsAt = detailedCard ? selectedVariant?.discountEndsAt ?? null : null;
   // What the visitor has picked, one line each — a colour with its swatch, anything else as «سایز: XL».
   const chosenDetails = options.flatMap((option) => {
@@ -318,7 +317,6 @@ export function AddToCart({ productId, options = [], variants = [], optionGuide,
         {purchaseSummary}
         {displayedOriginalPrice !== null && displayedPrice !== null && displayedOriginalPrice > displayedPrice && <div className="flex items-center gap-2"><span className="text-xs text-slate-400 line-through">{formatMoney(displayedOriginalPrice, currency)}</span>{discountLabel && <span className="inline-flex items-center rounded-full bg-[var(--danger)] px-2 py-1 text-[10px] font-bold text-[var(--danger-foreground)]">{discountLabel}</span>}</div>}
         <strong className="text-left text-xl font-bold text-slate-900" dir="rtl">{displayedPrice === null ? "قیمت نامشخص" : formatMoney(displayedPrice, currency)}</strong>
-        {selectedColorValue?.color && <div className="flex items-center justify-between rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-xs"><span className="text-slate-500">رنگ انتخاب‌شده</span><strong className="inline-flex items-center gap-2 text-slate-800"><span className="size-4 rounded-full border border-black/10" style={{ backgroundColor: selectedColorValue.color.hex }} />{selectedColorValue.color.name}</strong></div>}
         {purchaseMeta}
         {addButton}
         {msg && <small className="block text-[var(--brand-accent)]">{msg}</small>}
