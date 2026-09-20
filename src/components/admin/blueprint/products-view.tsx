@@ -13,6 +13,7 @@ import type { AdminProductsListData, ProductRow } from "@/components/admin/produ
 import { ProductBulkEditButton } from "@/components/product-bulk-edit-modal";
 import { ProductDeleteButton } from "./product-delete-button";
 import { ProductFlags } from "./product-flags";
+import { ProductPrice } from "./product-price";
 import { ProductStock } from "./product-stock";
 import { ProductRowMenu } from "./product-row-menu";
 import { ProductStatusMenu } from "./product-publish-toggle";
@@ -23,16 +24,6 @@ import { BpTruncated } from "./ui/truncated-text";
 
 function Panel({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return <section className={`bp-frame relative ${className}`}>{children}</section>;
-}
-
-/*
- * The unit lives in the column header, so the cells carry bare numbers. `formatMoney` is not
- * used here because it appends its own unit — and its default is ریال, which is what the rest
- * of the panel reports, so the header says ریال too.
- */
-function priceLabel(product: ProductRow) {
-  if (product.storeIndustry === "GOLD") return Number(product.weightGrams).toLocaleString("fa-IR", { maximumFractionDigits: 3 });
-  return product.fixedPrice ? Number(product.fixedPrice).toLocaleString("fa-IR", { maximumFractionDigits: 0 }) : "بدون قیمت";
 }
 
 /** Row action group: ghost icon buttons, 15px strokes, 4px apart — as in the mockup. */
@@ -132,7 +123,7 @@ export function BlueprintProductsView({ products, categories, filters, paginatio
                     <BpTag tone={productStatusTones[product.status]} size="md" withDot>{productStatusLabels[product.status]}</BpTag>
                   </div>
                   <div className="flex items-center justify-between gap-3 text-[13px]">
-                    <span>{priceLabel(product)} {storeIndustry === "GOLD" ? "گرم" : "ریال"}</span>
+                    <span><ProductPrice product={product} /> {storeIndustry === "GOLD" ? "گرم" : "ریال"}</span>
                     <span className="bp-muted"><ProductStock product={product} lowStockThreshold={lowStockThreshold} prefix="موجودی: " /></span>
                   </div>
                   <RowActions product={product} />
@@ -166,7 +157,7 @@ export function BlueprintProductsView({ products, categories, filters, paginatio
                         <AdminColumn id="offers"><BpTd className="max-w-[200px]"><ProductFlags product={product} emptyDash /></BpTd></AdminColumn>
                         <AdminColumn id="category"><BpTd className="bp-muted max-w-[180px] truncate">{product.category?.name ?? "بدون دسته‌بندی"}</BpTd></AdminColumn>
                         <AdminColumn id="brand"><BpTd className="bp-muted max-w-[140px] truncate">{product.brand?.name ?? "بدون برند"}</BpTd></AdminColumn>
-                        <AdminColumn id="priceOrWeight"><BpTd>{priceLabel(product)}</BpTd></AdminColumn>
+                        <AdminColumn id="priceOrWeight"><BpTd><ProductPrice product={product} /></BpTd></AdminColumn>
                         <AdminColumn id="stock"><BpTd><ProductStock product={product} lowStockThreshold={lowStockThreshold} /></BpTd></AdminColumn>
                         <AdminColumn id="status"><BpTd><BpTag tone={productStatusTones[product.status]} size="md" withDot>{productStatusLabels[product.status]}</BpTag></BpTd></AdminColumn>
                         <BpTd><RowActions product={product} /></BpTd>
