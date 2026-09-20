@@ -8,14 +8,13 @@ import { BlueprintCardTransferReview } from "@/components/admin/blueprint/card-t
 import { BpLinkButton } from "@/components/admin/blueprint/ui/button";
 import { formatDateTime, formatMoney } from "@/lib/format";
 import {
-  orderStatusLabels,
-  orderStatusTones,
   paymentStatusLabel,
   paymentStatusTones,
 } from "@/modules/admin/labels";
 import { paymentProviderLabel } from "@/modules/payments/admin-payments";
 import { CARD_TO_CARD_PROVIDER, type AdminCardTransfer } from "@/modules/payments/card-to-card-shared";
 import { optionEntries } from "@/modules/products/options";
+import { AdminOrderStatusSelect } from "@/components/admin-order-status-select";
 
 type OrderDetail = Prisma.OrderGetPayload<{
   include: {
@@ -62,7 +61,7 @@ function Field({ label, value, ltr = false }: { label: string; value: React.Reac
   );
 }
 
-export function BlueprintOrderDetail({ order, industry, optionColors = {} }: { order: OrderDetail; industry: "GOLD" | "GENERAL"; /** The swatch colour of each colour choice, keyed «رنگ: مشکی». */ optionColors?: Record<string, string> }) {
+export function BlueprintOrderDetail({ order, industry, optionColors = {}, warningMinutes }: { order: OrderDetail; industry: "GOLD" | "GENERAL"; /** Minutes before a pending order expires at which its countdown turns to a warning. */ warningMinutes: number; /** The swatch colour of each colour choice, keyed «رنگ: مشکی». */ optionColors?: Record<string, string> }) {
   const customerName = [order.user.firstName, order.user.lastName].filter(Boolean).join(" ") || "کاربر بدون نام";
   const address = readShippingAddress(order.shippingAddress);
   const successfulPayment = order.payments.find((payment) => payment.status === "SUCCESS");
@@ -92,7 +91,9 @@ export function BlueprintOrderDetail({ order, industry, optionColors = {} }: { o
         description="اطلاعات خریدار، اقلام سفارش، پرداخت و فاکتور را در این صفحه بررسی کنید."
         backHref="/admin/orders"
         backLabel="بازگشت به سفارش‌ها"
-        action={<AdminStatusBadge tone={orderStatusTones[order.status]}>{orderStatusLabels[order.status]}</AdminStatusBadge>}
+        // The status is changed right here, with the same control and the same allowed moves as the list —
+        // no need to go back to the orders table for it. A transfer waiting for review has its own clock.
+        action={<div className="w-[190px]"><AdminOrderStatusSelect key={order.status} orderId={order.id} initialStatus={order.status} expiresAt={cardTransfers.some((transfer) => transfer.reviewedAt === null) ? null : order.expiresAt?.toISOString() ?? null} warningMinutes={warningMinutes} /></div>}
       />
 
       {successfulPayment && !order.inventoryReserved && (
