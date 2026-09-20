@@ -10,12 +10,13 @@ import {
   type VariantDraft,
   type VariantDraftDefaults,
 } from "@/modules/products/variant-combinations";
+import { formatDateTime } from "@/lib/format";
 import { optionFieldLimits } from "@/modules/options/schemas";
 import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
 import { BpButton } from "./ui/button";
 import { BpCheckbox } from "./ui/checkbox";
 import { BpCombobox } from "./ui/combobox";
-import { BpDateTimeField, formatPersianDateTime } from "./ui/date-time-field";
+import { BpDateTimeField } from "./ui/date-time-field";
 import { BpDialog } from "./ui/dialog";
 import { BpNumberInput } from "./ui/number-input";
 import { BpSeg } from "./ui/seg";
@@ -600,10 +601,20 @@ export function BlueprintProductOptions({ storeIndustry, colors, library, option
                       <span className="inline-flex min-h-[36px] items-center gap-1 rounded-[var(--bp-radius)] border border-[var(--bp-divider)] ps-2.5 pe-1.5 py-1 text-[11px] whitespace-nowrap">
                         <button
                           type="button"
-                          className="hover:text-[var(--bp-accent)]"
+                          className="flex items-center gap-2.5 text-start hover:text-[var(--bp-accent)]"
                           onClick={() => openDiscountModal(variant, variant.discountType!)}
                         >
-                          {Number(variant.discountValue).toLocaleString("fa-IR")}{variant.discountType === "PERCENT" ? "٪" : " ریال"} | {variant.discountStartsAt && variant.discountEndsAt ? `${formatPersianDateTime(variant.discountStartsAt)} تا ${formatPersianDateTime(variant.discountEndsAt)}` : "فروش ویژه"}
+                          <span className="text-[13px] font-bold text-[var(--bp-danger)]">
+                            {Number(variant.discountValue).toLocaleString("fa-IR", { maximumFractionDigits: 2 })}{variant.discountType === "PERCENT" ? "٪" : " ریال"}
+                          </span>
+                          {variant.discountStartsAt && variant.discountEndsAt ? (
+                            <span className="grid gap-px text-[10.5px] leading-[14px] text-[var(--bp-muted)]">
+                              <span className="flex items-center gap-1.5"><i className="h-1.5 w-1.5 rounded-full bg-[var(--bp-success)]" aria-hidden />شروع {formatDateTime(variant.discountStartsAt)}</span>
+                              <span className="flex items-center gap-1.5"><i className="h-1.5 w-1.5 rounded-full bg-[var(--bp-warning)]" aria-hidden />پایان {formatDateTime(variant.discountEndsAt)}</span>
+                            </span>
+                          ) : (
+                            <span className="text-[11px] text-[var(--bp-muted)]">بدون محدودیت زمانی</span>
+                          )}
                         </button>
                         <button
                           type="button"
