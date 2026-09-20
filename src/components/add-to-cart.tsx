@@ -322,6 +322,7 @@ export function AddToCart({ productId, options = [], variants = [], optionGuide,
         {purchaseSummary}
         {displayedOriginalPrice !== null && displayedPrice !== null && displayedOriginalPrice > displayedPrice && <div className="flex items-center gap-2"><span className="text-xs text-slate-400 line-through">{formatMoney(displayedOriginalPrice, currency)}</span>{discountLabel && <span className="inline-flex items-center rounded-full bg-[var(--danger)] px-2 py-1 text-[10px] font-bold text-[var(--danger-foreground)]">{discountLabel}</span>}</div>}
         <strong className="text-left text-xl font-bold text-slate-900" dir="rtl">{displayedPrice === null ? "قیمت نامشخص" : formatMoney(displayedPrice, currency)}</strong>
+        <div aria-hidden className="h-px bg-slate-200" />
         {purchaseMeta}
         {addButton}
         {msg && <small className="block text-[var(--brand-accent)]">{msg}</small>}
