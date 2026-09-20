@@ -220,7 +220,7 @@ export function BlueprintOrderDetail({ order, industry, optionColors = {}, warni
                   </dl>
                 </div>
               )}
-              <dl className="m-0 grid w-full gap-2.5 md:ms-auto md:max-w-[340px]">
+              <dl className={`m-0 grid w-full gap-2.5 ${hasAppliedNotes ? "md:ms-auto md:max-w-[340px]" : ""}`}>
                 <TotalRow label="جمع کالاها" value={formatMoney(order.subtotal.toString())} />
                 {Number(order.productDiscount) > 0 && <TotalRow saving label="تخفیف محصولات" value={formatMoney(order.productDiscount.toString())} />}
                 {Number(order.promotionDiscount) > 0 && <TotalRow saving label="تخفیف پروموشن" value={formatMoney(order.promotionDiscount.toString())} />}
