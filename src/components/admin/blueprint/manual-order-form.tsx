@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "@heroui/react";
 import { PackageSearch, Plus, Search, Trash2, UserRound, X } from "lucide-react";
@@ -80,7 +80,12 @@ export function BlueprintManualOrderForm({ industry }: { industry: "GOLD" | "GEN
   const [quote, setQuote] = useState<Quote | null>(null);
   const [quoting, setQuoting] = useState(false);
   const [quoteError, setQuoteError] = useState("");
-  const [submitting, setSubmitting] = useState(false);
+  const [requesting, setSubmitting] = useState(false);
+  // A saved order navigates away inside a transition, so the button keeps spinning until the next page
+  // is up but is not left pending afterwards: this page stays alive behind it, and coming back to it
+  // must not find the submit button still stuck.
+  const [navigating, startNavigation] = useTransition();
+  const submitting = requesting || navigating;
   const [formError, setFormError] = useState("");
 
   const debouncedCustomerQuery = useDebounced(customerQuery.trim(), 400);
@@ -224,7 +229,8 @@ export function BlueprintManualOrderForm({ industry }: { industry: "GOLD" | "GEN
       };
       const result = await requestJson<{ id: string; orderNumber: string }>("/api/admin/orders", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }, { fallbackMessage: "ثبت سفارش انجام نشد." });
       toast.success("سفارش ثبت شد", { description: `شمارهٔ سفارش: ${result.orderNumber}` });
-      router.push(`/admin/orders/${result.id}`);
+      setSubmitting(false);
+      startNavigation(() => router.push(`/admin/orders/${result.id}`));
     } catch (reason) {
       setFormError(requestErrorMessage(reason, "ثبت سفارش انجام نشد."));
       setSubmitting(false);
