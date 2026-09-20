@@ -566,7 +566,7 @@ export function BlueprintProductOptions({ storeIndustry, colors, library, option
                       allowDecimal
                       value={variant.weightGrams ?? ""}
                       reserveMessage={false}
-                      wrapperClassName="w-[min(100%,140px)]"
+                      wrapperClassName="w-full min-w-[150px]"
                       onValueChange={(next) => updateVariant(signature, { weightGrams: next || null })}
                     />
                   ) : (
@@ -576,7 +576,7 @@ export function BlueprintProductOptions({ storeIndustry, colors, library, option
                       showWords={false}
                       value={variant.price ?? ""}
                       reserveMessage={false}
-                      wrapperClassName="w-[min(100%,130px)]"
+                      wrapperClassName="w-full min-w-[150px]"
                       onValueChange={(next) => updateVariant(signature, { price: next || null })}
                     />
                   )}
@@ -589,7 +589,7 @@ export function BlueprintProductOptions({ storeIndustry, colors, library, option
                       placeholder="بدون تخفیف"
                       reserveMessage={false}
                       options={[{ value: "PERCENT", label: "درصدی" }, { value: "FIXED", label: "مبلغ ثابت" }]}
-                      wrapperClassName="w-[min(100%,130px)]"
+                      wrapperClassName="w-full min-w-[150px] max-w-[220px]"
                       onChange={(event) => {
                         const next = event.target.value as "PERCENT" | "FIXED" | "";
                         if (!next) { updateVariant(signature, { discountType: null, discountValue: null, discountStartsAt: null, discountEndsAt: null }); return; }
