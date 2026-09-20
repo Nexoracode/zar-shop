@@ -5,17 +5,17 @@ import { useRouter } from "next/navigation";
 import { toast } from "@heroui/react";
 import { CheckCircle2, CircleAlert, Pencil, Rocket } from "lucide-react";
 import { requestErrorMessage, requestJson } from "@/lib/api-request";
-import type { SetupStepId } from "@/modules/settings/setup-schemas";
 import { BpButton, BpTag } from "../../ui";
 import { SetupFooter, SetupSection } from "../setup-ui";
 
 type Props = {
-  steps: Record<SetupStepId, boolean>;
-  labels: Record<SetupStepId, string>;
-  order: SetupStepId[];
+  /** Whether each step is complete, keyed by the wizard's own step ids. */
+  steps: Record<string, boolean>;
+  labels: Record<string, string>;
+  order: string[];
   allStepsSatisfied: boolean;
   onBack?: () => void;
-  onGoToStep: (step: SetupStepId) => void;
+  onGoToStep: (step: string) => void;
 };
 
 export function SetupFinishStep({ steps, labels, order, allStepsSatisfied, onBack, onGoToStep }: Props) {

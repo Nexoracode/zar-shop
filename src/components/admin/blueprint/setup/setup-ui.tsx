@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, CheckCircle2 } from "lucide-react";
 import { BpButton, BpTag } from "../ui";
 
 /**
@@ -45,5 +45,18 @@ export function SetupFooter({ onBack, primary, hint }: { onBack?: () => void; pr
       {hint && <p className="bp-muted m-0 min-w-0 flex-1 basis-[200px] text-[12px] leading-6" role="status">{hint}</p>}
       <div className="ms-auto flex items-center gap-2">{primary}</div>
     </footer>
+  );
+}
+
+/** A green note that a part is already set up, so the step reads as done instead of asking again. */
+export function SetupDoneNote({ title, children }: { title: string; children?: ReactNode }) {
+  return (
+    <div className="flex items-start gap-3 rounded-[var(--bp-radius-sm)] border border-[var(--bp-success)] bg-[var(--bp-success-bg)] p-3.5">
+      <CheckCircle2 size={18} className="mt-0.5 shrink-0 text-[var(--bp-success)]" aria-hidden />
+      <div className="min-w-0 flex-1 text-[12.5px] leading-7">
+        <strong className="block text-[13px]">{title}</strong>
+        {children}
+      </div>
+    </div>
   );
 }

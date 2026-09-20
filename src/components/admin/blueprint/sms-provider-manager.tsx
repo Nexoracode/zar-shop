@@ -33,7 +33,7 @@ const smsProviderColumns = [
   { id: "status", label: "وضعیت" },
 ];
 
-export function BlueprintSmsProviderManager({ mode, initialConfigs, smsEnabled, storeName = "", onSaved, editingProvider, initialSenderNumber, initialHiddenColumns = [] }: { mode: "list" | "form"; initialConfigs: PublicSmsProviderConfig[]; smsEnabled?: boolean; /** The store name, so the Faraz form can warn when it is longer than a pattern variable allows. */ storeName?: string; onSaved?: () => void; /** Set when editing an already-configured provider: locks the provider picker and prefills the saved settings. */ editingProvider?: SmsProviderId; initialSenderNumber?: string; initialHiddenColumns?: string[] }) {
+export function BlueprintSmsProviderManager({ mode, initialConfigs, smsEnabled, storeName = "", onSaved, editingProvider, initialSenderNumber, initialHiddenColumns = [], formId, hideSubmit = false, stacked = false, onPendingChange }: { mode: "list" | "form"; /** Lets a button outside the form (the setup wizard's footer) submit it. */ formId?: string; /** Leaves the form's own submit button out; something else submits it through `formId`. */ hideSubmit?: boolean; /** One column instead of two, for a form set inside a narrow card. */ stacked?: boolean; /** Reports the save starting and ending, so an outside submit button can show its spinner. */ onPendingChange?: (pending: boolean) => void; initialConfigs: PublicSmsProviderConfig[]; smsEnabled?: boolean; /** The store name, so the Faraz form can warn when it is longer than a pattern variable allows. */ storeName?: string; onSaved?: () => void; /** Set when editing an already-configured provider: locks the provider picker and prefills the saved settings. */ editingProvider?: SmsProviderId; initialSenderNumber?: string; initialHiddenColumns?: string[] }) {
   const router = useRouter();
   const [configs, setConfigs] = useState(initialConfigs);
   // The server list is the source of truth once a mutation settles and `router.refresh()` brings
@@ -57,6 +57,7 @@ export function BlueprintSmsProviderManager({ mode, initialConfigs, smsEnabled, 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setBusy("save");
+    onPendingChange?.(true);
     try {
       // Faraz has its own form (BlueprintFarazProviderForm); this submit only serves the others.
       const body = { provider: selectedId, username, password, senderNumber };
@@ -71,6 +72,7 @@ export function BlueprintSmsProviderManager({ mode, initialConfigs, smsEnabled, 
       toast.danger("ذخیره انجام نشد", { description: error instanceof Error ? error.message : "خطای ناشناخته" });
     } finally {
       setBusy(null);
+      onPendingChange?.(false);
     }
   }
 
@@ -248,9 +250,9 @@ export function BlueprintSmsProviderManager({ mode, initialConfigs, smsEnabled, 
 
       {selectedId === "FARAZ_SMS" ? (
         // Keyed by the saved config so a refreshed server copy remounts it with the new values.
-        <BlueprintFarazProviderForm key={existingFaraz?.updatedAt ?? "new"} existing={existingFaraz} storeName={storeName} onSaved={onSaved} />
+        <BlueprintFarazProviderForm key={existingFaraz?.updatedAt ?? "new"} existing={existingFaraz} storeName={storeName} onSaved={onSaved} formId={formId} hideSubmit={hideSubmit} stacked={stacked} onPendingChange={onPendingChange} />
       ) : (
-      <form onSubmit={submit} className="grid items-start gap-2 lg:grid-cols-2">
+      <form id={formId} onSubmit={submit} className={`grid items-start gap-2 ${stacked ? "" : "lg:grid-cols-2"}`}>
         <section className="bp-frame relative p-[16px]">
           <div className="flex items-center gap-3">
             <span className="grid size-11 shrink-0 place-items-center border border-[var(--bp-accent)] bg-[var(--bp-accent-100)] text-[var(--bp-accent)]"><ShieldCheck size={19} /></span>
@@ -280,7 +282,7 @@ export function BlueprintSmsProviderManager({ mode, initialConfigs, smsEnabled, 
             <BpInput label="نام کاربری" required dir="ltr" maxLength={smsProviderFieldLimits.username} value={username} onChange={(event) => setUsername(event.target.value)} />
             <BpInput label="رمز وب‌سرویس" required type="password" dir="ltr" maxLength={smsProviderFieldLimits.password} value={password} onChange={(event) => setPassword(event.target.value)} />
             <BpInput label="سرشماره ارسال" required dir="ltr" maxLength={smsProviderFieldLimits.senderNumber} value={senderNumber} onChange={(event) => setSenderNumber(event.target.value)} placeholder="90008361" />
-            <BpButton type="submit" variant="primary" fullWidth isPending={busy === "save"}>ذخیره پیکربندی</BpButton>
+            {!hideSubmit && <BpButton type="submit" variant="primary" fullWidth isPending={busy === "save"}>ذخیره پیکربندی</BpButton>}
           </div>
         </section>
       </form>

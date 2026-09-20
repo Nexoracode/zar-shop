@@ -44,7 +44,7 @@ function patternLabel(pattern: SmsPattern) {
  * names to be typed by hand, it verifies the API key against Faraz and offers the account's own
  * lines and patterns as choices. Everything still works typed by hand if a lookup fails.
  */
-export function BlueprintFarazProviderForm({ existing, storeName, onSaved }: { existing: PublicSmsProviderConfig | null; storeName: string; onSaved?: () => void }) {
+export function BlueprintFarazProviderForm({ existing, storeName, onSaved, formId, hideSubmit = false, stacked = false, onPendingChange }: { existing: PublicSmsProviderConfig | null; storeName: string; onSaved?: () => void; formId?: string; hideSubmit?: boolean; stacked?: boolean; onPendingChange?: (pending: boolean) => void }) {
   const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
   const [apiKey, setApiKey] = useState("");
@@ -122,6 +122,7 @@ export function BlueprintFarazProviderForm({ existing, storeName, onSaved }: { e
     if (!existing && !apiKey.trim()) next.apiKey = "API Key را وارد کنید.";
     if (Object.keys(next).length) { showErrors(next); return; }
     setSaving(true);
+    onPendingChange?.(true);
     try {
       const response = await fetch("/api/admin/sms/providers", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
       const result = await response.json().catch(() => null);
@@ -139,11 +140,12 @@ export function BlueprintFarazProviderForm({ existing, storeName, onSaved }: { e
       toast.danger("ذخیره انجام نشد", { description: error instanceof Error ? error.message : "خطای ناشناخته" });
     } finally {
       setSaving(false);
+      onPendingChange?.(false);
     }
   }
 
   return (
-    <form ref={formRef} onSubmit={submit} noValidate className="grid items-start gap-2 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
+    <form ref={formRef} id={formId} onSubmit={submit} noValidate className={`grid items-start gap-2 ${stacked ? "" : "lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]"}`}>
       <section className="bp-frame relative p-[16px]">
         <div className="flex items-center gap-3">
           <span className="grid size-11 shrink-0 place-items-center border border-[var(--bp-accent)] bg-[var(--bp-accent-100)] text-[var(--bp-accent)]"><ShieldCheck size={19} /></span>
@@ -220,7 +222,7 @@ export function BlueprintFarazProviderForm({ existing, storeName, onSaved }: { e
           </div>
         </section>
 
-        <BpButton type="submit" variant="primary" fullWidth isPending={saving}>ذخیره پیکربندی</BpButton>
+        {!hideSubmit && <BpButton type="submit" variant="primary" fullWidth isPending={saving}>ذخیره پیکربندی</BpButton>}
       </div>
     </form>
   );

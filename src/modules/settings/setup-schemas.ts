@@ -51,6 +51,8 @@ export type SetupState = {
   completedAt: string | null;
   industry: StoreIndustry;
   steps: Record<SetupStepId, boolean>;
+  /** The parts of the two combined steps, so the wizard can walk through them one at a time. */
+  parts: { gateway: boolean; sms: boolean; shippingOrigin: boolean; shippingMethod: boolean };
   allStepsSatisfied: boolean;
 };
 

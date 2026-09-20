@@ -6,31 +6,40 @@ import { Check, LogOut, Store } from "lucide-react";
 import type { PublicGatewayConfig } from "@/modules/payments/gateway-config";
 import type { PublicSmsProviderConfig } from "@/modules/communications/sms-config";
 import type { BrandSettings } from "@/modules/settings/brand-settings";
-import type { SetupState, SetupStepId } from "@/modules/settings/setup-schemas";
-import { SETUP_STEP_IDS } from "@/modules/settings/setup-schemas";
+import type { SetupState } from "@/modules/settings/setup-schemas";
 import { BpButton } from "../ui";
 import { SetupBasicsStep } from "./steps/basics-step";
 import { SetupBrandStep } from "./steps/brand-step";
 import { SetupContactStep } from "./steps/contact-step";
 import { SetupFinishStep } from "./steps/finish-step";
-import { SetupPaymentSmsStep } from "./steps/payment-sms-step";
-import { SetupShippingStep } from "./steps/shipping-step";
+import { SetupMethodStep } from "./steps/method-step";
+import { SetupOriginStep } from "./steps/origin-step";
+import { SetupPaymentStep } from "./steps/payment-step";
+import { SetupSmsStep } from "./steps/sms-step";
 
-type WizardStepId = SetupStepId | "finish";
+/**
+ * The screens, in order. Payment, SMS, shipping origin and shipping method are separate screens —
+ * one thing to do on each — even though the server counts them as two steps.
+ */
+const WORK_STEPS = ["basics", "contact", "brand", "payment", "sms", "origin", "method"] as const;
+type WorkStepId = (typeof WORK_STEPS)[number];
+type WizardStepId = WorkStepId | "finish";
 
-const STEP_ORDER: WizardStepId[] = [...SETUP_STEP_IDS, "finish"];
+const STEP_ORDER: WizardStepId[] = [...WORK_STEPS, "finish"];
 
 /** What each step is called, and — in one line — what it is for, so nobody has to guess. */
 const STEP_META: Record<WizardStepId, { label: string; summary: string; intro: string }> = {
   basics: { label: "صنف و اطلاعات پایه", summary: "نوع فروشگاه و نام آن", intro: "نوع کالاهایی که می‌فروشید و نامی که مشتری‌ها می‌بینند را مشخص کنید." },
   contact: { label: "تماس و اطلاعات حقوقی", summary: "راه ارتباطی و اطلاعات فاکتور", intro: "این اطلاعات روی فاکتور رسمی و در صفحهٔ تماس فروشگاه نمایش داده می‌شوند." },
   brand: { label: "برند و ظاهر", summary: "لوگو، فاویکون و رنگ‌ها", intro: "لوگو و رنگ‌های فروشگاه را انتخاب کنید تا سایت شبیه برند شما شود." },
-  "payment-sms": { label: "پرداخت و پیامک", summary: "درگاه پرداخت و پیامک تأیید", intro: "برای دریافت پول از مشتری به یک درگاه پرداخت و برای ارسال کد ورود به یک سرویس پیامک نیاز دارید." },
-  shipping: { label: "ارسال", summary: "مبدأ و روش ارسال سفارش", intro: "مشخص کنید سفارش‌ها از کجا و با چه روشی برای مشتری فرستاده می‌شوند." },
+  payment: { label: "درگاه پرداخت", summary: "دریافت پول از مشتری", intro: "مشتری سفارشش را از طریق درگاه پرداخت می‌کند. یک درگاه اضافه کنید." },
+  sms: { label: "سرویس پیامک", summary: "ارسال کد تأیید ورود", intro: "کد ورود و ثبت‌نام با پیامک می‌رود. یک سرویس پیامک وصل کنید." },
+  origin: { label: "مبدأ ارسال", summary: "سفارش‌ها از کجا می‌روند", intro: "شهری که سفارش‌ها را از آنجا ارسال می‌کنید تا کرایه درست محاسبه شود." },
+  method: { label: "روش ارسال", summary: "چطور به مشتری می‌رسد", intro: "روشی که مشتری در تسویه‌حساب برای دریافت سفارش انتخاب می‌کند." },
   finish: { label: "مرور و فعال‌سازی", summary: "باز کردن فروشگاه", intro: "همه‌چیز را یک‌بار مرور کنید و فروشگاه را برای مشتری‌ها باز کنید." },
 };
 
-const SETUP_STEP_LABELS = Object.fromEntries(SETUP_STEP_IDS.map((id) => [id, STEP_META[id].label])) as Record<SetupStepId, string>;
+const WORK_LABELS = Object.fromEntries(WORK_STEPS.map((id) => [id, STEP_META[id].label])) as Record<WorkStepId, string>;
 
 type Props = {
   state: SetupState;
@@ -64,7 +73,17 @@ function StepDot({ index, status }: { index: number; status: StepStatus }) {
 
 export function SetupWizard({ state, storeName, basics, contact, brand, origin, provinces, gateways, smsConfigs, appUrl }: Props) {
   const router = useRouter();
-  const [current, setCurrent] = useState<WizardStepId>(() => STEP_ORDER.find((id) => id !== "finish" && !state.steps[id as SetupStepId]) ?? "finish");
+  // Whether each screen's work is done; the four that share a server step come from `state.parts`.
+  const done: Record<WorkStepId, boolean> = {
+    basics: state.steps.basics,
+    contact: state.steps.contact,
+    brand: state.steps.brand,
+    payment: state.parts.gateway,
+    sms: state.parts.sms,
+    origin: state.parts.shippingOrigin,
+    method: state.parts.shippingMethod,
+  };
+  const [current, setCurrent] = useState<WizardStepId>(() => WORK_STEPS.find((id) => !done[id]) ?? "finish");
   const [loggingOut, setLoggingOut] = useState(false);
 
   const currentIndex = STEP_ORDER.indexOf(current);
@@ -78,8 +97,8 @@ export function SetupWizard({ state, storeName, basics, contact, brand, origin, 
   const goPrev = currentIndex > 0 ? () => goTo(STEP_ORDER[currentIndex - 1]) : undefined;
   const savedAndNext = () => { router.refresh(); goNext(); };
 
-  const doneCount = SETUP_STEP_IDS.filter((id) => state.steps[id]).length;
-  const total = SETUP_STEP_IDS.length;
+  const doneCount = WORK_STEPS.filter((id) => done[id]).length;
+  const total = WORK_STEPS.length;
   const percent = Math.round((doneCount / total) * 100);
 
   async function logout() {
@@ -96,7 +115,7 @@ export function SetupWizard({ state, storeName, basics, contact, brand, origin, 
   function stepStatus(id: WizardStepId): StepStatus {
     if (id === current) return "current";
     if (id === "finish") return state.allStepsSatisfied ? "done" : "todo";
-    return state.steps[id as SetupStepId] ? "done" : "todo";
+    return done[id] ? "done" : "todo";
   }
 
   const meta = STEP_META[current];
@@ -119,7 +138,7 @@ export function SetupWizard({ state, storeName, basics, contact, brand, origin, 
           <div className="min-w-0 flex-1 basis-[280px]">
             <h1 className="m-0 text-[18px] font-bold">فروشگاه‌تان را برای فروش آماده کنید</h1>
             <p className="bp-muted m-0 mt-1.5 text-[12.5px] leading-7">
-              فقط {total.toLocaleString("fa-IR")} گام کوتاه مانده. هر گام با «ذخیره و ادامه» همان لحظه ذخیره می‌شود و هر وقت خواستید می‌توانید برگردید.
+              فقط {total.toLocaleString("fa-IR")} گام کوتاه مانده. روی هر صفحه فقط یک کار دارید و دکمهٔ پایین صفحه آن را ذخیره می‌کند و شما را به گام بعد می‌برد؛ هر وقت خواستید می‌توانید برگردید.
               تا پایان همهٔ گام‌ها، فروشگاه برای مشتری‌ها بسته می‌ماند.
             </p>
           </div>
@@ -182,29 +201,22 @@ export function SetupWizard({ state, storeName, basics, contact, brand, origin, 
             {current === "basics" && <SetupBasicsStep initial={basics} onBack={goPrev} onSaved={savedAndNext} />}
             {current === "contact" && <SetupContactStep initial={contact} onBack={goPrev} onSaved={savedAndNext} />}
             {current === "brand" && <SetupBrandStep initial={brand} onBack={goPrev} onSaved={savedAndNext} />}
-            {current === "payment-sms" && (
-              <SetupPaymentSmsStep gateways={gateways} smsConfigs={smsConfigs} appUrl={appUrl} storeName={storeName} isComplete={state.steps["payment-sms"]} onBack={goPrev} onNext={goNext} onSaved={refresh} />
+            {current === "payment" && (
+              <SetupPaymentStep gateways={gateways} appUrl={appUrl} isDone={done.payment} onBack={goPrev} onNext={goNext} onSaved={savedAndNext} />
             )}
-            {current === "shipping" && (
-              <SetupShippingStep
-                provinces={provinces}
-                initialOrigin={origin}
-                originSaved={Boolean(origin.provinceId)}
-                hasActiveMethod={state.steps.shipping}
-                isComplete={state.steps.shipping}
-                onBack={goPrev}
-                onNext={goNext}
-                onSaved={refresh}
-              />
+            {current === "sms" && (
+              <SetupSmsStep smsConfigs={smsConfigs} storeName={storeName} isDone={done.sms} onBack={goPrev} onNext={goNext} onSaved={savedAndNext} />
             )}
+            {current === "origin" && <SetupOriginStep initialOrigin={origin} onBack={goPrev} onSaved={savedAndNext} />}
+            {current === "method" && <SetupMethodStep provinces={provinces} isDone={done.method} onBack={goPrev} onNext={goNext} onSaved={savedAndNext} />}
             {current === "finish" && (
               <SetupFinishStep
-                steps={state.steps}
-                labels={SETUP_STEP_LABELS}
-                order={[...SETUP_STEP_IDS]}
+                steps={done}
+                labels={WORK_LABELS}
+                order={[...WORK_STEPS]}
                 allStepsSatisfied={state.allStepsSatisfied}
                 onBack={goPrev}
-                onGoToStep={(step) => goTo(step)}
+                onGoToStep={(step) => goTo(step as WizardStepId)}
               />
             )}
           </div>

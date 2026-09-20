@@ -43,7 +43,7 @@ function deactivationNote(configs: PublicGatewayConfig[], config: PublicGatewayC
   };
 }
 
-export function BlueprintPaymentGatewayManager({ mode, initialConfigs, appUrl, onSaved, editingProvider, initialHiddenColumns = [] }: { mode: "list" | "form"; initialConfigs: PublicGatewayConfig[]; appUrl?: string; onSaved?: () => void; /** Set on the edit page: locks the provider, leaves the credential optional and prefills the mode. */ editingProvider?: GatewayProviderId; initialHiddenColumns?: string[] }) {
+export function BlueprintPaymentGatewayManager({ mode, initialConfigs, appUrl, onSaved, editingProvider, initialHiddenColumns = [], formId, hideSubmit = false, stacked = false, onPendingChange }: { mode: "list" | "form"; initialConfigs: PublicGatewayConfig[]; appUrl?: string; onSaved?: () => void; /** Lets a button outside the form (the setup wizard's footer) submit it. */ formId?: string; /** Leaves the form's own submit button out; something else submits it through `formId`. */ hideSubmit?: boolean; /** One column instead of two, for a form set inside a narrow card. */ stacked?: boolean; /** Reports the save starting and ending, so an outside submit button can show its spinner. */ onPendingChange?: (pending: boolean) => void; /** Set on the edit page: locks the provider, leaves the credential optional and prefills the mode. */ editingProvider?: GatewayProviderId; initialHiddenColumns?: string[] }) {
   const router = useRouter();
   const [configs, setConfigs] = useState(initialConfigs);
   // The server list is the source of truth once a mutation settles and `router.refresh()` brings
@@ -80,6 +80,7 @@ export function BlueprintPaymentGatewayManager({ mode, initialConfigs, appUrl, o
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setSaving(true);
+    onPendingChange?.(true);
     try {
       // Editing changes only what was sent: a blank credential keeps the stored (encrypted) one.
       const body = editingProvider
@@ -99,6 +100,7 @@ export function BlueprintPaymentGatewayManager({ mode, initialConfigs, appUrl, o
       toast.danger(editingProvider ? "ذخیرهٔ تغییرات انجام نشد" : "ثبت درگاه انجام نشد", { description: reason instanceof Error ? reason.message : "خطای ناشناخته" });
     } finally {
       setSaving(false);
+      onPendingChange?.(false);
     }
   }
 
@@ -246,7 +248,7 @@ export function BlueprintPaymentGatewayManager({ mode, initialConfigs, appUrl, o
         </div>
       </section>
 
-      <form onSubmit={submit} className="grid items-start gap-2 lg:grid-cols-2">
+      <form id={formId} onSubmit={submit} className={`grid items-start gap-2 ${stacked ? "" : "lg:grid-cols-2"}`}>
         <section className="bp-frame relative p-[16px]">
           <div className="flex items-center gap-3">
             <span className="grid size-11 shrink-0 place-items-center border border-[var(--bp-accent)] bg-[var(--bp-accent-100)] text-[var(--bp-accent)]"><ShieldCheck size={19} /></span>
@@ -304,7 +306,7 @@ export function BlueprintPaymentGatewayManager({ mode, initialConfigs, appUrl, o
             <p className="bp-confirm-note m-0 mt-2"><TriangleAlert size={15} className="mt-[3px] shrink-0" aria-hidden /><span>با ذخیره، درگاه به حالت <strong>آزمایشی</strong> درمی‌آید و پرداخت‌های واقعی مشتری‌ها دیگر انجام نمی‌شود.</span></p>
           )}
           <p className="bp-muted m-0 mt-3 border border-[var(--bp-divider)] bg-[var(--bp-bg)] p-3 text-[11px] leading-6">ذخیره شناسه به‌تنهایی کافی نیست؛ اتصال فنی همان ارائه‌دهنده باید در وضعیت «پرداخت آنلاین» تنظیمات ارسال و پرداخت هم فعال باشد.</p>
-          <BpButton type="submit" variant="primary" fullWidth isPending={saving} className="mt-3 gap-2">{editingProvider ? <><Save size={16} />ذخیرهٔ تغییرات</> : <><Plus size={16} />افزودن درگاه</>}</BpButton>
+          {!hideSubmit && <BpButton type="submit" variant="primary" fullWidth isPending={saving} className="mt-3 gap-2">{editingProvider ? <><Save size={16} />ذخیرهٔ تغییرات</> : <><Plus size={16} />افزودن درگاه</>}</BpButton>}
         </section>
       </form>
     </div>

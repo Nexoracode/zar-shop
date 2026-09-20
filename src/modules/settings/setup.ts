@@ -23,18 +23,20 @@ export const getSetupState = cache(async (): Promise<SetupState> => {
     db.shippingMethod.count({ where: { isActive: true } }),
   ]);
   const stepsDone = new Set(readStepsDone(row?.setupStepsDone));
+  const parts = { gateway: gatewayCount > 0, sms: smsCount > 0, shippingOrigin: Boolean(row?.originProvinceId), shippingMethod: activeShippingCount > 0 };
   const steps: Record<SetupStepId, boolean> = {
     basics: stepsDone.has("basics"),
     contact: stepsDone.has("contact"),
     brand: Boolean(row?.mainLogoMediaId) && Boolean(row?.faviconMediaId),
-    "payment-sms": gatewayCount > 0 && smsCount > 0,
-    shipping: Boolean(row?.originProvinceId) && activeShippingCount > 0,
+    "payment-sms": parts.gateway && parts.sms,
+    shipping: parts.shippingOrigin && parts.shippingMethod,
   };
   return {
     completed: Boolean(row?.setupCompletedAt),
     completedAt: row?.setupCompletedAt?.toISOString() ?? null,
     industry: row?.industry ?? "GENERAL",
     steps,
+    parts,
     allStepsSatisfied: SETUP_STEP_IDS.every((id) => steps[id]),
   };
 });

@@ -52,7 +52,7 @@ function Panel({ title, description, action, children }: { title: string; descri
   );
 }
 
-export function BlueprintShippingMethodForm({ provinces, method, onSaved }: { provinces: Array<{ id: string; name: string }>; method?: MethodDraft; onSaved?: () => void }) {
+export function BlueprintShippingMethodForm({ provinces, method, onSaved, formId, hideSubmit = false, onPendingChange }: { provinces: Array<{ id: string; name: string }>; method?: MethodDraft; onSaved?: () => void; /** Lets a button outside the form (the setup wizard's footer) submit it. */ formId?: string; /** Leaves the form's own footer with its submit button out; something else submits it through `formId`. */ hideSubmit?: boolean; /** Reports the save starting and ending, so an outside submit button can show its spinner. */ onPendingChange?: (pending: boolean) => void }) {
   const router = useRouter();
   const [title, setTitle] = useState(method?.title ?? "");
   const [carrier, setCarrier] = useState(method?.carrier ?? "");
@@ -98,6 +98,7 @@ export function BlueprintShippingMethodForm({ provinces, method, onSaved }: { pr
       return;
     }
     setSaving(true);
+    onPendingChange?.(true);
     try {
       await requestJson(method ? `/api/admin/shipping-methods/${method.id}` : "/api/admin/shipping-methods", {
         method: method ? "PATCH" : "POST",
@@ -106,19 +107,20 @@ export function BlueprintShippingMethodForm({ provinces, method, onSaved }: { pr
       }, { fallbackMessage: "ذخیره روش ارسال ناموفق بود." });
       setErrors({});
       toast.success(method ? "روش ارسال به‌روزرسانی شد" : "روش ارسال ثبت شد");
-      if (onSaved) { setSaving(false); onSaved(); return; }
+      if (onSaved) { setSaving(false); onPendingChange?.(false); onSaved(); return; }
       router.push("/admin/shipping-methods");
       router.refresh();
     } catch (reason) {
       toast.danger("ذخیره روش ارسال انجام نشد", { description: requestErrorMessage(reason, "ارتباط با سرور برقرار نشد.") });
       setSaving(false);
+      onPendingChange?.(false);
     }
   }
 
   const provinceOptions = [{ value: "", label: "همه استان‌ها" }, ...provinces.map((province) => ({ value: province.id, label: province.name }))];
 
   return (
-    <form onSubmit={submit} noValidate className="grid gap-2">
+    <form id={formId} onSubmit={submit} noValidate className="grid gap-2">
       <Panel title="اطلاعات پایه">
         <div className="grid gap-3 sm:grid-cols-2">
           <BpInput label="نام روش" required maxLength={shippingFieldLimits.title} value={title} error={errors.title} placeholder="مثلاً پست پیشتاز" onChange={(event) => { setTitle(event.target.value); clearError("title"); }} />
@@ -191,10 +193,12 @@ export function BlueprintShippingMethodForm({ provinces, method, onSaved }: { pr
           </div>}
       </Panel>
 
-      <section className="bp-frame relative flex flex-col gap-3 p-[18px] sm:flex-row sm:items-center sm:justify-between">
-        <p className="bp-muted m-0 text-[12px]">پس از ذخیره، این روش بلافاصله در تسویه حساب اعمال می‌شود.</p>
-        <BpButton type="submit" variant="primary" isPending={saving}>{method ? "ذخیره تغییرات" : "ثبت روش ارسال"}</BpButton>
-      </section>
+      {!hideSubmit && (
+        <section className="bp-frame relative flex flex-col gap-3 p-[18px] sm:flex-row sm:items-center sm:justify-between">
+          <p className="bp-muted m-0 text-[12px]">پس از ذخیره، این روش بلافاصله در تسویه حساب اعمال می‌شود.</p>
+          <BpButton type="submit" variant="primary" isPending={saving}>{method ? "ذخیره تغییرات" : "ثبت روش ارسال"}</BpButton>
+        </section>
+      )}
     </form>
   );
 }
