@@ -28,6 +28,13 @@ export const phoneCheckRateLimitPolicy: RateLimitPolicy = { maxAttempts: 20, win
 // generous enough for a genuine visitor to retry a typo, tight enough to stop spam floods.
 export const contactMessageRateLimitPolicy: RateLimitPolicy = { maxAttempts: 5, windowMs: 60 * 60_000, blockMs: 60 * 60_000 };
 
+/*
+ * The limits protect a public site from guessing and floods. On a developer's machine (`next dev`) they
+ * only get in the way of signing in again and again, so nothing is counted or blocked there. Production,
+ * tests and every other mode are untouched.
+ */
+const rateLimitsDisabled = process.env.NODE_ENV === "development";
+
 function requestIp(request: Request) {
   return request.headers.get("cf-connecting-ip")
     ?? request.headers.get("x-real-ip")
@@ -50,11 +57,13 @@ export function nextRateLimitState(current: RateLimitState | null, policy: RateL
 }
 
 async function isBlocked(keyHash: string, now = new Date()) {
+  if (rateLimitsDisabled) return null;
   const state = await db.authRateLimit.findUnique({ where: { keyHash } });
   return state?.blockedUntil && state.blockedUntil > now ? state.blockedUntil : null;
 }
 
 async function recordAttempt(keyHash: string, policy: RateLimitPolicy, now = new Date()) {
+  if (rateLimitsDisabled) return null;
   return db.$transaction(async (transaction) => {
     const current = await transaction.authRateLimit.findUnique({ where: { keyHash } });
     const next = nextRateLimitState(current, policy, now);
