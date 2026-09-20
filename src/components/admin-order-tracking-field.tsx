@@ -41,7 +41,7 @@ export function AdminOrderTrackingField({ orderId, initialTrackingNumber }: { or
     <form onSubmit={submit} className="bp-frame overflow-hidden">
       <div className="flex items-center gap-2 border-b border-[var(--bp-divider)] px-4 py-3">
         <span className="text-[var(--bp-muted)]"><Truck size={16} aria-hidden /></span>
-        <h2 className="m-0 text-[14px] font-bold">کد رهگیری مرسوله</h2>
+        <div role="heading" aria-level={2} className="text-[14px] font-bold">کد رهگیری مرسوله</div>
       </div>
       <div className="grid gap-3 p-4">
         <BpInput aria-label="کد رهگیری مرسوله" value={value} maxLength={trackingNumberMaxLength} error={error || undefined} onChange={(event) => { setValue(event.target.value); setError(""); }} dir={value ? "ltr" : "rtl"} placeholder="کد رهگیری را وارد کنید" disabled={saving} />

@@ -42,7 +42,8 @@ function Card({ icon, title, meta, children }: { icon: React.ReactNode; title: s
     <section className="bp-frame relative overflow-hidden">
       <div className="flex items-center gap-2 border-b border-[var(--bp-divider)] px-4 py-3">
         <span className="text-[var(--bp-muted)]" aria-hidden>{icon}</span>
-        <h2 className="m-0 text-[14px] font-bold">{title}</h2>
+        {/* Not an <h2>: `.bp-root h2` (24px, unlayered) beats any Tailwind size class, so a real heading tag could not be made card-sized. */}
+        <div role="heading" aria-level={2} className="text-[14px] font-bold">{title}</div>
         {meta && <span className="bp-muted ms-auto text-[12px]">{meta}</span>}
       </div>
       {children}
@@ -202,7 +203,7 @@ export function BlueprintOrderDetail({ order, industry, optionColors = {}, warni
             <div className="flex flex-col gap-4 border-t border-[var(--bp-divider)] bg-[var(--bp-hover)] p-4 md:flex-row md:items-start">
               {hasAppliedNotes && (
                 <div className="min-w-0 flex-1">
-                  <h3 className="bp-muted m-0 mb-2 text-[12px] font-bold">موارد ثبت‌شده در سفارش</h3>
+                  <div role="heading" aria-level={3} className="bp-muted mb-2 text-[12px] font-bold">موارد ثبت‌شده در سفارش</div>
                   <dl className="m-0 grid gap-2">
                     {order.promotionRedemptions.map((redemption) => (
                       <div key={redemption.id} className="border border-[var(--bp-divider)] bg-[var(--bp-card)] px-3 py-2">
