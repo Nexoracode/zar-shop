@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useRef, useState, type FormEvent, type ReactNode } from "react";
+import { useRef, useState, useTransition, type FormEvent, type ReactNode } from "react";
 import { toast } from "@heroui/react";
 import { requestErrorMessage, requestJson } from "@/lib/api-request";
 import { packagingFieldLimits } from "@/modules/shipping/packaging-limits";
@@ -50,7 +50,12 @@ export function BlueprintPackagingBoxForm({ box }: { box?: BoxDraft }) {
   // The store must always keep a default box, so one that holds the flag cannot give it up here.
   const wasDefault = box?.isDefault ?? false;
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [saving, setSaving] = useState(false);
+  const [requesting, setSaving] = useState(false);
+  // A save that lands navigates away inside a transition, so the button keeps spinning until the next
+  // page is up but is not left pending afterwards: this page stays alive behind the list, and coming
+  // back to it must not find the save button still stuck.
+  const [navigating, startNavigation] = useTransition();
+  const saving = requesting || navigating;
 
   function clearError(field: string) {
     setErrors((current) => (current[field] ? { ...current, [field]: "" } : current));
@@ -93,8 +98,11 @@ export function BlueprintPackagingBoxForm({ box }: { box?: BoxDraft }) {
       }, { fallbackMessage: "ذخیره جعبه بسته‌بندی ناموفق بود." });
       setErrors({});
       toast.success(box ? "جعبه بسته‌بندی به‌روزرسانی شد" : "جعبه بسته‌بندی ثبت شد");
-      router.push("/admin/packaging");
-      router.refresh();
+      setSaving(false);
+      startNavigation(() => {
+        router.push("/admin/packaging");
+        router.refresh();
+      });
     } catch (reason) {
       toast.danger("ذخیره جعبه بسته‌بندی انجام نشد", { description: requestErrorMessage(reason, "ارتباط با سرور برقرار نشد.") });
       setSaving(false);

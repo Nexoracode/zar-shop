@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "@heroui/react";
 import { ArrowRight, ImageOff, Plus, Trash2, Upload } from "lucide-react";
@@ -77,7 +77,12 @@ export function BlueprintArticleForm({ article, categories, authors }: Props) {
   const [cover, setCover] = useState<MediaChoice | null>(article?.cover ?? null);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [errors, setErrors] = useState<FieldErrors>({});
-  const [saving, setSaving] = useState(false);
+  const [requesting, setSaving] = useState(false);
+  // A save that lands navigates away inside a transition, so the button keeps spinning until the next
+  // page is up but is not left pending afterwards: this page stays alive behind the list, and coming
+  // back to it must not find the save button still stuck.
+  const [navigating, startNavigation] = useTransition();
+  const saving = requesting || navigating;
   const [dirty, setDirty] = useState(false);
 
   useUnsavedChangesWarning(dirty && !saving);
@@ -133,8 +138,11 @@ export function BlueprintArticleForm({ article, categories, authors }: Props) {
       }, { fallbackMessage: "ذخیرهٔ مقاله انجام نشد." });
       setDirty(false);
       toast.success(article ? "مقاله به‌روزرسانی شد" : "مقاله ثبت شد");
-      router.push("/admin/articles");
-      router.refresh();
+      setSaving(false);
+      startNavigation(() => {
+        router.push("/admin/articles");
+        router.refresh();
+      });
     } catch (reason) {
       toast.danger("ذخیرهٔ مقاله انجام نشد", { description: requestErrorMessage(reason, "ارتباط با سرور برقرار نشد.") });
       setSaving(false);

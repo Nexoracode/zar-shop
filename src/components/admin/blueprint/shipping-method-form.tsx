@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState, type FormEvent, type ReactNode } from "react";
+import { useState, useTransition, type FormEvent, type ReactNode } from "react";
 import { toast } from "@heroui/react";
 import { Plus, Trash2 } from "lucide-react";
 import { requestErrorMessage, requestJson } from "@/lib/api-request";
@@ -66,7 +66,12 @@ export function BlueprintShippingMethodForm({ provinces, method, onSaved, formId
   const sortOrder = method?.sortOrder ?? 0;
   const [zones, setZones] = useState<ZoneDraft[]>(method?.zones ?? []);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [saving, setSaving] = useState(false);
+  const [requesting, setSaving] = useState(false);
+  // A save that lands navigates away inside a transition, so the button keeps spinning until the next
+  // page is up but is not left pending afterwards: this page stays alive behind the list, and coming
+  // back to it must not find the save button still stuck.
+  const [navigating, startNavigation] = useTransition();
+  const saving = requesting || navigating;
 
   function clearError(field: string) {
     setErrors((current) => (current[field] ? { ...current, [field]: "" } : current));
@@ -108,8 +113,11 @@ export function BlueprintShippingMethodForm({ provinces, method, onSaved, formId
       setErrors({});
       toast.success(method ? "روش ارسال به‌روزرسانی شد" : "روش ارسال ثبت شد");
       if (onSaved) { setSaving(false); onPendingChange?.(false); onSaved(); return; }
-      router.push("/admin/shipping-methods");
-      router.refresh();
+      setSaving(false);
+      startNavigation(() => {
+        router.push("/admin/shipping-methods");
+        router.refresh();
+      });
     } catch (reason) {
       toast.danger("ذخیره روش ارسال انجام نشد", { description: requestErrorMessage(reason, "ارتباط با سرور برقرار نشد.") });
       setSaving(false);

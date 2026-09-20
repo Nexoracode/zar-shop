@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "@heroui/react";
 import { BadgePercent, Check, Gift, Info, ShoppingBag, Truck } from "lucide-react";
@@ -88,7 +88,12 @@ export function BlueprintPromotionForm({ promotion, categories = [], initialTarg
   const [targetUsers, setTargetUsers] = useState<UserRef[]>(initialTargetUsers);
 
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [saving, setSaving] = useState(false);
+  const [requesting, setSaving] = useState(false);
+  // A save that lands navigates away inside a transition, so the button keeps spinning until the next
+  // page is up but is not left pending afterwards: this page stays alive behind the list, and coming
+  // back to it must not find the save button still stuck.
+  const [navigating, startNavigation] = useTransition();
+  const saving = requesting || navigating;
 
   const isCoupon = type === "COUPON";
   const isFreeShipping = type === "FREE_SHIPPING";
@@ -167,8 +172,11 @@ export function BlueprintPromotionForm({ promotion, categories = [], initialTarg
         return;
       }
       toast.success(editing ? "پروموشن ویرایش شد." : "پروموشن ساخته شد.", { description: "قواعد کمپین از این لحظه در محاسبات سفارش بررسی می‌شوند." });
-      router.push("/admin/promotions");
-      router.refresh();
+      setSaving(false);
+      startNavigation(() => {
+        router.push("/admin/promotions");
+        router.refresh();
+      });
     } catch {
       toast.danger("ذخیرهٔ پروموشن انجام نشد", { description: "ارتباط با سرور برقرار نشد." });
       setSaving(false);

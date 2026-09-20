@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState, type FormEvent } from "react";
+import { useState, useTransition, type FormEvent } from "react";
 import { toast } from "@heroui/react";
 import type { UserRole } from "@generated/prisma/enums";
 import { requestErrorMessage, requestJson } from "@/lib/api-request";
@@ -23,7 +23,12 @@ export function BlueprintUserForm({ roleOptions }: { roleOptions: readonly UserR
   const [role, setRole] = useState<UserRole>(roleOptions[0]);
   const [status, setStatus] = useState<(typeof assignableUserStatuses)[number]>("ACTIVE");
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [saving, setSaving] = useState(false);
+  const [requesting, setSaving] = useState(false);
+  // A save that lands navigates away inside a transition, so the button keeps spinning until the next
+  // page is up but is not left pending afterwards: this page stays alive behind the list, and coming
+  // back to it must not find the save button still stuck.
+  const [navigating, startNavigation] = useTransition();
+  const saving = requesting || navigating;
 
   function clearError(field: string) {
     setErrors((current) => (current[field] ? { ...current, [field]: "" } : current));
@@ -57,8 +62,11 @@ export function BlueprintUserForm({ roleOptions }: { roleOptions: readonly UserR
         body: JSON.stringify(validation.data),
       }, { fallbackMessage: "ثبت کاربر ناموفق بود." });
       toast.success("کاربر جدید ثبت شد");
-      router.push("/admin/users");
-      router.refresh();
+      setSaving(false);
+      startNavigation(() => {
+        router.push("/admin/users");
+        router.refresh();
+      });
     } catch (reason) {
       toast.danger("ثبت کاربر انجام نشد", { description: requestErrorMessage(reason, "ارتباط با سرور برقرار نشد.") });
       setSaving(false);
