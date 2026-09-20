@@ -16,6 +16,7 @@ import { CARD_TO_CARD_PROVIDER } from "@/modules/payments/card-to-card-shared";
 import { cardToCardDestination, getCardToCardSettings } from "@/modules/settings/card-to-card-settings";
 import { getGeneralStoreSettings } from "@/modules/settings/general-settings";
 import { getOrderSettings } from "@/modules/settings/order-settings";
+import { RESUME_CHECKOUT_PATH } from "@/modules/orders/resume-path";
 
 export const metadata: Metadata = { title: "پرداخت کارت‌به‌کارت" };
 
@@ -63,7 +64,7 @@ export default async function CardToCardPaymentPage({ params }: { params: Promis
 
   return (
     <>
-      <StandaloneTopBar backHref={underReview ? `/account/orders/${order.id}` : "/checkout"} backLabel={underReview ? "سفارش" : "روش‌های پرداخت"} />
+      <StandaloneTopBar backHref={underReview ? `/account/orders/${order.id}` : RESUME_CHECKOUT_PATH} backLabel={underReview ? "سفارش" : "روش‌های پرداخت"} />
       <main className="min-h-[calc(100dvh-4rem)] bg-[var(--background)] px-4 py-8 sm:px-6 sm:py-12">
         <div className="mx-auto w-full max-w-[var(--store-content-max-width)]">
           <CheckoutSteps />
@@ -89,7 +90,7 @@ export default async function CardToCardPaymentPage({ params }: { params: Promis
                   <CardToCardProofForm orderId={order.id} />
                 </>
               ) : (
-                <InlineAlert status="warning" action={<Link href="/checkout" className="text-sm font-bold text-[var(--brand-primary)] hover:underline">انتخاب روش پرداخت دیگر</Link>}>
+                <InlineAlert status="warning" action={<Link href={RESUME_CHECKOUT_PATH} className="text-sm font-bold text-[var(--brand-primary)] hover:underline">انتخاب روش پرداخت دیگر</Link>}>
                   پرداخت کارت‌به‌کارت در حال حاضر در دسترس نیست. برای تکمیل سفارش، روش پرداخت دیگری را انتخاب کنید.
                 </InlineAlert>
               )}

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Card } from "@heroui/react";
 import { ChevronLeft, Clock3, PackageCheck } from "lucide-react";
 import { OrderExpiryCountdown } from "@/components/order-expiry-countdown";
+import { RESUME_CHECKOUT_PATH } from "@/modules/orders/resume-path";
 
 type Props = {
   orderNumber: string;
@@ -25,7 +26,7 @@ export function PendingOrderCartNotice({ orderNumber, total, expiresAt, warningM
       {/* Resuming this order re-uses the normal /checkout page (same layout, same route) with
           its own locked-in address and total, rather than a separate page or a direct gateway
           redirect — the orderId itself is looked up there from the user's session. */}
-      <Link href="/checkout" className="inline-flex min-h-10 shrink-0 items-center justify-center gap-1 rounded-lg bg-[var(--brand-primary)] px-5 text-xs font-bold text-[var(--brand-primary-foreground)] transition hover:brightness-105">پرداخت<ChevronLeft size={16} /></Link>
+      <Link href={RESUME_CHECKOUT_PATH} className="inline-flex min-h-10 shrink-0 items-center justify-center gap-1 rounded-lg bg-[var(--brand-primary)] px-5 text-xs font-bold text-[var(--brand-primary-foreground)] transition hover:brightness-105">پرداخت<ChevronLeft size={16} /></Link>
     </Card.Content>
   </Card>;
 }

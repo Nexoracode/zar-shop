@@ -21,14 +21,17 @@ import { getCheckoutPaymentMethods } from "@/modules/payments/storefront-methods
 import { serializeAddress } from "@/modules/account/addresses";
 import { getWalletSettings } from "@/modules/settings/wallet-settings";
 import { ensureWallet } from "@/modules/wallet/wallet";
+import { RESUME_CHECKOUT_PATH } from "@/modules/orders/resume-path";
+import Link from "next/link";
 
 // Per-user checkout; no static-shell value. Deferred from full Cache Components conversion —
 // see the caching migration plan for scope.
 export const instant = false;
 
 
-export default async function CheckoutPage() {
+export default async function CheckoutPage({ searchParams }: { searchParams: Promise<{ resume?: string }> }) {
   const user = await requireUser();
+  const { resume } = await searchParams;
   await expirePendingOrders();
 
   // A pending order's address, coupon and price are locked in at creation and must never be
@@ -39,7 +42,10 @@ export default async function CheckoutPage() {
     include: { payments: { orderBy: { createdAt: "desc" }, take: 1, select: { provider: true } }, promotionRedemptions: { select: { discountAmount: true, shippingDiscount: true, snapshot: true } } },
     orderBy: { createdAt: "desc" },
   });
-  if (pendingOrder) {
+  // Coming here with things in the cart is a new order, even while another waits for payment: the waiting
+  // one is resumed only when asked for (`?resume=1`, from its own links) or when there is nothing else to buy.
+  const cartLineCount = pendingOrder && !resume ? await db.cartItem.count({ where: { cart: { userId: user.id } } }) : 0;
+  if (pendingOrder && (resume || cartLineCount === 0)) {
     const [settings, paymentMethods, orderSettings] = await Promise.all([getGeneralStoreSettings(), getCheckoutPaymentMethods(), getOrderSettings()]);
     const address = pendingOrder.shippingAddress as { title: string; recipient: string; phone: string; province: string; city: string; postalCode: string; addressLine: string; plaque: string; unit: string | null };
     const quote = {
@@ -168,6 +174,11 @@ export default async function CheckoutPage() {
     <main className="min-h-[calc(100dvh-4rem)] bg-[var(--background)] px-4 py-8 sm:px-6 sm:py-12">
       <div className="mx-auto w-full max-w-[var(--store-content-max-width)]">
         <CheckoutSteps />
+        {pendingOrder && (
+          <InlineAlert status="warning" className="mb-4" action={<Link href={RESUME_CHECKOUT_PATH} className="text-sm font-bold text-[var(--brand-primary)] hover:underline">پرداخت سفارش قبلی</Link>}>
+            سفارش <b dir="ltr">{pendingOrder.orderNumber}</b> هنوز پرداخت نشده است. این صفحه برای سفارش جدید شما از سبد خرید است.
+          </InlineAlert>
+        )}
         <div className="mb-6"><h1 className="m-0 text-xl font-bold sm:text-2xl">تکمیل سفارش</h1><p className="mb-0 mt-2 text-sm text-[var(--muted)]">نشانی، تخفیف و روش پرداخت را بررسی کنید.</p></div>
         <CheckoutForm settings={commerceSettings} paymentMethods={paymentMethods} currency={settings.currency} itemCount={itemCount} items={checkoutItems} initialQuote={initialQuote} initialAddresses={addresses.map(serializeAddress)} user={{ firstName: user.firstName, lastName: user.lastName, phone: user.phone }} wallet={{ balance: walletBalance, checkoutEnabled: walletUsable }} />
       </div>

@@ -6,6 +6,7 @@ import { useMemo, useState } from "react";
 import { Button, Input } from "@heroui/react";
 import { Check, ChevronLeft, CreditCard, FileText, PackageCheck, RotateCcw, Search, ShoppingBag, X } from "lucide-react";
 import { OrderExpiryCountdown } from "@/components/order-expiry-countdown";
+import { RESUME_CHECKOUT_PATH } from "@/modules/orders/resume-path";
 
 type OrderStatus = "PENDING_PAYMENT" | "EXPIRED" | "PAID" | "PROCESSING" | "SHIPPED" | "DELIVERED" | "CANCELLED" | "REFUNDED";
 type OrderTab = "current" | "delivered" | "refunded" | "cancelled";
@@ -80,7 +81,7 @@ export function AccountOrdersPanel({ orders, showCountdown, warningMinutes }: { 
             // same entry point already used by PendingOrderCartNotice on the cart page.
             <div className="flex items-center gap-3 border-t border-[var(--border)] px-4 py-3 sm:px-5">
               {showCountdown && order.expiresAt ? <OrderExpiryCountdown variant="sentence" expiresAt={order.expiresAt} warningMinutes={warningMinutes} /> : null}
-              <Link href="/checkout" className="mr-auto inline-flex min-h-9 shrink-0 items-center gap-2 rounded-lg bg-[var(--brand-primary)] px-4 text-xs font-bold text-[var(--brand-primary-foreground)] transition hover:brightness-105"><CreditCard size={17} />پرداخت</Link>
+              <Link href={RESUME_CHECKOUT_PATH} className="mr-auto inline-flex min-h-9 shrink-0 items-center gap-2 rounded-lg bg-[var(--brand-primary)] px-4 text-xs font-bold text-[var(--brand-primary-foreground)] transition hover:brightness-105"><CreditCard size={17} />پرداخت</Link>
             </div>
           ) : null}
         </article>;

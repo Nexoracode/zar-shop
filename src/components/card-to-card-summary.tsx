@@ -5,6 +5,7 @@ import { Card } from "@heroui/react";
 import { ListChecks } from "lucide-react";
 import { OrderExpiryCountdown } from "@/components/order-expiry-countdown";
 import { formatMoney } from "@/lib/format";
+import { RESUME_CHECKOUT_PATH } from "@/modules/orders/resume-path";
 
 const guide = [
   "مبلغ قابل واریز را به کارت فروشگاه منتقل کنید.",
@@ -35,7 +36,7 @@ export function CardToCardSummary({ orderNumber, itemCount, total, walletApplied
           <div className="flex justify-between gap-4 border-t border-[var(--border)] pt-4 text-base font-bold"><dt>مبلغ قابل واریز</dt><dd className="text-[var(--brand-primary)]">{formatMoney(amount, currency)}</dd></div>
         </dl>
         {expiresAt ? <div className="mt-4"><OrderExpiryCountdown expiresAt={expiresAt} warningMinutes={warningMinutes} /></div> : null}
-        {canChangeMethod && <Link href="/checkout" className="mt-4 block text-center text-xs font-bold text-[var(--brand-primary)] hover:underline">انتخاب روش پرداخت دیگر</Link>}
+        {canChangeMethod && <Link href={RESUME_CHECKOUT_PATH} className="mt-4 block text-center text-xs font-bold text-[var(--brand-primary)] hover:underline">انتخاب روش پرداخت دیگر</Link>}
       </Card>
 
       <Card variant="secondary" className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 shadow-sm">

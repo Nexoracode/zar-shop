@@ -20,6 +20,7 @@ import { activeReturnStatuses, evaluateReturnEligibility } from "@/modules/order
 import { optionEntries } from "@/modules/products/options";
 import { getGeneralStoreSettings } from "@/modules/settings/general-settings";
 import { getOrderSettings } from "@/modules/settings/order-settings";
+import { RESUME_CHECKOUT_PATH } from "@/modules/orders/resume-path";
 
 // @next-codemod-ignore Cache Components adoption: this segment temporarily allows blocking.
 // Remove this opt-out after verifying the segment passes validation without it.
@@ -118,8 +119,8 @@ export default async function OrderDetailPage({ params, searchParams }: { params
   const canRetryPayment = order.status === "PENDING_PAYMENT";
   const paymentResultBanners = {
     success: { tone: "success" as const, title: "پرداخت با موفقیت انجام شد", body: <>سفارش شما ثبت شد و برای آماده‌سازی به فروشگاه ارسال شد.{order.invoice ? <> <Link href={`/invoices/${order.id}`} className="font-bold text-[var(--brand-primary)] hover:underline">مشاهدهٔ فاکتور رسمی</Link></> : null}</> },
-    failed: { tone: "danger" as const, title: "پرداخت ناموفق بود", body: <>اگر مبلغی از حساب شما کسر شده باشد، طبق روال درگاه تا ۷۲ ساعت بازمی‌گردد.{canRetryPayment ? <> <Link href="/checkout" className="font-bold text-[var(--danger)] hover:underline">تلاش دوباره برای پرداخت</Link></> : null}</> },
-    cancelled: { tone: "warning" as const, title: "پرداخت ناتمام ماند", body: <>این سفارش تا پایان مهلت پرداخت برای شما نگه داشته می‌شود.{canRetryPayment ? <> <Link href="/checkout" className="font-bold text-[var(--warning)] hover:underline">پرداخت سفارش</Link></> : null}</> },
+    failed: { tone: "danger" as const, title: "پرداخت ناموفق بود", body: <>اگر مبلغی از حساب شما کسر شده باشد، طبق روال درگاه تا ۷۲ ساعت بازمی‌گردد.{canRetryPayment ? <> <Link href={RESUME_CHECKOUT_PATH} className="font-bold text-[var(--danger)] hover:underline">تلاش دوباره برای پرداخت</Link></> : null}</> },
+    cancelled: { tone: "warning" as const, title: "پرداخت ناتمام ماند", body: <>این سفارش تا پایان مهلت پرداخت برای شما نگه داشته می‌شود.{canRetryPayment ? <> <Link href={RESUME_CHECKOUT_PATH} className="font-bold text-[var(--warning)] hover:underline">پرداخت سفارش</Link></> : null}</> },
     review: { tone: "info" as const, title: "در حال بررسی پرداخت", body: <>پرداخت شما ثبت شده و تأیید نهایی به‌صورت خودکار در حال انجام است؛ تا چند دقیقهٔ دیگر وضعیت به‌روزرسانی می‌شود. لطفاً دوباره پرداخت نکنید.</> },
   };
   // A card-to-card order is paid by a person, not a redirect, so where it stands is read from its own
