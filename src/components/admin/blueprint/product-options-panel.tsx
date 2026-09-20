@@ -475,23 +475,84 @@ export function BlueprintProductOptions({ storeIndustry, colors, library, option
       onClose={() => setCombinationsFullscreen(false)}
       actions={<BpButton variant="primary" onClick={() => setCombinationsFullscreen(false)}>تمام</BpButton>}
     >
-      <div className="mb-1">
-        <BpSeg
-          label="بخش تنظیم ترکیب‌ها"
-          value={combinationsTab}
-          onChange={setCombinationsTab}
-          options={[{ value: "pricing", label: "قیمت و تخفیف" }, { value: "fulfilment", label: "موجودی و آماده‌سازی" }]}
-        />
-      </div>
-      {combinationsTab === "fulfilment" ? (
-        <BpTable ariaLabel="موجودی و آماده‌سازی ترکیب‌های تنوع محصول" minWidth={680}>
+      <div>
+        <div className="mb-[5px]">
+          <BpSeg
+            label="بخش تنظیم ترکیب‌ها"
+            value={combinationsTab}
+            onChange={setCombinationsTab}
+            options={[{ value: "pricing", label: "قیمت و تخفیف" }, { value: "fulfilment", label: "موجودی و آماده‌سازی" }]}
+          />
+        </div>
+        {combinationsTab === "fulfilment" ? (
+          <BpTable ariaLabel="موجودی و آماده‌سازی ترکیب‌های تنوع محصول" minWidth={680}>
+            <thead>
+              <tr>
+                <BpTh>ترکیب</BpTh>
+                <BpTh>موجودی</BpTh>
+                <BpTh>زمان آماده‌سازی (روز)</BpTh>
+                <BpTh>حداقل سفارش</BpTh>
+                <BpTh>حداکثر سفارش</BpTh>
+              </tr>
+            </thead>
+            <tbody>
+              {variants.map((variant) => {
+                const signature = selectionSignature(variant.selection);
+                const label = describeSelection(variant.selection, typeOrder);
+                return (
+                  <tr key={signature}>
+                    <BpTd className="whitespace-nowrap">{label}</BpTd>
+                    <BpTd>
+                      <BpNumberInput
+                        aria-label={`موجودی ترکیب ${label}`}
+                        value={String(variant.stock)}
+                        reserveMessage={false}
+                        wrapperClassName="w-full min-w-[120px]"
+                        onValueChange={(next) => updateVariant(signature, { stock: next === "" ? 0 : Number(next) })}
+                      />
+                    </BpTd>
+                    <BpTd>
+                      <BpNumberInput
+                        aria-label={`زمان آماده‌سازی ترکیب ${label}`}
+                        value={String(variant.preparationDays)}
+                        reserveMessage={false}
+                        wrapperClassName="w-full min-w-[120px]"
+                        onValueChange={(next) => updateVariant(signature, { preparationDays: next === "" ? 0 : Number(next) })}
+                      />
+                    </BpTd>
+                    <BpTd>
+                      <BpNumberInput
+                        aria-label={`حداقل سفارش ترکیب ${label}`}
+                        value={String(variant.minOrderQuantity)}
+                        reserveMessage={false}
+                        wrapperClassName="w-full min-w-[120px]"
+                        onValueChange={(next) => updateVariant(signature, { minOrderQuantity: next === "" ? 1 : Math.max(1, Number(next)) })}
+                      />
+                    </BpTd>
+                    <BpTd>
+                      <BpNumberInput
+                        aria-label={`حداکثر سفارش ترکیب ${label}`}
+                        value={variant.maxOrderQuantity === null ? "" : String(variant.maxOrderQuantity)}
+                        placeholder="بدون سقف"
+                        reserveMessage={false}
+                        wrapperClassName="w-full min-w-[120px]"
+                        onValueChange={(next) => updateVariant(signature, { maxOrderQuantity: next === "" ? null : Number(next) })}
+                      />
+                    </BpTd>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </BpTable>
+        ) : (
+        <BpTable ariaLabel="ترکیب‌های تنوع محصول" minWidth={680}>
           <thead>
             <tr>
               <BpTh>ترکیب</BpTh>
-              <BpTh>موجودی</BpTh>
-              <BpTh>زمان آماده‌سازی (روز)</BpTh>
-              <BpTh>حداقل سفارش</BpTh>
-              <BpTh>حداکثر سفارش</BpTh>
+              <BpTh>{storeIndustry === "GOLD" ? "وزن (گرم)" : "قیمت (ریال)"}</BpTh>
+              <BpTh>تخفیف</BpTh>
+              <BpTh>فعال</BpTh>
+              <BpTh>حذف</BpTh>
             </tr>
           </thead>
           <tbody>
@@ -502,153 +563,94 @@ export function BlueprintProductOptions({ storeIndustry, colors, library, option
                 <tr key={signature}>
                   <BpTd className="whitespace-nowrap">{label}</BpTd>
                   <BpTd>
-                    <BpNumberInput
-                      aria-label={`موجودی ترکیب ${label}`}
-                      value={String(variant.stock)}
-                      reserveMessage={false}
-                      wrapperClassName="w-full min-w-[120px]"
-                      onValueChange={(next) => updateVariant(signature, { stock: next === "" ? 0 : Number(next) })}
-                    />
+                    {storeIndustry === "GOLD" ? (
+                      <BpNumberInput
+                        aria-label={`وزن ترکیب ${label}`}
+                        allowDecimal
+                        value={variant.weightGrams ?? ""}
+                        reserveMessage={false}
+                        wrapperClassName="w-full min-w-[150px]"
+                        onValueChange={(next) => updateVariant(signature, { weightGrams: next || null })}
+                      />
+                    ) : (
+                      <BpNumberInput
+                        aria-label={`قیمت ترکیب ${label}`}
+                        isPrice
+                        showWords={false}
+                        value={variant.price ?? ""}
+                        reserveMessage={false}
+                        wrapperClassName="w-full min-w-[150px]"
+                        onValueChange={(next) => updateVariant(signature, { price: next || null })}
+                      />
+                    )}
                   </BpTd>
                   <BpTd>
-                    <BpNumberInput
-                      aria-label={`زمان آماده‌سازی ترکیب ${label}`}
-                      value={String(variant.preparationDays)}
-                      reserveMessage={false}
-                      wrapperClassName="w-full min-w-[120px]"
-                      onValueChange={(next) => updateVariant(signature, { preparationDays: next === "" ? 0 : Number(next) })}
-                    />
+                    <div className="flex flex-nowrap items-center gap-1.5">
+                      <BpSelect
+                        aria-label={`نوع تخفیف ترکیب ${label}`}
+                        value={variant.discountType ?? ""}
+                        placeholder="بدون تخفیف"
+                        reserveMessage={false}
+                        options={[{ value: "PERCENT", label: "درصدی" }, { value: "FIXED", label: "مبلغ ثابت" }]}
+                        wrapperClassName="w-full min-w-[150px] max-w-[220px]"
+                        onChange={(event) => {
+                          const next = event.target.value as "PERCENT" | "FIXED" | "";
+                          if (!next) { updateVariant(signature, { discountType: null, discountValue: null, discountStartsAt: null, discountEndsAt: null }); return; }
+                          openDiscountModal(variant, next);
+                        }}
+                      />
+                      {variant.discountType && variant.discountValue && (
+                        <span className="inline-flex min-h-[36px] items-center gap-1 rounded-[var(--bp-radius)] border border-[var(--bp-divider)] ps-2.5 pe-1.5 py-1 text-[11px] whitespace-nowrap">
+                          <button
+                            type="button"
+                            className="flex items-center gap-2.5 text-start hover:text-[var(--bp-accent)]"
+                            onClick={() => openDiscountModal(variant, variant.discountType!)}
+                          >
+                            <span className="text-[13px] font-bold text-[var(--bp-danger)]">
+                              {Number(variant.discountValue).toLocaleString("fa-IR", { maximumFractionDigits: 2 })}{variant.discountType === "PERCENT" ? "٪" : " ریال"}
+                            </span>
+                            {variant.discountStartsAt && variant.discountEndsAt ? (
+                              <span className="grid gap-px text-[10.5px] leading-[14px] text-[var(--bp-muted)]">
+                                <span className="flex items-center gap-1.5"><i className="h-1.5 w-1.5 rounded-full bg-[var(--bp-success)]" aria-hidden />شروع {formatDateTime(variant.discountStartsAt)}</span>
+                                <span className="flex items-center gap-1.5"><i className="h-1.5 w-1.5 rounded-full bg-[var(--bp-warning)]" aria-hidden />پایان {formatDateTime(variant.discountEndsAt)}</span>
+                              </span>
+                            ) : (
+                              <span className="text-[11px] text-[var(--bp-muted)]">بدون محدودیت زمانی</span>
+                            )}
+                          </button>
+                          <button
+                            type="button"
+                            aria-label={`حذف تخفیف ترکیب ${label}`}
+                            className="grid h-4 w-4 place-items-center rounded-full text-[var(--bp-muted)] hover:text-[var(--bp-danger)]"
+                            onClick={() => updateVariant(signature, { discountType: null, discountValue: null, discountStartsAt: null, discountEndsAt: null })}
+                          >
+                            <X size={11} />
+                          </button>
+                        </span>
+                      )}
+                    </div>
                   </BpTd>
                   <BpTd>
-                    <BpNumberInput
-                      aria-label={`حداقل سفارش ترکیب ${label}`}
-                      value={String(variant.minOrderQuantity)}
-                      reserveMessage={false}
-                      wrapperClassName="w-full min-w-[120px]"
-                      onValueChange={(next) => updateVariant(signature, { minOrderQuantity: next === "" ? 1 : Math.max(1, Number(next)) })}
-                    />
+                    <BpCheckbox isSelected={variant.isActive} label={`فعال بودن ترکیب ${label}`} onChange={() => updateVariant(signature, { isActive: !variant.isActive })} />
                   </BpTd>
                   <BpTd>
-                    <BpNumberInput
-                      aria-label={`حداکثر سفارش ترکیب ${label}`}
-                      value={variant.maxOrderQuantity === null ? "" : String(variant.maxOrderQuantity)}
-                      placeholder="بدون سقف"
-                      reserveMessage={false}
-                      wrapperClassName="w-full min-w-[120px]"
-                      onValueChange={(next) => updateVariant(signature, { maxOrderQuantity: next === "" ? null : Number(next) })}
-                    />
+                    <BpButton
+                      isIconOnly
+                      variant="ghost"
+                      aria-label={`حذف ترکیب ${label}`}
+                      className="bp-btn-danger-icon"
+                      onClick={() => removeVariant(signature)}
+                    >
+                      <Trash2 size={15} />
+                    </BpButton>
                   </BpTd>
                 </tr>
               );
             })}
           </tbody>
         </BpTable>
-      ) : (
-      <BpTable ariaLabel="ترکیب‌های تنوع محصول" minWidth={680}>
-        <thead>
-          <tr>
-            <BpTh>ترکیب</BpTh>
-            <BpTh>{storeIndustry === "GOLD" ? "وزن (گرم)" : "قیمت (ریال)"}</BpTh>
-            <BpTh>تخفیف</BpTh>
-            <BpTh>فعال</BpTh>
-            <BpTh>حذف</BpTh>
-          </tr>
-        </thead>
-        <tbody>
-          {variants.map((variant) => {
-            const signature = selectionSignature(variant.selection);
-            const label = describeSelection(variant.selection, typeOrder);
-            return (
-              <tr key={signature}>
-                <BpTd className="whitespace-nowrap">{label}</BpTd>
-                <BpTd>
-                  {storeIndustry === "GOLD" ? (
-                    <BpNumberInput
-                      aria-label={`وزن ترکیب ${label}`}
-                      allowDecimal
-                      value={variant.weightGrams ?? ""}
-                      reserveMessage={false}
-                      wrapperClassName="w-full min-w-[150px]"
-                      onValueChange={(next) => updateVariant(signature, { weightGrams: next || null })}
-                    />
-                  ) : (
-                    <BpNumberInput
-                      aria-label={`قیمت ترکیب ${label}`}
-                      isPrice
-                      showWords={false}
-                      value={variant.price ?? ""}
-                      reserveMessage={false}
-                      wrapperClassName="w-full min-w-[150px]"
-                      onValueChange={(next) => updateVariant(signature, { price: next || null })}
-                    />
-                  )}
-                </BpTd>
-                <BpTd>
-                  <div className="flex flex-nowrap items-center gap-1.5">
-                    <BpSelect
-                      aria-label={`نوع تخفیف ترکیب ${label}`}
-                      value={variant.discountType ?? ""}
-                      placeholder="بدون تخفیف"
-                      reserveMessage={false}
-                      options={[{ value: "PERCENT", label: "درصدی" }, { value: "FIXED", label: "مبلغ ثابت" }]}
-                      wrapperClassName="w-full min-w-[150px] max-w-[220px]"
-                      onChange={(event) => {
-                        const next = event.target.value as "PERCENT" | "FIXED" | "";
-                        if (!next) { updateVariant(signature, { discountType: null, discountValue: null, discountStartsAt: null, discountEndsAt: null }); return; }
-                        openDiscountModal(variant, next);
-                      }}
-                    />
-                    {variant.discountType && variant.discountValue && (
-                      <span className="inline-flex min-h-[36px] items-center gap-1 rounded-[var(--bp-radius)] border border-[var(--bp-divider)] ps-2.5 pe-1.5 py-1 text-[11px] whitespace-nowrap">
-                        <button
-                          type="button"
-                          className="flex items-center gap-2.5 text-start hover:text-[var(--bp-accent)]"
-                          onClick={() => openDiscountModal(variant, variant.discountType!)}
-                        >
-                          <span className="text-[13px] font-bold text-[var(--bp-danger)]">
-                            {Number(variant.discountValue).toLocaleString("fa-IR", { maximumFractionDigits: 2 })}{variant.discountType === "PERCENT" ? "٪" : " ریال"}
-                          </span>
-                          {variant.discountStartsAt && variant.discountEndsAt ? (
-                            <span className="grid gap-px text-[10.5px] leading-[14px] text-[var(--bp-muted)]">
-                              <span className="flex items-center gap-1.5"><i className="h-1.5 w-1.5 rounded-full bg-[var(--bp-success)]" aria-hidden />شروع {formatDateTime(variant.discountStartsAt)}</span>
-                              <span className="flex items-center gap-1.5"><i className="h-1.5 w-1.5 rounded-full bg-[var(--bp-warning)]" aria-hidden />پایان {formatDateTime(variant.discountEndsAt)}</span>
-                            </span>
-                          ) : (
-                            <span className="text-[11px] text-[var(--bp-muted)]">بدون محدودیت زمانی</span>
-                          )}
-                        </button>
-                        <button
-                          type="button"
-                          aria-label={`حذف تخفیف ترکیب ${label}`}
-                          className="grid h-4 w-4 place-items-center rounded-full text-[var(--bp-muted)] hover:text-[var(--bp-danger)]"
-                          onClick={() => updateVariant(signature, { discountType: null, discountValue: null, discountStartsAt: null, discountEndsAt: null })}
-                        >
-                          <X size={11} />
-                        </button>
-                      </span>
-                    )}
-                  </div>
-                </BpTd>
-                <BpTd>
-                  <BpCheckbox isSelected={variant.isActive} label={`فعال بودن ترکیب ${label}`} onChange={() => updateVariant(signature, { isActive: !variant.isActive })} />
-                </BpTd>
-                <BpTd>
-                  <BpButton
-                    isIconOnly
-                    variant="ghost"
-                    aria-label={`حذف ترکیب ${label}`}
-                    className="bp-btn-danger-icon"
-                    onClick={() => removeVariant(signature)}
-                  >
-                    <Trash2 size={15} />
-                  </BpButton>
-                </BpTd>
-              </tr>
-            );
-          })}
-        </tbody>
-      </BpTable>
-      )}
+        )}
+      </div>
     </BpDialog>
 
     <DeleteConfirmDialog
