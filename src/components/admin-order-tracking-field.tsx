@@ -44,7 +44,7 @@ export function AdminOrderTrackingField({ orderId, initialTrackingNumber }: { or
         <h2 className="m-0 text-[14px] font-bold">کد رهگیری مرسوله</h2>
       </div>
       <div className="grid gap-3 p-4">
-        <BpInput aria-label="کد رهگیری مرسوله" value={value} maxLength={trackingNumberMaxLength} error={error || undefined} onChange={(event) => { setValue(event.target.value); setError(""); }} dir="ltr" placeholder="کد رهگیری را وارد کنید" disabled={saving} />
+        <BpInput aria-label="کد رهگیری مرسوله" value={value} maxLength={trackingNumberMaxLength} error={error || undefined} onChange={(event) => { setValue(event.target.value); setError(""); }} dir={value ? "ltr" : "rtl"} placeholder="کد رهگیری را وارد کنید" disabled={saving} />
         {/* The note is its own paragraph rather than the input's hint: that slot is clipped to one 11px line, which cut this sentence short in the narrow side column. */}
         <p className="bp-muted m-0 text-[10.5px] leading-5">با ثبت کد، پیامک اطلاع‌رسانی برای مشتری ارسال می‌شود.</p>
         <BpButton type="submit" variant="primary" fullWidth isPending={saving} disabled={!canSubmit}>{initial ? "به‌روزرسانی کد رهگیری" : "ثبت کد رهگیری"}</BpButton>
