@@ -1,5 +1,5 @@
 import { BpListPageSkeleton } from "@/components/admin/blueprint/skeleton";
 
 export default function UsersLoading() {
-  return <BpListPageSkeleton columns={8} rows={10} selects={2} minWidth={880} withAction />;
+  return <BpListPageSkeleton spaced columns={10} rows={10} minWidth={880} withAction leading={2} rowHeight={57} />;
 }

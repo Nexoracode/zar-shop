@@ -1,5 +1,5 @@
 import { BpListPageSkeleton } from "@/components/admin/blueprint/skeleton";
 
 export default function ContactMessagesLoading() {
-  return <BpListPageSkeleton columns={6} rows={10} selects={1} minWidth={820} />;
+  return <BpListPageSkeleton spaced cardBreak="lg" columns={6} rows={10} minWidth={900} rowHeight={64} />;
 }

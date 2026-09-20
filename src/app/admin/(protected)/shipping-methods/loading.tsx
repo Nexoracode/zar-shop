@@ -1,5 +1,5 @@
-import { BpListPageSkeleton } from "@/components/admin/blueprint/skeleton";
+import { BpPanelListSkeleton } from "@/components/admin/blueprint/skeleton";
 
 export default function ShippingMethodsLoading() {
-  return <BpListPageSkeleton columns={8} rows={6} selects={2} minWidth={880} withAction paginated={false} />;
+  return <BpPanelListSkeleton columns={8} rows={6} minWidth={880} notice rowHeight={57} />;
 }
