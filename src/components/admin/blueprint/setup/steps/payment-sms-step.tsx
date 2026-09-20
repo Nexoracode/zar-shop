@@ -1,56 +1,52 @@
 "use client";
 
-import { CheckCircle2 } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import type { PublicGatewayConfig } from "@/modules/payments/gateway-config";
 import type { PublicSmsProviderConfig } from "@/modules/communications/sms-config";
 import { BlueprintPaymentGatewayManager } from "../../payment-gateway-manager";
 import { BlueprintSmsProviderManager } from "../../sms-provider-manager";
-import { BpKicker, BpTag } from "../../ui";
+import { BpButton } from "../../ui";
+import { SetupFooter, SetupSection } from "../setup-ui";
 
 type Props = {
   gateways: PublicGatewayConfig[];
   smsConfigs: PublicSmsProviderConfig[];
   appUrl: string;
   storeName: string;
+  /** Both a gateway and an SMS provider are in place. */
+  isComplete: boolean;
+  onBack?: () => void;
+  onNext: () => void;
   onSaved: () => void;
 };
 
-function StatusLine({ done, label }: { done: boolean; label: string }) {
+export function SetupPaymentSmsStep({ gateways, smsConfigs, appUrl, storeName, isComplete, onBack, onNext, onSaved }: Props) {
+  const hasGateway = gateways.some((gateway) => gateway.isActive);
+  const hasSms = smsConfigs.length > 0;
+  const missing = [!hasGateway && "یک درگاه پرداخت فعال", !hasSms && "یک سرویس پیامک"].filter(Boolean).join(" و ");
   return (
-    <span className="flex items-center gap-2 text-[12px]">
-      <CheckCircle2 size={15} className={done ? "text-[var(--bp-success)]" : "bp-muted"} />
-      <span className={done ? "" : "bp-muted"}>{label}</span>
-      <BpTag tone={done ? "success" : "neutral"}>{done ? "کامل" : "ناقص"}</BpTag>
-    </span>
-  );
-}
+    <div>
+      <SetupSection
+        title="درگاه پرداخت"
+        description="مشتری از طریق این درگاه سفارشش را پرداخت می‌کند. بدون یک درگاه فعال، خرید آنلاین ممکن نیست."
+        status={hasGateway ? "done" : "todo"}
+      >
+        <BlueprintPaymentGatewayManager mode="form" initialConfigs={gateways} appUrl={appUrl} onSaved={onSaved} />
+      </SetupSection>
 
-export function SetupPaymentSmsStep({ gateways, smsConfigs, appUrl, storeName, onSaved }: Props) {
-  return (
-    <div className="grid gap-3">
-      <section className="bp-frame relative p-[16px]">
-        <BpKicker>وضعیت این گام</BpKicker>
-        <div className="mt-2 grid gap-1.5">
-          <StatusLine done={gateways.some((gateway) => gateway.isActive)} label="حداقل یک درگاه پرداخت فعال" />
-          <StatusLine done={smsConfigs.length > 0} label="حداقل یک ارائه‌دهنده پیامک ثبت شده" />
-        </div>
-      </section>
+      <SetupSection
+        title="سرویس پیامک"
+        description="کد تأیید ورود و ثبت‌نام مشتری‌ها با همین سرویس پیامک می‌شود؛ بدون آن کسی نمی‌تواند وارد شود."
+        status={hasSms ? "done" : "todo"}
+      >
+        <BlueprintSmsProviderManager mode="form" initialConfigs={smsConfigs} storeName={storeName} onSaved={onSaved} />
+      </SetupSection>
 
-      <section className="bp-frame relative p-[16px]">
-        <BpKicker>درگاه پرداخت</BpKicker>
-        <p className="bp-muted m-0 mt-1 text-[12px] leading-6">بدون درگاه فعال، امکان پرداخت آنلاین سفارش وجود ندارد.</p>
-        <div className="mt-3">
-          <BlueprintPaymentGatewayManager mode="form" initialConfigs={gateways} appUrl={appUrl} onSaved={onSaved} />
-        </div>
-      </section>
-
-      <section className="bp-frame relative p-[16px]">
-        <BpKicker>ارائه‌دهنده پیامک</BpKicker>
-        <p className="bp-muted m-0 mt-1 text-[12px] leading-6">کد تأیید ورود و ثبت‌نام مشتریان از طریق همین ارائه‌دهنده ارسال می‌شود.</p>
-        <div className="mt-3">
-          <BlueprintSmsProviderManager mode="form" initialConfigs={smsConfigs} storeName={storeName} onSaved={onSaved} />
-        </div>
-      </section>
+      <SetupFooter
+        onBack={onBack}
+        hint={isComplete ? undefined : `برای ادامه ${missing} ثبت کنید.`}
+        primary={<BpButton type="button" variant="primary" disabled={!isComplete} onClick={onNext} className="gap-1.5">ادامه<ArrowLeft size={15} /></BpButton>}
+      />
     </div>
   );
 }

@@ -2,17 +2,20 @@
 
 import { useState, type FormEvent } from "react";
 import { toast } from "@heroui/react";
+import { ArrowLeft } from "lucide-react";
 import { requestErrorMessage, requestJson } from "@/lib/api-request";
 import { setupContactSchema } from "@/modules/settings/setup-schemas";
 import { generalSettingsFieldLimits } from "@/modules/settings/settings-limits";
-import { BpButton, BpInput, BpKicker, BpTextarea } from "../../ui";
+import { BpButton, BpInput, BpTextarea } from "../../ui";
+import { SetupFooter, SetupSection } from "../setup-ui";
 
 type Props = {
   initial: { supportPhone: string; supportEmail: string; storeAddress: string; legalIdentifier: string; supportHours: string };
+  onBack?: () => void;
   onSaved: () => void;
 };
 
-export function SetupContactStep({ initial, onSaved }: Props) {
+export function SetupContactStep({ initial, onBack, onSaved }: Props) {
   const [values, setValues] = useState(initial);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
@@ -51,26 +54,30 @@ export function SetupContactStep({ initial, onSaved }: Props) {
   }
 
   return (
-    <form onSubmit={submit} noValidate className="grid gap-2">
-      <section className="bp-frame relative p-[16px]">
-        <BpKicker>راه‌های ارتباطی و اطلاعات حقوقی</BpKicker>
-        <p className="bp-muted m-0 mt-1 text-[12px] leading-6">شماره تماس، نشانی و شناسه اقتصادی روی فاکتور رسمی فروشگاه چاپ می‌شوند.</p>
-        <div className="mt-3 grid gap-3">
+    <form onSubmit={submit} noValidate>
+      <SetupSection title="چطور مشتری با شما تماس بگیرد؟" description="در صفحهٔ تماس و فوتر سایت نمایش داده می‌شود.">
+        <div className="grid gap-3">
           <div className="grid gap-3 sm:grid-cols-2">
             <BpInput label="شماره تماس پشتیبانی" required dir="ltr" maxLength={generalSettingsFieldLimits.supportPhone} value={values.supportPhone} error={errors.supportPhone} onChange={(event) => set("supportPhone", event.target.value)} />
             <BpInput label="ایمیل پشتیبانی" type="email" dir="ltr" maxLength={generalSettingsFieldLimits.supportEmail} value={values.supportEmail} error={errors.supportEmail} onChange={(event) => set("supportEmail", event.target.value)} hint="اختیاری" />
           </div>
+          <BpInput label="ساعات پاسخ‌گویی" maxLength={generalSettingsFieldLimits.supportHours} value={values.supportHours} error={errors.supportHours} onChange={(event) => set("supportHours", event.target.value)} hint="اختیاری؛ مثلاً «شنبه تا پنجشنبه، ۹ تا ۱۷»" />
+        </div>
+      </SetupSection>
+
+      <SetupSection title="اطلاعات حقوقی فروشگاه" description="روی فاکتور رسمی چاپ می‌شود؛ پس دقیق و مطابق مدارک ثبت‌شده وارد کنید.">
+        <div className="grid gap-3">
           <BpTextarea label="نشانی فروشگاه" required rows={2} maxLength={generalSettingsFieldLimits.storeAddress} value={values.storeAddress} error={errors.storeAddress} onChange={(event) => set("storeAddress", event.target.value)} />
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="sm:max-w-[calc(50%-6px)]">
             <BpInput label="شناسه ملی / کد اقتصادی" required maxLength={generalSettingsFieldLimits.legalIdentifier} value={values.legalIdentifier} error={errors.legalIdentifier} onChange={(event) => set("legalIdentifier", event.target.value)} />
-            <BpInput label="ساعات پاسخ‌گویی" maxLength={generalSettingsFieldLimits.supportHours} value={values.supportHours} error={errors.supportHours} onChange={(event) => set("supportHours", event.target.value)} hint="اختیاری" />
           </div>
         </div>
-      </section>
+      </SetupSection>
 
-      <div className="flex justify-end">
-        <BpButton type="submit" variant="primary" isPending={saving}>ذخیره و ادامه</BpButton>
-      </div>
+      <SetupFooter
+        onBack={onBack}
+        primary={<BpButton type="submit" variant="primary" isPending={saving} className="gap-1.5">ذخیره و ادامه{!saving && <ArrowLeft size={15} />}</BpButton>}
+      />
     </form>
   );
 }

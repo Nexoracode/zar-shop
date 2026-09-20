@@ -3,14 +3,15 @@
 import Image from "next/image";
 import { useState } from "react";
 import { toast } from "@heroui/react";
-import { Images, Trash2, Upload } from "lucide-react";
+import { ArrowLeft, Images, Trash2, Upload } from "lucide-react";
 import type { MediaChoice } from "@/components/media-library";
 import { MediaPickerDialog } from "@/components/media-picker-dialog";
 import { requestErrorMessage, requestJson } from "@/lib/api-request";
 import type { BrandSettings } from "@/modules/settings/brand-settings";
-import { BpButton, BpColorField, BpKicker } from "../../ui";
+import { BpButton, BpColorField } from "../../ui";
+import { SetupFooter, SetupSection } from "../setup-ui";
 
-type Props = { initial: BrandSettings; onSaved: () => void };
+type Props = { initial: BrandSettings; onBack?: () => void; onSaved: () => void };
 
 function toChoice(media: BrandSettings["mainLogoMedia"]): MediaChoice | null {
   return media ? { id: media.id, title: media.title || media.alt || "دارایی برند", url: media.url, type: "IMAGE", mimeType: media.mimeType } : null;
@@ -18,8 +19,8 @@ function toChoice(media: BrandSettings["mainLogoMedia"]): MediaChoice | null {
 
 function AssetRow({ title, hint, media, onSelect, onClear }: { title: string; hint: string; media: MediaChoice | null; onSelect: () => void; onClear: () => void }) {
   return (
-    <div className="flex flex-wrap items-center gap-2.5 border border-[var(--bp-divider)] bg-[var(--bp-bg)] p-2.5">
-      <span className="relative grid size-11 shrink-0 place-items-center overflow-hidden bg-[var(--bp-card)] text-[var(--bp-muted)]">
+    <div className="flex flex-wrap items-center gap-2.5 rounded-[var(--bp-radius-sm)] border border-[var(--bp-divider)] bg-[var(--bp-bg)] p-2.5">
+      <span className="relative grid size-11 shrink-0 place-items-center overflow-hidden rounded-[var(--bp-radius-sm)] border border-[var(--bp-divider)] bg-[var(--bp-card)] text-[var(--bp-muted)]">
         {media ? <Image src={media.url} alt={media.title} fill sizes="44px" className="object-contain p-1" /> : <Images size={16} />}
       </span>
       <div className="min-w-0 flex-1"><strong className="block text-[13px]">{title}</strong><span className="bp-muted mt-0.5 block truncate text-[11px]">{media?.title ?? hint}</span></div>
@@ -29,7 +30,7 @@ function AssetRow({ title, hint, media, onSelect, onClear }: { title: string; hi
   );
 }
 
-export function SetupBrandStep({ initial, onSaved }: Props) {
+export function SetupBrandStep({ initial, onBack, onSaved }: Props) {
   const [colors, setColors] = useState({ primary: initial.brandPrimaryColor, accent: initial.brandAccentColor, background: initial.brandBackgroundColor });
   const [assets, setAssets] = useState<{ main: MediaChoice | null; favicon: MediaChoice | null }>({ main: toChoice(initial.mainLogoMedia), favicon: toChoice(initial.faviconMedia) });
   const [picker, setPicker] = useState<"main" | "favicon" | null>(null);
@@ -74,30 +75,28 @@ export function SetupBrandStep({ initial, onSaved }: Props) {
   const selected = picker ? assets[picker] : null;
 
   return (
-    <div className="grid gap-2">
-      <section className="bp-frame relative p-[16px]">
-        <BpKicker>لوگو و فاویکون</BpKicker>
-        <p className="bp-muted m-0 mt-1 text-[12px] leading-6">فایل‌ها را از گالری انتخاب کنید یا در همان پنجره بارگذاری کنید.</p>
-        <div className="mt-3 grid gap-2.5">
+    <div>
+      <SetupSection title="لوگو و فاویکون" description="هر دو الزامی‌اند. فایل را از گالری انتخاب کنید یا همان‌جا بارگذاری کنید.">
+        <div className="grid gap-2.5">
           <AssetRow title="لوگوی اصلی" hint="PNG یا WebP شفاف، حداقل عرض ۴۰۰ پیکسل" media={assets.main} onSelect={() => setPicker("main")} onClear={() => setAssets((current) => ({ ...current, main: null }))} />
-          <AssetRow title="Favicon" hint="PNG یا WebP مربع، حداقل ۵۱۲×۵۱۲" media={assets.favicon} onSelect={() => setPicker("favicon")} onClear={() => setAssets((current) => ({ ...current, favicon: null }))} />
+          <AssetRow title="فاویکون" hint="PNG یا WebP مربع، حداقل ۵۱۲×۵۱۲ (آیکون کوچک تب مرورگر)" media={assets.favicon} onSelect={() => setPicker("favicon")} onClear={() => setAssets((current) => ({ ...current, favicon: null }))} />
         </div>
-        {error && <p role="alert" className="m-0 mt-3 border border-[var(--bp-danger)] bg-[var(--bp-danger-bg)] p-3 text-[12px] leading-6 text-[var(--bp-danger)]">{error}</p>}
-      </section>
+        {error && <p role="alert" className="m-0 mt-3 rounded-[var(--bp-radius-sm)] border border-[var(--bp-danger)] bg-[var(--bp-danger-bg)] p-3 text-[12px] leading-6 text-[var(--bp-danger)]">{error}</p>}
+      </SetupSection>
 
-      <section className="bp-frame relative p-[16px]">
-        <BpKicker>رنگ‌های برند</BpKicker>
-        <p className="bp-muted m-0 mt-1 text-[12px] leading-6">رنگ اصلی، تأکیدی و پس‌زمینهٔ رابط فروشگاه.</p>
-        <div className="mt-3 grid gap-3 sm:grid-cols-3">
+      <SetupSection title="رنگ‌های برند" description="رنگ‌های پیش‌فرض آماده‌اند؛ اگر رنگ مخصوص برندتان را دارید عوضشان کنید." optional>
+        <div className="grid gap-3 sm:grid-cols-3">
           <BpColorField label="رنگ اصلی" value={colors.primary} maxLength={7} onChange={(value) => setColors((current) => ({ ...current, primary: value }))} />
           <BpColorField label="رنگ تأکیدی" value={colors.accent} maxLength={7} onChange={(value) => setColors((current) => ({ ...current, accent: value }))} />
           <BpColorField label="پس‌زمینه" value={colors.background} maxLength={7} onChange={(value) => setColors((current) => ({ ...current, background: value }))} />
         </div>
-      </section>
+      </SetupSection>
 
-      <div className="flex justify-end">
-        <BpButton type="button" variant="primary" isPending={saving} onClick={() => void save()}>ذخیره و ادامه</BpButton>
-      </div>
+      <SetupFooter
+        onBack={onBack}
+        hint={!assets.main || !assets.favicon ? "برای ادامه، لوگوی اصلی و فاویکون را انتخاب کنید." : undefined}
+        primary={<BpButton type="button" variant="primary" isPending={saving} onClick={() => void save()} className="gap-1.5">ذخیره و ادامه{!saving && <ArrowLeft size={15} />}</BpButton>}
+      />
 
       <MediaPickerDialog
         open={picker !== null}

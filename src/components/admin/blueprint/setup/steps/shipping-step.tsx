@@ -2,21 +2,26 @@
 
 import { useState } from "react";
 import { toast } from "@heroui/react";
-import { CheckCircle2 } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { requestErrorMessage, requestJson } from "@/lib/api-request";
 import { BlueprintShippingMethodForm } from "../../shipping-method-form";
 import { BlueprintShippingOriginPicker } from "../../shipping-origin-picker";
-import { BpButton, BpKicker, BpTag } from "../../ui";
+import { BpButton } from "../../ui";
+import { SetupFooter, SetupSection } from "../setup-ui";
 
 type Props = {
   provinces: Array<{ id: string; name: string }>;
   initialOrigin: { provinceId: string | null; cityId: string | null };
   originSaved: boolean;
   hasActiveMethod: boolean;
+  /** The origin is saved and at least one method is active. */
+  isComplete: boolean;
+  onBack?: () => void;
+  onNext: () => void;
   onSaved: () => void;
 };
 
-export function SetupShippingStep({ provinces, initialOrigin, originSaved, hasActiveMethod, onSaved }: Props) {
+export function SetupShippingStep({ provinces, initialOrigin, originSaved, hasActiveMethod, isComplete, onBack, onNext, onSaved }: Props) {
   const [origin, setOrigin] = useState(initialOrigin);
   const [savingOrigin, setSavingOrigin] = useState(false);
   const [originError, setOriginError] = useState<string | null>(null);
@@ -43,39 +48,39 @@ export function SetupShippingStep({ provinces, initialOrigin, originSaved, hasAc
     }
   }
 
+  const missing = [!originSaved && "مبدأ ارسال را ذخیره", !hasActiveMethod && "یک روش ارسال فعال ثبت"].filter(Boolean).join(" و ");
+
   return (
-    <div className="grid gap-3">
-      <section className="bp-frame relative p-[16px]">
-        <BpKicker>وضعیت این گام</BpKicker>
-        <div className="mt-2 grid gap-1.5 text-[12px]">
-          <span className="flex items-center gap-2"><CheckCircle2 size={15} className={originSaved ? "text-[var(--bp-success)]" : "bp-muted"} /><span className={originSaved ? "" : "bp-muted"}>استان و شهر مبدأ انتخاب شده</span><BpTag tone={originSaved ? "success" : "neutral"}>{originSaved ? "کامل" : "ناقص"}</BpTag></span>
-          <span className="flex items-center gap-2"><CheckCircle2 size={15} className={hasActiveMethod ? "text-[var(--bp-success)]" : "bp-muted"} /><span className={hasActiveMethod ? "" : "bp-muted"}>حداقل یک روش ارسال فعال</span><BpTag tone={hasActiveMethod ? "success" : "neutral"}>{hasActiveMethod ? "کامل" : "ناقص"}</BpTag></span>
+    <div>
+      <SetupSection
+        title="مبدأ ارسال"
+        description="شهری که سفارش‌ها از آنجا بسته‌بندی و ارسال می‌شوند. کرایهٔ ارسال بر اساس همین مبدأ محاسبه می‌شود."
+        status={originSaved ? "done" : "todo"}
+      >
+        <BlueprintShippingOriginPicker
+          provinceId={origin.provinceId}
+          cityId={origin.cityId}
+          onChange={(next) => { setOrigin(next); setOriginError(null); }}
+        />
+        {originError && <p role="alert" className="m-0 mt-1 text-[12px] leading-6 text-[var(--bp-danger)]">{originError}</p>}
+        <div className="mt-2 flex justify-end">
+          <BpButton type="button" isPending={savingOrigin} onClick={() => void saveOrigin()}>ذخیره مبدأ</BpButton>
         </div>
-      </section>
+      </SetupSection>
 
-      <section className="bp-frame relative p-[16px]">
-        <BpKicker>مبدأ ارسال</BpKicker>
-        <p className="bp-muted m-0 mt-1 text-[12px] leading-6">آدرسی که سفارش‌ها از آن ارسال می‌شوند؛ برای محاسبهٔ نرخ کرایه لازم است.</p>
-        <div className="mt-3">
-          <BlueprintShippingOriginPicker
-            provinceId={origin.provinceId}
-            cityId={origin.cityId}
-            onChange={(next) => { setOrigin(next); setOriginError(null); }}
-          />
-          {originError && <p role="alert" className="m-0 mt-1 text-[12px] leading-6 text-[var(--bp-danger)]">{originError}</p>}
-          <div className="mt-2 flex justify-end">
-            <BpButton type="button" isPending={savingOrigin} onClick={() => void saveOrigin()}>ذخیره مبدأ</BpButton>
-          </div>
-        </div>
-      </section>
+      <SetupSection
+        title="روش ارسال"
+        description="روشی که مشتری در تسویه‌حساب برای دریافت سفارش انتخاب می‌کند. حداقل یک روش فعال لازم است."
+        status={hasActiveMethod ? "done" : "todo"}
+      >
+        <BlueprintShippingMethodForm provinces={provinces} onSaved={onSaved} />
+      </SetupSection>
 
-      <section className="bp-frame relative p-[16px]">
-        <BpKicker>روش ارسال</BpKicker>
-        <p className="bp-muted m-0 mt-1 text-[12px] leading-6">حداقل یک روش فعال لازم است تا مشتری بتواند در تسویه حساب ارسال را انتخاب کند.</p>
-        <div className="mt-3">
-          <BlueprintShippingMethodForm provinces={provinces} onSaved={onSaved} />
-        </div>
-      </section>
+      <SetupFooter
+        onBack={onBack}
+        hint={isComplete ? undefined : `برای ادامه ${missing} کنید.`}
+        primary={<BpButton type="button" variant="primary" disabled={!isComplete} onClick={onNext} className="gap-1.5">ادامه<ArrowLeft size={15} /></BpButton>}
+      />
     </div>
   );
 }
