@@ -158,7 +158,10 @@ function ProductBulkEditModal({ open, ids, variantTypeNames, variantProductCount
     let nextValueError: string | undefined;
     let nextDatesError: string | undefined;
     if (type !== "removeDiscount" && type !== "status" && type !== "category") {
-      if (!value || !Number.isFinite(amount) || amount <= 0) nextValueError = "مقدار را وارد کنید.";
+      // Setting the stock to zero is a real change (sold out); every other amount has to be above zero.
+      const allowsZero = type === "stock" && method === "set";
+      if (value === "" || !Number.isFinite(amount) || amount < 0) nextValueError = "مقدار را وارد کنید.";
+      else if (amount === 0 && !allowsZero) nextValueError = "مقدار باید بیشتر از صفر باشد.";
       else if ((type === "discount" || type === "scheduledDiscount") && unit === "PERCENT" && amount > 100) nextValueError = "درصد تخفیف نمی‌تواند بیشتر از ۱۰۰ باشد.";
     }
     if (type === "scheduledDiscount") {

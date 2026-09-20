@@ -21,7 +21,7 @@ const bodySchema = z.object({
   unit: z.enum(["PERCENT", "FIXED"]).optional(),
   // Every type but removeDiscount, status and category needs an amount — none of those ever
   // reads one, so they are the only types allowed to leave this out.
-  value: z.coerce.number("مقدار را وارد کنید.").positive("مقدار باید بیشتر از صفر باشد.").max(999999999999999999, "مقدار واردشده بیش از حد مجاز است.").optional(),
+  value: z.coerce.number("مقدار را وارد کنید.").min(0, "مقدار نمی‌تواند منفی باشد.").max(999999999999999999, "مقدار واردشده بیش از حد مجاز است.").optional(),
   startsAt: boundarySchema.nullable().optional(),
   endsAt: boundarySchema.nullable().optional(),
   status: z.enum(Object.values(ProductStatus) as [ProductStatus, ...ProductStatus[]]).optional(),
@@ -31,6 +31,10 @@ const bodySchema = z.object({
 }).superRefine((data, context) => {
   if (data.type !== "removeDiscount" && data.type !== "status" && data.type !== "category" && data.value === undefined) {
     context.addIssue({ code: "custom", path: ["value"], message: "مقدار را وارد کنید." });
+  }
+  // Zero is meaningful only as "set the stock to 0"; anywhere else an amount has to be above zero.
+  if (data.value === 0 && !(data.type === "stock" && data.method === "set")) {
+    context.addIssue({ code: "custom", path: ["value"], message: "مقدار باید بیشتر از صفر باشد." });
   }
   if (data.type === "status" && !data.status) {
     context.addIssue({ code: "custom", path: ["status"], message: "وضعیت محصول را انتخاب کنید." });
