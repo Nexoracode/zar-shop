@@ -597,7 +597,7 @@ export function BlueprintProductOptions({ storeIndustry, colors, library, option
                       }}
                     />
                     {variant.discountType && variant.discountValue && (
-                      <span className="inline-flex items-center gap-1 rounded-[var(--bp-radius)] border border-[var(--bp-divider)] ps-2 pe-1 py-1 text-[11px] whitespace-nowrap">
+                      <span className="inline-flex min-h-[36px] items-center gap-1 rounded-[var(--bp-radius)] border border-[var(--bp-divider)] ps-2.5 pe-1.5 py-1 text-[11px] whitespace-nowrap">
                         <button
                           type="button"
                           className="hover:text-[var(--bp-accent)]"
