@@ -1,5 +1,7 @@
 "use client";
 
+import { FreeShippingNote } from "@/components/free-shipping-note";
+import type { FreeShippingReason } from "@/modules/shipping/free-shipping";
 import { useState } from "react";
 import { Button, Card, Spinner } from "@heroui/react";
 import { ArrowLeftRight, Check, CreditCard, MapPin, PartyPopper } from "lucide-react";
@@ -28,6 +30,7 @@ type Quote = {
   promotionDiscount: number;
   shipping: number;
   shippingDiscount: number;
+  shippingFree?: FreeShippingReason | null;
   total: number;
   /** Portion already captured from the customer's wallet at checkout; the gateway owes the rest. */
   walletApplied: number;
@@ -105,7 +108,7 @@ export function ResumeOrderCheckout({ orderId, orderNumber, address, quote, curr
             <div className="flex justify-between gap-4 text-[var(--muted)]"><dt>قیمت کالاها</dt><dd>{formatMoney(quote.subtotal, currency)}</dd></div>
             {quote.productDiscount > 0 && <div className="flex items-center justify-between gap-4 rounded-lg px-3 py-2.5 font-bold text-[var(--success)]" style={{ backgroundColor: "color-mix(in srgb, var(--success) 12%, transparent)" }}><dt className="flex items-center gap-2"><PartyPopper size={16} />سود شما از خرید</dt><dd className="m-0 tabular-nums">{formatMoney(quote.productDiscount, currency)}</dd></div>}
             {quote.promotionDiscount > 0 && <div className="flex justify-between gap-4 font-bold text-[var(--success)]"><dt>کد تخفیف</dt><dd>{formatMoney(quote.promotionDiscount, currency)}</dd></div>}
-            <div className="flex justify-between gap-4 text-[var(--muted)]"><dt>هزینه ارسال و بسته‌بندی</dt><dd>{quote.shipping === 0 ? "رایگان" : formatMoney(quote.shipping, currency)}</dd></div>
+            <div className="flex justify-between gap-4 text-[var(--muted)]"><dt>هزینه ارسال و بسته‌بندی</dt><dd>{quote.shipping === 0 ? "رایگان" : formatMoney(quote.shipping, currency)}</dd></div>{quote.shipping === 0 && <FreeShippingNote reason={quote.shippingFree} currency={currency} />}
             {quote.shippingDiscount > 0 && <div className="flex justify-between gap-4 font-bold text-[var(--success)]"><dt>تخفیف ارسال</dt><dd>{formatMoney(quote.shippingDiscount, currency)}</dd></div>}
             {quote.walletApplied > 0 && <div className="flex justify-between gap-4 font-bold text-[var(--success)]"><dt>از کیف پول</dt><dd>− {formatMoney(quote.walletApplied, currency)}</dd></div>}
             <div className="flex justify-between gap-4 border-t border-[var(--border)] pt-4 text-base font-bold"><dt>{quote.walletApplied > 0 ? "مبلغ قابل پرداخت در درگاه" : "مبلغ قابل پرداخت"}</dt><dd>{formatMoney(quote.total - quote.walletApplied, currency)}</dd></div>
