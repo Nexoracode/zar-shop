@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "@heroui/react";
-import { ChevronDown, FileText, GripVertical, Images, Info, Trash2 } from "lucide-react";
+import { ArrowLeft, ChevronDown, FileText, GripVertical, Images, Info, Trash2 } from "lucide-react";
 import { MediaPickerDialog } from "@/components/media-picker-dialog";
 import type { MediaChoice } from "@/components/media-library";
 import { RichTextEditor } from "@/components/rich-text-editor";
@@ -51,12 +51,12 @@ function randomSuffix() {
   return Math.random().toString(36).slice(2, 6);
 }
 
-function Panel({ title, description, action, children, className = "" }: { title: string; description?: string; action?: React.ReactNode; children: React.ReactNode; className?: string }) {
+function Panel({ id, title, description, action, children, className = "" }: { id?: string; title: string; description?: string; action?: React.ReactNode; children: React.ReactNode; className?: string }) {
   return (
     // `min-w-0`: a grid item's automatic minimum size is its content's own — without this, a wide
     // table inside (the combinations table, in particular) forced this whole column wider than
     // its track and spilled onto the sticky sidebar instead of scrolling within itself.
-    <section className={`bp-frame relative min-w-0 p-[18px] ${className}`.trim()}>
+    <section id={id} className={`bp-frame bp-spotlight-target relative min-w-0 p-[18px] ${className}`.trim()}>
             <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
           <BpKicker>{title}</BpKicker>
@@ -67,6 +67,22 @@ function Panel({ title, description, action, children, className = "" }: { title
       <div className="mt-3">{children}</div>
     </section>
   );
+}
+
+const OPTIONS_PANEL_ID = "product-options-panel";
+const SPOTLIGHT_MS = 2800;
+
+/** Scrolls to a card and pulses it for a few seconds, so the reader can tell which one was meant. */
+function spotlightPanel(id: string) {
+  const panel = document.getElementById(id);
+  if (!panel) return;
+  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  panel.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "start" });
+  // Removed and re-added with a reflow in between, so a second click replays the animation.
+  panel.classList.remove("bp-spotlight");
+  void panel.offsetWidth;
+  panel.classList.add("bp-spotlight");
+  window.setTimeout(() => panel.classList.remove("bp-spotlight"), SPOTLIGHT_MS + 100);
 }
 
 export function BlueprintProductForm({ storeIndustry, categories = [], brands = [], colors = [], optionLibrary = [], product }: Props) {
@@ -385,10 +401,17 @@ export function BlueprintProductForm({ storeIndustry, categories = [], brands = 
             <BpSwitch isSelected={productDiscountOn} isDisabled={hasVariants} onChange={setDiscountEnabled}>تخفیف داشته باشد</BpSwitch>
           </div>
           {hasVariants && (
-            <p className="bp-muted m-0 mt-3 flex items-start gap-2 border border-[var(--bp-divider)] bg-[var(--bp-bg)] p-3 text-[12px] leading-6">
-              <Info size={15} className="mt-0.5 shrink-0" aria-hidden />
-              این محصول تنوع دارد، پس تخفیف آن برای هر ترکیب جداگانه و از بخش «تنوع محصول» (ستون تخفیف) مدیریت می‌شود؛ تخفیف کل محصول دیگر اینجا اعمال نمی‌شود.
-            </p>
+            <div role="note" className="bp-notice-info mt-3">
+              <Info size={15} className="mt-[5px] shrink-0" aria-hidden />
+              <p className="m-0 min-w-0 flex-1">
+                این محصول تنوع دارد؛ تخفیف هر ترکیب جداگانه از بخش «تنوع محصول» مدیریت می‌شود و تخفیف کل محصول اینجا غیرفعال است.
+                {" "}
+                <button type="button" className="bp-notice-info-action" onClick={() => spotlightPanel(OPTIONS_PANEL_ID)}>
+                  رفتن به تنوع محصول
+                  <ArrowLeft size={13} aria-hidden />
+                </button>
+              </p>
+            </div>
           )}
           {productDiscountOn && (
             <div className="mt-3 grid gap-3">
@@ -437,7 +460,7 @@ export function BlueprintProductForm({ storeIndustry, categories = [], brands = 
           )}
         </Panel>
 
-        <Panel title="تنوع محصول" description="اگر محصول در چند سایز یا رنگ عرضه می‌شود، نوع‌ها و مقادیرش را انتخاب کنید تا ترکیب‌ها ساخته شوند.">
+        <Panel id={OPTIONS_PANEL_ID} title="تنوع محصول" description="اگر محصول در چند سایز یا رنگ عرضه می‌شود، نوع‌ها و مقادیرش را انتخاب کنید تا ترکیب‌ها ساخته شوند.">
           <BlueprintProductOptions
             storeIndustry={storeIndustry}
             colors={colors}
