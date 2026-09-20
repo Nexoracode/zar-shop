@@ -5,7 +5,7 @@ import { createContext, useContext, useEffect, useState } from "react";
 import type { Dispatch, ReactNode, SetStateAction } from "react";
 import { useRouter } from "next/navigation";
 import { Button, Modal, Spinner, toast } from "@heroui/react";
-import { Check, FileText, Minus, PackageCheck, Plus, Ruler, ShieldCheck, ShoppingCart, Trash2, X } from "lucide-react";
+import { Check, FileText, Minus, PackageCheck, Plus, Ruler, ShieldCheck, ShoppingCart, Store, Trash2, Truck, Warehouse, X } from "lucide-react";
 import { formatMoney } from "@/lib/format";
 import { listenForCartUpdates, notifyCartUpdated } from "@/components/storefront-cart-link";
 import { FlashSaleCountdown, useRemainingMs } from "@/components/flash-sale-countdown";
@@ -109,13 +109,13 @@ export function VariantStockLabel({ showStock, lowStockThreshold }: { showStock:
   return <span className={`text-xs font-bold ${variant.stock < 1 || low ? "text-[var(--danger)]" : "text-[var(--success)]"}`}>{label}</span>;
 }
 
-/** The purchase card's title while a time-limited discount runs: "پیشنهاد شگفت‌انگیز" and the time left. */
+/** The detailed purchase card's header while a time-limited discount runs: "پیشنهاد شگفت‌انگیز" and the time left. */
 function FlashOfferHeader({ endsAt }: { endsAt: string }) {
   const remaining = useRemainingMs(endsAt);
-  // Once the time is up the offer is over; the plain heading takes its place until the page refreshes the price.
-  if (remaining !== null && remaining <= 0) return <strong className="text-base font-bold text-slate-900">خرید این محصول</strong>;
+  // Once the time is up the offer is over; the header goes until the page refreshes the price.
+  if (remaining !== null && remaining <= 0) return null;
   return (
-    <div className="-mx-4 -mt-4 flex items-center justify-between gap-3 rounded-t-xl border-b border-slate-200/80 bg-white px-4 py-3">
+    <div className="flex items-center justify-between gap-3 border-b border-slate-200 bg-white px-4 py-3">
       <strong className="text-[15px] font-black text-[var(--danger)]">پیشنهاد شگفت‌انگیز</strong>
       <FlashSaleCountdown endsAt={endsAt} tone="plain" />
     </div>
@@ -132,7 +132,7 @@ export function useSelectedProductOptions(): Record<string, string> {
   return useContext(ProductPurchaseContext)?.selectedOptions ?? {};
 }
 
-export function AddToCart({ productId, options = [], variants = [], optionGuide, disabled, disabledLabel = "ناموجود", currency = "IRR", layout = "default", purchaseSummary, purchaseMeta, purchaseFooter, purchasePrice = null, purchaseOriginalPrice = null, preparationDays = 0, showOptionFields = true, showPurchaseCard = true, showMobileBar = false, purchaseCardClassName, purchaseCardStickyTop = "6rem", showFlashOffer = false }: { productId: string; options?: ProductOption[]; variants?: PurchasableVariant[]; optionGuide?: OptionGuide | null; disabled: boolean; disabledLabel?: string; currency?: "IRR" | "IRT"; layout?: "default" | "product-detail"; purchaseSummary?: ReactNode; purchaseMeta?: ReactNode; /** Rendered under the trust badges, once per card instance — e.g. a "chat with support" link. */ purchaseFooter?: ReactNode; purchasePrice?: number | null; purchaseOriginalPrice?: number | null; preparationDays?: number; showOptionFields?: boolean; showPurchaseCard?: boolean; /** Renders the persistent mobile bottom price+buy bar — set on exactly one of the page's `AddToCart` instances. */ showMobileBar?: boolean; purchaseCardClassName?: string; purchaseCardStickyTop?: string; /** Opens the purchase card with the "پیشنهاد شگفت‌انگیز" header and countdown when the picked variant has a time-limited discount. Only the page's second card asks for it. */ showFlashOffer?: boolean }) {
+export function AddToCart({ productId, options = [], variants = [], optionGuide, disabled, disabledLabel = "ناموجود", currency = "IRR", layout = "default", purchaseSummary, purchaseMeta, purchaseFooter, purchasePrice = null, purchaseOriginalPrice = null, preparationDays = 0, showOptionFields = true, showPurchaseCard = true, showMobileBar = false, purchaseCardClassName, purchaseCardStickyTop = "6rem", detailedCard }: { productId: string; options?: ProductOption[]; variants?: PurchasableVariant[]; optionGuide?: OptionGuide | null; disabled: boolean; disabledLabel?: string; currency?: "IRR" | "IRT"; layout?: "default" | "product-detail"; purchaseSummary?: ReactNode; purchaseMeta?: ReactNode; /** Rendered under the trust badges, once per card instance — e.g. a "chat with support" link. */ purchaseFooter?: ReactNode; purchasePrice?: number | null; purchaseOriginalPrice?: number | null; preparationDays?: number; showOptionFields?: boolean; showPurchaseCard?: boolean; /** Renders the persistent mobile bottom price+buy bar — set on exactly one of the page's `AddToCart` instances. */ showMobileBar?: boolean; purchaseCardClassName?: string; purchaseCardStickyTop?: string; /** Turns the purchase card into the marketplace-style one: the product itself, the choices made, who sells it, stock, the price and — while a time-limited discount runs — the "پیشنهاد شگفت‌انگیز" header. Only the page's second card asks for it. */ detailedCard?: { name: string; imageUrl: string | null; imageAlt: string; storeName: string } }) {
   const router = useRouter();
   const sharedState = useContext(ProductPurchaseContext);
   const [localMessage, setLocalMessage] = useState("");
@@ -162,7 +162,20 @@ export function AddToCart({ productId, options = [], variants = [], optionGuide,
   // Out of stock as a pairing counts too: black and XL can each be in stock somewhere and still not together.
   const optionStockUnavailable = options.length > 0 && (!variants.some((variant) => variant.available) || (selectedVariant !== null && !selectedVariant.available));
   const selectedColorValue = options.filter((option) => option.kind === "COLOR").flatMap((option) => option.values.filter((item) => selectedOptions[option.id] === item.value)).find((item) => item.color);
-  const flashEndsAt = showFlashOffer ? selectedVariant?.discountEndsAt ?? null : null;
+  const flashEndsAt = detailedCard ? selectedVariant?.discountEndsAt ?? null : null;
+  // What the visitor has picked, one line each — a colour with its swatch, anything else as «سایز: XL».
+  const chosenDetails = options.flatMap((option) => {
+    const value = selectedOptions[option.id];
+    if (!value) return [];
+    const item = option.values.find((entry) => entry.value === value);
+    return [{ key: option.id, label: option.name, text: item?.color?.name ?? value, hex: item?.color?.hex ?? null }];
+  });
+  // The amount and its unit apart, so the unit can sit small beside a large number.
+  const moneyParts = (value: number) => {
+    const text = formatMoney(value, currency);
+    const cut = text.lastIndexOf(" ");
+    return { amount: text.slice(0, cut), unit: text.slice(cut + 1) };
+  };
   const displayedPrice = selectedVariant?.price ?? purchasePrice;
   const displayedOriginalPrice = selectedVariant?.originalPrice ?? purchaseOriginalPrice;
   // Worked out from whichever price ended up on screen, not passed in as its own prop — a
@@ -252,11 +265,56 @@ export function AddToCart({ productId, options = [], variants = [], optionGuide,
 
   if (layout === "product-detail") return <>
     {showOptionFields && optionFields && <section className="grid gap-4 pt-7 lg:col-start-2 lg:row-start-2" aria-label="انتخاب تنوع محصول">{optionFields}</section>}
-    {showPurchaseCard && <aside className={`hidden lg:block ${purchaseCardClassName ?? "lg:col-start-3 lg:row-span-2 lg:row-start-1"}`}>
+    {showPurchaseCard && detailedCard && <aside className={`hidden lg:block ${purchaseCardClassName ?? ""}`}>
+      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white lg:sticky" style={{ top: purchaseCardStickyTop }}>
+        {flashEndsAt && <FlashOfferHeader endsAt={flashEndsAt} />}
+        <div className="grid gap-4 p-4">
+          <div className="flex items-start gap-3">
+            <span className="relative grid size-[76px] shrink-0 place-items-center overflow-hidden rounded-lg border border-slate-200 bg-slate-50 text-slate-400">
+              {detailedCard.imageUrl ? <Image src={detailedCard.imageUrl} alt={detailedCard.imageAlt} fill sizes="76px" className="object-contain p-1" /> : <PackageCheck size={24} aria-hidden />}
+            </span>
+            <div className="grid min-w-0 flex-1 gap-2">
+              <h3 className="m-0 line-clamp-2 text-[13px] font-bold leading-6 text-slate-900">{detailedCard.name}</h3>
+              {chosenDetails.map((detail) => (
+                <span key={detail.key} className="flex min-w-0 items-center gap-2 text-[12px] text-slate-600">
+                  {detail.hex ? <span aria-hidden className="size-4 shrink-0 rounded-full border border-black/10" style={{ backgroundColor: detail.hex }} /> : <span className="shrink-0 text-slate-400">{detail.label}:</span>}
+                  <span className="truncate">{detail.text}</span>
+                </span>
+              ))}
+            </div>
+          </div>
+
+          <ul className="m-0 grid list-none gap-3 border-t border-slate-200 p-0 pt-4 text-[13px] text-slate-700">
+            <li className="flex items-center gap-2.5">
+              <span aria-hidden className="grid size-6 shrink-0 place-items-center rounded-full bg-[var(--brand-primary)] text-[var(--brand-primary-foreground)]"><Store size={13} /></span>
+              <span className="min-w-0 truncate font-bold">{detailedCard.storeName}</span>
+            </li>
+            <li className="flex items-center gap-2.5"><ShieldCheck size={18} className="shrink-0 text-slate-500" aria-hidden /><span>ضمانت اصالت و سلامت کالا</span></li>
+            <li className="flex items-center gap-2.5"><Warehouse size={18} className="shrink-0 text-slate-500" aria-hidden />{purchaseMeta}</li>
+            <li className="flex items-center gap-2.5"><Truck size={18} className="shrink-0 text-slate-500" aria-hidden /><span>{(selectedVariant?.preparationDays ?? preparationDays) > 0 ? `آماده‌سازی و ارسال تا ${(selectedVariant?.preparationDays ?? preparationDays).toLocaleString("fa-IR")} روز کاری` : "ارسال قابل پیگیری"}</span></li>
+          </ul>
+
+          <div className="grid gap-1.5">
+            {displayedOriginalPrice !== null && displayedPrice !== null && displayedOriginalPrice > displayedPrice && (
+              <div className="flex items-center gap-2">
+                {discountLabel && <span className="inline-flex items-center rounded-full bg-[var(--danger)] px-2 py-1 text-[11px] font-bold leading-none text-[var(--danger-foreground)]">{discountLabel}</span>}
+                <span className="text-[13px] text-slate-400 line-through">{moneyParts(displayedOriginalPrice).amount}</span>
+              </div>
+            )}
+            {displayedPrice === null
+              ? <strong className="text-base font-bold text-slate-900">قیمت نامشخص</strong>
+              : <div className="flex items-baseline gap-1.5"><strong className="text-[26px] font-black leading-none text-slate-900">{moneyParts(displayedPrice).amount}</strong><span className="text-[12px] text-slate-500">{moneyParts(displayedPrice).unit}</span></div>}
+          </div>
+          {purchaseSummary}
+          {addButton}
+          {msg && <small className="block text-[var(--brand-accent)]">{msg}</small>}
+          {purchaseFooter}
+        </div>
+      </div>
+    </aside>}
+    {showPurchaseCard && !detailedCard && <aside className={`hidden lg:block ${purchaseCardClassName ?? "lg:col-start-3 lg:row-span-2 lg:row-start-1"}`}>
       <div className="grid gap-4 rounded-xl border border-slate-200/80 bg-slate-50/40 p-4 lg:sticky" style={{ top: purchaseCardStickyTop }}>
-        {/* A time-limited discount on the picked variant is a "پیشنهاد شگفت‌انگیز": the card opens with that
-            title and the time left, and gives way to the plain heading when the time is up. */}
-        {flashEndsAt ? <FlashOfferHeader endsAt={flashEndsAt} /> : <strong className="text-base font-bold text-slate-900">خرید این محصول</strong>}
+        <strong className="text-base font-bold text-slate-900">خرید این محصول</strong>
         {purchaseSummary}
         {displayedOriginalPrice !== null && displayedPrice !== null && displayedOriginalPrice > displayedPrice && <div className="flex items-center gap-2"><span className="text-xs text-slate-400 line-through">{formatMoney(displayedOriginalPrice, currency)}</span>{discountLabel && <span className="inline-flex items-center rounded-full bg-[var(--danger)] px-2 py-1 text-[10px] font-bold text-[var(--danger-foreground)]">{discountLabel}</span>}</div>}
         <strong className="text-left text-xl font-bold text-slate-900" dir="rtl">{displayedPrice === null ? "قیمت نامشخص" : formatMoney(displayedPrice, currency)}</strong>

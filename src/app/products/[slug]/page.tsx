@@ -314,7 +314,7 @@ export default async function ProductPage({ params, searchParams }: { params: Pr
         <ProductReviews productId={product.id} initialData={reviewData} isAuthenticated={Boolean(currentUser && !currentUser.isGuest)} />
       </section>
         </div>
-        <AddToCart {...cartProps} layout="product-detail" showOptionFields={false} purchaseCardClassName="order-first h-full pt-6 lg:order-none" purchaseCardStickyTop="var(--product-detail-purchase-offset, 6rem)" showFlashOffer />
+        <AddToCart {...cartProps} layout="product-detail" showOptionFields={false} purchaseCardClassName="order-first h-full pt-6 lg:order-none" purchaseCardStickyTop="var(--product-detail-purchase-offset, 6rem)" detailedCard={{ name: product.name, imageUrl: galleryMedia.find((item) => item.type === "IMAGE")?.url ?? null, imageAlt: galleryMedia.find((item) => item.type === "IMAGE")?.alt ?? product.name, storeName: settings.storeName }} />
       </div>
     </div>
   </main></ProductPurchaseProvider>;
