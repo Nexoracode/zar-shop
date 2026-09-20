@@ -504,7 +504,7 @@ export function BlueprintProductOptions({ storeIndustry, colors, library, option
                       aria-label={`موجودی ترکیب ${label}`}
                       value={String(variant.stock)}
                       reserveMessage={false}
-                      wrapperClassName="w-[min(100%,90px)]"
+                      wrapperClassName="w-full min-w-[120px]"
                       onValueChange={(next) => updateVariant(signature, { stock: next === "" ? 0 : Number(next) })}
                     />
                   </BpTd>
@@ -513,7 +513,7 @@ export function BlueprintProductOptions({ storeIndustry, colors, library, option
                       aria-label={`زمان آماده‌سازی ترکیب ${label}`}
                       value={String(variant.preparationDays)}
                       reserveMessage={false}
-                      wrapperClassName="w-[min(100%,90px)]"
+                      wrapperClassName="w-full min-w-[120px]"
                       onValueChange={(next) => updateVariant(signature, { preparationDays: next === "" ? 0 : Number(next) })}
                     />
                   </BpTd>
@@ -522,7 +522,7 @@ export function BlueprintProductOptions({ storeIndustry, colors, library, option
                       aria-label={`حداقل سفارش ترکیب ${label}`}
                       value={String(variant.minOrderQuantity)}
                       reserveMessage={false}
-                      wrapperClassName="w-[min(100%,90px)]"
+                      wrapperClassName="w-full min-w-[120px]"
                       onValueChange={(next) => updateVariant(signature, { minOrderQuantity: next === "" ? 1 : Math.max(1, Number(next)) })}
                     />
                   </BpTd>
@@ -532,7 +532,7 @@ export function BlueprintProductOptions({ storeIndustry, colors, library, option
                       value={variant.maxOrderQuantity === null ? "" : String(variant.maxOrderQuantity)}
                       placeholder="بدون سقف"
                       reserveMessage={false}
-                      wrapperClassName="w-[min(100%,110px)]"
+                      wrapperClassName="w-full min-w-[120px]"
                       onValueChange={(next) => updateVariant(signature, { maxOrderQuantity: next === "" ? null : Number(next) })}
                     />
                   </BpTd>
