@@ -21,14 +21,6 @@ function GeneralProductPlaceholder() {
   return <div className="h-full w-full bg-[var(--surface-tertiary)]" aria-hidden="true" />;
 }
 
-function AmazingOfferBadge({ className = "" }: { className?: string }) {
-  return (
-    <span className={`inline-flex w-fit items-center rounded-[3px] bg-[color-mix(in_srgb,var(--danger)_10%,white)] px-1.5 py-1 text-[0.68rem] font-extrabold leading-none text-[var(--danger)] ${className}`}>
-      پیشنهاد شگفت‌انگیز
-    </span>
-  );
-}
-
 /** Placeholder matching the "catalog" variant's card shape, for the catalogue's initial and lazy-loaded skeletons. */
 export function ProductCardSkeleton() {
   return (
@@ -70,7 +62,6 @@ export function ProductCard({ id, isFavorite, href, name, category, industry, we
       {colors.length > 0 && <span className="absolute right-2 top-5 z-10 flex flex-col gap-0.5" aria-label={`${colors.length.toLocaleString("fa-IR")} رنگ موجود`}>
         {colors.slice(0, 5).map((color) => <span key={color.id} title={color.name} className="size-2.5 rounded-full border border-black/15 ring-1 ring-white" style={{ backgroundColor: color.hex }} />)}
       </span>}
-      {discountPercent !== undefined && discountPercent > 0 && <AmazingOfferBadge className="absolute left-3 top-3 z-10 shadow-sm" />}
       <div className="relative mx-auto aspect-square w-full max-w-[245px] overflow-hidden">
         {image ? <Image src={image.src} alt={image.alt} width={500} height={500} sizes="(min-width: 1280px) 245px, (min-width: 640px) 33vw, 50vw" className="h-full w-full object-contain transition-transform duration-300 group-hover:scale-[1.025]" /> : <GeneralProductPlaceholder />}
       </div>
@@ -115,7 +106,7 @@ export function ProductCard({ id, isFavorite, href, name, category, industry, we
           </div>
         )}
         {isGallery && id && <ProductFavoriteButton productId={id} initialFavorite={isFavorite} className="absolute right-2.5 top-2.5 z-10 shadow-sm" />}
-        {isGallery && makingFee ? <span className="absolute bottom-2.5 right-2.5 rounded-[4px] bg-slate-100 px-2 py-1 text-[0.6rem] font-bold text-slate-600 shadow-sm">{makingFee.type === "PERCENT" ? <>اجرت {makingFee.value.toLocaleString("fa-IR")}٪{makingFee.value < 5 && " | کم‌اجرت"}</> : "اجرت ثابت"}</span> : isGallery && discountPercent !== undefined && discountPercent > 0 ? <AmazingOfferBadge className="absolute bottom-2.5 right-2.5 shadow-sm" /> : null}
+        {isGallery && makingFee ? <span className="absolute bottom-2.5 right-2.5 rounded-[4px] bg-slate-100 px-2 py-1 text-[0.6rem] font-bold text-slate-600 shadow-sm">{makingFee.type === "PERCENT" ? <>اجرت {makingFee.value.toLocaleString("fa-IR")}٪{makingFee.value < 5 && " | کم‌اجرت"}</> : "اجرت ثابت"}</span> : isGallery && discountPercent !== undefined && discountPercent > 0 ? <span className="absolute bottom-2.5 right-2.5 rounded-[4px] bg-[var(--danger)] px-2 py-1 text-[0.6rem] font-bold text-[var(--danger-foreground)]">٪{discountPercent.toLocaleString("fa-IR")}</span> : null}
       </div>
 
       {/* Content */}
