@@ -202,7 +202,8 @@ export function AuthFlow() {
     setLoading(false);
     if (!complete.ok) { setOtp(""); setError(complete.result?.message ?? "ثبت‌نام انجام نشد."); return; }
     toast.success("حساب کاربری ساخته شد", { description: "خوش آمدید!", timeout: 4000 });
-    window.location.assign("/");
+    // Same full navigation as above, to an absolute address.
+    window.location.assign(new URL("/", window.location.origin).href);
   }
 
   if (step === "phone") {

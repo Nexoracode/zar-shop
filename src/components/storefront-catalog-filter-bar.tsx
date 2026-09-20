@@ -40,7 +40,7 @@ type Props = {
 export function StorefrontCatalogFilterBar({ facets, categoryScoped, selectedBrands, selectedColors, selectedAttributes, minPrice, maxPrice, inStock, hasDiscount, freeShipping, sameDayDelivery, resetHref, sortOptions, currentSort }: Props) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const { isPending, updateMultiValue, updateBooleanValue, updatePrice } = useCatalogFilterActions();
+  const { isPending, updateMultiValue, updatePrice } = useCatalogFilterActions();
   const [sheet, setSheet] = useState<"list" | "sort" | FacetKey | null>(null);
   const [cameFromList, setCameFromList] = useState(false);
   const [priceValues, setPriceValues] = useState<[number, number] | null>(null);

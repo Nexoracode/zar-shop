@@ -94,7 +94,7 @@ export function ForgotPasswordForm() {
     if (!ok) { setFieldErrors({ code: result?.message ?? "بازیابی رمز عبور انجام نشد." }); return; }
     toast.success("رمز عبور تغییر کرد", { description: "با موفقیت وارد حساب کاربری شدید.", timeout: 4000 });
     // Full browser navigation, not router.push — see auth-flow.tsx for why.
-    window.location.assign("/account");
+    window.location.assign(new URL("/account", window.location.origin).href);
   }
 
   if (step === "request") {
