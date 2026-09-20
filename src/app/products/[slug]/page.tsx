@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { CheckCircle2, Headset, PackageCheck, ShieldCheck, Star, Truck } from "lucide-react";
-import { AddToCart, ProductPurchaseProvider } from "@/components/add-to-cart";
+import { AddToCart, ProductPurchaseProvider, VariantStockLabel } from "@/components/add-to-cart";
 import { PriceTooltip } from "@/components/price-tooltip";
 import { ProductDetailGallery } from "@/components/product-detail-gallery";
 import { ExpandableContent } from "@/components/expandable-content";
@@ -197,15 +197,9 @@ export default async function ProductPage({ params, searchParams }: { params: Pr
   </div>;
   // Same threshold the admin panel's own stock column warns at, so the storefront's urgency
   // matches what the seller configured rather than an unrelated number of its own.
-  const lowStock = product.stock > 0 && product.stock <= catalogSettings.catalogLowStockThreshold;
-  const stockLabel = product.stock < 1
-    ? "در حال حاضر ناموجود"
-    : !catalogSettings.showProductStock
-      ? "موجود در انبار"
-      : lowStock
-        ? `🔥 تنها ${product.stock.toLocaleString("fa-IR")} عدد در انبار باقی مانده`
-        : `${product.stock.toLocaleString("fa-IR")} عدد موجود در انبار`;
-  const purchaseMeta = <span className={`text-xs font-bold ${product.stock < 1 || lowStock ? "text-[var(--danger)]" : "text-[var(--success)]"}`}>{stockLabel}</span>;
+  // Stock is the picked variant's, worked out in the browser as the visitor chooses — the product's own
+  // stock is only the total of all of them.
+  const purchaseMeta = <VariantStockLabel showStock={catalogSettings.showProductStock} lowStockThreshold={catalogSettings.catalogLowStockThreshold} />;
   const ticketHref = `/account/tickets/new?productId=${product.id}`;
   const resolvedTicketHref = currentUser && !currentUser.isGuest ? ticketHref : `/login?redirect=${encodeURIComponent(ticketHref)}`;
   const purchaseFooter = (
@@ -254,7 +248,7 @@ export default async function ProductPage({ params, searchParams }: { params: Pr
     } : {}),
   };
 
-  return <ProductPurchaseProvider productId={product.id} variantIds={purchasableVariants.map((variant) => ({ id: variant.id, selection: variant.selection }))} initialSelectedOptions={initialSelectedOptions} initialCartLines={initialCartLines}><ProductDetailTopBar productName={product.name} cartCount={cartCount} ticketHref={resolvedTicketHref} /><ProductActivityTracker productId={product.id} enabled={Boolean(currentUser && !currentUser.isGuest)} />{seo.enableProductSchema && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(productJsonLd) }} />}<main className="bg-white px-4 pb-16 pt-5 antialiased sm:px-6 lg:pb-24">
+  return <ProductPurchaseProvider productId={product.id} variantIds={purchasableVariants.map((variant) => ({ id: variant.id, selection: variant.selection, stock: variant.stock }))} initialSelectedOptions={initialSelectedOptions} initialCartLines={initialCartLines}><ProductDetailTopBar productName={product.name} cartCount={cartCount} ticketHref={resolvedTicketHref} /><ProductActivityTracker productId={product.id} enabled={Boolean(currentUser && !currentUser.isGuest)} />{seo.enableProductSchema && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(productJsonLd) }} />}<main className="bg-white px-4 pb-16 pt-5 antialiased sm:px-6 lg:pb-24">
     <div className="mx-auto w-full max-w-[1440px]">
       <nav className="mb-6 flex flex-wrap items-center gap-2 text-xs text-slate-500" aria-label="مسیر محصول">
         <Link href="/" className="transition hover:text-slate-900">خانه</Link><span>/</span><Link href="/products" className="transition hover:text-slate-900">محصولات</Link>{product.category && <><span>/</span><Link href={`/products?category=${encodeURIComponent(product.category.slug)}`} className="transition hover:text-slate-900">{product.category.name}</Link></>}

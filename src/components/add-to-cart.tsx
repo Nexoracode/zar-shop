@@ -20,6 +20,8 @@ type CartLine = { id: string; quantity: number };
 type CartLines = Record<string, CartLine>;
 
 type PurchaseState = {
+  /** Every variant with its stock, so anything on the page can speak for the one picked. */
+  variants: Array<{ id: string; selection: Record<string, string>; stock: number }>;
   selectedOptions: Record<string, string>;
   setSelectedOptions: Dispatch<SetStateAction<Record<string, string>>>;
   message: string;
@@ -35,7 +37,7 @@ const ProductPurchaseContext = createContext<PurchaseState | null>(null);
 /** Marks the cart events this page raises itself, which it must not treat as a change made elsewhere. */
 const PURCHASE_ORIGIN = "product-purchase";
 
-export function ProductPurchaseProvider({ children, productId, variantIds = [], initialSelectedOptions = {}, initialCartLines = [] }: { children: ReactNode; /** Every variant of the product, so the address can name the one picked (`?variant=<id>`). */ variantIds?: Array<{ id: string; selection: Record<string, string> }>; /** Lets a line added in another tab be placed here when this page shows the same product. */ productId?: string; initialSelectedOptions?: Record<string, string>; /** Lines the visitor already had in the cart when the page rendered. */ initialCartLines?: Array<CartLine & { selection: Record<string, string> }> }) {
+export function ProductPurchaseProvider({ children, productId, variantIds = [], initialSelectedOptions = {}, initialCartLines = [] }: { children: ReactNode; /** Every variant of the product, so the address can name the one picked (`?variant=<id>`). */ variantIds?: Array<{ id: string; selection: Record<string, string>; stock: number }>; /** Lets a line added in another tab be placed here when this page shows the same product. */ productId?: string; initialSelectedOptions?: Record<string, string>; /** Lines the visitor already had in the cart when the page rendered. */ initialCartLines?: Array<CartLine & { selection: Record<string, string> }> }) {
   const [selectedOptions, setSelectedOptions] = useState(initialSelectedOptions);
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
@@ -83,7 +85,27 @@ export function ProductPurchaseProvider({ children, productId, variantIds = [], 
     window.history.replaceState(window.history.state, "", url);
   }, [selectedOptions, variantIds]);
 
-  return <ProductPurchaseContext.Provider value={{ selectedOptions, setSelectedOptions, message, setMessage, loading, setLoading, cartLines, setCartLines }}>{children}</ProductPurchaseContext.Provider>;
+  return <ProductPurchaseContext.Provider value={{ variants: variantIds, selectedOptions, setSelectedOptions, message, setMessage, loading, setLoading, cartLines, setCartLines }}>{children}</ProductPurchaseContext.Provider>;
+}
+
+/**
+ * How many of the picked variant are in stock. It reads the choice from the page's shared state, so
+ * it follows the colour or size the visitor picks — a product's total says nothing about one variant.
+ */
+export function VariantStockLabel({ showStock, lowStockThreshold }: { showStock: boolean; lowStockThreshold: number }) {
+  const state = useContext(ProductPurchaseContext);
+  const chosen = cartLineKey(state?.selectedOptions ?? {});
+  const variant = state?.variants.find((item) => cartLineKey(item.selection) === chosen);
+  if (!variant) return <span className="text-xs font-bold text-[var(--danger)]">این ترکیب موجود نیست</span>;
+  const low = variant.stock > 0 && variant.stock <= lowStockThreshold;
+  const label = variant.stock < 1
+    ? "در حال حاضر ناموجود"
+    : !showStock
+      ? "موجود در انبار"
+      : low
+        ? `🔥 تنها ${variant.stock.toLocaleString("fa-IR")} عدد در انبار باقی مانده`
+        : `${variant.stock.toLocaleString("fa-IR")} عدد موجود در انبار`;
+  return <span className={`text-xs font-bold ${variant.stock < 1 || low ? "text-[var(--danger)]" : "text-[var(--success)]"}`}>{label}</span>;
 }
 
 function cartLineKey(selectedOptions: Record<string, string>) {
@@ -123,7 +145,8 @@ export function AddToCart({ productId, options = [], variants = [], optionGuide,
    * value — black is neither cheap nor plentiful on its own, only black in a given size is.
    */
   const selectedVariant = variants.find((variant) => options.every((option) => variant.selection[option.id] === selectedOptions[option.id])) ?? null;
-  const optionStockUnavailable = options.length > 0 && !variants.some((variant) => variant.available);
+  // Out of stock as a pairing counts too: black and XL can each be in stock somewhere and still not together.
+  const optionStockUnavailable = options.length > 0 && (!variants.some((variant) => variant.available) || (selectedVariant !== null && !selectedVariant.available));
   const selectedColorValue = options.filter((option) => option.kind === "COLOR").flatMap((option) => option.values.filter((item) => selectedOptions[option.id] === item.value)).find((item) => item.color);
   const displayedPrice = selectedVariant?.price ?? purchasePrice;
   const displayedOriginalPrice = selectedVariant?.originalPrice ?? purchaseOriginalPrice;
