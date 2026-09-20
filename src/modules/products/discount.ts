@@ -7,6 +7,13 @@ export type ProductDiscountLike = {
   discountEndsAt: Date | string | null;
 };
 
+/**
+ * What a product stores as its own discount once it has combinations. Each combination carries
+ * its own discount (or none), so the product's is switched off and cannot be set — every write
+ * that leaves a product with combinations applies this.
+ */
+export const NO_PRODUCT_DISCOUNT = { discountType: null, discountValue: null, discountStartsAt: null, discountEndsAt: null } as const;
+
 export function isProductDiscountActive(product: ProductDiscountLike, now = new Date()) {
   const value = new Prisma.Decimal(product.discountValue?.toString() ?? 0);
   if (!product.discountType || !value.greaterThan(0)) return false;

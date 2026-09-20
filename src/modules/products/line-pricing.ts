@@ -45,8 +45,9 @@ type StoredVariantRow = {
  * The unit price of a line, before and after discount, or null when it cannot be worked out —
  * a gold product with no live rate, which the caller must report rather than sell at zero.
  *
- * The combination named by `selectionKey` overrides the product's price, weight and discount;
- * anything it leaves unset falls through to the product.
+ * The combination named by `selectionKey` overrides the product's price and weight, and anything
+ * it leaves unset falls through to the product. Its discount is its own alone: one with none is
+ * sold at full price, whatever the product itself carries.
  */
 export function lineUnitPrice(product: PricedProduct, selectionKey: string, goldRate: number | Prisma.Decimal | null) {
   const variant = selectionKey ? findVariant(product.variants, selectionKey) : null;
@@ -66,8 +67,7 @@ export function lineUnitPrice(product: PricedProduct, selectionKey: string, gold
 
   if (base === null) return null;
 
-  // A combination with its own discount also brings its own window; one with neither reads the
-  // product's, so a shop can still discount one colour without restating when the sale runs.
+  // A combination's discount and its window come from the combination alone.
   const pricing = calculateDiscountedPrice(base, {
     discountType: resolved.discountType,
     discountValue: resolved.discountValue,

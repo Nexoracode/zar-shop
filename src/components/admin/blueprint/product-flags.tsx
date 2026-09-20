@@ -7,6 +7,8 @@ import { BpHoverCard } from "./ui/hover-card";
 import { BpTag } from "./ui/tag";
 
 const MAX_PREVIEW_DOTS = 4;
+/** Discounted combinations listed in the variants card before the rest are summed up in one line. */
+const MAX_LISTED_COMBINATION_DISCOUNTS = 4;
 
 const faNumber = (value: number) => value.toLocaleString("fa-IR", { maximumFractionDigits: 2 });
 
@@ -15,12 +17,23 @@ function amountText(entry: DiscountEntry) {
   return entry.type === "PERCENT" ? `${faNumber(entry.value)}٪` : `${faNumber(entry.value)} ریال`;
 }
 
-function windowText(entry: DiscountEntry) {
-  return entry.startsAt && entry.endsAt ? `از ${formatDateTime(entry.startsAt)} تا ${formatDateTime(entry.endsAt)}` : "بدون محدودیت زمانی";
+/**
+ * The rows that describe one discount — amount, then its start and end (or that it has no time
+ * limit). The product's own card and every discounted combination in the variants card are built
+ * from this, so the two read identically: only the heading above them differs.
+ */
+function discountRows(entry: DiscountEntry, isActive: boolean): BpChartTipRow[] {
+  return [
+    { label: "مقدار", value: amountText(entry), color: isActive ? "var(--bp-danger)" : "var(--bp-warning)" },
+    ...(entry.startsAt && entry.endsAt
+      ? [{ label: "شروع", value: formatDateTime(entry.startsAt), color: "var(--bp-success)" }, { label: "پایان", value: formatDateTime(entry.endsAt), color: "var(--bp-warning)" }]
+      : [{ label: "مدت", value: "بدون محدودیت زمانی", color: "var(--bp-muted)" }]),
+  ];
 }
 
-function discountRow(entry: DiscountEntry, color: string): BpChartTipRow {
-  return { label: entry.label, value: amountText(entry), color, note: windowText(entry) };
+/** A discounted combination as a small titled group of the same rows the product's own discount shows. */
+function combinationDiscountRows(entry: DiscountEntry, isActive: boolean): BpChartTipRow[] {
+  return [{ label: `تخفیف ${entry.label} · ${isActive ? "فعال" : "به‌زودی"}`, section: true }, ...discountRows(entry, isActive)];
 }
 
 /** One row per option type: its values as named colour swatches when they are colours, otherwise as plain text. */
@@ -44,10 +57,12 @@ function previewColors(product: ProductRow) {
  * on the mobile card). Each opens the Blueprint hover card:
  *
  * - the discount tag is for a discount on the product itself (running, or scheduled to start) and
- *   its card gives the amount and the dates;
+ *   its card gives the amount and the dates. A product with combinations has none — they carry
+ *   the discounts — so it never gets this tag;
  * - the variants tag lists each option's values (colours with their real swatch) and, when any
- *   combination has a discount of its own, those discounts — so a discount that lives on a
- *   combination is shown there and never as a tag of its own.
+ *   combination has a discount of its own, each of those in the same layout as the product's own
+ *   discount card — so a discount that lives on a combination is shown there and never as a tag
+ *   of its own.
  *
  * `emptyDash` fills the table cell with a dash when the product has neither.
  */
@@ -61,21 +76,19 @@ export function ProductFlags({ product, className = "", emptyDash = false }: { p
   if (!own && variantCount === 0) return emptyDash ? <span className="bp-muted">—</span> : null;
 
   const preview = previewColors(product);
-  const variantDiscounts = [...discounts.active.filter((entry) => entry.scope === "variant").map((entry) => ({ entry, color: "var(--bp-danger)" })), ...discounts.upcoming.filter((entry) => entry.scope === "variant").map((entry) => ({ entry, color: "var(--bp-warning)" }))];
+  const variantDiscounts = [
+    ...discounts.active.filter((entry) => entry.scope === "variant").map((entry) => ({ entry, isActive: true })),
+    ...discounts.upcoming.filter((entry) => entry.scope === "variant").map((entry) => ({ entry, isActive: false })),
+  ];
+  const listedVariantDiscounts = variantDiscounts.slice(0, MAX_LISTED_COMBINATION_DISCOUNTS);
+  const hiddenVariantDiscounts = variantDiscounts.length - listedVariantDiscounts.length;
 
-  const ownColor = ownActive ? "var(--bp-danger)" : "var(--bp-warning)";
-  const ownRows: BpChartTipRow[] = own
-    ? [
-      { label: "مقدار", value: amountText(own), color: ownColor },
-      ...(own.startsAt && own.endsAt
-        ? [{ label: "شروع", value: formatDateTime(own.startsAt), color: "var(--bp-success)" }, { label: "پایان", value: formatDateTime(own.endsAt), color: "var(--bp-warning)" }]
-        : [{ label: "مدت", value: "بدون محدودیت زمانی", color: "var(--bp-muted)" }]),
-    ]
-    : [];
+  const ownRows = own ? discountRows(own, Boolean(ownActive)) : [];
 
   const variantRows: BpChartTipRow[] = [
     ...optionRows(product),
-    ...(variantDiscounts.length ? [{ label: "تخفیف ترکیب‌ها", section: true }, ...variantDiscounts.map(({ entry, color }) => discountRow(entry, color))] : []),
+    ...listedVariantDiscounts.flatMap(({ entry, isActive }) => combinationDiscountRows(entry, isActive)),
+    ...(hiddenVariantDiscounts > 0 ? [{ label: `و ${faNumber(hiddenVariantDiscounts)} ترکیب دیگر با تخفیف`, section: true }] : []),
   ];
 
   return (

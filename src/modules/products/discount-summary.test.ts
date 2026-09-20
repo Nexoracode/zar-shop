@@ -63,10 +63,21 @@ test("a combination that is switched off, or a zero-value discount, is ignored",
   assert.deepEqual(summary, { active: [], upcoming: [] });
 });
 
-test("the product's discount and its combinations' can all be active together", () => {
+test("once a product has combinations, its own discount is not counted — only theirs are", () => {
   const summary = summarizeDiscounts({
     discountType: "PERCENT", discountValue: 10, discountStartsAt: null, discountEndsAt: null,
-    variants: [variant({ "رنگ": "مشکی" }, { discountType: "PERCENT", discountValue: 25, discountStartsAt: null, discountEndsAt: null })],
+    variants: [
+      variant({ "رنگ": "مشکی" }, { discountType: "PERCENT", discountValue: 25, discountStartsAt: null, discountEndsAt: null }),
+      variant({ "رنگ": "سفید" }),
+    ],
   }, now);
-  assert.deepEqual(summary.active.map((entry) => entry.label), ["کل محصول", "مشکی"]);
+  assert.deepEqual(summary.active.map((entry) => entry.label), ["مشکی"]);
+});
+
+test("a product whose combinations have no discount shows none, even if it once had its own", () => {
+  const summary = summarizeDiscounts({
+    discountType: "PERCENT", discountValue: 10, discountStartsAt: null, discountEndsAt: null,
+    variants: [variant({ "رنگ": "مشکی" })],
+  }, now);
+  assert.deepEqual(summary, { active: [], upcoming: [] });
 });

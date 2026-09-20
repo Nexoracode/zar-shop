@@ -63,8 +63,9 @@ export function isVariantSnapshotValid(variants: StoredVariant[], selectionKey: 
 /**
  * The figures a line is priced from.
  *
- * A combination overrides the product on any field it sets and inherits the rest, so a shop can
- * price one colour differently without restating everything else about the product.
+ * A combination overrides the product on its price and weight when it sets them and inherits the
+ * rest, so a shop can price one colour differently without restating everything else about the
+ * product. Discounts are the exception: they never inherit — see below.
  */
 export function variantPricing(variant: StoredVariant | null, product: {
   weightGrams: { toString(): string };
@@ -74,18 +75,18 @@ export function variantPricing(variant: StoredVariant | null, product: {
   discountStartsAt: Date | null;
   discountEndsAt: Date | null;
 }) {
-  // A combination that has a discount of its own brings its own schedule with it — even when that
-  // schedule is "none", which is a فروش ویژه. Falling back to the product's window field by field would
-  // hand it the product's (possibly long-finished) dates and switch its discount off.
-  const ownDiscount = variant && (variant.discountType != null || variant.discountValue != null) ? variant : null;
+  // A combination is the whole story on discounts: it either has one of its own — schedule
+  // included, even when that schedule is "none", which is a فروش ویژه — or it has none. The
+  // product's own discount is never read on its behalf, because a product with combinations does
+  // not carry one; only a line with no combination at all prices from the product's.
+  const discountSource = variant ?? product;
   return {
     weightGrams: (variant?.weightGrams ?? product.weightGrams).toString(),
     fixedPrice: variant?.price != null ? Number(variant.price) : product.fixedPrice != null ? Number(product.fixedPrice) : null,
-    discountType: variant?.discountType ?? product.discountType,
-    discountValue: variant?.discountValue ?? product.discountValue,
-    // One with no discount at all reads the product's, window included, exactly like the amount does.
-    discountStartsAt: ownDiscount ? ownDiscount.discountStartsAt : product.discountStartsAt,
-    discountEndsAt: ownDiscount ? ownDiscount.discountEndsAt : product.discountEndsAt,
+    discountType: discountSource.discountType,
+    discountValue: discountSource.discountValue,
+    discountStartsAt: discountSource.discountStartsAt,
+    discountEndsAt: discountSource.discountEndsAt,
   };
 }
 

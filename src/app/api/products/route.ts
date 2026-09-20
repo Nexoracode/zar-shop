@@ -5,7 +5,7 @@ import { getCurrentUser } from "@/modules/auth/session";
 import { completeProductSchema } from "@/modules/products/schemas";
 import { hasPermission } from "@/modules/auth/permissions";
 import { sanitizeProductDescription } from "@/modules/products/rich-text";
-import { tehranDateEnd, tehranDateStart } from "@/modules/products/discount";
+import { NO_PRODUCT_DISCOUNT, tehranDateEnd, tehranDateStart } from "@/modules/products/discount";
 import { getGeneralStoreSettings, isStorefrontAvailable } from "@/modules/settings/general-settings";
 import { getStoreIndustry } from "@/modules/settings/store-settings";
 import { getCatalogSettings } from "@/modules/settings/catalog-settings";
@@ -66,7 +66,7 @@ export async function POST(request: Request) {
       if (!guide) return NextResponse.json({ message: "فایل راهنمای انتخاب باید تصویر یا PDF معتبر از گالری محصولات باشد." }, { status: 422 });
     }
     const product = await db.$transaction(async (tx) => {
-      const created = await tx.product.create({ data: { ...input, attributes: attributeValidation.data, discountStartsAt: tehranDateStart(input.discountStartsAt), discountEndsAt: tehranDateEnd(input.discountEndsAt), description: sanitizeProductDescription(input.description), optionGuideId } });
+      const created = await tx.product.create({ data: { ...input, attributes: attributeValidation.data, ...(variants.length > 0 ? NO_PRODUCT_DISCOUNT : { discountStartsAt: tehranDateStart(input.discountStartsAt), discountEndsAt: tehranDateEnd(input.discountEndsAt) }), description: sanitizeProductDescription(input.description), optionGuideId } });
       await writeVariantSetup(tx, created.id, optionTypes, variants);
       if (mediaIds.length) await tx.productMedia.createMany({ data: mediaIds.map((mediaId, position) => ({ productId: created.id, mediaId, position, isCover: position === 0 })) });
       const result = await tx.product.findUniqueOrThrow({ where: { id: created.id }, include: { media: { include: { media: true }, orderBy: { position: "asc" } }, category: true, brand: true, variants: { orderBy: { createdAt: "asc" } }, optionTypes: productOptionTypeInclude, optionGuide: true } });

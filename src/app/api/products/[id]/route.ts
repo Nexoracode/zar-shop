@@ -7,7 +7,7 @@ import { hasPermission } from "@/modules/auth/permissions";
 import { sanitizeProductDescription } from "@/modules/products/rich-text";
 import { validateVariantSetup, writeVariantSetup } from "@/modules/products/variant-write";
 import { productOptionTypeInclude } from "@/modules/products/variant-selection";
-import { formatTehranDateInput, tehranDateEnd, tehranDateStart } from "@/modules/products/discount";
+import { formatTehranDateInput, NO_PRODUCT_DISCOUNT, tehranDateEnd, tehranDateStart } from "@/modules/products/discount";
 import { parseProductAttributes, validateProductAttributes } from "@/modules/products/attributes";
 import { auditRequestContext } from "@/modules/audit/request-context";
 import { buildAuditChanges, productAuditSnapshot } from "@/modules/audit/product-audit";
@@ -42,6 +42,9 @@ export async function PATCH(request: Request, context: Context) {
     if (existingProduct.storeIndustry === "GENERAL" && input.fixedPrice === null) {
       return NextResponse.json({ message: "قیمت محصول را وارد کنید." }, { status: 422 });
     }
+    // A product that ends up with combinations has no discount of its own: each combination
+    // carries its own. Saved that way whatever the request sent, so a stale form cannot bring it back.
+    if ((variants ? variants.length : existingProduct.variants.length) > 0) Object.assign(input, NO_PRODUCT_DISCOUNT);
     const discount = {
       type: input.discountType !== undefined ? input.discountType : existingProduct.discountType,
       value: input.discountValue !== undefined ? input.discountValue : existingProduct.discountValue === null ? null : Number(existingProduct.discountValue),

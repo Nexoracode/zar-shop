@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "@heroui/react";
-import { ChevronDown, FileText, GripVertical, Images, Trash2 } from "lucide-react";
+import { ChevronDown, FileText, GripVertical, Images, Info, Trash2 } from "lucide-react";
 import { MediaPickerDialog } from "@/components/media-picker-dialog";
 import type { MediaChoice } from "@/components/media-library";
 import { RichTextEditor } from "@/components/rich-text-editor";
@@ -142,6 +142,13 @@ export function BlueprintProductForm({ storeIndustry, categories = [], brands = 
     setAttributeValues(product?.categoryId === categoryId ? product.attributes : []);
   }
   const currentAttributes = attributeValues;
+  /*
+   * With combinations, each one carries its own discount (or none) and the product's own is off —
+   * the server saves it that way too. The state stays in the form only so that removing every
+   * combination brings back what was typed, and it is never submitted while combinations exist.
+   */
+  const hasVariants = variants.length > 0;
+  const productDiscountOn = discountEnabled && !hasVariants;
   const attributeGroupsChanged = JSON.stringify(attributeGroups) !== JSON.stringify(selectedCategory?.attributeGroups ?? []);
 
   function clearError(field: string) {
@@ -174,10 +181,10 @@ export function BlueprintProductForm({ storeIndustry, categories = [], brands = 
       stock: Number(stock), preparationDays: Number(preparationDays), status,
       shippingWeightGrams, packageLengthCm, packageWidthCm, packageHeightCm,
       minOrderQuantity: Number(minOrderQuantity), maxOrderQuantity,
-      discountType: discountEnabled ? discountType : null,
-      discountValue: discountEnabled && discountValue !== "" ? Number(discountValue) : null,
-      discountStartsAt: discountEnabled && !discountIsSpecialSale ? discountStartsAt : null,
-      discountEndsAt: discountEnabled && !discountIsSpecialSale ? discountEndsAt : null,
+      discountType: productDiscountOn ? discountType : null,
+      discountValue: productDiscountOn && discountValue !== "" ? Number(discountValue) : null,
+      discountStartsAt: productDiscountOn && !discountIsSpecialSale ? discountStartsAt : null,
+      discountEndsAt: productDiscountOn && !discountIsSpecialSale ? discountEndsAt : null,
       mediaIds: selectedMedia.map((media) => media.id),
       optionTypes, variants, optionGuideId: optionGuide?.id ?? null, attributes: currentAttributes,
     };
@@ -374,10 +381,16 @@ export function BlueprintProductForm({ storeIndustry, categories = [], brands = 
             </div>
           )}
           <div className="flex items-center justify-between gap-3">
-            <span className="bp-muted text-[12px]">فقط در بازه انتخاب‌شده به‌صورت خودکار اعمال می‌شود.</span>
-            <BpSwitch isSelected={discountEnabled} onChange={setDiscountEnabled}>تخفیف داشته باشد</BpSwitch>
+            <span className="bp-muted text-[12px]">{hasVariants ? "برای این محصول غیرفعال است." : "فقط در بازه انتخاب‌شده به‌صورت خودکار اعمال می‌شود."}</span>
+            <BpSwitch isSelected={productDiscountOn} isDisabled={hasVariants} onChange={setDiscountEnabled}>تخفیف داشته باشد</BpSwitch>
           </div>
-          {discountEnabled && (
+          {hasVariants && (
+            <p className="bp-muted m-0 mt-3 flex items-start gap-2 border border-[var(--bp-divider)] bg-[var(--bp-bg)] p-3 text-[12px] leading-6">
+              <Info size={15} className="mt-0.5 shrink-0" aria-hidden />
+              این محصول تنوع دارد، پس تخفیف آن برای هر ترکیب جداگانه و از بخش «تنوع محصول» (ستون تخفیف) مدیریت می‌شود؛ تخفیف کل محصول دیگر اینجا اعمال نمی‌شود.
+            </p>
+          )}
+          {productDiscountOn && (
             <div className="mt-3 grid gap-3">
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="bp-field">
@@ -434,10 +447,10 @@ export function BlueprintProductForm({ storeIndustry, categories = [], brands = 
             fixedPrice={fixedPrice}
             weightGrams={weightGrams}
             stock={Number(stock) || 0}
-            discountType={discountEnabled ? discountType : null}
-            discountValue={discountEnabled && discountValue !== "" ? discountValue : null}
-            discountStartsAt={discountEnabled && !discountIsSpecialSale ? discountStartsAt : null}
-            discountEndsAt={discountEnabled && !discountIsSpecialSale ? discountEndsAt : null}
+            discountType={productDiscountOn ? discountType : null}
+            discountValue={productDiscountOn && discountValue !== "" ? discountValue : null}
+            discountStartsAt={productDiscountOn && !discountIsSpecialSale ? discountStartsAt : null}
+            discountEndsAt={productDiscountOn && !discountIsSpecialSale ? discountEndsAt : null}
             onLibraryChange={setLibrary}
             onChange={(next) => { setOptionTypes(next.optionTypes); setVariants(next.variants); }}
           />

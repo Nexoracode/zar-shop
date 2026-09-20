@@ -58,7 +58,7 @@ type Props = {
   /** The product's own stock — seeded into a brand-new combination the same way `fixedPrice` is. */
   stock?: number;
   /** The product's own discount, exactly as it would be submitted (`null` when the product has
-   * none). A brand-new combination starts with its own explicit copy of these instead of reading
+   * none — which is always so once it has combinations, since they carry the discounts). A brand-new combination starts with its own explicit copy of these instead of reading
    * the product's live at display time — so the admin can then opt a single combination out of a
    * sale the rest of the product is on, rather than every undecorated row silently tracking it. */
   discountType?: "PERCENT" | "FIXED" | null;
