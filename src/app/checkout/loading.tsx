@@ -42,10 +42,10 @@ export default function CheckoutLoading() {
   return (
     <div aria-busy="true" aria-label="در حال بارگذاری تکمیل سفارش">
       <div className="w-full border-b border-[var(--border)] bg-[var(--surface)]">
-        <div className="mx-auto flex min-h-16 max-w-[1280px] items-center justify-center px-4 sm:px-6"><div className={`${bar} h-6 w-28`} /></div>
+        <div className="mx-auto flex min-h-16 max-w-[var(--store-content-max-width)] items-center justify-center px-4 sm:px-6"><div className={`${bar} h-6 w-28`} /></div>
       </div>
       <main className="min-h-[calc(100dvh-4rem)] bg-[var(--background)] px-4 py-8 sm:px-6 sm:py-12">
-        <div className="mx-auto w-full max-w-[1280px]">
+        <div className="mx-auto w-full max-w-[var(--store-content-max-width)]">
           <div className="mb-7 flex items-center justify-center gap-2 sm:gap-4">
             <div className={`${bar} h-5 w-24`} />
             <span className="h-px w-8 shrink-0 bg-[var(--border)] sm:w-16" />

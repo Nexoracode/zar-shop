@@ -50,7 +50,7 @@ export function StorefrontLicenses({ storeName, settings }: { storeName: string;
     </div>;
 
   return <section dir="rtl" className="mt-[90px] bg-[#fbf7f1] py-14 sm:py-16">
-    <div className="mx-auto w-[min(1440px,calc(100%-32px))] lg:w-[min(1440px,calc(100%-80px))]">
+    <div className="mx-auto w-[min(var(--store-max-width),calc(100%-32px))] lg:w-[min(var(--store-max-width),calc(100%-80px))]">
       <Tabs selectedKey={selectedKey} onSelectionChange={(key) => setSelectedKey(String(key))} className="w-full">
         <div className="grid items-center gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(360px,470px)] lg:gap-16">
           <div className="text-right">

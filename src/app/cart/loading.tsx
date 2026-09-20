@@ -29,7 +29,7 @@ function CartLineSkeleton() {
 export default function CartLoading() {
   return (
     <main aria-busy="true" aria-label="در حال بارگذاری سبد خرید" className="min-h-dvh bg-[var(--background)] px-4 pb-[calc(66px+env(safe-area-inset-bottom)+16px)] pt-8 sm:px-6 sm:pt-12 lg:pb-12">
-      <div className="mx-auto w-full max-w-[1280px]">
+      <div className="mx-auto w-full max-w-[var(--store-content-max-width)]">
         <div className="mb-6">
           <div className={`${bar} h-8 w-44`} />
           <div className={`${bar} mt-2 h-5 w-36`} />

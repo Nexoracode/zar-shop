@@ -41,7 +41,7 @@ export default async function BlogIndexPage({ searchParams }: Context) {
 
   return (
     <main className="px-4 py-10 sm:px-6 sm:py-14">
-      <div className="mx-auto w-[min(1200px,100%)]">
+      <div className="mx-auto w-[min(var(--store-content-max-width),100%)]">
         <header className="mb-8 max-w-xl sm:mb-10">
           <h1 className="m-0 text-3xl font-bold text-[var(--brand-primary)] sm:text-4xl">وبلاگ {settings.storeName}</h1>
           <p className="mt-3 text-sm leading-7 text-[var(--muted)]">آخرین مقالات، راهنمای خرید و تازه‌های {settings.storeName} را اینجا دنبال کنید.</p>

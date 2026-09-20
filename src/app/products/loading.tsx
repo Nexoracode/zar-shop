@@ -5,7 +5,7 @@ import { ProductCardSkeleton } from "@/components/product-card";
 export default function ProductsLoading() {
   return (
     <main className="bg-white px-4 py-7 sm:px-6 lg:py-10" aria-busy="true">
-      <div className="mx-auto w-full max-w-[1600px]">
+      <div className="mx-auto w-full max-w-[var(--store-max-width)]">
         <div className="mb-5 h-4 w-40 animate-pulse rounded bg-slate-100" />
         <div className="grid items-start gap-6 lg:grid-cols-[270px_minmax(0,1fr)]">
           <aside className="hidden lg:block">

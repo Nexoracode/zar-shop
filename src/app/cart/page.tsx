@@ -56,7 +56,7 @@ export default async function CartPage() {
   return (
     <main className="min-h-dvh bg-[var(--background)] px-4 pb-[calc(66px+env(safe-area-inset-bottom)+16px)] pt-8 sm:px-6 sm:pt-12 lg:pb-12">
       <CartLiveProvider lines={liveLines}>
-      <div className="mx-auto w-full max-w-[1280px]">
+      <div className="mx-auto w-full max-w-[var(--store-content-max-width)]">
         <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
           <div>
             <h1 className="m-0 text-xl font-bold sm:text-2xl">سبد خرید شما</h1>

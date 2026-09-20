@@ -16,7 +16,7 @@ export async function StandaloneTopBar({ backHref, backLabel = "بازگشت" }:
 
   return (
     <div className="w-full border-b border-[var(--border)] bg-[var(--surface)]">
-      <div className="relative mx-auto flex min-h-16 max-w-[1280px] items-center px-4 sm:px-6">
+      <div className="relative mx-auto flex min-h-16 max-w-[var(--store-content-max-width)] items-center px-4 sm:px-6">
         <Link href="/" className="mx-auto shrink-0" aria-label={`${settings.storeName}، صفحه اصلی`}>{logo}</Link>
         <BackControl href={backHref} label={backLabel} className="absolute right-4 inline-flex items-center gap-2 text-sm font-bold text-[var(--muted)] transition hover:text-[var(--brand-primary)] sm:right-6" />
       </div>

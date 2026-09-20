@@ -40,7 +40,7 @@ export default async function BlogCategoryPage({ params, searchParams }: Context
 
   return (
     <main className="px-4 py-10 sm:px-6 sm:py-14">
-      <div className="mx-auto w-[min(1200px,100%)]">
+      <div className="mx-auto w-[min(var(--store-content-max-width),100%)]">
         <nav className="mb-4 flex items-center gap-2 text-xs text-[var(--muted)]" aria-label="مسیر">
           <Link href="/blog" className="hover:text-[var(--foreground)]">وبلاگ</Link><span>/</span><span>{category.name}</span>
         </nav>

@@ -2,6 +2,13 @@
 @import "@heroui/styles";
 @import "../styles/admin-blueprint.css";
 
+/* How wide storefront pages may grow. `--store-max-width` is for the wide ones (home, listing, product,
+   footer); `--store-content-max-width` for cart, checkout, account, blog and the like. Change them here. */
+:root {
+  --store-max-width: 1600px;
+  --store-content-max-width: 1440px;
+}
+
 @font-face {
   font-family: "Vazir";
   src: url("/fonts/Vazir-Thin.ttf") format("truetype");

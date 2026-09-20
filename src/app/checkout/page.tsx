@@ -76,7 +76,7 @@ export default async function CheckoutPage() {
       <>
       <StandaloneTopBar backHref="/cart" backLabel="سبد خرید" />
       <main className="min-h-[calc(100dvh-4rem)] bg-[var(--background)] px-4 py-8 sm:px-6 sm:py-12">
-        <div className="mx-auto w-full max-w-[1280px]">
+        <div className="mx-auto w-full max-w-[var(--store-content-max-width)]">
           <CheckoutSteps />
           <div className="mb-6"><h1 className="m-0 text-xl font-bold sm:text-2xl">تکمیل سفارش</h1><p className="mb-0 mt-2 text-sm text-[var(--muted)]">سفارش <b dir="ltr">{pendingOrder.orderNumber}</b> قبلاً ثبت شده؛ فقط پرداخت آن باقی مانده است.</p></div>
           <ResumeOrderCheckout
@@ -161,7 +161,7 @@ export default async function CheckoutPage() {
     <>
     <StandaloneTopBar backHref="/cart" backLabel="سبد خرید" />
     <main className="min-h-[calc(100dvh-4rem)] bg-[var(--background)] px-4 py-8 sm:px-6 sm:py-12">
-      <div className="mx-auto w-full max-w-[1280px]">
+      <div className="mx-auto w-full max-w-[var(--store-content-max-width)]">
         <CheckoutSteps />
         <div className="mb-6"><h1 className="m-0 text-xl font-bold sm:text-2xl">تکمیل سفارش</h1><p className="mb-0 mt-2 text-sm text-[var(--muted)]">نشانی، تخفیف و روش پرداخت را بررسی کنید.</p></div>
         <CheckoutForm settings={commerceSettings} paymentMethods={paymentMethods} currency={settings.currency} itemCount={itemCount} items={checkoutItems} initialQuote={initialQuote} initialAddresses={addresses.map(serializeAddress)} user={{ firstName: user.firstName, lastName: user.lastName, phone: user.phone }} wallet={{ balance: walletBalance, checkoutEnabled: walletUsable }} />

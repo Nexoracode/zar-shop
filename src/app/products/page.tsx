@@ -144,7 +144,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
   const filters = <StorefrontCatalogFilters key={filterKey} {...filterProps} />;
 
   return <main className="bg-white px-4 py-7 sm:px-6 lg:py-10">
-    <div className="mx-auto w-full max-w-[1600px]">
+    <div className="mx-auto w-full max-w-[var(--store-max-width)]">
       <nav className="mb-5 flex flex-wrap items-center gap-2 text-xs text-slate-500" aria-label="مسیر صفحه">
         <Link href="/" className="transition hover:text-slate-900">خانه</Link><span>/</span>
         {selectedCategory ? <><Link href="/products" className="transition hover:text-slate-900">محصولات</Link><span>/</span><span className="font-bold text-slate-800">{selectedCategory.name}</span></> : <span className="font-bold text-slate-800">محصولات</span>}

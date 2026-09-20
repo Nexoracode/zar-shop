@@ -49,7 +49,7 @@ export function StorefrontFaq({ faqs, supportHref }: { faqs: StorefrontFaqItem[]
   const activeMeta = activeTopic ? faqCategoryMeta[activeTopic] : null;
 
   return (
-    <div className="mx-auto w-[min(1200px,calc(100%-24px))] py-6 sm:w-[min(1200px,calc(100%-48px))] sm:py-8">
+    <div className="mx-auto w-[min(var(--store-content-max-width),calc(100%-24px))] py-6 sm:w-[min(var(--store-content-max-width),calc(100%-48px))] sm:py-8">
       <nav className="mb-4 flex flex-wrap items-center gap-2 text-xs text-[var(--muted)]" aria-label="مسیر صفحه">
         <Link href="/" className="transition hover:text-[var(--foreground)]">خانه</Link>
         <span>/</span>

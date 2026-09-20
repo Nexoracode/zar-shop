@@ -3,7 +3,7 @@
 export default function ProductLoading() {
   return (
     <main className="bg-white px-4 pb-16 pt-5 sm:px-6 lg:pb-24" aria-busy="true">
-      <div className="mx-auto w-full max-w-[1440px]">
+      <div className="mx-auto w-full max-w-[var(--store-max-width)]">
         <div className="mb-6 h-4 w-56 animate-pulse rounded bg-slate-100" />
         <div className="grid items-stretch gap-7 lg:grid-cols-[minmax(0,1fr)_320px]">
           <div className="grid items-start gap-7 lg:grid-cols-[minmax(330px,1.05fr)_minmax(0,1.1fr)]">

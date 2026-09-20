@@ -37,7 +37,7 @@ export default async function ContentPage({ params }: Context) {
     } : null;
     return <main>
       {faqJsonLd && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />}
-      <Suspense fallback={<div className="mx-auto w-[min(1200px,calc(100%-24px))] py-16 text-center text-sm text-[var(--muted)]">در حال بارگذاری…</div>}>
+      <Suspense fallback={<div className="mx-auto w-[min(var(--store-content-max-width),calc(100%-24px))] py-16 text-center text-sm text-[var(--muted)]">در حال بارگذاری…</div>}>
         <StorefrontFaq faqs={faqs} supportHref="/pages/contact" />
       </Suspense>
     </main>;

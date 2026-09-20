@@ -21,7 +21,7 @@ import type { StorefrontProductCardItem } from "@/modules/products/storefront-fe
 import { getHomepageSettings, type HomepageLayoutItemId } from "@/modules/settings/homepage-settings";
 import { buildStorefrontHeroSlides } from "@/storefront/shared/hero";
 
-const container = "mx-auto w-[min(1440px,calc(100%-24px))] sm:w-[min(1440px,calc(100%-40px))] lg:w-[min(1440px,calc(100%-64px))]";
+const container = "mx-auto w-[min(var(--store-max-width),calc(100%-24px))] sm:w-[min(var(--store-max-width),calc(100%-40px))] lg:w-[min(var(--store-max-width),calc(100%-64px))]";
 const categoryTones = ["bg-[color-mix(in_srgb,var(--danger)_12%,transparent)] text-[var(--danger)]", "bg-blue-50 text-blue-600", "bg-[color-mix(in_srgb,var(--warning)_14%,transparent)] text-[var(--warning)]", "bg-[color-mix(in_srgb,var(--success)_12%,transparent)] text-[var(--success)]", "bg-violet-50 text-violet-600", "bg-cyan-50 text-cyan-600"];
 
 function resolveCategoryIcon(value: string): LucideIcon {

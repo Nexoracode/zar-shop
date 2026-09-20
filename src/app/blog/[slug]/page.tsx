@@ -137,7 +137,7 @@ export default async function ArticlePage({ params }: Context) {
           </>
         )}
 
-        <div className="mx-auto w-[min(1180px,100%)]">
+        <div className="mx-auto w-[min(var(--store-content-max-width),100%)]">
           <nav className="mb-5 flex flex-wrap items-center gap-1.5 text-xs text-[var(--muted)]" aria-label="مسیر مقاله">
             <Link href="/" className="hover:text-[var(--foreground)]">خانه</Link>
             <ChevronLeft size={10} />

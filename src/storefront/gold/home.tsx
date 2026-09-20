@@ -17,7 +17,7 @@ import { buildStorefrontHeroSlides } from "@/storefront/shared/hero";
 
 type HomeCategory = Prisma.CategoryGetPayload<{ include: { image: true; children: true; _count: { select: { products: true } } } }>;
 
-const container = "mx-auto w-[min(1440px,calc(100%-32px))] lg:w-[min(1440px,calc(100%-80px))]";
+const container = "mx-auto w-[min(var(--store-max-width),calc(100%-32px))] lg:w-[min(var(--store-max-width),calc(100%-80px))]";
 
 export async function GoldHome() {
   const settings = await getGeneralStoreSettings();
