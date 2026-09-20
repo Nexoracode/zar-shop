@@ -12,6 +12,7 @@ import type { CartLiveLine } from "@/components/cart-live";
 import type { Prisma } from "@generated/prisma/client";
 import { optionEntries } from "@/modules/products/options";
 import { lineUnitPrice } from "@/modules/products/line-pricing";
+import { loadOptionColors } from "@/modules/products/option-colors";
 import { findVariant, variantMaxQuantity, variantPricing } from "@/modules/products/variants";
 import { isCartLineUnavailable } from "@/modules/cart/line-availability";
 import { getGeneralStoreSettings } from "@/modules/settings/general-settings";
@@ -49,6 +50,7 @@ export default async function CartPage() {
     const unavailable = isCartLineUnavailable(product, item.selectionKey);
     return { item, variant, selectedWeight, pricing, unavailable };
   });
+  const optionColors = await loadOptionColors(pricedItems.map(({ item }) => item.selectedOptions));
   const priceUnavailable = pricedItems.some((line) => line.pricing === null);
   // Totals, counts and the free-shipping hint are worked out on the client from these lines, so they follow quantity clicks at once.
   const liveLines: CartLiveLine[] = pricedItems.map(({ item, pricing, unavailable }) => ({ id: item.id, quantity: item.quantity, finalPrice: pricing?.finalPrice ?? null, originalPrice: pricing?.originalPrice ?? null, unavailable }));
@@ -78,7 +80,7 @@ export default async function CartPage() {
               {pricedItems.map(({ item, variant, selectedWeight, pricing, unavailable }) => {
                 const product = item.product;
                 const cover = product.media[0]?.media;
-                return pricing ? <CartItemCard key={item.id} id={item.id} name={product.name} slug={product.slug} imageUrl={cover?.type === "IMAGE" ? cover.url : null} imageAlt={cover?.alt ?? product.name} maxQuantity={variantMaxQuantity(variant, orderSettings.maxOrderItemQuantity)} optionSummary={optionEntries(item.selectedOptions).map(([name, value]) => `${name}: ${value}`)} weight={product.storeIndustry === "GOLD" ? `${Number(selectedWeight).toLocaleString("fa-IR", { maximumFractionDigits: 3 })} گرم` : null} unitPrice={pricing.finalPrice} originalUnitPrice={pricing.isActive ? pricing.originalPrice : null} unavailable={unavailable} discountEndsAt={pricing.discountEndsAt ? pricing.discountEndsAt.toISOString() : null} currency={settings.currency} preparationDays={variant?.preparationDays ?? product.preparationDays} /> : <InlineAlert key={item.id} status="warning" className="m-4">قیمت «{product.name}» موقتاً قابل محاسبه نیست.</InlineAlert>;
+                return pricing ? <CartItemCard key={item.id} id={item.id} name={product.name} slug={product.slug} imageUrl={cover?.type === "IMAGE" ? cover.url : null} imageAlt={cover?.alt ?? product.name} maxQuantity={variantMaxQuantity(variant, orderSettings.maxOrderItemQuantity)} optionSummary={optionEntries(item.selectedOptions).map(([name, value]) => `${name}: ${value}`)} optionColors={optionColors} weight={product.storeIndustry === "GOLD" ? `${Number(selectedWeight).toLocaleString("fa-IR", { maximumFractionDigits: 3 })} گرم` : null} unitPrice={pricing.finalPrice} originalUnitPrice={pricing.isActive ? pricing.originalPrice : null} unavailable={unavailable} discountEndsAt={pricing.discountEndsAt ? pricing.discountEndsAt.toISOString() : null} currency={settings.currency} preparationDays={variant?.preparationDays ?? product.preparationDays} /> : <InlineAlert key={item.id} status="warning" className="m-4">قیمت «{product.name}» موقتاً قابل محاسبه نیست.</InlineAlert>;
               })}
             </section>
 

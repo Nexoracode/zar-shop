@@ -17,6 +17,8 @@ type Props = {
   imageAlt: string;
   maxQuantity: number;
   optionSummary: string[];
+  /** The swatch colour of a colour choice, keyed by its entry in `optionSummary` («رنگ: مشکی»). */
+  optionColors?: Record<string, string>;
   weight: string | null;
   unitPrice: number;
   originalUnitPrice: number | null;
@@ -28,7 +30,7 @@ type Props = {
   preparationDays: number;
 };
 
-export function CartItemCard({ id, name, slug, imageUrl, imageAlt, maxQuantity, optionSummary, weight, unitPrice, originalUnitPrice, discountEndsAt, unavailable, currency, preparationDays }: Props) {
+export function CartItemCard({ id, name, slug, imageUrl, imageAlt, maxQuantity, optionSummary, optionColors, weight, unitPrice, originalUnitPrice, discountEndsAt, unavailable, currency, preparationDays }: Props) {
   // The quantity comes from the page-level provider, which shows a click at once and keeps the totals in step (0 = removed).
   const { quantity: shownQuantity, mutate: mutateLine } = useCartLine(id);
   const [pendingAction, setPendingAction] = useState<"increase" | "decrease" | null>(null);
@@ -55,7 +57,7 @@ export function CartItemCard({ id, name, slug, imageUrl, imageAlt, maxQuantity, 
         <Link href={`/products/${slug}`} className="line-clamp-2 text-sm font-bold leading-7 text-[var(--foreground)] sm:text-base">{name}</Link>
         {unavailable && <p className="m-0 mt-2 flex items-start gap-2 text-xs font-bold leading-6 text-[var(--danger)]"><AlertTriangle size={16} className="mt-0.5 shrink-0" />این گزینه دیگر قابل خرید نیست؛ لطفاً آن را از سبد حذف کنید.</p>}
         <div className="mt-3 grid gap-2 text-xs text-[var(--muted)]">
-          {optionSummary.map((option) => <span key={option}>{option}</span>)}
+          {optionSummary.map((option) => <span key={option} className="flex items-center gap-1.5">{option}{optionColors?.[option] && <i aria-hidden className="size-3 shrink-0 rounded-full border border-black/15" style={{ backgroundColor: optionColors[option] }} />}</span>)}
           {weight && <span>وزن: {weight}</span>}
           <span className="flex items-center gap-2"><ShieldCheck size={16} />ضمانت اصالت و سلامت کالا</span>
           <span className="flex items-center gap-2"><Truck size={16} />آماده‌سازی تا {preparationDays.toLocaleString("fa-IR")} روز کاری</span>
