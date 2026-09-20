@@ -262,7 +262,7 @@ export function AddToCart({ productId, options = [], variants = [], optionGuide,
   const guideOption = options.find((option) => option.kind !== "COLOR") ?? null;
   const guideButton = <Button type="button" variant="ghost" onPress={() => setGuideOpen(true)} className="h-auto min-h-0 gap-1 p-0 text-xs font-bold text-[var(--brand-accent)]"><Ruler size={15} />راهنمای انتخاب</Button>;
 
-  const optionFields = options.length > 0 ? <div className="grid gap-4">
+  const optionFields = options.length > 0 ? <div className="grid gap-7">
         {optionGuide && !guideOption && <div className="flex justify-end">{guideButton}</div>}
         {options.map((option) => {
           const selectedValue = option.values.find((item) => selectedOptions[option.id] === item.value);
