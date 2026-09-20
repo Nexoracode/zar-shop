@@ -132,7 +132,7 @@ export function useSelectedProductOptions(): Record<string, string> {
   return useContext(ProductPurchaseContext)?.selectedOptions ?? {};
 }
 
-export function AddToCart({ productId, options = [], variants = [], optionGuide, disabled, disabledLabel = "ناموجود", currency = "IRR", layout = "default", purchaseSummary, purchaseMeta, purchaseFooter, purchasePrice = null, purchaseOriginalPrice = null, preparationDays = 0, showOptionFields = true, showPurchaseCard = true, showMobileBar = false, purchaseCardClassName, purchaseCardStickyTop = "6rem", detailedCard }: { productId: string; options?: ProductOption[]; variants?: PurchasableVariant[]; optionGuide?: OptionGuide | null; disabled: boolean; disabledLabel?: string; currency?: "IRR" | "IRT"; layout?: "default" | "product-detail"; purchaseSummary?: ReactNode; purchaseMeta?: ReactNode; /** Rendered under the trust badges, once per card instance — e.g. a "chat with support" link. */ purchaseFooter?: ReactNode; purchasePrice?: number | null; purchaseOriginalPrice?: number | null; preparationDays?: number; showOptionFields?: boolean; showPurchaseCard?: boolean; /** Renders the persistent mobile bottom price+buy bar — set on exactly one of the page's `AddToCart` instances. */ showMobileBar?: boolean; purchaseCardClassName?: string; purchaseCardStickyTop?: string; /** Turns the purchase card into the marketplace-style one: the product itself, the choices made, who sells it, stock, the price and — while a time-limited discount runs — the "پیشنهاد شگفت‌انگیز" header. Only the page's second card asks for it. */ detailedCard?: { name: string; imageUrl: string | null; imageAlt: string; storeName: string } }) {
+export function AddToCart({ productId, options = [], variants = [], optionGuide, disabled, disabledLabel = "ناموجود", currency = "IRR", layout = "default", purchaseSummary, purchaseMeta, purchaseFooter, purchasePrice = null, purchaseOriginalPrice = null, preparationDays = 0, showOptionFields = true, showPurchaseCard = true, showMobileBar = false, purchaseCardClassName, purchaseCardStickyTop = "6rem", detailedCard, storeName }: { productId: string; options?: ProductOption[]; variants?: PurchasableVariant[]; optionGuide?: OptionGuide | null; disabled: boolean; disabledLabel?: string; currency?: "IRR" | "IRT"; layout?: "default" | "product-detail"; purchaseSummary?: ReactNode; purchaseMeta?: ReactNode; /** Rendered under the trust badges, once per card instance — e.g. a "chat with support" link. */ purchaseFooter?: ReactNode; purchasePrice?: number | null; purchaseOriginalPrice?: number | null; preparationDays?: number; showOptionFields?: boolean; showPurchaseCard?: boolean; /** Renders the persistent mobile bottom price+buy bar — set on exactly one of the page's `AddToCart` instances. */ showMobileBar?: boolean; purchaseCardClassName?: string; purchaseCardStickyTop?: string; /** Turns the purchase card into the marketplace-style one: the product itself, the choices made, who sells it, stock, the price and — while a time-limited discount runs — the "پیشنهاد شگفت‌انگیز" header. Only the page's second card asks for it. */ detailedCard?: { name: string; imageUrl: string | null; imageAlt: string; storeName: string }; /** Who sells it — shown under the first purchase card's heading. The detailed card carries its own. */ storeName?: string }) {
   const router = useRouter();
   const sharedState = useContext(ProductPurchaseContext);
   const [localMessage, setLocalMessage] = useState("");
@@ -169,6 +169,13 @@ export function AddToCart({ productId, options = [], variants = [], optionGuide,
     const item = option.values.find((entry) => entry.value === value);
     return [{ key: option.id, label: option.name, text: item?.color?.name ?? value, hex: item?.color?.hex ?? null }];
   });
+  // Who sells it: the brand-coloured mark and the store's name, on both purchase cards.
+  const sellerRow = (name: string) => (
+    <span className="flex items-center gap-2.5 text-[13px] text-slate-700">
+      <span aria-hidden className="grid size-6 shrink-0 place-items-center rounded-full bg-[var(--brand-primary)] text-[var(--brand-primary-foreground)]"><Store size={13} /></span>
+      <span className="min-w-0 truncate font-bold">{name}</span>
+    </span>
+  );
   // The amount and its unit apart, so the unit can sit small beside a large number.
   const moneyParts = (value: number) => {
     const text = formatMoney(value, currency);
@@ -284,10 +291,7 @@ export function AddToCart({ productId, options = [], variants = [], optionGuide,
           </div>
 
           <ul className="m-0 grid list-none gap-3 border-t border-slate-200 p-0 pt-4 text-[13px] text-slate-700">
-            <li className="flex items-center gap-2.5">
-              <span aria-hidden className="grid size-6 shrink-0 place-items-center rounded-full bg-[var(--brand-primary)] text-[var(--brand-primary-foreground)]"><Store size={13} /></span>
-              <span className="min-w-0 truncate font-bold">{detailedCard.storeName}</span>
-            </li>
+            <li>{sellerRow(detailedCard.storeName)}</li>
             <li className="flex items-center gap-2.5"><ShieldCheck size={18} className="shrink-0 text-slate-500" aria-hidden /><span>ضمانت اصالت و سلامت کالا</span></li>
             <li className="flex items-center gap-2.5"><Warehouse size={18} className="shrink-0 text-slate-500" aria-hidden />{purchaseMeta}</li>
             <li className="flex items-center gap-2.5"><Truck size={18} className="shrink-0 text-slate-500" aria-hidden /><span>{(selectedVariant?.preparationDays ?? preparationDays) > 0 ? `آماده‌سازی و ارسال تا ${(selectedVariant?.preparationDays ?? preparationDays).toLocaleString("fa-IR")} روز کاری` : "ارسال قابل پیگیری"}</span></li>
@@ -314,6 +318,7 @@ export function AddToCart({ productId, options = [], variants = [], optionGuide,
     {showPurchaseCard && !detailedCard && <aside className={`hidden lg:block ${purchaseCardClassName ?? "lg:col-start-3 lg:row-span-2 lg:row-start-1"}`}>
       <div className="grid gap-4 rounded-xl border border-slate-200/80 bg-slate-50/40 p-4 lg:sticky" style={{ top: purchaseCardStickyTop }}>
         <strong className="text-base font-bold text-slate-900">خرید این محصول</strong>
+        {storeName && sellerRow(storeName)}
         {purchaseSummary}
         {displayedOriginalPrice !== null && displayedPrice !== null && displayedOriginalPrice > displayedPrice && <div className="flex items-center gap-2"><span className="text-xs text-slate-400 line-through">{formatMoney(displayedOriginalPrice, currency)}</span>{discountLabel && <span className="inline-flex items-center rounded-full bg-[var(--danger)] px-2 py-1 text-[10px] font-bold text-[var(--danger-foreground)]">{discountLabel}</span>}</div>}
         <strong className="text-left text-xl font-bold text-slate-900" dir="rtl">{displayedPrice === null ? "قیمت نامشخص" : formatMoney(displayedPrice, currency)}</strong>
