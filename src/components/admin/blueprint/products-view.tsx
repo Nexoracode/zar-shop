@@ -13,6 +13,7 @@ import type { AdminProductsListData, ProductRow } from "@/components/admin/produ
 import { ProductBulkEditButton } from "@/components/product-bulk-edit-modal";
 import { ProductDeleteButton } from "./product-delete-button";
 import { ProductFlags } from "./product-flags";
+import { ProductStock } from "./product-stock";
 import { ProductRowMenu } from "./product-row-menu";
 import { ProductStatusMenu } from "./product-publish-toggle";
 import { BpLinkButton } from "./ui/button";
@@ -132,7 +133,7 @@ export function BlueprintProductsView({ products, categories, filters, paginatio
                   </div>
                   <div className="flex items-center justify-between gap-3 text-[13px]">
                     <span>{priceLabel(product)} {storeIndustry === "GOLD" ? "گرم" : "ریال"}</span>
-                    <span className={product.stock <= lowStockThreshold ? "font-bold text-[var(--bp-danger)]" : "bp-muted"}>موجودی: {product.stock.toLocaleString("fa-IR")}</span>
+                    <span className="bp-muted"><ProductStock product={product} lowStockThreshold={lowStockThreshold} prefix="موجودی: " /></span>
                   </div>
                   <RowActions product={product} />
                 </article>
@@ -166,7 +167,7 @@ export function BlueprintProductsView({ products, categories, filters, paginatio
                         <AdminColumn id="category"><BpTd className="bp-muted max-w-[180px] truncate">{product.category?.name ?? "بدون دسته‌بندی"}</BpTd></AdminColumn>
                         <AdminColumn id="brand"><BpTd className="bp-muted max-w-[140px] truncate">{product.brand?.name ?? "بدون برند"}</BpTd></AdminColumn>
                         <AdminColumn id="priceOrWeight"><BpTd>{priceLabel(product)}</BpTd></AdminColumn>
-                        <AdminColumn id="stock"><BpTd className={product.stock <= lowStockThreshold ? "font-bold text-[var(--bp-danger)]" : ""}>{product.stock.toLocaleString("fa-IR")}</BpTd></AdminColumn>
+                        <AdminColumn id="stock"><BpTd><ProductStock product={product} lowStockThreshold={lowStockThreshold} /></BpTd></AdminColumn>
                         <AdminColumn id="status"><BpTd><BpTag tone={productStatusTones[product.status]} size="md" withDot>{productStatusLabels[product.status]}</BpTag></BpTd></AdminColumn>
                         <BpTd><RowActions product={product} /></BpTd>
                       </AdminBulkTr>
