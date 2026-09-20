@@ -468,13 +468,14 @@ export function BlueprintProductOptions({ storeIndustry, colors, library, option
     <BpDialog
       open={combinationsFullscreen}
       size="full"
+      className="bp-dialog-split"
       labelledBy="variant-combinations-title"
       title="ترکیب‌های این محصول"
       description={`${variants.length.toLocaleString("fa-IR")} از ${MAX_VARIANTS.toLocaleString("fa-IR")} ترکیب`}
       onClose={() => setCombinationsFullscreen(false)}
       actions={<BpButton variant="primary" onClick={() => setCombinationsFullscreen(false)}>تمام</BpButton>}
     >
-      <div className="mb-3">
+      <div className="bp-split-tabs">
         <BpSeg
           label="بخش تنظیم ترکیب‌ها"
           value={combinationsTab}
