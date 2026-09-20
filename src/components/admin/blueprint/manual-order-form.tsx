@@ -27,7 +27,8 @@ function Panel({ title, icon, children }: { title: string; icon?: React.ReactNod
     <section className="bp-frame relative">
       <div className="flex items-center gap-2 border-b border-[var(--bp-divider)] px-4 py-3">
         {icon && <span className="text-[var(--bp-muted)]">{icon}</span>}
-        <h2 className="m-0 text-[14px] font-bold">{title}</h2>
+        {/* Not an <h2>: `.bp-root h2` (24px, unlayered) beats any Tailwind size class, so a real heading tag could not be made card-sized. */}
+        <div role="heading" aria-level={2} className="text-[14px] font-bold">{title}</div>
       </div>
       <div className="p-4">{children}</div>
     </section>
@@ -363,7 +364,7 @@ export function BlueprintManualOrderForm({ industry }: { industry: "GOLD" | "GEN
         <aside className="flex min-w-0 flex-col gap-2 xl:sticky xl:top-20">
           <section className="bp-frame relative min-w-0">
             <div className="flex items-center justify-between gap-2 border-b border-[var(--bp-divider)] px-4 py-3">
-              <h2 className="m-0 text-[13px] font-bold">خلاصهٔ مبالغ</h2>
+              <div role="heading" aria-level={2} className="text-[14px] font-bold">خلاصهٔ مبالغ</div>
               {quoting ? <BpSpinner size={14} /> : quote ? <span className="bp-muted text-[11px]">{quote.lines.reduce((sum, line) => sum + line.quantity, 0).toLocaleString("fa-IR")} قلم</span> : null}
             </div>
 
