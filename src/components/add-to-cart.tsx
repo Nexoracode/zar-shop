@@ -8,12 +8,13 @@ import { Button, Modal, Spinner, toast } from "@heroui/react";
 import { Check, FileText, Minus, PackageCheck, Plus, Ruler, ShieldCheck, ShoppingCart, Trash2, X } from "lucide-react";
 import { formatMoney } from "@/lib/format";
 import { listenForCartUpdates, notifyCartUpdated } from "@/components/storefront-cart-link";
+import { FlashSaleCountdown, useRemainingMs } from "@/components/flash-sale-countdown";
 
 type OptionGuide = { url: string; type: "IMAGE" | "DOCUMENT"; title: string };
 type ProductOption = { id: string; name: string; kind: "COLOR" | "SELECT"; values: Array<{ value: string; stock: number; color: { name: string; hex: string } | null }> };
 
 /** One buyable combination. `selection` is keyed by type name, the same key `options[].id` carries. */
-type PurchasableVariant = { selection: Record<string, string>; price: number | null; originalPrice: number | null; stock: number; preparationDays: number; available: boolean };
+type PurchasableVariant = { selection: Record<string, string>; price: number | null; originalPrice: number | null; /** When the discount running on this variant ends; null when it has none or is a فروش ویژه without a window. */ discountEndsAt: string | null; stock: number; preparationDays: number; available: boolean };
 
 /** A cart line this page added, keyed by the picked combination — each combination is its own line. */
 type CartLine = { id: string; quantity: number };
@@ -108,6 +109,19 @@ export function VariantStockLabel({ showStock, lowStockThreshold }: { showStock:
   return <span className={`text-xs font-bold ${variant.stock < 1 || low ? "text-[var(--danger)]" : "text-[var(--success)]"}`}>{label}</span>;
 }
 
+/** The purchase card's title while a time-limited discount runs: "پیشنهاد شگفت‌انگیز" and the time left. */
+function FlashOfferHeader({ endsAt }: { endsAt: string }) {
+  const remaining = useRemainingMs(endsAt);
+  // Once the time is up the offer is over; the plain heading takes its place until the page refreshes the price.
+  if (remaining !== null && remaining <= 0) return <strong className="text-base font-bold text-slate-900">خرید این محصول</strong>;
+  return (
+    <div className="-mx-4 -mt-4 flex items-center justify-between gap-3 rounded-t-xl border-b border-slate-200/80 bg-white px-4 py-3">
+      <strong className="text-[15px] font-black text-[var(--danger)]">پیشنهاد شگفت‌انگیز</strong>
+      <FlashSaleCountdown endsAt={endsAt} tone="plain" />
+    </div>
+  );
+}
+
 function cartLineKey(selectedOptions: Record<string, string>) {
   return JSON.stringify(Object.entries(selectedOptions).sort(([a], [b]) => a.localeCompare(b)));
 }
@@ -148,6 +162,7 @@ export function AddToCart({ productId, options = [], variants = [], optionGuide,
   // Out of stock as a pairing counts too: black and XL can each be in stock somewhere and still not together.
   const optionStockUnavailable = options.length > 0 && (!variants.some((variant) => variant.available) || (selectedVariant !== null && !selectedVariant.available));
   const selectedColorValue = options.filter((option) => option.kind === "COLOR").flatMap((option) => option.values.filter((item) => selectedOptions[option.id] === item.value)).find((item) => item.color);
+  const flashEndsAt = selectedVariant?.discountEndsAt ?? null;
   const displayedPrice = selectedVariant?.price ?? purchasePrice;
   const displayedOriginalPrice = selectedVariant?.originalPrice ?? purchaseOriginalPrice;
   // Worked out from whichever price ended up on screen, not passed in as its own prop — a
@@ -239,7 +254,9 @@ export function AddToCart({ productId, options = [], variants = [], optionGuide,
     {showOptionFields && optionFields && <section className="grid gap-4 pt-7 lg:col-start-2 lg:row-start-2" aria-label="انتخاب تنوع محصول">{optionFields}</section>}
     {showPurchaseCard && <aside className={`hidden lg:block ${purchaseCardClassName ?? "lg:col-start-3 lg:row-span-2 lg:row-start-1"}`}>
       <div className="grid gap-4 rounded-xl border border-slate-200/80 bg-slate-50/40 p-4 lg:sticky" style={{ top: purchaseCardStickyTop }}>
-        <strong className="text-base font-bold text-slate-900">خرید این محصول</strong>
+        {/* A time-limited discount on the picked variant is a "پیشنهاد شگفت‌انگیز": the card opens with that
+            title and the time left, and gives way to the plain heading when the time is up. */}
+        {flashEndsAt ? <FlashOfferHeader endsAt={flashEndsAt} /> : <strong className="text-base font-bold text-slate-900">خرید این محصول</strong>}
         {purchaseSummary}
         {displayedOriginalPrice !== null && displayedPrice !== null && displayedOriginalPrice > displayedPrice && <div className="flex items-center gap-2"><span className="text-xs text-slate-400 line-through">{formatMoney(displayedOriginalPrice, currency)}</span>{discountLabel && <span className="inline-flex items-center rounded-full bg-[var(--danger)] px-2 py-1 text-[10px] font-bold text-[var(--danger-foreground)]">{discountLabel}</span>}</div>}
         <strong className="text-left text-xl font-bold text-slate-900" dir="rtl">{displayedPrice === null ? "قیمت نامشخص" : formatMoney(displayedPrice, currency)}</strong>

@@ -14,8 +14,13 @@ export function splitRemaining(milliseconds: number) {
 
 export const pad = (value: number) => value.toLocaleString("fa-IR", { minimumIntegerDigits: 2, useGrouping: false });
 
-function Cell({ value }: { value: string }) {
+function Cell({ value, plain }: { value: string; plain: boolean }) {
+  if (plain) return <span className="text-[16px] font-black tabular-nums leading-none text-[var(--danger)]">{value}</span>;
   return <span className="grid size-[26px] shrink-0 place-items-center rounded-[4px] bg-white text-[13px] font-bold tabular-nums text-[var(--foreground)]">{value}</span>;
+}
+
+function Colon({ plain }: { plain: boolean }) {
+  return <span className={plain ? "px-0.5 text-[16px] font-black leading-none text-[var(--danger)]" : "w-1 text-center text-[13px] font-bold text-[var(--brand-primary-foreground)]"}>:</span>;
 }
 
 /**
@@ -40,7 +45,13 @@ export function useRemainingMs(endsAt: string) {
  * regardless of the panel's background) rather than a labelled block. `DiscountExpiryRefresh`
  * reloads the section when it hits zero.
  */
-export function FlashSaleCountdown({ endsAt, className = "" }: { endsAt: string; className?: string }) {
+export function FlashSaleCountdown({ endsAt, className = "", tone = "chips" }: {
+  endsAt: string;
+  className?: string;
+  /** `chips`: white boxes for a coloured header. `plain`: bold red digits, for a white card — the purchase card's header. */
+  tone?: "chips" | "plain";
+}) {
+  const plain = tone === "plain";
   // The first pass shows zeroed digits on every side and the interval takes over once mounted.
   // Same approach as `OrderExpiryCountdown`.
   const remaining = useRemainingMs(endsAt);
@@ -50,18 +61,18 @@ export function FlashSaleCountdown({ endsAt, className = "" }: { endsAt: string;
   const { days, hours, minutes, seconds } = splitRemaining(remaining ?? 0);
 
   return (
-    <div className={`flex items-center gap-[2px] ${className}`} dir="ltr" aria-label="زمان باقی‌مانده تا پایان پیشنهاد">
+    <div className={`flex items-center ${plain ? "gap-[1px]" : "gap-[2px]"} ${className}`} dir="ltr" aria-label="زمان باقی‌مانده تا پایان پیشنهاد">
       {hydrated && days > 0 && (
         <>
-          <Cell value={days.toLocaleString("fa-IR")} />
-          <span className="w-1 text-center text-[13px] font-bold text-[var(--brand-primary-foreground)]">:</span>
+          <Cell value={days.toLocaleString("fa-IR")} plain={plain} />
+          <Colon plain={plain} />
         </>
       )}
-      <Cell value={hydrated ? pad(hours) : "۰۰"} />
-      <span className="w-1 text-center text-[13px] font-bold text-[var(--brand-primary-foreground)]">:</span>
-      <Cell value={hydrated ? pad(minutes) : "۰۰"} />
-      <span className="w-1 text-center text-[13px] font-bold text-[var(--brand-primary-foreground)]">:</span>
-      <Cell value={hydrated ? pad(seconds) : "۰۰"} />
+      <Cell value={hydrated ? pad(hours) : "۰۰"} plain={plain} />
+      <Colon plain={plain} />
+      <Cell value={hydrated ? pad(minutes) : "۰۰"} plain={plain} />
+      <Colon plain={plain} />
+      <Cell value={hydrated ? pad(seconds) : "۰۰"} plain={plain} />
     </div>
   );
 }

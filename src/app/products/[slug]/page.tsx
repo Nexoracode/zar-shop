@@ -171,6 +171,7 @@ export default async function ProductPage({ params, searchParams }: { params: Pr
       selection: (variant.selection ?? {}) as Record<string, string>,
       price: pricing?.finalPrice ?? null,
       originalPrice: pricing?.originalPrice ?? null,
+      discountEndsAt: pricing?.discountEndsAt ? pricing.discountEndsAt.toISOString() : null,
       stock: variant.stock,
       preparationDays: variant.preparationDays,
       available: variant.isActive && variant.stock > 0,
