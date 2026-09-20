@@ -160,7 +160,7 @@ export function BlueprintProductsView({ products, categories, filters, paginatio
                         <AdminColumn id="priceOrWeight"><BpTd><ProductPrice product={product} /></BpTd></AdminColumn>
                         <AdminColumn id="stock"><BpTd><ProductStock product={product} lowStockThreshold={lowStockThreshold} /></BpTd></AdminColumn>
                         <AdminColumn id="status"><BpTd><BpTag tone={productStatusTones[product.status]} size="md" withDot>{productStatusLabels[product.status]}</BpTag></BpTd></AdminColumn>
-                        <BpTd><RowActions product={product} /></BpTd>
+                        <BpTd><div className="flex justify-center"><RowActions product={product} /></div></BpTd>
                       </AdminBulkTr>
                     ))}
                   </tbody>

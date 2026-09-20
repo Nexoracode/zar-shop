@@ -154,7 +154,7 @@ export function BlueprintArticlesView({ articles, categories, counts, filters, p
                         <AdminColumn id="category"><BpTd className="bp-muted max-w-[160px] truncate">{article.category.name}</BpTd></AdminColumn>
                         <AdminColumn id="status"><BpTd><BpTag tone={articleStatusTones[article.status]} size="md" withDot>{articleStatusLabels[article.status]}</BpTag></BpTd></AdminColumn>
                         <AdminColumn id="publishedAt"><BpTd className="bp-muted">{dateLabel(article)}</BpTd></AdminColumn>
-                        <BpTd><RowActions article={article} /></BpTd>
+                        <BpTd><div className="flex justify-center"><RowActions article={article} /></div></BpTd>
                       </AdminBulkTr>
                     ))}
                   </tbody>
