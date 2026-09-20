@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { Button, Modal, Spinner, toast } from "@heroui/react";
 import { Check, FileText, Minus, PackageCheck, Plus, ShieldCheck, ShoppingCart, Store, Trash2, Truck, Warehouse, X } from "lucide-react";
 import { formatMoney } from "@/lib/format";
+import { AmazingOfferMark } from "@/components/amazing-offer-mark";
 import { listenForCartUpdates, notifyCartUpdated } from "@/components/storefront-cart-link";
 import { FlashSaleCountdown, useRemainingMs } from "@/components/flash-sale-countdown";
 
@@ -116,7 +117,7 @@ function FlashOfferHeader({ endsAt }: { endsAt: string }) {
   if (remaining !== null && remaining <= 0) return null;
   return (
     <div className="flex items-center justify-between gap-3 border-b border-slate-200 bg-white px-4 py-3">
-      <strong className="text-[15px] font-black text-[var(--danger)]">پیشنهاد شگفت‌انگیز</strong>
+      <AmazingOfferMark className="h-[34px] w-[148px] shrink-0" />
       <FlashSaleCountdown endsAt={endsAt} tone="plain" />
     </div>
   );
