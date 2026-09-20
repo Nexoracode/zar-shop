@@ -476,7 +476,7 @@ export function BlueprintProductOptions({ storeIndustry, colors, library, option
       actions={<BpButton variant="primary" onClick={() => setCombinationsFullscreen(false)}>تمام</BpButton>}
     >
       <div>
-        <div className="mb-[5px]">
+        <div className="mb-2">
           <BpSeg
             label="بخش تنظیم ترکیب‌ها"
             value={combinationsTab}
