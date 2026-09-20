@@ -71,7 +71,7 @@ export function BlueprintAuditLogsView({ logs, pagination, initialHiddenColumns,
               <AdminColumn id="kind"><BpTh>نوع</BpTh></AdminColumn>
               <AdminColumn id="entity"><BpTh>موجودیت</BpTh></AdminColumn>
               <AdminColumn id="time"><BpTh>زمان</BpTh></AdminColumn>
-              <BpTh className="text-center">جزئیات</BpTh>
+              <BpTh>جزئیات</BpTh>
             </tr>
           </thead>
           <tbody>
@@ -99,7 +99,7 @@ export function BlueprintAuditLogsView({ logs, pagination, initialHiddenColumns,
                     </BpTd>
                   </AdminColumn>
                   <AdminColumn id="time"><BpTd className="bp-muted whitespace-nowrap text-[12px]">{formatDateTime(log.createdAt)}</BpTd></AdminColumn>
-                  <BpTd className="text-center"><DetailLink id={log.id} label={auditActionLabel(log.action)} /></BpTd>
+                  <BpTd><DetailLink id={log.id} label={auditActionLabel(log.action)} /></BpTd>
                 </tr>
               );
             })}

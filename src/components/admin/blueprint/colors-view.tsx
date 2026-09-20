@@ -297,7 +297,7 @@ export function BlueprintColorsView({ colors, initialHiddenColumns }: { colors: 
                         <AdminColumn id="name"><BpTh>نام</BpTh></AdminColumn>
                         <AdminColumn id="hex"><BpTh>کد</BpTh></AdminColumn>
                         <AdminColumn id="status"><BpTh><span className="inline-flex items-center">وضعیت<AdminColumnFilter ariaLabel="فیلتر وضعیت" groups={[{ name: "status", label: "وضعیت", value: statusFilter, onChange: setStatusFilter, options: [{ value: "", label: "همه وضعیت‌ها" }, { value: "active", label: "فعال" }, { value: "inactive", label: "غیرفعال" }] }]} /></span></BpTh></AdminColumn>
-                        <BpTh className="text-center">عملیات</BpTh>
+                        <BpTh>عملیات</BpTh>
                       </tr>
                     </thead>
                     <tbody>
@@ -319,7 +319,7 @@ export function BlueprintColorsView({ colors, initialHiddenColumns }: { colors: 
                           <AdminColumn id="hex"><BpTd className="bp-muted font-mono"><span dir="ltr">{color.hex}</span></BpTd></AdminColumn>
                           <AdminColumn id="status"><BpTd><AdminStatusBadge tone={color.isActive ? "success" : "neutral"}>{color.isActive ? "فعال" : "غیرفعال"}</AdminStatusBadge></BpTd></AdminColumn>
                           <BpTd>
-                            <div className="flex items-center justify-center gap-1">
+                            <div className="flex items-center justify-start gap-1">
                               <AdminActiveToggle entity="colors" entityLabel="رنگ" id={color.id} name={color.name} isActive={color.isActive} />
                               <BpButton isIconOnly size="sm" variant="ghost" title="ویرایش رنگ" aria-label={`ویرایش ${color.name}`} onClick={() => startEdit(color)}><SquarePen size={15} strokeWidth={1.5} /></BpButton>
                               <BpButton isIconOnly size="sm" variant="ghost" className="bp-btn-danger-icon" title="حذف رنگ" aria-label={`حذف ${color.name}`} onClick={() => { setDeleteError(""); setDeleteTarget(color); }}><Trash2 size={15} strokeWidth={1.5} /></BpButton>

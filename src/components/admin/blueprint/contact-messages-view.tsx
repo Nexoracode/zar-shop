@@ -62,7 +62,7 @@ export function BlueprintContactMessagesView({ messages, pagination, initialHidd
                 <AdminColumn id="sender"><BpTh>فرستنده</BpTh></AdminColumn>
                 <AdminColumn id="date"><BpTh>تاریخ</BpTh></AdminColumn>
                 <AdminColumn id="status"><BpTh><span className="inline-flex items-center">وضعیت<AdminColumnFilter path="/admin/contact-messages" ariaLabel="فیلتر وضعیت" groups={[{ name: "status", label: "وضعیت", value: status, options: [{ value: "", label: "همه پیام‌ها" }, { value: "open", label: "بررسی‌نشده" }, { value: "resolved", label: "بررسی‌شده" }] }]} /></span></BpTh></AdminColumn>
-                <BpTh className="text-center">عملیات</BpTh>
+                <BpTh>عملیات</BpTh>
               </tr>
             </thead>
             <tbody>
@@ -88,7 +88,7 @@ export function BlueprintContactMessagesView({ messages, pagination, initialHidd
                   </AdminColumn>
                   <AdminColumn id="date"><BpTd className="text-[12px]">{formatDateTime(item.createdAt)}</BpTd></AdminColumn>
                   <AdminColumn id="status"><BpTd><AdminStatusBadge tone={item.isResolved ? "success" : "warning"}>{item.isResolved ? "بررسی‌شده" : "بررسی‌نشده"}</AdminStatusBadge></BpTd></AdminColumn>
-                  <BpTd className="text-center"><Link href={`/admin/contact-messages/${item.id}`} title="بررسی پیام" aria-label="مشاهده و مدیریت پیام" className="bp-btn bp-btn-ghost bp-btn-icon bp-btn-sm"><Eye size={15} strokeWidth={1.5} /></Link></BpTd>
+                  <BpTd><Link href={`/admin/contact-messages/${item.id}`} title="بررسی پیام" aria-label="مشاهده و مدیریت پیام" className="bp-btn bp-btn-ghost bp-btn-icon bp-btn-sm"><Eye size={15} strokeWidth={1.5} /></Link></BpTd>
                 </AdminBulkTr>
               ))}
             </tbody>

@@ -87,7 +87,7 @@ export default async function PaymentsPage({ searchParams }: { searchParams: Sea
                     <AdminColumn id="provider"><BpTh><span className="inline-flex items-center">درگاه<AdminColumnFilter path="/admin/payments" ariaLabel="فیلتر درگاه پرداخت" groups={[{ name: "provider", label: "درگاه پرداخت", value: provider, options: [{ value: "", label: "همه درگاه‌ها" }, ...providerOptions] }]} /></span></BpTh></AdminColumn>
                     <AdminColumn id="status"><BpTh><span className="inline-flex items-center">وضعیت<AdminColumnFilter path="/admin/payments" ariaLabel="فیلتر وضعیت پرداخت" groups={[{ name: "status", label: "وضعیت پرداخت", value: status, options: [{ value: "", label: "همه وضعیت‌ها" }, ...PAYMENT_STATUS_FILTERS.map((item) => ({ value: item, label: paymentStatusLabels[item] }))] }]} /></span></BpTh></AdminColumn>
                     <AdminColumn id="paidAt"><BpTh>تاریخ پرداخت</BpTh></AdminColumn>
-                    <BpTh className="text-center">جزئیات</BpTh>
+                    <BpTh>جزئیات</BpTh>
                   </tr>
                 </thead>
                 <tbody>
@@ -110,7 +110,7 @@ export default async function PaymentsPage({ searchParams }: { searchParams: Sea
                       <AdminColumn id="status"><BpTd><BpTag tone={paymentStatusTones[payment.status]} withDot>{paymentStatusLabels[payment.status]}</BpTag></BpTd></AdminColumn>
                       <AdminColumn id="paidAt"><BpTd className="bp-muted whitespace-nowrap text-[12px]">{payment.paidAt ? formatDateTime(payment.paidAt) : "—"}</BpTd></AdminColumn>
                       <BpTd>
-                        <div className="flex items-center justify-center">
+                        <div className="flex items-center justify-start">
                           <Link href={`/admin/payments/${payment.id}`} aria-label={`مشاهده جزئیات پرداخت سفارش ${payment.order.orderNumber}`} title="مشاهده جزئیات" className="bp-btn bp-btn-ghost bp-btn-icon bp-btn-sm"><Eye size={15} strokeWidth={1.5} /></Link>
                         </div>
                       </BpTd>

@@ -145,7 +145,7 @@ export function BlueprintProductsView({ products, categories, filters, paginatio
                       <AdminColumn id="priceOrWeight"><BpTh>{storeIndustry === "GOLD" ? "وزن (گرم)" : "قیمت (ریال)"}</BpTh></AdminColumn>
                       <AdminColumn id="stock"><BpTh><span className="inline-flex items-center">موجودی<AdminColumnFilter path="/admin/products" ariaLabel="فیلتر موجودی" groups={[stockFilter]} /></span></BpTh></AdminColumn>
                       <AdminColumn id="status"><BpTh><span className="inline-flex items-center">وضعیت<AdminColumnFilter path="/admin/products" ariaLabel="فیلتر وضعیت" groups={[statusFilter]} /></span></BpTh></AdminColumn>
-                      <BpTh className="text-center">عملیات</BpTh>
+                      <BpTh>عملیات</BpTh>
                     </tr>
                   </thead>
                   <tbody>
@@ -160,7 +160,7 @@ export function BlueprintProductsView({ products, categories, filters, paginatio
                         <AdminColumn id="priceOrWeight"><BpTd><ProductPrice product={product} /></BpTd></AdminColumn>
                         <AdminColumn id="stock"><BpTd><ProductStock product={product} lowStockThreshold={lowStockThreshold} /></BpTd></AdminColumn>
                         <AdminColumn id="status"><BpTd><BpTag tone={productStatusTones[product.status]} size="md" withDot>{productStatusLabels[product.status]}</BpTag></BpTd></AdminColumn>
-                        <BpTd><div className="flex justify-center"><RowActions product={product} /></div></BpTd>
+                        <BpTd><RowActions product={product} /></BpTd>
                       </AdminBulkTr>
                     ))}
                   </tbody>

@@ -338,7 +338,7 @@ export function BlueprintBrandsView({ brands, initialHiddenColumns }: { brands: 
                         <AdminColumn id="products"><BpTh><span className="inline-flex items-center">محصولات<AdminColumnFilter ariaLabel="فیلتر محصولات" groups={[{ name: "products", label: "محصولات برند", value: productsFilter, onChange: setProductsFilter, options: [{ value: "", label: "همه" }, { value: "has", label: "دارای محصول" }, { value: "none", label: "بدون محصول" }] }]} /></span></BpTh></AdminColumn>
                         <AdminColumn id="homepage"><BpTh><span className="inline-flex items-center">صفحه اصلی<AdminColumnFilter ariaLabel="فیلتر صفحه اصلی" groups={[{ name: "featured", label: "نمایش در صفحه اصلی", value: featuredFilter, onChange: setFeaturedFilter, options: [{ value: "", label: "همه" }, { value: "yes", label: "در صفحه اصلی" }, { value: "no", label: "خارج از صفحه اصلی" }] }]} /></span></BpTh></AdminColumn>
                         <AdminColumn id="status"><BpTh><span className="inline-flex items-center">وضعیت<AdminColumnFilter ariaLabel="فیلتر وضعیت" groups={[{ name: "status", label: "وضعیت", value: statusFilter, onChange: setStatusFilter, options: [{ value: "", label: "همه وضعیت‌ها" }, { value: "active", label: "فعال" }, { value: "inactive", label: "غیرفعال" }] }]} /></span></BpTh></AdminColumn>
-                        <BpTh className="text-center">عملیات</BpTh>
+                        <BpTh>عملیات</BpTh>
                       </tr>
                     </thead>
                     <tbody>
@@ -362,7 +362,7 @@ export function BlueprintBrandsView({ brands, initialHiddenColumns }: { brands: 
                           <AdminColumn id="homepage"><BpTd>{brand.featured ? <AdminStatusBadge tone="info">نمایش داده می‌شود</AdminStatusBadge> : <span className="bp-muted">—</span>}</BpTd></AdminColumn>
                           <AdminColumn id="status"><BpTd><AdminStatusBadge tone={brand.isActive ? "success" : "neutral"}>{brand.isActive ? "فعال" : "غیرفعال"}</AdminStatusBadge></BpTd></AdminColumn>
                           <BpTd>
-                            <div className="flex items-center justify-center gap-1">
+                            <div className="flex items-center justify-start gap-1">
                               <AdminActiveToggle entity="brands" entityLabel="برند" id={brand.id} name={brand.name} isActive={brand.isActive} />
                               <BpButton isIconOnly size="sm" variant="ghost" title="ویرایش برند" aria-label={`ویرایش ${brand.name}`} onClick={() => startEdit(brand)}><SquarePen size={15} strokeWidth={1.5} /></BpButton>
                               <BpButton isIconOnly size="sm" variant="ghost" title={brand._count.products > 0 ? "برند دارای محصول قابل حذف نیست" : "حذف برند"} className="bp-btn-danger-icon" aria-label={`حذف ${brand.name}`} disabled={brand._count.products > 0} onClick={() => { setDeleteError(""); setDeleteTarget(brand); }}><Trash2 size={15} strokeWidth={1.5} /></BpButton>

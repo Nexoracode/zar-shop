@@ -93,8 +93,8 @@ export function BlueprintUsersView({ users, pagination, actorId, actorRole, assi
                 <AdminColumn id="orders"><BpTh>سفارش‌ها</BpTh></AdminColumn>
                 <AdminColumn id="status"><BpTh><span className="inline-flex items-center">وضعیت<AdminColumnFilter path="/admin/users" ariaLabel="فیلتر وضعیت" groups={[{ name: "status", label: "وضعیت حساب", value: status, options: [{ value: "", label: "همه وضعیت‌ها" }, ...Object.values(UserStatus).map((item) => ({ value: item, label: userStatusLabels[item] }))] }]} /></span></BpTh></AdminColumn>
                 <AdminColumn id="joined"><BpTh>عضویت</BpTh></AdminColumn>
-                {walletEnabled && <AdminColumn id="wallet"><BpTh className="text-center">کیف پول</BpTh></AdminColumn>}
-                <BpTh className="text-center">عملیات</BpTh>
+                {walletEnabled && <AdminColumn id="wallet"><BpTh>کیف پول</BpTh></AdminColumn>}
+                <BpTh>عملیات</BpTh>
               </tr>
             </thead>
             <tbody>
@@ -123,14 +123,14 @@ export function BlueprintUsersView({ users, pagination, actorId, actorRole, assi
                   <AdminColumn id="joined"><BpTd className="bp-muted">{formatDate(user.createdAt)}</BpTd></AdminColumn>
                   {walletEnabled && (
                     <AdminColumn id="wallet">
-                      <BpTd className="text-center">
+                      <BpTd>
                         {user.isGuest ? <span className="bp-muted">—</span> : (
                           <Link href={`/admin/users/${user.id}/wallet`} aria-label={`کیف پول ${fullName}`} title="مدیریت کیف پول" className="bp-btn bp-btn-ghost bp-btn-icon bp-btn-sm"><Wallet size={15} strokeWidth={1.5} /></Link>
                         )}
                       </BpTd>
                     </AdminColumn>
                   )}
-                  <BpTd className="text-center">
+                  <BpTd>
                     <AdminActiveToggle entity="users" entityLabel="کاربر" id={user.id} name={fullName} isActive={user.status === "ACTIVE"} disabled={!selectable} disabledTitle="وضعیت این حساب از اینجا قابل تغییر نیست" actionOn="status:ACTIVE" actionOff="status:SUSPENDED" labelOff="تعلیق" doneOn="حساب کاربر فعال شد." doneOff="حساب کاربر تعلیق شد." />
                   </BpTd>
                 </>;

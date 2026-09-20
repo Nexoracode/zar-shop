@@ -404,7 +404,7 @@ export function BlueprintOptionTypesView({ types, colors, initialHiddenColumns }
                         <AdminColumn id="values"><BpTh>مقادیر</BpTh></AdminColumn>
                         <AdminColumn id="products"><BpTh>محصولات</BpTh></AdminColumn>
                         <AdminColumn id="status"><BpTh><span className="inline-flex items-center">وضعیت<AdminColumnFilter ariaLabel="فیلتر وضعیت" groups={[{ name: "status", label: "وضعیت", value: statusFilter, onChange: setStatusFilter, options: [{ value: "", label: "همه وضعیت‌ها" }, { value: "active", label: "فعال" }, { value: "inactive", label: "غیرفعال" }] }]} /></span></BpTh></AdminColumn>
-                        <BpTh className="text-center">عملیات</BpTh>
+                        <BpTh>عملیات</BpTh>
                       </tr>
                     </thead>
                     <tbody>
@@ -427,7 +427,7 @@ export function BlueprintOptionTypesView({ types, colors, initialHiddenColumns }
                           <AdminColumn id="products"><BpTd className="text-[var(--bp-text)]">{type.productCount.toLocaleString("fa-IR")}</BpTd></AdminColumn>
                           <AdminColumn id="status"><BpTd><AdminStatusBadge tone={type.isActive ? "success" : "neutral"}>{type.isActive ? "فعال" : "غیرفعال"}</AdminStatusBadge></BpTd></AdminColumn>
                           <BpTd>
-                            <div className="flex items-center justify-center gap-1">
+                            <div className="flex items-center justify-start gap-1">
                               <AdminActiveToggle entity="optionTypes" entityLabel="نوع تنوع" id={type.id} name={type.name} isActive={type.isActive} />
                               <BpButton isIconOnly size="sm" variant="ghost" title="ویرایش نوع تنوع" aria-label={`ویرایش ${type.name}`} onClick={() => startEdit(type)}><SquarePen size={15} strokeWidth={1.5} /></BpButton>
                               <BpButton isIconOnly size="sm" variant="ghost" title={type.productCount > 0 ? "این نوع در محصولی استفاده شده و قابل حذف نیست" : "حذف نوع تنوع"} className="bp-btn-danger-icon" aria-label={`حذف ${type.name}`} disabled={type.productCount > 0} onClick={() => { setDeleteError(""); setDeleteTarget(type); }}><Trash2 size={15} strokeWidth={1.5} /></BpButton>

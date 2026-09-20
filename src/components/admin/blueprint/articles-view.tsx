@@ -132,7 +132,7 @@ export function BlueprintArticlesView({ articles, categories, counts, filters, p
                       <AdminColumn id="category"><BpTh><span className="inline-flex items-center">دسته<AdminColumnFilter path="/admin/articles" ariaLabel="فیلتر دسته" groups={[{ name: "category", label: "دسته", value: filters.category, options: [{ value: "", label: "همه دسته‌ها" }, ...categories.map((category) => ({ value: category.id, label: category.name }))] }]} /></span></BpTh></AdminColumn>
                       <AdminColumn id="status"><BpTh><span className="inline-flex items-center">وضعیت<AdminColumnFilter path="/admin/articles" ariaLabel="فیلتر وضعیت" groups={[{ name: "status", label: "وضعیت", value: filters.status, options: [{ value: "", label: "همه وضعیت‌ها" }, ...Object.entries(articleStatusLabels).map(([value, label]) => ({ value, label }))] }]} /></span></BpTh></AdminColumn>
                       <AdminColumn id="publishedAt"><BpTh>تاریخ انتشار</BpTh></AdminColumn>
-                      <BpTh className="text-center">عملیات</BpTh>
+                      <BpTh>عملیات</BpTh>
                     </tr>
                   </thead>
                   <tbody>
@@ -154,7 +154,7 @@ export function BlueprintArticlesView({ articles, categories, counts, filters, p
                         <AdminColumn id="category"><BpTd className="bp-muted max-w-[160px] truncate">{article.category.name}</BpTd></AdminColumn>
                         <AdminColumn id="status"><BpTd><BpTag tone={articleStatusTones[article.status]} size="md" withDot>{articleStatusLabels[article.status]}</BpTag></BpTd></AdminColumn>
                         <AdminColumn id="publishedAt"><BpTd className="bp-muted">{dateLabel(article)}</BpTd></AdminColumn>
-                        <BpTd><div className="flex justify-center"><RowActions article={article} /></div></BpTd>
+                        <BpTd><RowActions article={article} /></BpTd>
                       </AdminBulkTr>
                     ))}
                   </tbody>

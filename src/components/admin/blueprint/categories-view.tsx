@@ -370,7 +370,7 @@ export function BlueprintCategoriesView({ categories, initialHiddenColumns }: { 
                         <AdminColumn id="products"><BpTh><span className="inline-flex items-center">محصولات<AdminColumnFilter ariaLabel="فیلتر محصولات" groups={[{ name: "products", label: "محصولات دسته‌بندی", value: productsFilter, onChange: setProductsFilter, options: [{ value: "", label: "همه" }, { value: "has", label: "دارای محصول" }, { value: "none", label: "بدون محصول" }] }]} /></span></BpTh></AdminColumn>
                         <AdminColumn id="children"><BpTh>زیردسته‌ها</BpTh></AdminColumn>
                         <AdminColumn id="status"><BpTh><span className="inline-flex items-center">وضعیت<AdminColumnFilter ariaLabel="فیلتر وضعیت" groups={[{ name: "status", label: "وضعیت", value: statusFilter, onChange: setStatusFilter, options: [{ value: "", label: "همه وضعیت‌ها" }, { value: "active", label: "فعال" }, { value: "inactive", label: "غیرفعال" }] }]} /></span></BpTh></AdminColumn>
-                        <BpTh className="text-center">عملیات</BpTh>
+                        <BpTh>عملیات</BpTh>
                       </tr>
                     </thead>
                     <tbody>
@@ -405,7 +405,7 @@ export function BlueprintCategoriesView({ categories, initialHiddenColumns }: { 
                             <AdminColumn id="children"><BpTd className="text-[var(--bp-text)]">{category._count.children.toLocaleString("fa-IR")}</BpTd></AdminColumn>
                             <AdminColumn id="status"><BpTd><AdminStatusBadge tone={category.isActive ? "success" : "neutral"}>{category.isActive ? "فعال" : "غیرفعال"}</AdminStatusBadge></BpTd></AdminColumn>
                             <BpTd>
-                              <div className="flex items-center justify-center gap-1">
+                              <div className="flex items-center justify-start gap-1">
                                 <Link href={`/admin/categories/${category.id}/attributes`} aria-label={`ویژگی‌های دسته‌بندی ${category.name}`} title="ویژگی‌های دسته‌بندی" className="bp-btn bp-btn-ghost bp-btn-icon bp-btn-sm"><SlidersHorizontal size={15} strokeWidth={1.5} /></Link>
                                 <AdminActiveToggle entity="categories" entityLabel="دسته‌بندی" id={category.id} name={category.name} isActive={category.isActive} />
                                 <BpButton isIconOnly size="sm" variant="ghost" title="ویرایش دسته‌بندی" aria-label={`ویرایش ${category.name}`} onClick={() => startEdit(category)}><SquarePen size={15} strokeWidth={1.5} /></BpButton>

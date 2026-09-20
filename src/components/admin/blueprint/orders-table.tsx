@@ -60,7 +60,7 @@ export function OrdersTable({ orders, pagination, warningMinutes, initialHiddenC
               <AdminColumn id="total"><BpTh>مبلغ</BpTh></AdminColumn>
               <AdminColumn id="status"><BpTh><span className="inline-flex items-center">وضعیت<AdminColumnFilter path="/admin/orders" ariaLabel="فیلتر وضعیت" groups={[{ name: "status", label: "وضعیت سفارش", value: status, options: [{ value: "", label: "همه وضعیت‌ها" }, ...statuses.map((item) => ({ value: item, label: orderStatusLabels[item] }))] }]} /></span></BpTh></AdminColumn>
               <AdminColumn id="createdAt"><BpTh>تاریخ</BpTh></AdminColumn>
-              <BpTh className="text-center">جزئیات</BpTh>
+              <BpTh>جزئیات</BpTh>
             </tr>
           </thead>
           <tbody>
@@ -80,7 +80,7 @@ export function OrdersTable({ orders, pagination, warningMinutes, initialHiddenC
                 <AdminColumn id="status"><BpTd><AdminOrderStatusSelect key={statusKey(order)} orderId={order.id} initialStatus={order.status} expiresAt={order.awaitingTransferReview ? null : order.expiresAt} warningMinutes={warningMinutes} />{order.awaitingTransferReview && <BpTag tone="warning" withDot className="mt-1.5">کارت‌به‌کارت در انتظار تأیید</BpTag>}</BpTd></AdminColumn>
                 <AdminColumn id="createdAt"><BpTd className="bp-muted whitespace-nowrap">{order.createdAt}</BpTd></AdminColumn>
                 <BpTd>
-                  <div className="flex items-center justify-center">
+                  <div className="flex items-center justify-start">
                     <Link href={`/admin/orders/${order.id}`} aria-label={`مشاهده جزئیات سفارش ${order.orderNumber}`} title="مشاهده جزئیات" className="bp-btn bp-btn-ghost bp-btn-icon bp-btn-sm"><Eye size={15} strokeWidth={1.5} /></Link>
                   </div>
                 </BpTd>

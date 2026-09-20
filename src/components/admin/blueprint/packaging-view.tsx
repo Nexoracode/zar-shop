@@ -121,7 +121,7 @@ export function BlueprintPackagingView({ boxes, initialHiddenColumns }: { boxes:
                         <AdminColumn id="tapinId"><BpTh>شناسه تاپین</BpTh></AdminColumn>
                         <AdminColumn id="status"><BpTh><span className="inline-flex items-center">وضعیت<AdminColumnFilter ariaLabel="فیلتر وضعیت" groups={[{ name: "status", label: "وضعیت", value: statusFilter, onChange: setStatusFilter, options: [{ value: "", label: "همه وضعیت‌ها" }, { value: "active", label: "فعال" }, { value: "inactive", label: "غیرفعال" }] }]} /></span></BpTh></AdminColumn>
                         <AdminColumn id="isDefault"><BpTh><span className="inline-flex items-center">پیش‌فرض<AdminColumnFilter ariaLabel="فیلتر پیش‌فرض" groups={[{ name: "default", label: "جعبه پیش‌فرض", value: defaultFilter, onChange: setDefaultFilter, options: [{ value: "", label: "همه" }, { value: "yes", label: "جعبه پیش‌فرض" }, { value: "no", label: "غیر پیش‌فرض" }] }]} /></span></BpTh></AdminColumn>
-                        <BpTh className="text-center">عملیات</BpTh>
+                        <BpTh>عملیات</BpTh>
                       </tr>
                     </thead>
                     <tbody>
@@ -136,7 +136,7 @@ export function BlueprintPackagingView({ boxes, initialHiddenColumns }: { boxes:
                           <AdminColumn id="status"><BpTd><AdminStatusBadge tone={box.isActive ? "success" : "neutral"}>{box.isActive ? "فعال" : "غیرفعال"}</AdminStatusBadge></BpTd></AdminColumn>
                           <AdminColumn id="isDefault"><BpTd>{box.isDefault ? <BpTag tone="info">پیش‌فرض</BpTag> : <span className="bp-muted">—</span>}</BpTd></AdminColumn>
                           <BpTd>
-                            <div className="flex items-center justify-center gap-1">
+                            <div className="flex items-center justify-start gap-1">
                               <AdminActiveToggle entity="packagingBoxes" entityLabel="جعبه" id={box.id} name={box.name} isActive={box.isActive} disabled={box.isDefault} disabledTitle="جعبه پیش‌فرض باید فعال بماند" />
                               <Link href={`/admin/packaging/${box.id}/edit`} title="ویرایش جعبه" aria-label={`ویرایش ${box.name}`} className="bp-btn bp-btn-ghost bp-btn-icon bp-btn-sm"><SquarePen size={15} strokeWidth={1.5} /></Link>
                               {!box.isDefault && <PackagingBoxDeleteButton id={box.id} name={box.name} />}

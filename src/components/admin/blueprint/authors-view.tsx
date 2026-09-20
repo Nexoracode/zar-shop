@@ -177,7 +177,7 @@ export function BlueprintAuthorsView({ authors, initialHiddenColumns }: { author
                       <AdminColumn id="avatar"><BpTh className="w-10">آواتار</BpTh></AdminColumn>
                       <AdminColumn id="name"><BpTh>نام</BpTh></AdminColumn>
                       <AdminColumn id="articles"><BpTh><span className="inline-flex items-center">مقالات<AdminColumnFilter ariaLabel="فیلتر مقالات" groups={[{ name: "articles", label: "مقالات", value: articlesFilter, onChange: setArticlesFilter, options: [{ value: "", label: "همه نویسندگان" }, { value: "with", label: "دارای مقاله" }, { value: "without", label: "بدون مقاله" }] }]} /></span></BpTh></AdminColumn>
-                      <BpTh className="text-center">عملیات</BpTh>
+                      <BpTh>عملیات</BpTh>
                     </tr>
                   </thead>
                   <tbody>
@@ -187,7 +187,7 @@ export function BlueprintAuthorsView({ authors, initialHiddenColumns }: { author
                         <AdminColumn id="name"><BpTd className="max-w-[220px] truncate font-bold" title={author.name}>{author.name}</BpTd></AdminColumn>
                         <AdminColumn id="articles"><BpTd className="text-[var(--bp-text)]">{author._count.articles.toLocaleString("fa-IR")}</BpTd></AdminColumn>
                         <BpTd>
-                          <div className="flex items-center justify-center gap-1">
+                          <div className="flex items-center justify-start gap-1">
                             <BpButton isIconOnly size="sm" variant="ghost" title="ویرایش نویسنده" aria-label={`ویرایش ${author.name}`} onClick={() => startEdit(author)}><SquarePen size={15} strokeWidth={1.5} /></BpButton>
                             <BpButton isIconOnly size="sm" variant="ghost" title={author._count.articles > 0 ? "نویسندهٔ دارای مقاله قابل حذف نیست" : "حذف نویسنده"} className="bp-btn-danger-icon" aria-label={`حذف ${author.name}`} disabled={author._count.articles > 0} onClick={() => { setDeleteError(""); setDeleteTarget(author); }}><Trash2 size={15} strokeWidth={1.5} /></BpButton>
                           </div>

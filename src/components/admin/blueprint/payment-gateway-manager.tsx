@@ -184,7 +184,7 @@ export function BlueprintPaymentGatewayManager({ mode, initialConfigs, appUrl, o
                       <AdminColumn id="credential"><BpTh>شناسه اتصال</BpTh></AdminColumn>
                       <AdminColumn id="environment"><BpTh><span className="inline-flex items-center">محیط<AdminColumnFilter ariaLabel="فیلتر محیط" groups={[{ name: "environment", label: "محیط", value: environmentFilter, onChange: setEnvironmentFilter, options: [{ value: "", label: "همه محیط‌ها" }, { value: "live", label: "زنده" }, { value: "sandbox", label: "آزمایشی" }] }]} /></span></BpTh></AdminColumn>
                       <AdminColumn id="status"><BpTh><span className="inline-flex items-center">وضعیت<AdminColumnFilter ariaLabel="فیلتر وضعیت" groups={[{ name: "status", label: "وضعیت", value: statusFilter, onChange: setStatusFilter, options: [{ value: "", label: "همه وضعیت‌ها" }, { value: "active", label: "فعال" }, { value: "inactive", label: "غیرفعال" }] }]} /></span></BpTh></AdminColumn>
-                      <BpTh className="text-center">عملیات</BpTh>
+                      <BpTh>عملیات</BpTh>
                     </tr>
                   </thead>
                   <tbody>
@@ -202,8 +202,8 @@ export function BlueprintPaymentGatewayManager({ mode, initialConfigs, appUrl, o
                         <AdminColumn id="credential"><BpTd className="bp-muted font-mono" dir="ltr">{config.credentialMasked}</BpTd></AdminColumn>
                         <AdminColumn id="environment"><BpTd><BpTag tone={config.isSandbox ? "warning" : "success"}>{config.isSandbox ? "آزمایشی" : "زنده"}</BpTag></BpTd></AdminColumn>
                         <AdminColumn id="status"><BpTd><BpTag tone={config.isActive ? "success" : "neutral"}>{config.isActive ? "فعال" : "غیرفعال"}</BpTag></BpTd></AdminColumn>
-                        <BpTd className="text-center">
-                          <div className="flex items-center justify-center gap-1">
+                        <BpTd>
+                          <div className="flex items-center justify-start gap-1">
                             <BpLinkButton href={`/admin/settings/payment-gateways/${config.provider}/edit`} variant="ghost" isIconOnly size="sm" title="ویرایش" aria-label={`ویرایش ${config.displayName}`}><SquarePen size={15} strokeWidth={1.5} /></BpLinkButton>
                             <AdminActiveToggle entity="paymentGateways" entityLabel="درگاه" id={config.id} name={config.displayName} isActive={config.isActive} confirmOff={deactivationNote(configs, config)} />
                             <BpButton type="button" variant="ghost" className="bp-btn-danger-icon" isIconOnly size="sm" isPending={deleting === config.provider} title="حذف" aria-label={`حذف ${config.displayName}`} onClick={() => setPendingDelete(config)}><Trash2 size={15} strokeWidth={1.5} /></BpButton>

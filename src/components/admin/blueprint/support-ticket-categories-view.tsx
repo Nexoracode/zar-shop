@@ -277,7 +277,7 @@ export function BlueprintSupportTicketCategoriesView({ categories, initialHidden
                         <AdminColumn id="name"><BpTh>نام</BpTh></AdminColumn>
                         <AdminColumn id="tickets"><BpTh>تیکت‌ها</BpTh></AdminColumn>
                         <AdminColumn id="status"><BpTh><span className="inline-flex items-center">وضعیت<AdminColumnFilter ariaLabel="فیلتر وضعیت" groups={[{ name: "status", label: "وضعیت", value: statusFilter, onChange: setStatusFilter, options: [{ value: "", label: "همه وضعیت‌ها" }, { value: "active", label: "فعال" }, { value: "inactive", label: "غیرفعال" }] }]} /></span></BpTh></AdminColumn>
-                        <BpTh className="text-center">عملیات</BpTh>
+                        <BpTh>عملیات</BpTh>
                       </tr>
                     </thead>
                     <tbody>
@@ -298,7 +298,7 @@ export function BlueprintSupportTicketCategoriesView({ categories, initialHidden
                           <AdminColumn id="tickets"><BpTd className="text-[var(--bp-text)]">{category._count.tickets.toLocaleString("fa-IR")}</BpTd></AdminColumn>
                           <AdminColumn id="status"><BpTd><AdminStatusBadge tone={category.isActive ? "success" : "neutral"}>{category.isActive ? "فعال" : "غیرفعال"}</AdminStatusBadge></BpTd></AdminColumn>
                           <BpTd>
-                            <div className="flex items-center justify-center gap-1">
+                            <div className="flex items-center justify-start gap-1">
                               <AdminActiveToggle entity="supportTicketCategories" entityLabel="موضوع" id={category.id} name={category.name} isActive={category.isActive} />
                               <BpButton isIconOnly size="sm" variant="ghost" title="ویرایش موضوع" aria-label={`ویرایش ${category.name}`} onClick={() => startEdit(category)}><SquarePen size={15} strokeWidth={1.5} /></BpButton>
                               <BpButton isIconOnly size="sm" variant="ghost" title={category._count.tickets > 0 ? "موضوع دارای تیکت قابل حذف نیست" : "حذف موضوع"} className="bp-btn-danger-icon" aria-label={`حذف ${category.name}`} disabled={category._count.tickets > 0} onClick={() => { setDeleteError(""); setDeleteTarget(category); }}><Trash2 size={15} strokeWidth={1.5} /></BpButton>

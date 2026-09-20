@@ -105,7 +105,7 @@ export function BlueprintReturnsView({ returns, pagination, initialHiddenColumns
                 <AdminColumn id="reason"><BpTh>دلیل مرجوعی</BpTh></AdminColumn>
                 <AdminColumn id="status"><BpTh><span className="inline-flex items-center">وضعیت<AdminColumnFilter path="/admin/returns" ariaLabel="فیلتر وضعیت" groups={[{ name: "status", label: "وضعیت", value: status, options: [{ value: "", label: "همه وضعیت‌ها" }, ...Object.values(ReturnStatus).map((item) => ({ value: item, label: returnStatusLabels[item] }))] }]} /></span></BpTh></AdminColumn>
                 <AdminColumn id="createdAt"><BpTh>تاریخ ثبت</BpTh></AdminColumn>
-                <BpTh className="text-center">جزئیات</BpTh>
+                <BpTh>جزئیات</BpTh>
               </tr>
             </thead>
             <tbody>
@@ -129,7 +129,7 @@ export function BlueprintReturnsView({ returns, pagination, initialHiddenColumns
                   <AdminColumn id="status"><BpTd><BpTag tone={returnStatusTones[row.status]} withDot>{returnStatusLabels[row.status]}</BpTag></BpTd></AdminColumn>
                   <AdminColumn id="createdAt"><BpTd className="bp-muted whitespace-nowrap">{row.createdAt}</BpTd></AdminColumn>
                   <BpTd>
-                    <div className="flex items-center justify-center">
+                    <div className="flex items-center justify-start">
                       <Link href={`/admin/returns/${row.id}`} aria-label={`بررسی درخواست مرجوعی سفارش ${row.orderNumber}`} title="بررسی درخواست" className="bp-btn bp-btn-ghost bp-btn-icon bp-btn-sm"><Eye size={15} strokeWidth={1.5} /></Link>
                     </div>
                   </BpTd>

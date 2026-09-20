@@ -160,7 +160,7 @@ export function BlueprintSmsProviderManager({ mode, initialConfigs, smsEnabled, 
                       <AdminColumn id="credential"><BpTh>شناسه</BpTh></AdminColumn>
                       <AdminColumn id="senderNumber"><BpTh>سرشماره</BpTh></AdminColumn>
                       <AdminColumn id="status"><BpTh><span className="inline-flex items-center">وضعیت<AdminColumnFilter ariaLabel="فیلتر وضعیت" groups={[{ name: "status", label: "وضعیت", value: statusFilter, onChange: setStatusFilter, options: [{ value: "", label: "همه وضعیت‌ها" }, { value: "active", label: "فعال" }, { value: "inactive", label: "غیرفعال" }, { value: "unsupported", label: "نیازمند قرارداد API" }] }]} /></span></BpTh></AdminColumn>
-                      <BpTh className="text-center">عملیات</BpTh>
+                      <BpTh>عملیات</BpTh>
                     </tr>
                   </thead>
                   <tbody>
@@ -178,8 +178,8 @@ export function BlueprintSmsProviderManager({ mode, initialConfigs, smsEnabled, 
                         <AdminColumn id="credential"><BpTd className="bp-muted font-mono" dir="ltr">{item.credentialMasked}</BpTd></AdminColumn>
                         <AdminColumn id="senderNumber"><BpTd className="bp-muted font-mono" dir="ltr">{item.senderNumber}</BpTd></AdminColumn>
                         <AdminColumn id="status"><BpTd><BpTag tone={statusTone(item)}>{statusLabel(item)}</BpTag></BpTd></AdminColumn>
-                        <BpTd className="text-center">
-                          <div className="flex items-center justify-center gap-1">
+                        <BpTd>
+                          <div className="flex items-center justify-start gap-1">
                             <BpLinkButton href={`/admin/settings/notifications/providers/${item.provider}/edit`} variant="ghost" isIconOnly size="sm" aria-label={`ویرایش ${item.displayName}`}><SquarePen size={15} strokeWidth={1.5} /></BpLinkButton>
                             <BpButton type="button" variant="ghost" isIconOnly size="sm" disabled={!item.sendSupported && !item.isActive} isPending={busy === `PATCH-${item.provider}`} title={item.isActive ? "غیرفعال‌سازی" : "فعال‌سازی"} aria-label={`${item.isActive ? "غیرفعال‌سازی" : "فعال‌سازی"} ${item.displayName}`} onClick={() => toggleActive(item)}>{item.isActive ? <ToggleRight size={15} strokeWidth={1.5} className="text-[var(--bp-success)]" /> : <ToggleLeft size={15} strokeWidth={1.5} className="bp-muted" />}</BpButton>
                             <BpButton type="button" variant="ghost" className="bp-btn-danger-icon" isIconOnly size="sm" isPending={busy === `DELETE-${item.provider}`} aria-label={`حذف ${item.displayName}`} onClick={() => setDeleting(item)}><Trash2 size={15} strokeWidth={1.5} /></BpButton>

@@ -108,7 +108,7 @@ export function BlueprintReviewsView({ reviews, pagination, initialHiddenColumns
                 <AdminColumn id="rating"><BpTh>امتیاز</BpTh></AdminColumn>
                 <AdminColumn id="engagement"><BpTh>تعامل</BpTh></AdminColumn>
                 <AdminColumn id="status"><BpTh><span className="inline-flex items-center">وضعیت<AdminColumnFilter path="/admin/reviews" ariaLabel="فیلتر وضعیت" groups={[{ name: "status", label: "وضعیت", value: status, options: [{ value: "", label: "همه وضعیت‌ها" }, ...Object.entries(reviewStatusLabels).map(([value, label]) => ({ value, label }))] }]} /></span></BpTh></AdminColumn>
-                <BpTh className="text-center">عملیات</BpTh>
+                <BpTh>عملیات</BpTh>
               </tr>
             </thead>
             <tbody>
@@ -141,7 +141,7 @@ export function BlueprintReviewsView({ reviews, pagination, initialHiddenColumns
                         <span className="bp-muted mt-1 block text-[10px]">{formatDateTime(review.createdAt)}</span>
                       </BpTd>
                     </AdminColumn>
-                    <BpTd className="text-center"><Link href={`/admin/reviews/${review.id}`} title="بررسی دیدگاه" aria-label="مشاهده و مدیریت دیدگاه" className="bp-btn bp-btn-ghost bp-btn-icon bp-btn-sm"><Eye size={15} strokeWidth={1.5} /></Link></BpTd>
+                    <BpTd><Link href={`/admin/reviews/${review.id}`} title="بررسی دیدگاه" aria-label="مشاهده و مدیریت دیدگاه" className="bp-btn bp-btn-ghost bp-btn-icon bp-btn-sm"><Eye size={15} strokeWidth={1.5} /></Link></BpTd>
                   </AdminBulkTr>
                 );
               })}

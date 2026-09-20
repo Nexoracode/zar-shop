@@ -128,7 +128,7 @@ export function BlueprintTicketsView({ tickets, categories, query, status, categ
                       <AdminColumn id="agent"><BpTh><span className="inline-flex items-center">پشتیبان<AdminColumnFilter path="/admin/tickets" ariaLabel="فیلتر صف" groups={[{ name: "mine", label: "صف", value: mine ? "true" : "", options: [{ value: "", label: "همهٔ تیکت‌ها" }, { value: "true", label: "فقط تیکت‌های من" }] }]} /></span></BpTh></AdminColumn>
                       <AdminColumn id="status"><BpTh><span className="inline-flex items-center">وضعیت<AdminColumnFilter path="/admin/tickets" ariaLabel="فیلتر وضعیت" groups={[{ name: "status", label: "وضعیت", value: status, options: [{ value: "", label: "همه وضعیت‌ها" }, ...Object.entries(ticketStatusLabels).map(([value, label]) => ({ value, label }))] }]} /></span></BpTh></AdminColumn>
                       <AdminColumn id="updatedAt"><BpTh>آخرین بروزرسانی</BpTh></AdminColumn>
-                      <BpTh className="text-center">عملیات</BpTh>
+                      <BpTh>عملیات</BpTh>
                     </tr>
                   </thead>
                   <tbody>
@@ -161,7 +161,7 @@ export function BlueprintTicketsView({ tickets, categories, query, status, categ
                         <AdminColumn id="status"><BpTd><AdminStatusBadge tone={ticketStatusTones[ticket.status]}>{ticketStatusLabels[ticket.status]}</AdminStatusBadge></BpTd></AdminColumn>
                         <AdminColumn id="updatedAt"><BpTd className="bp-muted whitespace-nowrap text-[12px]">{formatPersianDateTime(ticket.updatedAt)}</BpTd></AdminColumn>
                         <BpTd>
-                          <div className="flex items-center justify-center">
+                          <div className="flex items-center justify-start">
                             <Link href={`/admin/tickets/${ticket.id}`} aria-label={`مشاهده تیکت ${ticket.subject}`} title="مشاهده گفتگو" className="bp-btn bp-btn-ghost bp-btn-icon bp-btn-sm"><Eye size={15} strokeWidth={1.5} /></Link>
                           </div>
                         </BpTd>

@@ -82,7 +82,7 @@ export function BlueprintArticleCommentsView({ comments, pagination, initialHidd
               <AdminColumn id="author"><BpTh>نویسنده</BpTh></AdminColumn>
               <AdminColumn id="engagement"><BpTh>تعامل</BpTh></AdminColumn>
               <AdminColumn id="status"><BpTh><span className="inline-flex items-center">وضعیت<AdminColumnFilter path="/admin/article-comments" ariaLabel="فیلتر وضعیت" groups={[{ name: "status", label: "وضعیت", value: status, options: [{ value: "", label: "همه وضعیت‌ها" }, ...Object.entries(articleCommentStatusLabels).map(([value, label]) => ({ value, label }))] }]} /></span></BpTh></AdminColumn>
-              <BpTh className="text-center">عملیات</BpTh>
+              <BpTh>عملیات</BpTh>
             </tr>
           </thead>
           <tbody>
@@ -114,7 +114,7 @@ export function BlueprintArticleCommentsView({ comments, pagination, initialHidd
                     <span className="bp-muted mt-1 block text-[10px]">{formatDateTime(comment.createdAt)}</span>
                   </BpTd>
                   </AdminColumn>
-                  <BpTd className="text-center"><Link href={`/admin/article-comments/${comment.id}`} title="بررسی دیدگاه" aria-label="مشاهده و مدیریت دیدگاه" className="bp-btn bp-btn-ghost bp-btn-icon bp-btn-sm"><Eye size={15} strokeWidth={1.5} /></Link></BpTd>
+                  <BpTd><Link href={`/admin/article-comments/${comment.id}`} title="بررسی دیدگاه" aria-label="مشاهده و مدیریت دیدگاه" className="bp-btn bp-btn-ghost bp-btn-icon bp-btn-sm"><Eye size={15} strokeWidth={1.5} /></Link></BpTd>
                 </AdminBulkTr>
               );
             })}

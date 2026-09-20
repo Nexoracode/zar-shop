@@ -200,7 +200,7 @@ export function BlueprintShippingMethodsView({ methods, initialHiddenColumns }: 
                         <AdminColumn id="source"><BpTh><span className="inline-flex items-center">منبع نرخ<AdminColumnFilter ariaLabel="فیلتر منبع نرخ" groups={[{ name: "source", label: "منبع نرخ", value: sourceFilter, onChange: setSourceFilter, options: [{ value: "", label: "همه منابع نرخ" }, { value: "TABLE", label: "جدول نرخ فروشگاه" }, { value: "TAPIN", label: "نرخ لحظه‌ای تاپین" }] }]} /></span></BpTh></AdminColumn>
                         <AdminColumn id="estimatedDays"><BpTh>زمان تحویل</BpTh></AdminColumn>
                         <AdminColumn id="status"><BpTh><span className="inline-flex items-center">وضعیت<AdminColumnFilter ariaLabel="فیلتر وضعیت" groups={[{ name: "status", label: "وضعیت", value: statusFilter, onChange: setStatusFilter, options: [{ value: "", label: "همه وضعیت‌ها" }, { value: "active", label: "فعال" }, { value: "inactive", label: "غیرفعال" }] }]} /></span></BpTh></AdminColumn>
-                        <BpTh className="text-center">عملیات</BpTh>
+                        <BpTh>عملیات</BpTh>
                       </tr>
                     </thead>
                     <tbody>
@@ -223,7 +223,7 @@ export function BlueprintShippingMethodsView({ methods, initialHiddenColumns }: 
                           <AdminColumn id="estimatedDays"><BpTd>{method.estimatedDays.toLocaleString("fa-IR")} روز کاری</BpTd></AdminColumn>
                           <AdminColumn id="status"><BpTd><AdminStatusBadge tone={method.isActive ? "success" : "neutral"}>{method.isActive ? "فعال" : "غیرفعال"}</AdminStatusBadge></BpTd></AdminColumn>
                           <BpTd>
-                            <div className="flex items-center justify-center gap-1">
+                            <div className="flex items-center justify-start gap-1">
                               <AdminActiveToggle entity="shippingMethods" entityLabel="روش ارسال" id={method.id} name={method.title} isActive={method.isActive} />
                               <Link href={`/admin/shipping-methods/${method.id}/edit`} title="ویرایش روش ارسال" aria-label={`ویرایش ${method.title}`} className="bp-btn bp-btn-ghost bp-btn-icon bp-btn-sm"><SquarePen size={15} strokeWidth={1.5} /></Link>
                               <ShippingMethodDeleteButton id={method.id} title={method.title} orderCount={method.orderCount} />

@@ -199,7 +199,7 @@ export function BlueprintSmsCampaignList({ items, initialHiddenColumns }: { item
                       <AdminColumn id="failed"><BpTh>ناموفق</BpTh></AdminColumn>
                       <AdminColumn id="status"><BpTh><span className="inline-flex items-center">وضعیت<AdminColumnFilter ariaLabel="فیلتر وضعیت" groups={[{ name: "status", label: "وضعیت", value: statusFilter, onChange: setStatusFilter, options: [{ value: "", label: "همه وضعیت‌ها" }, ...statusOptions] }]} /></span></BpTh></AdminColumn>
                       <AdminColumn id="sentAt"><BpTh>زمان ارسال</BpTh></AdminColumn>
-                      <BpTh className="text-center">عملیات</BpTh>
+                      <BpTh>عملیات</BpTh>
                     </tr>
                   </thead>
                   <tbody>
@@ -212,7 +212,7 @@ export function BlueprintSmsCampaignList({ items, initialHiddenColumns }: { item
                         <AdminColumn id="failed"><BpTd className="bp-btn-danger-icon">{item.failedCount.toLocaleString("fa-IR")}</BpTd></AdminColumn>
                         <AdminColumn id="status"><BpTd><BpTag>{statusLabel(item.status)}</BpTag></BpTd></AdminColumn>
                         <AdminColumn id="sentAt"><BpTd className="bp-muted">{new Date(item.createdAt).toLocaleString("fa-IR")}</BpTd></AdminColumn>
-                        <BpTd className="text-center"><BpButton type="button" variant="ghost" className="bp-btn-danger-icon" isIconOnly size="sm" aria-label="حذف پیام از تاریخچه" onClick={() => { setDeleteError(""); setPendingDelete(item); }}><Trash2 size={15} strokeWidth={1.5} /></BpButton></BpTd>
+                        <BpTd><BpButton type="button" variant="ghost" className="bp-btn-danger-icon" isIconOnly size="sm" aria-label="حذف پیام از تاریخچه" onClick={() => { setDeleteError(""); setPendingDelete(item); }}><Trash2 size={15} strokeWidth={1.5} /></BpButton></BpTd>
                       </AdminBulkTr>
                     ))}
                     {!visible.length && <tr><BpTd colSpan={99} className="bp-muted py-8 text-center">چیزی پیدا نشد.</BpTd></tr>}

@@ -373,7 +373,7 @@ export function BlueprintSmsPatternList({ initialPatterns, initialHiddenColumns 
                     <AdminColumn id="category"><BpTh><span className="inline-flex items-center">دسته<AdminColumnFilter ariaLabel="فیلتر دسته" groups={[{ name: "category", label: "دسته", value: categoryFilter, onChange: setCategoryFilter, options: [{ value: "", label: "همه دسته‌ها" }, ...categoryOptions] }]} /></span></BpTh></AdminColumn>
                     <AdminColumn id="vars"><BpTh>متغیرها</BpTh></AdminColumn>
                     <AdminColumn id="status"><BpTh><span className="inline-flex items-center">وضعیت<AdminColumnFilter ariaLabel="فیلتر وضعیت" groups={[{ name: "status", label: "وضعیت", value: statusFilter, onChange: setStatusFilter, options: [{ value: "", label: "همه وضعیت‌ها" }, ...statusOptions] }]} /></span></BpTh></AdminColumn>
-                    <BpTh className="text-center">عملیات</BpTh>
+                    <BpTh>عملیات</BpTh>
                   </tr>
                 </thead>
                 <tbody>
@@ -384,8 +384,8 @@ export function BlueprintSmsPatternList({ initialPatterns, initialHiddenColumns 
                       <AdminColumn id="category"><BpTd className="bp-muted">{categoryLabel(item.category)}</BpTd></AdminColumn>
                       <AdminColumn id="vars"><BpTd className="bp-muted font-mono" dir="ltr">{item.vars.map((variable) => variable.var).join(", ") || "—"}</BpTd></AdminColumn>
                       <AdminColumn id="status"><BpTd><BpTag tone={statusTone(item.status)}>{statusLabel(item.status)}</BpTag></BpTd></AdminColumn>
-                      <BpTd className="text-center">
-                        <div className="flex items-center justify-center gap-1">
+                      <BpTd>
+                        <div className="flex items-center justify-start gap-1">
                           <BpButton type="button" variant="ghost" isIconOnly size="sm" aria-label={`ویرایش پترن ${item.code}`} onClick={() => router.push(`/admin/settings/notifications/patterns/${encodeURIComponent(item.code)}/edit`)}><SquarePen size={15} strokeWidth={1.5} /></BpButton>
                           <BpButton type="button" variant="ghost" className="bp-btn-danger-icon" isIconOnly size="sm" isPending={busy === `delete-${item.code}`} aria-label={`حذف پترن ${item.code}`} onClick={() => setDeleting(item)}><Trash2 size={15} strokeWidth={1.5} /></BpButton>
                         </div>

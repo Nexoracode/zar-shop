@@ -163,7 +163,7 @@ export function BlueprintPromotionsView({ initialItems, query, status, type, pag
                       <AdminColumn id="validity"><BpTh>بازهٔ اعتبار</BpTh></AdminColumn>
                       <AdminColumn id="usage"><BpTh>مصرف</BpTh></AdminColumn>
                       <AdminColumn id="status"><BpTh><span className="inline-flex items-center">وضعیت<AdminColumnFilter path="/admin/promotions" ariaLabel="فیلتر وضعیت" groups={[{ name: "status", label: "وضعیت", value: status ?? "", options: [{ value: "", label: "همه وضعیت‌ها" }, { value: "active", label: "فعال" }, { value: "inactive", label: "غیرفعال" }] }]} /></span></BpTh></AdminColumn>
-                      <BpTh className="text-center">عملیات</BpTh>
+                      <BpTh>عملیات</BpTh>
                     </tr>
                   </thead>
                   <tbody>
@@ -191,7 +191,7 @@ export function BlueprintPromotionsView({ initialItems, query, status, type, pag
                         </AdminColumn>
                         <AdminColumn id="status"><BpTd><AdminStatusBadge tone={item.isActive ? "success" : "neutral"}>{item.isActive ? "فعال" : "غیرفعال"}</AdminStatusBadge></BpTd></AdminColumn>
                         <BpTd>
-                          <div className="flex items-center justify-center gap-1">
+                          <div className="flex items-center justify-start gap-1">
                             <BpButton isIconOnly size="sm" variant="ghost" isPending={togglingId === item.id} title={item.isActive ? "غیرفعال‌کردن" : "فعال‌کردن"} aria-label={item.isActive ? `غیرفعال‌کردن ${item.title}` : `فعال‌کردن ${item.title}`} onClick={() => void toggle(item)}>{item.isActive ? <ToggleRight size={15} strokeWidth={1.5} className="text-[var(--bp-success)]" /> : <ToggleLeft size={15} strokeWidth={1.5} className="bp-muted" />}</BpButton>
                             <Link href={`/admin/promotions/${item.id}/edit`} aria-label={`ویرایش ${item.title}`} title="ویرایش" className="bp-btn bp-btn-ghost bp-btn-icon bp-btn-sm"><SquarePen size={15} strokeWidth={1.5} /></Link>
                             <BpButton isIconOnly size="sm" variant="ghost" className="bp-btn-danger-icon" title="حذف" aria-label={`حذف ${item.title}`} onClick={() => { setDeleteError(""); setDeleting(item); }}><Trash2 size={15} strokeWidth={1.5} /></BpButton>
