@@ -18,6 +18,7 @@ import { expirePendingOrders } from "@/modules/orders/expiration";
 import { CARD_TO_CARD_PROVIDER, cardToCardPagePath } from "@/modules/payments/card-to-card-shared";
 import { activeReturnStatuses, evaluateReturnEligibility } from "@/modules/orders/returns";
 import { optionEntries } from "@/modules/products/options";
+import { loadOptionColors } from "@/modules/products/option-colors";
 import { getGeneralStoreSettings } from "@/modules/settings/general-settings";
 import { getOrderSettings } from "@/modules/settings/order-settings";
 import { RESUME_CHECKOUT_PATH } from "@/modules/orders/resume-path";
@@ -93,6 +94,7 @@ export default async function OrderDetailPage({ params, searchParams }: { params
   for (const request of order.returns) {
     for (const line of request.items) returnedByItem.set(line.orderItemId, (returnedByItem.get(line.orderItemId) ?? 0) + line.quantity);
   }
+  const optionColors = await loadOptionColors(order.items.map((item) => item.selectedOptions));
   const returnableItems = order.items
     .map((item) => ({ id: item.id, name: item.name, returnable: item.quantity - (returnedByItem.get(item.id) ?? 0) }))
     .filter((item) => item.returnable > 0);
@@ -181,7 +183,7 @@ export default async function OrderDetailPage({ params, searchParams }: { params
           const productImage = <div className="relative grid size-24 place-items-center overflow-hidden rounded-lg bg-white sm:size-28">{media ? <Image src={media.url} alt={media.alt ?? item.name} fill sizes="112px" className="object-contain p-2" /> : <ImageIcon size={34} className="text-slate-300" />}</div>;
           return <div key={item.id} className="py-5 first:pt-5 last:pb-0"><div className="grid grid-cols-[6rem_minmax(0,1fr)] items-start gap-x-4 gap-y-5 sm:grid-cols-[7rem_minmax(0,1fr)]">
             {item.product ? <Link href={`/products/${item.product.slug}`} aria-label={`مشاهده ${item.name}`} className="rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brand-primary)]">{productImage}</Link> : productImage}
-            <div className="min-w-0"><h2 className="m-0 text-sm font-bold leading-7">{item.name}</h2><div className="mt-2 grid gap-1 text-[11px] text-[var(--muted)]">{optionEntries(item.selectedOptions).map(([name, optionValue]) => <span key={name}>{name}: <b className="text-[var(--foreground)]">{optionValue}</b></span>)}<span className="inline-flex items-center gap-1.5"><ShieldCheck size={14} />ضمانت اصالت و سلامت فیزیکی کالا</span><span className="inline-flex items-center gap-1.5"><FileCheck2 size={14} />تعداد: {item.quantity.toLocaleString("fa-IR")}</span></div><strong className="mt-3 block text-sm">{formatMoney(item.total.toString(), settings.currency)}</strong></div>
+            <div className="min-w-0"><h2 className="m-0 text-sm font-bold leading-7">{item.name}</h2><div className="mt-2 grid gap-1 text-[11px] text-[var(--muted)]">{optionEntries(item.selectedOptions).map(([name, optionValue]) => { const hex = optionColors[`${name}: ${optionValue}`]; return <span key={name} className="inline-flex items-center gap-1.5">{name}: <b className="text-[var(--foreground)]">{optionValue}</b>{hex && <i aria-hidden className="size-3 shrink-0 rounded-full border border-black/15" style={{ backgroundColor: hex }} />}</span>; })}<span className="inline-flex items-center gap-1.5"><ShieldCheck size={14} />ضمانت اصالت و سلامت فیزیکی کالا</span><span className="inline-flex items-center gap-1.5"><FileCheck2 size={14} />تعداد: {item.quantity.toLocaleString("fa-IR")}</span></div><strong className="mt-3 block text-sm">{formatMoney(item.total.toString(), settings.currency)}</strong></div>
             {order.status === "DELIVERED" && item.product ? <><strong className="pt-2 text-center text-xs text-[var(--foreground)]">امتیاز دهید</strong><OrderItemReviewAction productId={item.product.id} productName={item.name} /></> : null}
           </div></div>;
         })}</div>

@@ -62,7 +62,7 @@ function Field({ label, value, ltr = false }: { label: string; value: React.Reac
   );
 }
 
-export function BlueprintOrderDetail({ order, industry }: { order: OrderDetail; industry: "GOLD" | "GENERAL" }) {
+export function BlueprintOrderDetail({ order, industry, optionColors = {} }: { order: OrderDetail; industry: "GOLD" | "GENERAL"; /** The swatch colour of each colour choice, keyed «رنگ: مشکی». */ optionColors?: Record<string, string> }) {
   const customerName = [order.user.firstName, order.user.lastName].filter(Boolean).join(" ") || "کاربر بدون نام";
   const address = readShippingAddress(order.shippingAddress);
   const successfulPayment = order.payments.find((payment) => payment.status === "SUCCESS");
@@ -138,7 +138,7 @@ export function BlueprintOrderDetail({ order, industry }: { order: OrderDetail; 
                       {item.product ? <Link href={`/products/${item.product.slug}`} className="font-bold hover:text-[var(--bp-accent)]">{item.name}</Link> : <strong>{item.name}</strong>}
                       <div className="bp-muted mt-1.5 flex flex-wrap gap-x-4 gap-y-1 text-[11px]">
                         <span>کد: <b dir="ltr">{item.sku}</b></span>
-                        {optionEntries(item.selectedOptions).map(([name, value]) => <span key={name}>{name}: <b>{value}</b></span>)}
+                        {optionEntries(item.selectedOptions).map(([name, value]) => { const hex = optionColors[`${name}: ${value}`]; return <span key={name} className="inline-flex items-center gap-1.5">{name}: <b>{value}</b>{hex && <i aria-hidden className="size-3 shrink-0 rounded-full border border-black/15" style={{ backgroundColor: hex }} />}</span>; })}
                         <span>تعداد: <b>{item.quantity.toLocaleString("fa-IR")}</b></span>
                         {item.storeIndustry === "GOLD" && <><span>وزن: <b>{Number(item.weightGrams).toLocaleString("fa-IR", { maximumFractionDigits: 3 })} گرم</b></span><span>عیار: <b>{item.purity.toLocaleString("fa-IR")}</b></span></>}
                       </div>

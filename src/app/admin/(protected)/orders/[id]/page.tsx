@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { requirePermission } from "@/modules/auth/session";
 import { getStoreIndustry } from "@/modules/settings/store-settings";
 import { BlueprintOrderDetail } from "@/components/admin/blueprint/order-detail";
+import { loadOptionColors } from "@/modules/products/option-colors";
 
 // @next-codemod-ignore Cache Components adoption: this segment temporarily allows blocking.
 // Remove this opt-out after verifying the segment passes validation without it.
@@ -37,5 +38,6 @@ export default async function OrderDetailsPage({ params }: { params: PageParams 
   if (!order) notFound();
 
   const industry = await getStoreIndustry();
-  return <BlueprintOrderDetail order={order} industry={industry} />;
+  const optionColors = await loadOptionColors(order.items.map((item) => item.selectedOptions));
+  return <BlueprintOrderDetail order={order} industry={industry} optionColors={optionColors} />;
 }
