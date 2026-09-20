@@ -79,7 +79,9 @@ export function CheckoutForm({ settings, paymentMethods, currency, itemCount, it
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault(); setLoading(true); setError("");
-    if (!selectedAddress) { setError("برای ثبت سفارش ابتدا نشانی تحویل را اضافه و انتخاب کنید."); setLoading(false); return; }
+    // Without an address there is nothing to order to: the submit button is already disabled, so this is only a
+    // guard against a stray Enter key — and it stays silent rather than putting an error under the amount.
+    if (!selectedAddress) { setLoading(false); return; }
     const body = { addressId: selectedAddress.id, paymentProvider, couponCode, useWallet };
     const response = await fetch("/api/checkout", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
     const data = await response.json().catch(() => null);
