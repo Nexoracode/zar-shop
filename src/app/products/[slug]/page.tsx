@@ -74,13 +74,15 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   };
 }
 
-export default async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
+export default async function ProductPage({ params, searchParams }: { params: Promise<{ slug: string }>; searchParams: Promise<{ variant?: string }> }) {
   // Reads the viewer's session (favorite state, personalization) alongside uncached data
   // (live gold price, catalog settings) inside the Promise.all below, and that cookies() read
   // can't reliably establish dynamic rendering on its own during prerendering when it's racing
   // other reads concurrently. `connection()` marks this render as request-time explicitly.
   await connection();
   const { slug } = await params;
+  // A shared link can name the variant it was copied on (`?variant=<id>`), so it opens on that one.
+  const { variant: requestedVariantId } = await searchParams;
   const settings = await getGeneralStoreSettings();
   const [product, gold, catalogSettings, currentUser, seo] = await Promise.all([
     getProductForPage(slug, settings.industry),
@@ -119,7 +121,8 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   const rate = gold?.pricePerGram18 ?? null;
   // Every product is sold as variants, so the page opens on one: the first that can be bought
   // (else the first at all). Its price is what shows until the visitor picks something else.
-  const openingVariant = product.variants.find((variant) => variant.isActive && variant.stock > 0) ?? product.variants[0] ?? null;
+  const requestedVariant = product.variants.find((variant) => variant.id === requestedVariantId && variant.isActive) ?? null;
+  const openingVariant = requestedVariant ?? product.variants.find((variant) => variant.isActive && variant.stock > 0) ?? product.variants[0] ?? null;
   const discounted = openingVariant ? lineUnitPrice(product, openingVariant.selectionKey, rate) : null;
   const total = discounted?.finalPrice ?? null;
   // One entry per variant the gallery badge can be asked about (a product without options has just
@@ -164,6 +167,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   const purchasableVariants = product.variants.map((variant) => {
     const pricing = lineUnitPrice(product, variant.selectionKey, rate);
     return {
+      id: variant.id,
       selection: (variant.selection ?? {}) as Record<string, string>,
       price: pricing?.finalPrice ?? null,
       originalPrice: pricing?.originalPrice ?? null,
@@ -173,7 +177,8 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
     };
   });
 
-  const initialSelectedOptions = purchasableVariants.find((variant) => variant.available)?.selection ?? {};
+  const initialSelectedOptions = (requestedVariant ? purchasableVariants.find((variant) => variant.id === requestedVariant.id) : undefined)?.selection
+    ?? purchasableVariants.find((variant) => variant.available)?.selection ?? {};
   const relatedProducts = product.categoryId
     ? (await getStorefrontProductFeed({ sort: "POPULAR", page: 1, pageSize: 8, categoryId: product.categoryId, excludeProductId: product.id })).items
     : [];
@@ -249,7 +254,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
     } : {}),
   };
 
-  return <ProductPurchaseProvider productId={product.id} initialSelectedOptions={initialSelectedOptions} initialCartLines={initialCartLines}><ProductDetailTopBar productName={product.name} cartCount={cartCount} ticketHref={resolvedTicketHref} /><ProductActivityTracker productId={product.id} enabled={Boolean(currentUser && !currentUser.isGuest)} />{seo.enableProductSchema && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(productJsonLd) }} />}<main className="bg-white px-4 pb-16 pt-5 antialiased sm:px-6 lg:pb-24">
+  return <ProductPurchaseProvider productId={product.id} variantIds={purchasableVariants.map((variant) => ({ id: variant.id, selection: variant.selection }))} initialSelectedOptions={initialSelectedOptions} initialCartLines={initialCartLines}><ProductDetailTopBar productName={product.name} cartCount={cartCount} ticketHref={resolvedTicketHref} /><ProductActivityTracker productId={product.id} enabled={Boolean(currentUser && !currentUser.isGuest)} />{seo.enableProductSchema && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(productJsonLd) }} />}<main className="bg-white px-4 pb-16 pt-5 antialiased sm:px-6 lg:pb-24">
     <div className="mx-auto w-full max-w-[1440px]">
       <nav className="mb-6 flex flex-wrap items-center gap-2 text-xs text-slate-500" aria-label="مسیر محصول">
         <Link href="/" className="transition hover:text-slate-900">خانه</Link><span>/</span><Link href="/products" className="transition hover:text-slate-900">محصولات</Link>{product.category && <><span>/</span><Link href={`/products?category=${encodeURIComponent(product.category.slug)}`} className="transition hover:text-slate-900">{product.category.name}</Link></>}

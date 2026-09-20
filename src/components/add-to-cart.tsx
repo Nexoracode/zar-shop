@@ -35,7 +35,7 @@ const ProductPurchaseContext = createContext<PurchaseState | null>(null);
 /** Marks the cart events this page raises itself, which it must not treat as a change made elsewhere. */
 const PURCHASE_ORIGIN = "product-purchase";
 
-export function ProductPurchaseProvider({ children, productId, initialSelectedOptions = {}, initialCartLines = [] }: { children: ReactNode; /** Lets a line added in another tab be placed here when this page shows the same product. */ productId?: string; initialSelectedOptions?: Record<string, string>; /** Lines the visitor already had in the cart when the page rendered. */ initialCartLines?: Array<CartLine & { selection: Record<string, string> }> }) {
+export function ProductPurchaseProvider({ children, productId, variantIds = [], initialSelectedOptions = {}, initialCartLines = [] }: { children: ReactNode; /** Every variant of the product, so the address can name the one picked (`?variant=<id>`). */ variantIds?: Array<{ id: string; selection: Record<string, string> }>; /** Lets a line added in another tab be placed here when this page shows the same product. */ productId?: string; initialSelectedOptions?: Record<string, string>; /** Lines the visitor already had in the cart when the page rendered. */ initialCartLines?: Array<CartLine & { selection: Record<string, string> }> }) {
   const [selectedOptions, setSelectedOptions] = useState(initialSelectedOptions);
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
@@ -70,6 +70,18 @@ export function ProductPurchaseProvider({ children, productId, initialSelectedOp
       return key === null ? current : { ...current, [key]: { id: change.itemId, quantity: change.quantity } };
     });
   }), [productId]);
+
+  // The address follows the choice, the way a marketplace's does: copy it and the same variant opens.
+  // Nothing to name for a product with a single (default) variant.
+  useEffect(() => {
+    if (variantIds.length < 2) return;
+    const chosen = cartLineKey(selectedOptions);
+    const match = variantIds.find((variant) => cartLineKey(variant.selection) === chosen);
+    const url = new URL(window.location.href);
+    if (match) url.searchParams.set("variant", match.id);
+    else url.searchParams.delete("variant");
+    window.history.replaceState(window.history.state, "", url);
+  }, [selectedOptions, variantIds]);
 
   return <ProductPurchaseContext.Provider value={{ selectedOptions, setSelectedOptions, message, setMessage, loading, setLoading, cartLines, setCartLines }}>{children}</ProductPurchaseContext.Provider>;
 }
