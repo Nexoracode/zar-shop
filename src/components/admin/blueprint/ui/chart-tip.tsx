@@ -11,6 +11,8 @@ export type BpChartTipRow = {
   label: string;
   value?: string;
   color?: string;
+  /** The dot before the label. Left out, it takes `color`; a colour gives it that instead of `color`; `null` shows none — so a row's text can carry one colour and its dot another. */
+  dot?: string | null;
   swatches?: Array<{ label: string; color?: string }>;
   /** A muted line under the row — the date range of a discount, say. */
   note?: string;
@@ -37,7 +39,7 @@ export function BpTipCardBody({ content }: { content: BpChartTipContent }) {
       ) : (
         <div key={`${row.label}-${index}`}>
           <div className="bp-chart-tip-row" data-stack={row.swatches ? "true" : undefined}>
-            <span className="bp-chart-tip-key">{row.color && <i aria-hidden className="bp-chart-tip-dot" style={{ background: row.color }} />}{row.label}:</span>
+            <span className="bp-chart-tip-key">{(row.dot === undefined ? row.color : row.dot) && <i aria-hidden className="bp-chart-tip-dot" style={{ background: (row.dot === undefined ? row.color : row.dot) ?? undefined }} />}{row.label}:</span>
             {row.swatches ? (
               <span className="bp-chart-tip-swatches">
                 {row.swatches.map((swatch) => (

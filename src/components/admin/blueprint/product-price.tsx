@@ -2,6 +2,7 @@ import { combinationLabel } from "@/modules/products/discount-summary";
 import { isDefaultSelection } from "@/modules/products/variant-combinations";
 import type { ProductRow } from "@/components/admin/products-list-data";
 import type { BpChartTipRow } from "./ui/chart-tip";
+import { swatchOf } from "./product-stock";
 import { BpHoverCard } from "./ui/hover-card";
 
 /**
@@ -32,7 +33,8 @@ export function ProductPrice({ product }: { product: ProductRow }) {
     return {
       label: variant.isActive ? combinationLabel(variant.selection) : `${combinationLabel(variant.selection)} (غیرفعال)`,
       value: value === null ? "بدون قیمت" : `${format(value)} ${gold ? "گرم" : "ریال"}`,
-      color: variant.isActive ? "var(--bp-accent)" : "var(--bp-muted)",
+      // The dot is the combination's own colour, when it has one.
+      dot: swatchOf(product, variant.selection),
     };
   });
   return (

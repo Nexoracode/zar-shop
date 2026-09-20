@@ -6,6 +6,16 @@ import { BpHoverCard } from "./ui/hover-card";
 
 const faNumber = (value: number) => value.toLocaleString("fa-IR");
 
+/** The colour of a combination — the swatch of its colour value, if it has one. */
+export function swatchOf(product: ProductRow, selection: unknown) {
+  const chosen = (selection ?? {}) as Record<string, string>;
+  for (const optionType of product.optionTypes) {
+    const hex = optionType.values.find((item) => item.value.label === chosen[optionType.type.name])?.value.color?.hex;
+    if (hex) return hex;
+  }
+  return null;
+}
+
 /**
  * A product's stock, read from its variants — the product's own `stock` column is only a mirror of
  * their total. It is the total of the variants that can be sold; when the product has real
@@ -21,6 +31,8 @@ export function ProductStock({ product, lowStockThreshold, prefix }: { product: 
   const rows: BpChartTipRow[] = combinations.map((variant) => ({
     label: variant.isActive ? combinationLabel(variant.selection) : `${combinationLabel(variant.selection)} (غیرفعال)`,
     value: faNumber(variant.stock),
+    // The dot is the combination's own colour, when it has one; only the number takes the stock colour.
+    dot: swatchOf(product, variant.selection),
     color: !variant.isActive ? "var(--bp-muted)" : variant.stock <= 0 ? "var(--bp-danger)" : variant.stock <= lowStockThreshold ? "var(--bp-warning)" : "var(--bp-success)",
   }));
   return (
