@@ -757,6 +757,10 @@ select.bp-input { appearance: none; padding-inline-end: 28px; }
   border-bottom: 1px solid var(--bp-divider);
   white-space: nowrap;
 }
+/* `.bp-table th` above sets `text-align: right` and, being unlayered, outranks Tailwind's `text-center` utility —
+   so a centred column (the row actions) had a right-aligned header over centred icons. This gives the utility
+   its say again. */
+.bp-table th.text-center { text-align: center; }
 .bp-table td {
   padding: var(--bp-space-2);
   border-bottom: 1px solid var(--bp-row-line);
