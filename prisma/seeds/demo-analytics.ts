@@ -1,5 +1,8 @@
 import type { OrderStatus, VisitorDevice } from "../../generated/prisma/enums";
 import type { PrismaClient } from "../../generated/prisma/client";
+import { calculateDiscountedPrice } from "../../src/modules/products/discount";
+import { isDefaultSelection } from "../../src/modules/products/variant-combinations";
+import { seedDemoCatalog } from "./demo-catalog";
 import { assertDevelopmentDatabase, createClient } from "./seed-store";
 
 // Everything this script writes is tagged so a re-run replaces it without touching real data:
@@ -104,7 +107,13 @@ async function seedOrders(db: PrismaClient, now: Date, random: () => number) {
   await db.payment.deleteMany({ where: { order: { notes: DEMO_NOTE } } });
   await db.order.deleteMany({ where: { notes: DEMO_NOTE } });
 
-  const products = await db.product.findMany({ where: { status: "ACTIVE" }, select: { id: true, sku: true, name: true, storeIndustry: true, fixedPrice: true, purity: true, weightGrams: true }, take: 40 });
+  // What is sold is a variant, so a line is drawn from a product's sellable combinations and takes that
+  // combination's price and discount — the same figures a real order snapshots.
+  const products = await db.product.findMany({
+    where: { status: "ACTIVE", variants: { some: { isActive: true } } },
+    select: { id: true, sku: true, name: true, storeIndustry: true, purity: true, weightGrams: true, variants: { where: { isActive: true }, select: { selectionKey: true, selection: true, price: true, discountType: true, discountValue: true, discountStartsAt: true, discountEndsAt: true } } },
+    take: 40,
+  });
   if (!products.length) return 0;
   const provinceRows = await db.province.findMany({ select: { name: true } });
   const provinces: Array<[string, number]> = provinceRows.length >= 8
@@ -134,13 +143,20 @@ async function seedOrders(db: PrismaClient, now: Date, random: () => number) {
       const createdAt = new Date(Math.min(now.getTime() - 60_000, start.getTime() + (9 + random() * 13) * 3_600_000));
       const lines = Array.from({ length: 1 + Math.floor(random() * 3) }, () => {
         const product = products[Math.floor(random() * products.length)];
-        const unitPrice = Number(product.fixedPrice ?? 0) || (600_000 + Math.floor(random() * 90) * 100_000);
+        const variant = product.variants[Math.floor(random() * product.variants.length)];
+        const originalUnitPrice = Number(variant.price ?? 0) || (600_000 + Math.floor(random() * 90) * 100_000);
+        // The discount as it stood when the order was placed, not today's.
+        const { finalPrice, discountAmount } = calculateDiscountedPrice(originalUnitPrice, variant, createdAt);
         const quantity = 1 + Math.floor(random() * 2);
-        return { product, unitPrice, quantity, total: unitPrice * quantity };
+        return { product, variant, originalUnitPrice, discountAmount, unitPrice: finalPrice, quantity, total: finalPrice * quantity };
       });
-      const subtotal = lines.reduce((sum, line) => sum + line.total, 0);
-      const shipping = subtotal > 5_000_000 ? 0 : 450_000;
-      const total = subtotal + shipping;
+      // Same arithmetic as a real order: the subtotal is at full price, the product discount comes off
+      // it, and shipping is charged on what the customer actually pays for the goods.
+      const subtotal = lines.reduce((sum, line) => sum + line.originalUnitPrice * line.quantity, 0);
+      const productDiscount = lines.reduce((sum, line) => sum + line.discountAmount * line.quantity, 0);
+      const merchandise = subtotal - productDiscount;
+      const shipping = merchandise > 5_000_000 ? 0 : 450_000;
+      const total = merchandise + shipping;
       const order = await db.order.create({
         data: {
           orderNumber: `DEMO-${String(DEMO_DAYS - daysAgo).padStart(2, "0")}${index}-${customer.id.slice(-4).toUpperCase()}`,
@@ -150,13 +166,18 @@ async function seedOrders(db: PrismaClient, now: Date, random: () => number) {
           notes: DEMO_NOTE,
           goldPriceSnapshot: 0,
           subtotal,
+          productDiscount,
+          discount: productDiscount,
           shipping,
           total,
           shippingAddress: { fullName: `${customer.firstName} ${customer.lastName}`, phone: customer.phone, province: weighted(random, provinces), city: "—", address: "نشانی نمونه" },
           items: {
             create: lines.map((line) => ({
               productId: line.product.id, sku: line.product.sku, name: line.product.name, storeIndustry: line.product.storeIndustry, quantity: line.quantity,
-              weightGrams: line.product.weightGrams, purity: line.product.purity, makingFee: 0, profit: 0, tax: 0, originalUnitPrice: line.unitPrice, unitPrice: line.unitPrice, total: line.total,
+              // The default variant names no option, so its line carries no selection.
+              selectionKey: line.variant.selectionKey, ...(isDefaultSelection(line.variant.selection) ? {} : { selectedOptions: line.variant.selection as Record<string, string> }),
+              weightGrams: line.product.weightGrams, purity: line.product.purity, makingFee: 0, profit: 0, tax: 0,
+              originalUnitPrice: line.originalUnitPrice, discountAmount: line.discountAmount, unitPrice: line.unitPrice, total: line.total,
             })),
           },
         },
@@ -183,10 +204,12 @@ export async function seedDemoAnalytics() {
   const now = new Date();
   const random = mulberry32(20260919);
   try {
+    // The sample catalogue goes first, so the traffic and orders below include its products.
+    const catalog = await seedDemoCatalog(db, now, random);
     const slugs = (await db.product.findMany({ where: { status: "ACTIVE" }, select: { slug: true }, take: 25 })).map((product) => product.slug);
     const views = await seedTraffic(db, slugs, now, random);
     const orders = await seedOrders(db, now, random);
-    console.info(`[seed:demo] ${views} page views and ${orders} orders created.${orders === 0 ? " (No active products found — run db:seed:general first to get demo orders.)" : ""}`);
+    console.info(`[seed:demo] ${catalog.products} variant products (${catalog.variants} combinations, ${catalog.colors} colours, ${catalog.types} option types), ${views} page views and ${orders} orders created.${catalog.skipped ? ` (Sample catalogue skipped: ${catalog.skipped}.)` : ""}${orders === 0 ? " (No active products found — run db:seed:general first to get demo orders.)" : ""}`);
   } finally {
     await db.$disconnect();
   }
