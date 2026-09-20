@@ -38,11 +38,14 @@ export function AdminOrderTrackingField({ orderId, initialTrackingNumber }: { or
   }
 
   return (
-    <form onSubmit={submit} className="bp-frame grid gap-2 p-3 sm:max-w-sm">
-      <span className="bp-muted flex items-center gap-1.5 text-[12px] font-bold"><Truck size={14} />کد رهگیری مرسوله</span>
-      <div className="grid gap-2">
-        <BpInput aria-label="کد رهگیری مرسوله" value={value} maxLength={trackingNumberMaxLength} error={error || undefined} onChange={(event) => { setValue(event.target.value); setError(""); }} dir="ltr" placeholder="کد رهگیری را وارد کنید" disabled={saving} wrapperClassName="flex-1" />
-        <BpButton type="submit" variant="primary" fullWidth isPending={saving} disabled={!canSubmit}>ثبت</BpButton>
+    <form onSubmit={submit} className="bp-frame overflow-hidden">
+      <div className="flex items-center gap-2 border-b border-[var(--bp-divider)] px-4 py-3">
+        <span className="text-[var(--bp-muted)]"><Truck size={16} aria-hidden /></span>
+        <h2 className="m-0 text-[14px] font-bold">کد رهگیری مرسوله</h2>
+      </div>
+      <div className="grid gap-2 p-4">
+        <BpInput aria-label="کد رهگیری مرسوله" value={value} maxLength={trackingNumberMaxLength} error={error || undefined} hint="با ثبت کد، پیامک اطلاع‌رسانی برای مشتری ارسال می‌شود." onChange={(event) => { setValue(event.target.value); setError(""); }} dir="ltr" placeholder="کد رهگیری را وارد کنید" disabled={saving} />
+        <BpButton type="submit" variant="primary" fullWidth isPending={saving} disabled={!canSubmit}>{initial ? "به‌روزرسانی کد رهگیری" : "ثبت کد رهگیری"}</BpButton>
       </div>
     </form>
   );
