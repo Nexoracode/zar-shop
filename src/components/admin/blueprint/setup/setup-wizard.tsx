@@ -87,7 +87,6 @@ export function SetupWizard({ state, storeName, basics, contact, brand, origin, 
   const [loggingOut, setLoggingOut] = useState(false);
 
   const currentIndex = STEP_ORDER.indexOf(current);
-  const refresh = () => router.refresh();
   const goTo = (id: WizardStepId) => {
     setCurrent(id);
     // A step is a new screen: start it from the top rather than wherever the last one was scrolled to.

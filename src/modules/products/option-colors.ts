@@ -13,7 +13,7 @@ export async function loadOptionColors(selections: unknown[]): Promise<Record<st
     where: { colorId: { not: null }, label: { in: [...new Set(pairs.map(([, value]) => value))] }, type: { name: { in: [...new Set(pairs.map(([name]) => name))] } } },
     select: { label: true, type: { select: { name: true } }, color: { select: { hex: true } } },
   });
-  const hexByKey = new Map(values.flatMap((value) => (value.color ? [[`${value.type.name}: ${value.label}`, value.color.hex] as const] : [])));
+  const hexByKey = new Map<string, string>(values.flatMap((value): Array<[string, string]> => (value.color ? [[`${value.type.name}: ${value.label}`, value.color.hex]] : [])));
   return Object.fromEntries(pairs.flatMap(([name, value]) => {
     const key = `${name}: ${value}`;
     const hex = hexByKey.get(key);
