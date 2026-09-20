@@ -154,6 +154,26 @@ export function BlueprintOrderDetail({ order, industry, optionColors = {}, warni
             </div>
           </Panel>
 
+          <Panel className="p-4">
+            <h2 className="m-0 mb-3 text-[14px] font-bold">خلاصهٔ مبالغ</h2>
+            <dl className="grid gap-2.5 text-[13px]">
+              <div className="bp-muted flex justify-between gap-3"><dt>جمع کالاها</dt><dd>{formatMoney(order.subtotal.toString())}</dd></div>
+              {Number(order.productDiscount) > 0 && <div className="bp-muted flex justify-between gap-3"><dt>تخفیف محصولات</dt><dd>{formatMoney(order.productDiscount.toString())}</dd></div>}
+              {Number(order.promotionDiscount) > 0 && <div className="flex justify-between gap-3 text-[var(--bp-accent)]"><dt>تخفیف پروموشن</dt><dd>{formatMoney(order.promotionDiscount.toString())}</dd></div>}
+              {Number(order.shippingDiscount) > 0 && <div className="flex justify-between gap-3 text-[var(--bp-info)]"><dt>تخفیف ارسال</dt><dd>{formatMoney(order.shippingDiscount.toString())}</dd></div>}
+              <div className="bp-muted flex justify-between gap-3"><dt>هزینهٔ ارسال</dt><dd>{formatMoney(order.shipping.toString())}</dd></div>
+              <div className="bp-muted flex justify-between gap-3"><dt>مالیات</dt><dd>{formatMoney(order.tax.toString())}</dd></div>
+              <div className="flex justify-between gap-3 border-t border-[var(--bp-divider)] pt-2.5 font-bold"><dt>مبلغ نهایی</dt><dd>{formatMoney(order.total.toString())}</dd></div>
+              {order.promotionRedemptions.map((redemption) => (
+                <div key={redemption.id} className="border border-[var(--bp-divider)] px-3 py-2 text-[11px]">
+                  <dt className="font-bold">{redemption.promotion.title}</dt>
+                  <dd className="bp-muted mt-0.5">{redemption.promotion.code ? `کد: ${redemption.promotion.code}` : "اعمال خودکار"}</dd>
+                </div>
+              ))}
+              {industry === "GOLD" && <div className="flex justify-between gap-3 border border-[var(--bp-divider)] px-3 py-2 text-[11px] font-bold"><dt>نرخ طلای ثبت‌شده</dt><dd>{formatMoney(order.goldPriceSnapshot.toString())}</dd></div>}
+            </dl>
+          </Panel>
+
           <Panel>
             <PanelHead icon={<CreditCard size={17} />} title="سوابق پرداخت" />
             {order.payments.length ? (
@@ -211,26 +231,6 @@ export function BlueprintOrderDetail({ order, industry, optionColors = {}, warni
                 <Field label="نشانی" value={address.addressLine} />
               </dl>
             ) : <p className="bp-muted m-0 text-[13px]">آدرس ارسال ثبت نشده است.</p>}
-          </Panel>
-
-          <Panel className="p-4">
-            <h2 className="m-0 mb-3 text-[14px] font-bold">خلاصهٔ مبالغ</h2>
-            <dl className="grid gap-2.5 text-[13px]">
-              <div className="bp-muted flex justify-between gap-3"><dt>جمع کالاها</dt><dd>{formatMoney(order.subtotal.toString())}</dd></div>
-              {Number(order.productDiscount) > 0 && <div className="bp-muted flex justify-between gap-3"><dt>تخفیف محصولات</dt><dd>{formatMoney(order.productDiscount.toString())}</dd></div>}
-              {Number(order.promotionDiscount) > 0 && <div className="flex justify-between gap-3 text-[var(--bp-accent)]"><dt>تخفیف پروموشن</dt><dd>{formatMoney(order.promotionDiscount.toString())}</dd></div>}
-              {Number(order.shippingDiscount) > 0 && <div className="flex justify-between gap-3 text-[var(--bp-info)]"><dt>تخفیف ارسال</dt><dd>{formatMoney(order.shippingDiscount.toString())}</dd></div>}
-              <div className="bp-muted flex justify-between gap-3"><dt>هزینهٔ ارسال</dt><dd>{formatMoney(order.shipping.toString())}</dd></div>
-              <div className="bp-muted flex justify-between gap-3"><dt>مالیات</dt><dd>{formatMoney(order.tax.toString())}</dd></div>
-              <div className="flex justify-between gap-3 border-t border-[var(--bp-divider)] pt-2.5 font-bold"><dt>مبلغ نهایی</dt><dd>{formatMoney(order.total.toString())}</dd></div>
-              {order.promotionRedemptions.map((redemption) => (
-                <div key={redemption.id} className="border border-[var(--bp-divider)] px-3 py-2 text-[11px]">
-                  <dt className="font-bold">{redemption.promotion.title}</dt>
-                  <dd className="bp-muted mt-0.5">{redemption.promotion.code ? `کد: ${redemption.promotion.code}` : "اعمال خودکار"}</dd>
-                </div>
-              ))}
-              {industry === "GOLD" && <div className="flex justify-between gap-3 border border-[var(--bp-divider)] px-3 py-2 text-[11px] font-bold"><dt>نرخ طلای ثبت‌شده</dt><dd>{formatMoney(order.goldPriceSnapshot.toString())}</dd></div>}
-            </dl>
           </Panel>
 
           {order.invoice && (
