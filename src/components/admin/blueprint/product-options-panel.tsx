@@ -473,7 +473,7 @@ export function BlueprintProductOptions({ storeIndustry, colors, library, option
       title="ترکیب‌های این محصول"
       description={`${variants.length.toLocaleString("fa-IR")} از ${MAX_VARIANTS.toLocaleString("fa-IR")} ترکیب`}
       onClose={() => setCombinationsFullscreen(false)}
-      actions={<BpButton variant="primary" onClick={() => setCombinationsFullscreen(false)}>تمام</BpButton>}
+      actions={<BpButton variant="primary" onClick={() => setCombinationsFullscreen(false)}>ذخیره</BpButton>}
     >
       <div>
         <div className="mb-2">
