@@ -5,8 +5,9 @@ import { useRouter } from "next/navigation";
 import { toast } from "@heroui/react";
 import Link from "next/link";
 import { AlertTriangle, ExternalLink, MessageSquareText, Power, ShieldCheck, SquarePen, ToggleLeft, ToggleRight, Trash2 } from "lucide-react";
-import { AdminBulkCheckbox, AdminBulkEditor } from "@/components/admin-bulk-editor";
+import { AdminBulkCheckbox, AdminBulkEditor, AdminBulkTr } from "@/components/admin-bulk-editor";
 import { AdminColumn, AdminColumnSettingsButton, AdminColumnVisibility } from "@/components/admin-column-visibility";
+import { AdminColumnFilter } from "@/components/admin-column-filter";
 import { AdminGenericBulkEditButton } from "@/components/admin-generic-bulk-edit";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
@@ -24,6 +25,11 @@ function statusLabel(item: PublicSmsProviderConfig) {
   return item.isActive ? "فعال" : item.sendSupported ? "غیرفعال" : "نیازمند قرارداد API";
 }
 
+/** The three states a provider can be in, as the header filter keys them. */
+function providerStatusKey(item: PublicSmsProviderConfig) {
+  return item.isActive ? "active" : item.sendSupported ? "inactive" : "unsupported";
+}
+
 const SMS_PROVIDERS_TABLE_ID = "smsProviders";
 
 const smsProviderColumns = [
@@ -36,6 +42,8 @@ const smsProviderColumns = [
 export function BlueprintSmsProviderManager({ mode, initialConfigs, smsEnabled, storeName = "", onSaved, editingProvider, initialSenderNumber, initialHiddenColumns = [], formId, hideSubmit = false, stacked = false, onPendingChange }: { mode: "list" | "form"; /** Lets a button outside the form (the setup wizard's footer) submit it. */ formId?: string; /** Leaves the form's own submit button out; something else submits it through `formId`. */ hideSubmit?: boolean; /** One column instead of two, for a form set inside a narrow card. */ stacked?: boolean; /** Reports the save starting and ending, so an outside submit button can show its spinner. */ onPendingChange?: (pending: boolean) => void; initialConfigs: PublicSmsProviderConfig[]; smsEnabled?: boolean; /** The store name, so the Faraz form can warn when it is longer than a pattern variable allows. */ storeName?: string; onSaved?: () => void; /** Set when editing an already-configured provider: locks the provider picker and prefills the saved settings. */ editingProvider?: SmsProviderId; initialSenderNumber?: string; initialHiddenColumns?: string[] }) {
   const router = useRouter();
   const [configs, setConfigs] = useState(initialConfigs);
+  const [statusFilter, setStatusFilter] = useState("");
+  const visible = configs.filter((item) => !statusFilter || providerStatusKey(item) === statusFilter);
   // The server list is the source of truth once a mutation settles and `router.refresh()` brings
   // a fresh copy (e.g. after the bulk-edit modal's own delete); this render-time sync (not an
   // effect) picks it up without an extra render pass.
@@ -116,7 +124,7 @@ export function BlueprintSmsProviderManager({ mode, initialConfigs, smsEnabled, 
         {configs.length ? (
           <>
             <div className="md:hidden">
-              {configs.map((item) => (
+              {visible.map((item) => (
                 <article key={item.id} className="border-b border-[var(--bp-row-line)] p-4 last:border-b-0">
                   <div className="flex items-center gap-3">
                     <span className="grid size-9 shrink-0 place-items-center border border-[var(--bp-accent)] bg-[var(--bp-accent-100)] text-[var(--bp-accent)]"><MessageSquareText size={17} /></span>
@@ -139,7 +147,7 @@ export function BlueprintSmsProviderManager({ mode, initialConfigs, smsEnabled, 
               <AdminBulkEditor
                 entity="smsProviders"
                 entityLabel="ارائه‌دهنده"
-                ids={configs.map((item) => item.id)}
+                ids={visible.map((item) => item.id)}
                 actions={[]}
                 beforeSelectAll={<AdminColumnSettingsButton />}
                 extraAction={<AdminGenericBulkEditButton entity="smsProviders" entityLabel="ارائه‌دهنده" changeTypes={[{ value: "delete", label: "حذف ارائه‌دهندگان انتخاب‌شده", confirmation: { title: "حذف گروهی ارائه‌دهندگان پیامک", description: "اعتبارنامه‌های رمزنگاری‌شده و تنظیمات اتصال ارائه‌دهندگان انتخاب‌شده حذف خواهند شد.", confirmLabel: "حذف ارائه‌دهندگان" } }]} />}
@@ -151,13 +159,13 @@ export function BlueprintSmsProviderManager({ mode, initialConfigs, smsEnabled, 
                       <AdminColumn id="provider"><BpTh>ارائه‌دهنده</BpTh></AdminColumn>
                       <AdminColumn id="credential"><BpTh>شناسه</BpTh></AdminColumn>
                       <AdminColumn id="senderNumber"><BpTh>سرشماره</BpTh></AdminColumn>
-                      <AdminColumn id="status"><BpTh>وضعیت</BpTh></AdminColumn>
+                      <AdminColumn id="status"><BpTh><span className="inline-flex items-center">وضعیت<AdminColumnFilter ariaLabel="فیلتر وضعیت" groups={[{ name: "status", label: "وضعیت", value: statusFilter, onChange: setStatusFilter, options: [{ value: "", label: "همه وضعیت‌ها" }, { value: "active", label: "فعال" }, { value: "inactive", label: "غیرفعال" }, { value: "unsupported", label: "نیازمند قرارداد API" }] }]} /></span></BpTh></AdminColumn>
                       <BpTh className="text-center">عملیات</BpTh>
                     </tr>
                   </thead>
                   <tbody>
-                    {configs.map((item) => (
-                      <tr key={item.id}>
+                    {visible.map((item) => (
+                      <AdminBulkTr key={item.id} id={item.id}>
                         <BpTd className="w-10 text-center"><AdminBulkCheckbox id={item.id} label={`انتخاب ارائه‌دهنده ${item.displayName}`} /></BpTd>
                         <AdminColumn id="provider">
                           <BpTd className="font-bold">
@@ -177,8 +185,9 @@ export function BlueprintSmsProviderManager({ mode, initialConfigs, smsEnabled, 
                             <BpButton type="button" variant="ghost" className="bp-btn-danger-icon" isIconOnly size="sm" isPending={busy === `DELETE-${item.provider}`} aria-label={`حذف ${item.displayName}`} onClick={() => setDeleting(item)}><Trash2 size={15} strokeWidth={1.5} /></BpButton>
                           </div>
                         </BpTd>
-                      </tr>
+                      </AdminBulkTr>
                     ))}
+                    {!visible.length && <tr><BpTd colSpan={99} className="bp-muted py-8 text-center">چیزی پیدا نشد.</BpTd></tr>}
                   </tbody>
                 </BpTable>
               </AdminBulkEditor>

@@ -2,10 +2,14 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Clock3, Coins, Gauge, Settings2 } from "lucide-react";
 import { AdminEmptyState, AdminPageHeader } from "@/components/admin-ui";
+import { AdminColumn, AdminColumnSettingsButton, AdminColumnVisibility } from "@/components/admin-column-visibility";
+import { AdminColumnFilter } from "@/components/admin-column-filter";
+import { AdminReadOnlyTableToolbar } from "@/components/admin-table-refresh";
 import { BpKicker } from "@/components/admin/blueprint/ui/card";
 import { BpLineChart } from "@/components/admin/blueprint/ui/line-chart";
 import { BpTable, BpTd, BpTh } from "@/components/admin/blueprint/ui/table";
 import { BpTag, type BpTagTone } from "@/components/admin/blueprint/ui/tag";
+import { readHiddenColumns } from "@/lib/admin-column-visibility-server";
 import { db } from "@/lib/db";
 import { formatDateTime, formatMoney } from "@/lib/format";
 import { requirePermission } from "@/modules/auth/session";
@@ -30,14 +34,30 @@ function resolveCacheState(fetchedAt: Date | null, cacheSeconds: number, fallbac
   return { tone: "danger", label: "منقضی‌شده" };
 }
 
-export default async function AdminGoldPricePage() {
+const GOLD_PRICES_TABLE_ID = "goldPrices";
+
+const goldPriceColumns = [
+  { id: "price", label: "نرخ" },
+  { id: "source", label: "منبع" },
+  { id: "fetchedAt", label: "زمان دریافت" },
+];
+
+type SearchParams = Promise<{ source?: string }>;
+
+export default async function AdminGoldPricePage({ searchParams }: { searchParams: SearchParams }) {
   await requirePermission("catalog:manage");
   if ((await getStoreIndustry()) !== "GOLD") notFound();
 
-  const [history, settings] = await Promise.all([
+  const params = await searchParams;
+  const [history, settings, initialHiddenColumns] = await Promise.all([
     db.goldPrice.findMany({ orderBy: { fetchedAt: "desc" }, take: 48 }),
     getCatalogSettings(),
+    readHiddenColumns(GOLD_PRICES_TABLE_ID),
   ]);
+  // The chart always plots every record; only the table below is narrowed by the source filter.
+  const sources = [...new Set(history.map((row) => row.source))];
+  const source = sources.includes(params.source ?? "") ? (params.source as string) : "";
+  const rows = source ? history.filter((row) => row.source === source) : history;
   const latest = history[0] ?? null;
   const cacheState = resolveCacheState(latest?.fetchedAt ?? null, settings.goldPriceCacheSeconds, settings.goldPriceFallbackMinutes);
   const chartData = [...history].reverse().map((row) => ({ label: shortStamp(row.fetchedAt), value: Number(row.pricePerGram18) }));
@@ -117,26 +137,29 @@ export default async function AdminGoldPricePage() {
           <span className="bp-muted text-[11px]">{history.length.toLocaleString("fa-IR")} رکورد</span>
         </div>
         {history.length ? (
+          <AdminColumnVisibility tableId={GOLD_PRICES_TABLE_ID} columns={goldPriceColumns} initialHidden={initialHiddenColumns}>
+          <AdminReadOnlyTableToolbar label="تاریخچهٔ فقط‌خواندنی نرخ" description="نرخ‌های دریافت‌شده برای حفظ سابقه قابل ویرایش نیستند." trailing={<AdminColumnSettingsButton />} />
           <BpTable ariaLabel="تاریخچه نرخ طلا" minWidth={520}>
             <thead>
               <tr>
                 <BpTh className="w-12">ردیف</BpTh>
-                <BpTh>نرخ</BpTh>
-                <BpTh>منبع</BpTh>
-                <BpTh>زمان دریافت</BpTh>
+                <AdminColumn id="price"><BpTh>نرخ</BpTh></AdminColumn>
+                <AdminColumn id="source"><BpTh><span className="inline-flex items-center">منبع<AdminColumnFilter path="/admin/gold" ariaLabel="فیلتر منبع نرخ" groups={[{ name: "source", label: "منبع", value: source, options: [{ value: "", label: "همه منابع" }, ...sources.map((item) => ({ value: item, label: item }))] }]} /></span></BpTh></AdminColumn>
+                <AdminColumn id="fetchedAt"><BpTh>زمان دریافت</BpTh></AdminColumn>
               </tr>
             </thead>
             <tbody>
-              {history.map((row, index) => (
+              {rows.map((row, index) => (
                 <tr key={row.id}>
                   <BpTd className="bp-muted font-bold">{(index + 1).toLocaleString("fa-IR")}</BpTd>
-                  <BpTd className="whitespace-nowrap text-[13px] font-bold">{formatMoney(row.pricePerGram18.toString())}</BpTd>
-                  <BpTd><BpTag tone="neutral"><span dir="ltr">{row.source}</span></BpTag></BpTd>
-                  <BpTd className="bp-muted whitespace-nowrap text-[12px]">{formatDateTime(row.fetchedAt)}</BpTd>
+                  <AdminColumn id="price"><BpTd className="whitespace-nowrap text-[13px] font-bold">{formatMoney(row.pricePerGram18.toString())}</BpTd></AdminColumn>
+                  <AdminColumn id="source"><BpTd><BpTag tone="neutral"><span dir="ltr">{row.source}</span></BpTag></BpTd></AdminColumn>
+                  <AdminColumn id="fetchedAt"><BpTd className="bp-muted whitespace-nowrap text-[12px]">{formatDateTime(row.fetchedAt)}</BpTd></AdminColumn>
                 </tr>
               ))}
             </tbody>
           </BpTable>
+          </AdminColumnVisibility>
         ) : (
           <AdminEmptyState title="رکوردی ثبت نشده است" description="هنوز هیچ نرخ طلایی در فروشگاه ذخیره نشده است." />
         )}

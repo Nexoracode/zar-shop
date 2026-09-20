@@ -6,6 +6,7 @@ import { toast } from "@heroui/react";
 import { FileText, RefreshCw, SquarePen, Trash2 } from "lucide-react";
 import { AdminEmptyState, AdminPanel } from "@/components/admin-ui";
 import { AdminColumn, AdminColumnSettingsButton, AdminColumnVisibility } from "@/components/admin-column-visibility";
+import { AdminColumnFilter } from "@/components/admin-column-filter";
 import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
 import { smsPatternCategories, type SmsPattern } from "@/modules/communications/sms-pattern-schemas";
 import { smsPatternFieldLimits } from "@/modules/communications/limits";
@@ -294,6 +295,11 @@ const smsPatternColumns = [
 export function BlueprintSmsPatternList({ initialPatterns, initialHiddenColumns }: { initialPatterns: SmsPattern[]; initialHiddenColumns: string[] }) {
   const router = useRouter();
   const [patterns, setPatterns] = useState(initialPatterns);
+  const [statusFilter, setStatusFilter] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("");
+  const statusOptions = [...new Set(patterns.map((item) => item.status))].filter((value): value is string => value !== null).map((value) => ({ value, label: statusLabel(value) }));
+  const categoryOptions = smsPatternCategories.filter((category) => patterns.some((item) => item.category === category.value)).map((category) => ({ value: String(category.value), label: category.label }));
+  const visible = patterns.filter((item) => (!statusFilter || item.status === statusFilter) && (!categoryFilter || String(item.category) === categoryFilter));
   const [busy, setBusy] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<SmsPattern | null>(null);
 
@@ -340,7 +346,7 @@ export function BlueprintSmsPatternList({ initialPatterns, initialHiddenColumns 
         {patterns.length ? (
           <>
             <div className="md:hidden">
-              {patterns.map((item) => (
+              {visible.map((item) => (
                 <article key={item.code} className="border-b border-[var(--bp-row-line)] p-4 last:border-b-0">
                   <div className="flex items-start gap-3">
                     <span className="grid size-9 shrink-0 place-items-center border border-[var(--bp-accent)] bg-[var(--bp-accent-100)] text-[var(--bp-accent)]"><FileText size={17} /></span>
@@ -364,14 +370,14 @@ export function BlueprintSmsPatternList({ initialPatterns, initialHiddenColumns 
                   <tr>
                     <AdminColumn id="text"><BpTh>متن پترن</BpTh></AdminColumn>
                     <AdminColumn id="code"><BpTh>کد</BpTh></AdminColumn>
-                    <AdminColumn id="category"><BpTh>دسته</BpTh></AdminColumn>
+                    <AdminColumn id="category"><BpTh><span className="inline-flex items-center">دسته<AdminColumnFilter ariaLabel="فیلتر دسته" groups={[{ name: "category", label: "دسته", value: categoryFilter, onChange: setCategoryFilter, options: [{ value: "", label: "همه دسته‌ها" }, ...categoryOptions] }]} /></span></BpTh></AdminColumn>
                     <AdminColumn id="vars"><BpTh>متغیرها</BpTh></AdminColumn>
-                    <AdminColumn id="status"><BpTh>وضعیت</BpTh></AdminColumn>
+                    <AdminColumn id="status"><BpTh><span className="inline-flex items-center">وضعیت<AdminColumnFilter ariaLabel="فیلتر وضعیت" groups={[{ name: "status", label: "وضعیت", value: statusFilter, onChange: setStatusFilter, options: [{ value: "", label: "همه وضعیت‌ها" }, ...statusOptions] }]} /></span></BpTh></AdminColumn>
                     <BpTh className="text-center">عملیات</BpTh>
                   </tr>
                 </thead>
                 <tbody>
-                  {patterns.map((item) => (
+                  {visible.map((item) => (
                     <tr key={item.code}>
                       <AdminColumn id="text"><BpTd className="max-w-72 truncate font-bold">{item.text}</BpTd></AdminColumn>
                       <AdminColumn id="code"><BpTd className="bp-muted font-mono" dir="ltr">{item.code}</BpTd></AdminColumn>
@@ -386,6 +392,7 @@ export function BlueprintSmsPatternList({ initialPatterns, initialHiddenColumns 
                       </BpTd>
                     </tr>
                   ))}
+                  {!visible.length && <tr><BpTd colSpan={99} className="bp-muted py-8 text-center">چیزی پیدا نشد.</BpTd></tr>}
                 </tbody>
               </BpTable>
             </div>

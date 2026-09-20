@@ -1,11 +1,14 @@
 import { notFound } from "next/navigation";
 import { Wallet } from "lucide-react";
 import { AdminEmptyState, AdminPageHeader } from "@/components/admin-ui";
+import { AdminColumn, AdminColumnSettingsButton, AdminColumnVisibility } from "@/components/admin-column-visibility";
+import { AdminColumnFilter } from "@/components/admin-column-filter";
 import { AdminReadOnlyTableToolbar } from "@/components/admin-table-refresh";
 import { BpKicker } from "@/components/admin/blueprint/ui/card";
 import { BpTable, BpTd, BpTh } from "@/components/admin/blueprint/ui/table";
 import { BpTag } from "@/components/admin/blueprint/ui/tag";
 import { WalletAdjustForm } from "@/components/admin/blueprint/wallet-adjust-form";
+import { readHiddenColumns } from "@/lib/admin-column-visibility-server";
 import { db } from "@/lib/db";
 import { formatDateTime, formatMoney } from "@/lib/format";
 import { requirePermission } from "@/modules/auth/session";
@@ -28,17 +31,29 @@ const typeLabels: Record<WalletTransactionType, string> = {
   TOPUP: "افزایش اعتبار از درگاه",
 };
 
-type Context = { params: Promise<{ id: string }> };
+type Context = { params: Promise<{ id: string }>; searchParams: Promise<{ type?: string }> };
 
-export default async function AdminUserWalletPage({ params }: Context) {
+const WALLET_TABLE_ID = "walletTransactions";
+
+const walletColumns = [
+  { id: "type", label: "نوع" },
+  { id: "amount", label: "مبلغ" },
+  { id: "balanceAfter", label: "موجودی پس از تراکنش" },
+  { id: "description", label: "توضیح" },
+  { id: "createdAt", label: "زمان" },
+];
+
+export default async function AdminUserWalletPage({ params, searchParams }: Context) {
   await requirePermission("users:manage");
   const { id } = await params;
+  const query = await searchParams;
+  const type = Object.keys(typeLabels).includes(query.type ?? "") ? (query.type as WalletTransactionType) : undefined;
   const user = await db.user.findUnique({ where: { id }, select: { id: true, firstName: true, lastName: true, phone: true, isGuest: true } });
   if (!user || user.isGuest) notFound();
 
-  const [wallet, generalSettings] = await Promise.all([ensureWallet(db, user.id), getGeneralStoreSettings()]);
+  const [wallet, generalSettings, initialHiddenColumns] = await Promise.all([ensureWallet(db, user.id), getGeneralStoreSettings(), readHiddenColumns(WALLET_TABLE_ID)]);
   const currency = generalSettings.currency;
-  const transactions = await db.walletTransaction.findMany({ where: { walletId: wallet.id }, orderBy: { createdAt: "desc" }, take: 100 });
+  const transactions = await db.walletTransaction.findMany({ where: { walletId: wallet.id, ...(type ? { type } : {}) }, orderBy: { createdAt: "desc" }, take: 100 });
   const fullName = `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim() || user.phone || "کاربر بدون نام";
 
   return (
@@ -66,17 +81,18 @@ export default async function AdminUserWalletPage({ params }: Context) {
         </div>
 
         <section className="bp-frame relative overflow-hidden">
-          <AdminReadOnlyTableToolbar label="تاریخچهٔ کیف پول" description="این فهرست فقط برای مشاهده است؛ برای تغییر موجودی از فرم تعدیل استفاده کنید." />
+          <AdminColumnVisibility tableId={WALLET_TABLE_ID} columns={walletColumns} initialHidden={initialHiddenColumns}>
+          <AdminReadOnlyTableToolbar label="تاریخچهٔ کیف پول" description="این فهرست فقط برای مشاهده است؛ برای تغییر موجودی از فرم تعدیل استفاده کنید." trailing={<AdminColumnSettingsButton />} />
           {transactions.length ? (
             <BpTable ariaLabel="تراکنش‌های کیف پول" minWidth={640}>
               <thead>
                 <tr>
                   <BpTh className="w-10">#</BpTh>
-                  <BpTh>نوع</BpTh>
-                  <BpTh>مبلغ</BpTh>
-                  <BpTh>موجودی پس از تراکنش</BpTh>
-                  <BpTh>توضیح</BpTh>
-                  <BpTh>زمان</BpTh>
+                  <AdminColumn id="type"><BpTh><span className="inline-flex items-center">نوع<AdminColumnFilter path={`/admin/users/${user.id}/wallet`} ariaLabel="فیلتر نوع تراکنش" groups={[{ name: "type", label: "نوع تراکنش", value: type ?? "", options: [{ value: "", label: "همه انواع" }, ...Object.entries(typeLabels).map(([value, label]) => ({ value, label }))] }]} /></span></BpTh></AdminColumn>
+                  <AdminColumn id="amount"><BpTh>مبلغ</BpTh></AdminColumn>
+                  <AdminColumn id="balanceAfter"><BpTh>موجودی پس از تراکنش</BpTh></AdminColumn>
+                  <AdminColumn id="description"><BpTh>توضیح</BpTh></AdminColumn>
+                  <AdminColumn id="createdAt"><BpTh>زمان</BpTh></AdminColumn>
                 </tr>
               </thead>
               <tbody>
@@ -85,21 +101,24 @@ export default async function AdminUserWalletPage({ params }: Context) {
                   return (
                     <tr key={transaction.id}>
                       <BpTd className="bp-muted">{(index + 1).toLocaleString("fa-IR")}</BpTd>
-                      <BpTd><BpTag tone={isCredit ? "success" : "warning"}>{typeLabels[transaction.type]}</BpTag></BpTd>
-                      <BpTd className={`whitespace-nowrap font-bold ${isCredit ? "text-[var(--bp-success)]" : "text-[var(--bp-danger)]"}`}>
-                        {isCredit ? "+" : "−"} {formatMoney(Math.abs(Number(transaction.amount)), currency)}
-                      </BpTd>
-                      <BpTd className="whitespace-nowrap">{formatMoney(transaction.balanceAfter.toString(), currency)}</BpTd>
-                      <BpTd className="bp-muted max-w-[220px] truncate" title={transaction.description}>{transaction.description}</BpTd>
-                      <BpTd className="bp-muted whitespace-nowrap text-[12px]">{formatDateTime(transaction.createdAt)}</BpTd>
+                      <AdminColumn id="type"><BpTd><BpTag tone={isCredit ? "success" : "warning"}>{typeLabels[transaction.type]}</BpTag></BpTd></AdminColumn>
+                      <AdminColumn id="amount">
+                        <BpTd className={`whitespace-nowrap font-bold ${isCredit ? "text-[var(--bp-success)]" : "text-[var(--bp-danger)]"}`}>
+                          {isCredit ? "+" : "−"} {formatMoney(Math.abs(Number(transaction.amount)), currency)}
+                        </BpTd>
+                      </AdminColumn>
+                      <AdminColumn id="balanceAfter"><BpTd className="whitespace-nowrap">{formatMoney(transaction.balanceAfter.toString(), currency)}</BpTd></AdminColumn>
+                      <AdminColumn id="description"><BpTd className="bp-muted max-w-[220px] truncate" title={transaction.description}>{transaction.description}</BpTd></AdminColumn>
+                      <AdminColumn id="createdAt"><BpTd className="bp-muted whitespace-nowrap text-[12px]">{formatDateTime(transaction.createdAt)}</BpTd></AdminColumn>
                     </tr>
                   );
                 })}
               </tbody>
             </BpTable>
           ) : (
-            <AdminEmptyState title="تراکنشی ثبت نشده است" description="هنوز هیچ اعتباری به کیف پول این کاربر افزوده یا از آن کسر نشده است." />
+            <AdminEmptyState title="تراکنشی پیدا نشد" description={type ? "فیلتر را تغییر دهید و دوباره جستجو کنید." : "هنوز هیچ اعتباری به کیف پول این کاربر افزوده یا از آن کسر نشده است."} />
           )}
+          </AdminColumnVisibility>
         </section>
       </div>
     </>

@@ -5,8 +5,9 @@ import { useRouter } from "next/navigation";
 import { toast } from "@heroui/react";
 import { Check, CheckCircle2, Copy, CreditCard, ExternalLink, Plus, Save, ShieldCheck, SquarePen, Trash2, TriangleAlert } from "lucide-react";
 import { AdminActiveToggle } from "@/components/admin-active-toggle";
-import { AdminBulkCheckbox, AdminBulkEditor } from "@/components/admin-bulk-editor";
+import { AdminBulkCheckbox, AdminBulkEditor, AdminBulkTr } from "@/components/admin-bulk-editor";
 import { AdminColumn, AdminColumnSettingsButton, AdminColumnVisibility } from "@/components/admin-column-visibility";
+import { AdminColumnFilter } from "@/components/admin-column-filter";
 import { AdminGenericBulkEditButton } from "@/components/admin-generic-bulk-edit";
 import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
 import { AdminEmptyState, AdminPanel } from "@/components/admin-ui";
@@ -46,6 +47,15 @@ function deactivationNote(configs: PublicGatewayConfig[], config: PublicGatewayC
 export function BlueprintPaymentGatewayManager({ mode, initialConfigs, appUrl, onSaved, editingProvider, initialHiddenColumns = [], formId, hideSubmit = false, stacked = false, onPendingChange }: { mode: "list" | "form"; initialConfigs: PublicGatewayConfig[]; appUrl?: string; onSaved?: () => void; /** Lets a button outside the form (the setup wizard's footer) submit it. */ formId?: string; /** Leaves the form's own submit button out; something else submits it through `formId`. */ hideSubmit?: boolean; /** One column instead of two, for a form set inside a narrow card. */ stacked?: boolean; /** Reports the save starting and ending, so an outside submit button can show its spinner. */ onPendingChange?: (pending: boolean) => void; /** Set on the edit page: locks the provider, leaves the credential optional and prefills the mode. */ editingProvider?: GatewayProviderId; initialHiddenColumns?: string[] }) {
   const router = useRouter();
   const [configs, setConfigs] = useState(initialConfigs);
+  const [statusFilter, setStatusFilter] = useState("");
+  const [environmentFilter, setEnvironmentFilter] = useState("");
+  const visible = configs.filter((config) => {
+    if (statusFilter === "active" && !config.isActive) return false;
+    if (statusFilter === "inactive" && config.isActive) return false;
+    if (environmentFilter === "sandbox" && !config.isSandbox) return false;
+    if (environmentFilter === "live" && config.isSandbox) return false;
+    return true;
+  });
   // The server list is the source of truth once a mutation settles and `router.refresh()` brings
   // a fresh copy (e.g. after the bulk-edit modal's own delete); this render-time sync (not an
   // effect) picks it up without an extra render pass.
@@ -135,7 +145,7 @@ export function BlueprintPaymentGatewayManager({ mode, initialConfigs, appUrl, o
         {configs.length ? (
           <>
             <div className="md:hidden">
-              {configs.map((config) => (
+              {visible.map((config) => (
                 <article key={config.id} className="border-b border-[var(--bp-row-line)] p-4 last:border-b-0">
                   <div className="flex items-center gap-3">
                     <span className="grid size-9 shrink-0 place-items-center border border-[var(--bp-success)] bg-[var(--bp-success-bg)] text-[var(--bp-success)]"><CheckCircle2 size={17} /></span>
@@ -161,7 +171,7 @@ export function BlueprintPaymentGatewayManager({ mode, initialConfigs, appUrl, o
               <AdminBulkEditor
                 entity="paymentGateways"
                 entityLabel="درگاه"
-                ids={configs.map((config) => config.id)}
+                ids={visible.map((config) => config.id)}
                 actions={[]}
                 beforeSelectAll={<AdminColumnSettingsButton />}
                 extraAction={<AdminGenericBulkEditButton entity="paymentGateways" entityLabel="درگاه" changeTypes={[{ value: "active", label: "وضعیت", options: [{ value: "active:on", label: "فعال‌کردن" }, { value: "active:off", label: "غیرفعال‌کردن", confirmation: { tone: "warning", title: "غیرفعال‌سازی گروهی درگاه‌ها", description: "مشتری‌ها دیگر نمی‌توانند با درگاه‌های انتخاب‌شده پرداخت کنند. اگر درگاه فعال دیگری نداشته باشید، پرداخت آنلاین فروشگاه متوقف می‌شود.", confirmLabel: "غیرفعال‌سازی" } }] }, { value: "delete", label: "حذف درگاه‌های انتخاب‌شده", confirmation: { title: "حذف گروهی درگاه‌ها", description: "اطلاعات اتصال رمزنگاری‌شده درگاه‌های انتخاب‌شده حذف می‌شود و پرداخت از طریق آن‌ها دیگر ممکن نخواهد بود.", confirmLabel: "حذف درگاه‌ها" } }]} />}
@@ -172,14 +182,14 @@ export function BlueprintPaymentGatewayManager({ mode, initialConfigs, appUrl, o
                       <BpTh className="w-10 text-center"><span className="sr-only">انتخاب</span></BpTh>
                       <AdminColumn id="gateway"><BpTh>درگاه</BpTh></AdminColumn>
                       <AdminColumn id="credential"><BpTh>شناسه اتصال</BpTh></AdminColumn>
-                      <AdminColumn id="environment"><BpTh>محیط</BpTh></AdminColumn>
-                      <AdminColumn id="status"><BpTh>وضعیت</BpTh></AdminColumn>
+                      <AdminColumn id="environment"><BpTh><span className="inline-flex items-center">محیط<AdminColumnFilter ariaLabel="فیلتر محیط" groups={[{ name: "environment", label: "محیط", value: environmentFilter, onChange: setEnvironmentFilter, options: [{ value: "", label: "همه محیط‌ها" }, { value: "live", label: "زنده" }, { value: "sandbox", label: "آزمایشی" }] }]} /></span></BpTh></AdminColumn>
+                      <AdminColumn id="status"><BpTh><span className="inline-flex items-center">وضعیت<AdminColumnFilter ariaLabel="فیلتر وضعیت" groups={[{ name: "status", label: "وضعیت", value: statusFilter, onChange: setStatusFilter, options: [{ value: "", label: "همه وضعیت‌ها" }, { value: "active", label: "فعال" }, { value: "inactive", label: "غیرفعال" }] }]} /></span></BpTh></AdminColumn>
                       <BpTh className="text-center">عملیات</BpTh>
                     </tr>
                   </thead>
                   <tbody>
-                    {configs.map((config) => (
-                      <tr key={config.id}>
+                    {visible.map((config) => (
+                      <AdminBulkTr key={config.id} id={config.id}>
                         <BpTd className="w-10 text-center"><AdminBulkCheckbox id={config.id} label={`انتخاب درگاه ${config.displayName}`} /></BpTd>
                         <AdminColumn id="gateway">
                           <BpTd className="font-bold">
@@ -199,8 +209,9 @@ export function BlueprintPaymentGatewayManager({ mode, initialConfigs, appUrl, o
                             <BpButton type="button" variant="ghost" className="bp-btn-danger-icon" isIconOnly size="sm" isPending={deleting === config.provider} title="حذف" aria-label={`حذف ${config.displayName}`} onClick={() => setPendingDelete(config)}><Trash2 size={15} strokeWidth={1.5} /></BpButton>
                           </div>
                         </BpTd>
-                      </tr>
+                      </AdminBulkTr>
                     ))}
+                    {!visible.length && <tr><BpTd colSpan={99} className="bp-muted py-8 text-center">چیزی پیدا نشد.</BpTd></tr>}
                   </tbody>
                 </BpTable>
               </AdminBulkEditor>

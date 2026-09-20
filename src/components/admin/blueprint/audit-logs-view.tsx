@@ -4,6 +4,7 @@ import { Eye, History } from "lucide-react";
 import { AdminStatusBadge } from "@/components/admin-ui";
 import { AdminReadOnlyTableToolbar } from "@/components/admin-table-refresh";
 import { AdminColumn, AdminColumnSettingsButton, AdminColumnVisibility } from "@/components/admin-column-visibility";
+import { AdminColumnFilter } from "@/components/admin-column-filter";
 import { AdminPagination } from "@/components/admin-pagination";
 import type { resolveAdminPagination } from "@/lib/admin-pagination";
 import { formatDateTime } from "@/lib/format";
@@ -29,7 +30,7 @@ const auditLogColumns = [
   { id: "time", label: "زمان" },
 ];
 
-export function BlueprintAuditLogsView({ logs, pagination, initialHiddenColumns }: { logs: AuditRow[]; pagination: ReturnType<typeof resolveAdminPagination>; initialHiddenColumns: string[] }) {
+export function BlueprintAuditLogsView({ logs, pagination, initialHiddenColumns, action, actionOptions }: { logs: AuditRow[]; pagination: ReturnType<typeof resolveAdminPagination>; initialHiddenColumns: string[]; /** The activity type currently filtered on, or "". */ action: string; actionOptions: { value: string; label: string }[] }) {
   return (
     <AdminColumnVisibility tableId={AUDIT_LOGS_TABLE_ID} columns={auditLogColumns} initialHidden={initialHiddenColumns}>
       <AdminReadOnlyTableToolbar label="تاریخچه غیرقابل‌ویرایش" description="برای حفظ زنجیره نظارتی، رویدادها فقط قابل مشاهده و بروزرسانی هستند." trailing={<AdminColumnSettingsButton />} />
@@ -66,7 +67,7 @@ export function BlueprintAuditLogsView({ logs, pagination, initialHiddenColumns 
             <tr>
               <BpTh className="w-10">#</BpTh>
               <AdminColumn id="actor"><BpTh>کاربر پنل</BpTh></AdminColumn>
-              <AdminColumn id="action"><BpTh>فعالیت</BpTh></AdminColumn>
+              <AdminColumn id="action"><BpTh><span className="inline-flex items-center">فعالیت<AdminColumnFilter path="/admin/audit-logs" ariaLabel="فیلتر نوع فعالیت" groups={[{ name: "action", label: "نوع فعالیت", value: action, options: [{ value: "", label: "همه فعالیت‌ها" }, ...actionOptions] }]} /></span></BpTh></AdminColumn>
               <AdminColumn id="kind"><BpTh>نوع</BpTh></AdminColumn>
               <AdminColumn id="entity"><BpTh>موجودیت</BpTh></AdminColumn>
               <AdminColumn id="time"><BpTh>زمان</BpTh></AdminColumn>

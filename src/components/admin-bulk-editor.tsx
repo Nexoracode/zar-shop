@@ -23,7 +23,7 @@ const BulkContext = createContext<BulkContextValue | null>(null);
 
 export type AdminBulkAction = HeroSelectOption & { confirmation?: { title: string; description: string; confirmLabel?: string } };
 
-export type AdminBulkEntity = "products" | "categories" | "brands" | "orders" | "users" | "reviews" | "colors" | "optionTypes" | "promotions" | "contactMessages" | "paymentGateways" | "smsProviders" | "smsCampaigns" | "supportTicketCategories" | "tickets" | "shippingMethods" | "packagingBoxes" | "returns" | "articles" | "articleCategories";
+export type AdminBulkEntity = "products" | "categories" | "brands" | "orders" | "users" | "reviews" | "colors" | "optionTypes" | "promotions" | "contactMessages" | "paymentGateways" | "smsProviders" | "smsCampaigns" | "supportTicketCategories" | "tickets" | "shippingMethods" | "packagingBoxes" | "returns" | "articles" | "articleCategories" | "articleComments";
 
 /**
  * Exported so a caller-owned action rendered beside the toolbar (via `extraAction`) can read the

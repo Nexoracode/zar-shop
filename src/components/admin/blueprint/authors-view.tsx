@@ -9,6 +9,7 @@ import { AdminEmptyState, AdminPageHeader } from "@/components/admin-ui";
 import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
 import { MediaPickerDialog } from "@/components/media-picker-dialog";
 import { AdminColumn, AdminColumnSettingsButton, AdminColumnVisibility } from "@/components/admin-column-visibility";
+import { AdminColumnFilter } from "@/components/admin-column-filter";
 import type { MediaChoice } from "@/components/media-library";
 import { requestErrorMessage, requestJson } from "@/lib/api-request";
 import { normalizeSearchText } from "@/lib/text-search";
@@ -47,6 +48,7 @@ export function BlueprintAuthorsView({ authors, initialHiddenColumns }: { author
   const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
   const [query, setQuery] = useState("");
+  const [articlesFilter, setArticlesFilter] = useState("");
   const [editing, setEditing] = useState<AuthorRow | null>(null);
   const [name, setName] = useState(emptyForm.name);
   const [bio, setBio] = useState(emptyForm.bio);
@@ -128,7 +130,12 @@ export function BlueprintAuthorsView({ authors, initialHiddenColumns }: { author
   }
 
   const normalizedQuery = normalizeSearchText(query);
-  const visible = authors.filter((author) => !normalizedQuery || normalizeSearchText(author.name).includes(normalizedQuery));
+  const visible = authors.filter((author) => {
+    if (normalizedQuery && !normalizeSearchText(author.name).includes(normalizedQuery)) return false;
+    if (articlesFilter === "with" && author._count.articles === 0) return false;
+    if (articlesFilter === "without" && author._count.articles > 0) return false;
+    return true;
+  });
 
   return (
     <div className="flex flex-col gap-2">
@@ -169,7 +176,7 @@ export function BlueprintAuthorsView({ authors, initialHiddenColumns }: { author
                     <tr>
                       <AdminColumn id="avatar"><BpTh className="w-10">آواتار</BpTh></AdminColumn>
                       <AdminColumn id="name"><BpTh>نام</BpTh></AdminColumn>
-                      <AdminColumn id="articles"><BpTh>مقالات</BpTh></AdminColumn>
+                      <AdminColumn id="articles"><BpTh><span className="inline-flex items-center">مقالات<AdminColumnFilter ariaLabel="فیلتر مقالات" groups={[{ name: "articles", label: "مقالات", value: articlesFilter, onChange: setArticlesFilter, options: [{ value: "", label: "همه نویسندگان" }, { value: "with", label: "دارای مقاله" }, { value: "without", label: "بدون مقاله" }] }]} /></span></BpTh></AdminColumn>
                       <BpTh className="text-center">عملیات</BpTh>
                     </tr>
                   </thead>

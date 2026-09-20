@@ -1,7 +1,10 @@
 import type { Prisma } from "@generated/prisma/client";
 import { AdminEmptyState, AdminPageHeader } from "@/components/admin-ui";
 import { AdminListFilters } from "@/components/admin-list-filters";
+import { AdminColumn, AdminColumnSettingsButton, AdminColumnVisibility } from "@/components/admin-column-visibility";
+import { AdminColumnFilter } from "@/components/admin-column-filter";
 import { AdminPagination } from "@/components/admin-pagination";
+import { readHiddenColumns } from "@/lib/admin-column-visibility-server";
 import { AdminReadOnlyTableToolbar } from "@/components/admin-table-refresh";
 import { BpTable, BpTd, BpTh } from "@/components/admin/blueprint/ui/table";
 import { BpTag } from "@/components/admin/blueprint/ui/tag";
@@ -23,6 +26,18 @@ const scopes = ["all", "broadcast", "targeted"] as const;
 type Scope = (typeof scopes)[number];
 const scopeLabels: Record<Scope, string> = { all: "همه", broadcast: "فراگیر", targeted: "اختصاصی" };
 
+const NOTIFICATIONS_TABLE_ID = "notifications";
+
+const notificationColumns = [
+  { id: "title", label: "عنوان" },
+  { id: "body", label: "متن" },
+  { id: "type", label: "نوع" },
+  { id: "scope", label: "مخاطب" },
+  { id: "reads", label: "خوانده‌شده" },
+  { id: "expiresAt", label: "تاریخ انقضا" },
+  { id: "createdAt", label: "تاریخ ایجاد" },
+];
+
 function typeLabel(type: string) {
   return notificationTypeLabels[type as NotificationType] ?? type;
 }
@@ -41,7 +56,7 @@ export default async function AdminNotificationsPage({ searchParams }: { searchP
     ...(query ? { OR: [{ title: { contains: query } }, { body: { contains: query } }] } : {}),
   };
 
-  const filteredTotal = await db.notification.count({ where });
+  const [filteredTotal, initialHiddenColumns] = await Promise.all([db.notification.count({ where }), readHiddenColumns(NOTIFICATIONS_TABLE_ID)]);
   const pagination = resolveAdminPagination(filteredTotal, requestedPage, pageSize);
   const notifications = await db.notification.findMany({
     where,
@@ -66,20 +81,7 @@ export default async function AdminNotificationsPage({ searchParams }: { searchP
           query={query}
           queryLabel="جستجوی اعلان"
           queryPlaceholder="عنوان یا متن اعلان"
-          filters={[
-            {
-              name: "type",
-              label: "نوع اعلان",
-              value: type ?? "",
-              options: [{ value: "", label: "همه انواع" }, ...NOTIFICATION_TYPES.map((item) => ({ value: item, label: notificationTypeLabels[item] }))],
-            },
-            {
-              name: "scope",
-              label: "مخاطب اعلان",
-              value: scope === "all" ? "" : scope,
-              options: scopes.map((item) => ({ value: item === "all" ? "" : item, label: scopeLabels[item] })),
-            },
-          ]}
+          filters={[]}
         />
       </section>
 
@@ -90,10 +92,11 @@ export default async function AdminNotificationsPage({ searchParams }: { searchP
             description={filtered ? "فیلترها را تغییر دهید و دوباره جستجو کنید." : "هنوز اعلانی برای کاربران ارسال نشده است."}
           />
         ) : (
-          <>
+          <AdminColumnVisibility tableId={NOTIFICATIONS_TABLE_ID} columns={notificationColumns} initialHidden={initialHiddenColumns}>
             <AdminReadOnlyTableToolbar
               label="فهرست فقط‌خواندنی اعلان‌ها"
               description="این فهرست فقط برای مشاهده است و اعلان‌ها قابل ویرایش یا حذف نیستند."
+              trailing={<AdminColumnSettingsButton />}
             />
 
             <div className="md:hidden">
@@ -122,29 +125,31 @@ export default async function AdminNotificationsPage({ searchParams }: { searchP
               <BpTable ariaLabel="فهرست اعلان‌های کاربران" minWidth={1000}>
                 <thead>
                   <tr>
-                    <BpTh>عنوان</BpTh>
-                    <BpTh>متن</BpTh>
-                    <BpTh>نوع</BpTh>
-                    <BpTh>مخاطب</BpTh>
-                    <BpTh>خوانده‌شده</BpTh>
-                    <BpTh>تاریخ انقضا</BpTh>
-                    <BpTh>تاریخ ایجاد</BpTh>
+                    <AdminColumn id="title"><BpTh>عنوان</BpTh></AdminColumn>
+                    <AdminColumn id="body"><BpTh>متن</BpTh></AdminColumn>
+                    <AdminColumn id="type"><BpTh><span className="inline-flex items-center">نوع<AdminColumnFilter path="/admin/notifications" ariaLabel="فیلتر نوع اعلان" groups={[{ name: "type", label: "نوع اعلان", value: type ?? "", options: [{ value: "", label: "همه انواع" }, ...NOTIFICATION_TYPES.map((item) => ({ value: item, label: notificationTypeLabels[item] }))] }]} /></span></BpTh></AdminColumn>
+                    <AdminColumn id="scope"><BpTh><span className="inline-flex items-center">مخاطب<AdminColumnFilter path="/admin/notifications" ariaLabel="فیلتر مخاطب اعلان" groups={[{ name: "scope", label: "مخاطب اعلان", value: scope === "all" ? "" : scope, options: scopes.map((item) => ({ value: item === "all" ? "" : item, label: scopeLabels[item] })) }]} /></span></BpTh></AdminColumn>
+                    <AdminColumn id="reads"><BpTh>خوانده‌شده</BpTh></AdminColumn>
+                    <AdminColumn id="expiresAt"><BpTh>تاریخ انقضا</BpTh></AdminColumn>
+                    <AdminColumn id="createdAt"><BpTh>تاریخ ایجاد</BpTh></AdminColumn>
                   </tr>
                 </thead>
                 <tbody>
                   {notifications.map((item) => (
                     <tr key={item.id}>
-                      <BpTd className="max-w-[220px]"><span className="block truncate font-bold" title={item.title}>{item.title}</span></BpTd>
-                      <BpTd className="max-w-xs"><span className="bp-muted block truncate text-[12px]" title={item.body}>{item.body}</span></BpTd>
-                      <BpTd><BpTag tone="neutral">{typeLabel(item.type)}</BpTag></BpTd>
-                      <BpTd>
-                        {item.userId === null
-                          ? <BpTag tone="info" withDot>فراگیر</BpTag>
-                          : <BpTag tone="neutral" withDot>اختصاصی</BpTag>}
-                      </BpTd>
-                      <BpTd className="text-[13px]">{item._count.reads.toLocaleString("fa-IR")}</BpTd>
-                      <BpTd className="bp-muted whitespace-nowrap text-[12px]">{item.expiresAt ? formatDate(item.expiresAt) : "بدون انقضا"}</BpTd>
-                      <BpTd className="bp-muted whitespace-nowrap text-[12px]">{formatDateTime(item.createdAt)}</BpTd>
+                      <AdminColumn id="title"><BpTd className="max-w-[220px]"><span className="block truncate font-bold" title={item.title}>{item.title}</span></BpTd></AdminColumn>
+                      <AdminColumn id="body"><BpTd className="max-w-xs"><span className="bp-muted block truncate text-[12px]" title={item.body}>{item.body}</span></BpTd></AdminColumn>
+                      <AdminColumn id="type"><BpTd><BpTag tone="neutral">{typeLabel(item.type)}</BpTag></BpTd></AdminColumn>
+                      <AdminColumn id="scope">
+                        <BpTd>
+                          {item.userId === null
+                            ? <BpTag tone="info" withDot>فراگیر</BpTag>
+                            : <BpTag tone="neutral" withDot>اختصاصی</BpTag>}
+                        </BpTd>
+                      </AdminColumn>
+                      <AdminColumn id="reads"><BpTd className="text-[13px]">{item._count.reads.toLocaleString("fa-IR")}</BpTd></AdminColumn>
+                      <AdminColumn id="expiresAt"><BpTd className="bp-muted whitespace-nowrap text-[12px]">{item.expiresAt ? formatDate(item.expiresAt) : "بدون انقضا"}</BpTd></AdminColumn>
+                      <AdminColumn id="createdAt"><BpTd className="bp-muted whitespace-nowrap text-[12px]">{formatDateTime(item.createdAt)}</BpTd></AdminColumn>
                     </tr>
                   ))}
                 </tbody>
@@ -152,7 +157,7 @@ export default async function AdminNotificationsPage({ searchParams }: { searchP
             </div>
 
             <AdminPagination page={pagination.page} pageSize={pagination.pageSize} totalItems={pagination.totalItems} totalPages={pagination.totalPages} />
-          </>
+          </AdminColumnVisibility>
         )}
       </section>
     </div>

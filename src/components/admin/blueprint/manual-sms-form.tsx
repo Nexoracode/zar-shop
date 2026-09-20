@@ -5,8 +5,9 @@ import { useRouter } from "next/navigation";
 import { toast } from "@heroui/react";
 import { Send, Trash2, UserRound, Users } from "lucide-react";
 import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
-import { AdminBulkCheckbox, AdminBulkEditor } from "@/components/admin-bulk-editor";
+import { AdminBulkCheckbox, AdminBulkEditor, AdminBulkTr } from "@/components/admin-bulk-editor";
 import { AdminColumn, AdminColumnSettingsButton, AdminColumnVisibility } from "@/components/admin-column-visibility";
+import { AdminColumnFilter } from "@/components/admin-column-filter";
 import { AdminGenericBulkEditButton } from "@/components/admin-generic-bulk-edit";
 import { AdminEmptyState, AdminPanel } from "@/components/admin-ui";
 import { normalizeNumericValue } from "@/lib/persian-numbers";
@@ -121,6 +122,9 @@ const smsCampaignColumns = [
 
 export function BlueprintSmsCampaignList({ items, initialHiddenColumns }: { items: SmsCampaignListItem[]; initialHiddenColumns: string[] }) {
   const [campaigns, setCampaigns] = useState(items);
+  const [statusFilter, setStatusFilter] = useState("");
+  const statusOptions = [...new Set(campaigns.map((item) => item.status))].map((value) => ({ value, label: statusLabel(value) }));
+  const visible = campaigns.filter((item) => !statusFilter || item.status === statusFilter);
   // The server list is the source of truth once a mutation settles and `router.refresh()` brings
   // a fresh copy (e.g. after the bulk-edit modal's own delete); this render-time sync (not an
   // effect) picks it up without an extra render pass.
@@ -157,7 +161,7 @@ export function BlueprintSmsCampaignList({ items, initialHiddenColumns }: { item
         {campaigns.length ? (
           <>
             <div className="md:hidden">
-              {campaigns.map((item) => (
+              {visible.map((item) => (
                 <article key={item.id} className="border-b border-[var(--bp-row-line)] p-4 last:border-b-0">
                   <div className="flex items-start justify-between gap-3">
                     <p className="m-0 line-clamp-2 text-[13px] font-bold leading-6">{item.message}</p>
@@ -180,7 +184,7 @@ export function BlueprintSmsCampaignList({ items, initialHiddenColumns }: { item
               <AdminBulkEditor
                 entity="smsCampaigns"
                 entityLabel="رکورد پیامک"
-                ids={campaigns.map((item) => item.id)}
+                ids={visible.map((item) => item.id)}
                 actions={[]}
                 beforeSelectAll={<AdminColumnSettingsButton />}
                 extraAction={<AdminGenericBulkEditButton entity="smsCampaigns" entityLabel="رکورد پیامک" changeTypes={[{ value: "delete", label: "حذف رکوردهای انتخاب‌شده", confirmation: { title: "حذف گروهی تاریخچه پیامک", description: "این عملیات فقط رکوردهای پنل را حذف می‌کند؛ پیامک‌های ارسال‌شده قابل لغو یا بازگردانی نیستند.", confirmLabel: "حذف از تاریخچه" } }]} />}
@@ -193,14 +197,14 @@ export function BlueprintSmsCampaignList({ items, initialHiddenColumns }: { item
                       <AdminColumn id="recipients"><BpTh>مخاطبان</BpTh></AdminColumn>
                       <AdminColumn id="successful"><BpTh>موفق</BpTh></AdminColumn>
                       <AdminColumn id="failed"><BpTh>ناموفق</BpTh></AdminColumn>
-                      <AdminColumn id="status"><BpTh>وضعیت</BpTh></AdminColumn>
+                      <AdminColumn id="status"><BpTh><span className="inline-flex items-center">وضعیت<AdminColumnFilter ariaLabel="فیلتر وضعیت" groups={[{ name: "status", label: "وضعیت", value: statusFilter, onChange: setStatusFilter, options: [{ value: "", label: "همه وضعیت‌ها" }, ...statusOptions] }]} /></span></BpTh></AdminColumn>
                       <AdminColumn id="sentAt"><BpTh>زمان ارسال</BpTh></AdminColumn>
                       <BpTh className="text-center">عملیات</BpTh>
                     </tr>
                   </thead>
                   <tbody>
-                    {campaigns.map((item) => (
-                      <tr key={item.id}>
+                    {visible.map((item) => (
+                      <AdminBulkTr key={item.id} id={item.id}>
                         <BpTd className="w-10 text-center"><AdminBulkCheckbox id={item.id} label={`انتخاب پیام ${item.message.slice(0, 40)}`} /></BpTd>
                         <AdminColumn id="message"><BpTd className="max-w-[280px] truncate font-bold" title={item.message}>{item.message}</BpTd></AdminColumn>
                         <AdminColumn id="recipients"><BpTd>{item.recipientCount.toLocaleString("fa-IR")}</BpTd></AdminColumn>
@@ -209,8 +213,9 @@ export function BlueprintSmsCampaignList({ items, initialHiddenColumns }: { item
                         <AdminColumn id="status"><BpTd><BpTag>{statusLabel(item.status)}</BpTag></BpTd></AdminColumn>
                         <AdminColumn id="sentAt"><BpTd className="bp-muted">{new Date(item.createdAt).toLocaleString("fa-IR")}</BpTd></AdminColumn>
                         <BpTd className="text-center"><BpButton type="button" variant="ghost" className="bp-btn-danger-icon" isIconOnly size="sm" aria-label="حذف پیام از تاریخچه" onClick={() => { setDeleteError(""); setPendingDelete(item); }}><Trash2 size={15} strokeWidth={1.5} /></BpButton></BpTd>
-                      </tr>
+                      </AdminBulkTr>
                     ))}
+                    {!visible.length && <tr><BpTd colSpan={99} className="bp-muted py-8 text-center">چیزی پیدا نشد.</BpTd></tr>}
                   </tbody>
                 </BpTable>
               </AdminBulkEditor>
