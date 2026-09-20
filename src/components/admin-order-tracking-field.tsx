@@ -40,9 +40,9 @@ export function AdminOrderTrackingField({ orderId, initialTrackingNumber }: { or
   return (
     <form onSubmit={submit} className="bp-frame grid gap-2 p-3 sm:max-w-sm">
       <span className="bp-muted flex items-center gap-1.5 text-[12px] font-bold"><Truck size={14} />کد رهگیری مرسوله</span>
-      <div className="flex items-end gap-2">
+      <div className="grid gap-2">
         <BpInput aria-label="کد رهگیری مرسوله" value={value} maxLength={trackingNumberMaxLength} error={error || undefined} onChange={(event) => { setValue(event.target.value); setError(""); }} dir="ltr" placeholder="کد رهگیری را وارد کنید" disabled={saving} wrapperClassName="flex-1" />
-        <BpButton type="submit" variant="primary" className="field-action" isPending={saving} disabled={!canSubmit}>ثبت</BpButton>
+        <BpButton type="submit" variant="primary" fullWidth isPending={saving} disabled={!canSubmit}>ثبت</BpButton>
       </div>
     </form>
   );
