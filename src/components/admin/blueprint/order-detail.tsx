@@ -112,17 +112,17 @@ export function BlueprintOrderDetail({ order, industry, optionColors = {}, warni
         <Stat icon={<CalendarDays size={14} />} label="آماده‌سازی تخمینی" value={order.estimatedReadyAt ? formatDateTime(order.estimatedReadyAt) : `${order.preparationDaysSnapshot.toLocaleString("fa-IR")} روز`} />
       </section>
 
-      <div className="grid items-start gap-2 xl:grid-cols-[minmax(0,1fr)_360px]">
-        <div className="flex min-w-0 flex-col gap-2">
-          {cardTransfers.length > 0 && (
-            <Panel>
-              <PanelHead icon={<ArrowLeftRight size={17} />} title="پرداخت کارت‌به‌کارت" />
-              <div className="grid gap-2 p-4">
-                {cardTransfers.map((transfer) => <BlueprintCardTransferReview key={transfer.paymentId} orderId={order.id} transfer={transfer} />)}
-              </div>
-            </Panel>
-          )}
+      <div className="flex flex-col gap-2">
+        {cardTransfers.length > 0 && (
+          <Panel>
+            <PanelHead icon={<ArrowLeftRight size={17} />} title="پرداخت کارت‌به‌کارت" />
+            <div className="grid gap-2 p-4">
+              {cardTransfers.map((transfer) => <BlueprintCardTransferReview key={transfer.paymentId} orderId={order.id} transfer={transfer} />)}
+            </div>
+          </Panel>
+        )}
 
+        <div className="grid items-start gap-2 xl:grid-cols-[minmax(0,1fr)_360px]">
           <Panel>
             <PanelHead icon={<Package size={17} />} title="محصولات سفارش" />
             <div>
@@ -173,74 +173,78 @@ export function BlueprintOrderDetail({ order, industry, optionColors = {}, warni
               {industry === "GOLD" && <div className="flex justify-between gap-3 border border-[var(--bp-divider)] px-3 py-2 text-[11px] font-bold"><dt>نرخ طلای ثبت‌شده</dt><dd>{formatMoney(order.goldPriceSnapshot.toString())}</dd></div>}
             </dl>
           </Panel>
-
-          <Panel>
-            <PanelHead icon={<CreditCard size={17} />} title="سوابق پرداخت" />
-            {order.payments.length ? (
-              <div className="grid gap-2 p-4">
-                {order.payments.map((payment, index) => (
-                  <article key={payment.id} className="border border-[var(--bp-divider)]">
-                    <div className="flex flex-wrap items-center justify-between gap-2 bg-[var(--bp-hover)] px-3 py-2.5">
-                      <div>
-                        <span className="bp-muted block text-[11px]">تراکنش شماره {(index + 1).toLocaleString("fa-IR")}</span>
-                        <strong className="mt-0.5 block text-[13px]">{formatMoney(payment.amount.toString())}</strong>
-                      </div>
-                      <AdminStatusBadge tone={paymentStatusTones[payment.status]}>{paymentStatusLabel(payment.provider, payment.status)}</AdminStatusBadge>
-                    </div>
-                    <dl className="grid gap-2 border-t border-[var(--bp-divider)] p-3 sm:grid-cols-2 xl:grid-cols-4">
-                      <Field label="درگاه پرداخت" value={paymentProviderLabel(payment.provider)} />
-                      <Field label="زمان ایجاد تراکنش" value={formatDateTime(payment.createdAt)} />
-                      <Field label="زمان پرداخت" value={payment.paidAt ? formatDateTime(payment.paidAt) : "—"} />
-                      <Field label="شناسه مرجع" value={payment.referenceId ?? "—"} ltr />
-                    </dl>
-                    {payment.authority && <div className="border-t border-[var(--bp-divider)] px-3 py-2 text-[11px]"><span className="bp-muted me-2">شناسه درگاه:</span><b dir="ltr" className="break-all">{payment.authority}</b></div>}
-                  </article>
-                ))}
-              </div>
-            ) : <p className="bp-muted m-0 px-4 py-8 text-center text-[13px]">هنوز تراکنشی برای این سفارش ثبت نشده است.</p>}
-          </Panel>
-
-          {order.notes && (
-            <Panel className="p-4">
-              <h2 className="m-0 mb-2 text-[14px] font-bold">یادداشت سفارش</h2>
-              <p className="m-0 whitespace-pre-wrap text-[13px] leading-7 text-[var(--bp-muted)]">{order.notes}</p>
-            </Panel>
-          )}
         </div>
 
-        <aside className="flex min-w-0 flex-col gap-2">
-          {order.deliveryMethod === "INSURED_SHIPPING" && <AdminOrderTrackingField orderId={order.id} initialTrackingNumber={order.trackingNumber} />}
-          <Panel className="p-4">
-            <h2 className="m-0 mb-3 flex items-center gap-2 text-[14px] font-bold"><UserRound size={17} className="text-[var(--bp-muted)]" /> اطلاعات خریدار</h2>
-            <dl className="grid gap-2">
-              <Field label="نام و نام خانوادگی" value={customerName} />
-              <Field label="ایمیل" value={order.user.email ?? "—"} ltr />
-              <Field label="شماره موبایل" value={order.user.phone} ltr />
-              <Field label="کد ملی" value={order.user.nationalId} ltr />
-            </dl>
-          </Panel>
-
-          <Panel className="p-4">
-            <h2 className="m-0 mb-3 flex items-center gap-2 text-[14px] font-bold"><MapPin size={17} className="text-[var(--bp-muted)]" /> آدرس ارسال</h2>
-            {address ? (
-              <dl className="grid gap-2">
-                <Field label="تحویل‌گیرنده" value={address.recipient} />
-                <Field label="شماره تماس" value={address.phone} ltr />
-                <Field label="استان و شهر" value={[address.province, address.city].filter(Boolean).join("، ")} />
-                <Field label="کد پستی" value={address.postalCode} ltr />
-                <Field label="نشانی" value={address.addressLine} />
-              </dl>
-            ) : <p className="bp-muted m-0 text-[13px]">آدرس ارسال ثبت نشده است.</p>}
-          </Panel>
-
-          {order.invoice && (
-            <Panel className="p-4">
-              <h2 className="m-0 mb-2 flex items-center gap-2 text-[14px] font-bold"><FileText size={17} className="text-[var(--bp-muted)]" /> فاکتور رسمی</h2>
-              <p className="bp-muted m-0 mb-3 text-[11px]">شماره {order.invoice.invoiceNumber} · صادرشده در {formatDateTime(order.invoice.issuedAt)}</p>
-              <BpLinkButton href={`/invoices/${order.id}?source=admin`} variant="primary" fullWidth>مشاهدهٔ فاکتور</BpLinkButton>
+        <div className="grid items-start gap-2 xl:grid-cols-[minmax(0,1fr)_360px]">
+          <div className="flex min-w-0 flex-col gap-2">
+            <Panel>
+              <PanelHead icon={<CreditCard size={17} />} title="سوابق پرداخت" />
+              {order.payments.length ? (
+                <div className="grid gap-2 p-4">
+                  {order.payments.map((payment, index) => (
+                    <article key={payment.id} className="border border-[var(--bp-divider)]">
+                      <div className="flex flex-wrap items-center justify-between gap-2 bg-[var(--bp-hover)] px-3 py-2.5">
+                        <div>
+                          <span className="bp-muted block text-[11px]">تراکنش شماره {(index + 1).toLocaleString("fa-IR")}</span>
+                          <strong className="mt-0.5 block text-[13px]">{formatMoney(payment.amount.toString())}</strong>
+                        </div>
+                        <AdminStatusBadge tone={paymentStatusTones[payment.status]}>{paymentStatusLabel(payment.provider, payment.status)}</AdminStatusBadge>
+                      </div>
+                      <dl className="grid gap-2 border-t border-[var(--bp-divider)] p-3 sm:grid-cols-2 xl:grid-cols-4">
+                        <Field label="درگاه پرداخت" value={paymentProviderLabel(payment.provider)} />
+                        <Field label="زمان ایجاد تراکنش" value={formatDateTime(payment.createdAt)} />
+                        <Field label="زمان پرداخت" value={payment.paidAt ? formatDateTime(payment.paidAt) : "—"} />
+                        <Field label="شناسه مرجع" value={payment.referenceId ?? "—"} ltr />
+                      </dl>
+                      {payment.authority && <div className="border-t border-[var(--bp-divider)] px-3 py-2 text-[11px]"><span className="bp-muted me-2">شناسه درگاه:</span><b dir="ltr" className="break-all">{payment.authority}</b></div>}
+                    </article>
+                  ))}
+                </div>
+              ) : <p className="bp-muted m-0 px-4 py-8 text-center text-[13px]">هنوز تراکنشی برای این سفارش ثبت نشده است.</p>}
             </Panel>
-          )}
-        </aside>
+
+            {order.notes && (
+              <Panel className="p-4">
+                <h2 className="m-0 mb-2 text-[14px] font-bold">یادداشت سفارش</h2>
+                <p className="m-0 whitespace-pre-wrap text-[13px] leading-7 text-[var(--bp-muted)]">{order.notes}</p>
+              </Panel>
+            )}
+          </div>
+
+          <aside className="flex min-w-0 flex-col gap-2">
+            {order.deliveryMethod === "INSURED_SHIPPING" && <AdminOrderTrackingField orderId={order.id} initialTrackingNumber={order.trackingNumber} />}
+            <Panel className="p-4">
+              <h2 className="m-0 mb-3 flex items-center gap-2 text-[14px] font-bold"><UserRound size={17} className="text-[var(--bp-muted)]" /> اطلاعات خریدار</h2>
+              <dl className="grid gap-2">
+                <Field label="نام و نام خانوادگی" value={customerName} />
+                <Field label="ایمیل" value={order.user.email ?? "—"} ltr />
+                <Field label="شماره موبایل" value={order.user.phone} ltr />
+                <Field label="کد ملی" value={order.user.nationalId} ltr />
+              </dl>
+            </Panel>
+
+            <Panel className="p-4">
+              <h2 className="m-0 mb-3 flex items-center gap-2 text-[14px] font-bold"><MapPin size={17} className="text-[var(--bp-muted)]" /> آدرس ارسال</h2>
+              {address ? (
+                <dl className="grid gap-2">
+                  <Field label="تحویل‌گیرنده" value={address.recipient} />
+                  <Field label="شماره تماس" value={address.phone} ltr />
+                  <Field label="استان و شهر" value={[address.province, address.city].filter(Boolean).join("، ")} />
+                  <Field label="کد پستی" value={address.postalCode} ltr />
+                  <Field label="نشانی" value={address.addressLine} />
+                </dl>
+              ) : <p className="bp-muted m-0 text-[13px]">آدرس ارسال ثبت نشده است.</p>}
+            </Panel>
+
+            {order.invoice && (
+              <Panel className="p-4">
+                <h2 className="m-0 mb-2 flex items-center gap-2 text-[14px] font-bold"><FileText size={17} className="text-[var(--bp-muted)]" /> فاکتور رسمی</h2>
+                <p className="bp-muted m-0 mb-3 text-[11px]">شماره {order.invoice.invoiceNumber} · صادرشده در {formatDateTime(order.invoice.issuedAt)}</p>
+                <BpLinkButton href={`/invoices/${order.id}?source=admin`} variant="primary" fullWidth>مشاهدهٔ فاکتور</BpLinkButton>
+              </Panel>
+            )}
+          </aside>
+        </div>
       </div>
     </div>
   );
