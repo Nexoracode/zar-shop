@@ -5,9 +5,15 @@ import {
   describeSelection,
   findVariant,
   isVariantAvailable,
+  isVariantSnapshotValid,
   mergeCombinations,
+  pickDisplayVariant,
+  productMirror,
+  resolveVariantSelection,
   selectionSignature,
   variantPricing,
+  variantMaxQuantity,
+  variantQuantityError,
   variantSelectionKey,
   type VariantDraft,
 } from "@/modules/products/variants";
@@ -122,7 +128,7 @@ test("a combination with its own discount window keeps it instead of the product
     selectionKey: "k", selection: {}, price: null, weightGrams: null,
     discountType: "FIXED" as const, discountValue: "50000",
     discountStartsAt: new Date("2026-06-01"), discountEndsAt: new Date("2026-06-10"),
-    stock: 1, isActive: true,
+    stock: 1, preparationDays: 2, minOrderQuantity: 1, maxOrderQuantity: null, isActive: true,
   };
   const resolved = variantPricing(variant, product);
   assert.equal(resolved.discountType, "FIXED");
@@ -139,7 +145,7 @@ test("a combination with no discount of its own is not discounted, whatever the 
   const variant = {
     selectionKey: "k", selection: {}, price: null, weightGrams: null,
     discountType: null, discountValue: null, discountStartsAt: null, discountEndsAt: null,
-    stock: 1, isActive: true,
+    stock: 1, preparationDays: 2, minOrderQuantity: 1, maxOrderQuantity: null, isActive: true,
   };
   const resolved = variantPricing(variant, product);
   assert.equal(resolved.discountType, null);
@@ -168,10 +174,67 @@ test("a combination on special sale keeps having no window instead of inheriting
   const variant = {
     selectionKey: "k", selection: {}, price: null, weightGrams: null,
     discountType: "PERCENT" as const, discountValue: "20", discountStartsAt: null, discountEndsAt: null,
-    stock: 1, isActive: true,
+    stock: 1, preparationDays: 2, minOrderQuantity: 1, maxOrderQuantity: null, isActive: true,
   };
   const resolved = variantPricing(variant, product);
   assert.equal(resolved.discountValue, "20");
   assert.equal(resolved.discountStartsAt, null);
   assert.equal(resolved.discountEndsAt, null);
+});
+
+const stored = (extra: object = {}) => ({
+  selectionKey: "", selection: {}, price: "1000000" as string | null, weightGrams: null as string | null,
+  discountType: null, discountValue: null, discountStartsAt: null, discountEndsAt: null,
+  stock: 5, preparationDays: 2, minOrderQuantity: 1, maxOrderQuantity: null as number | null, isActive: true,
+  ...extra,
+});
+
+test("the default variant, which names no option, is keyed by the empty string a cart line already carries", () => {
+  assert.equal(variantSelectionKey({}), "");
+  assert.notEqual(variantSelectionKey({ رنگ: "مشکی" }), "");
+});
+
+test("a product without options is bought through its default variant, and one with none sellable is not for sale", () => {
+  const variants = [stored()];
+  const chosen = resolveVariantSelection(variants, {}, 2);
+  assert.equal(chosen.ok, true);
+  assert.equal(chosen.ok && chosen.selectionKey, "");
+  assert.equal(chosen.ok && chosen.snapshot, null);
+  assert.equal(isVariantSnapshotValid(variants, "", 5), true);
+  assert.equal(isVariantSnapshotValid(variants, "", 6), false);
+  assert.deepEqual(resolveVariantSelection([stored({ isActive: false })], {}, 1), { ok: false, reason: "unknown" });
+});
+
+test("a variant's own order limits narrow the store-wide cap but never widen it", () => {
+  const variant = { minOrderQuantity: 2, maxOrderQuantity: 4 };
+  assert.match(variantQuantityError(1, variant, 10) ?? "", /حداقل/);
+  assert.equal(variantQuantityError(3, variant, 10), null);
+  assert.match(variantQuantityError(5, variant, 10) ?? "", /حداکثر/);
+  assert.match(variantQuantityError(6, { minOrderQuantity: 1, maxOrderQuantity: 50 }, 5) ?? "", /حداکثر/);
+  assert.equal(variantMaxQuantity({ stock: 3, maxOrderQuantity: 4 }, 10), 3);
+  assert.equal(variantMaxQuantity({ stock: 30, maxOrderQuantity: 4 }, 10), 4);
+  assert.equal(variantMaxQuantity(null, 10), 0);
+});
+
+test("a listing speaks for the cheapest variant that can be bought, then the cheapest active one", () => {
+  const cheapSoldOut = stored({ price: "100", stock: 0 });
+  const dear = stored({ price: "900" });
+  const mid = stored({ price: "500" });
+  assert.equal(pickDisplayVariant([cheapSoldOut, dear, mid]), mid);
+  assert.equal(pickDisplayVariant([cheapSoldOut, stored({ price: "300", stock: 0 })]), cheapSoldOut);
+  assert.equal(pickDisplayVariant([]), null);
+});
+
+test("the product's mirror totals the sellable stock and copies the display variant's figures", () => {
+  const mirror = productMirror([
+    stored({ price: "900", stock: 2, preparationDays: 5 }),
+    stored({ price: "500", stock: 3, preparationDays: 1, discountType: "PERCENT", discountValue: "10", minOrderQuantity: 2, maxOrderQuantity: 6 }),
+    stored({ price: "100", stock: 40, isActive: false }),
+  ]);
+  assert.equal(mirror.stock, 5);
+  assert.equal(mirror.preparationDays, 1);
+  assert.equal(mirror.fixedPrice, "500");
+  assert.equal(mirror.discountType, "PERCENT");
+  assert.equal(mirror.minOrderQuantity, 2);
+  assert.equal(mirror.maxOrderQuantity, 6);
 });

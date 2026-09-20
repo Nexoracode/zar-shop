@@ -5,15 +5,18 @@ import { getCurrentUser } from "@/modules/auth/session";
 import { parseProductPatch } from "@/modules/products/schemas";
 import { hasPermission } from "@/modules/auth/permissions";
 import { sanitizeProductDescription } from "@/modules/products/rich-text";
-import { validateVariantSetup, writeVariantSetup } from "@/modules/products/variant-write";
+import { defaultVariantInput, validateVariantSetup, writeVariantSetup } from "@/modules/products/variant-write";
 import { productOptionTypeInclude } from "@/modules/products/variant-selection";
-import { formatTehranDateInput, NO_PRODUCT_DISCOUNT, tehranDateEnd, tehranDateStart } from "@/modules/products/discount";
+import { formatTehranDateInput, tehranDateEnd, tehranDateStart } from "@/modules/products/discount";
 import { parseProductAttributes, validateProductAttributes } from "@/modules/products/attributes";
 import { auditRequestContext } from "@/modules/audit/request-context";
 import { buildAuditChanges, productAuditSnapshot } from "@/modules/audit/product-audit";
 import { revalidateSitemap } from "@/modules/seo/revalidate";
 
 type Context = { params: Promise<{ id: string }> };
+
+/** The product columns a product without options is sold by: editing one edits its default variant. */
+const sellableFields = ["fixedPrice", "weightGrams", "discountType", "discountValue", "discountStartsAt", "discountEndsAt", "stock", "preparationDays", "minOrderQuantity", "maxOrderQuantity"] as const;
 
 export async function PATCH(request: Request, context: Context) {
   try {
@@ -42,9 +45,6 @@ export async function PATCH(request: Request, context: Context) {
     if (existingProduct.storeIndustry === "GENERAL" && input.fixedPrice === null) {
       return NextResponse.json({ message: "قیمت محصول را وارد کنید." }, { status: 422 });
     }
-    // A product that ends up with combinations has no discount of its own: each combination
-    // carries its own. Saved that way whatever the request sent, so a stale form cannot bring it back.
-    if ((variants ? variants.length : existingProduct.variants.length) > 0) Object.assign(input, NO_PRODUCT_DISCOUNT);
     const discount = {
       type: input.discountType !== undefined ? input.discountType : existingProduct.discountType,
       value: input.discountValue !== undefined ? input.discountValue : existingProduct.discountValue === null ? null : Number(existingProduct.discountValue),
@@ -75,7 +75,7 @@ export async function PATCH(request: Request, context: Context) {
       return NextResponse.json({ message: "نوع‌های تنوع و ترکیب‌های محصول باید با هم ارسال شوند." }, { status: 422 });
     }
     if (optionTypes && variants) {
-      const variantError = await validateVariantSetup(db, optionTypes, variants);
+      const variantError = await validateVariantSetup(db, optionTypes, variants, existingProduct.storeIndustry);
       if (variantError) return NextResponse.json({ message: variantError.message }, { status: 422 });
     }
     const nextCategoryId = input.categoryId !== undefined ? input.categoryId : existingProduct.categoryId;
@@ -102,7 +102,25 @@ export async function PATCH(request: Request, context: Context) {
         await tx.productMedia.deleteMany({ where: { productId: id } });
         if (mediaIds.length) await tx.productMedia.createMany({ data: mediaIds.map((mediaId, position) => ({ productId: id, mediaId, position, isCover: position === 0 })) });
       }
-      if (optionTypes && variants) await writeVariantSetup(tx, id, optionTypes, variants);
+      // Whatever is sold is a variant: the ones the form lists when the product has options, or
+      // the default one — made from the figures the product itself holds — when it has none.
+      const soldAsDefault = optionTypes ? optionTypes.length === 0 : existingProduct.optionTypes.length === 0 && sellableFields.some((field) => input[field] !== undefined);
+      if (optionTypes && variants && optionTypes.length > 0) await writeVariantSetup(tx, id, optionTypes, variants);
+      else if (soldAsDefault) {
+        await writeVariantSetup(tx, id, [], [defaultVariantInput({
+          storeIndustry: existingProduct.storeIndustry,
+          fixedPrice: input.fixedPrice !== undefined ? input.fixedPrice : existingProduct.fixedPrice === null ? null : Number(existingProduct.fixedPrice),
+          weightGrams: input.weightGrams !== undefined ? input.weightGrams : Number(existingProduct.weightGrams),
+          discountType: input.discountType !== undefined ? input.discountType : existingProduct.discountType,
+          discountValue: input.discountValue !== undefined ? input.discountValue : existingProduct.discountValue === null ? null : Number(existingProduct.discountValue),
+          discountStartsAt: input.discountStartsAt !== undefined ? input.discountStartsAt : existingProduct.discountStartsAt?.toISOString() ?? null,
+          discountEndsAt: input.discountEndsAt !== undefined ? input.discountEndsAt : existingProduct.discountEndsAt?.toISOString() ?? null,
+          stock: input.stock ?? existingProduct.stock,
+          preparationDays: input.preparationDays ?? existingProduct.preparationDays,
+          minOrderQuantity: input.minOrderQuantity ?? existingProduct.minOrderQuantity,
+          maxOrderQuantity: input.maxOrderQuantity !== undefined ? input.maxOrderQuantity : existingProduct.maxOrderQuantity,
+        })]);
+      }
       const updated = await tx.product.findUniqueOrThrow({ where: { id }, include: { media: { include: { media: true }, orderBy: { position: "asc" } }, category: true, brand: true, variants: { orderBy: { createdAt: "asc" } }, optionTypes: productOptionTypeInclude, optionGuide: true } });
       const before = productAuditSnapshot(existingProduct);
       const after = productAuditSnapshot(updated);

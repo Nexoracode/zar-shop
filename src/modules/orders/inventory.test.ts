@@ -54,11 +54,11 @@ test("inventory release restores a previously reserved order", async () => {
   assert.equal(state.variant.stock, 2);
 });
 
-test("a product sold without variants only moves its own stock", async () => {
+test("a product without options is reserved through its default variant, keyed by an empty string", async () => {
   const { state, transaction } = inventoryDb();
   await reserveInventory(transaction, [{ productId: "product-1", quantity: 1, selectionKey: "" }]);
   assert.equal(state.stock, 2);
-  assert.equal(state.variant.stock, 2);
+  assert.equal(state.variant.stock, 1);
 });
 
 test("an inactive combination cannot be reserved", async () => {

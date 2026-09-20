@@ -41,10 +41,10 @@ function mergeDb(carts: CartRow[], stockByProduct: Record<string, number>) {
         return created;
       },
     },
-    product: {
-      findUnique: async ({ where }: { where: { id: string } }) => {
-        const stock = stockByProduct[where.id];
-        return stock === undefined ? null : { stock };
+    productVariant: {
+      findUnique: async ({ where }: { where: { productId_selectionKey: { productId: string; selectionKey: string } } }) => {
+        const stock = stockByProduct[where.productId_selectionKey.productId];
+        return stock === undefined ? null : { stock, isActive: true };
       },
     },
   } as unknown as CartMergeTransaction;

@@ -41,7 +41,7 @@ export default async function ProductReportPage({ params }: Context) {
   const kpis = [
     { label: "تعداد فروش", value: salesCount.toLocaleString("fa-IR"), hint: "مجموع تعداد فروخته‌شده در سفارش‌های موفق", icon: ShoppingBag },
     { label: "درآمد", value: formatMoney(revenue), hint: "مجموع مبلغ این محصول در سفارش‌های موفق", icon: CircleDollarSign },
-    { label: "موجودی باقی‌مانده", value: remainingStock.toLocaleString("fa-IR"), hint: product.variants.length ? "مجموع موجودی همه ترکیب‌ها" : "موجودی انبار", icon: Boxes },
+    { label: "موجودی باقی‌مانده", value: remainingStock.toLocaleString("fa-IR"), hint: product.variants.length > 1 ? "مجموع موجودی همه ترکیب‌ها" : "موجودی انبار", icon: Boxes },
   ];
 
   return (

@@ -38,6 +38,9 @@ type StoredVariantRow = {
   discountStartsAt: Date | null;
   discountEndsAt: Date | null;
   stock: number;
+  preparationDays: number;
+  minOrderQuantity: number;
+  maxOrderQuantity: number | null;
   isActive: boolean;
 };
 
@@ -50,7 +53,7 @@ type StoredVariantRow = {
  * sold at full price, whatever the product itself carries.
  */
 export function lineUnitPrice(product: PricedProduct, selectionKey: string, goldRate: number | Prisma.Decimal | null) {
-  const variant = selectionKey ? findVariant(product.variants, selectionKey) : null;
+  const variant = findVariant(product.variants, selectionKey);
   const resolved = variantPricing(variant, product);
 
   const base = product.storeIndustry === "GENERAL"

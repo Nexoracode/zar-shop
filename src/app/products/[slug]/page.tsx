@@ -18,11 +18,10 @@ import { ProductReviews } from "@/components/product-reviews";
 import { db } from "@/lib/db";
 import { formatMoney } from "@/lib/format";
 import { buildProductAttributeGroups } from "@/modules/products/attributes";
-import { calculateDiscountedPrice, isProductDiscountActive } from "@/modules/products/discount";
+import { isProductDiscountActive } from "@/modules/products/discount";
 import { productColorIds, productOptionTypeInclude, selectableTypes } from "@/modules/products/variant-selection";
 import { lineUnitPrice } from "@/modules/products/line-pricing";
 import { findVariant, variantPricing } from "@/modules/products/variants";
-import { calculateProductPrice } from "@/modules/products/pricing";
 import { sanitizeProductDescription } from "@/modules/products/rich-text";
 import { calculateSoldPercent, completedSaleOrderStatuses } from "@/modules/products/sales";
 import { getRecentlyViewedProducts, getStorefrontProductFeed } from "@/modules/products/storefront-feed";
@@ -118,18 +117,15 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   const primaryFeatures = attributeGroups.flatMap((group) => group.attributes).filter((attribute) => attribute.important);
 
   const rate = gold?.pricePerGram18 ?? null;
-  const parts = product.storeIndustry === "GOLD" && rate !== null ? calculateProductPrice({ goldPricePerGram18: rate, weightGrams: product.weightGrams, purity: product.purity, makingFeeType: product.makingFeeType, makingFeeValue: product.makingFeeValue, profitPercent: product.profitPercent, taxPercent: product.taxPercent }) : null;
-  const baseTotal = product.fixedPrice ? Number(product.fixedPrice) : parts?.total ?? null;
-  const discounted = baseTotal === null ? null : calculateDiscountedPrice(baseTotal, product);
+  // Every product is sold as variants, so the page opens on one: the first that can be bought
+  // (else the first at all). Its price is what shows until the visitor picks something else.
+  const openingVariant = product.variants.find((variant) => variant.isActive && variant.stock > 0) ?? product.variants[0] ?? null;
+  const discounted = openingVariant ? lineUnitPrice(product, openingVariant.selectionKey, rate) : null;
   const total = discounted?.finalPrice ?? null;
-  // One entry per combination the gallery badge can be asked about — the base product itself
-  // (an empty selection, for a product with no combinations) plus every one of them — so the
-  // client can show the discount that applies to whatever is actually selected, rather than an
-  // aggregate across every combination the product happens to offer.
-  const discountBySelection = [
-    { selection: {} as Record<string, string>, ...variantPricing(null, product) },
-    ...product.variants.map((variant) => ({ selection: (variant.selection ?? {}) as Record<string, string>, ...variantPricing(variant, product) })),
-  ].map((entry) => ({
+  // One entry per variant the gallery badge can be asked about (a product without options has just
+  // its default one, whose selection is empty), so the client can show the discount that applies to
+  // whatever is actually selected, rather than an aggregate across every variant the product offers.
+  const discountBySelection = product.variants.map((variant) => ({ selection: (variant.selection ?? {}) as Record<string, string>, ...variantPricing(variant, product) })).map((entry) => ({
     selection: entry.selection,
     hasDiscount: isProductDiscountActive(entry),
     discountEndsAt: entry.discountEndsAt ? entry.discountEndsAt.toISOString() : null,
@@ -172,6 +168,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
       price: pricing?.finalPrice ?? null,
       originalPrice: pricing?.originalPrice ?? null,
       stock: variant.stock,
+      preparationDays: variant.preparationDays,
       available: variant.isActive && variant.stock > 0,
     };
   });

@@ -4,7 +4,7 @@ import { db } from "@/lib/db";
 import { apiError } from "@/lib/http";
 import { createGuestSessionUser, getCurrentUser } from "@/modules/auth/session";
 import { consumeGuestSessionAttempt, rateLimitResponse } from "@/modules/auth/rate-limit";
-import { isVariantSnapshotValid, resolveVariantSelection } from "@/modules/products/variants";
+import { findVariant, isVariantSnapshotValid, resolveVariantSelection, variantQuantityError } from "@/modules/products/variants";
 import { getGeneralStoreSettings, isStorefrontAvailable } from "@/modules/settings/general-settings";
 import { getOrderSettings } from "@/modules/settings/order-settings";
 import { getCartProductCount, getCartSummary } from "@/modules/cart/cart-summary";
@@ -41,7 +41,7 @@ export async function POST(request: Request) {
     if (!currentUser && !settings.guestCheckout) return NextResponse.json({ message: "ابتدا وارد حساب خود شوید." }, { status: 401 });
     const input = inputSchema.parse(await request.json());
     const product = await db.product.findFirst({ where: { id: input.productId, status: "ACTIVE", storeIndustry: settings.industry }, include: { variants: true } });
-    if (!product || product.stock < input.quantity) return NextResponse.json({ message: "محصول موجود نیست یا موجودی کافی ندارد." }, { status: 409 });
+    if (!product) return NextResponse.json({ message: "محصول موجود نیست یا موجودی کافی ندارد." }, { status: 409 });
     const selection = resolveVariantSelection(product.variants, input.selectedOptions, input.quantity);
     if (!selection.ok) {
       return selection.reason === "stock"
@@ -56,7 +56,7 @@ export async function POST(request: Request) {
     const cart = await db.cart.upsert({ where: { userId: user.id }, update: {}, create: { userId: user.id } });
     const existing = await db.cartItem.findUnique({ where: { cartId_productId_selectionKey: { cartId: cart.id, productId: product.id, selectionKey: selection.selectionKey } } });
     const nextQuantity = (existing?.quantity ?? 0) + input.quantity;
-    const limitMessage = quantityLimitMessage(nextQuantity, product, orderSettings.maxOrderItemQuantity);
+    const limitMessage = variantQuantityError(nextQuantity, findVariant(product.variants, selection.selectionKey), orderSettings.maxOrderItemQuantity);
     if (limitMessage) return NextResponse.json({ message: limitMessage }, { status: 422 });
     if (!isVariantSnapshotValid(product.variants, selection.selectionKey, nextQuantity)) return NextResponse.json({ message: "موجودی تنوع انتخاب‌شده برای این تعداد کافی نیست." }, { status: 409 });
     const cartItem = await db.cartItem.upsert({
@@ -76,12 +76,12 @@ export async function PATCH(request: Request) {
     const input = updateSchema.parse(await request.json());
     const item = await db.cartItem.findFirst({ where: { id: input.cartItemId, cart: { userId: user.id } }, include: { product: { include: { variants: true } } } });
     if (!item) return NextResponse.json({ message: "این قلم در سبد خرید پیدا نشد." }, { status: 404 });
-    const limitMessage = quantityLimitMessage(input.quantity, item.product, orderSettings.maxOrderItemQuantity);
+    const limitMessage = variantQuantityError(input.quantity, findVariant(item.product.variants, item.selectionKey), orderSettings.maxOrderItemQuantity);
     if (limitMessage) return NextResponse.json({ message: limitMessage }, { status: 422 });
     // Only asking for more needs stock. Lowering a quantity must always work: a line whose combination was
     // removed or sold down after it was added would otherwise be stuck at its size, unable even to shrink.
     const isIncrease = input.quantity > item.quantity;
-    if (isIncrease && (item.product.stock < input.quantity || !isVariantSnapshotValid(item.product.variants, item.selectionKey, input.quantity))) return NextResponse.json({ message: "موجودی کالا برای این تعداد کافی نیست." }, { status: 409 });
+    if (isIncrease && !isVariantSnapshotValid(item.product.variants, item.selectionKey, input.quantity)) return NextResponse.json({ message: "موجودی کالا برای این تعداد کافی نیست." }, { status: 409 });
     await db.cartItem.update({ where: { id: item.id }, data: { quantity: input.quantity } });
     return NextResponse.json({ message: "تعداد کالا به‌روزرسانی شد.", itemCount: await getCartProductCount(user.id, settings.industry) });
   } catch (error) { return apiError(error); }
@@ -98,21 +98,4 @@ export async function DELETE(request: Request) {
   const cart = await db.cart.findUnique({ where: { userId: user.id } });
   if (cart) await db.cartItem.deleteMany({ where: { cartId: cart.id, ...(cartItemId ? { id: cartItemId } : { productId: productId! }) } });
   return NextResponse.json({ ok: true, itemCount: await getCartProductCount(user.id, settings.industry) });
-}
-
-/**
- * Why a quantity is not allowed, or null when it is.
- *
- * A product may narrow the store-wide cap but never widen it, so the effective ceiling is
- * whichever of the two is lower.
- */
-function quantityLimitMessage(quantity: number, product: { minOrderQuantity: number; maxOrderQuantity: number | null }, storeMaximum: number) {
-  if (quantity < product.minOrderQuantity) {
-    return `حداقل تعداد سفارش این کالا ${product.minOrderQuantity.toLocaleString("fa-IR")} عدد است.`;
-  }
-  const ceiling = Math.min(product.maxOrderQuantity ?? storeMaximum, storeMaximum);
-  if (quantity > ceiling) {
-    return `حداکثر تعداد مجاز برای این کالا ${ceiling.toLocaleString("fa-IR")} عدد است.`;
-  }
-  return null;
 }

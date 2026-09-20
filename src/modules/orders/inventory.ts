@@ -4,7 +4,7 @@ export type InventoryTransaction = Pick<Prisma.TransactionClient, "product" | "p
 export type InventoryOrderItem = {
   productId: string | null;
   quantity: number;
-  /** Empty for a product sold without variants. */
+  /** The variant sold; empty for a product's default variant (one without options). */
   selectionKey: string;
 };
 
@@ -20,6 +20,9 @@ export class InventoryUnavailableError extends Error {
  * between fetching the row and writing it back. `stockVersion` gives a compare-and-swap: on a
  * lost race we re-read the fresh row and try again, rather than overwriting whatever the other
  * transaction just committed.
+ *
+ * Stock lives on the variant — a product without options has a default one, keyed "" — and the
+ * product's own `stock` is the mirror of their total, moved by the same amount alongside it.
  *
  * One row per line now, where the per-value model had to touch one row per option. Selling a
  * black XL used to decrement "مشکی" and "XL" separately, which could not express that the pair
@@ -71,18 +74,14 @@ export async function reserveInventory(transaction: InventoryTransaction, items:
     });
     if (reserved.count !== 1) throw new InventoryUnavailableError();
 
-    if (item.selectionKey) {
-      await adjustVariantStock(transaction, item.productId, item.selectionKey, item.quantity, "decrement");
-    }
+    await adjustVariantStock(transaction, item.productId, item.selectionKey, item.quantity, "decrement");
   }
 }
 
 export async function releaseInventory(transaction: InventoryTransaction, items: InventoryOrderItem[]) {
   for (const item of items) {
     if (!item.productId) continue;
-    if (item.selectionKey) {
-      await adjustVariantStock(transaction, item.productId, item.selectionKey, item.quantity, "increment");
-    }
+    await adjustVariantStock(transaction, item.productId, item.selectionKey, item.quantity, "increment");
     await transaction.product.update({ where: { id: item.productId }, data: { stock: { increment: item.quantity } } });
   }
 }

@@ -131,7 +131,8 @@ export function BlueprintManualOrderForm({ industry }: { industry: "GOLD" | "GEN
 
   async function addProduct(hit: ProductHit) {
     setProductQuery("");
-    if (items.some((item) => item.productId === hit.id && item.variants.length === 0)) return;
+    // A product without options is one line; one with options can be added once per combination.
+    if (items.some((item) => item.productId === hit.id && !item.hasVariants)) return;
     try {
       const data = await requestJson<{ id: string; name: string; sku: string; storeIndustry: "GOLD" | "GENERAL"; variants: VariantOption[] }>(`/api/admin/orders/product-options?productId=${encodeURIComponent(hit.id)}`, {}, { fallbackMessage: "دریافت تنوع‌های محصول انجام نشد." });
       setItems((current) => [...current, {
@@ -140,7 +141,7 @@ export function BlueprintManualOrderForm({ industry }: { industry: "GOLD" | "GEN
         name: data.name,
         sku: data.sku,
         variants: data.variants,
-        hasVariants: data.variants.length > 0,
+        hasVariants: data.variants.some((variant) => variant.selectionKey !== ""),
         selectionKey: data.variants.length === 1 ? data.variants[0].selectionKey : "",
         quantity: "1",
       }]);

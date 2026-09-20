@@ -2,7 +2,8 @@
  * Combination arithmetic for product variants — the half that runs in the browser too.
  *
  * A product varies by one or more types (رنگ, سایز); every pairing of their chosen values is a
- * combination the customer can buy, and each carries its own price, discount and stock. The admin
+ * combination the customer can buy, and each carries its own price, discount, stock, preparation
+ * time and order limits. The admin
  * form builds these rows as the admin picks values, so nothing here may touch Prisma, the network
  * or `node:crypto`; the stable hash that names a combination in the database lives in
  * `variants.ts` and is only ever computed on the server.
@@ -17,13 +18,26 @@ export type VariantDraft = {
   weightGrams: string | null;
   discountType: "PERCENT" | "FIXED" | null;
   discountValue: string | null;
-  /** The combination's own discount window — independent of the product's, falling back to it
-   * only when the combination carries no discount of its own. */
+  /** The combination's own discount window. It never falls back to the product's: a combination
+   * with no discount is sold at full price. */
   discountStartsAt: string | null;
   discountEndsAt: string | null;
   stock: number;
+  /** Days to prepare this combination before it ships. */
+  preparationDays: number;
+  /** Order limits for this combination; `null` for no maximum beyond the store-wide cap. */
+  minOrderQuantity: number;
+  maxOrderQuantity: number | null;
   isActive: boolean;
 };
+
+/** The selection of a product's default variant — the one a product without options is sold as. */
+export const DEFAULT_SELECTION: VariantSelection = {};
+
+/** Whether a selection is the default variant's, i.e. names no option at all. */
+export function isDefaultSelection(selection: unknown) {
+  return typeof selection !== "object" || selection === null || Object.keys(selection).length === 0;
+}
 
 /** One type on the product, with the values it offers, in the order they should be shown. */
 export type SelectedType = { typeName: string; values: string[] };
@@ -58,11 +72,14 @@ export function buildCombinations(types: SelectedType[]): VariantSelection[] {
   }, [{}]);
 }
 
-/** The product's own price, weight, stock and discount, offered to a brand-new combination row. */
+/** The product form's own price, weight, stock, discount, preparation time and order limits, offered to a brand-new combination row. */
 export type VariantDraftDefaults = {
   price?: string | null;
   weightGrams?: string | null;
   stock?: number | null;
+  preparationDays?: number | null;
+  minOrderQuantity?: number | null;
+  maxOrderQuantity?: number | null;
   discountType?: "PERCENT" | "FIXED" | null;
   discountValue?: string | null;
   discountStartsAt?: string | null;
@@ -79,6 +96,9 @@ function emptyDraft(selection: VariantSelection, defaults: VariantDraftDefaults)
     discountStartsAt: defaults.discountStartsAt ?? null,
     discountEndsAt: defaults.discountEndsAt ?? null,
     stock: defaults.stock ?? 0,
+    preparationDays: defaults.preparationDays ?? 2,
+    minOrderQuantity: defaults.minOrderQuantity ?? 1,
+    maxOrderQuantity: defaults.maxOrderQuantity ?? null,
     isActive: true,
   };
 }
@@ -90,11 +110,11 @@ function emptyDraft(selection: VariantSelection, defaults: VariantDraftDefaults)
  * removing a size must take only its own rows. Rows are matched by signature, so a pairing
  * survives anything that does not change which values it is made of.
  *
- * `defaults` seeds a brand-new row with the product's own price, weight, stock and discount
- * rather than leaving them blank — a combination usually starts out the same as the product until
- * the admin says otherwise, and having its own explicit values (rather than reading the product's
- * live at display time) is what lets one combination opt out of a sale the rest of the product is
- * on. An existing row, even one already cleared to nothing, is never touched.
+ * `defaults` seeds a brand-new row with what the form held for the product — price, weight, stock,
+ * discount, preparation time, order limits — rather than leaving them blank: a combination usually
+ * starts out the same until the admin says otherwise, and having its own explicit values is what
+ * lets one combination opt out of a sale the rest are on. An existing row, even one already
+ * cleared to nothing, is never touched.
  */
 export function mergeCombinations(existing: VariantDraft[], types: SelectedType[], defaults: VariantDraftDefaults = {}): VariantDraft[] {
   const bySignature = new Map(existing.map((variant) => [selectionSignature(variant.selection), variant]));

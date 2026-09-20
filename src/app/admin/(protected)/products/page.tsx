@@ -28,25 +28,16 @@ export default async function AdminProducts({ searchParams }: Context) {
   const { requestedPage, pageSize } = await parseAdminPaginationRequest(params);
   const now = new Date();
   const lowStockThreshold = catalogSettings.catalogLowStockThreshold;
-  // A product with combinations is discounted by its combinations alone — its own discount is not
-  // counted — so the product-level side only applies to a product that has none.
+  // What is sold is always a variant (a product without options has a default one), so a
+  // product's discount state is its variants' — the product's own discount columns only mirror one.
   // A "فروش ویژه" carries no window at all and counts as active regardless of the clock, same as
   // `isProductDiscountActive` treats it.
-  const noVariants: Prisma.ProductWhereInput = { variants: { none: {} } };
-  const activeDiscount: Prisma.ProductWhereInput = { OR: [
-    { ...noVariants, discountType: { not: null }, discountStartsAt: { lte: now }, discountEndsAt: { gte: now } },
-    { ...noVariants, discountType: { not: null }, discountStartsAt: null, discountEndsAt: null },
-    { variants: { some: { discountType: { not: null }, discountStartsAt: { lte: now }, discountEndsAt: { gte: now } } } },
-    { variants: { some: { discountType: { not: null }, discountStartsAt: null, discountEndsAt: null } } },
-  ] };
-  const upcomingDiscount: Prisma.ProductWhereInput = { OR: [
-    { ...noVariants, discountType: { not: null }, discountStartsAt: { gt: now } },
-    { variants: { some: { discountType: { not: null }, discountStartsAt: { gt: now } } } },
-  ] };
-  const noDiscount: Prisma.ProductWhereInput = { OR: [
-    { ...noVariants, discountType: null },
-    { variants: { some: {}, none: { discountType: { not: null } } } },
-  ] };
+  const activeDiscount: Prisma.ProductWhereInput = { variants: { some: { isActive: true, discountType: { not: null }, OR: [
+    { discountStartsAt: { lte: now }, discountEndsAt: { gte: now } },
+    { discountStartsAt: null, discountEndsAt: null },
+  ] } } };
+  const upcomingDiscount: Prisma.ProductWhereInput = { variants: { some: { isActive: true, discountType: { not: null }, discountStartsAt: { gt: now } } } };
+  const noDiscount: Prisma.ProductWhereInput = { variants: { none: { isActive: true, discountType: { not: null } } } };
   const where: Prisma.ProductWhereInput = {
     ...(query ? { OR: [{ name: { contains: query } }, { sku: { contains: query } }, { slug: { contains: query } }] } : {}),
     ...(status ? { status } : {}),
@@ -77,9 +68,8 @@ export default async function AdminProducts({ searchParams }: Context) {
     pagination,
     lowStockThreshold,
     storeIndustry,
-    // A product with combinations is discounted by those alone, so their windows are the ones
-    // that decide when the list has to redraw.
-    nextDiscountBoundaryAt: nextDiscountBoundary(products.flatMap((product) => product.variants.length > 0 ? product.variants : [product])),
+    // Discounts live on variants, so their windows are the ones that decide when the list has to redraw.
+    nextDiscountBoundaryAt: nextDiscountBoundary(products.flatMap((product) => product.variants)),
     initialHiddenColumns,
   };
 

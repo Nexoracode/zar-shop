@@ -1,6 +1,6 @@
 import type { Prisma } from "@generated/prisma/client";
 
-export type CartMergeTransaction = Pick<Prisma.TransactionClient, "cart" | "cartItem" | "product">;
+export type CartMergeTransaction = Pick<Prisma.TransactionClient, "cart" | "cartItem" | "productVariant">;
 
 /**
  * Folds a guest user's cart into the account they just logged into or registered.
@@ -26,13 +26,14 @@ export async function mergeGuestCartIntoUser(
   let targetCart: { id: string } | null = null;
 
   for (const item of guestCart.items) {
-    const product = await transaction.product.findUnique({ where: { id: item.productId }, select: { stock: true } });
-    if (!product || product.stock < 1) continue;
+    // What is in stock is what the line's own variant holds — not the product's total.
+    const variant = await transaction.productVariant.findUnique({ where: { productId_selectionKey: { productId: item.productId, selectionKey: item.selectionKey } }, select: { stock: true, isActive: true } });
+    if (!variant || !variant.isActive || variant.stock < 1) continue;
     targetCart ??= await transaction.cart.upsert({ where: { userId: targetUserId }, update: {}, create: { userId: targetUserId } });
     const existing = await transaction.cartItem.findUnique({
       where: { cartId_productId_selectionKey: { cartId: targetCart.id, productId: item.productId, selectionKey: item.selectionKey } },
     });
-    const quantity = Math.min(maxOrderItemQuantity, product.stock, (existing?.quantity ?? 0) + item.quantity);
+    const quantity = Math.min(maxOrderItemQuantity, variant.stock, (existing?.quantity ?? 0) + item.quantity);
     await transaction.cartItem.upsert({
       where: { cartId_productId_selectionKey: { cartId: targetCart.id, productId: item.productId, selectionKey: item.selectionKey } },
       create: { cartId: targetCart.id, productId: item.productId, selectionKey: item.selectionKey, selectedOptions: item.selectedOptions ?? undefined, quantity },

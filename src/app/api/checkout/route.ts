@@ -6,7 +6,7 @@ import { getCurrentUser } from "@/modules/auth/session";
 import { getGoldPrice } from "@/modules/gold/gold-price.service";
 import { calculateProductPrice } from "@/modules/products/pricing";
 import { optionEntries } from "@/modules/products/options";
-import { findVariant, isVariantSnapshotValid, variantPricing } from "@/modules/products/variants";
+import { findVariant, isVariantSnapshotValid, variantPricing, variantQuantityError } from "@/modules/products/variants";
 import { isCartLineUnavailable } from "@/modules/cart/line-availability";
 import { cardToCardPagePath } from "@/modules/payments/card-to-card-shared";
 import { checkoutPaymentMethodSchema, getCheckoutPaymentMethods, getStorefrontPaymentProvider, isCardToCardMethod } from "@/modules/payments/storefront-methods";
@@ -29,7 +29,7 @@ import { notifyNextPurchaseRewards } from "@/modules/notifications/promotion-not
 
 type ItemWithProduct = Prisma.CartItemGetPayload<{ include: { product: { include: { variants: true } } } }>;
 type PriceParts = ReturnType<typeof calculateProductPrice>;
-type CheckoutLine = { item: ItemWithProduct; p: ItemWithProduct["product"]; parts: PriceParts; selectedWeight: string; originalUnitPrice: number; discountAmount: number; unitPrice: number; total: number };
+type CheckoutLine = { item: ItemWithProduct; p: ItemWithProduct["product"]; parts: PriceParts; selectedWeight: string; originalUnitPrice: number; discountAmount: number; unitPrice: number; total: number; preparationDays: number };
 
 const checkoutSchema = z.object({
   addressId: z.string().cuid(),
@@ -100,10 +100,12 @@ export async function POST(request: Request) {
     }
     const lines: CheckoutLine[] = payableItems.map((item: ItemWithProduct) => {
       const p = item.product;
-      if (item.quantity > orderSettings.maxOrderItemQuantity) throw new Error(`حداکثر تعداد مجاز برای هر قلم ${orderSettings.maxOrderItemQuantity.toLocaleString("fa-IR")} عدد است.`);
-      if (p.status !== "ACTIVE" || p.stock < item.quantity) throw new Error(`موجودی ${p.name} کافی نیست.`);
-      if (!isVariantSnapshotValid(p.variants, item.selectionKey, item.quantity)) throw new Error(`تنوع انتخاب‌شده برای ${p.name} غیرفعال یا ناموجود است.`);
-      const resolved = variantPricing(item.selectionKey ? findVariant(p.variants, item.selectionKey) : null, p);
+      const variant = findVariant(p.variants, item.selectionKey);
+      const quantityError = variantQuantityError(item.quantity, variant, orderSettings.maxOrderItemQuantity);
+      if (quantityError) throw new Error(`${p.name}: ${quantityError}`);
+      if (p.status !== "ACTIVE") throw new Error(`${p.name} در حال حاضر قابل سفارش نیست.`);
+      if (!isVariantSnapshotValid(p.variants, item.selectionKey, item.quantity)) throw new Error(`موجودی ${p.name} کافی نیست یا تنوع انتخاب‌شده غیرفعال است.`);
+      const resolved = variantPricing(variant, p);
       const selectedWeight = resolved.weightGrams;
       const parts = calculateProductPrice({
         goldPricePerGram18: rate,
@@ -117,19 +119,19 @@ export async function POST(request: Request) {
       const originalUnitPrice = p.storeIndustry === "GENERAL"
         ? resolved.fixedPrice ?? 0
         : resolved.fixedPrice ?? parts.total;
-      // A combination that overrides the amount also brings its own window; one that does not
-      // reads the product's, via `resolved`.
+      // The variant's discount and window are its own; a variant without one is sold at full price.
       const pricing = calculateDiscountedPrice(originalUnitPrice, { ...p, discountType: resolved.discountType, discountValue: resolved.discountValue, discountStartsAt: resolved.discountStartsAt, discountEndsAt: resolved.discountEndsAt });
       const unitPrice = pricing.finalPrice;
       if (unitPrice <= 0) throw new Error(`قیمت ${p.name} معتبر نیست.`);
-      return { item, p, parts, selectedWeight, originalUnitPrice, discountAmount: pricing.discountAmount, unitPrice, total: unitPrice * item.quantity };
+      return { item, p, parts, selectedWeight, originalUnitPrice, discountAmount: pricing.discountAmount, unitPrice, total: unitPrice * item.quantity, preparationDays: variant?.preparationDays ?? p.preparationDays };
     });
     const merchandiseAmount = lines.reduce((sum: number, line: CheckoutLine) => sum + line.total, 0);
     if (merchandiseAmount < orderSettings.minimumOrderAmount) return NextResponse.json({ message: `حداقل مبلغ سفارش ${orderSettings.minimumOrderAmount.toLocaleString("fa-IR")} ریال است.` }, { status: 422 });
     const subtotal = lines.reduce((sum: number, line: CheckoutLine) => sum + line.originalUnitPrice * line.item.quantity, 0);
     const productDiscount = lines.reduce((sum: number, line: CheckoutLine) => sum + line.discountAmount * line.item.quantity, 0);
     const tax = lines.reduce((sum: number, line: CheckoutLine) => sum + line.parts.tax * line.item.quantity, 0);
-    const preparationDays = Math.max(...lines.map((line) => line.p.preparationDays));
+    // The order is ready when its slowest line is.
+    const preparationDays = Math.max(...lines.map((line) => line.preparationDays));
     const result = await db.$transaction(async (tx) => {
       const inventoryItems = lines.map(({ item, p }) => ({ productId: p.id, quantity: item.quantity, selectionKey: item.selectionKey }));
       await reserveInventory(tx, inventoryItems);

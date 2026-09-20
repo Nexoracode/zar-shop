@@ -47,7 +47,7 @@ const catalogProductSelect = {
     select: {
       selectionKey: true, selection: true, price: true, weightGrams: true,
       discountType: true, discountValue: true, discountStartsAt: true, discountEndsAt: true,
-      stock: true, isActive: true,
+      stock: true, preparationDays: true, minOrderQuantity: true, maxOrderQuantity: true, isActive: true,
     },
   },
   media: {
@@ -134,10 +134,10 @@ export async function getStorefrontCatalog(query: StorefrontCatalogQuery, catego
     /*
      * A card shows the cheapest combination a shopper could actually buy, so a product whose
      * black is discounted advertises that price rather than the product's undiscounted base.
-     * Without combinations the product prices itself, which is the same call with an empty key.
+     * A product without options has a single default variant, keyed "", so it is the same call.
      */
     const keys = product.variants.filter((variant) => variant.isActive).map((variant) => variant.selectionKey);
-    const quotes = (keys.length ? keys : [""]).flatMap((key) => {
+    const quotes = keys.flatMap((key) => {
       const quote = lineUnitPrice(product, key, goldPrice);
       return quote ? [quote] : [];
     });

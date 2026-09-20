@@ -13,7 +13,7 @@ type OptionGuide = { url: string; type: "IMAGE" | "DOCUMENT"; title: string };
 type ProductOption = { id: string; name: string; kind: "COLOR" | "SELECT"; values: Array<{ value: string; stock: number; color: { name: string; hex: string } | null }> };
 
 /** One buyable combination. `selection` is keyed by type name, the same key `options[].id` carries. */
-type PurchasableVariant = { selection: Record<string, string>; price: number | null; originalPrice: number | null; stock: number; available: boolean };
+type PurchasableVariant = { selection: Record<string, string>; price: number | null; originalPrice: number | null; stock: number; preparationDays: number; available: boolean };
 
 /** A cart line this page added, keyed by the picked combination — each combination is its own line. */
 type CartLine = { id: string; quantity: number };
@@ -214,7 +214,7 @@ export function AddToCart({ productId, options = [], variants = [], optionGuide,
         {msg && <small className="block text-[var(--brand-accent)]">{msg}</small>}
         <div className="grid gap-3 border-t border-slate-200 pt-4 text-xs text-slate-600">
           <span className="flex items-center justify-between gap-3"><span>ضمانت اصالت و سلامت کالا</span><ShieldCheck size={18} className="text-slate-500" /></span>
-          <span className="flex items-center justify-between gap-3"><span>{preparationDays > 0 ? `آماده‌سازی و ارسال تا ${preparationDays.toLocaleString("fa-IR")} روز کاری` : "ارسال قابل پیگیری"}</span><PackageCheck size={18} className="text-slate-500" /></span>
+          <span className="flex items-center justify-between gap-3"><span>{(selectedVariant?.preparationDays ?? preparationDays) > 0 ? `آماده‌سازی و ارسال تا ${(selectedVariant?.preparationDays ?? preparationDays).toLocaleString("fa-IR")} روز کاری` : "ارسال قابل پیگیری"}</span><PackageCheck size={18} className="text-slate-500" /></span>
         </div>
         {purchaseFooter}
       </div>

@@ -1,6 +1,7 @@
 import { Layers, Tag } from "lucide-react";
 import { formatDateTime } from "@/lib/format";
 import { summarizeDiscounts, type DiscountEntry } from "@/modules/products/discount-summary";
+import { isDefaultSelection } from "@/modules/products/variant-combinations";
 import type { ProductRow } from "@/components/admin/products-list-data";
 import type { BpChartTipRow } from "./ui/chart-tip";
 import { BpHoverCard } from "./ui/hover-card";
@@ -57,8 +58,8 @@ function previewColors(product: ProductRow) {
  * on the mobile card). Each opens the Blueprint hover card:
  *
  * - the discount tag is for a discount on the product itself (running, or scheduled to start) and
- *   its card gives the amount and the dates. A product with combinations has none — they carry
- *   the discounts — so it never gets this tag;
+ *   its card gives the amount and the dates. It is the default variant's discount, so a product
+ *   with combinations never gets this tag — they carry the discounts;
  * - the variants tag lists each option's values (colours with their real swatch) and, when any
  *   combination has a discount of its own, each of those in the same layout as the product's own
  *   discount card — so a discount that lives on a combination is shown there and never as a tag
@@ -68,7 +69,8 @@ function previewColors(product: ProductRow) {
  */
 export function ProductFlags({ product, className = "", emptyDash = false }: { product: ProductRow; className?: string; emptyDash?: boolean }) {
   const discounts = summarizeDiscounts(product);
-  const variantCount = product._count.variants;
+  // The default variant (no options) is not a "تنوع" — only the real combinations are counted.
+  const variantCount = product.variants.filter((variant) => !isDefaultSelection(variant.selection)).length;
   const ownActive = discounts.active.find((entry) => entry.scope === "product");
   const ownUpcoming = discounts.upcoming.find((entry) => entry.scope === "product");
   const own = ownActive ?? ownUpcoming;

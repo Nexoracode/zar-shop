@@ -74,6 +74,9 @@ export async function POST(request: Request, context: Context) {
         discountStartsAt: variant.discountStartsAt?.toISOString() ?? null,
         discountEndsAt: variant.discountEndsAt?.toISOString() ?? null,
         stock: variant.stock,
+        preparationDays: variant.preparationDays,
+        minOrderQuantity: variant.minOrderQuantity,
+        maxOrderQuantity: variant.maxOrderQuantity,
         isActive: variant.isActive,
       }));
       await writeVariantSetup(tx, created.id, optionTypesInput, variantsInput);

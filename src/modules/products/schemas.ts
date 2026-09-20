@@ -55,6 +55,9 @@ const productVariantSchema = z.object({
     z.string().trim().min(1).max(productFieldLimits.optionValue),
   ).refine((selection) => Object.keys(selection).length > 0, "ترکیب تنوع نمی‌تواند خالی باشد."),
   stock: z.coerce.number("موجودی ترکیب را وارد کنید.").int("موجودی ترکیب باید عدد صحیح باشد.").nonnegative("موجودی ترکیب نمی‌تواند منفی باشد.").default(0),
+  preparationDays: z.coerce.number("زمان آماده‌سازی ترکیب را وارد کنید.").int("زمان آماده‌سازی ترکیب باید عدد صحیح باشد.").min(0, "زمان آماده‌سازی ترکیب نمی‌تواند منفی باشد.").max(90, "زمان آماده‌سازی ترکیب نمی‌تواند بیشتر از ۹۰ روز باشد.").default(2),
+  minOrderQuantity: z.coerce.number("حداقل سفارش ترکیب را وارد کنید.").int("حداقل سفارش ترکیب باید عدد صحیح باشد.").min(1, "حداقل سفارش ترکیب نمی‌تواند کمتر از ۱ باشد.").max(1000, "حداقل سفارش ترکیب بیش از حد مجاز است.").default(1),
+  maxOrderQuantity: emptyToNull(z.coerce.number("حداکثر سفارش ترکیب را وارد کنید.").int("حداکثر سفارش ترکیب باید عدد صحیح باشد.").positive("حداکثر سفارش ترکیب باید بیشتر از صفر باشد.").max(1000, "حداکثر سفارش ترکیب بیش از حد مجاز است.")),
   isActive: z.boolean().default(true),
   weightGrams: z.string().trim().regex(/^\d{1,7}(\.\d{1,3})?$/, "وزن ترکیب باید حداکثر سه رقم اعشار داشته باشد.").nullable().default(null),
   price: z.string().trim().regex(/^[1-9]\d{0,17}$/, "قیمت ترکیب باید یک مبلغ معتبر و بیشتر از صفر باشد.").nullable().default(null),
@@ -66,6 +69,9 @@ const productVariantSchema = z.object({
   discountStartsAt: discountBoundarySchema.nullable().default(null),
   discountEndsAt: discountBoundarySchema.nullable().default(null),
 }).superRefine((variant, context) => {
+  if (variant.maxOrderQuantity !== null && variant.maxOrderQuantity < variant.minOrderQuantity) {
+    context.addIssue({ code: "custom", path: ["maxOrderQuantity"], message: "حداکثر سفارش ترکیب نمی‌تواند کمتر از حداقل آن باشد." });
+  }
   const hasDiscountAmount = variant.discountType !== null || variant.discountValue !== null;
   if ((variant.discountType !== null) !== (variant.discountValue !== null)) {
     context.addIssue({ code: "custom", path: ["discountValue"], message: "نوع و مقدار تخفیف ترکیب را با هم مشخص کنید." });

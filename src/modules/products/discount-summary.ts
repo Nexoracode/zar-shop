@@ -1,5 +1,6 @@
 import { isProductDiscountActive, type DiscountType } from "@/modules/products/discount";
 import { optionEntries } from "@/modules/products/options";
+import { isDefaultSelection } from "@/modules/products/variant-combinations";
 
 type DiscountFields = {
   discountType: DiscountType | null;
@@ -50,22 +51,23 @@ function toEntry(source: DiscountFields, scope: DiscountEntry["scope"], label: s
 /**
  * Every discount a product carries, split into those running now and those scheduled to start.
  *
- * A product with combinations is priced by them alone — each one either has a discount of its own
- * or has none — so the product's own discount is not counted at all once it has any; only a
- * product without combinations reports its own. A combination that is switched off is not for
- * sale, so its discount is left out.
+ * What is sold is always a variant, so only variants are read — the product's own discount columns
+ * merely mirror one of them. A product without options has a single default variant, reported as
+ * the whole product («کل محصول»); otherwise each combination is named by its values. A variant that
+ * is switched off is not for sale, so its discount is left out.
  */
 export function summarizeDiscounts(
-  product: DiscountFields & { variants: Array<DiscountFields & { selection: unknown; isActive: boolean }> },
+  product: { variants: Array<DiscountFields & { selection: unknown; isActive: boolean }> },
   now = new Date(),
 ): DiscountSummary {
   const summary: DiscountSummary = { active: [], upcoming: [] };
-  const own = product.variants.length > 0 ? null : classify(product, now);
-  if (own) summary[own].push(toEntry(product, "product", "کل محصول"));
   for (const variant of product.variants) {
     if (!variant.isActive) continue;
     const state = classify(variant, now);
-    if (state) summary[state].push(toEntry(variant, "variant", combinationLabel(variant.selection)));
+    if (!state) continue;
+    summary[state].push(isDefaultSelection(variant.selection)
+      ? toEntry(variant, "product", "کل محصول")
+      : toEntry(variant, "variant", combinationLabel(variant.selection)));
   }
   return summary;
 }

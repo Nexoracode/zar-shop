@@ -1,3 +1,4 @@
+import { isDefaultSelection } from "@/modules/products/variant-combinations";
 import { notFound } from "next/navigation";
 import { BlueprintProductForm } from "@/components/admin/blueprint/product-form";
 import { db } from "@/lib/db";
@@ -68,7 +69,8 @@ export default async function EditProductPage({ params }: Context) {
     status: product.status,
     attributes: parseProductAttributes(product.attributes),
     optionTypes: product.optionTypes.map((row) => ({ typeId: row.typeId, valueIds: row.values.map((entry) => entry.valueId) })),
-    variants: product.variants.map((variant) => ({
+    // The default variant of a product without options is edited through the product's own fields; the form lists only real combinations.
+    variants: product.variants.filter((variant) => !isDefaultSelection(variant.selection)).map((variant) => ({
       selection: (variant.selection ?? {}) as Record<string, string>,
       price: variant.price === null ? null : variant.price.toString(),
       weightGrams: variant.weightGrams === null ? null : variant.weightGrams.toString(),
@@ -77,6 +79,9 @@ export default async function EditProductPage({ params }: Context) {
       discountStartsAt: variant.discountStartsAt?.toISOString() ?? null,
       discountEndsAt: variant.discountEndsAt?.toISOString() ?? null,
       stock: variant.stock,
+      preparationDays: variant.preparationDays,
+      minOrderQuantity: variant.minOrderQuantity,
+      maxOrderQuantity: variant.maxOrderQuantity,
       isActive: variant.isActive,
     })),
     optionGuide: product.optionGuide ? { id: product.optionGuide.id, title: product.optionGuide.title ?? product.optionGuide.storageKey, url: product.optionGuide.url, type: product.optionGuide.type } : null,

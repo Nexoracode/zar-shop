@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Maximize2, Plus, Trash2, X } from "lucide-react";
+import { Boxes, Maximize2, Plus, Trash2, X } from "lucide-react";
 import {
   MAX_VARIANTS,
   describeSelection,
@@ -18,6 +18,7 @@ import { BpCombobox } from "./ui/combobox";
 import { BpDateTimeField, formatPersianDateTime } from "./ui/date-time-field";
 import { BpDialog } from "./ui/dialog";
 import { BpNumberInput } from "./ui/number-input";
+import { BpSeg } from "./ui/seg";
 import { BpSelect } from "./ui/select";
 import { BpSwitch } from "./ui/switch";
 import { BpTable, BpTd, BpTh } from "./ui/table";
@@ -57,6 +58,10 @@ type Props = {
   weightGrams?: string;
   /** The product's own stock — seeded into a brand-new combination the same way `fixedPrice` is. */
   stock?: number;
+  /** The product form's preparation time and order limits — seeded into a brand-new combination too. */
+  preparationDays?: number;
+  minOrderQuantity?: number;
+  maxOrderQuantity?: number | null;
   /** The product's own discount, exactly as it would be submitted (`null` when the product has
    * none — which is always so once it has combinations, since they carry the discounts). A brand-new combination starts with its own explicit copy of these instead of reading
    * the product's live at display time — so the admin can then opt a single combination out of a
@@ -71,11 +76,14 @@ type Props = {
 
 const MAX_TYPES = 5;
 
-export function BlueprintProductOptions({ storeIndustry, colors, library, optionTypes, variants, fixedPrice, weightGrams, stock, discountType, discountValue, discountStartsAt, discountEndsAt, onChange, onLibraryChange }: Props) {
+export function BlueprintProductOptions({ storeIndustry, colors, library, optionTypes, variants, fixedPrice, weightGrams, stock, preparationDays, minOrderQuantity, maxOrderQuantity, discountType, discountValue, discountStartsAt, discountEndsAt, onChange, onLibraryChange }: Props) {
   const defaultVariantBase: VariantDraftDefaults = {
     price: storeIndustry === "GENERAL" && fixedPrice ? fixedPrice : null,
     weightGrams: storeIndustry === "GOLD" && weightGrams ? weightGrams : null,
     stock: stock ?? null,
+    preparationDays: preparationDays ?? null,
+    minOrderQuantity: minOrderQuantity ?? null,
+    maxOrderQuantity: maxOrderQuantity ?? null,
     discountType: discountType ?? null,
     discountValue: discountValue ?? null,
     discountStartsAt: discountStartsAt ?? null,
@@ -91,6 +99,13 @@ export function BlueprintProductOptions({ storeIndustry, colors, library, option
   // The combinations table has too many columns to fit the form's own column, no matter how it's
   // squeezed — so editing happens in a dialog wide enough for it instead, opened from here.
   const [combinationsFullscreen, setCombinationsFullscreen] = useState(false);
+  // Two separate places for the two kinds of figures, so neither table outgrows the dialog:
+  // money (price or weight, discount) and fulfilment (stock, preparation time, order limits).
+  const [combinationsTab, setCombinationsTab] = useState<"pricing" | "fulfilment">("pricing");
+  function openCombinations(tab: "pricing" | "fulfilment") {
+    setCombinationsTab(tab);
+    setCombinationsFullscreen(true);
+  }
 
   function resetValueForm() {
     setNewValueFor("");
@@ -435,10 +450,16 @@ export function BlueprintProductOptions({ storeIndustry, colors, library, option
           <span className="bp-muted text-[11px]">{variants.length.toLocaleString("fa-IR")} از {MAX_VARIANTS.toLocaleString("fa-IR")}</span>
           {/* The table's own columns never fit the form's column, wide or narrow — so it is edited
               in a dialog with room for them instead of squeezed in here. */}
-          <BpButton size="sm" className="ms-auto gap-1.5" onClick={() => setCombinationsFullscreen(true)}>
-            <Maximize2 size={14} />
-            تنظیم ترکیب‌ها
-          </BpButton>
+          <div className="ms-auto flex flex-wrap items-center gap-2">
+            <BpButton size="sm" className="gap-1.5" onClick={() => openCombinations("pricing")}>
+              <Maximize2 size={14} />
+              قیمت و تخفیف
+            </BpButton>
+            <BpButton size="sm" className="gap-1.5" onClick={() => openCombinations("fulfilment")}>
+              <Boxes size={14} />
+              موجودی و آماده‌سازی
+            </BpButton>
+          </div>
         </div>
       )}
     </div>
@@ -452,13 +473,81 @@ export function BlueprintProductOptions({ storeIndustry, colors, library, option
       onClose={() => setCombinationsFullscreen(false)}
       actions={<BpButton variant="primary" onClick={() => setCombinationsFullscreen(false)}>تمام</BpButton>}
     >
-      <BpTable ariaLabel="ترکیب‌های تنوع محصول" minWidth={760}>
+      <div className="mb-3">
+        <BpSeg
+          label="بخش تنظیم ترکیب‌ها"
+          value={combinationsTab}
+          onChange={setCombinationsTab}
+          options={[{ value: "pricing", label: "قیمت و تخفیف" }, { value: "fulfilment", label: "موجودی و آماده‌سازی" }]}
+        />
+      </div>
+      {combinationsTab === "fulfilment" ? (
+        <BpTable ariaLabel="موجودی و آماده‌سازی ترکیب‌های تنوع محصول" minWidth={680}>
+          <thead>
+            <tr>
+              <BpTh>ترکیب</BpTh>
+              <BpTh>موجودی</BpTh>
+              <BpTh>زمان آماده‌سازی (روز)</BpTh>
+              <BpTh>حداقل سفارش</BpTh>
+              <BpTh>حداکثر سفارش</BpTh>
+            </tr>
+          </thead>
+          <tbody>
+            {variants.map((variant) => {
+              const signature = selectionSignature(variant.selection);
+              const label = describeSelection(variant.selection, typeOrder);
+              return (
+                <tr key={signature}>
+                  <BpTd className="whitespace-nowrap">{label}</BpTd>
+                  <BpTd>
+                    <BpNumberInput
+                      aria-label={`موجودی ترکیب ${label}`}
+                      value={String(variant.stock)}
+                      reserveMessage={false}
+                      wrapperClassName="w-[min(100%,90px)]"
+                      onValueChange={(next) => updateVariant(signature, { stock: next === "" ? 0 : Number(next) })}
+                    />
+                  </BpTd>
+                  <BpTd>
+                    <BpNumberInput
+                      aria-label={`زمان آماده‌سازی ترکیب ${label}`}
+                      value={String(variant.preparationDays)}
+                      reserveMessage={false}
+                      wrapperClassName="w-[min(100%,90px)]"
+                      onValueChange={(next) => updateVariant(signature, { preparationDays: next === "" ? 0 : Number(next) })}
+                    />
+                  </BpTd>
+                  <BpTd>
+                    <BpNumberInput
+                      aria-label={`حداقل سفارش ترکیب ${label}`}
+                      value={String(variant.minOrderQuantity)}
+                      reserveMessage={false}
+                      wrapperClassName="w-[min(100%,90px)]"
+                      onValueChange={(next) => updateVariant(signature, { minOrderQuantity: next === "" ? 1 : Math.max(1, Number(next)) })}
+                    />
+                  </BpTd>
+                  <BpTd>
+                    <BpNumberInput
+                      aria-label={`حداکثر سفارش ترکیب ${label}`}
+                      value={variant.maxOrderQuantity === null ? "" : String(variant.maxOrderQuantity)}
+                      placeholder="بدون سقف"
+                      reserveMessage={false}
+                      wrapperClassName="w-[min(100%,110px)]"
+                      onValueChange={(next) => updateVariant(signature, { maxOrderQuantity: next === "" ? null : Number(next) })}
+                    />
+                  </BpTd>
+                </tr>
+              );
+            })}
+          </tbody>
+        </BpTable>
+      ) : (
+      <BpTable ariaLabel="ترکیب‌های تنوع محصول" minWidth={680}>
         <thead>
           <tr>
             <BpTh>ترکیب</BpTh>
             <BpTh>{storeIndustry === "GOLD" ? "وزن (گرم)" : "قیمت (ریال)"}</BpTh>
             <BpTh>تخفیف</BpTh>
-            <BpTh>موجودی</BpTh>
             <BpTh>فعال</BpTh>
             <BpTh>حذف</BpTh>
           </tr>
@@ -529,15 +618,6 @@ export function BlueprintProductOptions({ storeIndustry, colors, library, option
                   </div>
                 </BpTd>
                 <BpTd>
-                  <BpNumberInput
-                    aria-label={`موجودی ترکیب ${label}`}
-                    value={String(variant.stock)}
-                    reserveMessage={false}
-                    wrapperClassName="w-[min(100%,70px)]"
-                    onValueChange={(next) => updateVariant(signature, { stock: next === "" ? 0 : Number(next) })}
-                  />
-                </BpTd>
-                <BpTd>
                   <BpCheckbox isSelected={variant.isActive} label={`فعال بودن ترکیب ${label}`} onChange={() => updateVariant(signature, { isActive: !variant.isActive })} />
                 </BpTd>
                 <BpTd>
@@ -556,6 +636,7 @@ export function BlueprintProductOptions({ storeIndustry, colors, library, option
           })}
         </tbody>
       </BpTable>
+      )}
     </BpDialog>
 
     <DeleteConfirmDialog

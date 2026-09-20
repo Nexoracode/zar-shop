@@ -1,6 +1,6 @@
 import type { Prisma } from "@generated/prisma/client";
 import { tehranDateEnd, tehranDateStart } from "@/modules/products/discount";
-import { variantSelectionKey, type VariantSelection } from "@/modules/products/variants";
+import { productMirror, variantSelectionKey, type VariantSelection } from "@/modules/products/variants";
 
 /*
  * Saving a product's variant setup.
@@ -22,12 +22,51 @@ export type ProductVariantInput = {
   discountStartsAt: string | null;
   discountEndsAt: string | null;
   stock: number;
+  preparationDays: number;
+  minOrderQuantity: number;
+  maxOrderQuantity: number | null;
   isActive: boolean;
 };
 
+/**
+ * What the product form holds for a product without options — the figures it is sold by. They are
+ * saved as the product's default variant, so a simple product and one with options are stored, and
+ * sold, the same way.
+ */
+export type DefaultVariantSource = {
+  storeIndustry: "GOLD" | "GENERAL";
+  fixedPrice: number | null;
+  weightGrams: number;
+  discountType: "PERCENT" | "FIXED" | null;
+  discountValue: number | null;
+  discountStartsAt: string | null;
+  discountEndsAt: string | null;
+  stock: number;
+  preparationDays: number;
+  minOrderQuantity: number;
+  maxOrderQuantity: number | null;
+};
+
+export function defaultVariantInput(source: DefaultVariantSource): ProductVariantInput {
+  return {
+    selection: {},
+    price: source.storeIndustry === "GENERAL" && source.fixedPrice !== null ? String(Math.round(source.fixedPrice)) : null,
+    weightGrams: source.storeIndustry === "GOLD" ? String(Number(source.weightGrams.toFixed(3))) : null,
+    discountType: source.discountType,
+    discountValue: source.discountValue !== null ? String(source.discountValue) : null,
+    discountStartsAt: source.discountStartsAt,
+    discountEndsAt: source.discountEndsAt,
+    stock: source.stock,
+    preparationDays: source.preparationDays,
+    minOrderQuantity: source.minOrderQuantity,
+    maxOrderQuantity: source.maxOrderQuantity,
+    isActive: true,
+  };
+}
+
 export type VariantWriteError = { message: string };
 
-type WriteTransaction = Pick<Prisma.TransactionClient, "optionType" | "optionValue" | "productOptionType" | "productOptionValue" | "productVariant">;
+type WriteTransaction = Pick<Prisma.TransactionClient, "optionType" | "optionValue" | "productOptionType" | "productOptionValue" | "productVariant" | "product">;
 
 /**
  * Checks the chosen types and values against the library, and that every combination is made of
@@ -38,10 +77,17 @@ export async function validateVariantSetup(
   db: Pick<Prisma.TransactionClient, "optionType">,
   optionTypes: ProductOptionTypeInput[],
   variants: ProductVariantInput[],
+  storeIndustry?: "GOLD" | "GENERAL",
 ): Promise<VariantWriteError | null> {
+  // Each combination is sold on its own figures — nothing is inherited from the product — so a
+  // general shop's must carry a price and a gold shop's a weight.
+  if (storeIndustry === "GENERAL" && variants.some((variant) => variant.price === null)) return { message: "برای هر ترکیب قیمت را وارد کنید." };
+  if (storeIndustry === "GOLD" && variants.some((variant) => variant.weightGrams === null)) return { message: "برای هر ترکیب وزن را وارد کنید." };
   if (!optionTypes.length) {
     return variants.length ? { message: "برای تعریف ترکیب، ابتدا نوع تنوع محصول را انتخاب کنید." } : null;
   }
+  // A product with options is sold only through its combinations, so it needs at least one.
+  if (!variants.length) return { message: "برای محصول دارای تنوع، حداقل یک ترکیب لازم است." };
 
   const types = await db.optionType.findMany({
     where: { id: { in: optionTypes.map((type) => type.typeId) }, isActive: true },
@@ -113,6 +159,9 @@ export async function writeVariantSetup(
       discountStartsAt: tehranDateStart(row.discountStartsAt),
       discountEndsAt: tehranDateEnd(row.discountEndsAt),
       stock: row.stock,
+      preparationDays: row.preparationDays,
+      minOrderQuantity: row.minOrderQuantity,
+      maxOrderQuantity: row.maxOrderQuantity,
       isActive: row.isActive,
     };
     await tx.productVariant.upsert({
@@ -121,4 +170,16 @@ export async function writeVariantSetup(
       update: data,
     });
   }
+
+  await syncProductMirror(tx, productId);
+}
+
+/**
+ * Rewrites the product's mirror columns from its variants (see `productMirror`). Called after
+ * every write that can change what a variant holds — a save, a bulk edit, an order taking stock.
+ */
+export async function syncProductMirror(tx: Pick<Prisma.TransactionClient, "product" | "productVariant">, productId: string) {
+  const variants = await tx.productVariant.findMany({ where: { productId }, orderBy: { createdAt: "asc" } });
+  if (!variants.length) return;
+  await tx.product.update({ where: { id: productId }, data: productMirror(variants) });
 }

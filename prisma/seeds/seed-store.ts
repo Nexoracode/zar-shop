@@ -214,6 +214,27 @@ async function createStore(db: PrismaClient, seed: DevelopmentStoreSeed) {
         attributes: product.attributes ?? [],
       },
     });
+    // What is sold is a variant: a product without options has a single default one, keyed "" and
+    // selecting nothing, that carries its price, discount, stock and order figures. The product's
+    // own columns above are the mirror the listings read.
+    await db.productVariant.create({
+      data: {
+        productId: created.id,
+        selectionKey: "",
+        selection: {},
+        price: seed.industry === "GENERAL" ? product.fixedPrice ?? null : null,
+        weightGrams: seed.industry === "GOLD" ? product.weightGrams ?? "1.000" : null,
+        discountType: hasDiscount ? "PERCENT" : null,
+        discountValue: product.discountPercent ?? null,
+        discountStartsAt: hasDiscount ? new Date("2025-01-01T00:00:00.000Z") : null,
+        discountEndsAt: hasDiscount ? new Date("2030-12-31T23:59:59.999Z") : null,
+        stock: product.stock,
+        preparationDays: 2,
+        minOrderQuantity: 1,
+        maxOrderQuantity: null,
+        isActive: true,
+      },
+    });
     if (product.media?.length) {
       await db.productMedia.createMany({
         data: product.media.map((item, position) => ({ productId: created.id, mediaId: resolveMediaId(item.key)!, position, isCover: item.isCover ?? false })),

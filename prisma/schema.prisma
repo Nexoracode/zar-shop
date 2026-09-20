@@ -479,6 +479,11 @@ model Product {
   makingFeeValue      Decimal              @default(0) @db.Decimal(15, 3)
   profitPercent       Decimal              @default(7) @db.Decimal(5, 2)
   taxPercent          Decimal              @default(10) @db.Decimal(5, 2)
+  // fixedPrice, the discount*, stock, preparationDays, minOrderQuantity and maxOrderQuantity below
+  // are a MIRROR for listings, filters and sorting — never what a customer is sold. What is sold
+  // is always a `ProductVariant` (a product without options has exactly one, with an empty
+  // selectionKey), and `syncProductMirror` rewrites these from the variants on every change:
+  // `stock` is the total of the sellable ones, the rest are the "display" variant's.
   fixedPrice          Decimal?             @db.Decimal(18, 0)
   discountType        ProductDiscountType?
   discountValue       Decimal?             @db.Decimal(18, 3)
@@ -492,7 +497,8 @@ model Product {
   packageLengthCm     Decimal?             @db.Decimal(8, 2)
   packageWidthCm      Decimal?             @db.Decimal(8, 2)
   packageHeightCm     Decimal?             @db.Decimal(8, 2)
-  // Per-product order limits. The store-wide cap in order settings still applies on top.
+  // Mirror of the display variant's order limits (see above). The store-wide cap in order
+  // settings still applies on top of a variant's own.
   minOrderQuantity    Int                  @default(1)
   maxOrderQuantity    Int?
   attributes          Json?
@@ -1041,19 +1047,25 @@ model ProductVariant {
   id               String               @id @default(cuid())
   productId        String
   selectionKey     String               @db.VarChar(64)
-  /// Readable snapshot for the cart and the invoice: { "رنگ": "مشکی", "سایز": "XL" }.
+  /// Readable snapshot for the cart and the invoice: { "رنگ": "مشکی", "سایز": "XL" }. A product
+  /// without options has a single default variant whose key is "" and whose selection is {}.
   selection        Json
   /// General shops price a combination directly; gold shops give it a weight and the day's rate
   /// builds the price. Only one of the two is ever set.
   price            Decimal?             @db.Decimal(18, 0)
   weightGrams      Decimal?             @db.Decimal(10, 3)
-  /// Overrides the product's discount for this combination, window included; a combination with
-  /// no discount of its own falls back to the product's, exactly as the type and amount already did.
+  /// This combination's own discount, window included. It is the only discount that applies to
+  /// what is sold: a combination without one is sold at full price.
   discountType     ProductDiscountType?
   discountValue    Decimal?             @db.Decimal(18, 3)
   discountStartsAt DateTime?
   discountEndsAt   DateTime?
   stock            Int                  @default(0)
+  /// Days to prepare this combination before it ships.
+  preparationDays  Int                  @default(2)
+  /// Order limits for this combination alone; the store-wide cap in order settings still applies.
+  minOrderQuantity Int                  @default(1)
+  maxOrderQuantity Int?
   isActive         Boolean              @default(true)
   /// Optimistic lock, as `ProductOption.stockVersion` was: a concurrent order must not overwrite
   /// a stock read it made before the other one landed.

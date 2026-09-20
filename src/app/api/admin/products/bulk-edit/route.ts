@@ -7,6 +7,7 @@ import { getCurrentUser } from "@/modules/auth/session";
 import { hasPermission } from "@/modules/auth/permissions";
 import { auditRequestContext } from "@/modules/audit/request-context";
 import { tehranDateEnd, tehranDateStart } from "@/modules/products/discount";
+import { syncProductMirror } from "@/modules/products/variant-write";
 import { revalidateSitemap } from "@/modules/seo/revalidate";
 
 const dateOnlySchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "تاریخ واردشده معتبر نیست.");
@@ -40,8 +41,9 @@ const bodySchema = z.object({
 });
 
 type Row = {
-  kind: "product" | "variant";
+  /** The variant the change lands on. */
   id: string;
+  productId: string;
   storeIndustry: "GOLD" | "GENERAL";
   price: number | null;
   stock: number;
@@ -49,30 +51,19 @@ type Row = {
 };
 
 /**
- * Groups a bulk change into one editable list: a product with no combinations of its own is the
- * row, a product with combinations hands the change to every one of them instead — the base
- * product's own price/stock stay untouched once it has variants, since those are what checkout
- * actually reads.
+ * A bulk change lands on the variants: what is sold is always a variant — a product without
+ * options has a single default one — so price, stock and discounts are changed there, and the
+ * product's own mirror columns are rewritten from them afterwards.
  */
 function rowsFor(product: Awaited<ReturnType<typeof loadProducts>>[number]): Row[] {
-  if (product.variants.length > 0) {
-    return product.variants.map((variant) => ({
-      kind: "variant",
-      id: variant.id,
-      storeIndustry: product.storeIndustry,
-      price: variant.price !== null ? Number(variant.price) : null,
-      stock: variant.stock,
-      hasDiscount: variant.discountType !== null,
-    }));
-  }
-  return [{
-    kind: "product",
-    id: product.id,
+  return product.variants.map((variant) => ({
+    id: variant.id,
+    productId: product.id,
     storeIndustry: product.storeIndustry,
-    price: product.fixedPrice !== null ? Number(product.fixedPrice) : null,
-    stock: product.stock,
-    hasDiscount: product.discountType !== null,
-  }];
+    price: variant.price !== null ? Number(variant.price) : null,
+    stock: variant.stock,
+    hasDiscount: variant.discountType !== null,
+  }));
 }
 
 function loadProducts(ids: string[]) {
@@ -114,12 +105,11 @@ export async function POST(request: Request) {
     if (!products.length) return NextResponse.json({ message: "محصولی برای ویرایش پیدا نشد." }, { status: 404 });
 
     const productUpdates: { id: string; data: Record<string, unknown> }[] = [];
-    const variantUpdates: { id: string; data: Record<string, unknown> }[] = [];
+    const variantUpdates: { id: string; productId: string; data: Record<string, unknown> }[] = [];
     let skipped = 0;
 
-    // Status and category live only on the product, never a combination, so these bypass
-    // `rowsFor` entirely — a product with variants still gets exactly one update, unlike every
-    // other type here.
+    // Status and category live only on the product, never a variant, so these bypass `rowsFor`
+    // entirely — a product still gets exactly one update, unlike every other type here.
     if (type === "status") {
       for (const product of products) productUpdates.push({ id: product.id, data: { status } });
     } else if (type === "category") {
@@ -132,7 +122,7 @@ export async function POST(request: Request) {
           // number, so a direct price change has nothing to act on there.
           if (row.storeIndustry === "GOLD" || row.price === null) { skipped += 1; continue; }
           const next = method === "set" ? amount : method === "increase" ? row.price + amount : Math.max(1, row.price - amount);
-          data[row.kind === "product" ? "fixedPrice" : "price"] = Math.round(next);
+          data.price = Math.round(next);
         } else if (type === "stock") {
           const change = Math.trunc(amount);
           data.stock = method === "set" ? change : method === "increase" ? row.stock + change : Math.max(0, row.stock - change);
@@ -156,8 +146,7 @@ export async function POST(request: Request) {
           data.discountStartsAt = windowStart;
           data.discountEndsAt = windowEnd;
         }
-        if (row.kind === "product") productUpdates.push({ id: row.id, data });
-        else variantUpdates.push({ id: row.id, data });
+        variantUpdates.push({ id: row.id, productId: row.productId, data });
       }
     }
 
@@ -168,6 +157,8 @@ export async function POST(request: Request) {
     await db.$transaction(async (tx) => {
       for (const update of productUpdates) await tx.product.update({ where: { id: update.id }, data: update.data });
       for (const update of variantUpdates) await tx.productVariant.update({ where: { id: update.id }, data: update.data });
+      // The product's mirror (total stock, display price and discount) follows its variants.
+      for (const productId of new Set(variantUpdates.map((update) => update.productId))) await syncProductMirror(tx, productId);
       await tx.auditLog.create({ data: { actorId: actor.id, action: "PRODUCT_BULK_EDIT", entityType: "Product", ...auditRequestContext(request, {
         type, method, unit, value, startsAt, endsAt, status, categoryId,
         requestedIds: uniqueIds,

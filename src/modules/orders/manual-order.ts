@@ -6,7 +6,7 @@ import { db } from "@/lib/db";
 import { getGoldPrice } from "@/modules/gold/gold-price.service";
 import { calculateProductPrice } from "@/modules/products/pricing";
 import { calculateDiscountedPrice } from "@/modules/products/discount";
-import { findVariant, isVariantSnapshotValid, variantPricing } from "@/modules/products/variants";
+import { findVariant, isDefaultSelection, isVariantSnapshotValid, variantPricing, variantQuantityError } from "@/modules/products/variants";
 import { InventoryUnavailableError, reserveInventory } from "@/modules/orders/inventory";
 import { getOrderSettings, orderExpiresAt } from "@/modules/settings/order-settings";
 import { estimatedReadyAt } from "@/modules/settings/commerce-settings";
@@ -109,11 +109,13 @@ export async function priceManualOrder(input: Pick<ManualOrderInput, "items" | "
     const product = productById.get(entry.productId);
     if (!product) throw new ManualOrderError("یکی از محصولات انتخاب‌شده پیدا نشد.");
     if (product.storeIndustry !== generalSettings.industry) throw new ManualOrderError(`نوع محصول «${product.name}» با قالب فعلی فروشگاه سازگار نیست.`);
-    if (entry.quantity > orderSettings.maxOrderItemQuantity) throw new ManualOrderError(`حداکثر تعداد مجاز برای هر قلم ${orderSettings.maxOrderItemQuantity.toLocaleString("fa-IR")} عدد است.`);
-    if (product.status !== "ACTIVE" || product.stock < entry.quantity) throw new ManualOrderError(`موجودی «${product.name}» کافی نیست.`);
-    if (!isVariantSnapshotValid(product.variants, entry.selectionKey, entry.quantity)) throw new ManualOrderError(`تنوع انتخاب‌شده برای «${product.name}» غیرفعال یا ناموجود است.`);
+    const variant = findVariant(product.variants, entry.selectionKey);
+    const quantityError = variantQuantityError(entry.quantity, variant, orderSettings.maxOrderItemQuantity);
+    if (quantityError) throw new ManualOrderError(`«${product.name}»: ${quantityError}`);
+    if (product.status !== "ACTIVE") throw new ManualOrderError(`«${product.name}» در حال حاضر قابل سفارش نیست.`);
+    if (!isVariantSnapshotValid(product.variants, entry.selectionKey, entry.quantity)) throw new ManualOrderError(`موجودی «${product.name}» کافی نیست یا تنوع انتخاب‌شده غیرفعال است.`);
 
-    const variant = entry.selectionKey ? findVariant(product.variants, entry.selectionKey) : null;
+
     const resolved = variantPricing(variant, product);
     const parts = calculateProductPrice({
       goldPricePerGram18: rate,
@@ -135,12 +137,14 @@ export async function priceManualOrder(input: Pick<ManualOrderInput, "items" | "
     });
     const unitPrice = pricing.finalPrice;
     if (unitPrice <= 0) throw new ManualOrderError(`قیمت «${product.name}» معتبر نیست.`);
-    const selectedOptions = variant && variant.selection && typeof variant.selection === "object" && !Array.isArray(variant.selection)
+    // The default variant names no option, so its line carries no selection.
+    const selectedOptions = variant && !isDefaultSelection(variant.selection) && typeof variant.selection === "object" && !Array.isArray(variant.selection)
       ? (variant.selection as Record<string, string>)
       : undefined;
 
     return {
       product, entry, parts, resolved,
+      preparationDays: variant?.preparationDays ?? product.preparationDays,
       selectedOptions,
       originalUnitPrice,
       discountAmount: pricing.discountAmount,
@@ -153,7 +157,7 @@ export async function priceManualOrder(input: Pick<ManualOrderInput, "items" | "
   const subtotal = lines.reduce((sum, line) => sum + line.originalUnitPrice * line.entry.quantity, 0);
   const productDiscount = lines.reduce((sum, line) => sum + line.discountAmount * line.entry.quantity, 0);
   const tax = lines.reduce((sum, line) => sum + line.parts.tax * line.entry.quantity, 0);
-  const preparationDays = Math.max(...lines.map((line) => line.product.preparationDays));
+  const preparationDays = Math.max(...lines.map((line) => line.preparationDays));
 
   let shippingFee = 0;
   let shippingMethodId: string | null = null;

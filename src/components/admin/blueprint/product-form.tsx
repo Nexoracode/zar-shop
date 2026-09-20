@@ -85,6 +85,26 @@ function spotlightPanel(id: string) {
   window.setTimeout(() => panel.classList.remove("bp-spotlight"), SPOTLIGHT_MS + 100);
 }
 
+/**
+ * The note a panel shows once the product has combinations: what it used to hold is now set per
+ * combination, in the variants card — with a link that takes the reader there.
+ */
+function VariantManagedNotice({ children }: { children: React.ReactNode }) {
+  return (
+    <div role="note" className="bp-notice-info mt-3">
+      <Info size={15} className="mt-[5px] shrink-0" aria-hidden />
+      <p className="m-0 min-w-0 flex-1">
+        {children}
+        {" "}
+        <button type="button" className="bp-notice-info-action" onClick={() => spotlightPanel(OPTIONS_PANEL_ID)}>
+          رفتن به تنوع محصول
+          <ArrowLeft size={13} aria-hidden />
+        </button>
+      </p>
+    </div>
+  );
+}
+
 export function BlueprintProductForm({ storeIndustry, categories = [], brands = [], colors = [], optionLibrary = [], product }: Props) {
   const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
@@ -165,6 +185,15 @@ export function BlueprintProductForm({ storeIndustry, categories = [], brands = 
    */
   const hasVariants = variants.length > 0;
   const productDiscountOn = discountEnabled && !hasVariants;
+  // What the product's own panels stand in for once it has combinations — shown read-only there,
+  // and what the server mirrors onto the product anyway (total stock, quickest preparation,
+  // lowest price).
+  const sellableVariants = variants.filter((variant) => variant.isActive);
+  const variantTotals = {
+    stock: sellableVariants.reduce((sum, variant) => sum + variant.stock, 0),
+    preparationDays: sellableVariants.length ? Math.min(...sellableVariants.map((variant) => variant.preparationDays)) : 0,
+    lowestPrice: variants.some((variant) => variant.price) ? Math.min(...variants.filter((variant) => variant.price).map((variant) => Number(variant.price))) : null,
+  };
   const attributeGroupsChanged = JSON.stringify(attributeGroups) !== JSON.stringify(selectedCategory?.attributeGroups ?? []);
 
   function clearError(field: string) {
@@ -193,10 +222,15 @@ export function BlueprintProductForm({ storeIndustry, categories = [], brands = 
       makingFeeValue: storeIndustry === "GOLD" ? Number(makingFeeValue) : 0,
       profitPercent: storeIndustry === "GOLD" ? Number(profitPercent) : 0,
       taxPercent: storeIndustry === "GOLD" ? Number(taxPercent) : 0,
-      fixedPrice: storeIndustry === "GENERAL" ? Number(fixedPrice) : null,
-      stock: Number(stock), preparationDays: Number(preparationDays), status,
+      // With combinations these are the ones the server mirrors from them; a combination missing its
+      // price is reported by the server, in words, rather than as an error on a locked field here.
+      fixedPrice: storeIndustry === "GENERAL" ? (hasVariants ? variantTotals.lowestPrice ?? 1 : Number(fixedPrice)) : null,
+      stock: hasVariants ? variantTotals.stock : Number(stock),
+      preparationDays: hasVariants ? variantTotals.preparationDays : Number(preparationDays),
+      status,
       shippingWeightGrams, packageLengthCm, packageWidthCm, packageHeightCm,
-      minOrderQuantity: Number(minOrderQuantity), maxOrderQuantity,
+      minOrderQuantity: hasVariants ? 1 : Number(minOrderQuantity),
+      maxOrderQuantity: hasVariants ? "" : maxOrderQuantity,
       discountType: productDiscountOn ? discountType : null,
       discountValue: productDiscountOn && discountValue !== "" ? Number(discountValue) : null,
       discountStartsAt: productDiscountOn && !discountIsSpecialSale ? discountStartsAt : null,
@@ -383,17 +417,22 @@ export function BlueprintProductForm({ storeIndustry, categories = [], brands = 
 
         <Panel title="موجودی و آماده‌سازی">
           <div className="grid gap-3 sm:grid-cols-2">
-            <BpNumberInput name="stock" label="تعداد موجودی در انبار" required value={stock} error={errors.stock} onValueChange={(next) => { setStock(next); clearError("stock"); }} />
-            <BpNumberInput name="preparationDays" label="زمان آماده‌سازی (روز)" required value={preparationDays} error={errors.preparationDays} onValueChange={(next) => { setPreparationDays(next); clearError("preparationDays"); }} />
-            <BpNumberInput name="minOrderQuantity" label="حداقل سفارش" required value={minOrderQuantity} error={errors.minOrderQuantity} hint="کمترین تعدادی که مشتری می‌تواند از این کالا بخرد." onValueChange={(next) => { setMinOrderQuantity(next); clearError("minOrderQuantity"); }} />
-            <BpNumberInput name="maxOrderQuantity" label="حداکثر سفارش" value={maxOrderQuantity} error={errors.maxOrderQuantity} hint="خالی بگذارید تا فقط سقف کلی فروشگاه اعمال شود." onValueChange={(next) => { setMaxOrderQuantity(next); clearError("maxOrderQuantity"); }} />
+            <BpNumberInput name="stock" label="تعداد موجودی در انبار" required disabled={hasVariants} value={hasVariants ? String(variantTotals.stock) : stock} error={errors.stock} hint={hasVariants ? "مجموع موجودی ترکیب‌های فعال." : undefined} onValueChange={(next) => { setStock(next); clearError("stock"); }} />
+            <BpNumberInput name="preparationDays" label="زمان آماده‌سازی (روز)" required disabled={hasVariants} value={hasVariants ? String(variantTotals.preparationDays) : preparationDays} error={errors.preparationDays} hint={hasVariants ? "سریع‌ترین ترکیب فعال." : undefined} onValueChange={(next) => { setPreparationDays(next); clearError("preparationDays"); }} />
+            <BpNumberInput name="minOrderQuantity" label="حداقل سفارش" required disabled={hasVariants} placeholder={hasVariants ? "به تفکیک ترکیب" : undefined} value={hasVariants ? "" : minOrderQuantity} error={errors.minOrderQuantity} hint={hasVariants ? undefined : "کمترین تعدادی که مشتری می‌تواند از این کالا بخرد."} onValueChange={(next) => { setMinOrderQuantity(next); clearError("minOrderQuantity"); }} />
+            <BpNumberInput name="maxOrderQuantity" label="حداکثر سفارش" disabled={hasVariants} placeholder={hasVariants ? "به تفکیک ترکیب" : undefined} value={hasVariants ? "" : maxOrderQuantity} error={errors.maxOrderQuantity} hint={hasVariants ? undefined : "خالی بگذارید تا فقط سقف کلی فروشگاه اعمال شود."} onValueChange={(next) => { setMaxOrderQuantity(next); clearError("maxOrderQuantity"); }} />
           </div>
+          {hasVariants && (
+            <VariantManagedNotice>
+              این محصول تنوع دارد؛ موجودی، زمان آماده‌سازی و حداقل و حداکثر سفارش هر ترکیب جداگانه از بخش «تنوع محصول» مدیریت می‌شود و اینجا غیرفعال است.
+            </VariantManagedNotice>
+          )}
         </Panel>
 
         <Panel title={storeIndustry === "GENERAL" ? "قیمت و تخفیف" : "تخفیف محصول"}>
           {storeIndustry === "GENERAL" && (
             <div className="mb-3 border-b border-[var(--bp-divider)] pb-3 sm:max-w-xs">
-              <BpNumberInput name="fixedPrice" label="قیمت فروش (ریال)" required isPrice value={fixedPrice} error={errors.fixedPrice} placeholder="۱٬۵۰۰٬۰۰۰" onValueChange={(next) => { setFixedPrice(next); clearError("fixedPrice"); }} />
+              <BpNumberInput name="fixedPrice" label="قیمت فروش (ریال)" required isPrice disabled={hasVariants} value={hasVariants ? String(variantTotals.lowestPrice ?? "") : fixedPrice} error={errors.fixedPrice} hint={hasVariants ? "کمترین قیمت ترکیب‌ها." : undefined} placeholder="۱٬۵۰۰٬۰۰۰" onValueChange={(next) => { setFixedPrice(next); clearError("fixedPrice"); }} />
             </div>
           )}
           <div className="flex items-center justify-between gap-3">
@@ -401,17 +440,9 @@ export function BlueprintProductForm({ storeIndustry, categories = [], brands = 
             <BpSwitch isSelected={productDiscountOn} isDisabled={hasVariants} onChange={setDiscountEnabled}>تخفیف داشته باشد</BpSwitch>
           </div>
           {hasVariants && (
-            <div role="note" className="bp-notice-info mt-3">
-              <Info size={15} className="mt-[5px] shrink-0" aria-hidden />
-              <p className="m-0 min-w-0 flex-1">
-                این محصول تنوع دارد؛ تخفیف هر ترکیب جداگانه از بخش «تنوع محصول» مدیریت می‌شود و تخفیف کل محصول اینجا غیرفعال است.
-                {" "}
-                <button type="button" className="bp-notice-info-action" onClick={() => spotlightPanel(OPTIONS_PANEL_ID)}>
-                  رفتن به تنوع محصول
-                  <ArrowLeft size={13} aria-hidden />
-                </button>
-              </p>
-            </div>
+            <VariantManagedNotice>
+              این محصول تنوع دارد؛ قیمت و تخفیف هر ترکیب جداگانه از بخش «تنوع محصول» مدیریت می‌شود و اینجا غیرفعال است.
+            </VariantManagedNotice>
           )}
           {productDiscountOn && (
             <div className="mt-3 grid gap-3">
@@ -470,6 +501,9 @@ export function BlueprintProductForm({ storeIndustry, categories = [], brands = 
             fixedPrice={fixedPrice}
             weightGrams={weightGrams}
             stock={Number(stock) || 0}
+            preparationDays={Number(preparationDays) || 0}
+            minOrderQuantity={Math.max(1, Number(minOrderQuantity) || 1)}
+            maxOrderQuantity={maxOrderQuantity === "" ? null : Number(maxOrderQuantity)}
             discountType={productDiscountOn ? discountType : null}
             discountValue={productDiscountOn && discountValue !== "" ? discountValue : null}
             discountStartsAt={productDiscountOn && !discountIsSpecialSale ? discountStartsAt : null}

@@ -5,12 +5,12 @@ import { getCurrentUser } from "@/modules/auth/session";
 import { completeProductSchema } from "@/modules/products/schemas";
 import { hasPermission } from "@/modules/auth/permissions";
 import { sanitizeProductDescription } from "@/modules/products/rich-text";
-import { NO_PRODUCT_DISCOUNT, tehranDateEnd, tehranDateStart } from "@/modules/products/discount";
+import { tehranDateEnd, tehranDateStart } from "@/modules/products/discount";
 import { getGeneralStoreSettings, isStorefrontAvailable } from "@/modules/settings/general-settings";
 import { getStoreIndustry } from "@/modules/settings/store-settings";
 import { getCatalogSettings } from "@/modules/settings/catalog-settings";
 import { validateProductAttributes } from "@/modules/products/attributes";
-import { validateVariantSetup, writeVariantSetup } from "@/modules/products/variant-write";
+import { defaultVariantInput, validateVariantSetup, writeVariantSetup } from "@/modules/products/variant-write";
 import { productColorIds, productOptionTypeInclude, selectableTypes } from "@/modules/products/variant-selection";
 import { auditRequestContext } from "@/modules/audit/request-context";
 import { buildAuditChanges, productAuditSnapshot } from "@/modules/audit/product-audit";
@@ -57,7 +57,7 @@ export async function POST(request: Request) {
     }
     const attributeValidation = validateProductAttributes(category?.attributeSchema ?? [], attributes);
     if (!attributeValidation.ok) return NextResponse.json({ message: attributeValidation.message }, { status: 422 });
-    const variantError = await validateVariantSetup(db, optionTypes, variants);
+    const variantError = await validateVariantSetup(db, optionTypes, variants, input.storeIndustry);
     if (variantError) return NextResponse.json({ message: variantError.message }, { status: 422 });
     const media = mediaIds.length ? await db.mediaAsset.findMany({ where: { id: { in: mediaIds }, scope: "PRODUCT", type: { in: ["IMAGE", "VIDEO"] } }, select: { id: true } }) : [];
     if (media.length !== new Set(mediaIds).size) return NextResponse.json({ message: "یک یا چند رسانه محصول معتبر نیست." }, { status: 422 });
@@ -66,8 +66,10 @@ export async function POST(request: Request) {
       if (!guide) return NextResponse.json({ message: "فایل راهنمای انتخاب باید تصویر یا PDF معتبر از گالری محصولات باشد." }, { status: 422 });
     }
     const product = await db.$transaction(async (tx) => {
-      const created = await tx.product.create({ data: { ...input, attributes: attributeValidation.data, ...(variants.length > 0 ? NO_PRODUCT_DISCOUNT : { discountStartsAt: tehranDateStart(input.discountStartsAt), discountEndsAt: tehranDateEnd(input.discountEndsAt) }), description: sanitizeProductDescription(input.description), optionGuideId } });
-      await writeVariantSetup(tx, created.id, optionTypes, variants);
+      const created = await tx.product.create({ data: { ...input, attributes: attributeValidation.data, discountStartsAt: tehranDateStart(input.discountStartsAt), discountEndsAt: tehranDateEnd(input.discountEndsAt), description: sanitizeProductDescription(input.description), optionGuideId } });
+      // A product without options is still sold as a variant — its default one, made from the
+      // figures the form holds for the product — so everything downstream reads variants only.
+      await writeVariantSetup(tx, created.id, optionTypes, optionTypes.length ? variants : [defaultVariantInput(input)]);
       if (mediaIds.length) await tx.productMedia.createMany({ data: mediaIds.map((mediaId, position) => ({ productId: created.id, mediaId, position, isCover: position === 0 })) });
       const result = await tx.product.findUniqueOrThrow({ where: { id: created.id }, include: { media: { include: { media: true }, orderBy: { position: "asc" } }, category: true, brand: true, variants: { orderBy: { createdAt: "asc" } }, optionTypes: productOptionTypeInclude, optionGuide: true } });
       const after = productAuditSnapshot(result);

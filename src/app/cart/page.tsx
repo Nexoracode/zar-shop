@@ -12,7 +12,7 @@ import type { CartLiveLine } from "@/components/cart-live";
 import type { Prisma } from "@generated/prisma/client";
 import { optionEntries } from "@/modules/products/options";
 import { lineUnitPrice } from "@/modules/products/line-pricing";
-import { findVariant, variantPricing } from "@/modules/products/variants";
+import { findVariant, variantMaxQuantity, variantPricing } from "@/modules/products/variants";
 import { isCartLineUnavailable } from "@/modules/cart/line-availability";
 import { getGeneralStoreSettings } from "@/modules/settings/general-settings";
 import { getCommerceSettings } from "@/modules/settings/commerce-settings";
@@ -43,10 +43,11 @@ export default async function CartPage() {
   const pricedItems = items.map((item) => {
     const product = item.product;
     const pricing = lineUnitPrice(product, item.selectionKey, rate);
-    const selectedWeight = variantPricing(item.selectionKey ? findVariant(product.variants, item.selectionKey) : null, product).weightGrams;
+    const variant = findVariant(product.variants, item.selectionKey);
+    const selectedWeight = variantPricing(variant, product).weightGrams;
     // The combination this line was added with may have been removed or emptied since; it is kept so it can be removed, but never sold.
     const unavailable = isCartLineUnavailable(product, item.selectionKey);
-    return { item, selectedWeight, pricing, unavailable };
+    return { item, variant, selectedWeight, pricing, unavailable };
   });
   const priceUnavailable = pricedItems.some((line) => line.pricing === null);
   // Totals, counts and the free-shipping hint are worked out on the client from these lines, so they follow quantity clicks at once.
@@ -74,10 +75,10 @@ export default async function CartPage() {
           <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_380px] xl:grid-cols-[minmax(0,1fr)_420px]">
             <section className="overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-sm" aria-label="اقلام سبد خرید">
               <div className="flex items-center gap-3 border-b border-[var(--border)] px-5 py-4"><ShoppingCart size={20} className="text-[var(--brand-primary)]" /><strong className="text-sm">کالاهای سبد خرید</strong><span className="text-xs text-[var(--muted)]">(<CartLiveCount /> کالا)</span></div>
-              {pricedItems.map(({ item, selectedWeight, pricing, unavailable }) => {
+              {pricedItems.map(({ item, variant, selectedWeight, pricing, unavailable }) => {
                 const product = item.product;
                 const cover = product.media[0]?.media;
-                return pricing ? <CartItemCard key={item.id} id={item.id} name={product.name} slug={product.slug} imageUrl={cover?.type === "IMAGE" ? cover.url : null} imageAlt={cover?.alt ?? product.name} maxQuantity={Math.min(orderSettings.maxOrderItemQuantity, product.stock)} optionSummary={optionEntries(item.selectedOptions).map(([name, value]) => `${name}: ${value}`)} weight={product.storeIndustry === "GOLD" ? `${Number(selectedWeight).toLocaleString("fa-IR", { maximumFractionDigits: 3 })} گرم` : null} unitPrice={pricing.finalPrice} originalUnitPrice={pricing.isActive ? pricing.originalPrice : null} unavailable={unavailable} discountEndsAt={pricing.discountEndsAt ? pricing.discountEndsAt.toISOString() : null} currency={settings.currency} preparationDays={product.preparationDays} /> : <InlineAlert key={item.id} status="warning" className="m-4">قیمت «{product.name}» موقتاً قابل محاسبه نیست.</InlineAlert>;
+                return pricing ? <CartItemCard key={item.id} id={item.id} name={product.name} slug={product.slug} imageUrl={cover?.type === "IMAGE" ? cover.url : null} imageAlt={cover?.alt ?? product.name} maxQuantity={variantMaxQuantity(variant, orderSettings.maxOrderItemQuantity)} optionSummary={optionEntries(item.selectedOptions).map(([name, value]) => `${name}: ${value}`)} weight={product.storeIndustry === "GOLD" ? `${Number(selectedWeight).toLocaleString("fa-IR", { maximumFractionDigits: 3 })} گرم` : null} unitPrice={pricing.finalPrice} originalUnitPrice={pricing.isActive ? pricing.originalPrice : null} unavailable={unavailable} discountEndsAt={pricing.discountEndsAt ? pricing.discountEndsAt.toISOString() : null} currency={settings.currency} preparationDays={variant?.preparationDays ?? product.preparationDays} /> : <InlineAlert key={item.id} status="warning" className="m-4">قیمت «{product.name}» موقتاً قابل محاسبه نیست.</InlineAlert>;
               })}
             </section>
 

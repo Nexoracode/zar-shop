@@ -2,7 +2,7 @@ type ProductAuditSource = Record<string, unknown> & {
   category?: { id: string; name: string } | null;
   media?: Array<{ position: number; isCover: boolean; media: { id: string; title: string | null; storageKey: string } }>;
   optionTypes?: Array<{ position: number; type: { name: string; kind: string }; values: Array<{ position: number; value: { label: string } }> }>;
-  variants?: Array<{ selectionKey: string; selection: unknown; price: unknown; weightGrams: unknown; discountType: string | null; discountValue: unknown; discountStartsAt: unknown; discountEndsAt: unknown; stock: number; isActive: boolean }>;
+  variants?: Array<{ selectionKey: string; selection: unknown; price: unknown; weightGrams: unknown; discountType: string | null; discountValue: unknown; discountStartsAt: unknown; discountEndsAt: unknown; stock: number; preparationDays?: number; minOrderQuantity?: number; maxOrderQuantity?: number | null; isActive: boolean }>;
   optionGuide?: { id: string; title: string | null; storageKey: string } | null;
 };
 
@@ -19,7 +19,7 @@ const productFieldLabels: Record<string, string> = {
   discountEndsAt: "پایان تخفیف", stock: "موجودی", preparationDays: "زمان آماده‌سازی", featured: "محصول ویژه",
   attributes: "ویژگی‌ها", media: "گالری رسانه", optionTypes: "نوع‌های تنوع", variants: "ترکیب‌های تنوع", selection: "ترکیب", selectionKey: "کلید ترکیب", kind: "نوع", id: "شناسه", title: "عنوان", storageKey: "کلید فایل",
   position: "جایگاه", isCover: "تصویر اصلی", values: "مقادیر", value: "مقدار", colorId: "شناسه رنگ", isActive: "فعال", type: "نوع تنوع",
-  price: "قیمت", productId: "شناسه محصول",
+  price: "قیمت", productId: "شناسه محصول", minOrderQuantity: "حداقل سفارش", maxOrderQuantity: "حداکثر سفارش",
 };
 
 const productFields = [
@@ -66,6 +66,9 @@ export function productAuditSnapshot(product: ProductAuditSource) {
       discountStartsAt: item.discountStartsAt,
       discountEndsAt: item.discountEndsAt,
       stock: item.stock,
+      preparationDays: item.preparationDays,
+      minOrderQuantity: item.minOrderQuantity,
+      maxOrderQuantity: item.maxOrderQuantity,
       isActive: item.isActive,
     })) ?? [],
   };
