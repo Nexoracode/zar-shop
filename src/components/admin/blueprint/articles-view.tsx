@@ -57,7 +57,7 @@ function Cover({ article }: { article: ArticleRow }) {
 
 function RowActions({ article }: { article: ArticleRow }) {
   return (
-    <div className="flex items-center justify-center gap-1">
+    <div className="flex items-center gap-1">
       <Link href={`/admin/articles/${article.id}/edit`} className="bp-btn bp-btn-ghost bp-btn-icon bp-btn-sm" aria-label={`ویرایش ${article.title}`} title="ویرایش مقاله">
         <SquarePen size={15} strokeWidth={1.5} />
       </Link>
