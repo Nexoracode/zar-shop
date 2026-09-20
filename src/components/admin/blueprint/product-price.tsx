@@ -19,6 +19,12 @@ export function ProductPrice({ product }: { product: ProductRow }) {
     return value === null || value === undefined ? null : Number(value);
   };
 
+  // A product without any variant falls back to its mirror column instead of reading as unpriced.
+  if (product.variants.length === 0) {
+    const mirror = gold ? product.weightGrams : product.fixedPrice;
+    return <>{mirror === null || mirror === undefined ? "بدون قیمت" : format(Number(mirror))}</>;
+  }
+
   const sellable = product.variants.filter((variant) => variant.isActive);
   const values = (sellable.length ? sellable : product.variants).flatMap((variant) => { const value = figure(variant); return value === null ? [] : [value]; });
   if (values.length === 0) return <>{gold ? format(Number(product.weightGrams)) : "بدون قیمت"}</>;

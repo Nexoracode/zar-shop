@@ -22,7 +22,8 @@ export function swatchOf(product: ProductRow, selection: unknown) {
  * combinations, hovering it lists each one's own stock, coloured by whether it is out or running low.
  */
 export function ProductStock({ product, lowStockThreshold, prefix }: { product: ProductRow; lowStockThreshold: number; /** Text before the number on the mobile card ("موجودی: "). */ prefix?: string }) {
-  const total = product.variants.filter((variant) => variant.isActive).reduce((sum, variant) => sum + Math.max(0, variant.stock), 0);
+  // A product should always have a variant; one that somehow has none falls back to the mirror total rather than reading as empty.
+  const total = product.variants.length === 0 ? product.stock : product.variants.filter((variant) => variant.isActive).reduce((sum, variant) => sum + Math.max(0, variant.stock), 0);
   const combinations = product.variants.filter((variant) => !isDefaultSelection(variant.selection));
   const tone = total <= lowStockThreshold ? "font-bold text-[var(--bp-danger)]" : "";
   const number = <span className={tone}>{prefix}{faNumber(total)}</span>;
