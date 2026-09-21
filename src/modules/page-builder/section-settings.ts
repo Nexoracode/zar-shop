@@ -1,6 +1,7 @@
 import { z } from "zod";
 import type { BannerSliderConfig } from "@/modules/page-builder/banner-sliders";
 import type { ProductListConfig } from "@/modules/page-builder/product-lists";
+import { richTextPlainLength } from "@/modules/page-builder/rich-text";
 import { pageSectionLimits } from "@/modules/settings/settings-limits";
 
 // Content settings of individual storefront sections, edited from the page builder's "edit" dialog — what a section
@@ -27,13 +28,18 @@ export const categoriesSortLabels: Record<CategoriesSort, string> = {
 
 export const categoriesSectionSettingsSchema = z.object({
   title: titleSchema(pageSectionLimits.title),
+  // Rich text (HTML) shown under the title when there is any; the server keeps only what the editor can produce.
+  description: z.string().trim()
+    .max(pageSectionLimits.descriptionHtml, "توضیحات بیش از حد طولانی است.")
+    .refine((html) => richTextPlainLength(html) <= pageSectionLimits.description, `توضیحات نباید بیشتر از ${pageSectionLimits.description.toLocaleString("fa-IR")} کاراکتر باشد.`)
+    .default(""),
   limit: countSchema(pageSectionLimits.categoriesMin, pageSectionLimits.categoriesMax),
   sort: z.enum(categoriesSortValues, { error: "ترتیب نمایش را انتخاب کنید." }),
 });
 export type CategoriesSectionSettings = z.infer<typeof categoriesSectionSettingsSchema>;
 
 // The homepage's category strip as it was before it became editable (a fixed title and the first ten categories).
-export const categoriesSectionDefaults: CategoriesSectionSettings = { title: "خرید بر اساس دسته‌بندی", limit: 10, sort: "MANUAL" };
+export const categoriesSectionDefaults: CategoriesSectionSettings = { title: "خرید بر اساس دسته‌بندی", description: "", limit: 10, sort: "MANUAL" };
 
 /** The sections that have content settings, by the id the builder and the storage use. */
 export const sectionSettingsSchemas = { CATEGORIES: categoriesSectionSettingsSchema } as const;
@@ -59,6 +65,7 @@ export type ContentField = { /** Hide the field while this says so (e.g. the cat
 export const sectionContentFields: Record<SectionSettingsId, ContentField[]> = {
   CATEGORIES: [
     { name: "title", kind: "text", label: "عنوان بخش", maxLength: pageSectionLimits.title },
+    { name: "description", kind: "richtext", label: "توضیحات بخش", maxLength: pageSectionLimits.description },
     { name: "limit", kind: "number", label: "تعداد نمایش", max: pageSectionLimits.categoriesMax, hint: `حداکثر ${pageSectionLimits.categoriesMax.toLocaleString("fa-IR")} دسته` },
     { name: "sort", kind: "select", label: "ترتیب نمایش", options: categoriesSortValues.map((value) => ({ value, label: categoriesSortLabels[value] })) },
   ],

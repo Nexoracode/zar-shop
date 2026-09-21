@@ -78,6 +78,7 @@ const displaySections: Record<string, { master: "display" | "layout"; masterLabe
     parts: {
       GENERAL: [
         { id: "title", label: "عنوان بخش" },
+        { id: "description", label: "توضیحات بخش" },
         { id: "more", label: "نمایش بیشتر" },
         { id: "categoryTitle", label: "عنوان دسته" },
         { id: "categoryCount", label: "تعداد کالا" },

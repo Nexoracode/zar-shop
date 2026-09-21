@@ -5,6 +5,7 @@ import { db } from "@/lib/db";
 import { apiError } from "@/lib/http";
 import { auditRequestContext } from "@/modules/audit/request-context";
 import { getPermittedActor } from "@/modules/auth/session";
+import { sanitizeSectionDescription } from "@/modules/page-builder/rich-text-sanitize";
 import { isSectionSettingsId, sectionSettingsSchemas } from "@/modules/page-builder/section-settings";
 import { getPageSectionSettings } from "@/modules/page-builder/section-settings-store";
 import { STORE_SETTING_ID } from "@/modules/settings/store-settings";
@@ -21,7 +22,9 @@ export async function PATCH(request: Request) {
     const actor = await getPermittedActor("settings:manage");
     if (!actor) return NextResponse.json({ message: "دسترسی غیرمجاز است." }, { status: 403 });
     const { sectionId, settings } = z.object({ sectionId: z.string().refine(isSectionSettingsId, "این بخش تنظیمات محتوا ندارد."), settings: z.unknown() }).parse(await request.json());
-    const parsed = sectionSettingsSchemas[sectionId as keyof typeof sectionSettingsSchemas].parse(settings);
+    const validated = sectionSettingsSchemas[sectionId as keyof typeof sectionSettingsSchemas].parse(settings);
+    // A description is HTML from the browser: only what the editor can produce is kept.
+    const parsed = "description" in validated ? { ...validated, description: sanitizeSectionDescription(validated.description) } : validated;
 
     await db.$transaction(async (transaction) => {
       const current = await transaction.storeSetting.findUnique({ where: { id: STORE_SETTING_ID }, select: { pageSectionSettings: true } });

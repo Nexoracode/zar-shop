@@ -8,7 +8,7 @@ const items = [category("موبایل", 4), category("پوشاک", 9), category(
 const names = (list: { name: string }[]) => list.map((item) => item.name);
 
 test("the defaults are the strip as it was before it became editable", () => {
-  assert.deepEqual(categoriesSectionDefaults, { title: "خرید بر اساس دسته‌بندی", limit: 10, sort: "MANUAL" });
+  assert.deepEqual(categoriesSectionDefaults, { title: "خرید بر اساس دسته‌بندی", description: "", limit: 10, sort: "MANUAL" });
   assert.equal(categoriesSectionSettingsSchema.safeParse(categoriesSectionDefaults).success, true);
 });
 
@@ -41,5 +41,5 @@ test("arranges the categories by the administrator's order, by name or by produc
 });
 
 test("every section with settings has form fields for exactly its schema's keys", () => {
-  assert.deepEqual(sectionContentFields.CATEGORIES.map((field) => field.name), ["title", "limit", "sort"]);
+  assert.deepEqual(sectionContentFields.CATEGORIES.map((field) => field.name), ["title", "description", "limit", "sort"]);
 });
