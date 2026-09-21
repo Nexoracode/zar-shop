@@ -23,7 +23,8 @@ const compactWidth = "w-[128px] min-w-[128px] snap-start sm:w-[142px] sm:min-w-[
 // height, so the banner and the cards are exactly as tall as each other (the zoom shrinks the cards' layout, not just their
 // looks). On a phone the banner is above the row, so the cards keep their full size and are wider.
 const offerZoom = "sm:[zoom:0.9]";
-const offerWidth = "w-[176px] min-w-[176px] snap-start sm:w-[206px] sm:min-w-[206px] lg:w-[218px] lg:min-w-[218px]";
+// Wide enough that the offer header ("amazing offer" and the timer) fits on one line: about 205px once the zoom is applied.
+const offerWidth = "w-[210px] min-w-[210px] snap-start sm:w-[232px] sm:min-w-[232px] lg:w-[236px] lg:min-w-[236px]";
 const cardWidth = "w-[164px] min-w-[164px] snap-start sm:w-[206px] sm:min-w-[206px] lg:w-[218px] lg:min-w-[218px]";
 
 function Shell({ children, roomy = false }: { children: ReactNode; /** The roomier padding of the ranked list. */ roomy?: boolean }) {

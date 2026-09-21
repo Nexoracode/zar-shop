@@ -19,7 +19,7 @@ export function ProductOfferCard({ product, builder, reserveTop }: { product: St
         <div className="mb-2 min-h-9">
           {product.discountEndsAt && cardPart(builder, "countdown", (
             <div className="flex items-center justify-between gap-2 border-b-2 border-[var(--danger)] pb-1.5">
-              <span className="text-[0.72rem] font-bold text-[var(--danger)]">پیشنهاد شگفت‌انگیز</span>
+              <span className="shrink-0 whitespace-nowrap text-[0.7rem] font-bold text-[var(--danger)]">پیشنهاد شگفت‌انگیز</span>
               <FlashSaleCountdown endsAt={product.discountEndsAt} tone="plain" />
             </div>
           ))}
