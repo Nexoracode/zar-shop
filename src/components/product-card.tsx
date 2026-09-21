@@ -65,6 +65,10 @@ type ProductCardProps = {
   originalPrice?: string;
   image?: { src: string; alt: string };
   storefrontVariant?: "default" | "gallery" | "catalog";
+  /** Gallery cards: the category's name above the product's (a switchable part of the section). */
+  showCategory?: boolean;
+  /** Gallery cards: no space under the price, so a row of cards ends exactly where its neighbours do. */
+  flushBottom?: boolean;
   imageTone?: number;
   stock?: number;
   rating?: number;
@@ -72,7 +76,7 @@ type ProductCardProps = {
   builder?: ProductCardBuilder;
 };
 
-export function ProductCard({ id, isFavorite, href, name, category, industry, weight, makingFee, discountPercent, price, originalPrice, image, storefrontVariant = "default", imageTone = 0, stock, rating, colors = [], builder }: ProductCardProps) {
+export function ProductCard({ id, isFavorite, href, name, category, industry, weight, makingFee, discountPercent, price, originalPrice, image, storefrontVariant = "default", showCategory = false, flushBottom = false, imageTone = 0, stock, rating, colors = [], builder }: ProductCardProps) {
   if (storefrontVariant === "catalog") {
     return <Link href={href} className="group relative flex min-h-[390px] min-w-0 flex-col border-b border-l border-slate-200 bg-white p-4 transition duration-200 hover:z-10 hover:shadow-[0_6px_24px_rgba(0,0,0,.09)] focus-visible:z-10 focus-visible:outline-2 focus-visible:outline-[var(--brand-primary)]">
       {colors.length > 0 && <span className="absolute right-2 top-5 z-10 flex flex-col gap-0.5" aria-label={`${colors.length.toLocaleString("fa-IR")} رنگ موجود`}>
@@ -128,8 +132,9 @@ export function ProductCard({ id, isFavorite, href, name, category, industry, we
       </div>
 
       {/* Content */}
-      <div className={`px-1 pb-4 sm:pb-5 ${isGallery ? "pt-2 text-right" : "px-2.5 pt-2.5 text-center sm:px-[15px] sm:pt-[17px]"}`}>
+      <div className={`px-1 ${flushBottom ? "pb-0" : "pb-4 sm:pb-5"} ${isGallery ? "pt-2 text-right" : "px-2.5 pt-2.5 text-center sm:px-[15px] sm:pt-[17px]"}`}>
         {!isGallery && <span className="text-[0.7rem] text-[var(--muted)]">{industry === "GOLD" ? `${category} · ${weight} گرم` : category}</span>}
+        {isGallery && showCategory && category && part("category", <span className="mb-0.5 block truncate text-[0.68rem] text-slate-400">{category}</span>)}
         {part("name", <h3 className={`font-medium ${isGallery ? `mb-1 mt-0 line-clamp-2 h-9 overflow-hidden text-[0.76rem] leading-[1.15rem] sm:text-[0.82rem] ${industry === "GENERAL" ? "text-slate-700" : ""}` : "mb-[7px] mt-[5px] min-h-8 text-[0.82rem] sm:text-[0.95rem]"}`}>{name}</h3>)}
         <div className={isGallery ? "grid min-h-9 grid-rows-[1rem_1.125rem] content-start justify-items-start gap-0.5" : ""}>
           {part("originalPrice", originalPrice ? <span className={`${isGallery ? "block" : "ml-2"} text-[0.7rem] text-slate-400 line-through`}>{originalPrice}</span> : isGallery ? <span aria-hidden="true" className="invisible block text-[0.7rem]">بدون تخفیف</span> : null)}

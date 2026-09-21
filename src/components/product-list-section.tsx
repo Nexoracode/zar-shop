@@ -64,8 +64,8 @@ export function ProductListSection({ sectionId, config, descriptionHtml, data, d
   const arrows = { section: sectionId, hidden: isPartHidden(display, sectionId, "arrows"), editable };
   const viewAll = (className: string, compact = false) => <BuilderPart {...part("viewAll")} className={className}><ViewAllProductCard href={moreHref} label={config.moreLabel} compact={compact} /></BuilderPart>;
   const compactCards = (items: typeof products) => items.map((product) => <div key={product.id} className={compactWidth}><ProductThumbItem product={product} builder={builder} vertical /></div>);
-  const cards = (items: typeof products, className: string, toneOffset = 0) => items.map((product, index) => (
-    <div key={product.id} className={className}><ProductCard {...product} storefrontVariant="gallery" imageTone={(index + toneOffset) % 4} builder={builder} /></div>
+  const cards = (items: typeof products, className: string, toneOffset = 0, extras: { showCategory?: boolean; flushBottom?: boolean } = {}) => items.map((product, index) => (
+    <div key={product.id} className={className}><ProductCard {...product} storefrontVariant="gallery" imageTone={(index + toneOffset) % 4} builder={builder} {...extras} /></div>
   ));
   const refresh = <DiscountExpiryRefresh moments={discountEndMoments(products)} />;
   const [first, ...rest] = products;
@@ -99,7 +99,7 @@ export function ProductListSection({ sectionId, config, descriptionHtml, data, d
           {banner
             ? <BuilderPart {...part("banner")} className="contents"><SquareBanner src={banner.url} alt={banner.alt ?? config.title} href={banner.href || undefined} /></BuilderPart>
             : <div className="flex w-[240px] min-w-[240px] snap-start sm:w-[300px] sm:min-w-[300px]"><ProductFeatureTile product={first} builder={builder} className="min-h-[200px] w-full" /></div>}
-          {cards(listed, cardWidth, banner ? 0 : 1)}{viewAll(cardWidth)}
+          {cards(listed, cardWidth, banner ? 0 : 1, { showCategory: true, flushBottom: true })}{viewAll(cardWidth)}
         </DragScrollRow>{refresh}
       </Shell>;
     }

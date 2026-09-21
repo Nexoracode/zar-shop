@@ -29,6 +29,7 @@ export function productCardParts(industry: PageBuilderIndustry): DisplayPart[] {
     { id: "card.favorite", label: "دکمه علاقه‌مندی", group: PRODUCT_CARD_GROUP },
     // The cost badge on a gold card is the making fee; on a general one it is the discount percent.
     { id: "card.badge", label: industry === "GOLD" ? "برچسب اجرت / تخفیف" : "درصد تخفیف", group: PRODUCT_CARD_GROUP },
+    { id: "card.category", label: "نام دسته", group: PRODUCT_CARD_GROUP },
     { id: "card.name", label: "نام محصول", group: PRODUCT_CARD_GROUP },
     { id: "card.originalPrice", label: "قیمت قبل از تخفیف", group: PRODUCT_CARD_GROUP },
     { id: "card.price", label: "قیمت", group: PRODUCT_CARD_GROUP },
