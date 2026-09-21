@@ -30,7 +30,7 @@ const displaySections: Record<string, { master: "display" | "layout"; masterLabe
         { id: "logo", label: "لوگو" },
         { id: "search", label: "جستجو" },
         { id: "notifications", label: "اعلان‌ها" },
-        { id: "account", label: "ورود / ثبت‌نام و حساب کاربری" },
+        { id: "account", label: "ورود / ثبت‌نام" },
         { id: "cart", label: "سبد خرید" },
         { id: "delivery", label: "آدرس تحویل" },
         { id: "categories", label: "منوی دسته‌بندی‌ها" },
@@ -45,7 +45,7 @@ const displaySections: Record<string, { master: "display" | "layout"; masterLabe
         { id: "menu", label: "لینک‌های منوی بالا" },
         { id: "search", label: "جستجو" },
         { id: "notifications", label: "اعلان‌ها" },
-        { id: "account", label: "ورود / ثبت‌نام و حساب کاربری" },
+        { id: "account", label: "ورود / ثبت‌نام" },
         { id: "cart", label: "سبد خرید" },
       ],
     },
@@ -53,8 +53,8 @@ const displaySections: Record<string, { master: "display" | "layout"; masterLabe
   HERO: {
     master: "layout",
     parts: {
-      GENERAL: [{ id: "arrows", label: "نمایش فلش‌ها" }, { id: "dots", label: "نمایش اسلایدر (نقطه‌ها)" }],
-      GOLD: [{ id: "arrows", label: "نمایش فلش‌ها" }, { id: "dots", label: "نمایش اسلایدر (نقطه‌ها)" }],
+      GENERAL: [{ id: "arrows", label: "نمایش فلش‌ها" }, { id: "dots", label: "نمایش اسلایدر" }],
+      GOLD: [{ id: "arrows", label: "نمایش فلش‌ها" }, { id: "dots", label: "نمایش اسلایدر" }],
     },
   },
   // Sections with nothing to toggle inside them still get the whole-section switch.
