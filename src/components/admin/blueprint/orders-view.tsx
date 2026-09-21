@@ -58,17 +58,18 @@ export function BlueprintOrdersView({ orders, query, status, statuses, filteredP
         </p>
       )}
 
-      <Panel className="p-4">
-        <AdminListFilters
-          path="/admin/orders"
-          query={query}
-          queryLabel="جستجوی سفارش"
-          queryPlaceholder="شماره سفارش، نام، ایمیل یا موبایل"
-          filters={[]}
-        />
-      </Panel>
-
       <Panel>
+        <div className="border-b border-[var(--bp-divider)] p-4">
+          <AdminListFilters
+            path="/admin/orders"
+            query={query}
+            queryLabel="جستجوی سفارش"
+            queryPlaceholder="شماره سفارش، نام، ایمیل یا موبایل"
+            filters={[]}
+            large
+          />
+        </div>
+
         {!orders.length ? (
           <AdminEmptyState title="سفارشی پیدا نشد" description={query || status || filteredProduct ? "فیلترها را تغییر دهید و دوباره جستجو کنید." : "هنوز سفارشی در فروشگاه ثبت نشده است."} action={query || status || filteredProduct ? <AdminClearFilters href="/admin/orders" /> : undefined} />
         ) : (

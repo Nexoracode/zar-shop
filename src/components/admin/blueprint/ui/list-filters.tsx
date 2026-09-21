@@ -30,7 +30,7 @@ export function BpListFilters({ query, onQueryChange, searchLabel, searchPlaceho
   leading?: ReactNode;
 }) {
   return (
-    <div className="flex flex-wrap items-center gap-2 border-b border-[var(--bp-divider)] p-3">
+    <div className="flex flex-wrap items-center gap-2 border-b border-[var(--bp-divider)] p-4">
       {leading}
       <div className="relative w-full min-w-[180px] sm:w-auto sm:min-w-[220px] sm:flex-1">
         <Search className="pointer-events-none absolute start-2.5 top-1/2 z-10 -translate-y-1/2 text-[var(--bp-muted)]" size={15} />
@@ -40,7 +40,7 @@ export function BpListFilters({ query, onQueryChange, searchLabel, searchPlaceho
           onChange={(event) => onQueryChange(event.target.value)}
           aria-label={searchLabel}
           placeholder={searchPlaceholder}
-          className="bp-input bp-input-search"
+          className="bp-input bp-input-search bp-input-search-lg"
         />
         {query ? (
           <BpButton isIconOnly size="sm" variant="ghost" aria-label="پاک‌کردن جستجو" onClick={() => onQueryChange("")} className="absolute end-1 top-1/2 z-20 h-7 min-h-7 w-7 min-w-7 -translate-y-1/2"><X size={14} /></BpButton>
@@ -54,7 +54,7 @@ export function BpListFilters({ query, onQueryChange, searchLabel, searchPlaceho
           value={filter.value}
           reserveMessage={false}
           wrapperClassName="w-full sm:w-auto"
-          className="w-full sm:w-44"
+          className="bp-input-lg w-full sm:w-44"
           onChange={(event) => filter.onChange(event.target.value)}
           options={filter.options}
         />

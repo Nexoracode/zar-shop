@@ -96,17 +96,18 @@ export function BlueprintProductsView({ products, categories, filters, paginatio
         action={<AdminPrimaryLink href="/admin/products/new"><Plus size={16} />محصول جدید</AdminPrimaryLink>}
       />
 
-      <Panel className="p-4">
-        <AdminListFilters
-          path="/admin/products"
-          query={filters.query}
-          queryLabel="جستجوی محصول"
-          queryPlaceholder="نام، کد کالا یا نشانی محصول"
-          filters={[]}
-        />
-      </Panel>
-
       <Panel>
+        <div className="border-b border-[var(--bp-divider)] p-4">
+          <AdminListFilters
+            path="/admin/products"
+            query={filters.query}
+            queryLabel="جستجوی محصول"
+            queryPlaceholder="نام، کد کالا یا نشانی محصول"
+            filters={[]}
+            large
+          />
+        </div>
+
         {products.length ? (
           <>
             <div className="md:hidden">

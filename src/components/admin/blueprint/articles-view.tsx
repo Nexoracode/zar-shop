@@ -79,17 +79,18 @@ export function BlueprintArticlesView({ articles, categories, counts, filters, p
         action={<AdminPrimaryLink href="/admin/articles/new"><Plus size={16} />مقالهٔ جدید</AdminPrimaryLink>}
       />
 
-      <Panel className="p-4">
-        <AdminListFilters
-          path="/admin/articles"
-          query={filters.query}
-          queryLabel="جستجوی مقاله"
-          queryPlaceholder="عنوان یا نشانی مقاله"
-          filters={[]}
-        />
-      </Panel>
-
       <Panel>
+        <div className="border-b border-[var(--bp-divider)] p-4">
+          <AdminListFilters
+            path="/admin/articles"
+            query={filters.query}
+            queryLabel="جستجوی مقاله"
+            queryPlaceholder="عنوان یا نشانی مقاله"
+            filters={[]}
+            large
+          />
+        </div>
+
         {articles.length ? (
           <>
             <div className="md:hidden">

@@ -79,17 +79,18 @@ export default async function AdminReturnsPage({ searchParams }: { searchParams:
         ))}
       </div>
 
-      <section className="bp-frame relative p-4">
-        <AdminListFilters
-          path="/admin/returns"
-          query={query}
-          queryLabel="جستجوی مرجوعی"
-          queryPlaceholder="شماره سفارش، مشتری یا دلیل"
-          filters={[]}
-        />
-      </section>
-
       <section className="bp-frame relative">
+        <div className="border-b border-[var(--bp-divider)] p-4">
+          <AdminListFilters
+            path="/admin/returns"
+            query={query}
+            queryLabel="جستجوی مرجوعی"
+            queryPlaceholder="شماره سفارش، مشتری یا دلیل"
+            filters={[]}
+            large
+          />
+        </div>
+
         {!returns.length ? (
           <AdminEmptyState
             title="درخواستی پیدا نشد"

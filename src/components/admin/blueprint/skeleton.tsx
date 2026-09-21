@@ -37,11 +37,11 @@ export function BpPageHeaderSkeleton({ withBack = false, withAction = false, flu
 /** Placeholder for the shared search + filter bar (`AdminListFilters` / `BpListFilters`). */
 export function BpFilterBarSkeleton({ selects = 0 }: { selects?: number }) {
   return (
-    <div className="flex flex-wrap items-center gap-2 border-b border-[var(--bp-divider)] p-3">
-      <BpBar className="h-9 w-full min-w-[180px] sm:w-auto sm:min-w-[220px] sm:flex-1" />
+    <div className="flex flex-wrap items-center gap-2 border-b border-[var(--bp-divider)] p-4">
+      <BpBar className="h-11 w-full min-w-[180px] sm:w-auto sm:min-w-[220px] sm:flex-1" />
       {selects > 0 && <span aria-hidden className="mx-1 hidden h-6 w-px shrink-0 bg-[var(--bp-divider)] sm:block" />}
       {Array.from({ length: selects }).map((_, index) => (
-        <BpBar key={index} className="h-9 w-full sm:w-44" />
+        <BpBar key={index} className="h-11 w-full sm:w-44" />
       ))}
     </div>
   );

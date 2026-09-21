@@ -79,17 +79,18 @@ export function BlueprintTicketsView({ tickets, categories, query, status, categ
     <div className="flex flex-col gap-2">
       <AdminPageHeader flush title="تیکت‌های پشتیبانی" description="پرسش‌ها و مشکلات مطرح‌شدهٔ کاربران را پاسخ دهید و وضعیت آن‌ها را مدیریت کنید." />
 
-      <section className="bp-frame relative p-4">
-        <AdminListFilters
-          path="/admin/tickets"
-          query={query}
-          queryLabel="جستجوی تیکت"
-          queryPlaceholder="موضوع، نام یا شمارهٔ تماس کاربر"
-          filters={[]}
-        />
-      </section>
-
       <section className="bp-frame relative">
+        <div className="border-b border-[var(--bp-divider)] p-4">
+          <AdminListFilters
+            path="/admin/tickets"
+            query={query}
+            queryLabel="جستجوی تیکت"
+            queryPlaceholder="موضوع، نام یا شمارهٔ تماس کاربر"
+            filters={[]}
+            large
+          />
+        </div>
+
         {!tickets.length ? (
           <AdminEmptyState title="تیکتی پیدا نشد" description={query || status || categoryId || mine ? "فیلترها را تغییر دهید و دوباره جستجو کنید." : "هنوز تیکتی از سمت کاربران ثبت نشده است."} action={query || status || categoryId || mine ? <AdminClearFilters href="/admin/tickets" /> : undefined} />
         ) : (

@@ -48,8 +48,11 @@ export default async function AuditLogsPage({ searchParams }: { searchParams: Se
 
   return <>
     <AdminPageHeader eyebrow="نظارت و امنیت" title="تاریخچه فعالیت‌ها" description="تمام عملیات ثبت، ویرایش، حذف و دسترسی کاربران پنل را با جزئیات بررسی کنید." />
-    <AdminPanel className="mb-5 p-4 sm:p-5"><AdminListFilters path="/admin/audit-logs" query={query} queryLabel="جستجوی فعالیت" queryPlaceholder="نام مدیر، عملیات، موجودیت یا شناسه" filters={[]} /></AdminPanel>
     <AdminPanel>
+      <div className="border-b border-[var(--bp-divider)] p-4">
+        <AdminListFilters path="/admin/audit-logs" query={query} queryLabel="جستجوی فعالیت" queryPlaceholder="نام مدیر، عملیات، موجودیت یا شناسه" filters={[]} large />
+      </div>
+
       {!logs.length
         ? <AdminEmptyState title="فعالیتی پیدا نشد" description={query || action ? "فیلترها را تغییر دهید و دوباره جستجو کنید." : "هنوز فعالیت مدیریتی ثبت نشده است."} action={query || action ? <AdminClearFilters href="/admin/audit-logs" /> : undefined} />
         : <BlueprintAuditLogsView logs={logs} pagination={pagination} initialHiddenColumns={initialHiddenColumns} action={action} actionOptions={actionRows.map((item) => ({ value: item.action, label: auditActionLabel(item.action) }))} />}

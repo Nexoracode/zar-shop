@@ -55,7 +55,7 @@ export function AdminListFilters({ path, query, queryLabel, queryPlaceholder, fi
           onChange={(event) => update(filter.name, event.target.value)}
           reserveMessage={false}
           wrapperClassName="w-full sm:w-auto"
-          className="w-full sm:w-44"
+          className={`w-full sm:w-44 ${large ? "bp-input-lg" : ""}`.trim()}
         />
       ))}
     </div>

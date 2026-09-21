@@ -60,11 +60,11 @@ export default async function UsersPage({ searchParams }: { searchParams: Search
         action={<AdminPrimaryLink href="/admin/users/new"><Plus size={17} />کاربر جدید</AdminPrimaryLink>}
       />
 
-      <AdminPanel className="mb-5 p-4 sm:p-5">
-        <AdminListFilters path="/admin/users" query={query} queryLabel="جستجوی کاربر" queryPlaceholder="نام، ایمیل یا شماره موبایل" filters={[]} />
-      </AdminPanel>
-
       <AdminPanel>
+        <div className="border-b border-[var(--bp-divider)] p-4">
+          <AdminListFilters path="/admin/users" query={query} queryLabel="جستجوی کاربر" queryPlaceholder="نام، ایمیل یا شماره موبایل" filters={[]} large />
+        </div>
+
         {!users.length
           ? <AdminEmptyState title="کاربری پیدا نشد" description={query || role || status ? "فیلترها را تغییر دهید و دوباره جستجو کنید." : "هنوز کاربری در فروشگاه ثبت نشده است."} action={query || role || status ? <AdminClearFilters href="/admin/users" /> : undefined} />
           : <BlueprintUsersView users={users} pagination={pagination} actorId={actor.id} actorRole={actor.role} assignableRoles={assignableRoles} walletEnabled={walletSettings.walletEnabled} initialHiddenColumns={initialHiddenColumns} role={role ?? ""} status={status ?? ""} />}

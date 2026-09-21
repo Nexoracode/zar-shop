@@ -109,17 +109,18 @@ export function BlueprintPromotionsView({ initialItems, query, status, type, pag
         action={<AdminPrimaryLink href="/admin/promotions/new">پروموشن جدید</AdminPrimaryLink>}
       />
 
-      <Panel className="p-4">
-        <AdminListFilters
-          path="/admin/promotions"
-          query={query}
-          queryLabel="جستجوی پروموشن"
-          queryPlaceholder="عنوان یا کد تخفیف"
-          filters={[]}
-        />
-      </Panel>
-
       <Panel>
+        <div className="border-b border-[var(--bp-divider)] p-4">
+          <AdminListFilters
+            path="/admin/promotions"
+            query={query}
+            queryLabel="جستجوی پروموشن"
+            queryPlaceholder="عنوان یا کد تخفیف"
+            filters={[]}
+            large
+          />
+        </div>
+
         {!items.length ? (
           <AdminEmptyState title="پروموشنی پیدا نشد" description={query || status || type ? "فیلترها را تغییر دهید و دوباره جستجو کنید." : "برای ساخت اولین کمپین از دکمهٔ «پروموشن جدید» استفاده کنید."} action={query || status || type ? <AdminClearFilters href="/admin/promotions" /> : undefined} />
         ) : (

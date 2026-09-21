@@ -58,9 +58,11 @@ export default async function AdminArticleCommentsPage({ searchParams }: { searc
         <AdminPanel className="p-4"><span className="mb-2 flex items-center gap-2 text-xs text-[var(--bp-muted)]"><Flag size={16} />ردشده</span><strong className="text-xl text-[var(--danger)]">{rejectedCount.toLocaleString("fa-IR")}</strong></AdminPanel>
       </section>
 
-      <AdminPanel className="mb-5 p-4 sm:p-5"><AdminListFilters path="/admin/article-comments" query={q} queryLabel="جستجوی دیدگاه" queryPlaceholder="عنوان مقاله، کاربر یا متن دیدگاه" filters={[]} /></AdminPanel>
-
       <AdminPanel>
+        <div className="border-b border-[var(--bp-divider)] p-4">
+          <AdminListFilters path="/admin/article-comments" query={q} queryLabel="جستجوی دیدگاه" queryPlaceholder="عنوان مقاله، کاربر یا متن دیدگاه" filters={[]} large />
+        </div>
+
         {!comments.length
           ? <AdminEmptyState title="دیدگاهی پیدا نشد" description={q || status ? "فیلترها را تغییر دهید و دوباره جستجو کنید." : "هنوز دیدگاهی ثبت نشده است."} action={q || status ? <AdminClearFilters href="/admin/article-comments" /> : undefined} />
           : <BlueprintArticleCommentsView comments={comments} pagination={pagination} initialHiddenColumns={initialHiddenColumns} status={status ?? ""} />}

@@ -62,9 +62,11 @@ export default async function AdminReviewsPage({ searchParams }: { searchParams:
         <AdminPanel className="p-4"><span className="mb-2 flex items-center gap-2 text-xs text-[var(--bp-muted)]"><Star size={16} />میانگین امتیاز</span><strong className="text-xl text-[var(--warning)]">{averageRating ? averageRating.toLocaleString("fa-IR", { maximumFractionDigits: 1 }) : "—"}</strong><span className="mr-1 text-xs text-[var(--bp-muted)]">از ۵</span></AdminPanel>
       </section>
 
-      <AdminPanel className="mb-5 p-4 sm:p-5"><AdminListFilters path="/admin/reviews" query={q} queryLabel="جستجوی دیدگاه" queryPlaceholder="محصول، کاربر یا متن دیدگاه" filters={[]} /></AdminPanel>
-
       <AdminPanel>
+        <div className="border-b border-[var(--bp-divider)] p-4">
+          <AdminListFilters path="/admin/reviews" query={q} queryLabel="جستجوی دیدگاه" queryPlaceholder="محصول، کاربر یا متن دیدگاه" filters={[]} large />
+        </div>
+
         {!reviews.length
           ? <AdminEmptyState title="دیدگاهی پیدا نشد" description={q || status ? "فیلترها را تغییر دهید و دوباره جستجو کنید." : "هنوز دیدگاهی ثبت نشده است."} action={q || status ? <AdminClearFilters href="/admin/reviews" /> : undefined} />
           : <BlueprintReviewsView reviews={reviews} pagination={pagination} initialHiddenColumns={initialHiddenColumns} status={status ?? ""} />}

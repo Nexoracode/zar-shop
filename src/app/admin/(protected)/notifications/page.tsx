@@ -76,17 +76,18 @@ export default async function AdminNotificationsPage({ searchParams }: { searchP
         description="اعلان‌های ارسال‌شده به کاربران (broadcast و اختصاصی)"
       />
 
-      <section className="bp-frame relative p-4">
-        <AdminListFilters
-          path="/admin/notifications"
-          query={query}
-          queryLabel="جستجوی اعلان"
-          queryPlaceholder="عنوان یا متن اعلان"
-          filters={[]}
-        />
-      </section>
-
       <section className="bp-frame relative">
+        <div className="border-b border-[var(--bp-divider)] p-4">
+          <AdminListFilters
+            path="/admin/notifications"
+            query={query}
+            queryLabel="جستجوی اعلان"
+            queryPlaceholder="عنوان یا متن اعلان"
+            filters={[]}
+            large
+          />
+        </div>
+
         {!notifications.length ? (
           <AdminEmptyState
             title="اعلانی پیدا نشد"
