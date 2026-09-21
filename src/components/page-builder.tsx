@@ -287,20 +287,19 @@ export function PageBuilder({ initialSections, initialDisplay, industry, identit
     }));
   }
 
-  // Adding is instant: the new section joins the draft (nothing is sent to the server) and its form opens.
+  // Adding is instant: the new section joins the draft (nothing is sent to the server). Its form isn't opened — the owner
+  // edits it from the toolbar when they want to.
   function createList(layoutChoice: ProductListLayout) {
     const id = newProductListId(crypto.randomUUID());
     // The card slider ends in a "view all" card, so it starts without the text link too (it can be switched on).
     addSectionToDraft(id, { kind: "list", config: newProductListConfig(layoutChoice) }, layoutChoice === "SLIDER" ? ["more"] : []);
     setAddStep(null);
-    setEditSection(id);
   }
 
   function createStrip() {
     const id = newCategoryStripId(crypto.randomUUID());
     addSectionToDraft(id, { kind: "strip", settings: newCategoryStripSettings() });
     setAddStep(null);
-    setEditSection(id);
   }
 
   // The settings of an added strip: the draft's if it has any, otherwise the server's.
@@ -322,7 +321,6 @@ export function PageBuilder({ initialSections, initialDisplay, industry, identit
     const items = isTileLayout(layoutChoice) ? resizeBannerItems([], bannerTileCount[layoutChoice], () => crypto.randomUUID()) : [];
     addSectionToDraft(id, { kind: "banner", layout: layoutChoice, items });
     setAddStep(null);
-    setEditSection(id);
   }
 
   // The rows of the edit dialog's list for the sections that have a fixed set of things to edit.

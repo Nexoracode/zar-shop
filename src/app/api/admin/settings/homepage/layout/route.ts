@@ -5,7 +5,8 @@ import { db } from "@/lib/db";
 import { apiError } from "@/lib/http";
 import { auditRequestContext } from "@/modules/audit/request-context";
 import { getPermittedActor } from "@/modules/auth/session";
-import { commitDraftSections } from "@/modules/page-builder/draft-sections";
+import { commitDraftSections, deleteSectionInstances, isSectionInstanceId } from "@/modules/page-builder/draft-sections";
+import { parseStoredDisplay } from "@/modules/page-builder/display-parts";
 import { getHomepageSettings, homepageLayoutSettingsInputSchema, homepageSettingsInputSchema, homepageSettingsToInput, homepageTilesSettingsInputSchema } from "@/modules/settings/homepage-settings";
 import { getStoreIndustry, STORE_SETTING_ID } from "@/modules/settings/store-settings";
 
@@ -19,7 +20,14 @@ export async function PATCH(request: Request) {
   try {
     const actor = await getPermittedActor("settings:manage");
     if (!actor) return NextResponse.json({ message: "دسترسی غیرمجاز است." }, { status: 403 });
-    const input = homepageLayoutSettingsInputSchema.parse(await request.json());
+    const submitted = homepageLayoutSettingsInputSchema.parse(await request.json());
+    // A section the builder added and the owner then removed can't come back once this is saved, so it doesn't stay in
+    // the layout as a "removed" entry (that would only pile up): its layout entry and its configuration are deleted.
+    // The built-in sections and the tile rows keep theirs (the defaults would otherwise bring them back).
+    const gone = submitted.sections.filter((section) => section.removed && isSectionInstanceId(section.id)).map((section) => section.id);
+    const kept = submitted.sections.filter((section) => !gone.includes(section.id));
+    const input = kept.length ? { sections: kept } : submitted;
+    const deletedInstances = kept.length ? gone : [];
     const current = await getHomepageSettings();
     homepageTilesSettingsInputSchema.parse({ sections: input.sections, tileGroups: homepageSettingsToInput(current).tileGroups });
     const industry = await getStoreIndustry();
@@ -43,10 +51,12 @@ export async function PATCH(request: Request) {
         });
       }
       // The sections added in the page builder become part of the page with the layout that contains them.
-      const stored = await transaction.storeSetting.findUnique({ where: { id: STORE_SETTING_ID }, select: { pageSectionSettings: true } });
+      const stored = await transaction.storeSetting.findUnique({ where: { id: STORE_SETTING_ID }, select: { pageSectionSettings: true, pageDisplaySettings: true } });
       const commit = commitDraftSections(stored?.pageSectionSettings, input.sections.map((section) => section.id));
-      if (commit.committed.length) {
-        await transaction.storeSetting.update({ where: { id: STORE_SETTING_ID }, data: { pageSectionSettings: commit.stored as Prisma.InputJsonObject } });
+      const removal = deleteSectionInstances(commit.stored, deletedInstances);
+      if (commit.committed.length || removal.deleted.length) {
+        const display = Object.fromEntries(Object.entries(parseStoredDisplay(stored?.pageDisplaySettings)).filter(([id]) => !removal.deleted.includes(id)));
+        await transaction.storeSetting.update({ where: { id: STORE_SETTING_ID }, data: { pageSectionSettings: removal.stored as Prisma.InputJsonObject, ...(removal.deleted.length ? { pageDisplaySettings: display } : {}) } });
         committedDrafts = true;
       }
       await transaction.auditLog.create({

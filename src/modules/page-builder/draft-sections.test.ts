@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { addDraftSectionId, commitDraftSections, discardDraftSections, readDraftSectionIds, withDraftSectionIds } from "./draft-sections";
+import { addDraftSectionId, commitDraftSections, deleteSectionInstances, discardDraftSections, isSectionInstanceId, readDraftSectionIds, withDraftSectionIds } from "./draft-sections";
 
 const stored = {
   CATEGORIES: { title: "دسته‌ها" },
@@ -45,4 +45,20 @@ test("discarding never touches a section that is part of the page", () => {
   const result = discardDraftSections(stored, ["PRODUCT_LIST:b", "HERO"]);
   assert.deepEqual(result.discarded, []);
   assert.deepEqual(result.stored, stored);
+});
+
+test("only the sections the builder adds count as instances", () => {
+  assert.equal(isSectionInstanceId("PRODUCT_LIST:a"), true);
+  assert.equal(isSectionInstanceId("BANNER_SLIDER:a"), true);
+  assert.equal(isSectionInstanceId("CATEGORY_STRIP:a"), true);
+  assert.equal(isSectionInstanceId("HERO"), false);
+  assert.equal(isSectionInstanceId("TILE_GROUP:a"), false);
+});
+
+test("deleting instances removes their configuration but never a built-in section's", () => {
+  const result = deleteSectionInstances({ ...stored, CATEGORY_STRIPS: { "CATEGORY_STRIP:s": {} } }, ["PRODUCT_LIST:b", "CATEGORY_STRIP:s", "HERO", "FEATURED_PRODUCTS"]);
+  assert.deepEqual(result.deleted, ["PRODUCT_LIST:b", "CATEGORY_STRIP:s"]);
+  assert.deepEqual(result.stored.PRODUCT_LISTS, { "PRODUCT_LIST:a": { title: "الف" } });
+  assert.deepEqual(result.stored.CATEGORY_STRIPS, {});
+  assert.deepEqual(result.stored.DRAFT_SECTIONS, ["PRODUCT_LIST:a", "BANNER_SLIDER:c"]);
 });

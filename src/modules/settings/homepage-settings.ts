@@ -139,7 +139,7 @@ function addedProductListIds(pageSectionSettings: unknown, industry: "GOLD" | "G
 }
 
 function normalizeStoredSections(value: unknown, industry: "GOLD" | "GENERAL", tileGroups: z.infer<typeof homepageTileGroupsSchema>, productListIds: string[]) {
-  const parsed = z.array(z.object({ id: z.string(), enabled: z.boolean(), removed: z.boolean().optional() })).max(40).safeParse(value);
+  const parsed = z.array(z.object({ id: z.string(), enabled: z.boolean(), removed: z.boolean().optional() })).max(100).safeParse(value);
   const stored = parsed.success ? parsed.data.map((section) => (section.removed ? { ...section, enabled: false } : section)) : [];
   const tileIds = tileGroups.map((group) => `TILE_GROUP:${group.id}` as const);
   const allowed = new Set<string>([...homepageBaseSectionIds(industry), ...tileIds, ...productListIds]);
@@ -160,7 +160,7 @@ function normalizeStoredSections(value: unknown, industry: "GOLD" | "GENERAL", t
 }
 
 const homepageOverviewSettingsObjectSchema = z.object({
-  sections: z.array(sectionSchema).min(1).max(40).superRefine((sections, context) => {
+  sections: z.array(sectionSchema).min(1).max(100).superRefine((sections, context) => {
     const ids = new Set(sections.map((section) => section.id));
     if (ids.size !== sections.length) {
       context.addIssue({ code: "custom", message: "آیتم‌های چینش صفحه اصلی نباید تکراری باشند." });

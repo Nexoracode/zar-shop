@@ -35,6 +35,26 @@ export function commitDraftSections(stored: unknown, layoutIds: string[]): { sto
   return { stored: committed.length ? withDraftSectionIds(stored, drafts.filter((id) => !committed.includes(id))) : asDocument(stored), committed };
 }
 
+/** Whether the id is one of the sections the page builder adds (each has a configuration of its own in the settings). */
+export function isSectionInstanceId(id: string) {
+  return id.startsWith("PRODUCT_LIST:") || id.startsWith("BANNER_SLIDER:") || id.startsWith("CATEGORY_STRIP:");
+}
+
+/** Deletes the configuration of the given added sections (and their draft mark, if they still have one). */
+export function deleteSectionInstances(stored: unknown, ids: string[]): { stored: Record<string, unknown>; deleted: string[] } {
+  const document = asDocument(stored);
+  const targets = [...new Set(ids)].filter(isSectionInstanceId);
+  if (!targets.length) return { stored: document, deleted: [] };
+  const next: Record<string, unknown> = { ...document };
+  for (const key of INSTANCE_KEYS) {
+    const instances = document[key];
+    if (instances && typeof instances === "object" && !Array.isArray(instances)) {
+      next[key] = Object.fromEntries(Object.entries(instances).filter(([id]) => !targets.includes(id)));
+    }
+  }
+  return { stored: withDraftSectionIds(next, readDraftSectionIds(document).filter((id) => !targets.includes(id))), deleted: targets };
+}
+
 /**
  * Throws away the given drafts: their configuration goes, and so does their draft mark. An id that is not a draft is
  * never touched — a section that is part of the page can't be removed through here.
@@ -43,13 +63,5 @@ export function discardDraftSections(stored: unknown, ids: string[]): { stored: 
   const drafts = readDraftSectionIds(stored);
   const discarded = [...new Set(ids)].filter((id) => drafts.includes(id));
   if (!discarded.length) return { stored: asDocument(stored), discarded };
-  const document = asDocument(stored);
-  const next: Record<string, unknown> = { ...document };
-  for (const key of INSTANCE_KEYS) {
-    const instances = document[key];
-    if (instances && typeof instances === "object" && !Array.isArray(instances)) {
-      next[key] = Object.fromEntries(Object.entries(instances).filter(([id]) => !discarded.includes(id)));
-    }
-  }
-  return { stored: withDraftSectionIds(next, drafts.filter((id) => !discarded.includes(id))), discarded };
+  return { stored: deleteSectionInstances(stored, discarded).stored, discarded };
 }
