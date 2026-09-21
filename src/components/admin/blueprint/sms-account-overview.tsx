@@ -70,6 +70,17 @@ export function BlueprintSmsAccountOverview({ config, storeName }: { config: Pub
     <section className="bp-frame relative mb-2 p-[16px]">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
+          <BpButton
+            type="button"
+            isIconOnly
+            aria-expanded={open}
+            aria-controls="sms-account-details"
+            aria-label={open ? "بستن جزئیات حساب" : "باز کردن جزئیات حساب"}
+            title={open ? "بستن جزئیات حساب" : "باز کردن جزئیات حساب"}
+            onClick={() => setOpen((current) => !current)}
+          >
+            <ChevronDown size={16} className={`transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
+          </BpButton>
           <span className="grid size-9 shrink-0 place-items-center border border-[var(--bp-accent)] bg-[var(--bp-accent-100)] text-[var(--bp-accent)]"><Wallet size={17} /></span>
           <div className="min-w-0">
             <BpKicker>حساب فراز اس‌ام‌اس</BpKicker>
@@ -83,17 +94,6 @@ export function BlueprintSmsAccountOverview({ config, storeName }: { config: Pub
         <div className="flex flex-wrap gap-2">
           <BpButton type="button" variant="secondary" isPending={loading} onClick={refresh} className="gap-2"><RefreshCw size={14} />بروزرسانی</BpButton>
           <BpButton type="button" variant="primary" onClick={() => setTesting(true)} className="gap-2"><FlaskConical size={14} />ارسال آزمایشی</BpButton>
-          <BpButton
-            type="button"
-            isIconOnly
-            aria-expanded={open}
-            aria-controls="sms-account-details"
-            aria-label={open ? "بستن جزئیات حساب" : "باز کردن جزئیات حساب"}
-            title={open ? "بستن جزئیات حساب" : "باز کردن جزئیات حساب"}
-            onClick={() => setOpen((current) => !current)}
-          >
-            <ChevronDown size={16} className={`transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
-          </BpButton>
         </div>
       </div>
 
