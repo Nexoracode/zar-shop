@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { ChevronLeft, Sparkles } from "lucide-react";
@@ -7,7 +6,7 @@ import { DiscountExpiryRefresh } from "@/components/discount-expiry-refresh";
 import { DragScrollRow } from "@/components/drag-scroll-row";
 import { ProductOfferCard } from "@/components/product-offer-card";
 import { ProductListSliderShell } from "@/components/product-list-slider-shell";
-import { RowBanner } from "@/components/row-banner";
+import { FullWidthBanner, RowBanner } from "@/components/row-banner";
 import { FlashSaleCountdown } from "@/components/flash-sale-countdown";
 import { ProductCard, type ProductCardBuilder } from "@/components/product-card";
 import { ProductFeatureTile, ProductRankedItem, ProductThumbItem } from "@/components/product-list-items";
@@ -113,10 +112,7 @@ export function ProductListSection({ sectionId, config, descriptionHtml, data, d
       // On a phone the banner is a full-width picture above the row instead of the row's first item.
       const phoneBanner = banner && (
         <BuilderPart {...part("banner")} className="contents">
-          <div className={`relative mb-3 overflow-hidden rounded-2xl bg-black/5 sm:hidden ${config.layout === "BANNER_ROW" ? "aspect-[3/2]" : "aspect-[4/3]"}`}>
-            {banner.href && <Link href={banner.href} aria-label={banner.alt ?? config.title} className="absolute inset-0 z-10" />}
-            <Image src={banner.url} alt={banner.alt ?? config.title} fill sizes="100vw" className="object-cover" />
-          </div>
+          <div className="mb-3 sm:hidden"><FullWidthBanner src={banner.url} alt={banner.alt ?? config.title} href={banner.href || undefined} fallbackRatio={config.layout === "BANNER_ROW" ? 1.5 : 4 / 3} /></div>
         </BuilderPart>
       );
       return <Shell>
@@ -124,7 +120,7 @@ export function ProductListSection({ sectionId, config, descriptionHtml, data, d
         {phoneBanner}
         <DragScrollRow ariaLabel={config.title} showNavigation navigationPart={arrows} className="flex w-full min-w-0 max-w-full gap-3 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {banner
-            ? <BuilderPart {...part("banner")} className="contents"><RowBanner src={banner.url} alt={banner.alt ?? config.title} href={banner.href || undefined} ratio={bannerRatio} className="hidden sm:block" /></BuilderPart>
+            ? <BuilderPart {...part("banner")} className="contents"><RowBanner src={banner.url} alt={banner.alt ?? config.title} href={banner.href || undefined} fallbackRatio={bannerRatio} className="hidden sm:block" /></BuilderPart>
             : <div className="flex w-[240px] min-w-[240px] snap-start sm:w-[300px] sm:min-w-[300px]"><ProductFeatureTile product={first} builder={builder} className="min-h-[200px] w-full" /></div>}
           {offerCards(listed, offerWidth)}{offerViewAll(offerWidth)}
         </DragScrollRow>{refresh}
@@ -143,10 +139,8 @@ export function ProductListSection({ sectionId, config, descriptionHtml, data, d
           {banner
             ? (
               <BuilderPart {...part("banner")} className="contents">
-                <div className="relative aspect-[3/2] shrink-0 overflow-hidden rounded-2xl bg-black/5 sm:aspect-auto sm:min-h-[260px] sm:w-[36%]">
-                  {banner.href && <Link href={banner.href} aria-label={banner.alt ?? config.title} className="absolute inset-0 z-10" />}
-                  <Image src={banner.url} alt={banner.alt ?? config.title} fill sizes="(min-width: 640px) 36vw, 100vw" className="object-cover" />
-                </div>
+                <div className="sm:hidden"><FullWidthBanner src={banner.url} alt={banner.alt ?? config.title} href={banner.href || undefined} fallbackRatio={3 / 2} /></div>
+                <RowBanner src={banner.url} alt={banner.alt ?? config.title} href={banner.href || undefined} fallbackRatio={1.3} className="hidden sm:block" />
               </BuilderPart>
             )
             : <ProductFeatureTile product={first} builder={builder} className="min-h-[220px] sm:w-[36%] sm:shrink-0" />}
