@@ -54,6 +54,9 @@ export function BpSelect({ label, hint, error, reserveMessage = true, options, p
   // What the button shows is read back from the hidden select after every commit, so it is right
   // whether the value is controlled, uncontrolled, or changed from outside.
   const [shown, setShown] = useState(() => String(rest.value ?? rest.defaultValue ?? (placeholder ? "" : options[0]?.value ?? "")));
+  // No dependency list on purpose: the value can change without React knowing (uncontrolled, or set from outside). The
+  // update bails out when nothing changed, so it cannot loop.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useLayoutEffect(() => {
     const current = selectRef.current?.value;
     if (current !== undefined) setShown((previous) => (previous === current ? previous : current));
