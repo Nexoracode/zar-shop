@@ -2,6 +2,7 @@ import { cacheLife, cacheTag } from "next/cache";
 import { db } from "@/lib/db";
 import { STORE_SETTING_ID, getStoreIndustry } from "@/modules/settings/store-settings";
 import { parseStoredSectionSettings, type PageSectionSettingsBundle } from "@/modules/page-builder/section-settings";
+import { resolveBannerSliders } from "@/modules/page-builder/banner-sliders";
 import { resolveProductLists } from "@/modules/page-builder/product-lists";
 
 // Cached across requests like the other settings getters; the save routes clear it with
@@ -14,5 +15,5 @@ export async function getPageSectionSettings(): Promise<PageSectionSettingsBundl
     db.storeSetting.findUnique({ where: { id: STORE_SETTING_ID }, select: { pageSectionSettings: true } }),
     getStoreIndustry(),
   ]);
-  return { ...parseStoredSectionSettings(setting?.pageSectionSettings), productLists: resolveProductLists(setting?.pageSectionSettings, industry) };
+  return { ...parseStoredSectionSettings(setting?.pageSectionSettings), productLists: resolveProductLists(setting?.pageSectionSettings, industry), bannerSliders: resolveBannerSliders(setting?.pageSectionSettings) };
 }

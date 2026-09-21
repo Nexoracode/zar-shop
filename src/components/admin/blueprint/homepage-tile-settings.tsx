@@ -5,6 +5,7 @@ import { toast } from "@heroui/react";
 import { GripVertical, Plus, Trash2 } from "lucide-react";
 import type { MediaChoice } from "@/components/media-library";
 import { MediaPickerDialog } from "@/components/media-picker-dialog";
+import { bannerTileCount } from "@/modules/page-builder/banners";
 import type { HomepageSettings, HomepageTileLayout } from "@/modules/settings/homepage-settings";
 import { homepageFieldLimits } from "@/modules/settings/settings-limits";
 import { BpButton, BpInput, BpKicker, BpSelect } from "./ui";
@@ -19,16 +20,14 @@ const layoutOptions = [
   { value: "THREE_COLUMNS", label: "سه تایی کنار هم" },
   { value: "FOUR_COLUMNS", label: "چهار تایی کنار هم" },
   { value: "TWO_BY_TWO", label: "چهار تایی، دو در دو" },
+  { value: "SINGLE", label: "تکی" },
+  { value: "BIG_AND_TWO", label: "یک بزرگ و دو کوچک" },
+  { value: "MOSAIC", label: "یک بزرگ و سه کوچک" },
 ];
 
 /** The site renders exactly this many tiles per layout — the editor no longer lets an admin
  * add/remove tiles one by one, it just resizes to match whichever layout is picked. */
-const layoutTileCount: Record<HomepageTileLayout, number> = {
-  TWO_COLUMNS: 2,
-  THREE_COLUMNS: 3,
-  FOUR_COLUMNS: 4,
-  TWO_BY_TWO: 4,
-};
+const layoutTileCount: Record<HomepageTileLayout, number> = bannerTileCount;
 
 function resizeTiles(tiles: TileEditor[], count: number): TileEditor[] {
   if (tiles.length === count) return tiles;

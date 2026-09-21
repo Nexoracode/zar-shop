@@ -4,12 +4,14 @@ import { db } from "@/lib/db";
 import { STORE_SETTING_ID } from "@/modules/settings/store-settings";
 import { homepageFieldLimits } from "@/modules/settings/settings-limits";
 import { safeHrefSchema } from "@/modules/settings/safe-href";
+import { bannerSliderIdPattern, isBannerSliderId, resolveBannerSliders } from "@/modules/page-builder/banner-sliders";
+import { bannerTileLayouts } from "@/modules/page-builder/banners";
 import { isProductListId, productListIdPattern, resolveProductLists } from "@/modules/page-builder/product-lists";
 
 export const homepageSectionIds = ["HERO", "CATEGORIES", "BRANDS", "FEATURED_PRODUCTS", "POPULAR_PRODUCTS", "BEST_SELLING_PRODUCTS", "LATEST_PRODUCTS", "ABOUT", "PROMISES", "CONCIERGE", "ARTICLES"] as const;
 export type HomepageSectionId = (typeof homepageSectionIds)[number];
-export type HomepageLayoutItemId = HomepageSectionId | `TILE_GROUP:${string}` | `PRODUCT_LIST:${string}`;
-export const homepageTileLayouts = ["TWO_COLUMNS", "THREE_COLUMNS", "FOUR_COLUMNS", "TWO_BY_TWO"] as const;
+export type HomepageLayoutItemId = HomepageSectionId | `TILE_GROUP:${string}` | `PRODUCT_LIST:${string}` | `BANNER_SLIDER:${string}`;
+export const homepageTileLayouts = bannerTileLayouts;
 export type HomepageTileLayout = (typeof homepageTileLayouts)[number];
 export const homepageTreasureCardIds = ["UNDER_20", "FROM_20_TO_60", "FROM_60_TO_100", "OVER_100"] as const;
 export type HomepageTreasureCardId = (typeof homepageTreasureCardIds)[number];
@@ -21,6 +23,11 @@ const productListSectionIdSchema = z.custom<`PRODUCT_LIST:${string}`>(
   "شناسه لیست محصولات معتبر نیست.",
 );
 
+const bannerSliderSectionIdSchema = z.custom<`BANNER_SLIDER:${string}`>(
+  (value) => typeof value === "string" && bannerSliderIdPattern.test(value),
+  "شناسه اسلایدر بنر معتبر نیست.",
+);
+
 const tileGroupSectionIdSchema = z.custom<`TILE_GROUP:${string}`>(
   (value) => typeof value === "string" && /^TILE_GROUP:[^:]{1,80}$/.test(value),
   "شناسه ردیف تایل معتبر نیست.",
@@ -30,7 +37,7 @@ const tileGroupSectionIdSchema = z.custom<`TILE_GROUP:${string}`>(
 // defaults in `normalizeStoredSections` don't bring it back) but is never shown, and the admin layout
 // page doesn't list it.
 const sectionSchema = z.object({
-  id: z.union([z.enum(homepageSectionIds), tileGroupSectionIdSchema, productListSectionIdSchema]),
+  id: z.union([z.enum(homepageSectionIds), tileGroupSectionIdSchema, productListSectionIdSchema, bannerSliderSectionIdSchema]),
   enabled: z.boolean(),
   removed: z.boolean().optional(),
 });
@@ -117,9 +124,9 @@ function homepageBaseSectionIds(industry: "GOLD" | "GENERAL"): HomepageSectionId
     : ["HERO", "BRANDS", "LATEST_PRODUCTS", "ABOUT", "PROMISES", "ARTICLES", "CONCIERGE"];
 }
 
-/** The ids of the product lists the page builder added (the built-in ones are base sections already). */
+/** The ids of the sections the page builder added — product lists and banner sliders (the built-in lists are base sections already). */
 function addedProductListIds(pageSectionSettings: unknown, industry: "GOLD" | "GENERAL") {
-  return Object.keys(resolveProductLists(pageSectionSettings, industry)).filter(isProductListId);
+  return [...Object.keys(resolveProductLists(pageSectionSettings, industry)).filter(isProductListId), ...Object.keys(resolveBannerSliders(pageSectionSettings)).filter(isBannerSliderId)];
 }
 
 function normalizeStoredSections(value: unknown, industry: "GOLD" | "GENERAL", tileGroups: z.infer<typeof homepageTileGroupsSchema>, productListIds: string[]) {
@@ -136,7 +143,7 @@ function normalizeStoredSections(value: unknown, industry: "GOLD" | "GENERAL", t
     return [section];
   }).filter((section) => allowed.has(section.id));
   const unique = expanded.filter((section, index) => expanded.findIndex((item) => item.id === section.id) === index);
-  const defaults: HomepageLayoutItemId[] = ["HERO", ...tileIds, ...homepageBaseSectionIds(industry).filter((id) => id !== "HERO"), ...(productListIds as `PRODUCT_LIST:${string}`[])];
+  const defaults: HomepageLayoutItemId[] = ["HERO", ...tileIds, ...homepageBaseSectionIds(industry).filter((id) => id !== "HERO"), ...(productListIds as HomepageLayoutItemId[])];
   return [
     ...unique,
     ...defaults.filter((id) => !unique.some((section) => section.id === id)).map((id) => ({ id, enabled: true })),

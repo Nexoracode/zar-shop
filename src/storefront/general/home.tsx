@@ -14,6 +14,8 @@ import { getLatestPublishedArticles } from "@/modules/articles/service";
 import { builderSectionProps } from "@/modules/page-builder/sections";
 import { BuilderPart } from "@/components/builder-part";
 import { isPartHidden } from "@/modules/page-builder/display-parts";
+import { BannerSlider } from "@/components/banner-slider";
+import { getBannerSlidesById } from "@/modules/page-builder/banner-slider-data";
 import { getProductListData } from "@/modules/page-builder/product-list-data";
 import { getStorefrontProductFeed } from "@/modules/products/storefront-feed";
 import { arrangeCategories } from "@/modules/page-builder/section-settings";
@@ -41,7 +43,7 @@ function resolveCategoryIcon(value: string): LucideIcon {
 export async function GeneralHome({ editable = false }: { /** The viewer can edit the page (the page builder is mounted): disabled sections and switched-off parts are rendered so it can show them. */ editable?: boolean }) {
   const sectionSettings = await getPageSectionSettings();
   const productLists = Object.entries(sectionSettings.productLists);
-  const [homepage, popularFeed, listsData, allCategories, brands, latestArticles, pageDisplay] = await Promise.all([
+  const [homepage, popularFeed, listsData, allCategories, brands, latestArticles, pageDisplay, bannerSlides] = await Promise.all([
     getHomepageSettings(),
     getStorefrontProductFeed({ sort: "POPULAR", page: 1, pageSize: 12 }),
     Promise.all(productLists.map(([, config]) => getProductListData(config))),
@@ -59,6 +61,7 @@ export async function GeneralHome({ editable = false }: { /** The viewer can edi
     }),
     getLatestPublishedArticles(4),
     getPageDisplaySettings(),
+    getBannerSlidesById(sectionSettings.bannerSliders),
   ]);
 
   const categories = arrangeCategories(allCategories, sectionSettings.CATEGORIES);
@@ -71,7 +74,7 @@ export async function GeneralHome({ editable = false }: { /** The viewer can edi
   return <main className="flex flex-col gap-4 overflow-hidden bg-[#f4f5f7] pb-[78px] pt-3 lg:gap-6 lg:pb-8">
     <section {...sectionProps("HERO")} className="bg-white"><StorefrontHeroSlider slides={heroSlides} contentMode={homepage.heroContentMode} title={homepage.heroTitle} description={homepage.heroDescription} buttonLabel={homepage.heroButtonLabel} arrowsHidden={isPartHidden(pageDisplay, "HERO", "arrows")} dotsHidden={isPartHidden(pageDisplay, "HERO", "dots")} editable={editable} /></section>
 
-    {homepage.tileGroups.map((group) => group.tiles.some((tile) => tile.media) && <section key={group.id} {...sectionProps(`TILE_GROUP:${group.id}`)} className={container} aria-label="پیشنهادهای تصویری"><StorefrontImageTiles groups={[group]} /></section>)}
+    {homepage.tileGroups.map((group) => (editable || group.tiles.some((tile) => tile.media)) && <section key={group.id} {...sectionProps(`TILE_GROUP:${group.id}`)} className={container} aria-label="پیشنهادهای تصویری"><StorefrontImageTiles groups={[group]} editable={editable} /></section>)}
 
     {categories.length > 0 && <section {...sectionProps("CATEGORIES")} className={`${container} rounded-2xl bg-white px-3 py-6 sm:px-6 lg:py-8`} aria-label="دسته‌بندی محصولات">
       <div className="mb-6 flex items-center justify-between"><BuilderPart {...categoriesPart("title")}><h2 className="m-0 text-lg font-bold text-[#232934] sm:text-xl">{sectionSettings.CATEGORIES.title}</h2></BuilderPart><BuilderPart {...categoriesPart("more")}><Link href="/products" className="inline-flex items-center gap-1 text-xs font-bold text-[var(--brand-primary)]">همه کالاها<ChevronLeft size={15} /></Link></BuilderPart></div>
@@ -82,6 +85,8 @@ export async function GeneralHome({ editable = false }: { /** The viewer can edi
     </section>}
 
     {brands.length > 0 && <div {...sectionProps("BRANDS")} className={container}><HomepageBrands brands={brands} /></div>}
+
+    {Object.entries(sectionSettings.bannerSliders).map(([id, slider]) => (bannerSlides[id].length > 0 || editable) && <div key={id} {...sectionProps(id as HomepageLayoutItemId)} className={container}><BannerSlider sectionId={id} layout={slider.layout} slides={bannerSlides[id]} arrowsHidden={isPartHidden(pageDisplay, id, "arrows")} dotsHidden={isPartHidden(pageDisplay, id, "dots")} editable={editable} /></div>)}
 
     {productLists.map(([id, config], index) => (listsData[index].products.length > 0 || editable) && <div key={id} {...sectionProps(id as HomepageLayoutItemId)} className={container}><ProductListSection sectionId={id} config={config} data={listsData[index]} display={pageDisplay} editable={editable} /></div>)}
 

@@ -57,6 +57,8 @@ const actionLabels: Record<string, string> = {
   PAGE_SECTION_SETTINGS_UPDATE: "ویرایش تنظیمات محتوای بخش‌های صفحه",
   PRODUCT_LIST_CREATE: "افزودن لیست محصولات به صفحه اصلی",
   PRODUCT_LIST_UPDATE: "ویرایش لیست محصولات صفحه اصلی",
+  BANNER_SLIDER_CREATE: "افزودن اسلایدر بنر به صفحه اصلی",
+  BANNER_SLIDER_UPDATE: "ویرایش اسلایدر بنر صفحه اصلی",
   CONTENT_SETTINGS_UPDATE: "ویرایش محتوا و FAQ",
   COMMUNICATION_SETTINGS_UPDATE: "ویرایش تنظیمات پیامک",
   PAYMENT_GATEWAY_CONFIG_UPSERT: "ثبت یا ویرایش درگاه پرداخت",
