@@ -64,8 +64,8 @@ export function DeliveryAddressPicker({ initialAddresses, user, authenticated = 
     {trigger}
     <Modal.Backdrop isOpen={open} onOpenChange={(next) => { setOpen(next); if (!next) { setEditing(null); setAddressFormStep(2); } }} variant="blur">
       <Modal.Container placement="center" size="lg">
-        <Modal.Dialog aria-label="انتخاب نشانی تحویل" dir="rtl" className="mx-3 max-h-[calc(100dvh-24px)] max-w-[560px] overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface)] shadow-2xl">
-          <Modal.Header className="flex-row items-center border-b border-[var(--border)] px-5 py-3">
+        <Modal.Dialog aria-label="انتخاب نشانی تحویل" dir="rtl" className="p-0 mx-3 max-h-[calc(100dvh-24px)] max-w-[560px] overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface)] shadow-2xl">
+          <Modal.Header className="flex-row items-center border-b border-[var(--border)] py-3 ps-5 pe-3">
             <Modal.Heading className="truncate text-base font-bold text-[var(--foreground)]">
               {editing ? addressFormStep === 3 ? "تأیید اطلاعات آدرس" : editing === "new" ? "افزودن آدرس جدید" : "ویرایش آدرس" : "انتخاب آدرس تحویل"}
             </Modal.Heading>
@@ -74,7 +74,7 @@ export function DeliveryAddressPicker({ initialAddresses, user, authenticated = 
             </Modal.CloseTrigger>
           </Modal.Header>
 
-          <Modal.Body className={`overflow-y-auto ${editing ? "p-0" : "bg-[var(--surface-secondary)]/70 p-4 sm:p-5"}`}>
+          <Modal.Body className={`m-0 overflow-y-auto ${editing ? "p-0" : "bg-[var(--surface-secondary)]/70 p-4 sm:p-5"}`}>
             {editing ? (
               <AddressForm initial={editing === "new" ? null : editing} user={user} onSaved={replace} onCancel={() => { if (mode === "create") setOpen(false); else setEditing(null); }} onStepChange={setAddressFormStep} />
             ) : (
@@ -104,7 +104,7 @@ export function DeliveryAddressPicker({ initialAddresses, user, authenticated = 
           </Modal.Body>
 
           {!editing && (
-            <Modal.Footer className="border-t border-[var(--border)] bg-[var(--surface)] px-4 py-3 sm:px-5">
+            <Modal.Footer className="m-0 border-t border-[var(--border)] bg-[var(--surface)] px-4 py-3 sm:px-5">
               <Button type="button" variant="primary" fullWidth onPress={() => { setAddressFormStep(2); setEditing("new"); }} className="min-h-10 justify-center gap-2 rounded-lg bg-[var(--brand-primary)] px-5 text-sm font-bold text-[var(--brand-primary-foreground)]">
                 <Plus size={18} />افزودن آدرس جدید
               </Button>

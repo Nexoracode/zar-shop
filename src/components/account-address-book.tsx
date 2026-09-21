@@ -104,12 +104,12 @@ export function AccountAddressBook({ initialAddresses, user }: AccountAddressBoo
 
     <Modal.Backdrop isOpen={Boolean(editing)} onOpenChange={(open) => { if (!open) { setEditing(null); setEditStep(2); } }} variant="blur">
       <Modal.Container placement="center" size="lg">
-        <Modal.Dialog aria-label="ویرایش آدرس" dir="rtl" className="mx-3 max-h-[calc(100dvh-24px)] max-w-[560px] overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface)] shadow-2xl">
-          <Modal.Header className="flex-row items-center border-b border-[var(--border)] px-5 py-3">
+        <Modal.Dialog aria-label="ویرایش آدرس" dir="rtl" className="p-0 mx-3 max-h-[calc(100dvh-24px)] max-w-[560px] overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface)] shadow-2xl">
+          <Modal.Header className="flex-row items-center border-b border-[var(--border)] py-3 ps-5 pe-3">
             <Modal.Heading className="truncate text-base font-bold text-[var(--foreground)]">{editStep === 3 ? "تأیید اطلاعات آدرس" : "ویرایش آدرس"}</Modal.Heading>
             <Modal.CloseTrigger aria-label="بستن" className="mr-auto grid size-8 place-items-center rounded-lg text-[var(--muted)] transition hover:bg-[var(--surface-secondary)] hover:text-[var(--foreground)]"><X size={18} /></Modal.CloseTrigger>
           </Modal.Header>
-          <Modal.Body className="overflow-y-auto p-0">{editing && <AddressForm initial={editing} user={user} onSaved={finishEditing} onCancel={() => setEditing(null)} onStepChange={setEditStep} />}</Modal.Body>
+          <Modal.Body className="m-0 overflow-y-auto p-0">{editing && <AddressForm initial={editing} user={user} onSaved={finishEditing} onCancel={() => setEditing(null)} onStepChange={setEditStep} />}</Modal.Body>
         </Modal.Dialog>
       </Modal.Container>
     </Modal.Backdrop>
