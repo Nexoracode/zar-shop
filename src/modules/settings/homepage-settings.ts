@@ -4,16 +4,22 @@ import { db } from "@/lib/db";
 import { STORE_SETTING_ID } from "@/modules/settings/store-settings";
 import { homepageFieldLimits } from "@/modules/settings/settings-limits";
 import { safeHrefSchema } from "@/modules/settings/safe-href";
+import { isProductListId, productListIdPattern, resolveProductLists } from "@/modules/page-builder/product-lists";
 
 export const homepageSectionIds = ["HERO", "CATEGORIES", "BRANDS", "FEATURED_PRODUCTS", "POPULAR_PRODUCTS", "BEST_SELLING_PRODUCTS", "LATEST_PRODUCTS", "ABOUT", "PROMISES", "CONCIERGE", "ARTICLES"] as const;
 export type HomepageSectionId = (typeof homepageSectionIds)[number];
-export type HomepageLayoutItemId = HomepageSectionId | `TILE_GROUP:${string}`;
+export type HomepageLayoutItemId = HomepageSectionId | `TILE_GROUP:${string}` | `PRODUCT_LIST:${string}`;
 export const homepageTileLayouts = ["TWO_COLUMNS", "THREE_COLUMNS", "FOUR_COLUMNS", "TWO_BY_TWO"] as const;
 export type HomepageTileLayout = (typeof homepageTileLayouts)[number];
 export const homepageTreasureCardIds = ["UNDER_20", "FROM_20_TO_60", "FROM_60_TO_100", "OVER_100"] as const;
 export type HomepageTreasureCardId = (typeof homepageTreasureCardIds)[number];
 export const homepageLicenseIds = ["SALES", "ONLINE", "ENAMAD"] as const;
 export type HomepageLicenseId = (typeof homepageLicenseIds)[number];
+
+const productListSectionIdSchema = z.custom<`PRODUCT_LIST:${string}`>(
+  (value) => typeof value === "string" && productListIdPattern.test(value),
+  "شناسه لیست محصولات معتبر نیست.",
+);
 
 const tileGroupSectionIdSchema = z.custom<`TILE_GROUP:${string}`>(
   (value) => typeof value === "string" && /^TILE_GROUP:[^:]{1,80}$/.test(value),
@@ -24,7 +30,7 @@ const tileGroupSectionIdSchema = z.custom<`TILE_GROUP:${string}`>(
 // defaults in `normalizeStoredSections` don't bring it back) but is never shown, and the admin layout
 // page doesn't list it.
 const sectionSchema = z.object({
-  id: z.union([z.enum(homepageSectionIds), tileGroupSectionIdSchema]),
+  id: z.union([z.enum(homepageSectionIds), tileGroupSectionIdSchema, productListSectionIdSchema]),
   enabled: z.boolean(),
   removed: z.boolean().optional(),
 });
@@ -111,11 +117,16 @@ function homepageBaseSectionIds(industry: "GOLD" | "GENERAL"): HomepageSectionId
     : ["HERO", "BRANDS", "LATEST_PRODUCTS", "ABOUT", "PROMISES", "ARTICLES", "CONCIERGE"];
 }
 
-function normalizeStoredSections(value: unknown, industry: "GOLD" | "GENERAL", tileGroups: z.infer<typeof homepageTileGroupsSchema>) {
+/** The ids of the product lists the page builder added (the built-in ones are base sections already). */
+function addedProductListIds(pageSectionSettings: unknown, industry: "GOLD" | "GENERAL") {
+  return Object.keys(resolveProductLists(pageSectionSettings, industry)).filter(isProductListId);
+}
+
+function normalizeStoredSections(value: unknown, industry: "GOLD" | "GENERAL", tileGroups: z.infer<typeof homepageTileGroupsSchema>, productListIds: string[]) {
   const parsed = z.array(z.object({ id: z.string(), enabled: z.boolean(), removed: z.boolean().optional() })).max(40).safeParse(value);
   const stored = parsed.success ? parsed.data.map((section) => (section.removed ? { ...section, enabled: false } : section)) : [];
   const tileIds = tileGroups.map((group) => `TILE_GROUP:${group.id}` as const);
-  const allowed = new Set<string>([...homepageBaseSectionIds(industry), ...tileIds]);
+  const allowed = new Set<string>([...homepageBaseSectionIds(industry), ...tileIds, ...productListIds]);
   const expanded = stored.flatMap((section) => {
     if (section.id === "TILES") return tileIds.map((id) => ({ id, enabled: section.enabled }));
     if (section.id === "PRODUCTS") {
@@ -125,7 +136,7 @@ function normalizeStoredSections(value: unknown, industry: "GOLD" | "GENERAL", t
     return [section];
   }).filter((section) => allowed.has(section.id));
   const unique = expanded.filter((section, index) => expanded.findIndex((item) => item.id === section.id) === index);
-  const defaults: HomepageLayoutItemId[] = ["HERO", ...tileIds, ...homepageBaseSectionIds(industry).filter((id) => id !== "HERO")];
+  const defaults: HomepageLayoutItemId[] = ["HERO", ...tileIds, ...homepageBaseSectionIds(industry).filter((id) => id !== "HERO"), ...(productListIds as `PRODUCT_LIST:${string}`[])];
   return [
     ...unique,
     ...defaults.filter((id) => !unique.some((section) => section.id === id)).map((id) => ({ id, enabled: true })),
@@ -277,6 +288,7 @@ const homepageMediaSelect = { id: true, title: true, alt: true, url: true, type:
 const homepageSelect = {
   industry: true,
   generalHomepageSettings: true,
+  pageSectionSettings: true,
   homepageSections: true,
   menuCategoryIds: true,
   homepageTreasureCards: true,
@@ -323,7 +335,7 @@ export async function getHomepageSettings(): Promise<HomepageSettings> {
       ...stored,
       menuItems: homepageMenuItemsSchema.safeParse(stored.menuItems).data ?? legacyMenuItems,
       tileGroups: homepageTileGroupsSchema.safeParse(stored.tileGroups).data ?? [],
-      sections: normalizeStoredSections(stored.sections, "GENERAL", homepageTileGroupsSchema.safeParse(stored.tileGroups).data ?? []),
+      sections: normalizeStoredSections(stored.sections, "GENERAL", homepageTileGroupsSchema.safeParse(stored.tileGroups).data ?? [], addedProductListIds(settings.pageSectionSettings, "GENERAL")),
     });
     activeSettings = parsed.success ? parsed.data : generalHomepageSettingsDefaults;
   } else {
@@ -334,7 +346,7 @@ export async function getHomepageSettings(): Promise<HomepageSettings> {
         ? [{ id: "legacy-slide", desktopMediaId: settings.heroDesktopMediaId, mobileMediaId: settings.heroMobileMediaId, href: settings.heroButtonHref }]
         : [];
     activeSettings = homepageSettingsInputSchema.parse({
-      sections: normalizeStoredSections(settings.homepageSections, "GOLD", homepageTileGroupsSchema.safeParse(settings.homepageTileGroups).data ?? homepageSettingsDefaults.tileGroups),
+      sections: normalizeStoredSections(settings.homepageSections, "GOLD", homepageTileGroupsSchema.safeParse(settings.homepageTileGroups).data ?? homepageSettingsDefaults.tileGroups, addedProductListIds(settings.pageSectionSettings, "GOLD")),
       menuItems: homepageMenuItemsSchema.safeParse(settings.menuCategoryIds).data ?? await resolveLegacyMenuItems(settings.menuCategoryIds),
       tileGroups: homepageTileGroupsSchema.safeParse(settings.homepageTileGroups).data ?? homepageSettingsDefaults.tileGroups,
       treasureCards: treasureCardsSchema.safeParse(settings.homepageTreasureCards).data ?? homepageSettingsDefaults.treasureCards,

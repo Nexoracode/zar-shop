@@ -7,6 +7,7 @@ import { getHomepageMenuLinkOptions, getHomepageSettings } from "@/modules/setti
 import { getBrandSettings } from "@/modules/settings/brand-settings";
 import { getGeneralStoreSettings } from "@/modules/settings/general-settings";
 import { getPageDisplaySettings } from "@/modules/page-builder/display-settings";
+import { getCategoryOptions } from "@/modules/page-builder/category-options";
 import { getPageSectionSettings } from "@/modules/page-builder/section-settings-store";
 import { getStoreIndustry } from "@/modules/settings/store-settings";
 import { resolveStorefrontHome } from "@/storefront/resolve-storefront";
@@ -35,11 +36,11 @@ export default async function HomePage() {
   // permission (ADMIN only) — the same gate as the admin homepage settings pages.
   const user = await getCurrentUser();
   const canEditPages = Boolean(user && hasPermission(user.role, "settings:manage"));
-  const [homepage, display, industry, general, brand, menuLinkOptions, sectionSettings] = canEditPages ? await Promise.all([getHomepageSettings(), getPageDisplaySettings(), getStoreIndustry(), getGeneralStoreSettings(), getBrandSettings(), getHomepageMenuLinkOptions(), getPageSectionSettings()]) : [];
+  const [homepage, display, industry, general, brand, menuLinkOptions, sectionSettings, categoryOptions] = canEditPages ? await Promise.all([getHomepageSettings(), getPageDisplaySettings(), getStoreIndustry(), getGeneralStoreSettings(), getBrandSettings(), getHomepageMenuLinkOptions(), getPageSectionSettings(), getCategoryOptions()]) : [];
   return (
     <>
       <StorefrontHome editable={canEditPages} />
-      {homepage && display && industry && general && brand && menuLinkOptions && sectionSettings ? (
+      {homepage && display && industry && general && brand && menuLinkOptions && sectionSettings && categoryOptions ? (
         <PageBuilder
           initialSections={homepage.sections}
           initialDisplay={display}
@@ -47,6 +48,7 @@ export default async function HomePage() {
           identity={{ storeName: general.storeName, tagline: general.tagline, logo: brand.mainLogoMedia ? { id: brand.mainLogoMedia.id, title: brand.mainLogoMedia.title || brand.mainLogoMedia.alt || "لوگو", alt: brand.mainLogoMedia.alt, url: brand.mainLogoMedia.url, type: "IMAGE", mimeType: brand.mainLogoMedia.mimeType } : null }}
           menu={{ items: homepage.menuItems, linkOptions: menuLinkOptions }}
           sectionSettings={sectionSettings}
+          categoryOptions={categoryOptions}
           hero={{
             contentMode: homepage.heroContentMode,
             title: homepage.heroTitle,

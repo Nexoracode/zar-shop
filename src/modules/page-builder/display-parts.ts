@@ -86,31 +86,20 @@ const displaySections: Record<string, { master: "display" | "layout"; masterLabe
       GOLD: [],
     },
   },
-  // The flash-deals section exists in the general template only.
-  FEATURED_PRODUCTS: {
-    master: "layout",
-    parts: {
-      GENERAL: [
-        { id: "icon", label: "آیکون" },
-        { id: "title", label: "عنوان بخش" },
-        { id: "countdown", label: "شمارنده زمان" },
-        { id: "more", label: "نمایش بیشتر" },
-        { id: "arrows", label: "نمایش فلش‌ها" },
-        { id: "viewAll", label: "کارت «مشاهده همه»" },
-        ...productCardParts("GENERAL"),
-      ],
-      GOLD: [],
-    },
-  },
-  // For now these list only their cards' switches; the rest of their parts comes with their own dialogs.
-  POPULAR_PRODUCTS: { master: "layout", parts: { GENERAL: productCardParts("GENERAL"), GOLD: [] } },
-  LATEST_PRODUCTS: { master: "layout", parts: { GENERAL: productCardParts("GENERAL"), GOLD: productCardParts("GOLD") } },
+  // The gold template's latest-products section keeps its own tabbed look and lists only its cards' switches. (In the
+  // general template this id is a product list, whose config is resolved dynamically.)
+  LATEST_PRODUCTS: { master: "layout", parts: { GENERAL: [], GOLD: productCardParts("GOLD") } },
   // Sections with nothing to toggle inside them still get the whole-section switch.
   PROMO_BANNER: { master: "display", parts: { GENERAL: [], GOLD: [] } },
   FOOTER: { master: "display", parts: { GENERAL: [], GOLD: [] } },
 };
 
-export function sectionDisplayConfig(sectionId: string, industry: PageBuilderIndustry): SectionDisplayConfig | null {
+/** Resolves the display config of sections that are not in the fixed registry (the product lists, see `product-lists.ts`). */
+export type DynamicDisplayConfig = (sectionId: string) => SectionDisplayConfig | null;
+
+export function sectionDisplayConfig(sectionId: string, industry: PageBuilderIndustry, dynamic?: DynamicDisplayConfig): SectionDisplayConfig | null {
+  const resolved = dynamic?.(sectionId);
+  if (resolved) return resolved;
   const section = displaySections[sectionId];
   return section ? { parts: section.parts[industry], master: section.master, masterLabel: section.masterLabel } : null;
 }
@@ -168,10 +157,10 @@ const sectionDisplaySchema = z.object({
 });
 
 /** The stored shape, checked for the store's industry: only known sections and known parts of them. */
-export function pageDisplaySchema(industry: PageBuilderIndustry) {
+export function pageDisplaySchema(industry: PageBuilderIndustry, dynamic?: DynamicDisplayConfig) {
   return z.record(z.string().min(1).max(80), sectionDisplaySchema).superRefine((display, context) => {
     for (const [sectionId, entry] of Object.entries(display)) {
-      const config = sectionDisplayConfig(sectionId, industry);
+      const config = sectionDisplayConfig(sectionId, industry, dynamic);
       if (!config) {
         context.addIssue({ code: "custom", message: "تنظیمات نمایش برای این بخش تعریف نشده است.", path: [sectionId] });
         continue;

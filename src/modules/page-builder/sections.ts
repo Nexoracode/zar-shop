@@ -31,5 +31,6 @@ export function builderSectionProps(id: BuilderSectionId) {
 export function builderSectionLabel(id: string | undefined) {
   if (!id) return "بخش";
   if (id.startsWith("TILE_GROUP:")) return "ردیف تصاویر";
+  if (id.startsWith("PRODUCT_LIST:")) return "لیست محصولات";
   return (homepageSectionLabels as Record<string, string>)[id] ?? (chromeSectionLabels as Record<string, string>)[id] ?? "بخش";
 }

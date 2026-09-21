@@ -70,7 +70,7 @@ const toolbarSeparatorClass = "mx-1 h-5 w-px bg-white/25";
  * and this way nothing in the templates has to know about the builder beyond the section attribute.
  * Positions are written straight to the DOM in a rAF loop so scrolling never re-renders React.
  */
-export function PageBuilderOverlay({ active, layoutKey, onMove, onRemove, onOpenSettings, onEdit }: {
+export function PageBuilderOverlay({ active, layoutKey, onMove, onRemove, onOpenSettings, onEdit, onAdd }: {
   active: boolean;
   /** Changes whenever the draft layout does, so the frame re-measures and follows a section that moved. */
   layoutKey: string;
@@ -78,6 +78,7 @@ export function PageBuilderOverlay({ active, layoutKey, onMove, onRemove, onOpen
   onRemove: (sectionId: string) => void;
   onOpenSettings: (sectionId: string) => void;
   onEdit: (sectionId: string) => void;
+  onAdd: () => void;
 }) {
   const [selected, setSelected] = useState<HTMLElement | null>(null);
   const hoveredRef = useRef<HTMLElement | null>(null);
@@ -214,7 +215,7 @@ export function PageBuilderOverlay({ active, layoutKey, onMove, onRemove, onOpen
             <ToolbarButton label="حذف" onPress={() => selectedId && onRemove(selectedId)}><Trash2 size={20} /></ToolbarButton>
           </div>
           <div className={toolbarPillClass}>
-            <ToolbarButton label="افزودن بخش"><Plus size={20} /></ToolbarButton>
+            <ToolbarButton label="افزودن بخش" onPress={onAdd}><Plus size={20} /></ToolbarButton>
           </div>
         </div>
       </div>

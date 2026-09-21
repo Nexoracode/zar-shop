@@ -1,7 +1,7 @@
 // What can be edited inside a storefront section: the list the section's "edit" dialog shows. Each item groups
 // the settings that belong together (for the header: name/tagline/logo, and the menu). Sections without an entry
 // have no edit dialog yet. (The slider's list is not here: it has one row per banner, built from the banners.)
-export type EditItemIcon = "identity" | "menu" | "image";
+export type EditItemIcon = "identity" | "menu" | "image" | "list";
 export type EditItem = { id: string; title: string; description: string; icon: EditItemIcon };
 
 const editItems: Record<string, EditItem[]> = {

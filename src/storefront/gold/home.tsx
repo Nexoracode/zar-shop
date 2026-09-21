@@ -5,6 +5,7 @@ import type { Prisma } from "@generated/prisma/client";
 import { HomepageBrands } from "@/components/homepage-brands";
 import { HomepageLatestArticles } from "@/components/homepage-latest-articles";
 import { HomepageProductFeed } from "@/components/homepage-product-feed";
+import { ProductListSection } from "@/components/product-list-section";
 import { StorefrontHeroSlider } from "@/components/storefront-hero-slider";
 import { StorefrontLicenses } from "@/components/storefront-licenses";
 import { StorefrontImageTiles } from "@/components/storefront-image-tiles";
@@ -14,6 +15,8 @@ import { getStorefrontProductFeed } from "@/modules/products/storefront-feed";
 import { getGeneralStoreSettings } from "@/modules/settings/general-settings";
 import { builderSectionProps } from "@/modules/page-builder/sections";
 import { isPartHidden, sectionDisplay } from "@/modules/page-builder/display-parts";
+import { getProductListData } from "@/modules/page-builder/product-list-data";
+import { getPageSectionSettings } from "@/modules/page-builder/section-settings-store";
 import { getPageDisplaySettings } from "@/modules/page-builder/display-settings";
 import { isSectionHiddenAtRender } from "@/modules/page-builder/layout-draft";
 import { getHomepageSettings, type HomepageLayoutItemId, type HomepageTreasureCardId } from "@/modules/settings/homepage-settings";
@@ -25,7 +28,8 @@ const container = "mx-auto w-[min(var(--store-max-width),calc(100%-32px))] lg:w-
 
 export async function GoldHome({ editable = false }: { /** The viewer can edit the page (the page builder is mounted): disabled sections and switched-off parts are rendered so it can show them. */ editable?: boolean }) {
   const settings = await getGeneralStoreSettings();
-  const [productFeed, homepageCategories, homepage, brands, latestArticles, pageDisplay] = await Promise.all([
+  const productLists = Object.entries((await getPageSectionSettings()).productLists);
+  const [productFeed, homepageCategories, homepage, brands, latestArticles, pageDisplay, listsData] = await Promise.all([
     getStorefrontProductFeed({ sort: "LATEST", page: 1 }),
     db.category.findMany({
       where: { isActive: true, featured: true, products: { some: { status: "ACTIVE", storeIndustry: "GOLD" } } },
@@ -41,6 +45,7 @@ export async function GoldHome({ editable = false }: { /** The viewer can edit t
     }),
     getLatestPublishedArticles(4),
     getPageDisplaySettings(),
+    Promise.all(productLists.map(([, config]) => getProductListData(config))),
   ]);
 
   const categories = homepageCategories;
@@ -73,6 +78,8 @@ export async function GoldHome({ editable = false }: { /** The viewer can edit t
         <HomepageProductFeed initialFeed={productFeed} cardBuilder={{ section: "LATEST_PRODUCTS", hiddenParts: sectionDisplay(pageDisplay, "LATEST_PRODUCTS").hiddenParts, editable }} />
       </div>
     </section>
+
+    {productLists.map(([id, config], index) => (listsData[index].products.length > 0 || editable) && <section key={id} {...sectionProps(id as HomepageLayoutItemId)} className="bg-white py-5 lg:py-10"><div className={container}><ProductListSection sectionId={id} config={config} data={listsData[index]} display={pageDisplay} editable={editable} /></div></section>)}
 
     <section {...sectionProps("ABOUT")} className="bg-white py-5 lg:py-[60px]">
       <div className={`${container} grid min-h-[340px] items-center gap-8 lg:grid-cols-[1.15fr_.85fr]`}>

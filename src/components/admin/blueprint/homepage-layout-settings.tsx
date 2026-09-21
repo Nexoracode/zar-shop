@@ -85,7 +85,7 @@ export function BlueprintHomepageLayoutSettings({ initialSettings }: { initialSe
               const groupId = section.id.startsWith("TILE_GROUP:") ? section.id.slice("TILE_GROUP:".length) : null;
               const groupIndex = groupId ? initialSettings.tileGroups.findIndex((group) => group.id === groupId) : -1;
               const group = groupIndex >= 0 ? initialSettings.tileGroups[groupIndex] : null;
-              const meta = group ? { title: `ردیف تایل ${(groupIndex + 1).toLocaleString("fa-IR")}`, description: `${group.tiles.length.toLocaleString("fa-IR")} تایل؛ تصاویر و چیدمان از مدیریت تایل‌ها` } : sectionMeta[section.id as HomepageSectionId];
+              const meta = group ? { title: `ردیف تایل ${(groupIndex + 1).toLocaleString("fa-IR")}`, description: `${group.tiles.length.toLocaleString("fa-IR")} تایل؛ تصاویر و چیدمان از مدیریت تایل‌ها` } : sectionMeta[section.id as HomepageSectionId] ?? (section.id.startsWith("PRODUCT_LIST:") ? { title: "لیست محصولات", description: "لیستی که با صفحه‌ساز به صفحه اصلی اضافه شده است" } : undefined);
               if (!meta) return null;
               const before = dropTarget?.id === section.id && !dropTarget.after && draggedId !== section.id;
               const after = dropTarget?.id === section.id && dropTarget.after && draggedId !== section.id;

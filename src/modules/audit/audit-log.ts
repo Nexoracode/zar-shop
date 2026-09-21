@@ -55,6 +55,8 @@ const actionLabels: Record<string, string> = {
   PAGE_DISPLAY_SETTINGS_UPDATE: "ویرایش تنظیمات نمایش بخش‌های صفحه",
   STOREFRONT_IDENTITY_UPDATE: "ویرایش نام، شعار و لوگوی فروشگاه",
   PAGE_SECTION_SETTINGS_UPDATE: "ویرایش تنظیمات محتوای بخش‌های صفحه",
+  PRODUCT_LIST_CREATE: "افزودن لیست محصولات به صفحه اصلی",
+  PRODUCT_LIST_UPDATE: "ویرایش لیست محصولات صفحه اصلی",
   CONTENT_SETTINGS_UPDATE: "ویرایش محتوا و FAQ",
   COMMUNICATION_SETTINGS_UPDATE: "ویرایش تنظیمات پیامک",
   PAYMENT_GATEWAY_CONFIG_UPSERT: "ثبت یا ویرایش درگاه پرداخت",

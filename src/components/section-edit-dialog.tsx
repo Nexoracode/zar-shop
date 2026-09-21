@@ -2,10 +2,10 @@
 
 import type { ReactNode } from "react";
 import { Button, Modal } from "@heroui/react";
-import { ChevronLeft, ImageIcon, Menu, Plus, Store, X } from "lucide-react";
+import { ChevronLeft, ImageIcon, LayoutList, Menu, Plus, Store, X } from "lucide-react";
 import type { EditItem, EditItemIcon } from "@/modules/page-builder/edit-items";
 
-const itemIcons: Record<EditItemIcon, typeof Store> = { identity: Store, menu: Menu, image: ImageIcon };
+const itemIcons: Record<EditItemIcon, typeof Store> = { identity: Store, menu: Menu, image: ImageIcon, list: LayoutList };
 
 type Props = {
   title: string;

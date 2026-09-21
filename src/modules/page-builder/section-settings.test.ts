@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { pageSectionLimits } from "../settings/settings-limits";
-import { arrangeCategories, categoriesSectionDefaults, categoriesSectionSettingsSchema, featuredSectionDefaults, featuredSectionSettingsSchema, isSectionSettingsId, parseStoredSectionSettings, sectionContentFields } from "./section-settings";
+import { arrangeCategories, categoriesSectionDefaults, categoriesSectionSettingsSchema, isSectionSettingsId, parseStoredSectionSettings, sectionContentFields } from "./section-settings";
 
 const category = (name: string, products: number) => ({ name, _count: { products } });
 const items = [category("موبایل", 4), category("پوشاک", 9), category("ابزار", 4)];
@@ -26,12 +26,11 @@ test("stored settings fall back to the defaults piece by piece", () => {
   assert.deepEqual(parseStoredSectionSettings(null).CATEGORIES, categoriesSectionDefaults);
   assert.deepEqual(parseStoredSectionSettings({ CATEGORIES: { limit: 6 } }).CATEGORIES, { ...categoriesSectionDefaults, limit: 6 });
   assert.deepEqual(parseStoredSectionSettings({ CATEGORIES: { limit: "many" } }).CATEGORIES, categoriesSectionDefaults);
-  assert.deepEqual(parseStoredSectionSettings({ FEATURED_PRODUCTS: { title: "پیشنهاد ویژه" } }).FEATURED_PRODUCTS, { ...featuredSectionDefaults, title: "پیشنهاد ویژه" });
 });
 
 test("knows which sections have content settings", () => {
   assert.equal(isSectionSettingsId("CATEGORIES"), true);
-  assert.equal(isSectionSettingsId("FEATURED_PRODUCTS"), true);
+  assert.equal(isSectionSettingsId("FEATURED_PRODUCTS"), false);
   assert.equal(isSectionSettingsId("HERO"), false);
 });
 
@@ -41,8 +40,6 @@ test("arranges the categories by the administrator's order, by name or by produc
   assert.deepEqual(names(arrangeCategories(items, { sort: "MOST_PRODUCTS", limit: 3 })), ["پوشاک", "موبایل", "ابزار"]);
 });
 
-test("the flash-deals defaults are the section as it was, and its count is bounded", () => {
-  assert.deepEqual(featuredSectionDefaults, { title: "شگفت‌انگیز", limit: 12 });
   assert.equal(featuredSectionSettingsSchema.safeParse(featuredSectionDefaults).success, true);
   assert.equal(featuredSectionSettingsSchema.safeParse({ ...featuredSectionDefaults, limit: pageSectionLimits.featuredMax + 1 }).success, false);
   assert.equal(featuredSectionSettingsSchema.safeParse({ ...featuredSectionDefaults, limit: 0 }).success, false);
@@ -50,5 +47,4 @@ test("the flash-deals defaults are the section as it was, and its count is bound
 
 test("every section with settings has form fields for exactly its schema's keys", () => {
   assert.deepEqual(sectionContentFields.CATEGORIES.map((field) => field.name), ["title", "limit", "sort"]);
-  assert.deepEqual(sectionContentFields.FEATURED_PRODUCTS.map((field) => field.name), ["title", "limit"]);
 });

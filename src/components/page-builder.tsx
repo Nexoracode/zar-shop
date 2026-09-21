@@ -9,13 +9,16 @@ import { PageBuilderHeroSlideDialog } from "@/components/page-builder-hero-dialo
 import { PageBuilderIdentityDialog, type IdentityValues } from "@/components/page-builder-identity-dialog";
 import { PageBuilderMenuDialog } from "@/components/page-builder-menu-dialog";
 import { PageBuilderOverlay } from "@/components/page-builder-overlay";
+import { ProductListDialog, type CategoryOption } from "@/components/product-list-dialog";
+import { ProductListLayoutPicker } from "@/components/product-list-layout-picker";
 import { SectionContentDialog } from "@/components/section-content-dialog";
 import { SectionDisplayDialog } from "@/components/section-display-dialog";
 import { SectionEditDialog } from "@/components/section-edit-dialog";
-import { displayCss, sameDisplay, sectionDisplay, sectionDisplayConfig, setSectionDisplay, type PageBuilderIndustry, type PageDisplay, type SectionDisplay, type SectionDisplayConfig } from "@/modules/page-builder/display-parts";
+import { displayCss, sameDisplay, sectionDisplay, sectionDisplayConfig, setSectionDisplay, type DynamicDisplayConfig, type PageBuilderIndustry, type PageDisplay, type SectionDisplay, type SectionDisplayConfig } from "@/modules/page-builder/display-parts";
 import { sectionEditItems, type EditItem } from "@/modules/page-builder/edit-items";
 import { heroSlideLabel, type HeroValues } from "@/modules/page-builder/hero-payload";
-import { isSectionSettingsId, type PageSectionSettings } from "@/modules/page-builder/section-settings";
+import { newProductListConfig, productListDisplayConfig, pruneDisplayForList, type ProductListConfig, type ProductListLayout } from "@/modules/page-builder/product-lists";
+import { isSectionSettingsId, type PageSectionSettingsBundle } from "@/modules/page-builder/section-settings";
 import { isLayoutSection, layoutCss, moveSection, removeSection, sameLayout, sectionSelector, type LayoutSection } from "@/modules/page-builder/layout-draft";
 import { builderSectionLabel } from "@/modules/page-builder/sections";
 import type { HomepageMenuItem, HomepageMenuLinkOption } from "@/modules/settings/homepage-settings";
@@ -41,7 +44,7 @@ async function patchJson(url: string, body: unknown, fallbackMessage: string) {
  * at once through an injected stylesheet, can be undone and redone, and only reach the store on "save". Removing a
  * section asks for confirmation first, because once the change is saved there is no way back.
  */
-export function PageBuilder({ initialSections, initialDisplay, industry, identity, menu, hero, sectionSettings }: {
+export function PageBuilder({ initialSections, initialDisplay, industry, identity, menu, hero, sectionSettings, categoryOptions }: {
   initialSections: LayoutSection[];
   initialDisplay: PageDisplay;
   industry: PageBuilderIndustry;
@@ -50,7 +53,9 @@ export function PageBuilder({ initialSections, initialDisplay, industry, identit
   /** Current hero slider configuration, for the slider's banner forms. */
   hero: HeroValues;
   /** Current content settings of the sections that have them (category strip, flash deals…), for their edit forms. */
-  sectionSettings: PageSectionSettings;
+  sectionSettings: PageSectionSettingsBundle;
+  /** The active categories, for a product list that shows one category. */
+  categoryOptions: CategoryOption[];
   /** Current top-menu links and the ready-made links the menu form offers. */
   menu: { items: HomepageMenuItem[]; linkOptions: HomepageMenuLinkOption[] };
 }) {
@@ -65,6 +70,11 @@ export function PageBuilder({ initialSections, initialDisplay, industry, identit
   const [editSection, setEditSection] = useState<string | null>(null);
   // The group of settings picked in the edit dialog's list (see `edit-items.ts`), once a form is open.
   const [editItem, setEditItem] = useState<string | null>(null);
+  // Product lists created or saved during this visit; they win over what the server sent until the page catches up.
+  const [localLists, setLocalLists] = useState<Record<string, ProductListConfig>>({});
+  const [addStep, setAddStep] = useState<"type" | "layout" | null>(null);
+  const [addingList, setAddingList] = useState(false);
+  const productLists = { ...sectionSettings.productLists, ...localLists };
   const { layout, display } = draft.current;
 
   const commit = (next: Snapshot) => setDraft((state) => ({ current: next, past: [...state.past, state.current], future: [] }));
@@ -94,8 +104,10 @@ export function PageBuilder({ initialSections, initialDisplay, industry, identit
 
   // Every section has display settings: the registry lists the switchable parts of the ones that have any, and a
   // layout section without an entry still gets the whole-section switch.
+  const productListConfig: DynamicDisplayConfig = (id) => (productLists[id] ? productListDisplayConfig(productLists[id], industry) : null);
+
   function displayConfig(id: string): SectionDisplayConfig | null {
-    return sectionDisplayConfig(id, industry) ?? (isLayoutSection(layout, id) ? { parts: [], master: "layout" } : null);
+    return sectionDisplayConfig(id, industry, productListConfig) ?? (isLayoutSection(layout, id) ? { parts: [], master: "layout" } : null);
   }
 
   function requestSettings(id: string) {
@@ -104,7 +116,7 @@ export function PageBuilder({ initialSections, initialDisplay, industry, identit
   }
 
   function requestEdit(id: string) {
-    if (id === "HERO" || isSectionSettingsId(id) || sectionEditItems(id)) setEditSection(id);
+    if (id === "HERO" || isSectionSettingsId(id) || productLists[id] || sectionEditItems(id)) setEditSection(id);
     else toast.info("ویرایش این بخش هنوز اضافه نشده است");
   }
 
@@ -112,6 +124,44 @@ export function PageBuilder({ initialSections, initialDisplay, industry, identit
     setEditItem(null);
     setEditSection(null);
     router.refresh();
+  }
+
+  // A list was saved: remember it, and drop the switches its new layout doesn't have (the server did the same).
+  function listSaved(id: string, config: ProductListConfig) {
+    setLocalLists((current) => ({ ...current, [id]: config }));
+    const prune = (snapshot: Snapshot): Snapshot => ({ ...snapshot, display: pruneDisplayForList(snapshot.display, id, config, industry) });
+    setSaved(prune);
+    setDraft((state) => ({ current: prune(state.current), past: state.past.map(prune), future: state.future.map(prune) }));
+    finishEdit();
+  }
+
+  // A section that now exists on the server (a new list) joins every state of the draft, at the end of the page, so
+  // an unsaved draft survives and the next save still lists it.
+  function appendSection(id: string) {
+    const withSection = (snapshot: Snapshot): Snapshot => (snapshot.layout.some((section) => section.id === id) ? snapshot : { ...snapshot, layout: [...snapshot.layout, { id, enabled: true }] });
+    setSaved(withSection);
+    setDraft((state) => ({ current: withSection(state.current), past: state.past.map(withSection), future: state.future.map(withSection) }));
+  }
+
+  async function createList(layoutChoice: ProductListLayout) {
+    setAddingList(true);
+    try {
+      const config = newProductListConfig(layoutChoice);
+      const response = await fetch("/api/admin/settings/product-lists", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(config) });
+      const result = await response.json().catch(() => null);
+      if (!response.ok || typeof result?.id !== "string") throw new Error(result?.message ?? "افزودن لیست محصولات انجام نشد.");
+      setLocalLists((current) => ({ ...current, [result.id]: config }));
+      appendSection(result.id);
+      toast.success("لیست محصولات به انتهای صفحه اضافه شد");
+      setAddStep(null);
+      // Its details come next: the edit form opens straight away.
+      setEditSection(result.id);
+      router.refresh();
+    } catch (reason) {
+      toast.danger("افزودن لیست محصولات انجام نشد", { description: reason instanceof Error ? reason.message : "خطای ناشناخته" });
+    } finally {
+      setAddingList(false);
+    }
   }
 
   // Saving a banner goes back to the banner list, which then shows the refreshed slider.
@@ -179,7 +229,7 @@ export function PageBuilder({ initialSections, initialDisplay, industry, identit
   return (
     <>
       <style>{css}</style>
-      <PageBuilderOverlay active={editing} layoutKey={css} onMove={handleMove} onRemove={requestRemove} onOpenSettings={requestSettings} onEdit={requestEdit} />
+      <PageBuilderOverlay active={editing} layoutKey={css} onMove={handleMove} onRemove={requestRemove} onOpenSettings={requestSettings} onEdit={requestEdit} onAdd={() => setAddStep("type")} />
       <PageBuilderBar
         open={open}
         onOpenChange={setOpen}
@@ -194,7 +244,7 @@ export function PageBuilder({ initialSections, initialDisplay, industry, identit
         canRedo={draft.future.length > 0}
         saving={saving}
       />
-      {editSection && !isSectionSettingsId(editSection) && !editItem && (
+      {editSection && !isSectionSettingsId(editSection) && !productLists[editSection] && !editItem && (
         <SectionEditDialog
           key={editSection}
           title={editSection === "HERO" ? "ویرایش بنر اسلایدر" : `ویرایش ${builderSectionLabel(editSection)}`}
@@ -205,6 +255,9 @@ export function PageBuilder({ initialSections, initialDisplay, industry, identit
           onClose={() => setEditSection(null)}
         />
       )}
+      {editSection && productLists[editSection] && <ProductListDialog key={editSection} listId={editSection} initial={productLists[editSection]} categoryOptions={categoryOptions} onSaved={(config) => listSaved(editSection, config)} onClose={() => setEditSection(null)} />}
+      {addStep === "type" && <SectionEditDialog title="افزودن بخش" items={[{ id: "product-list", title: "لیست محصولات", description: "نمایش محصولات با ظاهرهای گوناگون", icon: "list" }]} onSelect={() => setAddStep("layout")} onClose={() => setAddStep(null)} />}
+      {addStep === "layout" && <ProductListLayoutPicker saving={addingList} onConfirm={(choice) => void createList(choice)} onBack={() => setAddStep("type")} onClose={() => setAddStep(null)} />}
       {editSection && isSectionSettingsId(editSection) && <SectionContentDialog key={editSection} sectionId={editSection} sectionLabel={builderSectionLabel(editSection)} initial={sectionSettings[editSection]} onSaved={finishEdit} onClose={() => setEditSection(null)} />}
       {/* These forms save on their own (the data lives in other settings, not in the page draft), then the page is refreshed. */}
       {editSection === "HEADER" && editItem === "identity" && <PageBuilderIdentityDialog initial={identity} onSaved={finishEdit} onClose={() => setEditItem(null)} />}

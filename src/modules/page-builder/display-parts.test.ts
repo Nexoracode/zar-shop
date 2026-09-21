@@ -58,15 +58,18 @@ test("stored garbage counts as nothing customised", () => {
   assert.deepEqual(parseStoredDisplay(null), {});
 });
 
-test("sections that list product cards can switch the card's parts, gold and general worded differently", () => {
-  const featured = sectionDisplayConfig("FEATURED_PRODUCTS", "GENERAL")?.parts ?? [];
-  assert.ok(featured.some((part) => part.id === "countdown"));
-  assert.deepEqual(featured.filter((part) => part.group === PRODUCT_CARD_GROUP).map((part) => part.id), productCardParts("GENERAL").map((part) => part.id));
+test("the product card's switches are worded differently for gold and general, and grouped", () => {
   assert.equal(productCardParts("GOLD").find((part) => part.id === "card.badge")?.label, "برچسب اجرت / تخفیف");
   assert.equal(productCardParts("GENERAL").find((part) => part.id === "card.badge")?.label, "درصد تخفیف");
-  const schema = pageDisplaySchema("GENERAL");
-  assert.equal(schema.safeParse({ FEATURED_PRODUCTS: { enabled: true, hiddenParts: ["card.price", "countdown"] } }).success, true);
-  assert.equal(schema.safeParse({ POPULAR_PRODUCTS: { enabled: true, hiddenParts: ["countdown"] } }).success, false);
-  // The gold template has no flash-deals section.
-  assert.equal(pageDisplaySchema("GOLD").safeParse({ FEATURED_PRODUCTS: { enabled: true, hiddenParts: ["card.price"] } }).success, false);
+  assert.ok(productCardParts("GENERAL").every((part) => part.group === PRODUCT_CARD_GROUP));
+  // The gold latest-products section (tabbed feed) lists just the card's switches.
+  assert.deepEqual(sectionDisplayConfig("LATEST_PRODUCTS", "GOLD")?.parts.map((part) => part.id), productCardParts("GOLD").map((part) => part.id));
+});
+
+test("sections outside the registry are resolved dynamically, first", () => {
+  const dynamic = (id: string) => (id === "PRODUCT_LIST:a" ? { parts: [{ id: "title", label: "عنوان" }], master: "layout" as const } : null);
+  assert.equal(sectionDisplayConfig("PRODUCT_LIST:a", "GENERAL"), null);
+  assert.equal(sectionDisplayConfig("PRODUCT_LIST:a", "GENERAL", dynamic)?.parts[0].id, "title");
+  assert.equal(pageDisplaySchema("GENERAL", dynamic).safeParse({ "PRODUCT_LIST:a": { enabled: true, hiddenParts: ["title"] } }).success, true);
+  assert.equal(pageDisplaySchema("GENERAL", dynamic).safeParse({ "PRODUCT_LIST:a": { enabled: true, hiddenParts: ["arrows"] } }).success, false);
 });

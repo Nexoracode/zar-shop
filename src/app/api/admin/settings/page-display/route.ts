@@ -7,6 +7,8 @@ import { auditRequestContext } from "@/modules/audit/request-context";
 import { getPermittedActor } from "@/modules/auth/session";
 import { pageDisplaySchema } from "@/modules/page-builder/display-parts";
 import { getPageDisplaySettings } from "@/modules/page-builder/display-settings";
+import { productListDisplayConfig } from "@/modules/page-builder/product-lists";
+import { getPageSectionSettings } from "@/modules/page-builder/section-settings-store";
 import { getStoreIndustry, STORE_SETTING_ID } from "@/modules/settings/store-settings";
 
 export async function GET() {
@@ -20,7 +22,10 @@ export async function PATCH(request: Request) {
     const actor = await getPermittedActor("settings:manage");
     if (!actor) return NextResponse.json({ message: "دسترسی غیرمجاز است." }, { status: 403 });
     const industry = await getStoreIndustry();
-    const { display } = z.object({ display: pageDisplaySchema(industry) }).parse(await request.json());
+    // Product lists have the switches their layout offers, so their configuration decides which parts are valid.
+    const { productLists } = await getPageSectionSettings();
+    const dynamic = (id: string) => (productLists[id] ? productListDisplayConfig(productLists[id], industry) : null);
+    const { display } = z.object({ display: pageDisplaySchema(industry, dynamic) }).parse(await request.json());
 
     await db.$transaction(async (transaction) => {
       await transaction.storeSetting.upsert({

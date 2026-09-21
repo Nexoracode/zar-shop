@@ -38,9 +38,9 @@ export const pageSectionLimits = {
   categoriesMax: 20,
   // How many top-level categories the homepage reads before arranging them (the arrangement happens in memory).
   categoriesPool: 100,
-  // How many products the flash-deals section may list.
-  featuredMin: 1,
-  featuredMax: 24,
+  // How many products a product list may show.
+  productListMin: 1,
+  productListMax: 24,
 } as const;
 
 export const contentFieldLimits = {

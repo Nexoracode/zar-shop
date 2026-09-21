@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { ProductListConfig } from "@/modules/page-builder/product-lists";
 import { pageSectionLimits } from "@/modules/settings/settings-limits";
 
 // Content settings of individual storefront sections, edited from the page builder's "edit" dialog — what a section
@@ -33,41 +34,31 @@ export type CategoriesSectionSettings = z.infer<typeof categoriesSectionSettings
 // The homepage's category strip as it was before it became editable (a fixed title and the first ten categories).
 export const categoriesSectionDefaults: CategoriesSectionSettings = { title: "خرید بر اساس دسته‌بندی", limit: 10, sort: "MANUAL" };
 
-// ---- the flash-deals ("شگفت‌انگیز") section
-export const featuredSectionSettingsSchema = z.object({
-  title: titleSchema(pageSectionLimits.title),
-  limit: countSchema(pageSectionLimits.featuredMin, pageSectionLimits.featuredMax),
-});
-export type FeaturedSectionSettings = z.infer<typeof featuredSectionSettingsSchema>;
-
-// The flash-deals section as it was before it became editable (a fixed title and up to twelve products).
-export const featuredSectionDefaults: FeaturedSectionSettings = { title: "شگفت‌انگیز", limit: 12 };
-
 /** The sections that have content settings, by the id the builder and the storage use. */
-export const sectionSettingsSchemas = { CATEGORIES: categoriesSectionSettingsSchema, FEATURED_PRODUCTS: featuredSectionSettingsSchema } as const;
+export const sectionSettingsSchemas = { CATEGORIES: categoriesSectionSettingsSchema } as const;
 export type SectionSettingsId = keyof typeof sectionSettingsSchemas;
 export function isSectionSettingsId(id: string): id is SectionSettingsId {
   return id in sectionSettingsSchemas;
 }
 
-export type PageSectionSettings = { CATEGORIES: CategoriesSectionSettings; FEATURED_PRODUCTS: FeaturedSectionSettings };
-export const sectionSettingsDefaults: PageSectionSettings = { CATEGORIES: categoriesSectionDefaults, FEATURED_PRODUCTS: featuredSectionDefaults };
+export type PageSectionSettings = { CATEGORIES: CategoriesSectionSettings };
+export const sectionSettingsDefaults: PageSectionSettings = { CATEGORIES: categoriesSectionDefaults };
+
+/** The fixed sections' settings plus every product list of the store (by section id). */
+export type PageSectionSettingsBundle = PageSectionSettings & { productLists: Record<string, ProductListConfig> };
 
 /** The form fields of a section's edit dialog, in order (text ones full width, the others two to a row). */
-export type ContentField =
+export type ContentField = { /** Hide the field while this says so (e.g. the category picker unless the source is a category). */ visibleWhen?: (values: Record<string, string>) => boolean } & (
   | { name: string; kind: "text"; label: string; maxLength: number }
   | { name: string; kind: "number"; label: string; max: number; hint?: string }
-  | { name: string; kind: "select"; label: string; options: { value: string; label: string }[] };
+  | { name: string; kind: "select"; label: string; options: { value: string; label: string }[]; /** An empty first choice with this wording (otherwise a value is always selected). */ placeholder?: string; searchable?: boolean }
+);
 
 export const sectionContentFields: Record<SectionSettingsId, ContentField[]> = {
   CATEGORIES: [
     { name: "title", kind: "text", label: "عنوان بخش", maxLength: pageSectionLimits.title },
     { name: "limit", kind: "number", label: "تعداد نمایش", max: pageSectionLimits.categoriesMax, hint: `حداکثر ${pageSectionLimits.categoriesMax.toLocaleString("fa-IR")} دسته` },
     { name: "sort", kind: "select", label: "ترتیب نمایش", options: categoriesSortValues.map((value) => ({ value, label: categoriesSortLabels[value] })) },
-  ],
-  FEATURED_PRODUCTS: [
-    { name: "title", kind: "text", label: "عنوان بخش", maxLength: pageSectionLimits.title },
-    { name: "limit", kind: "number", label: "تعداد نمایش", max: pageSectionLimits.featuredMax, hint: `حداکثر ${pageSectionLimits.featuredMax.toLocaleString("fa-IR")} محصول` },
   ],
 };
 

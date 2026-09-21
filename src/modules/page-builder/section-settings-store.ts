@@ -1,14 +1,18 @@
 import { cacheLife, cacheTag } from "next/cache";
 import { db } from "@/lib/db";
-import { STORE_SETTING_ID } from "@/modules/settings/store-settings";
-import { parseStoredSectionSettings, type PageSectionSettings } from "@/modules/page-builder/section-settings";
+import { STORE_SETTING_ID, getStoreIndustry } from "@/modules/settings/store-settings";
+import { parseStoredSectionSettings, type PageSectionSettingsBundle } from "@/modules/page-builder/section-settings";
+import { resolveProductLists } from "@/modules/page-builder/product-lists";
 
-// Cached across requests like the other settings getters; the save route clears it with
+// Cached across requests like the other settings getters; the save routes clear it with
 // `revalidateTag("settings:page-sections")`.
-export async function getPageSectionSettings(): Promise<PageSectionSettings> {
+export async function getPageSectionSettings(): Promise<PageSectionSettingsBundle> {
   "use cache";
   cacheLife("hours");
   cacheTag("settings:page-sections");
-  const setting = await db.storeSetting.findUnique({ where: { id: STORE_SETTING_ID }, select: { pageSectionSettings: true } });
-  return parseStoredSectionSettings(setting?.pageSectionSettings);
+  const [setting, industry] = await Promise.all([
+    db.storeSetting.findUnique({ where: { id: STORE_SETTING_ID }, select: { pageSectionSettings: true } }),
+    getStoreIndustry(),
+  ]);
+  return { ...parseStoredSectionSettings(setting?.pageSectionSettings), productLists: resolveProductLists(setting?.pageSectionSettings, industry) };
 }

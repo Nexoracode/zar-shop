@@ -44,6 +44,12 @@ export function ProductCardSkeleton() {
  */
 export type ProductCardBuilder = { section: string; hiddenParts: string[]; editable: boolean };
 
+/** Wraps one part of a card (or of a compact product item) so the builder can switch it; whole when there is no builder. */
+export function cardPart(builder: ProductCardBuilder | undefined, id: string, node: ReactNode) {
+  if (!builder) return node;
+  return <BuilderPart section={builder.section} id={`card.${id}`} hidden={builder.hiddenParts.includes(`card.${id}`)} editable={builder.editable}>{node}</BuilderPart>;
+}
+
 type ProductCardProps = {
   id?: string;
   isFavorite?: boolean;
@@ -93,9 +99,7 @@ export function ProductCard({ id, isFavorite, href, name, category, industry, we
   }
   const isGallery = storefrontVariant === "gallery";
   // A part of the card the page builder can switch off; outside a builder-aware section the card is drawn whole.
-  const part = (id: string, node: ReactNode) => builder
-    ? <BuilderPart section={builder.section} id={`card.${id}`} hidden={builder.hiddenParts.includes(`card.${id}`)} editable={builder.editable}>{node}</BuilderPart>
-    : node;
+  const part = (id: string, node: ReactNode) => cardPart(builder, id, node);
   const imageBackground = industry === "GENERAL" ? generalImageBackgrounds[Math.abs(imageTone) % generalImageBackgrounds.length] : galleryImageBackgrounds[Math.abs(imageTone) % galleryImageBackgrounds.length];
   return (
     <Link
