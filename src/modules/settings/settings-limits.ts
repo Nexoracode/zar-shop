@@ -29,6 +29,16 @@ export const homepageFieldLimits = {
   heroButtonLabel: 80,
 } as const;
 
+// The content settings of storefront sections edited from the page builder.
+export const pageSectionLimits = {
+  categoriesTitle: 80,
+  // How many categories the homepage's category strip may list.
+  categoriesMin: 1,
+  categoriesMax: 20,
+  // How many top-level categories the homepage reads before arranging them (the arrangement happens in memory).
+  categoriesPool: 100,
+} as const;
+
 export const contentFieldLimits = {
   faqQuestion: 300,
   faqAnswer: 3000,

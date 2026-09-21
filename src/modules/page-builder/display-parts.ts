@@ -57,6 +57,20 @@ const displaySections: Record<string, { master: "display" | "layout"; masterLabe
       GOLD: [{ id: "arrows", label: "نمایش فلش‌ها" }, { id: "dots", label: "نمایش اسلایدر" }],
     },
   },
+  // The category strip exists in the general template only (the gold one has no such section).
+  CATEGORIES: {
+    master: "layout",
+    parts: {
+      GENERAL: [
+        { id: "title", label: "عنوان بخش" },
+        { id: "more", label: "نمایش بیشتر" },
+        { id: "categoryTitle", label: "عنوان دسته" },
+        { id: "categoryCount", label: "تعداد کالا" },
+        { id: "categoryImage", label: "تصویر دسته" },
+      ],
+      GOLD: [],
+    },
+  },
   // Sections with nothing to toggle inside them still get the whole-section switch.
   PROMO_BANNER: { master: "display", parts: { GENERAL: [], GOLD: [] } },
   FOOTER: { master: "display", parts: { GENERAL: [], GOLD: [] } },

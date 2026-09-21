@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "@heroui/react";
 import { PageBuilderBar } from "@/components/page-builder-bar";
+import { PageBuilderCategoriesDialog } from "@/components/page-builder-categories-dialog";
 import { PageBuilderConfirmDialog } from "@/components/page-builder-confirm-dialog";
 import { PageBuilderHeroSlideDialog } from "@/components/page-builder-hero-dialogs";
 import { PageBuilderIdentityDialog, type IdentityValues } from "@/components/page-builder-identity-dialog";
@@ -14,6 +15,7 @@ import { SectionEditDialog } from "@/components/section-edit-dialog";
 import { displayCss, sameDisplay, sectionDisplay, sectionDisplayConfig, setSectionDisplay, type PageBuilderIndustry, type PageDisplay, type SectionDisplay, type SectionDisplayConfig } from "@/modules/page-builder/display-parts";
 import { sectionEditItems, type EditItem } from "@/modules/page-builder/edit-items";
 import { heroSlideLabel, type HeroValues } from "@/modules/page-builder/hero-payload";
+import type { CategoriesSectionSettings } from "@/modules/page-builder/section-settings";
 import { isLayoutSection, layoutCss, moveSection, removeSection, sameLayout, sectionSelector, type LayoutSection } from "@/modules/page-builder/layout-draft";
 import { builderSectionLabel } from "@/modules/page-builder/sections";
 import type { HomepageMenuItem, HomepageMenuLinkOption } from "@/modules/settings/homepage-settings";
@@ -39,7 +41,7 @@ async function patchJson(url: string, body: unknown, fallbackMessage: string) {
  * at once through an injected stylesheet, can be undone and redone, and only reach the store on "save". Removing a
  * section asks for confirmation first, because once the change is saved there is no way back.
  */
-export function PageBuilder({ initialSections, initialDisplay, industry, identity, menu, hero }: {
+export function PageBuilder({ initialSections, initialDisplay, industry, identity, menu, hero, categories }: {
   initialSections: LayoutSection[];
   initialDisplay: PageDisplay;
   industry: PageBuilderIndustry;
@@ -47,6 +49,8 @@ export function PageBuilder({ initialSections, initialDisplay, industry, identit
   identity: IdentityValues;
   /** Current hero slider configuration, for the slider's banner forms. */
   hero: HeroValues;
+  /** Current settings of the homepage category strip, for its edit form. */
+  categories: CategoriesSectionSettings;
   /** Current top-menu links and the ready-made links the menu form offers. */
   menu: { items: HomepageMenuItem[]; linkOptions: HomepageMenuLinkOption[] };
 }) {
@@ -100,7 +104,7 @@ export function PageBuilder({ initialSections, initialDisplay, industry, identit
   }
 
   function requestEdit(id: string) {
-    if (id === "HERO" || sectionEditItems(id)) setEditSection(id);
+    if (id === "HERO" || id === "CATEGORIES" || sectionEditItems(id)) setEditSection(id);
     else toast.info("ویرایش این بخش هنوز اضافه نشده است");
   }
 
@@ -190,7 +194,7 @@ export function PageBuilder({ initialSections, initialDisplay, industry, identit
         canRedo={draft.future.length > 0}
         saving={saving}
       />
-      {editSection && !editItem && (
+      {editSection && editSection !== "CATEGORIES" && !editItem && (
         <SectionEditDialog
           key={editSection}
           title={editSection === "HERO" ? "ویرایش بنر اسلایدر" : `ویرایش ${builderSectionLabel(editSection)}`}
@@ -201,6 +205,7 @@ export function PageBuilder({ initialSections, initialDisplay, industry, identit
           onClose={() => setEditSection(null)}
         />
       )}
+      {editSection === "CATEGORIES" && <PageBuilderCategoriesDialog sectionLabel={builderSectionLabel("CATEGORIES")} initial={categories} onSaved={finishEdit} onClose={() => setEditSection(null)} />}
       {/* These forms save on their own (the data lives in other settings, not in the page draft), then the page is refreshed. */}
       {editSection === "HEADER" && editItem === "identity" && <PageBuilderIdentityDialog initial={identity} onSaved={finishEdit} onClose={() => setEditItem(null)} />}
       {editSection === "HERO" && editItem && (editItem === "add" || editItem.startsWith("slide:")) && (

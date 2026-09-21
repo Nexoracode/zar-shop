@@ -6,7 +6,7 @@ test("the header has different switchable parts per industry", () => {
   assert.ok(sectionDisplayConfig("HEADER", "GENERAL")?.parts.some((part) => part.id === "categories"));
   assert.ok(sectionDisplayConfig("HEADER", "GOLD")?.parts.some((part) => part.id === "goldPrice"));
   assert.equal(sectionDisplayConfig("HEADER", "GENERAL")?.parts.some((part) => part.id === "goldPrice"), false);
-  assert.equal(sectionDisplayConfig("CATEGORIES", "GENERAL"), null);
+  assert.equal(sectionDisplayConfig("BRANDS", "GENERAL"), null);
   assert.deepEqual(sectionDisplayConfig("HERO", "GOLD")?.parts.map((part) => part.id), ["arrows", "dots"]);
 });
 
@@ -46,7 +46,8 @@ test("the save schema accepts known parts only", () => {
   const schema = pageDisplaySchema("GENERAL");
   assert.equal(schema.safeParse({ HEADER: { enabled: true, hiddenParts: ["search"] } }).success, true);
   assert.equal(schema.safeParse({ HEADER: { enabled: true, hiddenParts: ["goldPrice"] } }).success, false);
-  assert.equal(schema.safeParse({ CATEGORIES: { enabled: true, hiddenParts: [] } }).success, false);
+  assert.equal(schema.safeParse({ BRANDS: { enabled: true, hiddenParts: [] } }).success, false);
+  assert.equal(schema.safeParse({ CATEGORIES: { enabled: true, hiddenParts: ["more", "categoryImage"] } }).success, true);
   assert.equal(schema.safeParse({ HERO: { enabled: true, hiddenParts: ["arrows"] } }).success, true);
   // The slider's whole-section switch is stored in the layout, so it can't be turned off here.
   assert.equal(schema.safeParse({ HERO: { enabled: false, hiddenParts: [] } }).success, false);

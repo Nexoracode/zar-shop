@@ -700,6 +700,8 @@ model StoreSetting {
   generalHomepageSettings       Json?
   // Per-section display switches from the storefront page builder (see modules/page-builder/display-parts.ts).
   pageDisplaySettings           Json?
+  // Content settings of individual storefront sections, edited from the page builder (see modules/page-builder/section-settings.ts).
+  pageSectionSettings           Json?
   heroContentMode               String                @default("WITH_CONTENT") @db.VarChar(20)
   heroTitle                     String                @default("درخشش ماندگار، انتخابی مطمئن") @db.VarChar(191)
   heroDescription               String                @default("جدیدترین زیورآلات طلا با قیمت لحظه‌ای") @db.VarChar(500)

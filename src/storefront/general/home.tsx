@@ -19,7 +19,11 @@ import { earliestDiscountEnd } from "@/modules/products/discount-window";
 import { getStorefrontFlashDeals, getStorefrontProductFeed } from "@/modules/products/storefront-feed";
 import type { StorefrontProductCardItem } from "@/modules/products/storefront-feed-contract";
 import { builderSectionProps } from "@/modules/page-builder/sections";
+import { BuilderPart } from "@/components/builder-part";
 import { isPartHidden } from "@/modules/page-builder/display-parts";
+import { arrangeCategories } from "@/modules/page-builder/section-settings";
+import { getPageSectionSettings } from "@/modules/page-builder/section-settings-store";
+import { pageSectionLimits } from "@/modules/settings/settings-limits";
 import { getPageDisplaySettings } from "@/modules/page-builder/display-settings";
 import { isSectionHiddenAtRender } from "@/modules/page-builder/layout-draft";
 import { getHomepageSettings, type HomepageLayoutItemId } from "@/modules/settings/homepage-settings";
@@ -50,7 +54,7 @@ function ProductRail({ title, description, products, href }: { title: string; de
 }
 
 export async function GeneralHome({ editable = false }: { /** The viewer can edit the page (the page builder is mounted): disabled sections and switched-off parts are rendered so it can show them. */ editable?: boolean }) {
-  const [homepage, latestFeed, popularFeed, flashDeals, categories, brands, latestArticles, pageDisplay] = await Promise.all([
+  const [homepage, latestFeed, popularFeed, flashDeals, allCategories, brands, latestArticles, pageDisplay, sectionSettings] = await Promise.all([
     getHomepageSettings(),
     getStorefrontProductFeed({ sort: "LATEST", page: 1 }),
     getStorefrontProductFeed({ sort: "POPULAR", page: 1, pageSize: 12 }),
@@ -59,7 +63,7 @@ export async function GeneralHome({ editable = false }: { /** The viewer can edi
       where: { parentId: null, isActive: true, products: { some: { status: "ACTIVE", storeIndustry: "GENERAL" } } },
       include: { image: true, _count: { select: { products: { where: { status: "ACTIVE", storeIndustry: "GENERAL" } } } } },
       orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
-      take: 10,
+      take: pageSectionLimits.categoriesPool,
     }),
     db.brand.findMany({
       where: { isActive: true, featured: true },
@@ -69,8 +73,11 @@ export async function GeneralHome({ editable = false }: { /** The viewer can edi
     }),
     getLatestPublishedArticles(4),
     getPageDisplaySettings(),
+    getPageSectionSettings(),
   ]);
 
+  const categories = arrangeCategories(allCategories, sectionSettings.categories);
+  const categoriesPart = (id: string) => ({ section: "CATEGORIES", id, hidden: isPartHidden(pageDisplay, "CATEGORIES", id), editable });
   const heroSlides = buildStorefrontHeroSlides(homepage, "/images/zar-hero-campaign.png");
   const sectionById = new Map(homepage.sections.map((section) => [section.id, section]));
   const sectionOrder = new Map(homepage.sections.map((section, index) => [section.id, index]));
@@ -85,10 +92,10 @@ export async function GeneralHome({ editable = false }: { /** The viewer can edi
     {homepage.tileGroups.map((group) => group.tiles.some((tile) => tile.media) && <section key={group.id} {...sectionProps(`TILE_GROUP:${group.id}`)} className={container} aria-label="پیشنهادهای تصویری"><StorefrontImageTiles groups={[group]} /></section>)}
 
     {categories.length > 0 && <section {...sectionProps("CATEGORIES")} className={`${container} rounded-2xl bg-white px-3 py-6 sm:px-6 lg:py-8`} aria-label="دسته‌بندی محصولات">
-      <div className="mb-6 flex items-center justify-between"><h2 className="m-0 text-lg font-bold text-[#232934] sm:text-xl">خرید بر اساس دسته‌بندی</h2><Link href="/products" className="inline-flex items-center gap-1 text-xs font-bold text-[var(--brand-primary)]">همه کالاها<ChevronLeft size={15} /></Link></div>
+      <div className="mb-6 flex items-center justify-between"><BuilderPart {...categoriesPart("title")}><h2 className="m-0 text-lg font-bold text-[#232934] sm:text-xl">{sectionSettings.categories.title}</h2></BuilderPart><BuilderPart {...categoriesPart("more")}><Link href="/products" className="inline-flex items-center gap-1 text-xs font-bold text-[var(--brand-primary)]">همه کالاها<ChevronLeft size={15} /></Link></BuilderPart></div>
       <DragScrollRow ariaLabel="دسته‌بندی محصولات" showNavigation className="flex w-full min-w-0 max-w-full gap-3 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">{categories.map((category, index) => {
         const Icon = resolveCategoryIcon(`${category.name} ${category.slug}`);
-        return <Link key={category.id} href={`/products?category=${category.slug}`} className="group grid w-[84px] min-w-[84px] shrink-0 snap-start justify-items-center gap-2.5 text-center sm:w-[100px] sm:min-w-[100px] lg:w-[112px] lg:min-w-[112px]"><span className={`relative grid aspect-square w-full place-items-center overflow-hidden rounded-full ${categoryTones[index % categoryTones.length]} transition duration-300 group-hover:-translate-y-1 group-hover:shadow-md`}>{category.image?.type === "IMAGE" ? <Image src={category.image.url} alt={category.image.alt ?? category.name} fill sizes="112px" className="object-cover transition duration-500 group-hover:scale-105" /> : <><span className="absolute -left-4 -top-4 size-14 rounded-full bg-white/50" /><Icon size={38} strokeWidth={1.4} /></>}</span><span className="w-full truncate text-xs font-bold text-[#3d4450]">{category.name}</span><small className="-mt-1 text-[10px] text-[#9298a2]">{category._count.products.toLocaleString("fa-IR")} کالا</small></Link>;
+        return <Link key={category.id} href={`/products?category=${category.slug}`} className="group grid w-[84px] min-w-[84px] shrink-0 snap-start justify-items-center gap-2.5 text-center sm:w-[100px] sm:min-w-[100px] lg:w-[112px] lg:min-w-[112px]"><BuilderPart {...categoriesPart("categoryImage")} className="contents"><span className={`relative grid aspect-square w-full place-items-center overflow-hidden rounded-full ${categoryTones[index % categoryTones.length]} transition duration-300 group-hover:-translate-y-1 group-hover:shadow-md`}>{category.image?.type === "IMAGE" ? <Image src={category.image.url} alt={category.image.alt ?? category.name} fill sizes="112px" className="object-cover transition duration-500 group-hover:scale-105" /> : <><span className="absolute -left-4 -top-4 size-14 rounded-full bg-white/50" /><Icon size={38} strokeWidth={1.4} /></>}</span></BuilderPart><BuilderPart {...categoriesPart("categoryTitle")}><span className="w-full truncate text-xs font-bold text-[#3d4450]">{category.name}</span></BuilderPart><BuilderPart {...categoriesPart("categoryCount")}><small className="-mt-1 text-[10px] text-[#9298a2]">{category._count.products.toLocaleString("fa-IR")} کالا</small></BuilderPart></Link>;
       })}</DragScrollRow>
     </section>}
 
