@@ -62,6 +62,11 @@
     --color-accent: #1b6bf2;
     --accent-foreground: #ffffff;
     --color-accent-foreground: #ffffff;
+    /* Derived colors are computed once at the root from the brand color, so they have to be restated here too:
+       the fill on hover and the focus ring. */
+    --accent-hover: #0b57c4;
+    --color-accent-hover: #0b57c4;
+    --focus: #1b6bf2;
   }
 
   /* Small floating things */
