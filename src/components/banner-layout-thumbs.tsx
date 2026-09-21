@@ -7,11 +7,11 @@ import type { BannerLayout } from "@/modules/page-builder/banners";
 const glyph = "#5ea6ff";
 const line = "#c9ced6";
 
-function Picture({ x, y, w, h }: { x: number; y: number; w: number; h: number }) {
+function Picture({ x, y, w, h, rx = 4 }: { x: number; y: number; w: number; h: number; rx?: number }) {
   const s = Math.min(w, h) * 0.4;
   return (
     <g>
-      <rect x={x} y={y} width={w} height={h} rx={4} fill="#fff" />
+      <rect x={x} y={y} width={w} height={h} rx={rx} fill="#fff" />
       <g transform={`translate(${x + w / 2 - s / 2} ${y + h / 2 - s / 2}) scale(${s / 24})`} fill={glyph}>
         <circle cx="8" cy="8" r="3" />
         <path d="M2 20 9 12l4 4 3-3 6 7z" />
@@ -28,7 +28,10 @@ function Dots({ y = 96, active = 1 }: { y?: number; active?: number }) {
   return <g>{[0, 1, 2].map((index) => <circle key={index} cx={72 + index * 8} cy={y} r={index === active ? 2 : 1.4} fill={index === active ? "#8a919c" : line} />)}</g>;
 }
 
+// The full-width look touches both edges of the box (the others keep a margin, like the store's content width), with
+// guides at the margins so the difference reads at a glance.
 const drawings: Record<BannerLayout, ReactNode> = {
+  SLIDER_FULL: <><line x1={8} y1={14} x2={8} y2={106} stroke={line} strokeDasharray="2 3" /><line x1={152} y1={14} x2={152} y2={106} stroke={line} strokeDasharray="2 3" /><Picture x={0} y={28} w={160} h={58} rx={0} /><Arrow x={14} y={57} /><Arrow x={146} y={57} /><Dots /></>,
   SLIDER_WIDE: <><Picture x={12} y={28} w={136} h={58} /><Arrow x={20} y={57} /><Arrow x={140} y={57} /><Dots /></>,
   SLIDER_CORNER: <><Picture x={12} y={26} w={136} h={62} /><Arrow x={128} y={76} /><Arrow x={116} y={76} /><Dots y={98} /></>,
   SLIDER_TWO_UP: <><Picture x={22} y={34} w={56} h={44} /><Picture x={84} y={34} w={56} h={44} /><Arrow x={16} y={56} /><Arrow x={146} y={56} /><Dots y={90} /></>,

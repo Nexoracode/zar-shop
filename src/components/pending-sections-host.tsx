@@ -7,7 +7,7 @@ import { usePendingSections } from "@/components/pending-sections-store";
 import { StorefrontImageTiles } from "@/components/storefront-image-tiles";
 import type { BannerItem } from "@/modules/page-builder/banner-items";
 import type { BannerSlide } from "@/modules/page-builder/banner-sliders";
-import { isTileLayout } from "@/modules/page-builder/banners";
+import { isFullWidthLayout, isTileLayout } from "@/modules/page-builder/banners";
 import type { ProductListData } from "@/modules/page-builder/product-list-data";
 import type { ProductListConfig } from "@/modules/page-builder/product-lists";
 import { builderSectionProps } from "@/modules/page-builder/sections";
@@ -70,8 +70,9 @@ function PendingBanner({ id, layout, items }: { id: string; layout: string; item
  */
 export function PendingSectionsHost({ industry }: { industry: "GOLD" | "GENERAL" }) {
   const pending = usePendingSections();
-  const wrap = (id: string, content: ReactNode) => industry === "GOLD"
-    ? <section key={id} {...builderSectionProps(id as HomepageLayoutItemId)} className="bg-white py-5 lg:py-10"><div className={container}>{content}</div></section>
-    : <div key={id} {...builderSectionProps(id as HomepageLayoutItemId)} className={container}>{content}</div>;
-  return <>{Object.entries(pending).map(([id, section]) => wrap(id, section.kind === "list" ? <PendingProductList id={id} config={section.config} /> : <PendingBanner id={id} layout={section.layout} items={section.items} />))}</>;
+  // A full-width banner runs edge to edge; everything else sits inside the store's content width.
+  const wrap = (id: string, content: ReactNode, fullWidth: boolean) => industry === "GOLD"
+    ? <section key={id} {...builderSectionProps(id as HomepageLayoutItemId)} className="bg-white py-5 lg:py-10"><div className={fullWidth ? undefined : container}>{content}</div></section>
+    : <div key={id} {...builderSectionProps(id as HomepageLayoutItemId)} className={fullWidth ? undefined : container}>{content}</div>;
+  return <>{Object.entries(pending).map(([id, section]) => wrap(id, section.kind === "list" ? <PendingProductList id={id} config={section.config} /> : <PendingBanner id={id} layout={section.layout} items={section.items} />, section.kind === "banner" && isFullWidthLayout(section.layout)))}</>;
 }

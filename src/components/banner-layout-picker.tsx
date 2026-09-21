@@ -5,7 +5,7 @@ import { Button, Modal, Spinner } from "@heroui/react";
 import { ArrowRight, Check, X } from "lucide-react";
 import { BannerLayoutThumb } from "@/components/banner-layout-thumbs";
 import { brandPrimaryButtonStyle } from "@/components/page-builder-styles";
-import { bannerLayoutLabels, type BannerLayout } from "@/modules/page-builder/banners";
+import { bannerLayoutLabels, isFullWidthLayout, type BannerLayout } from "@/modules/page-builder/banners";
 
 /**
  * The picker of a banner's look: the offered layouts drawn as small wireframes, one selected. Used when adding a
@@ -43,6 +43,7 @@ export function BannerLayoutPicker({ title, layouts, initial, saving, onConfirm,
                   >
                     {isSelected && <span className="absolute right-2 top-2 z-10 grid size-6 place-items-center rounded-full bg-[var(--pb-accent)] text-white"><Check size={14} strokeWidth={3} /></span>}
                     <BannerLayoutThumb layout={layout} />
+                    {isFullWidthLayout(layout) && <span className="absolute bottom-2 left-2 z-10 rounded-full bg-[var(--pb-accent)] px-2 py-0.5 text-[10px] font-bold text-white">تمام‌عرض</span>}
                   </Button>
                 );
               })}

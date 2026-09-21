@@ -17,7 +17,7 @@ import { BuilderPart } from "@/components/builder-part";
 import { isPartHidden } from "@/modules/page-builder/display-parts";
 import { BannerSlider } from "@/components/banner-slider";
 import { getBannerSetData } from "@/modules/page-builder/banner-slider-data";
-import { isTileLayout } from "@/modules/page-builder/banners";
+import { isFullWidthLayout, isTileLayout } from "@/modules/page-builder/banners";
 import { getProductListData } from "@/modules/page-builder/product-list-data";
 import { sanitizeSectionDescription } from "@/modules/page-builder/rich-text-sanitize";
 import { getStorefrontProductFeed } from "@/modules/products/storefront-feed";
@@ -93,7 +93,7 @@ export async function GeneralHome({ editable = false }: { /** The viewer can edi
 
     {Object.entries(sectionSettings.bannerSliders).map(([id, slider]) => isShown(id) && (isTileLayout(slider.layout)
       ? (editable || bannerSets.tileGroups[id].tiles.some((tile) => tile.media)) && <section key={id} {...sectionProps(id as HomepageLayoutItemId)} className={container} aria-label="پیشنهادهای تصویری"><StorefrontImageTiles groups={[bannerSets.tileGroups[id]]} editable={editable} /></section>
-      : (bannerSets.slides[id].length > 0 || editable) && <div key={id} {...sectionProps(id as HomepageLayoutItemId)} className={container}><BannerSlider sectionId={id} layout={slider.layout} slides={bannerSets.slides[id]} arrowsHidden={isPartHidden(pageDisplay, id, "arrows")} dotsHidden={isPartHidden(pageDisplay, id, "dots")} editable={editable} /></div>))}
+      : (bannerSets.slides[id].length > 0 || editable) && <div key={id} {...sectionProps(id as HomepageLayoutItemId)} className={isFullWidthLayout(slider.layout) ? undefined : container}><BannerSlider sectionId={id} layout={slider.layout} slides={bannerSets.slides[id]} arrowsHidden={isPartHidden(pageDisplay, id, "arrows")} dotsHidden={isPartHidden(pageDisplay, id, "dots")} editable={editable} /></div>))}
 
     {productLists.map(([id, config], index) => isShown(id) && (listsData[index].products.length > 0 || editable) && <div key={id} {...sectionProps(id as HomepageLayoutItemId)} className={container}><ProductListSection sectionId={id} config={config} descriptionHtml={sanitizeSectionDescription(config.description)} data={listsData[index]} display={pageDisplay} editable={editable} /></div>)}
 

@@ -3,10 +3,10 @@
 // is a picture (with an optional smaller one for phones, on sliders) and the link it goes to.
 
 /** The looks, in the order the picker shows them (right to left, row by row). */
-export const bannerLayouts = ["SLIDER_WIDE", "SLIDER_CORNER", "SLIDER_TWO_UP", "SLIDER_PEEK", "SINGLE", "TWO_COLUMNS", "BIG_AND_TWO", "FOUR_COLUMNS", "MOSAIC", "THREE_COLUMNS", "TWO_BY_TWO"] as const;
+export const bannerLayouts = ["SLIDER_FULL", "SLIDER_WIDE", "SLIDER_CORNER", "SLIDER_TWO_UP", "SLIDER_PEEK", "SINGLE", "TWO_COLUMNS", "BIG_AND_TWO", "FOUR_COLUMNS", "MOSAIC", "THREE_COLUMNS", "TWO_BY_TWO"] as const;
 export type BannerLayout = (typeof bannerLayouts)[number];
 
-export const bannerSliderLayouts = ["SLIDER_WIDE", "SLIDER_CORNER", "SLIDER_TWO_UP", "SLIDER_PEEK"] as const;
+export const bannerSliderLayouts = ["SLIDER_FULL", "SLIDER_WIDE", "SLIDER_CORNER", "SLIDER_TWO_UP", "SLIDER_PEEK"] as const;
 export type BannerSliderLayout = (typeof bannerSliderLayouts)[number];
 
 /** The tile looks — exactly the layouts an image tile row of the homepage settings can have. */
@@ -14,6 +14,7 @@ export const bannerTileLayouts = ["SINGLE", "TWO_COLUMNS", "BIG_AND_TWO", "FOUR_
 export type BannerTileLayout = (typeof bannerTileLayouts)[number];
 
 export const bannerLayoutLabels: Record<BannerLayout, string> = {
+  SLIDER_FULL: "اسلایدر تمام‌عرض",
   SLIDER_WIDE: "اسلایدر تک‌بنره با فلش‌های کناری",
   SLIDER_CORNER: "اسلایدر تک‌بنره با فلش پایین",
   SLIDER_TWO_UP: "اسلایدر دوبنره",
@@ -37,6 +38,11 @@ export const bannerTileCount: Record<BannerTileLayout, number> = {
   THREE_COLUMNS: 3,
   TWO_BY_TWO: 4,
 };
+
+/** The looks that run edge to edge across the page instead of sitting inside the store's content width. */
+export function isFullWidthLayout(layout: string) {
+  return layout === "SLIDER_FULL";
+}
 
 export function isSliderLayout(layout: string): layout is BannerSliderLayout {
   return (bannerSliderLayouts as readonly string[]).includes(layout);

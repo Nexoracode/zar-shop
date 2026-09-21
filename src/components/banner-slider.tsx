@@ -12,6 +12,7 @@ import type { BannerSlide } from "@/modules/page-builder/banner-sliders";
 // How a slide is sized in each look. The peeking look centres a slide that is narrower than the row, so its
 // neighbours show at the edges; the two-up look shows two slides at once from tablet width.
 const slideClass: Record<BannerSliderLayout, string> = {
+  SLIDER_FULL: "w-full aspect-[2/1] sm:aspect-[1920/440] snap-start",
   SLIDER_WIDE: "w-full aspect-[2.4/1] sm:aspect-[3.2/1] snap-start",
   SLIDER_CORNER: "w-full aspect-[2.4/1] sm:aspect-[3.2/1] snap-start",
   SLIDER_TWO_UP: "w-full aspect-[2.4/1] sm:w-[calc(50%-8px)] snap-start",
@@ -76,9 +77,9 @@ export function BannerSlider({ sectionId, layout, slides, arrowsHidden = false, 
   return (
     <div className="min-w-0" onMouseEnter={() => { pausedRef.current = true; }} onMouseLeave={() => { pausedRef.current = false; }} onTouchStart={() => { pausedRef.current = true; }} onTouchEnd={() => { pausedRef.current = false; }}>
       <div className="relative">
-        <div ref={rowRef} dir="rtl" onScroll={onScroll} className="flex snap-x snap-mandatory gap-4 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div ref={rowRef} dir="rtl" onScroll={onScroll} className={`flex snap-x snap-mandatory overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${layout === "SLIDER_FULL" ? "" : "gap-4"}`}>
           {slides.map((slide, index) => (
-            <Link key={slide.id} href={slide.href} aria-label={slide.desktop.alt} className={`relative block shrink-0 overflow-hidden rounded-xl bg-black/5 ${slideClass[layout]}`}>
+            <Link key={slide.id} href={slide.href} aria-label={slide.desktop.alt} className={`relative block shrink-0 overflow-hidden bg-black/5 ${layout === "SLIDER_FULL" ? "" : "rounded-xl"} ${slideClass[layout]}`}>
               {slide.mobile && <Image src={slide.mobile.src} alt={slide.mobile.alt} fill priority={index === 0} sizes="100vw" className="object-cover sm:hidden" />}
               <Image src={slide.desktop.src} alt={slide.desktop.alt} fill priority={index === 0} sizes={layout === "SLIDER_TWO_UP" ? "(max-width: 640px) 100vw, 50vw" : "100vw"} className={`object-cover ${slide.mobile ? "hidden sm:block" : ""}`} />
             </Link>
