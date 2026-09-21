@@ -64,9 +64,9 @@ export function SectionDisplayDialog({ sectionLabel, masterLabel, parts, value, 
             ))}
             <CheckboxCard icon={<Eye size={18} />} isSelected={enabled} onChange={setEnabled}>{masterLabel ?? `کل بخش «${sectionLabel}» فعال باشد`}</CheckboxCard>
           </Modal.Body>
-          <Modal.Footer className="m-0 gap-3 border-t border-[var(--border)] p-5">
-            <Button type="button" variant="primary" onPress={() => onConfirm({ enabled, hiddenParts: [...hidden] })} className="min-h-12 flex-[1.4] rounded-xl text-base font-bold" style={brandPrimaryButtonStyle}>تأیید</Button>
-            <Button type="button" variant="outline" onPress={onClose} className="min-h-12 flex-1 rounded-xl text-base font-bold">انصراف</Button>
+          <Modal.Footer className="m-0 justify-start gap-3 border-t border-[var(--border)] p-5">
+            <Button type="button" variant="primary" onPress={() => onConfirm({ enabled, hiddenParts: [...hidden] })} className="min-h-11 min-w-24 rounded-xl px-6 text-sm font-bold" style={brandPrimaryButtonStyle}>تأیید</Button>
+            <Button type="button" variant="outline" onPress={onClose} className="min-h-11 rounded-xl px-6 text-sm font-bold">انصراف</Button>
           </Modal.Footer>
         </Modal.Dialog>
       </Modal.Container>

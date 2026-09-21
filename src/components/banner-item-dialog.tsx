@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { Button, Modal, Spinner, toast } from "@heroui/react";
-import { ArrowRight, Trash2, X } from "lucide-react";
+import { ArrowRight, Smartphone, Trash2, X } from "lucide-react";
+import { CheckboxCard } from "@/components/checkbox-card";
 import { InlineAlert } from "@/components/inline-alert";
 import { TextField } from "@/components/form-field";
 import { MediaPickerDialog } from "@/components/media-picker-dialog";
@@ -41,6 +42,8 @@ export function BannerItemDialog({ items, itemId, allowMobile, allowDelete, maxI
   const [formError, setFormError] = useState("");
   const [saving, setSaving] = useState(false);
   const [picker, setPicker] = useState<"desktop" | "mobile" | null>(null);
+  // The phone picture is opt-in: closed unless the banner already has one. Closing it again drops that picture.
+  const [wantsMobile, setWantsMobile] = useState(Boolean(item.mobileMedia));
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const full = isNew && (maxItems === null || items.length >= maxItems);
   const title = isNew ? "افزودن بنر" : `ویرایش ${heroSlideLabel(existingIndex)}`;
@@ -90,7 +93,8 @@ export function BannerItemDialog({ items, itemId, allowMobile, allowDelete, maxI
             <Modal.Body className="m-0 grid max-h-[62vh] gap-5 overflow-y-auto p-5">
               {full && <InlineAlert status="warning" compact>{maxItems === null ? "تعداد بنرهای این ظاهر ثابت است؛ برای افزودن بنر ظاهر را عوض کنید." : `این اسلایدر به سقف ${maxItems.toLocaleString("fa-IR")} بنر رسیده است؛ برای افزودن، ابتدا یکی از بنرها را حذف کنید.`}</InlineAlert>}
               <BuilderImagePreview id="builder-banner-desktop" label={allowMobile ? "تصویر دسکتاپ" : "تصویر بنر"} required media={item.desktopMedia} hint={sizeHints ? <>اندازهٔ پیشنهادی: <span dir="ltr">{sizeHints.desktop}</span> پیکسل</> : undefined} error={errors.desktop} disabled={saving} onPick={() => setPicker("desktop")} />
-              {allowMobile && <BuilderImagePreview id="builder-banner-mobile" label="تصویر موبایل" media={item.mobileMedia} heightClass="h-32" hint={<>اختیاری؛ بدون آن تصویر دسکتاپ نمایش داده می‌شود.{sizeHints && <> اندازهٔ پیشنهادی: <span dir="ltr">{sizeHints.mobile}</span> پیکسل</>}</>} disabled={saving} onPick={() => setPicker("mobile")} onClear={() => setItem((current) => ({ ...current, mobileMedia: null }))} />}
+              {allowMobile && <CheckboxCard icon={<Smartphone size={18} />} isSelected={wantsMobile} isDisabled={saving} onChange={(next) => { setWantsMobile(next); if (!next) setItem((current) => ({ ...current, mobileMedia: null })); }}>برای گوشی هم تصویر جداگانه می‌گذارم</CheckboxCard>}
+              {allowMobile && wantsMobile && <BuilderImagePreview id="builder-banner-mobile" label="تصویر موبایل" media={item.mobileMedia} heightClass="h-32" hint={<>اختیاری؛ بدون آن تصویر دسکتاپ نمایش داده می‌شود.{sizeHints && <> اندازهٔ پیشنهادی: <span dir="ltr">{sizeHints.mobile}</span> پیکسل</>}</>} disabled={saving} onPick={() => setPicker("mobile")} onClear={() => setItem((current) => ({ ...current, mobileMedia: null }))} />}
               <TextField id="builder-banner-href" label="لینک مقصد (URL)" dir="ltr" value={item.href} maxLength={homepageFieldLimits.href} error={errors.href} disabled={saving} onChange={(event) => { setItem((current) => ({ ...current, href: event.target.value })); setErrors((current) => ({ ...current, href: undefined })); }} />
               {formError && <InlineAlert status="danger" compact>{formError}</InlineAlert>}
             </Modal.Body>
