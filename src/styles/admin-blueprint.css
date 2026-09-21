@@ -1040,6 +1040,14 @@ button.bp-select-trigger:disabled { cursor: not-allowed; }
 .bp-scroll::-webkit-scrollbar-thumb { background: var(--bp-neutral-400); }
 .bp-scroll::-webkit-scrollbar-track { background: transparent; }
 
+/* A section that folds away: the row height animates between 0 and its content, and once shut its
+   content is hidden from sight and from the keyboard (the element is also `inert`). */
+.bp-collapse { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.22s ease; }
+.bp-collapse[data-open="true"] { grid-template-rows: 1fr; }
+.bp-collapse-inner { min-height: 0; overflow: hidden; }
+.bp-collapse:not([data-open="true"]) .bp-collapse-inner { visibility: hidden; transition: visibility 0s 0.22s; }
+@media (prefers-reduced-motion: reduce) { .bp-collapse { transition: none; } }
+
 /* — option lists — the drop-down under a combobox or a multi-select, drawn like the tooltip: the
    same card-coloured plate with a hairline and soft shadow, rows with rounded corners, and the
    tooltip's short accent rail (plus a tick) marking the chosen row. Scoped to the classes below, so

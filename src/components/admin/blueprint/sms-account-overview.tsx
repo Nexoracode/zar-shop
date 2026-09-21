@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { AlertTriangle, CheckCircle2, FlaskConical, Info, RefreshCw, Wallet } from "lucide-react";
+import { AlertTriangle, CheckCircle2, ChevronDown, FlaskConical, Info, RefreshCw, Wallet } from "lucide-react";
 import type { PublicSmsProviderConfig } from "@/modules/communications/sms-config";
 import type { SmsAccountInspection } from "@/modules/communications/sms-account";
 import { requestSmsAccountInspection } from "./sms-account-client";
@@ -45,6 +45,8 @@ function buildChecks(config: PublicSmsProviderConfig, storeName: string, inspect
 export function BlueprintSmsAccountOverview({ config, storeName }: { config: PublicSmsProviderConfig; storeName: string }) {
   const [state, setState] = useState<State>({ status: "loading" });
   const [testing, setTesting] = useState(false);
+  // The card can be folded down to its header once the account has been checked.
+  const [open, setOpen] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
@@ -62,6 +64,8 @@ export function BlueprintSmsAccountOverview({ config, storeName }: { config: Pub
   }
 
   const loading = state.status === "loading";
+  // A folded card must not hide a problem: the header keeps count of the warnings inside.
+  const warningCount = state.status === "ready" ? buildChecks(config, storeName, state.inspection).filter((check) => check.tone === "warning").length : 0;
   return (
     <section className="bp-frame relative mb-2 p-[16px]">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -72,15 +76,29 @@ export function BlueprintSmsAccountOverview({ config, storeName }: { config: Pub
             <div className="mt-1 flex flex-wrap items-center gap-1.5">
               <BpTag tone={config.isActive ? "success" : "neutral"}>{config.isActive ? "فعال" : "غیرفعال"}</BpTag>
               <span className="bp-muted font-mono text-[11px]" dir="ltr">{config.senderNumber}</span>
+              {!open && warningCount > 0 && <BpTag tone="warning">{warningCount.toLocaleString("fa-IR")} هشدار</BpTag>}
             </div>
           </div>
         </div>
         <div className="flex flex-wrap gap-2">
           <BpButton type="button" variant="secondary" isPending={loading} onClick={refresh} className="gap-2"><RefreshCw size={14} />بروزرسانی</BpButton>
           <BpButton type="button" variant="primary" onClick={() => setTesting(true)} className="gap-2"><FlaskConical size={14} />ارسال آزمایشی</BpButton>
+          <BpButton
+            type="button"
+            isIconOnly
+            aria-expanded={open}
+            aria-controls="sms-account-details"
+            aria-label={open ? "بستن جزئیات حساب" : "باز کردن جزئیات حساب"}
+            title={open ? "بستن جزئیات حساب" : "باز کردن جزئیات حساب"}
+            onClick={() => setOpen((current) => !current)}
+          >
+            <ChevronDown size={16} className={`transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
+          </BpButton>
         </div>
       </div>
 
+      <div id="sms-account-details" className="bp-collapse" data-open={open} inert={!open}>
+      <div className="bp-collapse-inner">
       <div className="mt-3">
         {state.status === "loading" && <div className="bp-muted flex items-center gap-2 text-[12px]"><BpSpinner size={14} />در حال دریافت اطلاعات از فراز اس‌ام‌اس…</div>}
         {state.status === "error" && (
@@ -107,6 +125,9 @@ export function BlueprintSmsAccountOverview({ config, storeName }: { config: Pub
       <div className="mt-3 flex items-start gap-2.5 border border-[var(--bp-divider)] p-3 text-[12px] leading-6">
         <Info size={14} className="bp-muted mt-1 shrink-0" />
         <p className="bp-muted m-0">پیامک‌های متنی آزاد (ارسال دستی و اعلان‌های سفارش) طبق قوانین فراز پیش از ارسال توسط اپراتور تأیید می‌شوند و فوری نیستند؛ فقط ارسال با پترن، مثل کد تأیید، بلافاصله انجام می‌شود. اگر می‌خواهید پیامک‌های متنی بدون تأیید بروند، از پشتیبانی فراز بخواهید حساب را مستثنا کند.</p>
+      </div>
+
+      </div>
       </div>
 
       {testing && <SmsTestDialog open onClose={() => setTesting(false)} hasOtpPattern={Boolean(config.otp)} ownerMobile={state.status === "ready" ? state.inspection.profile?.mobile ?? null : null} />}
