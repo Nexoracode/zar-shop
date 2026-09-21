@@ -5,7 +5,8 @@ import { BannerSlider } from "@/components/banner-slider";
 import { CategoriesContent, categoriesSectionClass, type CategoryStripItem } from "@/components/categories-section";
 import { StorefrontHeroSlider } from "@/components/storefront-hero-slider";
 import { ProductListSection } from "@/components/product-list-section";
-import { usePendingSections } from "@/components/pending-sections-store";
+import { EmptyPageCard } from "@/components/empty-page-card";
+import { useEmptyPage, usePendingSections } from "@/components/pending-sections-store";
 import { StorefrontImageTiles } from "@/components/storefront-image-tiles";
 import type { BannerItem } from "@/modules/page-builder/banner-items";
 import type { BannerSlide } from "@/modules/page-builder/banner-sliders";
@@ -88,6 +89,7 @@ function PendingBanner({ id, layout, items }: { id: string; layout: string; item
  */
 export function PendingSectionsHost({ industry, categories = [] }: { industry: "GOLD" | "GENERAL"; /** The categories the general template's strip picks from, for its draft copy. */ categories?: CategoryStripItem[] }) {
   const pending = usePendingSections();
+  const emptyPage = useEmptyPage();
   const container = containers[industry];
   // `data-builder-draft` marks these as the browser's copy, so the stylesheet that hides a replaced section spares them.
   const marks = (id: string) => ({ ...builderSectionProps(id as HomepageLayoutItemId), "data-builder-draft": "" });
@@ -95,7 +97,7 @@ export function PendingSectionsHost({ industry, categories = [] }: { industry: "
   const wrap = (id: string, content: ReactNode, fullWidth: boolean) => industry === "GOLD"
     ? <section key={id} {...marks(id)} className="bg-white py-5 lg:py-10"><div className={fullWidth ? undefined : container}>{content}</div></section>
     : <div key={id} {...marks(id)} className={fullWidth ? undefined : container}>{content}</div>;
-  return <>{Object.entries(pending).map(([id, section]) => {
+  return <>{emptyPage && <EmptyPageCard onAdd={emptyPage.onAdd} />}{Object.entries(pending).map(([id, section]) => {
     // The main slider is a full-bleed section of its own in both templates.
     if (section.kind === "hero") return <section key={id} {...marks(id)} className="bg-white"><StorefrontHeroSlider slides={bannerSlides(section.items)} contentMode={section.content.contentMode} title={section.content.title} description={section.content.description} buttonLabel={section.content.buttonLabel} editable /></section>;
     if (section.kind === "categories" || section.kind === "strip") return <PendingCategories key={id} id={id} settings={section.settings} categories={categories} className={container} />;

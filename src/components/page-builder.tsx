@@ -7,7 +7,7 @@ import { PageBuilderBar } from "@/components/page-builder-bar";
 import { PageBuilderConfirmDialog } from "@/components/page-builder-confirm-dialog";
 import { PageBuilderBanners, type SliderView } from "@/components/page-builder-banners";
 import { setHeaderDraft } from "@/components/header-draft";
-import { setPendingSections } from "@/components/pending-sections-store";
+import { setEmptyPage, setPendingSections } from "@/components/pending-sections-store";
 import { PageBuilderIdentityDialog, type IdentityValues } from "@/components/page-builder-identity-dialog";
 import { PageBuilderMenuDialog } from "@/components/page-builder-menu-dialog";
 import { PageBuilderOverlay } from "@/components/page-builder-overlay";
@@ -155,6 +155,13 @@ export function PageBuilder({ initialSections, initialDisplay, industry, identit
     return () => setPendingSections({});
   }, [hostDraft]);
 
+  // With nothing left on the draft page the homepage shows a card that invites adding a section.
+  const pageEmpty = editing && !layout.some((section) => !section.removed && section.enabled);
+  useEffect(() => {
+    setEmptyPage(pageEmpty ? { onAdd: () => { setAddAfter("PAGE_CONTENT"); setAddStep("type"); } } : null);
+    return () => setEmptyPage(null);
+  }, [pageEmpty]);
+
   // The header is rendered on the server; its draft name, logo and menu are drawn over it by small client pieces.
   useEffect(() => {
     setHeaderDraft({ identity: identityEdit ? { storeName: identityEdit.storeName, logo: identityEdit.logo ? { url: identityEdit.logo.url, alt: identityEdit.logo.alt ?? identityEdit.logo.title } : null } : null, menu: menuEdit });
@@ -265,7 +272,7 @@ export function PageBuilder({ initialSections, initialDisplay, industry, identit
   // Where a section added from `sectionId`'s toolbar goes: right below it in the draft. The header and the promo banner
   // sit above the whole layout, so below them is the top of it; the footer is below everything, so the end is right above it.
   function positionBelow(sectionId: string | null): "start" | "end" | { after: string } {
-    if (sectionId === "HEADER" || sectionId === "PROMO_BANNER") return "start";
+    if (sectionId === "HEADER" || sectionId === "PROMO_BANNER" || sectionId === "PAGE_CONTENT") return "start";
     return sectionId && isLayoutSection(layout, sectionId) ? { after: sectionId } : "end";
   }
 

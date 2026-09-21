@@ -14,6 +14,15 @@ export function setPendingSections(next: HostSections) {
   listeners.forEach((listener) => listener());
 }
 
+/** Set while the page has nothing left on it in the builder's draft: what the card that invites adding a section does. */
+export type EmptyPage = { onAdd: () => void } | null;
+let emptyPage: EmptyPage = null;
+
+export function setEmptyPage(next: EmptyPage) {
+  emptyPage = next;
+  listeners.forEach((listener) => listener());
+}
+
 function subscribe(listener: () => void) {
   listeners.add(listener);
   return () => {
@@ -23,4 +32,8 @@ function subscribe(listener: () => void) {
 
 export function usePendingSections() {
   return useSyncExternalStore(subscribe, () => current, () => empty);
+}
+
+export function useEmptyPage() {
+  return useSyncExternalStore(subscribe, () => emptyPage, () => null);
 }

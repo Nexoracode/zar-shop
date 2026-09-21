@@ -225,15 +225,17 @@ export function PageBuilderOverlay({ active, layoutKey, onMove, onRemove, onOpen
       <div ref={selectedBoxRef} className="pointer-events-none fixed left-0 top-0 z-[126] hidden border-x-0 border-y-[3px] border-solid border-[var(--pb-accent)]">
         <span className="absolute right-0 top-0 rounded-bl-lg bg-[var(--pb-accent-strong)] px-3.5 py-1 text-xs font-bold text-white">{builderSectionLabel(selectedId ?? undefined)}</span>
         <div ref={toolbarRef} data-page-builder-ui className="absolute left-1/2 flex -translate-x-1/2 items-center gap-2">
-          <div className={toolbarPillClass}>
-            <ToolbarButton label="ویرایش بخش" onPress={() => selectedId && onEdit(selectedId)}><Pencil size={20} /></ToolbarButton>
-            <ToolbarButton label="تنظیمات نمایش" onPress={() => selectedId && onOpenSettings(selectedId)}><SectionSettingsIcon /></ToolbarButton>
-            <span className={toolbarSeparatorClass} />
-            <ToolbarButton label="بردن به بالا" onPress={() => selectedId && onMove(selectedId, -1)}><ArrowUp size={20} /></ToolbarButton>
-            <ToolbarButton label="بردن به پایین" onPress={() => selectedId && onMove(selectedId, 1)}><ArrowDown size={20} /></ToolbarButton>
-            <span className={toolbarSeparatorClass} />
-            <ToolbarButton label="حذف" onPress={() => selectedId && onRemove(selectedId)}><Trash2 size={20} /></ToolbarButton>
-          </div>
+          {selectedId !== "PAGE_CONTENT" && (
+            <div className={toolbarPillClass}>
+              <ToolbarButton label="ویرایش بخش" onPress={() => selectedId && onEdit(selectedId)}><Pencil size={20} /></ToolbarButton>
+              <ToolbarButton label="تنظیمات نمایش" onPress={() => selectedId && onOpenSettings(selectedId)}><SectionSettingsIcon /></ToolbarButton>
+              <span className={toolbarSeparatorClass} />
+              <ToolbarButton label="بردن به بالا" onPress={() => selectedId && onMove(selectedId, -1)}><ArrowUp size={20} /></ToolbarButton>
+              <ToolbarButton label="بردن به پایین" onPress={() => selectedId && onMove(selectedId, 1)}><ArrowDown size={20} /></ToolbarButton>
+              <span className={toolbarSeparatorClass} />
+              <ToolbarButton label="حذف" onPress={() => selectedId && onRemove(selectedId)}><Trash2 size={20} /></ToolbarButton>
+            </div>
+          )}
           <div className={toolbarPillClass}>
             <ToolbarButton label="افزودن بخش" onPress={() => selectedId && onAdd(selectedId)}><Plus size={20} /></ToolbarButton>
           </div>

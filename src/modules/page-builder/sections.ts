@@ -6,7 +6,8 @@ import type { HomepageLayoutItemId, HomepageSectionId } from "@/modules/settings
 export const BUILDER_SECTION_ATTRIBUTE = "data-builder-section";
 export const BUILDER_SECTION_SELECTOR = `[${BUILDER_SECTION_ATTRIBUTE}]`;
 
-export type BuilderSectionId = HomepageLayoutItemId | "PROMO_BANNER" | "HEADER" | "FOOTER";
+// PAGE_CONTENT is the empty-page card the builder shows when nothing is left on the page (not a layout section).
+export type BuilderSectionId = HomepageLayoutItemId | "PROMO_BANNER" | "HEADER" | "FOOTER" | "PAGE_CONTENT";
 
 const homepageSectionLabels: Record<HomepageSectionId, string> = {
   HERO: "اسلایدر اصلی",
@@ -22,7 +23,7 @@ const homepageSectionLabels: Record<HomepageSectionId, string> = {
   ARTICLES: "آخرین مقالات وبلاگ",
 };
 
-const chromeSectionLabels = { PROMO_BANNER: "بنر تبلیغاتی", HEADER: "سربرگ", FOOTER: "پاورقی" } as const;
+const chromeSectionLabels = { PROMO_BANNER: "بنر تبلیغاتی", HEADER: "سربرگ", FOOTER: "پاورقی", PAGE_CONTENT: "محتوای صفحه" } as const;
 
 export function builderSectionProps(id: BuilderSectionId) {
   return { [BUILDER_SECTION_ATTRIBUTE]: id } as const;
