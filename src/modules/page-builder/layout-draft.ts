@@ -43,9 +43,21 @@ export function sameLayout(a: LayoutSection[], b: LayoutSection[]) {
 
 /**
  * Applies a layout to the already rendered page. The homepage templates lay their sections out in a flex
- * column and position them with `order`, so restating `order` (and hiding disabled ones) is all it takes;
- * a stylesheet, unlike editing the elements, is reverted by simply dropping it.
+ * column and position them with `order`, so restating `order` (and hiding disabled ones, or fading them while
+ * editing) is all it takes; a stylesheet, unlike editing the elements, is reverted by simply dropping it.
  */
-export function layoutCss(sections: LayoutSection[]) {
-  return sections.map((section, index) => `${sectionSelector(section.id)}{order:${index} !important;${section.enabled ? "" : "display:none !important;"}}`).join("");
+export function layoutCss(sections: LayoutSection[], { editing }: { editing: boolean }) {
+  return sections.map((section, index) => {
+    const hidden = section.removed || (!section.enabled && !editing);
+    const faded = !section.removed && !section.enabled && editing;
+    return `${sectionSelector(section.id)}{order:${index} !important;${hidden ? "display:none !important;" : ""}${faded ? "opacity:0.35 !important;" : ""}}`;
+  }).join("");
+}
+
+/**
+ * Whether a section's markup is emitted hidden. Removed sections always are; disabled ones are too, except for
+ * viewers who can edit the page: the builder shows those faded so they can be switched back on.
+ */
+export function isSectionHiddenAtRender(section: LayoutSection | undefined, editable: boolean) {
+  return Boolean(section?.removed) || (section?.enabled === false && !editable);
 }

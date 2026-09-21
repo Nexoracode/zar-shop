@@ -13,6 +13,9 @@ import { getLatestPublishedArticles } from "@/modules/articles/service";
 import { getStorefrontProductFeed } from "@/modules/products/storefront-feed";
 import { getGeneralStoreSettings } from "@/modules/settings/general-settings";
 import { builderSectionProps } from "@/modules/page-builder/sections";
+import { isPartHidden } from "@/modules/page-builder/display-parts";
+import { getPageDisplaySettings } from "@/modules/page-builder/display-settings";
+import { isSectionHiddenAtRender } from "@/modules/page-builder/layout-draft";
 import { getHomepageSettings, type HomepageLayoutItemId, type HomepageTreasureCardId } from "@/modules/settings/homepage-settings";
 import { buildStorefrontHeroSlides } from "@/storefront/shared/hero";
 
@@ -20,9 +23,9 @@ type HomeCategory = Prisma.CategoryGetPayload<{ include: { image: true; children
 
 const container = "mx-auto w-[min(var(--store-max-width),calc(100%-32px))] lg:w-[min(var(--store-max-width),calc(100%-80px))]";
 
-export async function GoldHome() {
+export async function GoldHome({ editable = false }: { /** The viewer can edit the page (the page builder is mounted): disabled sections and switched-off parts are rendered so it can show them. */ editable?: boolean }) {
   const settings = await getGeneralStoreSettings();
-  const [productFeed, homepageCategories, homepage, brands, latestArticles] = await Promise.all([
+  const [productFeed, homepageCategories, homepage, brands, latestArticles, pageDisplay] = await Promise.all([
     getStorefrontProductFeed({ sort: "LATEST", page: 1 }),
     db.category.findMany({
       where: { isActive: true, featured: true, products: { some: { status: "ACTIVE", storeIndustry: "GOLD" } } },
@@ -37,13 +40,14 @@ export async function GoldHome() {
       take: 20,
     }),
     getLatestPublishedArticles(4),
+    getPageDisplaySettings(),
   ]);
 
   const categories = homepageCategories;
   const heroSlides = buildStorefrontHeroSlides(homepage, "/images/zar-hero-campaign.png");
-  const sectionState = new Map(homepage.sections.map((section) => [section.id, section.enabled]));
+  const sectionById = new Map(homepage.sections.map((section) => [section.id, section]));
   const sectionOrder = new Map(homepage.sections.map((section, index) => [section.id, index]));
-  const sectionProps = (id: HomepageLayoutItemId) => ({ ...builderSectionProps(id), hidden: sectionState.get(id) === false, style: { order: sectionOrder.get(id) ?? homepage.sections.length } });
+  const sectionProps = (id: HomepageLayoutItemId) => ({ ...builderSectionProps(id), hidden: isSectionHiddenAtRender(sectionById.get(id), editable), style: { order: sectionOrder.get(id) ?? homepage.sections.length } });
   const categoryImage = (category: HomeCategory | undefined) => category?.image?.type === "IMAGE" ? category.image.url : "/images/zar-hero-campaign.png";
   const treasureItems: Array<{ id: HomepageTreasureCardId; title: string; subtitle: string; query: string }> = [
     { id: "UNDER_20", title: "کمتر از ۲۰ میلیون تومان", subtitle: "محصولات مینیمال", query: "sortby=newest&MaxPrice=20000000" },
@@ -55,7 +59,7 @@ export async function GoldHome() {
 
   return <main className="flex flex-col overflow-hidden bg-[#f7f4f2] pb-[66px] lg:pb-0">
     <section {...sectionProps("HERO")} className="bg-white">
-      <StorefrontHeroSlider slides={heroSlides} contentMode={homepage.heroContentMode} title={homepage.heroTitle} description={homepage.heroDescription} buttonLabel={homepage.heroButtonLabel} />
+      <StorefrontHeroSlider slides={heroSlides} contentMode={homepage.heroContentMode} title={homepage.heroTitle} description={homepage.heroDescription} buttonLabel={homepage.heroButtonLabel} arrowsHidden={isPartHidden(pageDisplay, "HERO", "arrows")} editable={editable} />
     </section>
 
     {homepage.tileGroups.map((group) => group.tiles.some((tile) => tile.media) && <section key={group.id} {...sectionProps(`TILE_GROUP:${group.id}`)} className="bg-white py-5 lg:py-10" aria-label="پیشنهادهای تصویری">

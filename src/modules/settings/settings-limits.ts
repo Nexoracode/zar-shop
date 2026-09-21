@@ -22,6 +22,8 @@ export const homepageFieldLimits = {
   menuLabel: 80,
   // How many links the top menu may hold.
   menuItems: 20,
+  // How many banners the hero slider may hold.
+  heroSlides: 10,
   heroTitle: 191,
   heroDescription: 500,
   heroButtonLabel: 80,

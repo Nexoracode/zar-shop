@@ -1,10 +1,10 @@
 "use client";
 
 import { Button, Modal } from "@heroui/react";
-import { ChevronLeft, Menu, Store, X } from "lucide-react";
+import { ChevronLeft, Images, Menu, Plus, Store, X } from "lucide-react";
 import type { EditItem, EditItemIcon } from "@/modules/page-builder/edit-items";
 
-const itemIcons: Record<EditItemIcon, typeof Store> = { identity: Store, menu: Menu };
+const itemIcons: Record<EditItemIcon, typeof Store> = { identity: Store, menu: Menu, images: Images, plus: Plus };
 
 type Props = {
   sectionLabel: string;

@@ -95,12 +95,12 @@ const heroSlideSchema = z.object({
   href: safeHrefSchema,
 });
 
-const heroSlidesSchema = z.array(heroSlideSchema).max(10).refine(
+const heroSlidesSchema = z.array(heroSlideSchema).max(homepageFieldLimits.heroSlides).refine(
   (slides) => new Set(slides.map((slide) => slide.id)).size === slides.length,
   "شناسه اسلایدها نباید تکراری باشد.",
 );
 
-const storedHeroSlidesSchema = z.array(heroSlideSchema.extend({ href: safeHrefSchema.optional() })).max(10).refine(
+const storedHeroSlidesSchema = z.array(heroSlideSchema.extend({ href: safeHrefSchema.optional() })).max(homepageFieldLimits.heroSlides).refine(
   (slides) => new Set(slides.map((slide) => slide.id)).size === slides.length,
   "شناسه اسلایدها نباید تکراری باشد.",
 );

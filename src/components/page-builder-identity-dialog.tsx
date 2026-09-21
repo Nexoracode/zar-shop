@@ -1,12 +1,12 @@
 "use client";
 
-import Image from "next/image";
 import { useState } from "react";
 import { Button, Modal, Spinner, toast } from "@heroui/react";
-import { ImageIcon, X } from "lucide-react";
+import { X } from "lucide-react";
 import { InlineAlert } from "@/components/inline-alert";
 import { TextField } from "@/components/form-field";
 import type { MediaChoice } from "@/components/media-library";
+import { BuilderMediaField } from "@/components/page-builder-media-field";
 import { brandPrimaryButtonStyle } from "@/components/page-builder-styles";
 import { MediaPickerDialog } from "@/components/media-picker-dialog";
 import { generalSettingsFieldLimits } from "@/modules/settings/settings-limits";
@@ -76,19 +76,7 @@ export function PageBuilderIdentityDialog({ initial, onSaved, onClose }: { initi
             <Modal.Body className="grid gap-1 p-5">
               <TextField id={fieldIds.storeName} label="نام فروشگاه" required value={storeName} maxLength={generalSettingsFieldLimits.storeName} error={errors.storeName} onChange={(event) => { setStoreName(event.target.value); setErrors((current) => ({ ...current, storeName: undefined })); }} />
               <TextField id={fieldIds.tagline} label="شعار فروشگاه" required value={tagline} maxLength={generalSettingsFieldLimits.tagline} error={errors.tagline} onChange={(event) => { setTagline(event.target.value); setErrors((current) => ({ ...current, tagline: undefined })); }} />
-              <div>
-                <span className="field-label">لوگوی فروشگاه</span>
-                <div className="mt-2 flex items-center gap-3">
-                  <span className="relative grid h-16 w-28 shrink-0 place-items-center overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface-secondary)] text-[var(--muted)]">
-                    {logo ? <Image src={logo.url} alt={logo.alt ?? logo.title} fill sizes="112px" className="object-contain p-1.5" /> : <ImageIcon size={24} strokeWidth={1.5} />}
-                  </span>
-                  <div className="flex flex-wrap gap-2">
-                    <Button type="button" variant="outline" isDisabled={saving} onPress={() => setPickerOpen(true)} className="min-h-10 rounded-lg px-4 text-sm font-bold">{logo ? "تغییر لوگو" : "انتخاب لوگو"}</Button>
-                    {logo && <Button type="button" variant="ghost" isDisabled={saving} onPress={() => setLogo(null)} className="min-h-10 rounded-lg px-4 text-sm font-bold text-[var(--danger)]">حذف لوگو</Button>}
-                  </div>
-                </div>
-                <p className="m-0 mt-2 text-xs leading-6 text-[var(--muted)]">بدون لوگو، نام فروشگاه در سربرگ نمایش داده می‌شود.</p>
-              </div>
+              <BuilderMediaField id="builder-identity-logo" label="لوگوی فروشگاه" media={logo} hint="بدون لوگو، نام فروشگاه در سربرگ نمایش داده می‌شود." disabled={saving} onPick={() => setPickerOpen(true)} onClear={() => setLogo(null)} />
               {formError && <InlineAlert status="danger" compact className="mt-2">{formError}</InlineAlert>}
             </Modal.Body>
             <Modal.Footer className="gap-3 border-t border-[var(--border)] p-5">

@@ -19,6 +19,9 @@ import { earliestDiscountEnd } from "@/modules/products/discount-window";
 import { getStorefrontFlashDeals, getStorefrontProductFeed } from "@/modules/products/storefront-feed";
 import type { StorefrontProductCardItem } from "@/modules/products/storefront-feed-contract";
 import { builderSectionProps } from "@/modules/page-builder/sections";
+import { isPartHidden } from "@/modules/page-builder/display-parts";
+import { getPageDisplaySettings } from "@/modules/page-builder/display-settings";
+import { isSectionHiddenAtRender } from "@/modules/page-builder/layout-draft";
 import { getHomepageSettings, type HomepageLayoutItemId } from "@/modules/settings/homepage-settings";
 import { buildStorefrontHeroSlides } from "@/storefront/shared/hero";
 
@@ -46,8 +49,8 @@ function ProductRail({ title, description, products, href }: { title: string; de
   </section>;
 }
 
-export async function GeneralHome() {
-  const [homepage, latestFeed, popularFeed, flashDeals, categories, brands, latestArticles] = await Promise.all([
+export async function GeneralHome({ editable = false }: { /** The viewer can edit the page (the page builder is mounted): disabled sections and switched-off parts are rendered so it can show them. */ editable?: boolean }) {
+  const [homepage, latestFeed, popularFeed, flashDeals, categories, brands, latestArticles, pageDisplay] = await Promise.all([
     getHomepageSettings(),
     getStorefrontProductFeed({ sort: "LATEST", page: 1 }),
     getStorefrontProductFeed({ sort: "POPULAR", page: 1, pageSize: 12 }),
@@ -65,18 +68,19 @@ export async function GeneralHome() {
       take: 20,
     }),
     getLatestPublishedArticles(4),
+    getPageDisplaySettings(),
   ]);
 
   const heroSlides = buildStorefrontHeroSlides(homepage, "/images/zar-hero-campaign.png");
-  const sectionState = new Map(homepage.sections.map((section) => [section.id, section.enabled]));
+  const sectionById = new Map(homepage.sections.map((section) => [section.id, section]));
   const sectionOrder = new Map(homepage.sections.map((section, index) => [section.id, index]));
-  const sectionProps = (id: HomepageLayoutItemId) => ({ ...builderSectionProps(id), hidden: sectionState.get(id) === false, style: { order: sectionOrder.get(id) ?? homepage.sections.length } });
+  const sectionProps = (id: HomepageLayoutItemId) => ({ ...builderSectionProps(id), hidden: isSectionHiddenAtRender(sectionById.get(id), editable), style: { order: sectionOrder.get(id) ?? homepage.sections.length } });
   // `getStorefrontFlashDeals` only returns discounts still running, so the earliest end is ahead of
   // now — no clock needed here (a `Date.now()` while rendering can't be prerendered).
   const flashDealsExpiry = earliestDiscountEnd(flashDeals);
 
   return <main className="flex flex-col gap-4 overflow-hidden bg-[#f4f5f7] pb-[78px] pt-3 lg:gap-6 lg:pb-8">
-    <section {...sectionProps("HERO")} className="bg-white"><StorefrontHeroSlider slides={heroSlides} contentMode={homepage.heroContentMode} title={homepage.heroTitle} description={homepage.heroDescription} buttonLabel={homepage.heroButtonLabel} /></section>
+    <section {...sectionProps("HERO")} className="bg-white"><StorefrontHeroSlider slides={heroSlides} contentMode={homepage.heroContentMode} title={homepage.heroTitle} description={homepage.heroDescription} buttonLabel={homepage.heroButtonLabel} arrowsHidden={isPartHidden(pageDisplay, "HERO", "arrows")} editable={editable} /></section>
 
     {homepage.tileGroups.map((group) => group.tiles.some((tile) => tile.media) && <section key={group.id} {...sectionProps(`TILE_GROUP:${group.id}`)} className={container} aria-label="پیشنهادهای تصویری"><StorefrontImageTiles groups={[group]} /></section>)}
 

@@ -9,6 +9,8 @@ import type { DisplayPart, SectionDisplay } from "@/modules/page-builder/display
 
 type Props = {
   sectionLabel: string;
+  /** The whole-section switch's wording; defaults to "the whole section <name> is on". */
+  masterLabel?: string;
   parts: DisplayPart[];
   value: SectionDisplay;
   onConfirm: (next: SectionDisplay) => void;
@@ -21,7 +23,7 @@ type Props = {
  * settings, closing discards them. Parts are shown-when-checked; unchecking the whole section greys them out but
  * remembers their state.
  */
-export function SectionDisplayDialog({ sectionLabel, parts, value, onConfirm, onClose }: Props) {
+export function SectionDisplayDialog({ sectionLabel, masterLabel, parts, value, onConfirm, onClose }: Props) {
   const [enabled, setEnabled] = useState(value.enabled);
   const [hidden, setHidden] = useState(() => new Set(value.hiddenParts));
 
@@ -50,7 +52,7 @@ export function SectionDisplayDialog({ sectionLabel, parts, value, onConfirm, on
               ))}
             </div>
             <hr className="m-0 border-0 border-t border-[var(--border)]" />
-            <CheckboxCard icon={<Eye size={18} />} isSelected={enabled} onChange={setEnabled}>{`کل بخش «${sectionLabel}» فعال باشد`}</CheckboxCard>
+            <CheckboxCard icon={<Eye size={18} />} isSelected={enabled} onChange={setEnabled}>{masterLabel ?? `کل بخش «${sectionLabel}» فعال باشد`}</CheckboxCard>
           </Modal.Body>
           <Modal.Footer className="gap-3 border-t border-[var(--border)] p-5">
             <Button type="button" variant="primary" onPress={() => onConfirm({ enabled, hiddenParts: [...hidden] })} className="min-h-12 flex-[1.4] rounded-xl text-base font-bold" style={brandPrimaryButtonStyle}>تأیید</Button>

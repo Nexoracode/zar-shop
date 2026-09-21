@@ -1,12 +1,17 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { displayCss, isPartHidden, isSectionEnabled, normalizeDisplay, pageDisplaySchema, parseStoredDisplay, sameDisplay, sectionDisplayParts, setSectionDisplay } from "./display-parts";
+import { displayCss, isPartHidden, isSectionEnabled, normalizeDisplay, pageDisplaySchema, parseStoredDisplay, sameDisplay, sectionDisplayConfig, setSectionDisplay } from "./display-parts";
 
 test("the header has different switchable parts per industry", () => {
-  assert.ok(sectionDisplayParts("HEADER", "GENERAL")?.some((part) => part.id === "categories"));
-  assert.ok(sectionDisplayParts("HEADER", "GOLD")?.some((part) => part.id === "goldPrice"));
-  assert.equal(sectionDisplayParts("HEADER", "GENERAL")?.some((part) => part.id === "goldPrice"), false);
-  assert.equal(sectionDisplayParts("HERO", "GENERAL"), null);
+  assert.ok(sectionDisplayConfig("HEADER", "GENERAL")?.parts.some((part) => part.id === "categories"));
+  assert.ok(sectionDisplayConfig("HEADER", "GOLD")?.parts.some((part) => part.id === "goldPrice"));
+  assert.equal(sectionDisplayConfig("HEADER", "GENERAL")?.parts.some((part) => part.id === "goldPrice"), false);
+  assert.equal(sectionDisplayConfig("CATEGORIES", "GENERAL"), null);
+});
+
+test("the slider's on/off switch lives in the layout, the header's here", () => {
+  assert.equal(sectionDisplayConfig("HERO", "GENERAL")?.master, "layout");
+  assert.equal(sectionDisplayConfig("HEADER", "GENERAL")?.master, "display");
 });
 
 test("a section without settings is enabled with nothing hidden", () => {
@@ -36,6 +41,9 @@ test("the save schema accepts known parts only", () => {
   const schema = pageDisplaySchema("GENERAL");
   assert.equal(schema.safeParse({ HEADER: { enabled: true, hiddenParts: ["search"] } }).success, true);
   assert.equal(schema.safeParse({ HEADER: { enabled: true, hiddenParts: ["goldPrice"] } }).success, false);
+  assert.equal(schema.safeParse({ CATEGORIES: { enabled: true, hiddenParts: [] } }).success, false);
+  assert.equal(schema.safeParse({ HERO: { enabled: true, hiddenParts: ["arrows"] } }).success, true);
+  // The slider's whole-section switch is stored in the layout, so it can't be turned off here.
   assert.equal(schema.safeParse({ HERO: { enabled: false, hiddenParts: [] } }).success, false);
 });
 

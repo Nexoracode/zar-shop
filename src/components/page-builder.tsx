@@ -5,13 +5,15 @@ import { useRouter } from "next/navigation";
 import { Button, Modal, toast } from "@heroui/react";
 import { TriangleAlert, X } from "lucide-react";
 import { PageBuilderBar } from "@/components/page-builder-bar";
+import { PageBuilderHeroAddDialog, PageBuilderHeroImagesDialog } from "@/components/page-builder-hero-dialogs";
 import { PageBuilderIdentityDialog, type IdentityValues } from "@/components/page-builder-identity-dialog";
 import { PageBuilderMenuDialog } from "@/components/page-builder-menu-dialog";
 import { PageBuilderOverlay } from "@/components/page-builder-overlay";
 import { SectionDisplayDialog } from "@/components/section-display-dialog";
 import { SectionEditDialog } from "@/components/section-edit-dialog";
-import { displayCss, sameDisplay, sectionDisplay, sectionDisplayParts, setSectionDisplay, type PageBuilderIndustry, type PageDisplay, type SectionDisplay } from "@/modules/page-builder/display-parts";
+import { displayCss, sameDisplay, sectionDisplay, sectionDisplayConfig, setSectionDisplay, type PageBuilderIndustry, type PageDisplay, type SectionDisplay } from "@/modules/page-builder/display-parts";
 import { sectionEditItems } from "@/modules/page-builder/edit-items";
+import type { HeroValues } from "@/modules/page-builder/hero-payload";
 import { isLayoutSection, layoutCss, moveSection, removeSection, sameLayout, sectionSelector, type LayoutSection } from "@/modules/page-builder/layout-draft";
 import { builderSectionLabel } from "@/modules/page-builder/sections";
 import type { HomepageMenuItem, HomepageMenuLinkOption } from "@/modules/settings/homepage-settings";
@@ -36,12 +38,14 @@ async function patchJson(url: string, body: unknown, fallbackMessage: string) {
  * at once through an injected stylesheet, can be undone and redone, and only reach the store on "save". Removing a
  * section asks for confirmation first, because once the change is saved there is no way back.
  */
-export function PageBuilder({ initialSections, initialDisplay, industry, identity, menu }: {
+export function PageBuilder({ initialSections, initialDisplay, industry, identity, menu, hero }: {
   initialSections: LayoutSection[];
   initialDisplay: PageDisplay;
   industry: PageBuilderIndustry;
   /** Current name, tagline and logo, for the header's "name, tagline and logo" form. */
   identity: IdentityValues;
+  /** Current hero slider configuration, for the slider's banner forms. */
+  hero: HeroValues;
   /** Current top-menu links and the ready-made links the menu form offers. */
   menu: { items: HomepageMenuItem[]; linkOptions: HomepageMenuLinkOption[] };
 }) {
@@ -84,7 +88,7 @@ export function PageBuilder({ initialSections, initialDisplay, industry, identit
   }
 
   function requestSettings(id: string) {
-    if (sectionDisplayParts(id, industry)) setSettingsSection(id);
+    if (sectionDisplayConfig(id, industry)) setSettingsSection(id);
     else toast.info("تنظیمات نمایش این بخش هنوز اضافه نشده است");
   }
 
@@ -99,9 +103,19 @@ export function PageBuilder({ initialSections, initialDisplay, industry, identit
     router.refresh();
   }
 
+  // The dialog's whole-section switch is `enabled` in the homepage layout for layout sections (the slider…) and in
+  // the display settings for the rest (the header…); the part switches are always display settings.
+  function settingsValue(id: string): SectionDisplay {
+    const stored = sectionDisplay(display, id);
+    if (sectionDisplayConfig(id, industry)?.master !== "layout") return stored;
+    return { enabled: layout.find((section) => section.id === id)?.enabled ?? true, hiddenParts: stored.hiddenParts };
+  }
+
   function confirmSettings(id: string, next: SectionDisplay) {
-    const nextDisplay = setSectionDisplay(display, id, next);
-    if (!sameDisplay(nextDisplay, display)) commit({ layout, display: nextDisplay });
+    const inLayout = sectionDisplayConfig(id, industry)?.master === "layout";
+    const nextDisplay = setSectionDisplay(display, id, inLayout ? { enabled: true, hiddenParts: next.hiddenParts } : next);
+    const nextLayout = inLayout ? layout.map((section) => (section.id === id && !section.removed ? { ...section, enabled: next.enabled } : section)) : layout;
+    if (!sameDisplay(nextDisplay, display) || !sameLayout(nextLayout, layout)) commit({ layout: nextLayout, display: nextDisplay });
     setSettingsSection(null);
   }
 
@@ -138,7 +152,7 @@ export function PageBuilder({ initialSections, initialDisplay, industry, identit
     }
   }
 
-  const css = layoutCss(layout) + displayCss(display, { editing });
+  const css = layoutCss(layout, { editing }) + displayCss(display, { editing });
 
   return (
     <>
@@ -169,13 +183,16 @@ export function PageBuilder({ initialSections, initialDisplay, industry, identit
       )}
       {/* These forms save on their own (the data lives in other settings, not in the page draft), then the page is refreshed. */}
       {editSection === "HEADER" && editItem === "identity" && <PageBuilderIdentityDialog initial={identity} onSaved={finishEdit} onClose={() => setEditItem(null)} />}
+      {editSection === "HERO" && editItem === "images" && <PageBuilderHeroImagesDialog hero={hero} onSaved={finishEdit} onClose={() => setEditItem(null)} />}
+      {editSection === "HERO" && editItem === "add" && <PageBuilderHeroAddDialog hero={hero} onSaved={finishEdit} onClose={() => setEditItem(null)} />}
       {editSection === "HEADER" && editItem === "menu" && <PageBuilderMenuDialog initialItems={menu.items} linkOptions={menu.linkOptions} onSaved={finishEdit} onClose={() => setEditItem(null)} />}
       {settingsSection && (
         <SectionDisplayDialog
           key={settingsSection}
           sectionLabel={builderSectionLabel(settingsSection)}
-          parts={sectionDisplayParts(settingsSection, industry) ?? []}
-          value={sectionDisplay(display, settingsSection)}
+          parts={sectionDisplayConfig(settingsSection, industry)?.parts ?? []}
+          masterLabel={sectionDisplayConfig(settingsSection, industry)?.masterLabel}
+          value={settingsValue(settingsSection)}
           onConfirm={(next) => confirmSettings(settingsSection, next)}
           onClose={() => setSettingsSection(null)}
         />

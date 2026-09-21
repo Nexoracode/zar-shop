@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { isLayoutSection, layoutCss, moveSection, removeSection, sameLayout, type LayoutSection } from "./layout-draft";
+import { isLayoutSection, isSectionHiddenAtRender, layoutCss, moveSection, removeSection, sameLayout, type LayoutSection } from "./layout-draft";
 
 const sections: LayoutSection[] = [
   { id: "HERO", enabled: true },
@@ -53,5 +53,16 @@ test("compares layouts by order and enabled state", () => {
 });
 
 test("builds the order and visibility stylesheet", () => {
-  assert.equal(layoutCss([{ id: "HERO", enabled: true }, { id: "TILE_GROUP:a", enabled: false }]), '[data-builder-section="HERO"]{order:0 !important;}[data-builder-section="TILE_GROUP:a"]{order:1 !important;display:none !important;}');
+  const layout = [{ id: "HERO", enabled: true }, { id: "TILE_GROUP:a", enabled: false }, { id: "BRANDS", enabled: false, removed: true }];
+  assert.equal(layoutCss(layout, { editing: false }), '[data-builder-section="HERO"]{order:0 !important;}[data-builder-section="TILE_GROUP:a"]{order:1 !important;display:none !important;}[data-builder-section="BRANDS"]{order:2 !important;display:none !important;}');
+  // While editing a disabled section stays visible, faded, so it can be switched back on; a removed one never returns.
+  assert.equal(layoutCss(layout, { editing: true }), '[data-builder-section="HERO"]{order:0 !important;}[data-builder-section="TILE_GROUP:a"]{order:1 !important;opacity:0.35 !important;}[data-builder-section="BRANDS"]{order:2 !important;display:none !important;}');
+});
+
+test("a disabled section is rendered hidden only for viewers who cannot edit", () => {
+  assert.equal(isSectionHiddenAtRender({ id: "HERO", enabled: false }, false), true);
+  assert.equal(isSectionHiddenAtRender({ id: "HERO", enabled: false }, true), false);
+  assert.equal(isSectionHiddenAtRender({ id: "HERO", enabled: false, removed: true }, true), true);
+  assert.equal(isSectionHiddenAtRender({ id: "HERO", enabled: true }, false), false);
+  assert.equal(isSectionHiddenAtRender(undefined, false), false);
 });

@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@heroui/react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { BuilderPart } from "@/components/builder-part";
 
 export type StorefrontHeroSlide = {
   id: string;
@@ -19,6 +20,10 @@ type Props = {
   title: string;
   description: string;
   buttonLabel: string;
+  /** The store owner switched the prev/next arrows off (the page builder's "show arrows" setting). */
+  arrowsHidden?: boolean;
+  /** The viewer can edit the page: the arrows are rendered even when switched off, so the builder can bring them back. */
+  editable?: boolean;
 };
 
 // Digikala's own mobile hero (measured directly from the live site's DOM): not a full-bleed
@@ -74,7 +79,7 @@ function MobileHeroPeekCarousel({ slides }: { slides: StorefrontHeroSlide[] }) {
   );
 }
 
-export function StorefrontHeroSlider({ slides, contentMode, title, description, buttonLabel }: Props) {
+export function StorefrontHeroSlider({ slides, contentMode, title, description, buttonLabel, arrowsHidden = false, editable = false }: Props) {
   const [activeIndex, setActiveIndex] = useState(0);
   const [hovered, setHovered] = useState(false);
   const [dragging, setDragging] = useState(false);
@@ -194,8 +199,10 @@ export function StorefrontHeroSlider({ slides, contentMode, title, description, 
         </>}
 
         {hasMultipleSlides && <>
+          <BuilderPart section="HERO" id="arrows" hidden={arrowsHidden} editable={editable}>
           <Button type="button" isIconOnly variant="secondary" aria-label="اسلاید قبلی" onPress={previous} className="absolute right-4 top-1/2 z-30 grid size-10 min-h-10 min-w-10 -translate-y-1/2 rounded-full border border-white/40 bg-black/25 text-white backdrop-blur hover:bg-black/40"><ChevronRight size={19} /></Button>
           <Button type="button" isIconOnly variant="secondary" aria-label="اسلاید بعدی" onPress={next} className="absolute left-4 top-1/2 z-30 grid size-10 min-h-10 min-w-10 -translate-y-1/2 rounded-full border border-white/40 bg-black/25 text-white backdrop-blur hover:bg-black/40"><ChevronLeft size={19} /></Button>
+          </BuilderPart>
           <div className="absolute bottom-4 left-1/2 z-30 flex -translate-x-1/2 items-center gap-2 rounded-full bg-black/20 px-3 py-2 backdrop-blur" dir="rtl">{slides.map((slide, index) => <Button key={slide.id} type="button" isIconOnly variant="ghost" aria-label={`نمایش اسلاید ${(index + 1).toLocaleString("fa-IR")}`} aria-pressed={index === activeIndex} onPress={() => setActiveIndex(index)} className={`h-2 min-h-2 min-w-2 rounded-full p-0 transition-all ${index === activeIndex ? "w-6 bg-white" : "w-2 bg-white/55 hover:bg-white/80"}`} />)}</div>
         </>}
       </div>

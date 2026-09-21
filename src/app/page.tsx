@@ -15,6 +15,12 @@ export function generateMetadata(): Metadata {
   return { alternates: { canonical: env.APP_URL } };
 }
 
+type HomepageMedia = { id: string; title: string | null; alt: string | null; url: string; mimeType: string } | null;
+
+function toMediaChoice(media: HomepageMedia) {
+  return media ? { id: media.id, title: media.title || media.alt || "تصویر صفحه اصلی", alt: media.alt, url: media.url, type: "IMAGE" as const, mimeType: media.mimeType } : null;
+}
+
 export default async function HomePage() {
   // The product feed rendered by StorefrontHome flags each card's favorite state per viewer
   // (getStorefrontFlashDeals → markFavoriteCards → getCurrentUser), and that cookies() read
@@ -31,7 +37,7 @@ export default async function HomePage() {
   const [homepage, display, industry, general, brand, menuLinkOptions] = canEditPages ? await Promise.all([getHomepageSettings(), getPageDisplaySettings(), getStoreIndustry(), getGeneralStoreSettings(), getBrandSettings(), getHomepageMenuLinkOptions()]) : [];
   return (
     <>
-      <StorefrontHome />
+      <StorefrontHome editable={canEditPages} />
       {homepage && display && industry && general && brand && menuLinkOptions ? (
         <PageBuilder
           initialSections={homepage.sections}
@@ -39,6 +45,14 @@ export default async function HomePage() {
           industry={industry}
           identity={{ storeName: general.storeName, tagline: general.tagline, logo: brand.mainLogoMedia ? { id: brand.mainLogoMedia.id, title: brand.mainLogoMedia.title || brand.mainLogoMedia.alt || "لوگو", alt: brand.mainLogoMedia.alt, url: brand.mainLogoMedia.url, type: "IMAGE", mimeType: brand.mainLogoMedia.mimeType } : null }}
           menu={{ items: homepage.menuItems, linkOptions: menuLinkOptions }}
+          hero={{
+            contentMode: homepage.heroContentMode,
+            title: homepage.heroTitle,
+            description: homepage.heroDescription,
+            buttonLabel: homepage.heroButtonLabel,
+            buttonHref: homepage.heroButtonHref,
+            slides: homepage.heroSlides.map((slide) => ({ id: slide.id, href: slide.href, desktopMedia: toMediaChoice(slide.desktopMedia), mobileMedia: toMediaChoice(slide.mobileMedia) })),
+          }}
         />
       ) : null}
     </>
