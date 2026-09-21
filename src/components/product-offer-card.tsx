@@ -27,7 +27,7 @@ export function ProductOfferCard({ product, builder, reserveTop }: { product: St
       )}
       <Link href={product.href} className="flex min-h-0 flex-1 flex-col">
         {cardPart(builder, "image", (
-          <span className="relative block aspect-square shrink-0 overflow-hidden rounded-lg border border-slate-200 bg-[var(--surface-tertiary)]">
+          <span className="relative block aspect-[100/85] shrink-0 overflow-hidden rounded-lg border border-slate-200 bg-[var(--surface-tertiary)]">
             {product.image && <Image src={product.image.src} alt={product.image.alt} fill sizes="(min-width: 640px) 220px, 45vw" className="object-cover" />}
           </span>
         ))}

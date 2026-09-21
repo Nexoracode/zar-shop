@@ -20,7 +20,7 @@ import { discountEndMoments } from "@/modules/products/discount-window";
 const compactWidth = "w-[128px] min-w-[128px] snap-start sm:w-[142px] sm:min-w-[142px]";
 // The offer cards are drawn at this fraction of their size, and the banner takes the row's whole height, so the banner and the
 // cards are exactly as tall as each other (the zoom shrinks the cards' layout, not just their looks).
-const offerScale = 0.82;
+const offerScale = 0.9;
 const cardWidth = "w-[164px] min-w-[164px] snap-start sm:w-[206px] sm:min-w-[206px] lg:w-[218px] lg:min-w-[218px]";
 
 function Shell({ children, roomy = false }: { children: ReactNode; /** The roomier padding of the ranked list. */ roomy?: boolean }) {
