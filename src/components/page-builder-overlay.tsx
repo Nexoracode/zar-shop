@@ -78,7 +78,8 @@ export function PageBuilderOverlay({ active, layoutKey, onMove, onRemove, onOpen
   onRemove: (sectionId: string) => void;
   onOpenSettings: (sectionId: string) => void;
   onEdit: (sectionId: string) => void;
-  onAdd: () => void;
+  /** "Add a section" pressed on this section: the new one goes right below it. */
+  onAdd: (sectionId: string) => void;
 }) {
   const [selected, setSelected] = useState<HTMLElement | null>(null);
   const hoveredRef = useRef<HTMLElement | null>(null);
@@ -215,7 +216,7 @@ export function PageBuilderOverlay({ active, layoutKey, onMove, onRemove, onOpen
             <ToolbarButton label="حذف" onPress={() => selectedId && onRemove(selectedId)}><Trash2 size={20} /></ToolbarButton>
           </div>
           <div className={toolbarPillClass}>
-            <ToolbarButton label="افزودن بخش" onPress={onAdd}><Plus size={20} /></ToolbarButton>
+            <ToolbarButton label="افزودن بخش" onPress={() => selectedId && onAdd(selectedId)}><Plus size={20} /></ToolbarButton>
           </div>
         </div>
       </div>

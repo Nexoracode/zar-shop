@@ -19,7 +19,7 @@ import { sectionEditItems, type EditItem } from "@/modules/page-builder/edit-ite
 import { heroSlideLabel, type HeroValues } from "@/modules/page-builder/hero-payload";
 import { newProductListConfig, productListDisplayConfig, pruneDisplayForList, type ProductListConfig, type ProductListLayout } from "@/modules/page-builder/product-lists";
 import { isSectionSettingsId, type PageSectionSettingsBundle } from "@/modules/page-builder/section-settings";
-import { isLayoutSection, layoutCss, moveSection, removeSection, sameLayout, sectionSelector, type LayoutSection } from "@/modules/page-builder/layout-draft";
+import { insertSection, isLayoutSection, layoutCss, moveSection, removeSection, sameLayout, sectionSelector, type LayoutSection } from "@/modules/page-builder/layout-draft";
 import { builderSectionLabel } from "@/modules/page-builder/sections";
 import type { HomepageMenuItem, HomepageMenuLinkOption } from "@/modules/settings/homepage-settings";
 import { homepageFieldLimits } from "@/modules/settings/settings-limits";
@@ -73,6 +73,8 @@ export function PageBuilder({ initialSections, initialDisplay, industry, identit
   // Product lists created or saved during this visit; they win over what the server sent until the page catches up.
   const [localLists, setLocalLists] = useState<Record<string, ProductListConfig>>({});
   const [addStep, setAddStep] = useState<"type" | "layout" | null>(null);
+  // The section whose "add" button was pressed; the new one goes right below it.
+  const [addAfter, setAddAfter] = useState<string | null>(null);
   const [addingList, setAddingList] = useState(false);
   const productLists = { ...sectionSettings.productLists, ...localLists };
   const { layout, display } = draft.current;
@@ -135,12 +137,20 @@ export function PageBuilder({ initialSections, initialDisplay, industry, identit
     finishEdit();
   }
 
-  // A section that now exists on the server (a new list) joins every state of the draft, at the end of the page, so
-  // an unsaved draft survives and the next save still lists it.
-  function appendSection(id: string) {
-    const withSection = (snapshot: Snapshot): Snapshot => (snapshot.layout.some((section) => section.id === id) ? snapshot : { ...snapshot, layout: [...snapshot.layout, { id, enabled: true }] });
-    setSaved(withSection);
-    setDraft((state) => ({ current: withSection(state.current), past: state.past.map(withSection), future: state.future.map(withSection) }));
+  // Where a section added from `sectionId`'s toolbar goes: right below it. The header and the promo banner sit above
+  // the whole layout, so below them is the top of it; the footer is below everything, so the end is right above it.
+  function positionBelow(sectionId: string | null): "start" | "end" | { after: string } {
+    if (sectionId === "HEADER" || sectionId === "PROMO_BANNER") return "start";
+    return sectionId && isLayoutSection(saved.layout, sectionId) ? { after: sectionId } : "end";
+  }
+
+  // A section that now exists on the server (a new list) joins the layout of the saved state and of every state of the
+  // draft — each at its own spot below `position`'s section — so an unsaved draft survives and the next save keeps it.
+  function addSectionToLayout(id: string, savedPosition: "start" | "end" | { after: string }, draftPosition: "start" | "end" | { after: string }) {
+    const section = { id, enabled: true };
+    setSaved((snapshot) => ({ ...snapshot, layout: insertSection(snapshot.layout, section, savedPosition) }));
+    const inDraft = (snapshot: Snapshot): Snapshot => ({ ...snapshot, layout: insertSection(snapshot.layout, section, draftPosition) });
+    setDraft((state) => ({ current: inDraft(state.current), past: state.past.map(inDraft), future: state.future.map(inDraft) }));
   }
 
   async function createList(layoutChoice: ProductListLayout) {
@@ -151,8 +161,19 @@ export function PageBuilder({ initialSections, initialDisplay, industry, identit
       const result = await response.json().catch(() => null);
       if (!response.ok || typeof result?.id !== "string") throw new Error(result?.message ?? "افزودن لیست محصولات انجام نشد.");
       setLocalLists((current) => ({ ...current, [result.id]: config }));
-      appendSection(result.id);
-      toast.success("لیست محصولات به انتهای صفحه اضافه شد");
+      // The new list is stored below the section it was added from. The saved order is stored right away (from the
+      // saved layout, so an unsaved draft is not swept along); if that fails the list stays where the server put it,
+      // at the end, and the draft alone carries the position until "save".
+      const position = positionBelow(addAfter);
+      let placed = true;
+      try {
+        await patchJson("/api/admin/settings/homepage/layout", { sections: insertSection(saved.layout, { id: result.id, enabled: true }, position) }, "ذخیره جایگاه لیست انجام نشد.");
+      } catch {
+        placed = false;
+      }
+      addSectionToLayout(result.id, placed ? position : "end", position);
+      if (placed) toast.success("لیست محصولات زیر بخش انتخاب‌شده اضافه شد");
+      else toast.warning("لیست اضافه شد، ولی جایگاهش هنوز ذخیره نشده", { description: "برای ثبت جایگاه، «ذخیره» را بزنید." });
       setAddStep(null);
       // Its details come next: the edit form opens straight away.
       setEditSection(result.id);
@@ -229,7 +250,7 @@ export function PageBuilder({ initialSections, initialDisplay, industry, identit
   return (
     <>
       <style>{css}</style>
-      <PageBuilderOverlay active={editing} layoutKey={css} onMove={handleMove} onRemove={requestRemove} onOpenSettings={requestSettings} onEdit={requestEdit} onAdd={() => setAddStep("type")} />
+      <PageBuilderOverlay active={editing} layoutKey={css} onMove={handleMove} onRemove={requestRemove} onOpenSettings={requestSettings} onEdit={requestEdit} onAdd={(sectionId) => { setAddAfter(sectionId); setAddStep("type"); }} />
       <PageBuilderBar
         open={open}
         onOpenChange={setOpen}

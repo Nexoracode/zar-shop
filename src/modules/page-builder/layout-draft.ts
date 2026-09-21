@@ -31,6 +31,21 @@ export function moveSection(sections: LayoutSection[], id: string, direction: -1
   return next;
 }
 
+export type InsertPosition = "start" | "end" | { after: string };
+
+/**
+ * Puts `section` into the layout at `position`: at the start, at the end, or right after the section with the given
+ * id (the end when there is no such section). A section already in the layout is left where it is.
+ */
+export function insertSection(sections: LayoutSection[], section: LayoutSection, position: InsertPosition) {
+  if (sections.some((item) => item.id === section.id)) return sections;
+  const index = position === "start" ? 0 : position === "end" ? sections.length : (() => {
+    const at = sections.findIndex((item) => item.id === position.after);
+    return at < 0 ? sections.length : at + 1;
+  })();
+  return [...sections.slice(0, index), section, ...sections.slice(index)];
+}
+
 /** Removes a section from the page. Returns null when the id is unknown or already removed. */
 export function removeSection(sections: LayoutSection[], id: string) {
   if (!sections.some((section) => section.id === id && !section.removed)) return null;

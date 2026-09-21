@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { isLayoutSection, isSectionHiddenAtRender, layoutCss, moveSection, removeSection, sameLayout, type LayoutSection } from "./layout-draft";
+import { insertSection, isLayoutSection, isSectionHiddenAtRender, layoutCss, moveSection, removeSection, sameLayout, type LayoutSection } from "./layout-draft";
 
 const sections: LayoutSection[] = [
   { id: "HERO", enabled: true },
@@ -65,4 +65,13 @@ test("a disabled section is rendered hidden only for viewers who cannot edit", (
   assert.equal(isSectionHiddenAtRender({ id: "HERO", enabled: false, removed: true }, true), true);
   assert.equal(isSectionHiddenAtRender({ id: "HERO", enabled: true }, false), false);
   assert.equal(isSectionHiddenAtRender(undefined, false), false);
+});
+
+test("inserts a new section after the given one, at the start or at the end", () => {
+  const added = { id: "PRODUCT_LIST:a", enabled: true };
+  assert.deepEqual(ids(insertSection(sections, added, { after: "CATEGORIES" })), ["HERO", "CATEGORIES", "PRODUCT_LIST:a", "BRANDS", "LATEST_PRODUCTS"]);
+  assert.deepEqual(ids(insertSection(sections, added, "start")), ["PRODUCT_LIST:a", "HERO", "CATEGORIES", "BRANDS", "LATEST_PRODUCTS"]);
+  assert.deepEqual(ids(insertSection(sections, added, "end")), ["HERO", "CATEGORIES", "BRANDS", "LATEST_PRODUCTS", "PRODUCT_LIST:a"]);
+  assert.deepEqual(ids(insertSection(sections, added, { after: "FOOTER" })), ["HERO", "CATEGORIES", "BRANDS", "LATEST_PRODUCTS", "PRODUCT_LIST:a"]);
+  assert.equal(insertSection(sections, { id: "HERO", enabled: true }, "end"), sections);
 });
