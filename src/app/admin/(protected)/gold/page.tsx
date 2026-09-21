@@ -4,6 +4,8 @@ import { Clock3, Coins, Gauge, Settings2 } from "lucide-react";
 import { AdminEmptyState, AdminPageHeader } from "@/components/admin-ui";
 import { AdminColumn, AdminColumnSettingsButton, AdminColumnVisibility } from "@/components/admin-column-visibility";
 import { AdminColumnFilter } from "@/components/admin-column-filter";
+import { AdminClearFilters } from "@/components/admin-clear-filters";
+import { AdminListFilters } from "@/components/admin-list-filters";
 import { AdminReadOnlyTableToolbar } from "@/components/admin-table-refresh";
 import { BpKicker } from "@/components/admin/blueprint/ui/card";
 import { BpLineChart } from "@/components/admin/blueprint/ui/line-chart";
@@ -12,6 +14,7 @@ import { BpTag, type BpTagTone } from "@/components/admin/blueprint/ui/tag";
 import { readHiddenColumns } from "@/lib/admin-column-visibility-server";
 import { db } from "@/lib/db";
 import { formatDateTime, formatMoney } from "@/lib/format";
+import { includesNormalizedText } from "@/lib/text-search";
 import { requirePermission } from "@/modules/auth/session";
 import { getCatalogSettings } from "@/modules/settings/catalog-settings";
 import { getStoreIndustry } from "@/modules/settings/store-settings";
@@ -42,7 +45,7 @@ const goldPriceColumns = [
   { id: "fetchedAt", label: "زمان دریافت" },
 ];
 
-type SearchParams = Promise<{ source?: string }>;
+type SearchParams = Promise<{ source?: string; q?: string }>;
 
 export default async function AdminGoldPricePage({ searchParams }: { searchParams: SearchParams }) {
   await requirePermission("catalog:manage");
@@ -57,7 +60,8 @@ export default async function AdminGoldPricePage({ searchParams }: { searchParam
   // The chart always plots every record; only the table below is narrowed by the source filter.
   const sources = [...new Set(history.map((row) => row.source))];
   const source = sources.includes(params.source ?? "") ? (params.source as string) : "";
-  const rows = source ? history.filter((row) => row.source === source) : history;
+  const search = (params.q ?? "").trim().slice(0, 100);
+  const rows = history.filter((row) => (!source || row.source === source) && (!search || includesNormalizedText(`${row.source} ${formatMoney(row.pricePerGram18.toString())} ${formatDateTime(row.fetchedAt)}`, search)));
   const latest = history[0] ?? null;
   const cacheState = resolveCacheState(latest?.fetchedAt ?? null, settings.goldPriceCacheSeconds, settings.goldPriceFallbackMinutes);
   const chartData = [...history].reverse().map((row) => ({ label: shortStamp(row.fetchedAt), value: Number(row.pricePerGram18) }));
@@ -137,6 +141,10 @@ export default async function AdminGoldPricePage({ searchParams }: { searchParam
           <span className="bp-muted text-[11px]">{history.length.toLocaleString("fa-IR")} رکورد</span>
         </div>
         {history.length ? (
+          <>
+          <div className="border-b border-[var(--bp-divider)] p-4">
+            <AdminListFilters path="/admin/gold" query={search} queryLabel="جستجوی نرخ" queryPlaceholder="جستجو بر اساس منبع، نرخ یا زمان" filters={[]} large />
+          </div>
           <AdminColumnVisibility tableId={GOLD_PRICES_TABLE_ID} columns={goldPriceColumns} initialHidden={initialHiddenColumns}>
           <AdminReadOnlyTableToolbar label="تاریخچهٔ فقط‌خواندنی نرخ" description="نرخ‌های دریافت‌شده برای حفظ سابقه قابل ویرایش نیستند." leading={<AdminColumnSettingsButton />} />
           <BpTable ariaLabel="تاریخچه نرخ طلا" minWidth={520}>
@@ -157,9 +165,11 @@ export default async function AdminGoldPricePage({ searchParams }: { searchParam
                   <AdminColumn id="fetchedAt"><BpTd className="bp-muted whitespace-nowrap text-[12px]">{formatDateTime(row.fetchedAt)}</BpTd></AdminColumn>
                 </tr>
               ))}
+              {!rows.length && <tr><BpTd colSpan={99} className="py-8 text-center"><p className="bp-muted m-0 mb-3 text-[13px]">چیزی پیدا نشد.</p><AdminClearFilters href="/admin/gold" /></BpTd></tr>}
             </tbody>
           </BpTable>
           </AdminColumnVisibility>
+          </>
         ) : (
           <AdminEmptyState title="رکوردی ثبت نشده است" description="هنوز هیچ نرخ طلایی در فروشگاه ذخیره نشده است." />
         )}

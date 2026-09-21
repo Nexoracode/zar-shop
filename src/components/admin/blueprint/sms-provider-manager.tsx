@@ -13,11 +13,12 @@ import { AdminGenericBulkEditButton } from "@/components/admin-generic-bulk-edit
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
 import { AdminEmptyState, AdminPanel } from "@/components/admin-ui";
+import { includesNormalizedText } from "@/lib/text-search";
 import { smsProviders, type SmsProviderId } from "@/modules/communications/sms-providers";
 import type { PublicSmsProviderConfig } from "@/modules/communications/sms-config";
 import { smsProviderFieldLimits } from "@/modules/communications/limits";
 import { BlueprintFarazProviderForm } from "./sms-faraz-provider-form";
-import { BpButton, BpInput, BpKicker, BpLinkButton, BpTable, BpTag, BpTd, BpTh } from "./ui";
+import { BpButton, BpInput, BpKicker, BpLinkButton, BpListFilters, BpTable, BpTag, BpTd, BpTh } from "./ui";
 
 function statusTone(item: PublicSmsProviderConfig) {
   return item.isActive ? "success" : item.sendSupported ? "neutral" : "warning";
@@ -44,7 +45,8 @@ export function BlueprintSmsProviderManager({ mode, initialConfigs, smsEnabled, 
   const router = useRouter();
   const [configs, setConfigs] = useState(initialConfigs);
   const [statusFilter, setStatusFilter] = useState("");
-  const visible = configs.filter((item) => !statusFilter || providerStatusKey(item) === statusFilter);
+  const [query, setQuery] = useState("");
+  const visible = configs.filter((item) => (!statusFilter || providerStatusKey(item) === statusFilter) && (!query.trim() || includesNormalizedText(`${item.displayName} ${item.provider} ${item.senderNumber}`, query)));
   // The server list is the source of truth once a mutation settles and `router.refresh()` brings
   // a fresh copy (e.g. after the bulk-edit modal's own delete); this render-time sync (not an
   // effect) picks it up without an extra render pass.
@@ -124,6 +126,7 @@ export function BlueprintSmsProviderManager({ mode, initialConfigs, smsEnabled, 
       <AdminPanel>
         {configs.length ? (
           <>
+            <BpListFilters query={query} onQueryChange={setQuery} searchLabel="جستجوی ارائه‌دهنده" searchPlaceholder="جستجو بر اساس نام یا سرشماره" />
             <div className="md:hidden">
               {visible.map((item) => (
                 <article key={item.id} className="border-b border-[var(--bp-row-line)] p-4 last:border-b-0">
@@ -188,7 +191,7 @@ export function BlueprintSmsProviderManager({ mode, initialConfigs, smsEnabled, 
                         </BpTd>
                       </AdminBulkTr>
                     ))}
-                    {!visible.length && <tr><BpTd colSpan={99} className="py-8 text-center"><p className="bp-muted m-0 mb-3 text-[13px]">چیزی پیدا نشد.</p><AdminClearFilters onClick={() => { setStatusFilter(""); }} /></BpTd></tr>}
+                    {!visible.length && <tr><BpTd colSpan={99} className="py-8 text-center"><p className="bp-muted m-0 mb-3 text-[13px]">چیزی پیدا نشد.</p><AdminClearFilters onClick={() => { setStatusFilter(""); setQuery(""); }} /></BpTd></tr>}
                   </tbody>
                 </BpTable>
               </AdminBulkEditor>

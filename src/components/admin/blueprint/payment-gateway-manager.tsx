@@ -8,6 +8,7 @@ import { AdminActiveToggle } from "@/components/admin-active-toggle";
 import { AdminBulkCheckbox, AdminBulkEditor, AdminBulkTr } from "@/components/admin-bulk-editor";
 import { AdminColumn, AdminColumnSettingsButton, AdminColumnVisibility } from "@/components/admin-column-visibility";
 import { AdminClearFilters } from "@/components/admin-clear-filters";
+import { includesNormalizedText } from "@/lib/text-search";
 import { AdminColumnFilter } from "@/components/admin-column-filter";
 import { AdminGenericBulkEditButton } from "@/components/admin-generic-bulk-edit";
 import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
@@ -15,7 +16,7 @@ import { AdminEmptyState, AdminPanel } from "@/components/admin-ui";
 import { gatewayProviders, type GatewayProviderId } from "@/modules/payments/gateway-providers";
 import type { PublicGatewayConfig } from "@/modules/payments/gateway-config";
 import { gatewayFieldLimits } from "@/modules/payments/limits";
-import { BpButton, BpCheckbox, BpInput, BpKicker, BpLinkButton, BpTable, BpTag, BpTd, BpTh } from "./ui";
+import { BpButton, BpCheckbox, BpInput, BpKicker, BpLinkButton, BpListFilters, BpTable, BpTag, BpTd, BpTh } from "./ui";
 
 const PAYMENT_GATEWAYS_TABLE_ID = "paymentGateways";
 
@@ -50,7 +51,9 @@ export function BlueprintPaymentGatewayManager({ mode, initialConfigs, appUrl, o
   const [configs, setConfigs] = useState(initialConfigs);
   const [statusFilter, setStatusFilter] = useState("");
   const [environmentFilter, setEnvironmentFilter] = useState("");
+  const [query, setQuery] = useState("");
   const visible = configs.filter((config) => {
+    if (query.trim() && !includesNormalizedText(`${config.displayName} ${config.provider}`, query)) return false;
     if (statusFilter === "active" && !config.isActive) return false;
     if (statusFilter === "inactive" && config.isActive) return false;
     if (environmentFilter === "sandbox" && !config.isSandbox) return false;
@@ -145,6 +148,7 @@ export function BlueprintPaymentGatewayManager({ mode, initialConfigs, appUrl, o
         </div>
         {configs.length ? (
           <>
+            <BpListFilters query={query} onQueryChange={setQuery} searchLabel="جستجوی درگاه" searchPlaceholder="جستجو بر اساس نام درگاه" />
             <div className="md:hidden">
               {visible.map((config) => (
                 <article key={config.id} className="border-b border-[var(--bp-row-line)] p-4 last:border-b-0">
@@ -212,7 +216,7 @@ export function BlueprintPaymentGatewayManager({ mode, initialConfigs, appUrl, o
                         </BpTd>
                       </AdminBulkTr>
                     ))}
-                    {!visible.length && <tr><BpTd colSpan={99} className="py-8 text-center"><p className="bp-muted m-0 mb-3 text-[13px]">چیزی پیدا نشد.</p><AdminClearFilters onClick={() => { setStatusFilter(""); setEnvironmentFilter(""); }} /></BpTd></tr>}
+                    {!visible.length && <tr><BpTd colSpan={99} className="py-8 text-center"><p className="bp-muted m-0 mb-3 text-[13px]">چیزی پیدا نشد.</p><AdminClearFilters onClick={() => { setStatusFilter(""); setEnvironmentFilter(""); setQuery(""); }} /></BpTd></tr>}
                   </tbody>
                 </BpTable>
               </AdminBulkEditor>

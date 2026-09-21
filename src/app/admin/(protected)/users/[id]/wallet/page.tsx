@@ -5,6 +5,7 @@ import { AdminColumn, AdminColumnSettingsButton, AdminColumnVisibility } from "@
 import { AdminColumnFilter } from "@/components/admin-column-filter";
 import { AdminReadOnlyTableToolbar } from "@/components/admin-table-refresh";
 import { AdminClearFilters } from "@/components/admin-clear-filters";
+import { AdminListFilters } from "@/components/admin-list-filters";
 import { BpKicker } from "@/components/admin/blueprint/ui/card";
 import { BpTable, BpTd, BpTh } from "@/components/admin/blueprint/ui/table";
 import { BpTag } from "@/components/admin/blueprint/ui/tag";
@@ -32,7 +33,7 @@ const typeLabels: Record<WalletTransactionType, string> = {
   TOPUP: "افزایش اعتبار از درگاه",
 };
 
-type Context = { params: Promise<{ id: string }>; searchParams: Promise<{ type?: string }> };
+type Context = { params: Promise<{ id: string }>; searchParams: Promise<{ type?: string; q?: string }> };
 
 const WALLET_TABLE_ID = "walletTransactions";
 
@@ -49,12 +50,13 @@ export default async function AdminUserWalletPage({ params, searchParams }: Cont
   const { id } = await params;
   const query = await searchParams;
   const type = Object.keys(typeLabels).includes(query.type ?? "") ? (query.type as WalletTransactionType) : undefined;
+  const search = (query.q ?? "").trim().slice(0, 100);
   const user = await db.user.findUnique({ where: { id }, select: { id: true, firstName: true, lastName: true, phone: true, isGuest: true } });
   if (!user || user.isGuest) notFound();
 
   const [wallet, generalSettings, initialHiddenColumns] = await Promise.all([ensureWallet(db, user.id), getGeneralStoreSettings(), readHiddenColumns(WALLET_TABLE_ID)]);
   const currency = generalSettings.currency;
-  const transactions = await db.walletTransaction.findMany({ where: { walletId: wallet.id, ...(type ? { type } : {}) }, orderBy: { createdAt: "desc" }, take: 100 });
+  const transactions = await db.walletTransaction.findMany({ where: { walletId: wallet.id, ...(type ? { type } : {}), ...(search ? { description: { contains: search } } : {}) }, orderBy: { createdAt: "desc" }, take: 100 });
   const fullName = `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim() || user.phone || "کاربر بدون نام";
 
   return (
@@ -82,6 +84,9 @@ export default async function AdminUserWalletPage({ params, searchParams }: Cont
         </div>
 
         <section className="bp-frame relative overflow-hidden">
+          <div className="border-b border-[var(--bp-divider)] p-4">
+            <AdminListFilters path={`/admin/users/${user.id}/wallet`} query={search} queryLabel="جستجوی تراکنش" queryPlaceholder="جستجو در توضیح تراکنش" filters={[]} large />
+          </div>
           <AdminColumnVisibility tableId={WALLET_TABLE_ID} columns={walletColumns} initialHidden={initialHiddenColumns}>
           <AdminReadOnlyTableToolbar label="تاریخچهٔ کیف پول" description="این فهرست فقط برای مشاهده است؛ برای تغییر موجودی از فرم تعدیل استفاده کنید." leading={<AdminColumnSettingsButton />} />
           {transactions.length ? (
@@ -117,7 +122,7 @@ export default async function AdminUserWalletPage({ params, searchParams }: Cont
               </tbody>
             </BpTable>
           ) : (
-            <AdminEmptyState title="تراکنشی پیدا نشد" description={type ? "فیلتر را تغییر دهید و دوباره جستجو کنید." : "هنوز هیچ اعتباری به کیف پول این کاربر افزوده یا از آن کسر نشده است."} action={type ? <AdminClearFilters href={`/admin/users/${user.id}/wallet`} /> : undefined} />
+            <AdminEmptyState title="تراکنشی پیدا نشد" description={type || search ? "فیلترها را تغییر دهید و دوباره جستجو کنید." : "هنوز هیچ اعتباری به کیف پول این کاربر افزوده یا از آن کسر نشده است."} action={type || search ? <AdminClearFilters href={`/admin/users/${user.id}/wallet`} /> : undefined} />
           )}
           </AdminColumnVisibility>
         </section>
