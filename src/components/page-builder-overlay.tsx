@@ -6,7 +6,8 @@ import { Button, Tooltip } from "@heroui/react";
 import { ArrowDown, ArrowUp, Pencil, Plus, Trash2 } from "lucide-react";
 import { BUILDER_SECTION_ATTRIBUTE, BUILDER_SECTION_SELECTOR, builderSectionLabel } from "@/modules/page-builder/sections";
 
-const UI_SELECTOR = "[data-page-builder-ui]";
+// The builder's controls and what they open into <body> (see `page-builder.css`).
+const UI_SELECTOR = "[data-page-builder-ui], .bp-root, [data-trigger]";
 const DOCK_SELECTOR = "[data-page-builder-dock]";
 const TOOLBAR_MARGIN = 12;
 

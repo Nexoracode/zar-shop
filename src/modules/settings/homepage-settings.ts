@@ -3,6 +3,7 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { STORE_SETTING_ID } from "@/modules/settings/store-settings";
 import { homepageFieldLimits } from "@/modules/settings/settings-limits";
+import { safeHrefSchema } from "@/modules/settings/safe-href";
 
 export const homepageSectionIds = ["HERO", "CATEGORIES", "BRANDS", "FEATURED_PRODUCTS", "POPULAR_PRODUCTS", "BEST_SELLING_PRODUCTS", "LATEST_PRODUCTS", "ABOUT", "PROMISES", "CONCIERGE", "ARTICLES"] as const;
 export type HomepageSectionId = (typeof homepageSectionIds)[number];
@@ -40,10 +41,6 @@ const treasureCardsSchema = z.array(treasureCardSchema).length(homepageTreasureC
   }
 });
 
-const safeHrefSchema = z.string().trim().min(1).max(homepageFieldLimits.href).refine(
-  (value) => (/^\/(?!\/)/.test(value) || /^https:\/\//i.test(value)),
-  "لینک دکمه باید یک مسیر داخلی یا نشانی امن HTTPS باشد.",
-);
 const optionalSafeHrefSchema = z.union([z.null(), z.literal(""), safeHrefSchema]).transform((value) => value || null);
 
 const homepageMenuItemSchema = z.object({
@@ -53,7 +50,7 @@ const homepageMenuItemSchema = z.object({
 });
 export type HomepageMenuItem = z.infer<typeof homepageMenuItemSchema>;
 
-const homepageMenuItemsSchema = z.array(homepageMenuItemSchema).max(20).refine(
+const homepageMenuItemsSchema = z.array(homepageMenuItemSchema).max(homepageFieldLimits.menuItems).refine(
   (items) => new Set(items.map((item) => item.id)).size === items.length,
   "شناسه آیتم‌های منوی بالا نباید تکراری باشد.",
 );

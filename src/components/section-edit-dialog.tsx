@@ -20,7 +20,7 @@ type Props = {
 export function SectionEditDialog({ sectionLabel, items, onSelect, onClose }: Props) {
   return (
     // The dialog is portaled to <body>, so `data-page-builder-ui` on it keeps it clickable while the page is in edit mode.
-    <Modal.Backdrop isOpen onOpenChange={(next) => { if (!next) onClose(); }} variant="blur" className="z-[200]">
+    <Modal.Backdrop isOpen onOpenChange={(next) => { if (!next) onClose(); }} variant="blur" className="z-[150]">
       <Modal.Container size="sm" placement="center">
         <Modal.Dialog data-page-builder-ui aria-label={`ویرایش ${sectionLabel}`} dir="rtl" className="mx-4 max-w-[440px] bg-[var(--surface)] text-right">
           <Modal.Header className="flex-row items-center justify-between border-b border-[var(--border)] p-5">

@@ -24,7 +24,13 @@ html[data-page-builder="editing"] [data-builder-section] {
   -webkit-user-select: none;
 }
 
+/* The builder's own controls, plus what they open into <body>: the admin media library (`.bp-root`) and the
+   popovers of selects/combo boxes inside its dialogs (`[data-trigger]`). */
 html[data-page-builder="editing"] [data-page-builder-ui],
-html[data-page-builder="editing"] [data-page-builder-ui] * {
+html[data-page-builder="editing"] [data-page-builder-ui] *,
+html[data-page-builder="editing"] .bp-root,
+html[data-page-builder="editing"] .bp-root *,
+html[data-page-builder="editing"] [data-trigger],
+html[data-page-builder="editing"] [data-trigger] * {
   pointer-events: auto !important;
 }

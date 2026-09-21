@@ -20,6 +20,8 @@ export const generalSettingsFieldLimits = {
 export const homepageFieldLimits = {
   href: 500,
   menuLabel: 80,
+  // How many links the top menu may hold.
+  menuItems: 20,
   heroTitle: 191,
   heroDescription: 500,
   heroButtonLabel: 80,

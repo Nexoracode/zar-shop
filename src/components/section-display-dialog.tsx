@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, type CSSProperties } from "react";
+import { useState } from "react";
 import { Button, Modal } from "@heroui/react";
 import { Eye, X } from "lucide-react";
 import { CheckboxCard } from "@/components/checkbox-card";
+import { brandPrimaryButtonStyle } from "@/components/page-builder-styles";
 import type { DisplayPart, SectionDisplay } from "@/modules/page-builder/display-parts";
 
 type Props = {
@@ -35,7 +36,7 @@ export function SectionDisplayDialog({ sectionLabel, parts, value, onConfirm, on
 
   return (
     // The dialog is portaled to <body>, so `data-page-builder-ui` on it keeps it clickable while the page is in edit mode.
-    <Modal.Backdrop isOpen onOpenChange={(next) => { if (!next) onClose(); }} variant="blur" className="z-[200]">
+    <Modal.Backdrop isOpen onOpenChange={(next) => { if (!next) onClose(); }} variant="blur" className="z-[150]">
       <Modal.Container size="sm" placement="center">
         <Modal.Dialog data-page-builder-ui aria-label={`تنظیمات نمایش ${sectionLabel}`} dir="rtl" className="mx-4 max-w-[440px] bg-[var(--surface)] text-right">
           <Modal.Header className="flex-row items-center justify-between border-b border-[var(--border)] p-5">
@@ -52,7 +53,7 @@ export function SectionDisplayDialog({ sectionLabel, parts, value, onConfirm, on
             <CheckboxCard icon={<Eye size={18} />} isSelected={enabled} onChange={setEnabled}>{`کل بخش «${sectionLabel}» فعال باشد`}</CheckboxCard>
           </Modal.Body>
           <Modal.Footer className="gap-3 border-t border-[var(--border)] p-5">
-            <Button type="button" variant="primary" onPress={() => onConfirm({ enabled, hiddenParts: [...hidden] })} className="min-h-12 flex-[1.4] rounded-xl text-base font-bold" style={{ "--button-bg": "var(--brand-primary)", "--button-bg-hover": "color-mix(in srgb, var(--brand-primary) 90%, black)", "--button-bg-pressed": "color-mix(in srgb, var(--brand-primary) 82%, black)", "--button-fg": "var(--brand-primary-foreground)" } as CSSProperties}>تأیید</Button>
+            <Button type="button" variant="primary" onPress={() => onConfirm({ enabled, hiddenParts: [...hidden] })} className="min-h-12 flex-[1.4] rounded-xl text-base font-bold" style={brandPrimaryButtonStyle}>تأیید</Button>
             <Button type="button" variant="outline" onPress={onClose} className="min-h-12 flex-1 rounded-xl text-base font-bold">انصراف</Button>
           </Modal.Footer>
         </Modal.Dialog>

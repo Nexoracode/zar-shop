@@ -1,12 +1,10 @@
 "use client";
 
 import { useId, useState } from "react";
-import type { CSSProperties } from "react";
 import Link from "next/link";
 import { Button, Spinner } from "@heroui/react";
+import { brandPrimaryButtonStyle } from "@/components/page-builder-styles";
 import { ArrowUpRight, ChevronDown, ChevronUp, Redo2, Undo2 } from "lucide-react";
-
-const primaryButtonStyle = { "--button-bg": "var(--brand-primary)", "--button-bg-hover": "color-mix(in srgb, var(--brand-primary) 90%, black)", "--button-bg-pressed": "color-mix(in srgb, var(--brand-primary) 82%, black)", "--button-fg": "var(--brand-primary-foreground)" } as CSSProperties;
 
 type PageBuilderBarProps = {
   /** Whether the dock's panel is expanded (the tab toggles it). */
@@ -67,7 +65,7 @@ export function PageBuilderBar({ open, onOpenChange, editing, onStartEditing, on
             <div data-page-builder-ui className="pointer-events-auto mx-auto flex max-w-[480px] items-center gap-2 rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-3 shadow-[0_12px_40px_rgba(15,23,42,.18)]">
               {editingFace ? (
                 <>
-                  <Button type="button" variant="primary" style={primaryButtonStyle} isPending={saving} isDisabled={!canSave || saving} onPress={onSave} className="min-h-10 rounded-lg px-6 text-sm font-bold">
+                  <Button type="button" variant="primary" style={brandPrimaryButtonStyle} isPending={saving} isDisabled={!canSave || saving} onPress={onSave} className="min-h-10 rounded-lg px-6 text-sm font-bold">
                     {({ isPending }) => <>{isPending && <Spinner color="current" size="sm" />}ذخیره</>}
                   </Button>
                   <Button type="button" variant="outline" isDisabled={saving} onPress={onCancel} className="min-h-10 rounded-lg px-5 text-sm font-bold">
@@ -88,7 +86,7 @@ export function PageBuilderBar({ open, onOpenChange, editing, onStartEditing, on
                     <ArrowUpRight size={16} />
                     ورود به مدیریت
                   </Link>
-                  <Button type="button" variant="primary" style={primaryButtonStyle} onPress={onStartEditing} className="mr-auto min-h-10 rounded-lg px-6 text-sm font-bold">
+                  <Button type="button" variant="primary" style={brandPrimaryButtonStyle} onPress={onStartEditing} className="mr-auto min-h-10 rounded-lg px-6 text-sm font-bold">
                     ویرایش ظاهر صفحه
                   </Button>
                 </>

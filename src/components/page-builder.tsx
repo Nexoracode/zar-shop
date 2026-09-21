@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { Button, Modal, toast } from "@heroui/react";
 import { TriangleAlert, X } from "lucide-react";
 import { PageBuilderBar } from "@/components/page-builder-bar";
+import { PageBuilderIdentityDialog, type IdentityValues } from "@/components/page-builder-identity-dialog";
+import { PageBuilderMenuDialog } from "@/components/page-builder-menu-dialog";
 import { PageBuilderOverlay } from "@/components/page-builder-overlay";
 import { SectionDisplayDialog } from "@/components/section-display-dialog";
 import { SectionEditDialog } from "@/components/section-edit-dialog";
@@ -12,6 +14,7 @@ import { displayCss, sameDisplay, sectionDisplay, sectionDisplayParts, setSectio
 import { sectionEditItems } from "@/modules/page-builder/edit-items";
 import { isLayoutSection, layoutCss, moveSection, removeSection, sameLayout, sectionSelector, type LayoutSection } from "@/modules/page-builder/layout-draft";
 import { builderSectionLabel } from "@/modules/page-builder/sections";
+import type { HomepageMenuItem, HomepageMenuLinkOption } from "@/modules/settings/homepage-settings";
 
 // Everything the builder can change, kept as one value so undo/redo step through layout and display edits alike.
 type Snapshot = { layout: LayoutSection[]; display: PageDisplay };
@@ -33,7 +36,15 @@ async function patchJson(url: string, body: unknown, fallbackMessage: string) {
  * at once through an injected stylesheet, can be undone and redone, and only reach the store on "save". Removing a
  * section asks for confirmation first, because once the change is saved there is no way back.
  */
-export function PageBuilder({ initialSections, initialDisplay, industry }: { initialSections: LayoutSection[]; initialDisplay: PageDisplay; industry: PageBuilderIndustry }) {
+export function PageBuilder({ initialSections, initialDisplay, industry, identity, menu }: {
+  initialSections: LayoutSection[];
+  initialDisplay: PageDisplay;
+  industry: PageBuilderIndustry;
+  /** Current name, tagline and logo, for the header's "name, tagline and logo" form. */
+  identity: IdentityValues;
+  /** Current top-menu links and the ready-made links the menu form offers. */
+  menu: { items: HomepageMenuItem[]; linkOptions: HomepageMenuLinkOption[] };
+}) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState(false);
@@ -43,6 +54,8 @@ export function PageBuilder({ initialSections, initialDisplay, industry }: { ini
   const [pendingRemoval, setPendingRemoval] = useState<string | null>(null);
   const [settingsSection, setSettingsSection] = useState<string | null>(null);
   const [editSection, setEditSection] = useState<string | null>(null);
+  // The group of settings picked in the edit dialog's list (see `edit-items.ts`), once a form is open.
+  const [editItem, setEditItem] = useState<string | null>(null);
   const { layout, display } = draft.current;
 
   const commit = (next: Snapshot) => setDraft((state) => ({ current: next, past: [...state.past, state.current], future: [] }));
@@ -78,6 +91,12 @@ export function PageBuilder({ initialSections, initialDisplay, industry }: { ini
   function requestEdit(id: string) {
     if (sectionEditItems(id)) setEditSection(id);
     else toast.info("ویرایش این بخش هنوز اضافه نشده است");
+  }
+
+  function finishEdit() {
+    setEditItem(null);
+    setEditSection(null);
+    router.refresh();
   }
 
   function confirmSettings(id: string, next: SectionDisplay) {
@@ -139,15 +158,18 @@ export function PageBuilder({ initialSections, initialDisplay, industry }: { ini
         canRedo={draft.future.length > 0}
         saving={saving}
       />
-      {editSection && (
+      {editSection && !editItem && (
         <SectionEditDialog
           key={editSection}
           sectionLabel={builderSectionLabel(editSection)}
           items={sectionEditItems(editSection) ?? []}
-          onSelect={(item) => toast.info(`ویرایش «${item.title}» هنوز اضافه نشده است`)}
+          onSelect={(item) => setEditItem(item.id)}
           onClose={() => setEditSection(null)}
         />
       )}
+      {/* These forms save on their own (the data lives in other settings, not in the page draft), then the page is refreshed. */}
+      {editSection === "HEADER" && editItem === "identity" && <PageBuilderIdentityDialog initial={identity} onSaved={finishEdit} onClose={() => setEditItem(null)} />}
+      {editSection === "HEADER" && editItem === "menu" && <PageBuilderMenuDialog initialItems={menu.items} linkOptions={menu.linkOptions} onSaved={finishEdit} onClose={() => setEditItem(null)} />}
       {settingsSection && (
         <SectionDisplayDialog
           key={settingsSection}
@@ -159,7 +181,7 @@ export function PageBuilder({ initialSections, initialDisplay, industry }: { ini
         />
       )}
       {/* The dialog is portaled to <body>, so `data-page-builder-ui` on it keeps it clickable while the page is in edit mode. */}
-      <Modal.Backdrop isOpen={pendingRemoval !== null} onOpenChange={(next) => { if (!next) setPendingRemoval(null); }} variant="blur" className="z-[200]">
+      <Modal.Backdrop isOpen={pendingRemoval !== null} onOpenChange={(next) => { if (!next) setPendingRemoval(null); }} variant="blur" className="z-[150]">
         <Modal.Container size="sm" placement="center">
           <Modal.Dialog data-page-builder-ui aria-label="تأیید حذف بخش" dir="rtl" className="mx-4 max-w-md bg-[var(--surface)] text-right">
             <Modal.Header className="flex-row items-center justify-between border-b border-[var(--border)] p-5">

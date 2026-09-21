@@ -53,6 +53,7 @@ const actionLabels: Record<string, string> = {
   HOMEPAGE_PROMO_SETTINGS_UPDATE: "ویرایش پروموبنر صفحه اصلی",
   HOMEPAGE_MENU_SETTINGS_UPDATE: "ویرایش منوی صفحه اصلی",
   PAGE_DISPLAY_SETTINGS_UPDATE: "ویرایش تنظیمات نمایش بخش‌های صفحه",
+  STOREFRONT_IDENTITY_UPDATE: "ویرایش نام، شعار و لوگوی فروشگاه",
   CONTENT_SETTINGS_UPDATE: "ویرایش محتوا و FAQ",
   COMMUNICATION_SETTINGS_UPDATE: "ویرایش تنظیمات پیامک",
   PAYMENT_GATEWAY_CONFIG_UPSERT: "ثبت یا ویرایش درگاه پرداخت",
