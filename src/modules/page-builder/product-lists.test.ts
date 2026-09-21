@@ -80,6 +80,10 @@ test("the switches depend on the layout and source, and always include the card'
   assert.equal(ids("PANEL_SLIDER").includes("countdown"), false);
   assert.equal(ids("PANEL_SLIDER", "DISCOUNTED").includes("countdown"), true);
   assert.equal(ids("LIST_TWO_COLUMNS").includes("card.price"), true);
+  // The ranked list mode has a switch for its rank badges; no other layout does.
+  assert.equal(ids("LIST_TWO_COLUMNS").includes("rank"), true);
+  assert.equal(ids("GRID_COMPACT").includes("rank"), false);
+  assert.equal(productListLayoutMeta.LIST_TWO_COLUMNS.label, "حالت لیستی");
   assert.equal(productListDisplayConfig(newProductListConfig("SLIDER"), "GENERAL").master, "layout");
 });
 

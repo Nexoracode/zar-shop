@@ -6,7 +6,7 @@ import { DiscountExpiryRefresh } from "@/components/discount-expiry-refresh";
 import { DragScrollRow } from "@/components/drag-scroll-row";
 import { FlashSaleCountdown } from "@/components/flash-sale-countdown";
 import { ProductCard, type ProductCardBuilder } from "@/components/product-card";
-import { ProductFeatureTile, ProductThumbItem } from "@/components/product-list-items";
+import { ProductFeatureTile, ProductRankedItem, ProductThumbItem } from "@/components/product-list-items";
 import { ViewAllProductCard } from "@/components/view-all-product-card";
 import { isPartHidden, sectionDisplay, type PageDisplay } from "@/modules/page-builder/display-parts";
 import type { ProductListData } from "@/modules/page-builder/product-list-data";
@@ -17,9 +17,11 @@ import { discountEndMoments } from "@/modules/products/discount-window";
 const cardWidth = "w-[164px] min-w-[164px] snap-start sm:w-[206px] sm:min-w-[206px] lg:w-[218px] lg:min-w-[218px]";
 const panelCardWidth = "w-[calc(50%-2px)] min-w-[calc(50%-2px)] snap-start sm:w-[220px] sm:min-w-[220px] lg:w-[224px] lg:min-w-[224px]";
 
-function Shell({ children }: { children: ReactNode }) {
-  return <div className="min-w-0 overflow-hidden rounded-2xl border border-[#e6e8ec] bg-white px-4 py-5 sm:px-6 lg:px-7 lg:py-7">{children}</div>;
+function Shell({ children, roomy = false }: { children: ReactNode; /** The roomier padding of the ranked list. */ roomy?: boolean }) {
+  return <div className={`min-w-0 overflow-hidden rounded-2xl border border-[#e6e8ec] bg-white ${roomy ? "px-4 py-6 sm:px-6 lg:px-8 lg:py-8" : "px-4 py-5 sm:px-6 lg:px-7 lg:py-7"}`}>{children}</div>;
 }
+
+const rankedPerColumn = 3;
 
 type Props = {
   /** The section's id in the layout — also the key its display switches are stored under. */
@@ -46,8 +48,8 @@ export function ProductListSection({ sectionId, config, data, display, editable 
   // Cleaned again here, however it was stored: this is the one place the description's HTML reaches the page.
   const description = sanitizeSectionDescription(config.description);
   const richStyle = "[&_a]:underline [&_p]:m-0 [&_mark]:rounded-sm [&_mark]:px-0.5";
-  const header = (
-    <div className="mb-5 flex items-end justify-between gap-4">
+  const headerFor = (divided: boolean) => (
+    <div className={`flex items-end justify-between gap-4 ${divided ? "mb-6 border-b border-slate-100 pb-5" : "mb-5"}`}>
       <div className="min-w-0">
         <BuilderPart {...part("title")}><h2 className="m-0 text-xl font-bold text-[#232934] sm:text-2xl">{config.title}</h2></BuilderPart>
         {description && <BuilderPart {...part("description")}><div className={`mb-0 mt-1 text-xs leading-6 text-[#858b95] sm:text-sm ${richStyle}`} dangerouslySetInnerHTML={{ __html: description }} /></BuilderPart>}
@@ -55,6 +57,7 @@ export function ProductListSection({ sectionId, config, data, display, editable 
       <BuilderPart {...part("more")}><Link href={moreHref} className="inline-flex shrink-0 items-center gap-1 text-xs font-bold text-[#232934] transition hover:text-black">مشاهده همه<ChevronLeft size={15} /></Link></BuilderPart>
     </div>
   );
+  const header = headerFor(false);
   const arrows = { section: sectionId, hidden: isPartHidden(display, sectionId, "arrows"), editable };
   const viewAll = (className: string) => <BuilderPart {...part("viewAll")} className={className}><ViewAllProductCard href={moreHref} /></BuilderPart>;
   const cards = (items: typeof products, className: string, toneOffset = 0) => items.map((product, index) => (
@@ -120,8 +123,20 @@ export function ProductListSection({ sectionId, config, data, display, editable 
         </div>
       );
 
-    case "LIST_TWO_COLUMNS":
-      return <Shell>{header}<div className="grid gap-x-8 gap-y-1 md:grid-cols-2">{products.map((product) => <ProductThumbItem key={product.id} product={product} builder={builder} large />)}</div>{refresh}</Shell>;
+    case "LIST_TWO_COLUMNS": {
+      // "List mode", the look of the best-selling products: columns of three ranked rows, four columns on a wide
+      // screen and a snapping row of columns on a narrow one.
+      const columns = Array.from({ length: Math.ceil(products.length / rankedPerColumn) }, (_, index) => products.slice(index * rankedPerColumn, (index + 1) * rankedPerColumn));
+      return <Shell roomy>{headerFor(true)}
+        <div className="flex snap-x snap-mandatory gap-5 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden lg:grid lg:grid-cols-4 lg:gap-0 lg:overflow-visible lg:pb-0">
+          {columns.map((column, columnIndex) => (
+            <div key={column[0].id} className="grid min-w-[285px] snap-start divide-y divide-slate-100 px-1 sm:min-w-[330px] lg:min-w-0 lg:border-l lg:border-slate-100 lg:px-5 lg:last:border-l-0">
+              {column.map((product, rowIndex) => <ProductRankedItem key={product.id} product={product} rank={columnIndex * rankedPerColumn + rowIndex + 1} builder={builder} />)}
+            </div>
+          ))}
+        </div>{refresh}
+      </Shell>;
+    }
 
     case "GROUPED_PANELS": {
       const groups: (typeof products)[] = [];
