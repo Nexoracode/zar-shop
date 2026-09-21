@@ -5,6 +5,7 @@ import { db } from "@/lib/db";
 import { apiError } from "@/lib/http";
 import { auditRequestContext } from "@/modules/audit/request-context";
 import { getPermittedActor } from "@/modules/auth/session";
+import { sanitizeSectionDescription } from "@/modules/page-builder/rich-text-sanitize";
 import { parseStoredDisplay } from "@/modules/page-builder/display-parts";
 import { isBuiltInProductListId, isProductListId, newProductListId, productListConfigSchema, pruneDisplayForList, resolveProductLists, type ProductListConfig } from "@/modules/page-builder/product-lists";
 import { getStoreIndustry, STORE_SETTING_ID } from "@/modules/settings/store-settings";
@@ -12,6 +13,11 @@ import { getStoreIndustry, STORE_SETTING_ID } from "@/modules/settings/store-set
 // The product lists of the homepage (see modules/page-builder/product-lists.ts): POST adds one, PATCH edits one. A list
 // is stored in `StoreSetting.pageSectionSettings.PRODUCT_LISTS` under its section id; the other sections' stored
 // settings are kept as they are.
+
+// The description is HTML from the browser: only what the editor can produce is kept.
+function clean(config: ProductListConfig): ProductListConfig {
+  return { ...config, description: sanitizeSectionDescription(config.description) };
+}
 
 async function categoryProblem(config: ProductListConfig) {
   if (config.source !== "CATEGORY" || !config.categoryId) return null;
@@ -49,7 +55,7 @@ export async function POST(request: Request) {
   try {
     const actor = await getPermittedActor("settings:manage");
     if (!actor) return NextResponse.json({ message: "دسترسی غیرمجاز است." }, { status: 403 });
-    const config = productListConfigSchema.parse(await request.json());
+    const config = clean(productListConfigSchema.parse(await request.json()));
     const problem = await categoryProblem(config);
     if (problem) return problem;
     const id = newProductListId(crypto.randomUUID());
@@ -64,7 +70,8 @@ export async function PATCH(request: Request) {
   try {
     const actor = await getPermittedActor("settings:manage");
     if (!actor) return NextResponse.json({ message: "دسترسی غیرمجاز است." }, { status: 403 });
-    const { id, config } = z.object({ id: z.string().min(1).max(100), config: productListConfigSchema }).parse(await request.json());
+    const { id, config: submitted } = z.object({ id: z.string().min(1).max(100), config: productListConfigSchema }).parse(await request.json());
+    const config = clean(submitted);
     // Only a list that exists can be edited: one of this store's built-in ones or one that was added.
     const current = await db.storeSetting.findUnique({ where: { id: STORE_SETTING_ID }, select: { pageSectionSettings: true } });
     const known = resolveProductLists(current?.pageSectionSettings, await getStoreIndustry());

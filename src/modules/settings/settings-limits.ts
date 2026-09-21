@@ -33,6 +33,9 @@ export const homepageFieldLimits = {
 export const pageSectionLimits = {
   // The title of a section (shared by the sections whose title is editable).
   title: 80,
+  // The optional rich-text description under a section's title: visible characters, and the markup they come in.
+  description: 300,
+  descriptionHtml: 3000,
   // How many categories the homepage's category strip may list.
   categoriesMin: 1,
   categoriesMax: 20,

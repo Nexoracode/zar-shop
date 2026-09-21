@@ -11,6 +11,7 @@ import { ViewAllProductCard } from "@/components/view-all-product-card";
 import { isPartHidden, sectionDisplay, type PageDisplay } from "@/modules/page-builder/display-parts";
 import type { ProductListData } from "@/modules/page-builder/product-list-data";
 import type { ProductListConfig } from "@/modules/page-builder/product-lists";
+import { sanitizeSectionDescription } from "@/modules/page-builder/rich-text-sanitize";
 import { discountEndMoments } from "@/modules/products/discount-window";
 
 const cardWidth = "w-[164px] min-w-[164px] snap-start sm:w-[206px] sm:min-w-[206px] lg:w-[218px] lg:min-w-[218px]";
@@ -42,9 +43,15 @@ export function ProductListSection({ sectionId, config, data, display, editable 
 
   if (products.length === 0) return <p className="m-0 rounded-2xl border border-dashed border-[#d5d9e0] bg-white p-6 text-center text-sm text-[#858b95]">«{config.title}» هنوز محصولی برای نمایش ندارد.</p>;
 
+  // Cleaned again here, however it was stored: this is the one place the description's HTML reaches the page.
+  const description = sanitizeSectionDescription(config.description);
+  const richStyle = "[&_a]:underline [&_p]:m-0 [&_mark]:rounded-sm [&_mark]:px-0.5";
   const header = (
     <div className="mb-5 flex items-end justify-between gap-4">
-      <BuilderPart {...part("title")}><h2 className="m-0 text-xl font-bold text-[#232934] sm:text-2xl">{config.title}</h2></BuilderPart>
+      <div className="min-w-0">
+        <BuilderPart {...part("title")}><h2 className="m-0 text-xl font-bold text-[#232934] sm:text-2xl">{config.title}</h2></BuilderPart>
+        {description && <BuilderPart {...part("description")}><div className={`mb-0 mt-1 text-xs leading-6 text-[#858b95] sm:text-sm ${richStyle}`} dangerouslySetInnerHTML={{ __html: description }} /></BuilderPart>}
+      </div>
       <BuilderPart {...part("more")}><Link href={moreHref} className="inline-flex shrink-0 items-center gap-1 text-xs font-bold text-[#232934] transition hover:text-black">مشاهده همه<ChevronLeft size={15} /></Link></BuilderPart>
     </div>
   );
@@ -97,6 +104,7 @@ export function ProductListSection({ sectionId, config, data, display, editable 
             <div className="flex shrink-0 items-center gap-3 px-4 pb-3 pt-5 lg:flex-col lg:justify-center lg:gap-6 lg:self-stretch lg:px-5 lg:pb-5 lg:pt-3">
               <BuilderPart {...part("icon")}><Sparkles size={24} className="shrink-0 text-[var(--brand-primary-foreground)] lg:size-16" /></BuilderPart>
               <BuilderPart {...part("title")}><strong className="shrink-0 text-lg font-extrabold leading-6 text-[var(--brand-primary-foreground)] lg:text-center lg:text-2xl lg:leading-8">{config.title}</strong></BuilderPart>
+              {description && <BuilderPart {...part("description")}><div className={`m-0 hidden max-w-[11rem] text-center text-xs leading-5 text-[var(--brand-primary-foreground)]/80 lg:block ${richStyle}`} dangerouslySetInnerHTML={{ __html: description }} /></BuilderPart>}
               {config.source === "DISCOUNTED" && expiry && <BuilderPart {...part("countdown")}><FlashSaleCountdown endsAt={expiry} className="shrink-0" /></BuilderPart>}
               <BuilderPart {...part("more")} className="contents"><Link href={moreHref} className="mr-auto inline-flex shrink-0 items-center gap-1 text-xs font-bold text-[var(--brand-primary-foreground)] lg:mr-0 lg:mt-1 lg:rounded-lg lg:px-3 lg:py-2 lg:text-sm lg:transition lg:hover:bg-black/5">
                 <span className="lg:hidden">همه</span><span className="hidden lg:inline">مشاهده همه</span><ChevronLeft size={15} />

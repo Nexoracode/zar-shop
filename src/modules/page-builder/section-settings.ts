@@ -49,7 +49,8 @@ export type PageSectionSettingsBundle = PageSectionSettings & { productLists: Re
 
 /** The form fields of a section's edit dialog, in order (text ones full width, the others two to a row). */
 export type ContentField = { /** Hide the field while this says so (e.g. the category picker unless the source is a category). */ visibleWhen?: (values: Record<string, string>) => boolean } & (
-  | { name: string; kind: "text"; label: string; maxLength: number }
+  | { name: string; kind: "text"; label: string; maxLength: number; /** Not required (no asterisk); an empty value is allowed. */ optional?: boolean }
+  | { name: string; kind: "richtext"; label: string; /** Visible characters allowed. */ maxLength: number; hint?: string }
   | { name: string; kind: "number"; label: string; max: number; hint?: string }
   | { name: string; kind: "select"; label: string; options: { value: string; label: string }[]; /** An empty first choice with this wording (otherwise a value is always selected). */ placeholder?: string; searchable?: boolean }
 );

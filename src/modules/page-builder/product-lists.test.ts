@@ -71,7 +71,8 @@ test("the flash deals keep the title and count they had stored before they becam
 
 test("the switches depend on the layout and source, and always include the card's", () => {
   const ids = (layout: (typeof productListLayouts)[number], source: "LATEST" | "DISCOUNTED" = "LATEST") => productListDisplayConfig({ ...newProductListConfig(layout), source }, "GENERAL").parts.map((part) => part.id);
-  assert.deepEqual(ids("GRID_COMPACT").slice(0, 2), ["title", "more"]);
+  assert.deepEqual(ids("GRID_COMPACT").slice(0, 3), ["title", "description", "more"]);
+  assert.deepEqual(ids("PANEL_SLIDER", "DISCOUNTED").slice(0, 5), ["icon", "title", "description", "countdown", "more"]);
   assert.equal(ids("GRID_COMPACT").includes("arrows"), false);
   assert.equal(ids("SLIDER").includes("arrows"), true);
   assert.equal(ids("SLIDER").includes("viewAll"), true);
@@ -96,4 +97,19 @@ test("the view-more link follows the source", () => {
   assert.equal(productListMoreHref({ ...config, source: "LATEST" }, null), "/products?sortby=newest");
   assert.equal(productListMoreHref({ ...config, source: "CATEGORY", categoryId: "c" }, "phones"), "/products?category=phones");
   assert.equal(productListMoreHref({ ...config, source: "DISCOUNTED" }, null), "/products");
+});
+
+test("the description is optional rich text, bounded by its visible characters, and lists stored without one still load", () => {
+  const base = newProductListConfig("SLIDER");
+  assert.equal(base.description, "");
+  assert.equal(productListConfigSchema.safeParse({ ...base, description: "<p>توضیح <strong>کوتاه</strong></p>" }).success, true);
+  // The markup does not count against the limit, the visible text does.
+  assert.equal(productListConfigSchema.safeParse({ ...base, description: `<p><strong>${"ت".repeat(pageSectionLimits.description)}</strong></p>` }).success, true);
+  assert.equal(productListConfigSchema.safeParse({ ...base, description: `<p>${"ت".repeat(pageSectionLimits.description + 1)}</p>` }).success, false);
+  const { description, ...withoutDescription } = base;
+  assert.equal(description, "");
+  assert.equal(productListConfigSchema.parse(withoutDescription).description, "");
+  assert.equal(resolveProductLists({ PRODUCT_LISTS: { "PRODUCT_LIST:old": withoutDescription } }, "GENERAL")["PRODUCT_LIST:old"].description, "");
+  // The popular products keep the sentence they always had under their title.
+  assert.ok(resolveProductLists(null, "GENERAL").POPULAR_PRODUCTS.description.length > 0);
 });

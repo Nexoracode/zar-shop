@@ -7,6 +7,7 @@ import { X } from "lucide-react";
 import { HeroSelectField } from "@/components/hero-select-field";
 import { InlineAlert } from "@/components/inline-alert";
 import { TextField } from "@/components/form-field";
+import { RichTextField } from "@/components/rich-text-field";
 import { brandPrimaryButtonStyle } from "@/components/page-builder-styles";
 import { normalizeNumericValue } from "@/lib/persian-numbers";
 import type { ContentField } from "@/modules/page-builder/section-settings";
@@ -86,7 +87,8 @@ export function ContentFormDialog({ title, ariaLabel, idPrefix, fields, initial,
 
   function renderField(field: ContentField) {
     const id = idOf(field.name);
-    if (field.kind === "text") return <TextField key={field.name} id={id} label={field.label} required value={values[field.name]} maxLength={field.maxLength} error={errors[field.name]} disabled={saving} onChange={(event) => change(field.name, event.target.value)} />;
+    if (field.kind === "richtext") return <RichTextField key={field.name} id={id} label={field.label} value={values[field.name]} maxLength={field.maxLength} hint={field.hint} error={errors[field.name]} disabled={saving} onChange={(html) => change(field.name, html)} />;
+    if (field.kind === "text") return <TextField key={field.name} id={id} label={field.label} required={!field.optional} value={values[field.name]} maxLength={field.maxLength} error={errors[field.name]} disabled={saving} onChange={(event) => change(field.name, event.target.value)} />;
     if (field.kind === "number") return <TextField key={field.name} id={id} label={field.label} required inputMode="numeric" dir="ltr" value={values[field.name]} maxLength={String(field.max).length} hint={field.hint} error={errors[field.name]} disabled={saving} onChange={(event) => change(field.name, normalizeNumericValue(event.target.value, false))} />;
     return (
       <div key={field.name}>
@@ -96,8 +98,8 @@ export function ContentFormDialog({ title, ariaLabel, idPrefix, fields, initial,
     );
   }
 
-  const textFields = visible.filter((field) => field.kind === "text");
-  const rowFields = visible.filter((field) => field.kind !== "text");
+  const textFields = visible.filter((field) => field.kind === "text" || field.kind === "richtext");
+  const rowFields = visible.filter((field) => field.kind !== "text" && field.kind !== "richtext");
 
   return (
     // react-aria places a select's list by the locale's direction, not the page's `dir`: without a Persian locale it opens
