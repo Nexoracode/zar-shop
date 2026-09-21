@@ -56,7 +56,7 @@ export function PageBuilderBar({ open, onOpenChange, editing, onEditingChange }:
       <div id={panelId} inert={!open} className={`grid w-full transition-[grid-template-rows] duration-300 ease-out motion-reduce:transition-none ${open ? "grid-rows-[1fr]" : "grid-rows-[0fr]"}`} onTransitionEnd={(event) => { if (event.target === event.currentTarget && !open) setEditingFace(editing); }}>
         <div className="overflow-hidden">
           <div className="px-3 pb-3 pt-1">
-            <div data-page-builder-ui className="pointer-events-auto mx-auto flex max-w-[400px] items-center gap-2 rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-3 shadow-[0_12px_40px_rgba(15,23,42,.18)]">
+            <div data-page-builder-ui className="pointer-events-auto mx-auto flex max-w-[480px] items-center gap-2 rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-3 shadow-[0_12px_40px_rgba(15,23,42,.18)]">
               {editingFace ? (
                 <>
                   <Button type="button" variant="primary" style={primaryButtonStyle} className="min-h-10 rounded-lg px-6 text-sm font-bold">
