@@ -68,7 +68,7 @@ function LinkForm({ editor, close }: { editor: Editor; close: () => void }) {
 
 /**
  * A small rich text control: bold, italic, strikethrough, underline, text and highlight colors, links and "clear
- * formatting", with the number of characters used under it. It holds HTML (empty string when there is no text);
+ * formatting". It holds HTML (empty string when there is no text);
  * `maxLength` counts the visible characters, is enforced while typing and pasting, and must also be enforced by the
  * server, which cleans the HTML (see `rich-text-sanitize.ts`). It takes its initial content once — remount it to reset.
  */
@@ -109,7 +109,6 @@ export function RichTextField({ id, label, value, maxLength, hint, error, disabl
       link: current?.isActive("link") ?? false,
       color: Boolean(current?.getAttributes("textStyle").color),
       highlight: current?.isActive("highlight") ?? false,
-      length: current?.state.doc.textContent.length ?? 0,
     }),
   });
   const off = disabled || !editor;
@@ -120,7 +119,6 @@ export function RichTextField({ id, label, value, maxLength, hint, error, disabl
       label={label}
       hint={hint}
       error={error}
-      counter={<span aria-live="polite" className={`field-message shrink-0 ${state && state.length >= maxLength ? "field-message-error" : "field-message-hint"}`}>{(state?.length ?? 0).toLocaleString("fa-IR")} از {maxLength.toLocaleString("fa-IR")} کاراکتر</span>}
     >
       <div className={`mt-2 overflow-hidden rounded-xl border bg-[var(--surface)] transition focus-within:border-[var(--field-border-focus)] focus-within:shadow-[0_0_0_4px_color-mix(in_srgb,var(--focus)_10%,transparent)] ${error ? "border-[var(--danger)]" : "border-[var(--field-border)]"} ${disabled ? "opacity-60" : ""}`}>
         <div className="flex flex-wrap items-center gap-0.5 border-b border-[var(--border)] px-1.5 py-1" role="toolbar" aria-label="قالب‌بندی متن">
