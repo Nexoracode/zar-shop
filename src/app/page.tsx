@@ -3,6 +3,7 @@ import { connection } from "next/server";
 import { PageBuilder } from "@/components/page-builder";
 import { getCurrentUser } from "@/modules/auth/session";
 import { hasPermission } from "@/modules/auth/permissions";
+import { getHomepageSettings } from "@/modules/settings/homepage-settings";
 import { resolveStorefrontHome } from "@/storefront/resolve-storefront";
 import { env } from "@/lib/env";
 
@@ -26,7 +27,7 @@ export default async function HomePage() {
   return (
     <>
       <StorefrontHome />
-      {canEditPages ? <PageBuilder /> : null}
+      {canEditPages ? <PageBuilder initialSections={(await getHomepageSettings()).sections} /> : null}
     </>
   );
 }

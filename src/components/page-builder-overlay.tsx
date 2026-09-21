@@ -46,11 +46,11 @@ const toolbarPillClass = "flex items-center rounded-xl bg-[var(--pb-tool-bg)] p-
 // sits above the frames (z-126) and the dock (z-130). Its arrow is recolored to match the dark fill.
 const tooltipClass = "z-[140] rounded-lg bg-[var(--pb-tool-bg)] px-3 py-1.5 text-center text-xs font-medium text-white [&_[data-slot='overlay-arrow']]:fill-[var(--pb-tool-bg)] [&_[data-slot='overlay-arrow']]:stroke-transparent";
 
-function ToolbarButton({ label, children }: { label: string; children: ReactNode }) {
+function ToolbarButton({ label, onPress, children }: { label: string; onPress?: () => void; children: ReactNode }) {
   return (
     <Tooltip delay={200} closeDelay={0}>
       <Tooltip.Trigger className="inline-flex">
-        <Button type="button" isIconOnly variant="ghost" aria-label={label} className={toolButtonClass}>{children}</Button>
+        <Button type="button" isIconOnly variant="ghost" aria-label={label} onPress={onPress} className={toolButtonClass}>{children}</Button>
       </Tooltip.Trigger>
       <Tooltip.Content showArrow dir="rtl" className={tooltipClass}>{label}</Tooltip.Content>
     </Tooltip>
@@ -69,7 +69,14 @@ const toolbarSeparatorClass = "mx-1 h-5 w-px bg-white/25";
  * and this way nothing in the templates has to know about the builder beyond the section attribute.
  * Positions are written straight to the DOM in a rAF loop so scrolling never re-renders React.
  */
-export function PageBuilderOverlay({ active }: { active: boolean }) {
+export function PageBuilderOverlay({ active, layoutKey, onMove, onRemove }: {
+  active: boolean;
+  /** Changes whenever the draft layout does, so the frame re-measures and follows a section that moved. */
+  layoutKey: string;
+  onMove: (sectionId: string, direction: -1 | 1) => void;
+  /** Returns whether the section was actually removed. */
+  onRemove: (sectionId: string) => boolean;
+}) {
   const [selected, setSelected] = useState<HTMLElement | null>(null);
   const hoveredRef = useRef<HTMLElement | null>(null);
   const selectedRef = useRef<HTMLElement | null>(null);
@@ -178,22 +185,31 @@ export function PageBuilderOverlay({ active }: { active: boolean }) {
     return () => observer.disconnect();
   }, [active, selected, schedule]);
 
+  // A moved section lands somewhere else on the page; re-measure and bring it back into view.
+  useEffect(() => {
+    if (!active || !selectedRef.current) return;
+    schedule();
+    selectedRef.current.scrollIntoView({ block: "nearest" });
+  }, [active, layoutKey, schedule]);
+
+  const selectedId = selected?.getAttribute(BUILDER_SECTION_ATTRIBUTE) ?? null;
+
   if (!active) return null;
 
   return (
     <div dir="rtl">
       <div ref={hoverBoxRef} className="pointer-events-none fixed left-0 top-0 z-[125] hidden rounded-[3px] border-2 border-solid border-[var(--pb-accent)] shadow-[0_0_0_4px_var(--pb-glow),0_10px_28px_var(--pb-shadow)]" />
       <div ref={selectedBoxRef} className="pointer-events-none fixed left-0 top-0 z-[126] hidden border-[3px] border-solid border-[var(--pb-frame)] [border-top-color:var(--pb-accent-strong)] [border-top-style:dashed] [border-top-width:1px]">
-        <span className="absolute right-0 top-0 rounded-bl-lg bg-[var(--pb-accent-strong)] px-3.5 py-1 text-xs font-bold text-white">{builderSectionLabel(selected?.getAttribute(BUILDER_SECTION_ATTRIBUTE) ?? undefined)}</span>
+        <span className="absolute right-0 top-0 rounded-bl-lg bg-[var(--pb-accent-strong)] px-3.5 py-1 text-xs font-bold text-white">{builderSectionLabel(selectedId ?? undefined)}</span>
         <div ref={toolbarRef} data-page-builder-ui className="absolute left-1/2 flex -translate-x-1/2 items-center gap-2">
           <div className={toolbarPillClass}>
             <ToolbarButton label="ویرایش بخش"><Pencil size={20} /></ToolbarButton>
             <ToolbarButton label="تنظیمات نمایش"><SectionSettingsIcon /></ToolbarButton>
             <span className={toolbarSeparatorClass} />
-            <ToolbarButton label="بردن به بالا"><ArrowUp size={20} /></ToolbarButton>
-            <ToolbarButton label="بردن به پایین"><ArrowDown size={20} /></ToolbarButton>
+            <ToolbarButton label="بردن به بالا" onPress={() => selectedId && onMove(selectedId, -1)}><ArrowUp size={20} /></ToolbarButton>
+            <ToolbarButton label="بردن به پایین" onPress={() => selectedId && onMove(selectedId, 1)}><ArrowDown size={20} /></ToolbarButton>
             <span className={toolbarSeparatorClass} />
-            <ToolbarButton label="حذف"><Trash2 size={20} /></ToolbarButton>
+            <ToolbarButton label="حذف" onPress={() => { if (selectedId && onRemove(selectedId)) select(null); }}><Trash2 size={20} /></ToolbarButton>
           </div>
           <div className={toolbarPillClass}>
             <ToolbarButton label="افزودن بخش"><Plus size={20} /></ToolbarButton>
