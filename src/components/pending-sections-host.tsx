@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { BannerSlider } from "@/components/banner-slider";
+import { StorefrontHeroSlider } from "@/components/storefront-hero-slider";
 import { ProductListSection } from "@/components/product-list-section";
 import { usePendingSections } from "@/components/pending-sections-store";
 import { StorefrontImageTiles } from "@/components/storefront-image-tiles";
@@ -64,15 +65,23 @@ function PendingBanner({ id, layout, items }: { id: string; layout: string; item
 }
 
 /**
- * The sections that were added in the page builder and are not saved yet, drawn in the homepage like the real ones so
- * the draft can be seen and arranged. Their order and display switches come from the builder's stylesheet, exactly as
- * for the saved sections. Only mounted for viewers who can edit the page.
+ * What the page builder changed and hasn't saved yet, drawn in the homepage like the real thing: the sections that were
+ * added, and the existing sections whose content was edited (the builder's stylesheet hides their server-rendered
+ * version). Their order and display switches come from that stylesheet, exactly as for the saved sections. Only mounted
+ * for viewers who can edit the page.
  */
 export function PendingSectionsHost({ industry }: { industry: "GOLD" | "GENERAL" }) {
   const pending = usePendingSections();
+  // `data-builder-draft` marks these as the browser's copy, so the stylesheet that hides a replaced section spares them.
+  const marks = (id: string) => ({ ...builderSectionProps(id as HomepageLayoutItemId), "data-builder-draft": "" });
   // A full-width banner runs edge to edge; everything else sits inside the store's content width.
   const wrap = (id: string, content: ReactNode, fullWidth: boolean) => industry === "GOLD"
-    ? <section key={id} {...builderSectionProps(id as HomepageLayoutItemId)} className="bg-white py-5 lg:py-10"><div className={fullWidth ? undefined : container}>{content}</div></section>
-    : <div key={id} {...builderSectionProps(id as HomepageLayoutItemId)} className={fullWidth ? undefined : container}>{content}</div>;
-  return <>{Object.entries(pending).map(([id, section]) => wrap(id, section.kind === "list" ? <PendingProductList id={id} config={section.config} /> : <PendingBanner id={id} layout={section.layout} items={section.items} />, section.kind === "banner" && isFullWidthLayout(section.layout)))}</>;
+    ? <section key={id} {...marks(id)} className="bg-white py-5 lg:py-10"><div className={fullWidth ? undefined : container}>{content}</div></section>
+    : <div key={id} {...marks(id)} className={fullWidth ? undefined : container}>{content}</div>;
+  return <>{Object.entries(pending).map(([id, section]) => {
+    // The main slider is a full-bleed section of its own in both templates.
+    if (section.kind === "hero") return <section key={id} {...marks(id)} className="bg-white"><StorefrontHeroSlider slides={bannerSlides(section.items)} contentMode={section.content.contentMode} title={section.content.title} description={section.content.description} buttonLabel={section.content.buttonLabel} editable /></section>;
+    if (section.kind === "list") return wrap(id, <PendingProductList id={id} config={section.config} />, false);
+    return wrap(id, <PendingBanner id={id} layout={section.layout} items={section.items} />, section.kind === "banner" && isFullWidthLayout(section.layout));
+  })}</>;
 }

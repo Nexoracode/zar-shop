@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Button, Modal, Spinner, toast } from "@heroui/react";
+import { Button, Modal } from "@heroui/react";
 import { ArrowRight, Smartphone, Trash2, X } from "lucide-react";
 import { CheckboxCard } from "@/components/checkbox-card";
 import { InlineAlert } from "@/components/inline-alert";
@@ -19,7 +19,7 @@ import { homepageFieldLimits } from "@/modules/settings/settings-limits";
  * know where banners are stored: `save` gets the whole new list and stores it. The back arrow returns to the banner
  * list, the X closes the builder's dialogs.
  */
-export function BannerItemDialog({ items, itemId, allowMobile, allowDelete, maxItems, sizeHints, quiet = false, save, onSaved, onBack, onClose }: {
+export function BannerItemDialog({ items, itemId, allowMobile, allowDelete, maxItems, sizeHints, save, onSaved, onBack, onClose }: {
   items: HeroSlideDraft[];
   itemId: string | null;
   allowMobile: boolean;
@@ -28,9 +28,8 @@ export function BannerItemDialog({ items, itemId, allowMobile, allowDelete, maxI
   maxItems: number | null;
   /** Recommended picture sizes, when there are any to recommend. */
   sizeHints?: { desktop: string; mobile: string };
-  /** No "saved" message: nothing was stored on the server (the banner belongs to the page builder's draft). */
-  quiet?: boolean;
-  save: (next: HeroSlideDraft[]) => Promise<void>;
+  /** Hands the new list of banners to the page builder's draft; nothing is sent to the server from here. */
+  save: (next: HeroSlideDraft[]) => void;
   onSaved: () => void;
   onBack: () => void;
   onClose: () => void;
@@ -39,8 +38,6 @@ export function BannerItemDialog({ items, itemId, allowMobile, allowDelete, maxI
   const isNew = existingIndex < 0;
   const [item, setItem] = useState<HeroSlideDraft>(() => (isNew ? { id: crypto.randomUUID(), href: "/products", desktopMedia: null, mobileMedia: null } : items[existingIndex]));
   const [errors, setErrors] = useState<HeroSlideErrors>({});
-  const [formError, setFormError] = useState("");
-  const [saving, setSaving] = useState(false);
   const [picker, setPicker] = useState<"desktop" | "mobile" | null>(null);
   // The phone picture is opt-in: closed unless the banner already has one. Closing it again drops that picture.
   const [wantsMobile, setWantsMobile] = useState(Boolean(item.mobileMedia));
@@ -49,67 +46,55 @@ export function BannerItemDialog({ items, itemId, allowMobile, allowDelete, maxI
   const title = isNew ? "افزودن بنر" : `ویرایش ${heroSlideLabel(existingIndex)}`;
   const pickedMedia = picker ? item[picker === "desktop" ? "desktopMedia" : "mobileMedia"] : null;
 
-  async function persist(next: HeroSlideDraft[], successMessage: string) {
-    setSaving(true);
-    setFormError("");
-    try {
-      await save(next);
-      if (!quiet) toast.success(successMessage);
-      onSaved();
-    } catch (reason) {
-      setFormError(reason instanceof Error ? reason.message : "ذخیره بنر انجام نشد.");
-    } finally {
-      setSaving(false);
-    }
+  function persist(next: HeroSlideDraft[]) {
+    save(next);
+    onSaved();
   }
 
-  async function submit() {
+  function submit() {
     const itemErrors = validateHeroSlide(item);
     setErrors(itemErrors);
     if (itemErrors.desktop || itemErrors.href) {
       document.getElementById(itemErrors.desktop ? "builder-banner-desktop" : "builder-banner-href")?.focus();
       return;
     }
-    await persist(isNew ? [...items, item] : items.map((current) => (current.id === item.id ? item : current)), isNew ? "بنر اضافه شد" : "بنر ذخیره شد");
+    persist(isNew ? [...items, item] : items.map((current) => (current.id === item.id ? item : current)));
   }
 
-  async function confirmDelete() {
+  function confirmDelete() {
     setConfirmingDelete(false);
-    await persist(items.filter((current) => current.id !== item.id), "بنر حذف شد");
+    persist(items.filter((current) => current.id !== item.id));
   }
 
   return (
     <>
-      <Modal.Backdrop isOpen={picker === null && !confirmingDelete} onOpenChange={(next) => { if (!next && !saving) onClose(); }} variant="blur" className="z-[150]">
+      <Modal.Backdrop isOpen={picker === null && !confirmingDelete} onOpenChange={(next) => { if (!next) onClose(); }} variant="blur" className="z-[150]">
         <Modal.Container size="md" placement="center">
           <Modal.Dialog data-page-builder-ui aria-label={title} dir="rtl" className="p-0 mx-4 max-w-[560px] bg-[var(--surface)] text-right">
             <Modal.Header className="flex-row items-center justify-between border-b border-[var(--border)] py-3 ps-5 pe-3">
               <div className="flex min-w-0 items-center gap-3">
-                <Button type="button" isIconOnly variant="ghost" isDisabled={saving} aria-label="بازگشت به فهرست بنرها" onPress={onBack} className="size-9 min-h-9 min-w-9 text-[var(--muted)]"><ArrowRight size={20} /></Button>
+                <Button type="button" isIconOnly variant="ghost" aria-label="بازگشت به فهرست بنرها" onPress={onBack} className="size-9 min-h-9 min-w-9 text-[var(--muted)]"><ArrowRight size={20} /></Button>
                 <Modal.Heading className="text-base font-bold">{title}</Modal.Heading>
               </div>
               <Modal.CloseTrigger aria-label="بستن" className="static grid size-9 place-items-center rounded-lg text-[var(--muted)]"><X size={20} /></Modal.CloseTrigger>
             </Modal.Header>
             <Modal.Body className="m-0 grid max-h-[62vh] gap-5 overflow-y-auto p-5">
               {full && <InlineAlert status="warning" compact>{maxItems === null ? "تعداد بنرهای این ظاهر ثابت است؛ برای افزودن بنر ظاهر را عوض کنید." : `این اسلایدر به سقف ${maxItems.toLocaleString("fa-IR")} بنر رسیده است؛ برای افزودن، ابتدا یکی از بنرها را حذف کنید.`}</InlineAlert>}
-              <BuilderImagePreview id="builder-banner-desktop" label={allowMobile ? "تصویر دسکتاپ" : "تصویر بنر"} required media={item.desktopMedia} hint={sizeHints ? <>اندازهٔ پیشنهادی: <span dir="ltr">{sizeHints.desktop}</span> پیکسل</> : undefined} error={errors.desktop} disabled={saving} onPick={() => setPicker("desktop")} />
-              {allowMobile && <CheckboxCard icon={<Smartphone size={18} />} isSelected={wantsMobile} isDisabled={saving} onChange={(next) => { setWantsMobile(next); if (!next) setItem((current) => ({ ...current, mobileMedia: null })); }}>افزودن تصویر مخصوص موبایل</CheckboxCard>}
-              {allowMobile && wantsMobile && <BuilderImagePreview id="builder-banner-mobile" label="تصویر موبایل" media={item.mobileMedia} heightClass="h-32" hint={<>اختیاری؛ بدون آن تصویر دسکتاپ نمایش داده می‌شود.{sizeHints && <> اندازهٔ پیشنهادی: <span dir="ltr">{sizeHints.mobile}</span> پیکسل</>}</>} disabled={saving} onPick={() => setPicker("mobile")} onClear={() => setItem((current) => ({ ...current, mobileMedia: null }))} />}
-              <TextField id="builder-banner-href" label="لینک مقصد (URL)" dir="ltr" value={item.href} maxLength={homepageFieldLimits.href} error={errors.href} disabled={saving} onChange={(event) => { setItem((current) => ({ ...current, href: event.target.value })); setErrors((current) => ({ ...current, href: undefined })); }} />
-              {formError && <InlineAlert status="danger" compact>{formError}</InlineAlert>}
+              <BuilderImagePreview id="builder-banner-desktop" label={allowMobile ? "تصویر دسکتاپ" : "تصویر بنر"} required media={item.desktopMedia} hint={sizeHints ? <>اندازهٔ پیشنهادی: <span dir="ltr">{sizeHints.desktop}</span> پیکسل</> : undefined} error={errors.desktop} onPick={() => setPicker("desktop")} />
+              {allowMobile && <CheckboxCard icon={<Smartphone size={18} />} isSelected={wantsMobile} onChange={(next) => { setWantsMobile(next); if (!next) setItem((current) => ({ ...current, mobileMedia: null })); }}>افزودن تصویر مخصوص موبایل</CheckboxCard>}
+              {allowMobile && wantsMobile && <BuilderImagePreview id="builder-banner-mobile" label="تصویر موبایل" media={item.mobileMedia} heightClass="h-32" hint={<>اختیاری؛ بدون آن تصویر دسکتاپ نمایش داده می‌شود.{sizeHints && <> اندازهٔ پیشنهادی: <span dir="ltr">{sizeHints.mobile}</span> پیکسل</>}</>} onPick={() => setPicker("mobile")} onClear={() => setItem((current) => ({ ...current, mobileMedia: null }))} />}
+              <TextField id="builder-banner-href" label="لینک مقصد (URL)" dir="ltr" value={item.href} maxLength={homepageFieldLimits.href} error={errors.href} onChange={(event) => { setItem((current) => ({ ...current, href: event.target.value })); setErrors((current) => ({ ...current, href: undefined })); }} />
             </Modal.Body>
             <Modal.Footer className="m-0 justify-start gap-3 border-t border-[var(--border)] p-5">
-              <Button type="button" variant="primary" isPending={saving} isDisabled={full} onPress={() => void submit()} className="min-h-11 min-w-24 rounded-xl px-6 text-sm font-bold" style={brandPrimaryButtonStyle}>
-                {({ isPending }) => <>{isPending && <Spinner color="current" size="sm" />}{isNew ? "افزودن" : "تأیید"}</>}
-              </Button>
-              <Button type="button" variant="outline" isDisabled={saving} onPress={onBack} className="min-h-11 rounded-xl px-6 text-sm font-bold">انصراف</Button>
-              {!isNew && allowDelete && <Button type="button" variant="ghost" isDisabled={saving} onPress={() => setConfirmingDelete(true)} className="mr-auto min-h-11 gap-1.5 rounded-xl px-3 text-sm font-bold text-[var(--danger)]"><Trash2 size={16} />حذف</Button>}
+              <Button type="button" variant="primary" isDisabled={full} onPress={submit} className="min-h-11 min-w-24 rounded-xl px-6 text-sm font-bold" style={brandPrimaryButtonStyle}>{isNew ? "افزودن" : "تأیید"}</Button>
+              <Button type="button" variant="outline" onPress={onBack} className="min-h-11 rounded-xl px-6 text-sm font-bold">انصراف</Button>
+              {!isNew && allowDelete && <Button type="button" variant="ghost" onPress={() => setConfirmingDelete(true)} className="mr-auto min-h-11 gap-1.5 rounded-xl px-3 text-sm font-bold text-[var(--danger)]"><Trash2 size={16} />حذف</Button>}
             </Modal.Footer>
           </Modal.Dialog>
         </Modal.Container>
       </Modal.Backdrop>
       {confirmingDelete && (
-        <PageBuilderConfirmDialog title={`حذف ${heroSlideLabel(existingIndex)}`} confirmLabel="حذف بنر" onConfirm={() => void confirmDelete()} onClose={() => setConfirmingDelete(false)}>
+        <PageBuilderConfirmDialog title={`حذف ${heroSlideLabel(existingIndex)}`} confirmLabel="حذف بنر" onConfirm={confirmDelete} onClose={() => setConfirmingDelete(false)}>
           این بنر حذف می‌شود و <b className="text-[var(--foreground)]">امکان بازگرداندن آن وجود ندارد.</b> آیا از حذف آن مطمئن هستید؟
         </PageBuilderConfirmDialog>
       )}

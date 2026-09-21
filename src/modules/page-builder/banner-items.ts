@@ -11,10 +11,8 @@ export type BannerSet = {
   kind: "hero" | "tiles" | "slider";
   layout: BannerLayout;
   items: BannerItem[];
-  /** The set only exists in the page builder's draft: saving it sends nothing to the server and needs no refresh. */
-  local?: boolean;
-  /** Stores the new list of banners (and, for looks that can change, the new look). */
-  save: (items: BannerItem[], layout: BannerLayout) => Promise<void>;
+  /** Hands the new list of banners (and, for looks that can change, the new look) to the page builder's draft. */
+  save: (items: BannerItem[], layout: BannerLayout) => void;
 };
 
 /** The banners of a tile look are exactly `count`: extra ones are dropped, missing ones start empty. */

@@ -17,13 +17,13 @@ import { SectionDisplayDialog } from "@/components/section-display-dialog";
 import { SectionEditDialog } from "@/components/section-edit-dialog";
 import { displayCss, sameDisplay, sectionDisplay, sectionDisplayConfig, setSectionDisplay, type DynamicDisplayConfig, type PageBuilderIndustry, type PageDisplay, type SectionDisplay, type SectionDisplayConfig } from "@/modules/page-builder/display-parts";
 import { sectionEditItems, type EditItem } from "@/modules/page-builder/edit-items";
-import type { HeroValues } from "@/modules/page-builder/hero-payload";
-import { bannerSliderDisplayConfig, newBannerSliderId } from "@/modules/page-builder/banner-sliders";
+import { heroSettingsPayload, type HeroValues } from "@/modules/page-builder/hero-payload";
+import { bannerSliderDisplayConfig, newBannerSliderId, pruneDisplayForBanner } from "@/modules/page-builder/banner-sliders";
 import { bannerTileCount, isBannerSectionId, isTileLayout, type BannerLayout } from "@/modules/page-builder/banners";
-import { resizeBannerItems, sliderConfigPayload, type TileGroupView } from "@/modules/page-builder/banner-items";
-import { pendingInLayout, type PendingSection, type PendingSections } from "@/modules/page-builder/pending-sections";
+import { resizeBannerItems, sliderConfigPayload, tileGroupsPayload, type TileGroupView } from "@/modules/page-builder/banner-items";
+import { hostSections, identityEditKey, menuEditKey, replacedSectionsCss, type ContentEdit, type ContentEdits, type PendingSection, type PendingSections } from "@/modules/page-builder/pending-sections";
 import { newProductListConfig, newProductListId, productListDisplayConfig, pruneDisplayForList, type ProductListConfig, type ProductListLayout } from "@/modules/page-builder/product-lists";
-import { isSectionSettingsId, type PageSectionSettingsBundle } from "@/modules/page-builder/section-settings";
+import { isSectionSettingsId, type CategoriesSectionSettings, type PageSectionSettingsBundle } from "@/modules/page-builder/section-settings";
 import { insertSection, isLayoutSection, layoutCss, moveSection, removeSection, sameLayout, sectionSelector, type LayoutSection } from "@/modules/page-builder/layout-draft";
 import { builderSectionLabel } from "@/modules/page-builder/sections";
 import type { HomepageMenuItem, HomepageMenuLinkOption } from "@/modules/settings/homepage-settings";
@@ -42,6 +42,19 @@ async function sendJson(method: "POST" | "PATCH", url: string, body: unknown, fa
 
 const patchJson = (url: string, body: unknown, fallbackMessage: string) => sendJson("PATCH", url, body, fallbackMessage);
 
+// One edit of an existing section's content, sent to the store it lives in.
+function saveEdit(key: string, edit: ContentEdit, hero: HeroValues) {
+  switch (edit.kind) {
+    case "hero": return patchJson("/api/admin/settings/homepage/hero", heroSettingsPayload(hero, edit.items), "ذخیره اسلایدر اصلی انجام نشد.");
+    case "list": return patchJson("/api/admin/settings/product-lists", { id: key, config: edit.config }, "ذخیره لیست محصولات انجام نشد.");
+    case "banner": return patchJson("/api/admin/settings/banner-sliders", { id: key, config: sliderConfigPayload(edit.layout, edit.items) }, "ذخیره بنر انجام نشد.");
+    case "categories": return patchJson("/api/admin/settings/page-sections", { sectionId: "CATEGORIES", settings: edit.settings }, "ذخیره تنظیمات دسته‌بندی‌ها انجام نشد.");
+    case "identity": return patchJson("/api/admin/settings/storefront-identity", { storeName: edit.values.storeName, tagline: edit.values.tagline, mainLogoMediaId: edit.values.logo?.id ?? null }, "ذخیره نام، شعار و لوگو انجام نشد.");
+    case "menu": return patchJson("/api/admin/settings/homepage/menu", { menuItems: edit.items.map((item) => ({ id: item.id, label: item.label, href: item.href })) }, "ذخیره منو انجام نشد.");
+    default: return Promise.resolve();
+  }
+}
+
 // A section added in this edit is created on the server, under the id it has had in the draft all along, just before
 // the layout that contains it is saved (the server keeps it a hidden draft until then).
 function createPendingSection(id: string, section: PendingSection) {
@@ -55,8 +68,11 @@ function createPendingSection(id: string, section: PendingSection) {
  * the page goes into edit mode (and the overlay turns on) once "edit page appearance" is pressed.
  *
  * Edits (remove, move up/down, display settings) are a draft over the store's page layout: they show on the page
- * at once through an injected stylesheet, can be undone and redone, and only reach the store on "save". Removing a
- * section asks for confirmation first, because once the change is saved there is no way back.
+ * at once through an injected stylesheet, can be undone and redone, and only reach the store on "save". So does
+ * everything else: the sections added here and every change to the content of an existing section (banners, lists,
+ * the category strip, the header) are kept in the browser — the homepage draws them itself (`PendingSectionsHost`) —
+ * and "cancel" just drops them. Removing a section asks for confirmation first, because once the change is saved
+ * there is no way back.
  */
 export function PageBuilder({ initialSections, initialDisplay, industry, identity, menu, hero, sectionSettings, categoryOptions, tileGroups, bannerSliders }: {
   initialSections: LayoutSection[];
@@ -88,24 +104,52 @@ export function PageBuilder({ initialSections, initialDisplay, industry, identit
   const [editSection, setEditSection] = useState<string | null>(null);
   // The group of settings picked in the edit dialog's list (see `edit-items.ts`), once a form is open.
   const [editItem, setEditItem] = useState<string | null>(null);
-  // Product lists created or saved during this visit; they win over what the server sent until the page catches up.
-  const [localLists, setLocalLists] = useState<Record<string, ProductListConfig>>({});
   const [addStep, setAddStep] = useState<"type" | "layout" | "banner" | null>(null);
   // The section whose "add" button was pressed; the new one goes right below it.
   const [addAfter, setAddAfter] = useState<string | null>(null);
   // Sections added during this edit live only here until "save" (see modules/page-builder/pending-sections.ts).
   const [pending, setPending] = useState<PendingSections>({});
-  const pendingLists = Object.fromEntries(Object.entries(pending).flatMap(([id, section]) => (section.kind === "list" ? [[id, section.config] as const] : [])));
-  const pendingBanners = Object.fromEntries(Object.entries(pending).flatMap(([id, section]) => (section.kind === "banner" ? [[id, { layout: section.layout, items: section.items }] as const] : [])));
-  const productLists = { ...sectionSettings.productLists, ...localLists, ...pendingLists };
+  // Changes to the content of existing sections, likewise kept here until "save".
+  const [edits, setEdits] = useState<ContentEdits>({});
+  // Set while a saved page is being re-read from the server: the draft copies stay until the fresh page arrives.
+  const [refreshingFrom, setRefreshingFrom] = useState<PageSectionSettingsBundle | null>(null);
+  if (refreshingFrom && refreshingFrom !== sectionSettings) {
+    setRefreshingFrom(null);
+    setPending({});
+    setEdits({});
+  }
+
+  // What the forms and the page show: the server's values with the draft's edits on top.
+  const heroEdit = edits.HERO?.kind === "hero" ? edits.HERO : null;
+  const effectiveHero: HeroValues = heroEdit ? { ...hero, slides: heroEdit.items } : hero;
+  const effectiveTileGroups: TileGroupView[] = tileGroups.map((group) => {
+    const edit = edits[`TILE_GROUP:${group.id}`];
+    return edit?.kind === "tiles" ? { id: group.id, layout: edit.layout, items: edit.items } : group;
+  });
+  const effectiveSliders: Record<string, SliderView> = { ...bannerSliders };
+  const productLists: Record<string, ProductListConfig> = { ...sectionSettings.productLists };
+  for (const [id, edit] of Object.entries(edits)) {
+    if (edit.kind === "banner") effectiveSliders[id] = { layout: edit.layout, items: edit.items };
+    else if (edit.kind === "list") productLists[id] = edit.config;
+  }
+  for (const [id, section] of Object.entries(pending)) {
+    if (section.kind === "banner") effectiveSliders[id] = { layout: section.layout, items: section.items };
+    else productLists[id] = section.config;
+  }
+  const categoriesEdit = edits.CATEGORIES?.kind === "categories" ? edits.CATEGORIES.settings : null;
+  const identityEdit = edits[identityEditKey]?.kind === "identity" ? edits[identityEditKey].values : null;
+  const menuEdit = edits[menuEditKey]?.kind === "menu" ? edits[menuEditKey].items : null;
   const { layout, display } = draft.current;
 
-  // The pending sections that are on the draft page are drawn in it by the homepage (see PendingSectionsHost).
-  const visiblePending = useMemo(() => pendingInLayout(pending, layout), [pending, layout]);
+  // What the homepage has to draw itself: the added sections and the edited ones that can be shown from here.
+  const hostDraft = useMemo(
+    () => hostSections(pending, edits, layout, { contentMode: hero.contentMode, title: hero.title, description: hero.description, buttonLabel: hero.buttonLabel }),
+    [pending, edits, layout, hero.contentMode, hero.title, hero.description, hero.buttonLabel],
+  );
   useEffect(() => {
-    setPendingSections(visiblePending);
+    setPendingSections(hostDraft);
     return () => setPendingSections({});
-  }, [visiblePending]);
+  }, [hostDraft]);
 
   const commit = (next: Snapshot) => setDraft((state) => ({ current: next, past: [...state.past, state.current], future: [] }));
   const undo = () => setDraft((state) => (state.past.length ? { current: state.past[state.past.length - 1], past: state.past.slice(0, -1), future: [state.current, ...state.future] } : state));
@@ -137,7 +181,7 @@ export function PageBuilder({ initialSections, initialDisplay, industry, identit
   // layout section without an entry still gets the whole-section switch.
   const productListConfig: DynamicDisplayConfig = (id) => {
     if (productLists[id]) return productListDisplayConfig(productLists[id], industry);
-    const bannerSet = pendingBanners[id] ?? sectionSettings.bannerSliders[id] ?? bannerSliders[id];
+    const bannerSet = effectiveSliders[id] ?? sectionSettings.bannerSliders[id];
     return bannerSet ? bannerSliderDisplayConfig(bannerSet) : null;
   };
 
@@ -155,22 +199,38 @@ export function PageBuilder({ initialSections, initialDisplay, industry, identit
     else toast.info("ویرایش این بخش هنوز اضافه نشده است");
   }
 
-  function finishEdit() {
-    setEditItem(null);
-    setEditSection(null);
-    router.refresh();
+  // An edit of some content is kept in the draft (a new section's is part of the section itself).
+  function setEdit(key: string, edit: ContentEdit) {
+    setEdits((current) => ({ ...current, [key]: edit }));
   }
 
-  // A list was saved: remember it, and drop the switches its new layout doesn't have (the server did the same). A list
-  // that only exists in the draft is just updated there.
+  function closeEdit(message = "تغییر ثبت شد؛ با «ذخیره» در صفحه اعمال می‌شود") {
+    setEditItem(null);
+    setEditSection(null);
+    toast.info(message);
+  }
+
+  // The display switches a section's new look doesn't have are dropped from the draft (the server drops them from the
+  // stored ones when the edit is saved).
+  function pruneDraftDisplay(prune: (display: PageDisplay) => PageDisplay) {
+    const apply = (snapshot: Snapshot): Snapshot => ({ ...snapshot, display: prune(snapshot.display) });
+    setDraft((state) => ({ current: apply(state.current), past: state.past.map(apply), future: state.future.map(apply) }));
+  }
+
   function listSaved(id: string, config: ProductListConfig) {
     if (pending[id]) setPending((current) => ({ ...current, [id]: { kind: "list", config } }));
-    else setLocalLists((current) => ({ ...current, [id]: config }));
-    const prune = (snapshot: Snapshot): Snapshot => ({ ...snapshot, display: pruneDisplayForList(snapshot.display, id, config, industry) });
-    setSaved(prune);
-    setDraft((state) => ({ current: prune(state.current), past: state.past.map(prune), future: state.future.map(prune) }));
-    if (pending[id]) setEditSection(null);
-    else finishEdit();
+    else setEdit(id, { kind: "list", config });
+    pruneDraftDisplay((current) => pruneDisplayForList(current, id, config, industry));
+    setEditSection(null);
+  }
+
+  // A banner set's banners or look changed. A pending set is updated where it lives; an existing one becomes an edit.
+  function changeBanner(id: string, view: SliderView) {
+    if (pending[id]) setPending((current) => ({ ...current, [id]: { kind: "banner", layout: view.layout, items: view.items } }));
+    else if (id === "HERO") setEdit(id, { kind: "hero", items: view.items });
+    else if (id.startsWith("TILE_GROUP:")) setEdit(id, { kind: "tiles", layout: view.layout, items: view.items });
+    else setEdit(id, { kind: "banner", layout: view.layout, items: view.items });
+    if (!id.startsWith("TILE_GROUP:") && id !== "HERO") pruneDraftDisplay((current) => pruneDisplayForBanner(current, id, view.layout));
   }
 
   // Sections a "save" created on the server but could not put into the layout (it failed half-way) stay hidden drafts
@@ -240,9 +300,11 @@ export function PageBuilder({ initialSections, initialDisplay, industry, identit
     setSettingsSection(null);
   }
 
-  // Cancelling puts the page back as it was — the sections added during this edit only ever lived here, so they just go.
+  // Cancelling puts the page back as it was — the sections added and the content edited during this visit only ever lived
+  // here, so they just go.
   function cancel() {
     setPending({});
+    setEdits({});
     setDraft({ current: saved, past: [], future: [] });
     setEditing(false);
     setOpen(false);
@@ -251,8 +313,22 @@ export function PageBuilder({ initialSections, initialDisplay, industry, identit
   async function save() {
     setSaving(true);
     let persisted = saved;
+    const done = new Set<string>();
     try {
-      // Two stores, two requests: whatever already went through is remembered, so a retry only resends the rest.
+      // What was edited in existing sections goes first, each into the store it lives in. Edits of sections that were
+      // removed from the draft are dropped. The tile rows go in one request: they are stored together.
+      const onPage = (key: string) => !layout.some((section) => section.id === key && section.removed);
+      const toSave = Object.entries(edits).filter(([key]) => onPage(key));
+      if (toSave.some(([, edit]) => edit.kind === "tiles")) {
+        await patchJson("/api/admin/settings/homepage/tiles", { sections: saved.layout, tileGroups: tileGroupsPayload(effectiveTileGroups) }, "ذخیره بنرها انجام نشد.");
+        toSave.filter(([, edit]) => edit.kind === "tiles").forEach(([key]) => done.add(key));
+      }
+      for (const [key, edit] of toSave) {
+        if (done.has(key)) continue;
+        await saveEdit(key, edit, hero);
+        done.add(key);
+      }
+      // Two more stores, two more requests: whatever already went through is remembered, so a retry only resends the rest.
       if (!sameLayout(layout, persisted.layout)) {
         // The sections added in this edit are created just before the layout that holds them.
         for (const section of layout) {
@@ -266,27 +342,27 @@ export function PageBuilder({ initialSections, initialDisplay, industry, identit
         await patchJson("/api/admin/settings/page-display", { display }, "ذخیره تنظیمات نمایش انجام نشد.");
         persisted = { ...persisted, display };
       }
-      setPending({});
       setSaved(persisted);
       setDraft({ current: persisted, past: [], future: [] });
       setEditing(false);
       setOpen(false);
       toast.success("تغییرات صفحه ذخیره شد");
+      // The draft's copies stay on the page until the fresh, saved page arrives (they are dropped when it does).
+      setRefreshingFrom(sectionSettings);
       router.refresh();
     } catch (reason) {
       setSaved(persisted);
-      // The layout went through, so the added sections are part of the page now; the server's copies replace the draft's.
-      if (persisted.layout !== saved.layout) {
-        setPending({});
-        router.refresh();
-      }
+      // What already went through is on the server now: it stops being an edit here, and the page is re-read.
+      if (done.size) setEdits((current) => Object.fromEntries(Object.entries(current).filter(([key]) => !done.has(key))));
+      if (persisted.layout !== saved.layout) setPending({});
+      if (done.size || persisted.layout !== saved.layout) router.refresh();
       toast.danger("ذخیره تغییرات صفحه انجام نشد", { description: reason instanceof Error ? reason.message : "خطای ناشناخته" });
     } finally {
       setSaving(false);
     }
   }
 
-  const css = layoutCss(layout, { editing }) + displayCss(display, { editing });
+  const css = layoutCss(layout, { editing }) + displayCss(display, { editing }) + replacedSectionsCss(hostDraft);
 
   return (
     <>
@@ -301,7 +377,7 @@ export function PageBuilder({ initialSections, initialDisplay, industry, identit
         onCancel={cancel}
         onUndo={undo}
         onRedo={redo}
-        canSave={!sameLayout(layout, saved.layout) || !sameDisplay(display, saved.display)}
+        canSave={!sameLayout(layout, saved.layout) || !sameDisplay(display, saved.display) || Object.keys(edits).length > 0}
         canUndo={draft.past.length > 0}
         canRedo={draft.future.length > 0}
         saving={saving}
@@ -316,27 +392,24 @@ export function PageBuilder({ initialSections, initialDisplay, industry, identit
         />
       )}
       <PageBuilderBanners
-        hero={hero}
-        tileGroups={tileGroups}
-        sliders={bannerSliders}
-        pending={pendingBanners}
-        sections={saved.layout}
+        hero={effectiveHero}
+        tileGroups={effectiveTileGroups}
+        sliders={effectiveSliders}
         editSectionId={editSection && isBannerSectionId(editSection) ? editSection : null}
         adding={addStep === "banner"}
         onEditClose={() => setEditSection(null)}
         onAddBack={() => setAddStep("type")}
         onAddClose={() => setAddStep(null)}
         onCreate={createBanner}
-        onPendingChange={(id, view) => setPending((current) => ({ ...current, [id]: { kind: "banner", layout: view.layout, items: view.items } }))}
-        onChanged={() => router.refresh()}
+        onChange={changeBanner}
       />
-      {editSection && productLists[editSection] && <ProductListDialog key={editSection} listId={editSection} initial={productLists[editSection]} categoryOptions={categoryOptions} local={Boolean(pending[editSection])} onSaved={(config) => listSaved(editSection, config)} onClose={() => setEditSection(null)} />}
+      {editSection && productLists[editSection] && <ProductListDialog key={editSection} listId={editSection} initial={productLists[editSection]} categoryOptions={categoryOptions} onSaved={(config) => listSaved(editSection, config)} onClose={() => setEditSection(null)} />}
       {addStep === "type" && <SectionEditDialog title="افزودن بخش" items={[{ id: "product-list", title: "لیست محصولات", description: "نمایش محصولات با ظاهرهای گوناگون", icon: "list" }, { id: "banner", title: "بنر", description: "اسلایدر یا ردیف‌های تصویری با ظاهرهای گوناگون", icon: "image" }]} onSelect={(item) => setAddStep(item.id === "banner" ? "banner" : "layout")} onClose={() => setAddStep(null)} />}
       {addStep === "layout" && <ProductListLayoutPicker saving={false} onConfirm={createList} onBack={() => setAddStep("type")} onClose={() => setAddStep(null)} />}
-      {editSection && isSectionSettingsId(editSection) && <SectionContentDialog key={editSection} sectionId={editSection} sectionLabel={builderSectionLabel(editSection)} initial={sectionSettings[editSection]} onSaved={finishEdit} onClose={() => setEditSection(null)} />}
-      {/* These forms save on their own (the data lives in other settings, not in the page draft), then the page is refreshed. */}
-      {editSection === "HEADER" && editItem === "identity" && <PageBuilderIdentityDialog initial={identity} onSaved={finishEdit} onClose={() => setEditItem(null)} />}
-      {editSection === "HEADER" && editItem === "menu" && <PageBuilderMenuDialog initialItems={menu.items} linkOptions={menu.linkOptions} onSaved={finishEdit} onClose={() => setEditItem(null)} />}
+      {editSection && isSectionSettingsId(editSection) && <SectionContentDialog key={editSection} sectionId={editSection} sectionLabel={builderSectionLabel(editSection)} initial={categoriesEdit ?? sectionSettings[editSection]} onSaved={(settings) => { setEdit(editSection, { kind: "categories", settings: settings as CategoriesSectionSettings }); closeEdit(); }} onClose={() => setEditSection(null)} />}
+      {/* Their values go into the draft like everything else and are saved with "save" (the header can't show them before that). */}
+      {editSection === "HEADER" && editItem === "identity" && <PageBuilderIdentityDialog initial={identityEdit ?? identity} onConfirm={(values) => { setEdit(identityEditKey, { kind: "identity", values }); closeEdit(); }} onClose={() => setEditItem(null)} />}
+      {editSection === "HEADER" && editItem === "menu" && <PageBuilderMenuDialog initialItems={menuEdit ?? menu.items} linkOptions={menu.linkOptions} onConfirm={(items) => { setEdit(menuEditKey, { kind: "menu", items }); closeEdit(); }} onClose={() => setEditItem(null)} />}
       {settingsSection && (
         <SectionDisplayDialog
           key={settingsSection}

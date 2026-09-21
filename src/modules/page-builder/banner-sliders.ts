@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { DisplayPart, SectionDisplayConfig } from "@/modules/page-builder/display-parts";
+import { normalizeDisplay, type DisplayPart, type PageDisplay, type SectionDisplayConfig } from "@/modules/page-builder/display-parts";
 import { bannerLayouts, bannerSliderMaxSlides, bannerTileCount, isSliderLayout, isTileLayout, type BannerLayout } from "@/modules/page-builder/banners";
 import { safeHrefSchema } from "@/modules/settings/safe-href";
 
@@ -61,4 +61,12 @@ export function bannerSliderDisplayConfig(config: Pick<BannerSliderConfig, "layo
   if (config.layout !== "SLIDER_PEEK") parts.push({ id: "arrows", label: "نمایش فلش‌ها" });
   parts.push({ id: "dots", label: "نمایش نقطه‌ها" });
   return { parts, master: "layout" };
+}
+
+/** Drops the switched-off parts of a banner set that its (new) look no longer has, like `pruneDisplayForList` does for lists. */
+export function pruneDisplayForBanner(display: PageDisplay, id: string, layout: BannerLayout): PageDisplay {
+  const entry = display[id];
+  if (!entry) return display;
+  const valid = new Set(bannerSliderDisplayConfig({ layout }).parts.map((part) => part.id));
+  return normalizeDisplay({ ...display, [id]: { ...entry, hiddenParts: entry.hiddenParts.filter((part) => valid.has(part)) } });
 }

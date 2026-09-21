@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { bannerSliderConfigSchema, bannerSliderDisplayConfig } from "./banner-sliders";
+import { bannerSliderConfigSchema, bannerSliderDisplayConfig, pruneDisplayForBanner } from "./banner-sliders";
 
 const slide = (id: string) => ({ id, desktopMediaId: null, mobileMediaId: null, href: "/products" });
 
@@ -19,4 +19,11 @@ test("only sliders have display switches, and the peeking look has no arrows", (
   assert.deepEqual(bannerSliderDisplayConfig({ layout: "MOSAIC" }).parts, []);
   assert.deepEqual(bannerSliderDisplayConfig({ layout: "SLIDER_PEEK" }).parts.map((part) => part.id), ["dots"]);
   assert.deepEqual(bannerSliderDisplayConfig({ layout: "SLIDER_WIDE" }).parts.map((part) => part.id), ["arrows", "dots"]);
+});
+
+test("changing a slider's look drops the switches the new look doesn't have", () => {
+  const display = { "BANNER_SLIDER:a": { enabled: true, hiddenParts: ["arrows", "dots"] } };
+  assert.deepEqual(pruneDisplayForBanner(display, "BANNER_SLIDER:a", "SLIDER_PEEK"), { "BANNER_SLIDER:a": { enabled: true, hiddenParts: ["dots"] } });
+  assert.deepEqual(pruneDisplayForBanner(display, "BANNER_SLIDER:a", "MOSAIC"), {});
+  assert.equal(pruneDisplayForBanner(display, "BANNER_SLIDER:z", "MOSAIC"), display);
 });

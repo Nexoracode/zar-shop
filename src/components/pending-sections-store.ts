@@ -1,14 +1,15 @@
 import { useSyncExternalStore } from "react";
-import type { PendingSections } from "@/modules/page-builder/pending-sections";
+import type { HostSections } from "@/modules/page-builder/pending-sections";
 
 // The page builder and the homepage's `PendingSectionsHost` live in different parts of the tree (the builder is a
-// sibling of the server-rendered home), so the sections that only exist in the builder's draft are handed over here.
+// sibling of the server-rendered home), so the sections that only exist in the builder's draft — or whose content was
+// edited there — are handed over here.
 
-const empty: PendingSections = {};
-let current: PendingSections = empty;
+const empty: HostSections = {};
+let current: HostSections = empty;
 const listeners = new Set<() => void>();
 
-export function setPendingSections(next: PendingSections) {
+export function setPendingSections(next: HostSections) {
   current = next;
   listeners.forEach((listener) => listener());
 }
