@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { BannerSlider } from "@/components/banner-slider";
+import { CategoriesContent, categoriesSectionClass, type CategoryStripItem } from "@/components/categories-section";
 import { StorefrontHeroSlider } from "@/components/storefront-hero-slider";
 import { ProductListSection } from "@/components/product-list-section";
 import { usePendingSections } from "@/components/pending-sections-store";
@@ -11,10 +12,15 @@ import type { BannerSlide } from "@/modules/page-builder/banner-sliders";
 import { isFullWidthLayout, isTileLayout } from "@/modules/page-builder/banners";
 import type { ProductListData } from "@/modules/page-builder/product-list-data";
 import type { ProductListConfig } from "@/modules/page-builder/product-lists";
+import { arrangeCategories, type CategoriesSectionSettings } from "@/modules/page-builder/section-settings";
 import { builderSectionProps } from "@/modules/page-builder/sections";
 import type { HomepageLayoutItemId } from "@/modules/settings/homepage-settings";
 
-const container = "mx-auto w-[min(var(--store-max-width),calc(100%-32px))] lg:w-[min(var(--store-max-width),calc(100%-80px))]";
+// Each template has its own content width (the same strings its homepage uses).
+const containers = {
+  GENERAL: "mx-auto w-[min(var(--store-max-width),calc(100%-24px))] sm:w-[min(var(--store-max-width),calc(100%-40px))] lg:w-[min(var(--store-max-width),calc(100%-64px))]",
+  GOLD: "mx-auto w-[min(var(--store-max-width),calc(100%-32px))] lg:w-[min(var(--store-max-width),calc(100%-80px))]",
+} as const;
 
 // The description as the builder's editor produced it, cleaned just enough for the admin's own preview; the server
 // sanitises it properly when the section is saved.
@@ -50,6 +56,16 @@ function PendingProductList({ id, config }: { id: string; config: ProductListCon
   return <ProductListSection sectionId={id} config={config} descriptionHtml={description} data={loaded.data} display={{}} editable />;
 }
 
+function PendingCategories({ id, settings, categories, className }: { id: string; settings: CategoriesSectionSettings; categories: CategoryStripItem[]; className: string }) {
+  const description = useMemo(() => cleanPreviewHtml(settings.description), [settings.description]);
+  const items = arrangeCategories(categories, settings);
+  return (
+    <section {...builderSectionProps(id as HomepageLayoutItemId)} data-builder-draft="" className={`${className} ${categoriesSectionClass}`} aria-label="دسته‌بندی محصولات">
+      <CategoriesContent title={settings.title} descriptionHtml={description} items={items} display={{}} editable />
+    </section>
+  );
+}
+
 function bannerSlides(items: BannerItem[]): BannerSlide[] {
   return items.flatMap((item) => item.desktopMedia
     ? [{ id: item.id, href: item.href, desktop: { src: item.desktopMedia.url, alt: item.desktopMedia.alt ?? item.desktopMedia.title }, mobile: item.mobileMedia ? { src: item.mobileMedia.url, alt: item.mobileMedia.alt ?? item.mobileMedia.title } : undefined }]
@@ -70,8 +86,9 @@ function PendingBanner({ id, layout, items }: { id: string; layout: string; item
  * version). Their order and display switches come from that stylesheet, exactly as for the saved sections. Only mounted
  * for viewers who can edit the page.
  */
-export function PendingSectionsHost({ industry }: { industry: "GOLD" | "GENERAL" }) {
+export function PendingSectionsHost({ industry, categories = [] }: { industry: "GOLD" | "GENERAL"; /** The categories the general template's strip picks from, for its draft copy. */ categories?: CategoryStripItem[] }) {
   const pending = usePendingSections();
+  const container = containers[industry];
   // `data-builder-draft` marks these as the browser's copy, so the stylesheet that hides a replaced section spares them.
   const marks = (id: string) => ({ ...builderSectionProps(id as HomepageLayoutItemId), "data-builder-draft": "" });
   // A full-width banner runs edge to edge; everything else sits inside the store's content width.
@@ -81,6 +98,7 @@ export function PendingSectionsHost({ industry }: { industry: "GOLD" | "GENERAL"
   return <>{Object.entries(pending).map(([id, section]) => {
     // The main slider is a full-bleed section of its own in both templates.
     if (section.kind === "hero") return <section key={id} {...marks(id)} className="bg-white"><StorefrontHeroSlider slides={bannerSlides(section.items)} contentMode={section.content.contentMode} title={section.content.title} description={section.content.description} buttonLabel={section.content.buttonLabel} editable /></section>;
+    if (section.kind === "categories") return <PendingCategories key={id} id={id} settings={section.settings} categories={categories} className={container} />;
     if (section.kind === "list") return wrap(id, <PendingProductList id={id} config={section.config} />, false);
     return wrap(id, <PendingBanner id={id} layout={section.layout} items={section.items} />, section.kind === "banner" && isFullWidthLayout(section.layout));
   })}</>;

@@ -5,6 +5,7 @@ import {
   WalletCards,
 } from "lucide-react";
 import type { User } from "@generated/prisma/client";
+import { GoldMenuLinks, HeaderLogo } from "@/components/header-draft";
 import { StorefrontGoldPrice } from "@/components/storefront-gold-price";
 import { formatMoney } from "@/lib/format";
 import { getGoldPriceForDisplay } from "@/modules/gold/gold-price.service";
@@ -87,11 +88,11 @@ export async function GoldHeader({ settings, brand, user, menuItems, display }: 
 
       <div className="hidden h-14 w-full items-center px-10 lg:flex">
         <div className="flex items-center">
-          <BuilderPart {...part("logo")}><Link href="/" aria-label={`${settings.storeName}، صفحه اصلی`}>{logo}</Link></BuilderPart>
+          <BuilderPart {...part("logo")}><Link href="/" aria-label={`${settings.storeName}، صفحه اصلی`}><HeaderLogo variant="gold">{logo}</HeaderLogo></Link></BuilderPart>
           <BuilderPart {...part("storeLink")}><span className="mx-8 h-7 w-px bg-[#ddd]" /><Link href="/products" className="inline-flex items-center gap-2 text-sm"><WalletCards size={20} /> فروشگاه زر گالری</Link></BuilderPart>
         </div>
         <BuilderPart {...part("menu")}><nav className="mr-10 flex h-full min-w-0 items-center gap-9 overflow-hidden text-sm" aria-label="منوی اصلی فروشگاه">
-          {menuItems.map((item) => <Link key={item.id} href={item.href} className="flex h-full shrink-0 items-center border-b-2 border-transparent transition hover:border-[var(--success)] hover:text-[var(--success)]">{item.label}</Link>)}
+          <GoldMenuLinks items={menuItems} />
         </nav></BuilderPart>
         <div className="mr-auto flex items-center gap-5 text-[#555]">
           <BuilderPart {...part("search")}><StorefrontSearch /></BuilderPart>

@@ -29,7 +29,7 @@ test("new sections and edited existing ones are drawn by the homepage; the edite
   };
   const layout = ["HERO", "TILE_GROUP:t", "PRODUCT_LIST:c", "BANNER_SLIDER:a", "CATEGORIES"].map((id) => ({ id, enabled: true }));
   const sections = hostSections(pending, edits, layout, hero);
-  assert.deepEqual(Object.keys(sections).sort(), ["BANNER_SLIDER:a", "HERO", "PRODUCT_LIST:c", "TILE_GROUP:t"]);
+  assert.deepEqual(Object.keys(sections).sort(), ["BANNER_SLIDER:a", "CATEGORIES", "HERO", "PRODUCT_LIST:c", "TILE_GROUP:t"]);
   assert.equal(sections["BANNER_SLIDER:a"].replaces, false);
   assert.equal(sections.HERO.replaces, true);
 });

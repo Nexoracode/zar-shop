@@ -41,6 +41,7 @@ export type HostSection = (
   | PendingSection
   | { kind: "hero"; items: BannerItem[]; content: HeroContent }
   | { kind: "tiles"; layout: BannerLayout; items: BannerItem[] }
+  | { kind: "categories"; settings: CategoriesSectionSettings }
 ) & {
   /** An existing section drawn with its edited content: the server-rendered one is hidden. */
   replaces: boolean;
@@ -71,6 +72,7 @@ export function hostSections(pending: PendingSections, edits: ContentEdits, layo
     else if (edit.kind === "banner") result[id] = { kind: "banner", layout: edit.layout, items: edit.items, replaces: true };
     else if (edit.kind === "tiles") result[id] = { kind: "tiles", layout: edit.layout, items: edit.items, replaces: true };
     else if (edit.kind === "hero") result[id] = { kind: "hero", items: edit.items, content: hero, replaces: true };
+    else if (edit.kind === "categories") result[id] = { kind: "categories", settings: edit.settings, replaces: true };
   }
   return result;
 }

@@ -6,6 +6,7 @@ import { toast } from "@heroui/react";
 import { PageBuilderBar } from "@/components/page-builder-bar";
 import { PageBuilderConfirmDialog } from "@/components/page-builder-confirm-dialog";
 import { PageBuilderBanners, type SliderView } from "@/components/page-builder-banners";
+import { setHeaderDraft } from "@/components/header-draft";
 import { setPendingSections } from "@/components/pending-sections-store";
 import { PageBuilderIdentityDialog, type IdentityValues } from "@/components/page-builder-identity-dialog";
 import { PageBuilderMenuDialog } from "@/components/page-builder-menu-dialog";
@@ -150,6 +151,12 @@ export function PageBuilder({ initialSections, initialDisplay, industry, identit
     setPendingSections(hostDraft);
     return () => setPendingSections({});
   }, [hostDraft]);
+
+  // The header is rendered on the server; its draft name, logo and menu are drawn over it by small client pieces.
+  useEffect(() => {
+    setHeaderDraft({ identity: identityEdit ? { storeName: identityEdit.storeName, logo: identityEdit.logo ? { url: identityEdit.logo.url, alt: identityEdit.logo.alt ?? identityEdit.logo.title } : null } : null, menu: menuEdit });
+    return () => setHeaderDraft({ identity: null, menu: null });
+  }, [identityEdit, menuEdit]);
 
   const commit = (next: Snapshot) => setDraft((state) => ({ current: next, past: [...state.past, state.current], future: [] }));
   const undo = () => setDraft((state) => (state.past.length ? { current: state.past[state.past.length - 1], past: state.past.slice(0, -1), future: [state.current, ...state.future] } : state));

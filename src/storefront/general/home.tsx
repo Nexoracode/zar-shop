@@ -1,8 +1,4 @@
-import Image from "next/image";
-import Link from "next/link";
-import type { LucideIcon } from "lucide-react";
-import { ChevronLeft, Dumbbell, HeartPulse, House, Laptop, Shirt, ShoppingBag, Smartphone } from "lucide-react";
-import { DragScrollRow } from "@/components/drag-scroll-row";
+import { CategoriesContent, categoriesSectionClass, toCategoryStripItem } from "@/components/categories-section";
 import { HomepageBrands } from "@/components/homepage-brands";
 import { HomepageLatestArticles } from "@/components/homepage-latest-articles";
 import { HomepageBestSellers } from "@/components/homepage-best-sellers";
@@ -13,7 +9,6 @@ import { StorefrontImageTiles } from "@/components/storefront-image-tiles";
 import { db } from "@/lib/db";
 import { getLatestPublishedArticles } from "@/modules/articles/service";
 import { builderSectionProps } from "@/modules/page-builder/sections";
-import { BuilderPart } from "@/components/builder-part";
 import { isPartHidden } from "@/modules/page-builder/display-parts";
 import { BannerSlider } from "@/components/banner-slider";
 import { getBannerSetData } from "@/modules/page-builder/banner-slider-data";
@@ -30,18 +25,6 @@ import { getHomepageSettings, type HomepageLayoutItemId } from "@/modules/settin
 import { buildStorefrontHeroSlides } from "@/storefront/shared/hero";
 
 const container = "mx-auto w-[min(var(--store-max-width),calc(100%-24px))] sm:w-[min(var(--store-max-width),calc(100%-40px))] lg:w-[min(var(--store-max-width),calc(100%-64px))]";
-const categoryTones = ["bg-[color-mix(in_srgb,var(--danger)_12%,transparent)] text-[var(--danger)]", "bg-blue-50 text-blue-600", "bg-[color-mix(in_srgb,var(--warning)_14%,transparent)] text-[var(--warning)]", "bg-[color-mix(in_srgb,var(--success)_12%,transparent)] text-[var(--success)]", "bg-violet-50 text-violet-600", "bg-cyan-50 text-cyan-600"];
-
-function resolveCategoryIcon(value: string): LucideIcon {
-  const name = value.toLowerCase();
-  if (name.includes("موبایل")) return Smartphone;
-  if (name.includes("دیجیتال")) return Laptop;
-  if (name.includes("خانه") || name.includes("آشپزخانه")) return House;
-  if (name.includes("پوشاک") || name.includes("مد")) return Shirt;
-  if (name.includes("ورزش") || name.includes("سفر")) return Dumbbell;
-  if (name.includes("زیبایی") || name.includes("سلامت")) return HeartPulse;
-  return ShoppingBag;
-}
 
 export async function GeneralHome({ editable = false }: { /** The viewer can edit the page (the page builder is mounted): disabled sections and switched-off parts are rendered so it can show them. */ editable?: boolean }) {
   const sectionSettings = await getPageSectionSettings();
@@ -70,7 +53,6 @@ export async function GeneralHome({ editable = false }: { /** The viewer can edi
   const categories = arrangeCategories(allCategories, sectionSettings.CATEGORIES);
   // Cleaned again here, however it was stored: this is the one place the description's HTML reaches the page.
   const categoriesDescription = sanitizeSectionDescription(sectionSettings.CATEGORIES.description);
-  const categoriesPart = (id: string) => ({ section: "CATEGORIES", id, hidden: isPartHidden(pageDisplay, "CATEGORIES", id), editable });
   const heroSlides = buildStorefrontHeroSlides(homepage, "/images/zar-hero-campaign.png");
   const sectionById = new Map(homepage.sections.map((section) => [section.id, section]));
   const sectionOrder = new Map(homepage.sections.map((section, index) => [section.id, index]));
@@ -83,13 +65,7 @@ export async function GeneralHome({ editable = false }: { /** The viewer can edi
 
     {homepage.tileGroups.map((group) => (editable || group.tiles.some((tile) => tile.media)) && <section key={group.id} {...sectionProps(`TILE_GROUP:${group.id}`)} className={container} aria-label="پیشنهادهای تصویری"><StorefrontImageTiles groups={[group]} editable={editable} /></section>)}
 
-    {categories.length > 0 && <section {...sectionProps("CATEGORIES")} className={`${container} rounded-2xl bg-white px-3 py-6 sm:px-6 lg:py-8`} aria-label="دسته‌بندی محصولات">
-      <div className="mb-6 flex items-end justify-between gap-4"><div className="min-w-0"><BuilderPart {...categoriesPart("title")}><h2 className="m-0 text-lg font-bold text-[#232934] sm:text-xl">{sectionSettings.CATEGORIES.title}</h2></BuilderPart>{categoriesDescription && <BuilderPart {...categoriesPart("description")}><div className="mb-0 mt-1 text-xs leading-6 text-[#858b95] sm:text-sm [&_a]:underline [&_p]:m-0 [&_mark]:rounded-sm [&_mark]:px-0.5" dangerouslySetInnerHTML={{ __html: categoriesDescription }} /></BuilderPart>}</div><BuilderPart {...categoriesPart("more")}><Link href="/products" className="inline-flex items-center gap-1 text-xs font-bold text-[var(--brand-primary)]">همه کالاها<ChevronLeft size={15} /></Link></BuilderPart></div>
-      <DragScrollRow ariaLabel="دسته‌بندی محصولات" showNavigation className="flex w-full min-w-0 max-w-full gap-3 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">{categories.map((category, index) => {
-        const Icon = resolveCategoryIcon(`${category.name} ${category.slug}`);
-        return <Link key={category.id} href={`/products?category=${category.slug}`} className="group grid w-[84px] min-w-[84px] shrink-0 snap-start justify-items-center gap-2.5 text-center sm:w-[100px] sm:min-w-[100px] lg:w-[112px] lg:min-w-[112px]"><BuilderPart {...categoriesPart("categoryImage")} className="contents"><span className={`relative grid aspect-square w-full place-items-center overflow-hidden rounded-full ${categoryTones[index % categoryTones.length]} transition duration-300 group-hover:-translate-y-1 group-hover:shadow-md`}>{category.image?.type === "IMAGE" ? <Image src={category.image.url} alt={category.image.alt ?? category.name} fill sizes="112px" className="object-cover transition duration-500 group-hover:scale-105" /> : <><span className="absolute -left-4 -top-4 size-14 rounded-full bg-white/50" /><Icon size={38} strokeWidth={1.4} /></>}</span></BuilderPart><BuilderPart {...categoriesPart("categoryTitle")}><span className="w-full truncate text-xs font-bold text-[#3d4450]">{category.name}</span></BuilderPart><BuilderPart {...categoriesPart("categoryCount")}><small className="-mt-1 text-[10px] text-[#9298a2]">{category._count.products.toLocaleString("fa-IR")} کالا</small></BuilderPart></Link>;
-      })}</DragScrollRow>
-    </section>}
+    {categories.length > 0 && <section {...sectionProps("CATEGORIES")} className={`${container} ${categoriesSectionClass}`} aria-label="دسته‌بندی محصولات"><CategoriesContent title={sectionSettings.CATEGORIES.title} descriptionHtml={categoriesDescription} items={categories.map(toCategoryStripItem)} display={pageDisplay} editable={editable} /></section>}
 
     {brands.length > 0 && <div {...sectionProps("BRANDS")} className={container}><HomepageBrands brands={brands} /></div>}
 
@@ -103,6 +79,6 @@ export async function GeneralHome({ editable = false }: { /** The viewer can edi
 
     {latestArticles.length > 0 && <div {...sectionProps("ARTICLES")} className={`${container} min-w-0 overflow-hidden rounded-2xl border border-[#e6e8ec] bg-white px-4 py-6 sm:px-6 lg:px-7 lg:py-8`}><HomepageLatestArticles articles={latestArticles} /></div>}
 
-    {editable && <PendingSectionsHost industry="GENERAL" />}
+    {editable && <PendingSectionsHost industry="GENERAL" categories={allCategories.map(toCategoryStripItem)} />}
   </main>;
 }

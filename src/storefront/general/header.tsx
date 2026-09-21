@@ -1,3 +1,4 @@
+import { HeaderLogo } from "@/components/header-draft";
 import Image from "next/image";
 import Link from "next/link";
 import { Bell } from "lucide-react";
@@ -66,7 +67,7 @@ export async function GeneralHeader({ settings, brand, user, menuItems, display 
       </div>
       <BuilderPart {...part("delivery")}><div className="flex min-h-10 items-center border-t border-slate-100 px-4 lg:hidden">{deliveryPicker}</div></BuilderPart>
       <div className="hidden h-[72px] grid-cols-[auto_minmax(320px,500px)_1fr] items-center gap-8 px-10 lg:grid">
-        <BuilderPart {...part("logo")} className="flex items-center lg:col-start-1"><Link href="/" aria-label={`${settings.storeName}، صفحه اصلی`}>{logo}</Link></BuilderPart>
+        <BuilderPart {...part("logo")} className="flex items-center lg:col-start-1"><Link href="/" aria-label={`${settings.storeName}، صفحه اصلی`}><HeaderLogo variant="general">{logo}</HeaderLogo></Link></BuilderPart>
         <BuilderPart {...part("search")} className="lg:col-start-2"><StorefrontSearch variant="field" /></BuilderPart>
         <div className="col-start-3 mr-auto flex items-center gap-1 text-[#323741]">
           <BuilderPart {...part("notifications")}>{bellButton}</BuilderPart>
