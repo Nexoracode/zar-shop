@@ -18,9 +18,9 @@ export const productListLayoutMeta: Record<ProductListLayout, { label: string; d
   BANNER_ROW: { label: "بنر و ردیف محصولات", defaultLimit: 6, slider: false },
   FEATURE_LIST: { label: "محصول شاخص و فهرست", defaultLimit: 4, slider: false },
   PANEL_SLIDER: { label: "قاب رنگی و اسلایدر", defaultLimit: 12, slider: true },
-  // "List mode": one plain vertical list of ranked rows, in the look of the best-selling products' rows. (The id dates
-  // from when it was a two-column list and is kept so lists stored with it keep working.)
-  LIST_TWO_COLUMNS: { label: "حالت لیستی", defaultLimit: 8, slider: false },
+  // "List mode": ranked columns of three, like the best-selling products. (The id predates the redesign and is kept so
+  // lists stored with it keep working.)
+  LIST_TWO_COLUMNS: { label: "حالت لیستی", defaultLimit: 12, slider: false },
   GROUPED_PANELS: { label: "قاب‌های گروهی", defaultLimit: 12, slider: false },
 };
 

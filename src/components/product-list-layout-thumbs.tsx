@@ -60,13 +60,12 @@ const drawings: Record<ProductListLayout, ReactNode> = {
     {[0, 1, 2, 3].map((index) => <Card key={index} x={20 + index * 32} y={42} w={28} h={48} />)}
     <circle cx="14" cy="66" r="4" fill="#fff" stroke={line} /><circle cx="146" cy="66" r="4" fill="#fff" stroke={line} />
   </>,
-  LIST_TWO_COLUMNS: <>{[0, 1, 2, 3].map((row) => (
-    <g key={row}>
-      <Row x={14} y={12 + row * 25} w={132} />
-      <circle cx={112} cy={12 + row * 25 + 7} r={3.4} fill="#f43f5e" />
-      {row < 3 && <rect x={14} y={12 + row * 25 + 19.5} width={132} height={0.8} fill={line} />}
+  LIST_TWO_COLUMNS: <>{[0, 1, 2].flatMap((col) => [0, 1, 2].map((row) => (
+    <g key={`${col}-${row}`}>
+      <Row x={12 + col * 48} y={18 + row * 30} w={38} />
+      <circle cx={12 + col * 48 + 20} cy={18 + row * 30 + 7} r={3} fill="#f43f5e" />
     </g>
-  ))}</>,
+  )))}{[1, 2].map((col) => <rect key={col} x={6 + col * 48} y={14} width={0.8} height={92} fill={line} />)}</>,
   GROUPED_PANELS: <>{[0, 1, 2].map((panel) => (
     <g key={panel}>
       <rect x={8 + panel * 50} y={16} width={46} height={88} rx={5} fill="#f1f3f6" stroke={line} />

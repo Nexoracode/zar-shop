@@ -21,6 +21,7 @@ function Shell({ children, roomy = false }: { children: ReactNode; /** The roomi
   return <div className={`min-w-0 overflow-hidden rounded-2xl border border-[#e6e8ec] bg-white ${roomy ? "px-4 py-6 sm:px-6 lg:px-8 lg:py-8" : "px-4 py-5 sm:px-6 lg:px-7 lg:py-7"}`}>{children}</div>;
 }
 
+const rankedPerColumn = 3;
 
 type Props = {
   /** The section's id in the layout — also the key its display switches are stored under. */
@@ -122,14 +123,20 @@ export function ProductListSection({ sectionId, config, data, display, editable 
         </div>
       );
 
-    case "LIST_TWO_COLUMNS":
-      // "List mode": every product as one row of a single vertical list — picture, rank badge, name and a small
-      // "category · price" line, the way the best-selling products' rows look.
+    case "LIST_TWO_COLUMNS": {
+      // "List mode", the look of the best-selling products: columns of three ranked rows, four columns on a wide
+      // screen and a snapping row of columns on a narrow one.
+      const columns = Array.from({ length: Math.ceil(products.length / rankedPerColumn) }, (_, index) => products.slice(index * rankedPerColumn, (index + 1) * rankedPerColumn));
       return <Shell roomy>{headerFor(true)}
-        <div className="divide-y divide-slate-100">
-          {products.map((product, index) => <ProductRankedItem key={product.id} product={product} rank={index + 1} builder={builder} />)}
+        <div className="flex snap-x snap-mandatory gap-5 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden lg:grid lg:grid-cols-4 lg:gap-0 lg:overflow-visible lg:pb-0">
+          {columns.map((column, columnIndex) => (
+            <div key={column[0].id} className="grid min-w-[285px] snap-start divide-y divide-slate-100 px-1 sm:min-w-[330px] lg:min-w-0 lg:border-l lg:border-slate-100 lg:px-5 lg:last:border-l-0">
+              {column.map((product, rowIndex) => <ProductRankedItem key={product.id} product={product} rank={columnIndex * rankedPerColumn + rowIndex + 1} builder={builder} />)}
+            </div>
+          ))}
         </div>{refresh}
       </Shell>;
+    }
 
     case "GROUPED_PANELS": {
       const groups: (typeof products)[] = [];
