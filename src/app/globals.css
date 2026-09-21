@@ -92,13 +92,14 @@ body {
 }
 
 /* HeroUI positions modal close triggers on the right by default. Keep them on
-   the visual end in RTL and reserve enough header space for long titles. */
+   the visual end in RTL and reserve enough header space for long titles. A close
+   button that sits in the header's own flow (`static`) needs neither reserve. */
 html[dir="rtl"] [data-slot="modal-close-trigger"] {
   right: auto;
   left: 1rem;
 }
 
-html[dir="rtl"] [data-slot="modal-header"]:has([data-slot="modal-close-trigger"]) {
+html[dir="rtl"] [data-slot="modal-header"]:has([data-slot="modal-close-trigger"]:not(.static)) {
   padding-left: 4rem;
 }
 

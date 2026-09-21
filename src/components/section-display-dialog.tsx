@@ -46,7 +46,7 @@ export function SectionDisplayDialog({ sectionLabel, masterLabel, parts, value, 
     <Modal.Backdrop isOpen onOpenChange={(next) => { if (!next) onClose(); }} variant="blur" className="z-[150]">
       <Modal.Container size="sm" placement="center">
         <Modal.Dialog data-page-builder-ui aria-label={`تنظیمات نمایش ${sectionLabel}`} dir="rtl" className="p-0 mx-4 max-w-[440px] bg-[var(--surface)] text-right">
-          <Modal.Header className="flex-row items-center justify-between border-b border-[var(--border)] p-5">
+          <Modal.Header className="flex-row items-center justify-between border-b border-[var(--border)] py-3 ps-5 pe-3">
             <Modal.Heading className="text-base font-bold">تنظیمات نمایش</Modal.Heading>
             <Modal.CloseTrigger aria-label="بستن" className="static grid size-9 place-items-center rounded-lg text-[var(--muted)]"><X size={20} /></Modal.CloseTrigger>
           </Modal.Header>

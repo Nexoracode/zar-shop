@@ -19,7 +19,7 @@ export function ProductListLayoutPicker({ saving, onConfirm, onBack, onClose }: 
     <Modal.Backdrop isOpen onOpenChange={(next) => { if (!next && !saving) onClose(); }} variant="blur" className="z-[150]">
       <Modal.Container size="md" placement="center">
         <Modal.Dialog data-page-builder-ui aria-label="افزودن لیست محصولات" dir="rtl" className="p-0 mx-4 max-w-[580px] bg-[var(--surface)] text-right">
-          <Modal.Header className="flex-row items-center justify-between border-b border-[var(--border)] p-5">
+          <Modal.Header className="flex-row items-center justify-between border-b border-[var(--border)] py-3 ps-5 pe-3">
             <div className="flex min-w-0 items-center gap-3">
               <Button type="button" isIconOnly variant="ghost" isDisabled={saving} aria-label="بازگشت" onPress={onBack} className="size-9 min-h-9 min-w-9 text-[var(--muted)]"><ArrowRight size={20} /></Button>
               <Modal.Heading className="text-base font-bold">افزودن لیست محصولات</Modal.Heading>

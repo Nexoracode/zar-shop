@@ -69,7 +69,7 @@ export function DeliveryAddressPicker({ initialAddresses, user, authenticated = 
             <Modal.Heading className="truncate text-base font-bold text-[var(--foreground)]">
               {editing ? addressFormStep === 3 ? "تأیید اطلاعات آدرس" : editing === "new" ? "افزودن آدرس جدید" : "ویرایش آدرس" : "انتخاب آدرس تحویل"}
             </Modal.Heading>
-            <Modal.CloseTrigger aria-label="بستن" className="mr-auto grid size-8 place-items-center rounded-lg text-[var(--muted)] transition hover:bg-[var(--surface-secondary)] hover:text-[var(--foreground)]">
+            <Modal.CloseTrigger aria-label="بستن" className="static mr-auto grid size-8 place-items-center rounded-lg text-[var(--muted)] transition hover:bg-[var(--surface-secondary)] hover:text-[var(--foreground)]">
               <X size={18} />
             </Modal.CloseTrigger>
           </Modal.Header>
