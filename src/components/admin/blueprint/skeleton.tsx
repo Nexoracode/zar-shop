@@ -81,13 +81,13 @@ export function BpBulkToolbarSkeleton({ settings = true, extra = true, showFrom 
 export function BpReadOnlyToolbarSkeleton({ settings = true }: { settings?: boolean }) {
   return (
     <div className="hidden items-center gap-3 border-b border-[var(--bp-divider)] px-4 py-3 md:flex">
+      {settings && <BpBar className="size-9 shrink-0" />}
       <BpBar className="size-9 shrink-0" />
       <div className="flex min-w-0 flex-col gap-1.5">
         <BpBar className="h-3 w-40" />
         <BpBar className="h-2.5 w-72 max-w-full" />
       </div>
       <div className="ms-auto flex items-center gap-2">
-        {settings && <BpBar className="size-9 shrink-0" />}
         <BpBar className="size-9 shrink-0" />
       </div>
     </div>

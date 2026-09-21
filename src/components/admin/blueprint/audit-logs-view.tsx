@@ -33,7 +33,7 @@ const auditLogColumns = [
 export function BlueprintAuditLogsView({ logs, pagination, initialHiddenColumns, action, actionOptions }: { logs: AuditRow[]; pagination: ReturnType<typeof resolveAdminPagination>; initialHiddenColumns: string[]; /** The activity type currently filtered on, or "". */ action: string; actionOptions: { value: string; label: string }[] }) {
   return (
     <AdminColumnVisibility tableId={AUDIT_LOGS_TABLE_ID} columns={auditLogColumns} initialHidden={initialHiddenColumns}>
-      <AdminReadOnlyTableToolbar label="تاریخچه غیرقابل‌ویرایش" description="برای حفظ زنجیره نظارتی، رویدادها فقط قابل مشاهده و بروزرسانی هستند." trailing={<AdminColumnSettingsButton />} />
+      <AdminReadOnlyTableToolbar label="تاریخچه غیرقابل‌ویرایش" description="برای حفظ زنجیره نظارتی، رویدادها فقط قابل مشاهده و بروزرسانی هستند." leading={<AdminColumnSettingsButton />} />
 
       <div className="md:hidden">
         {logs.map((log) => {

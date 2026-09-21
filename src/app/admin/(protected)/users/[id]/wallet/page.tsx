@@ -82,7 +82,7 @@ export default async function AdminUserWalletPage({ params, searchParams }: Cont
 
         <section className="bp-frame relative overflow-hidden">
           <AdminColumnVisibility tableId={WALLET_TABLE_ID} columns={walletColumns} initialHidden={initialHiddenColumns}>
-          <AdminReadOnlyTableToolbar label="تاریخچهٔ کیف پول" description="این فهرست فقط برای مشاهده است؛ برای تغییر موجودی از فرم تعدیل استفاده کنید." trailing={<AdminColumnSettingsButton />} />
+          <AdminReadOnlyTableToolbar label="تاریخچهٔ کیف پول" description="این فهرست فقط برای مشاهده است؛ برای تغییر موجودی از فرم تعدیل استفاده کنید." leading={<AdminColumnSettingsButton />} />
           {transactions.length ? (
             <BpTable ariaLabel="تراکنش‌های کیف پول" minWidth={640}>
               <thead>

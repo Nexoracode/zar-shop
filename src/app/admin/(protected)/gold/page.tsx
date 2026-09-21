@@ -138,7 +138,7 @@ export default async function AdminGoldPricePage({ searchParams }: { searchParam
         </div>
         {history.length ? (
           <AdminColumnVisibility tableId={GOLD_PRICES_TABLE_ID} columns={goldPriceColumns} initialHidden={initialHiddenColumns}>
-          <AdminReadOnlyTableToolbar label="تاریخچهٔ فقط‌خواندنی نرخ" description="نرخ‌های دریافت‌شده برای حفظ سابقه قابل ویرایش نیستند." trailing={<AdminColumnSettingsButton />} />
+          <AdminReadOnlyTableToolbar label="تاریخچهٔ فقط‌خواندنی نرخ" description="نرخ‌های دریافت‌شده برای حفظ سابقه قابل ویرایش نیستند." leading={<AdminColumnSettingsButton />} />
           <BpTable ariaLabel="تاریخچه نرخ طلا" minWidth={520}>
             <thead>
               <tr>

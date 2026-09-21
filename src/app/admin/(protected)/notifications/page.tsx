@@ -96,7 +96,7 @@ export default async function AdminNotificationsPage({ searchParams }: { searchP
             <AdminReadOnlyTableToolbar
               label="فهرست فقط‌خواندنی اعلان‌ها"
               description="این فهرست فقط برای مشاهده است و اعلان‌ها قابل ویرایش یا حذف نیستند."
-              trailing={<AdminColumnSettingsButton />}
+              leading={<AdminColumnSettingsButton />}
             />
 
             <div className="md:hidden">

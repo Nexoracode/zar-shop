@@ -67,7 +67,7 @@ export default async function PaymentsPage({ searchParams }: { searchParams: Sea
             <AdminReadOnlyTableToolbar
               label="فهرست فقط‌خواندنی پرداخت‌ها"
               description="برای حفظ سوابق مالی، تراکنش‌ها فقط قابل مشاهده‌اند."
-              trailing={<AdminColumnSettingsButton />}
+              leading={<AdminColumnSettingsButton />}
             />
 
             <div className="md:hidden">

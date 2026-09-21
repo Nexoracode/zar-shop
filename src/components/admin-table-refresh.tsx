@@ -21,13 +21,13 @@ export function AdminTableRefreshButton({ className = "" }: { className?: string
   </BpButton>;
 }
 
-export function AdminReadOnlyTableToolbar({ label = "جدول فقط‌خواندنی", description = "این اطلاعات برای حفظ سابقه قابل ویرایش نیستند.", trailing }: { label?: string; description?: string; /** Rendered before the refresh button — e.g. a column-visibility toggle. */ trailing?: ReactNode }) {
+export function AdminReadOnlyTableToolbar({ label = "جدول فقط‌خواندنی", description = "این اطلاعات برای حفظ سابقه قابل ویرایش نیستند.", leading }: { label?: string; description?: string; /** Rendered at the start of the bar, before the lock badge — e.g. the column-visibility toggle, where the editable tables keep it too. */ leading?: ReactNode }) {
   return (
     <div className="hidden items-center gap-3 border-b border-[var(--bp-divider)] px-4 py-3 md:flex">
+      {leading}
       <span className="grid size-9 shrink-0 place-items-center border border-[var(--bp-divider)] text-[var(--bp-muted)]"><LockKeyhole size={16} /></span>
       <div className="min-w-0"><strong className="block text-[13px]">{label}</strong><span className="bp-muted block truncate text-[11px]">{description}</span></div>
       <div className="ms-auto flex items-center gap-2">
-        {trailing}
         <AdminTableRefreshButton />
       </div>
     </div>
