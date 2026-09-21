@@ -7,7 +7,9 @@ import { TriangleAlert, X } from "lucide-react";
 import { PageBuilderBar } from "@/components/page-builder-bar";
 import { PageBuilderOverlay } from "@/components/page-builder-overlay";
 import { SectionDisplayDialog } from "@/components/section-display-dialog";
+import { SectionEditDialog } from "@/components/section-edit-dialog";
 import { displayCss, sameDisplay, sectionDisplay, sectionDisplayParts, setSectionDisplay, type PageBuilderIndustry, type PageDisplay, type SectionDisplay } from "@/modules/page-builder/display-parts";
+import { sectionEditItems } from "@/modules/page-builder/edit-items";
 import { isLayoutSection, layoutCss, moveSection, removeSection, sameLayout, sectionSelector, type LayoutSection } from "@/modules/page-builder/layout-draft";
 import { builderSectionLabel } from "@/modules/page-builder/sections";
 
@@ -40,6 +42,7 @@ export function PageBuilder({ initialSections, initialDisplay, industry }: { ini
   const [draft, setDraft] = useState<Draft>({ current: saved, past: [], future: [] });
   const [pendingRemoval, setPendingRemoval] = useState<string | null>(null);
   const [settingsSection, setSettingsSection] = useState<string | null>(null);
+  const [editSection, setEditSection] = useState<string | null>(null);
   const { layout, display } = draft.current;
 
   const commit = (next: Snapshot) => setDraft((state) => ({ current: next, past: [...state.past, state.current], future: [] }));
@@ -70,6 +73,11 @@ export function PageBuilder({ initialSections, initialDisplay, industry }: { ini
   function requestSettings(id: string) {
     if (sectionDisplayParts(id, industry)) setSettingsSection(id);
     else toast.info("تنظیمات نمایش این بخش هنوز اضافه نشده است");
+  }
+
+  function requestEdit(id: string) {
+    if (sectionEditItems(id)) setEditSection(id);
+    else toast.info("ویرایش این بخش هنوز اضافه نشده است");
   }
 
   function confirmSettings(id: string, next: SectionDisplay) {
@@ -116,7 +124,7 @@ export function PageBuilder({ initialSections, initialDisplay, industry }: { ini
   return (
     <>
       <style>{css}</style>
-      <PageBuilderOverlay active={editing} layoutKey={css} onMove={handleMove} onRemove={requestRemove} onOpenSettings={requestSettings} />
+      <PageBuilderOverlay active={editing} layoutKey={css} onMove={handleMove} onRemove={requestRemove} onOpenSettings={requestSettings} onEdit={requestEdit} />
       <PageBuilderBar
         open={open}
         onOpenChange={setOpen}
@@ -131,6 +139,15 @@ export function PageBuilder({ initialSections, initialDisplay, industry }: { ini
         canRedo={draft.future.length > 0}
         saving={saving}
       />
+      {editSection && (
+        <SectionEditDialog
+          key={editSection}
+          sectionLabel={builderSectionLabel(editSection)}
+          items={sectionEditItems(editSection) ?? []}
+          onSelect={(item) => toast.info(`ویرایش «${item.title}» هنوز اضافه نشده است`)}
+          onClose={() => setEditSection(null)}
+        />
+      )}
       {settingsSection && (
         <SectionDisplayDialog
           key={settingsSection}
