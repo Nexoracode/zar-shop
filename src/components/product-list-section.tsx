@@ -15,7 +15,6 @@ import { productListDefaultMoreLabel, type ProductListConfig } from "@/modules/p
 import { discountEndMoments } from "@/modules/products/discount-window";
 
 const cardWidth = "w-[164px] min-w-[164px] snap-start sm:w-[206px] sm:min-w-[206px] lg:w-[218px] lg:min-w-[218px]";
-const panelCardWidth = "w-[calc(50%-2px)] min-w-[calc(50%-2px)] snap-start sm:w-[220px] sm:min-w-[220px] lg:w-[224px] lg:min-w-[224px]";
 
 function Shell({ children, roomy = false }: { children: ReactNode; /** The roomier padding of the ranked list. */ roomy?: boolean }) {
   return <div className={`min-w-0 overflow-hidden rounded-2xl border border-[#e6e8ec] bg-white ${roomy ? "px-4 py-6 sm:px-6 lg:px-8 lg:py-8" : "px-4 py-5 sm:px-6 lg:px-7 lg:py-7"}`}>{children}</div>;
