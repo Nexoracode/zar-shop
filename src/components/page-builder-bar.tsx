@@ -2,22 +2,34 @@
 
 import { useId } from "react";
 import type { CSSProperties } from "react";
+import Link from "next/link";
 import { Button } from "@heroui/react";
-import { ChevronDown, ChevronUp, Redo2, Undo2 } from "lucide-react";
+import { ArrowUpRight, ChevronDown, ChevronUp, Redo2, Undo2 } from "lucide-react";
 
 const primaryButtonStyle = { "--button-bg": "var(--brand-primary)", "--button-bg-hover": "color-mix(in srgb, var(--brand-primary) 90%, black)", "--button-bg-pressed": "color-mix(in srgb, var(--brand-primary) 82%, black)", "--button-fg": "var(--brand-primary-foreground)" } as CSSProperties;
 
+type PageBuilderBarProps = {
+  /** Whether the dock's panel is expanded (the tab toggles it). */
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  /** Whether the page is in edit mode; swaps the panel's controls (see `PageBuilderOverlay` for the mode itself). */
+  editing: boolean;
+  onEditingChange: (editing: boolean) => void;
+};
+
 /**
  * The storefront page builder's dock. It is pinned to the bottom of the viewport (so it follows the
- * scroll), collapsed to just its dark tab until the tab is pressed, and then the action bar
- * (save / cancel / undo / redo) grows upward out of it. The panel animates through a 0fr → 1fr grid
- * row, so its height is never measured and the tab rides on top of it in both states.
+ * scroll), collapsed to just its dark tab until the tab is pressed, and then a compact panel grows
+ * upward out of it. The panel animates through a 0fr → 1fr grid row, so its height is never measured
+ * and the tab rides on top of it in both states.
+ *
+ * The panel has two faces: the entry one (start editing / go to the admin panel) and, once editing
+ * starts, the working one (save / cancel / undo / redo).
  *
  * Only mounted for viewers allowed to edit the storefront (see `src/app/page.tsx`); this component
- * itself does no permission check. `open` is controlled by the parent because it is also what switches
- * the page into edit mode (see `PageBuilderOverlay`).
+ * itself does no permission check.
  */
-export function PageBuilderBar({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
+export function PageBuilderBar({ open, onOpenChange, editing, onEditingChange }: PageBuilderBarProps) {
   const panelId = useId();
 
   return (
@@ -38,22 +50,36 @@ export function PageBuilderBar({ open, onOpenChange }: { open: boolean; onOpenCh
 
       <div id={panelId} inert={!open} className={`grid w-full transition-[grid-template-rows] duration-300 ease-out motion-reduce:transition-none ${open ? "grid-rows-[1fr]" : "grid-rows-[0fr]"}`}>
         <div className="overflow-hidden">
-          <div className="px-3 pb-3 pt-1 lg:px-6">
-            <div data-page-builder-ui className="pointer-events-auto mx-auto flex max-w-[1100px] items-center gap-2 rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-3 shadow-[0_12px_40px_rgba(15,23,42,.18)]">
-              <Button type="button" variant="primary" style={primaryButtonStyle} className="min-h-10 rounded-lg px-6 text-sm font-bold">
-                ذخیره
-              </Button>
-              <Button type="button" variant="outline" onPress={() => onOpenChange(false)} className="min-h-10 rounded-lg px-5 text-sm font-bold">
-                انصراف
-              </Button>
-              <div className="mr-auto flex items-center gap-1">
-                <Button type="button" isIconOnly variant="ghost" isDisabled aria-label="بازگرداندن تغییر" className="size-10 min-h-10 min-w-10 text-[var(--muted)]">
-                  <Undo2 size={20} />
-                </Button>
-                <Button type="button" isIconOnly variant="ghost" isDisabled aria-label="انجام مجدد تغییر" className="size-10 min-h-10 min-w-10 text-[var(--muted)]">
-                  <Redo2 size={20} />
-                </Button>
-              </div>
+          <div className="px-3 pb-3 pt-1">
+            <div data-page-builder-ui className="pointer-events-auto mx-auto flex max-w-[400px] items-center gap-2 rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-3 shadow-[0_12px_40px_rgba(15,23,42,.18)]">
+              {editing ? (
+                <>
+                  <Button type="button" variant="primary" style={primaryButtonStyle} className="min-h-10 rounded-lg px-6 text-sm font-bold">
+                    ذخیره
+                  </Button>
+                  <Button type="button" variant="outline" onPress={() => onEditingChange(false)} className="min-h-10 rounded-lg px-5 text-sm font-bold">
+                    انصراف
+                  </Button>
+                  <div className="mr-auto flex items-center gap-1">
+                    <Button type="button" isIconOnly variant="ghost" isDisabled aria-label="بازگرداندن تغییر" className="size-10 min-h-10 min-w-10 text-[var(--muted)]">
+                      <Undo2 size={20} />
+                    </Button>
+                    <Button type="button" isIconOnly variant="ghost" isDisabled aria-label="انجام مجدد تغییر" className="size-10 min-h-10 min-w-10 text-[var(--muted)]">
+                      <Redo2 size={20} />
+                    </Button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <Link href="/admin" className="inline-flex min-h-10 items-center gap-1.5 rounded-lg px-2 text-sm font-medium text-[var(--foreground)] transition hover:text-[var(--brand-primary)]">
+                    <ArrowUpRight size={16} />
+                    ورود به مدیریت
+                  </Link>
+                  <Button type="button" variant="primary" style={primaryButtonStyle} onPress={() => onEditingChange(true)} className="mr-auto min-h-10 rounded-lg px-6 text-sm font-bold">
+                    ویرایش ظاهر صفحه
+                  </Button>
+                </>
+              )}
             </div>
           </div>
         </div>
