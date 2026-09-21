@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { ChevronLeft, Sparkles } from "lucide-react";
@@ -96,6 +97,15 @@ export function ProductListSection({ sectionId, config, descriptionHtml, data, d
       const banner = config.banner;
       const listed = banner ? products : rest;
       const bannerRatio = config.layout === "BANNER_ROW" ? 1.5 : 1;
+      // On a phone the banner is a full-width picture above the row instead of the row's first item.
+      const phoneBanner = banner && (
+        <BuilderPart {...part("banner")} className="contents">
+          <div className={`relative mb-3 overflow-hidden rounded-2xl bg-black/5 sm:hidden ${config.layout === "BANNER_ROW" ? "aspect-[3/2]" : "aspect-[4/3]"}`}>
+            {banner.href && <Link href={banner.href} aria-label={banner.alt ?? config.title} className="absolute inset-0 z-10" />}
+            <Image src={banner.url} alt={banner.alt ?? config.title} fill sizes="100vw" className="object-cover" />
+          </div>
+        </BuilderPart>
+      );
       return <Shell>
         <div className="mb-5 flex items-start justify-between gap-4">
           <div className="min-w-0">
@@ -104,9 +114,10 @@ export function ProductListSection({ sectionId, config, descriptionHtml, data, d
           </div>
           <BuilderPart {...part("more")}><Link href={moreHref} className="inline-flex h-10 shrink-0 items-center rounded-xl border border-[#d5d9e0] bg-white px-4 text-sm font-bold text-[#232934] transition hover:bg-[#f6f7f9]">{config.moreLabel}</Link></BuilderPart>
         </div>
+        {phoneBanner}
         <DragScrollRow ariaLabel={config.title} showNavigation navigationPart={arrows} className="flex w-full min-w-0 max-w-full gap-3 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {banner
-            ? <BuilderPart {...part("banner")} className="contents"><RowBanner src={banner.url} alt={banner.alt ?? config.title} href={banner.href || undefined} ratio={bannerRatio} /></BuilderPart>
+            ? <BuilderPart {...part("banner")} className="contents"><RowBanner src={banner.url} alt={banner.alt ?? config.title} href={banner.href || undefined} ratio={bannerRatio} className="hidden sm:block" /></BuilderPart>
             : <div className="flex w-[240px] min-w-[240px] snap-start sm:w-[300px] sm:min-w-[300px]"><ProductFeatureTile product={first} builder={builder} className="min-h-[200px] w-full" /></div>}
           {offerCards(listed, cardWidth)}{offerViewAll(cardWidth)}
         </DragScrollRow>{refresh}

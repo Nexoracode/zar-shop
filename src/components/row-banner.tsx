@@ -9,7 +9,7 @@ import Link from "next/link";
  * cards set) and `ratio` times that wide (1 = a square). CSS can't derive a width from a stretched height, so the height
  * is measured. Before it is measured it has a fixed width, so nothing jumps by much.
  */
-export function RowBanner({ src, alt, href, ratio = 1, sizes = "600px" }: { src: string; alt: string; href?: string; /** Width as a multiple of the height. */ ratio?: number; sizes?: string }) {
+export function RowBanner({ src, alt, href, ratio = 1, sizes = "600px", className = "" }: { src: string; alt: string; href?: string; /** Width as a multiple of the height. */ ratio?: number; sizes?: string; className?: string }) {
   const ref = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState<number | null>(null);
 
@@ -29,7 +29,7 @@ export function RowBanner({ src, alt, href, ratio = 1, sizes = "600px" }: { src:
     </span>
   );
   return (
-    <div ref={ref} className="relative min-h-[200px] shrink-0 snap-start self-stretch" style={{ width: width ?? Math.round(260 * ratio) }}>
+    <div ref={ref} className={`relative min-h-[200px] shrink-0 snap-start self-stretch ${className}`} style={{ width: width ?? Math.round(260 * ratio) }}>
       {href ? <Link href={href} aria-label={alt} className="block size-full">{picture}</Link> : picture}
     </div>
   );
