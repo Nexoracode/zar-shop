@@ -19,9 +19,11 @@ import { discountEndMoments } from "@/modules/products/discount-window";
 
 // The small cards of the looks that show a row of compact products (picture, name and price only).
 const compactWidth = "w-[128px] min-w-[128px] snap-start sm:w-[142px] sm:min-w-[142px]";
-// The offer cards are drawn at this fraction of their size, and the banner takes the row's whole height, so the banner and the
-// cards are exactly as tall as each other (the zoom shrinks the cards' layout, not just their looks).
-const offerScale = 0.9;
+// From the small breakpoint up the offer cards are drawn at this fraction of their size and the banner takes the row's whole
+// height, so the banner and the cards are exactly as tall as each other (the zoom shrinks the cards' layout, not just their
+// looks). On a phone the banner is above the row, so the cards keep their full size and are wider.
+const offerZoom = "sm:[zoom:0.9]";
+const offerWidth = "w-[176px] min-w-[176px] snap-start sm:w-[206px] sm:min-w-[206px] lg:w-[218px] lg:min-w-[218px]";
 const cardWidth = "w-[164px] min-w-[164px] snap-start sm:w-[206px] sm:min-w-[206px] lg:w-[218px] lg:min-w-[218px]";
 
 function Shell({ children, roomy = false }: { children: ReactNode; /** The roomier padding of the ranked list. */ roomy?: boolean }) {
@@ -72,8 +74,8 @@ export function ProductListSection({ sectionId, config, descriptionHtml, data, d
   const cards = (items: typeof products, className: string, toneOffset = 0) => items.map((product, index) => (
     <div key={product.id} className={className}><ProductCard {...product} storefrontVariant="gallery" imageTone={(index + toneOffset) % 4} builder={builder} /></div>
   ));
-  const offerCards = (items: typeof products, className: string) => items.map((product) => <div key={product.id} className={className} style={{ zoom: offerScale }}><ProductOfferCard product={product} builder={builder} reserveTop={items.some((item) => item.discountEndsAt)} /></div>);
-  const offerViewAll = (className: string) => <BuilderPart {...part("viewAll")} className="contents"><div className={className} style={{ zoom: offerScale }}><ViewAllProductCard href={moreHref} label={config.moreLabel} /></div></BuilderPart>;
+  const offerCards = (items: typeof products, className: string) => items.map((product) => <div key={product.id} className={`${className} ${offerZoom}`}><ProductOfferCard product={product} builder={builder} reserveTop={items.some((item) => item.discountEndsAt)} /></div>);
+  const offerViewAll = (className: string) => <BuilderPart {...part("viewAll")} className="contents"><div className={`${className} ${offerZoom}`}><ViewAllProductCard href={moreHref} label={config.moreLabel} /></div></BuilderPart>;
   const refresh = <DiscountExpiryRefresh moments={discountEndMoments(products)} />;
   const [first, ...rest] = products;
 
@@ -119,7 +121,7 @@ export function ProductListSection({ sectionId, config, descriptionHtml, data, d
           {banner
             ? <BuilderPart {...part("banner")} className="contents"><RowBanner src={banner.url} alt={banner.alt ?? config.title} href={banner.href || undefined} ratio={bannerRatio} className="hidden sm:block" /></BuilderPart>
             : <div className="flex w-[240px] min-w-[240px] snap-start sm:w-[300px] sm:min-w-[300px]"><ProductFeatureTile product={first} builder={builder} className="min-h-[200px] w-full" /></div>}
-          {offerCards(listed, cardWidth)}{offerViewAll(cardWidth)}
+          {offerCards(listed, offerWidth)}{offerViewAll(offerWidth)}
         </DragScrollRow>{refresh}
       </Shell>;
     }
