@@ -118,7 +118,8 @@ export function productListDisplayConfig(config: ProductListConfig, industry: Pa
     parts.unshift({ id: "icon", label: "آیکون" });
     if (config.source === "DISCOUNTED") parts.splice(3, 0, { id: "countdown", label: "شمارنده زمان" });
   }
-  if (config.layout === "LIST_TWO_COLUMNS") parts.push({ id: "rank", label: "شماره رتبه" });
+  // The two ranked layouts: the compact grid and the list mode.
+  if (config.layout === "LIST_TWO_COLUMNS" || config.layout === "GRID_COMPACT") parts.push({ id: "rank", label: "شماره رتبه" });
   if (productListLayoutMeta[config.layout].slider) parts.push({ id: "arrows", label: "نمایش فلش‌ها" }, { id: "viewAll", label: "کارت «مشاهده همه»" });
   return { parts: [...parts, ...productCardParts(industry)], master: "layout" };
 }

@@ -36,7 +36,12 @@ function Card({ x, y, w, h }: { x: number; y: number; w: number; h: number }) {
 }
 
 const drawings: Record<ProductListLayout, ReactNode> = {
-  GRID_COMPACT: <>{[0, 1, 2].flatMap((col) => [0, 1, 2].map((row) => <Row key={`${col}-${row}`} x={10 + col * 48} y={16 + row * 32} w={44} />))}</>,
+  GRID_COMPACT: <>{[0, 1, 2].flatMap((col) => [0, 1, 2].map((row) => (
+    <g key={`${col}-${row}`}>
+      <Row x={10 + col * 48} y={16 + row * 32} w={44} />
+      <circle cx={10 + col * 48 + 20} cy={16 + row * 32 + 7} r={3} fill="#f43f5e" />
+    </g>
+  )))}</>,
   SLIDER: <>
     <circle cx="20" cy="18" r="4.5" fill="#fff" /><circle cx="32" cy="18" r="4.5" fill="#fff" />
     {[0, 1, 2].map((index) => <Card key={index} x={10 + index * 48} y={32} w={42} h={70} />)}

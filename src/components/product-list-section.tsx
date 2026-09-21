@@ -68,7 +68,7 @@ export function ProductListSection({ sectionId, config, data, display, editable 
 
   switch (config.layout) {
     case "GRID_COMPACT":
-      return <Shell>{header}<div className="grid gap-x-6 gap-y-1 sm:grid-cols-2 lg:grid-cols-3">{products.map((product) => <ProductThumbItem key={product.id} product={product} builder={builder} />)}</div>{refresh}</Shell>;
+      return <Shell>{header}<div className="grid gap-x-6 gap-y-1 sm:grid-cols-2 lg:grid-cols-3">{products.map((product, index) => <ProductThumbItem key={product.id} product={product} rank={index + 1} builder={builder} />)}</div>{refresh}</Shell>;
 
     case "SLIDER":
       return <Shell>{header}

@@ -7,18 +7,25 @@ import type { StorefrontProductCardItem } from "@/modules/products/storefront-fe
 
 const placeholder = <span className="block size-full bg-[var(--surface-tertiary)]" aria-hidden="true" />;
 
+/** The red numbered circle of the ranked layouts; a switchable part of the section (`rank`). */
+function RankBadge({ rank, builder }: { rank: number; builder?: ProductCardBuilder }) {
+  const badge = <span className="grid size-7 shrink-0 place-items-center rounded-full bg-[var(--danger)] text-[11px] font-bold text-white shadow-[0_5px_14px_rgba(244,63,94,.22)]">{rank.toLocaleString("fa-IR")}</span>;
+  return builder ? <BuilderPart section={builder.section} id="rank" hidden={builder.hiddenParts.includes("rank")} editable={builder.editable} className="contents">{badge}</BuilderPart> : badge;
+}
+
 /**
  * The compact way of showing a product used by the list layouts: a small image next to the name and price (or above
  * them, when `vertical`). It honours the same product-card switches (`card.image`, `card.name`, `card.originalPrice`,
  * `card.price`) as the full card, so a section's card settings apply whichever layout it uses.
  */
-export function ProductThumbItem({ product, builder, vertical = false, large = false }: { product: StorefrontProductCardItem; builder?: ProductCardBuilder; vertical?: boolean; large?: boolean }) {
+export function ProductThumbItem({ product, builder, vertical = false, large = false, rank }: { product: StorefrontProductCardItem; builder?: ProductCardBuilder; vertical?: boolean; large?: boolean; /** Shows the red numbered circle between the picture and the text (not in the vertical form). */ rank?: number }) {
   const image = cardPart(builder, "image", product.image
     ? <Image src={product.image.src} alt={product.image.alt} fill sizes={large ? "96px" : "72px"} className="object-cover transition duration-300 group-hover:scale-105" />
     : placeholder);
   return (
     <Link href={product.href} className={`group flex min-w-0 gap-3 rounded-xl p-2 transition hover:bg-[#f6f7f9] ${vertical ? "flex-col" : "items-center"}`}>
       <span className={`relative shrink-0 overflow-hidden rounded-lg bg-[var(--surface-tertiary)] ${vertical ? "aspect-square w-full" : large ? "size-24" : "size-[72px]"}`}>{image}</span>
+      {rank !== undefined && !vertical && <RankBadge rank={rank} builder={builder} />}
       <span className={`min-w-0 flex-1 text-right ${vertical ? "" : "grid gap-1"}`}>
         {cardPart(builder, "name", <span className={`line-clamp-2 block font-medium leading-6 text-slate-700 ${large ? "text-sm" : "text-xs"}`}>{product.name}</span>)}
         {cardPart(builder, "originalPrice", product.originalPrice ? <span className="block text-[0.7rem] text-slate-400 line-through">{product.originalPrice}</span> : null)}
@@ -55,7 +62,6 @@ export function ProductFeatureTile({ product, builder, className = "" }: { produ
  * product-card switches like every other way of showing a product.
  */
 export function ProductRankedItem({ product, rank, builder }: { product: StorefrontProductCardItem; rank: number; builder?: ProductCardBuilder }) {
-  const badge = <span className="grid size-7 place-items-center rounded-full bg-[var(--danger)] text-[11px] font-bold text-white shadow-[0_5px_14px_rgba(244,63,94,.22)]">{rank.toLocaleString("fa-IR")}</span>;
   return (
     <Link href={product.href} className="group grid min-h-[108px] grid-cols-[76px_30px_minmax(0,1fr)] items-center gap-3 py-3.5">
       <span className="relative block aspect-square overflow-hidden rounded-xl bg-[#f3f4f6]">
@@ -63,7 +69,7 @@ export function ProductRankedItem({ product, rank, builder }: { product: Storefr
           ? <Image src={product.image.src} alt={product.image.alt} fill sizes="76px" className="object-cover transition duration-300 group-hover:scale-105" />
           : <span className="grid h-full place-items-center text-slate-300"><ShoppingBag size={25} strokeWidth={1.4} /></span>)}
       </span>
-      {builder ? <BuilderPart section={builder.section} id="rank" hidden={builder.hiddenParts.includes("rank")} editable={builder.editable} className="contents">{badge}</BuilderPart> : badge}
+      <RankBadge rank={rank} builder={builder} />
       <span className="min-w-0">
         {cardPart(builder, "name", <strong className="line-clamp-2 block text-xs leading-6 text-[#42495a] transition group-hover:text-[var(--brand-primary)]">{product.name}</strong>)}
         <small className="mt-1 block truncate text-[10px] text-[#9298a2]">{product.category}{cardPart(builder, "price", <> · {product.price}</>)}</small>
