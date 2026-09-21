@@ -1,0 +1,61 @@
+/*
+ * Storefront controls: buttons, dialogs and the lists of selects/combo boxes.
+ *
+ * HeroUI's defaults are pill-round (buttons are `rounded-3xl`, dialogs and popovers 32px) and the project's `--radius`
+ * makes the utility classes on top of them rounder still, which reads as bubbly next to the flatter reference design.
+ * These rules bring them down to small corners. They are unlayered on purpose: that makes them win over both HeroUI's
+ * layered component styles and Tailwind's `rounded-*` utilities, without touching every component that sets one.
+ *
+ * Not applied inside the admin panel — it has its own controls (`.bp-root`); a Blueprint dialog opened from the
+ * storefront (the media library, from the page builder) doesn't count as being in the panel.
+ *
+ * Buttons that ask to be round with an explicit `rounded-full` (slider arrows, dots, the favourite heart) stay round.
+ */
+:root:not(:has(.bp-root:not(.bp-dialog-backdrop))) {
+  /* Buttons */
+  .button:not([class*="rounded-full"]) {
+    border-radius: 8px;
+  }
+
+  /* Dialogs and their kin */
+  .modal__dialog,
+  .alert-dialog__dialog {
+    border-radius: 14px;
+  }
+
+  /* The field the list drops from */
+  .select__trigger,
+  .combo-box__input-group {
+    border-radius: 8px;
+  }
+
+  /* The lists (selects, combo boxes, menus, popovers) and their options */
+  .select__popover,
+  .combo-box__popover,
+  .autocomplete__popover,
+  .dropdown__popover,
+  .popover {
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    box-shadow: 0 6px 20px rgb(15 23 42 / 0.1);
+  }
+
+  .list-box-item {
+    border-radius: 6px;
+  }
+
+  /* The chosen option is marked by a tint and a check in the store's color. */
+  .list-box-item[data-selected="true"] {
+    background: color-mix(in srgb, var(--foreground) 6%, transparent);
+  }
+
+  .list-box-item__indicator {
+    color: var(--brand-primary);
+  }
+
+  /* Small floating things */
+  .tooltip,
+  .toast {
+    border-radius: 8px;
+  }
+}
