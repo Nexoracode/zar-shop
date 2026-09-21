@@ -11,8 +11,47 @@ import type { StorefrontProductCardItem } from "@/modules/products/storefront-fe
  * and an "add to cart" button that ends the card. `reserveTop` keeps the header's space on the cards of a row that have no
  * offer, so the pictures line up. Every piece is a switchable part of the section (`card.*`).
  */
-export function ProductOfferCard({ product, builder, reserveTop }: { product: StorefrontProductCardItem; builder?: ProductCardBuilder; reserveTop: boolean }) {
+export function ProductOfferCard({ product, builder, reserveTop, horizontal = false }: { product: StorefrontProductCardItem; builder?: ProductCardBuilder; reserveTop: boolean; /** The list's form: the picture on the right and the details to its left, the cart button just a plus. */ horizontal?: boolean }) {
   const meta = [product.category, product.brand].filter(Boolean).join(" • ");
+  if (horizontal) {
+    return (
+      <div className="flex min-w-0 gap-3 text-right">
+        <Link href={product.href} className="shrink-0 self-start">
+          {cardPart(builder, "image", (
+            <span className="relative block h-[124px] w-[92px] overflow-hidden rounded-lg border border-slate-200 bg-[var(--surface-tertiary)]">
+              {product.image && <Image src={product.image.src} alt={product.image.alt} fill sizes="92px" className="object-cover" />}
+            </span>
+          ))}
+        </Link>
+        <div className="flex min-w-0 flex-1 flex-col">
+          {reserveTop && (
+            <div className="mb-1.5 min-h-8">
+              {product.discountEndsAt && cardPart(builder, "countdown", (
+                <div className="flex items-center justify-between gap-2 border-b-2 border-[var(--danger)] pb-1">
+                  <span className="shrink-0 whitespace-nowrap text-[0.7rem] font-bold text-[var(--danger)]">پیشنهاد شگفت‌انگیز</span>
+                  <FlashSaleCountdown endsAt={product.discountEndsAt} tone="plain" />
+                </div>
+              ))}
+            </div>
+          )}
+          <Link href={product.href} className="flex min-w-0 flex-col">
+            {meta && cardPart(builder, "category", <span className="block truncate text-[0.68rem] text-slate-400">{meta}</span>)}
+            {cardPart(builder, "name", <h3 className="m-0 mt-1 line-clamp-2 text-[0.8rem] font-medium leading-5 text-slate-800">{product.name}</h3>)}
+          </Link>
+          <div className="mt-auto flex items-end justify-between gap-2 pt-1.5">
+            <div className="grid min-w-0 gap-0.5">
+              <div className="flex items-center gap-1.5">
+                {cardPart(builder, "badge", product.discountPercent ? <span className="rounded-md bg-[color-mix(in_srgb,var(--danger)_12%,transparent)] px-1.5 py-0.5 text-[0.68rem] font-bold text-[var(--danger)]">٪{product.discountPercent.toLocaleString("fa-IR")}</span> : null)}
+                {cardPart(builder, "originalPrice", product.originalPrice ? <span className="text-[0.7rem] text-slate-400 line-through">{product.originalPrice}</span> : null)}
+              </div>
+              {cardPart(builder, "price", <strong className="text-[0.85rem] font-bold text-slate-900">{product.price}</strong>)}
+            </div>
+            {cardPart(builder, "cart", <ProductOfferCartButton productId={product.id} href={product.href} iconOnly />)}
+          </div>
+        </div>
+      </div>
+    );
+  }
   return (
     <div className="flex h-full min-w-0 flex-col text-right">
       {reserveTop && (

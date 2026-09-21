@@ -17,7 +17,7 @@ export const productListLayoutMeta: Record<ProductListLayout, { label: string; d
   SLIDER: { label: "اسلایدر کارت‌ها", defaultLimit: 12, slider: true },
   FEATURE_SLIDER: { label: "محصول شاخص و اسلایدر", defaultLimit: 12, slider: true },
   BANNER_ROW: { label: "بنر و ردیف محصولات", defaultLimit: 6, slider: true },
-  FEATURE_LIST: { label: "محصول شاخص و فهرست", defaultLimit: 4, slider: false },
+  FEATURE_LIST: { label: "محصول شاخص و فهرست", defaultLimit: 6, slider: false },
   PANEL_SLIDER: { label: "قاب رنگی و اسلایدر", defaultLimit: 12, slider: true },
   // "List mode": ranked columns of three, like the best-selling products. (The id predates the redesign and is kept so
   // lists stored with it keep working.)
@@ -37,7 +37,7 @@ export const productListSourceLabels: Record<ProductListSource, string> = {
 
 /** The looks that open with a banner picture and show the offer card. */
 export function hasBanner(layout: ProductListLayout) {
-  return layout === "FEATURE_SLIDER" || layout === "BANNER_ROW";
+  return layout === "FEATURE_SLIDER" || layout === "BANNER_ROW" || layout === "FEATURE_LIST";
 }
 
 /** What a product list's "view all" link says unless the store owner words it otherwise. */

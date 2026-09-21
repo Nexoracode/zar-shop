@@ -69,9 +69,10 @@ const drawings: Record<ProductListLayout, ReactNode> = {
     <Picture x={72} y={32} w={82} h={56} />
     {[0, 1, 2].map((index) => <Card key={index} x={50 - index * 23} y={44} w={20} h={44} />)}
   </>,
+  // The banner on the right, two columns of horizontal cards to its left.
   FEATURE_LIST: <>
-    <Picture x={92} y={22} w={58} h={76} />
-    {[0, 1, 2].map((index) => <Row key={index} x={10} y={26 + index * 24} w={74} />)}
+    <Picture x={96} y={24} w={54} h={74} />
+    {[0, 1].flatMap((col) => [0, 1, 2].map((row) => <Row key={`${col}-${row}`} x={8 + col * 44} y={28 + row * 24} w={40} />))}
   </>,
   // A colored panel: the title and a line of description on the right, the cards in a light strip with arrows at its edges.
   PANEL_SLIDER: <>

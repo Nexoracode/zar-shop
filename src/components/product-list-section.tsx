@@ -69,6 +69,16 @@ export function ProductListSection({ sectionId, config, descriptionHtml, data, d
     </div>
   );
   const header = headerFor(false);
+  // The header of the looks that open with a banner: title and description on the right, the "view all" button opposite.
+  const offerHeader = (
+    <div className="mb-5 flex items-start justify-between gap-4">
+      <div className="min-w-0">
+        <BuilderPart {...part("title")}><h2 className="m-0 text-xl font-bold text-[#232934] sm:text-2xl">{config.title}</h2></BuilderPart>
+        {description && <BuilderPart {...part("description")}><div className={`mb-0 mt-1 text-xs leading-6 text-[#858b95] sm:text-sm ${richStyle}`} dangerouslySetInnerHTML={{ __html: description }} /></BuilderPart>}
+      </div>
+      <BuilderPart {...part("more")}><Link href={moreHref} className="inline-flex h-10 shrink-0 items-center rounded-xl border border-[#d5d9e0] bg-white px-4 text-sm font-bold text-[#232934] transition hover:bg-[#f6f7f9]">{config.moreLabel}</Link></BuilderPart>
+    </div>
+  );
   const arrows = { section: sectionId, hidden: isPartHidden(display, sectionId, "arrows"), editable };
   const viewAll = (className: string, compact = false) => <BuilderPart {...part("viewAll")} className={className}><ViewAllProductCard href={moreHref} label={config.moreLabel} compact={compact} /></BuilderPart>;
   const compactCards = (items: typeof products) => items.map((product) => <div key={product.id} className={compactWidth}><ProductThumbItem product={product} builder={builder} vertical /></div>);
@@ -110,13 +120,7 @@ export function ProductListSection({ sectionId, config, descriptionHtml, data, d
         </BuilderPart>
       );
       return <Shell>
-        <div className="mb-5 flex items-start justify-between gap-4">
-          <div className="min-w-0">
-            <BuilderPart {...part("title")}><h2 className="m-0 text-xl font-bold text-[#232934] sm:text-2xl">{config.title}</h2></BuilderPart>
-            {description && <BuilderPart {...part("description")}><div className={`mb-0 mt-1 text-xs leading-6 text-[#858b95] sm:text-sm ${richStyle}`} dangerouslySetInnerHTML={{ __html: description }} /></BuilderPart>}
-          </div>
-          <BuilderPart {...part("more")}><Link href={moreHref} className="inline-flex h-10 shrink-0 items-center rounded-xl border border-[#d5d9e0] bg-white px-4 text-sm font-bold text-[#232934] transition hover:bg-[#f6f7f9]">{config.moreLabel}</Link></BuilderPart>
-        </div>
+        {offerHeader}
         {phoneBanner}
         <DragScrollRow ariaLabel={config.title} showNavigation navigationPart={arrows} className="flex w-full min-w-0 max-w-full gap-3 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {banner
@@ -127,13 +131,31 @@ export function ProductListSection({ sectionId, config, descriptionHtml, data, d
       </Shell>;
     }
 
-    case "FEATURE_LIST":
-      return <Shell>{header}
-        <div className="grid gap-5 lg:grid-cols-2">
-          <ProductFeatureTile product={first} builder={builder} className="min-h-[280px]" />
-          <div className="grid content-start divide-y divide-[#eef0f3]">{rest.map((product) => <ProductThumbItem key={product.id} product={product} builder={builder} large />)}</div>
+    case "FEATURE_LIST": {
+      // The banner picture (or, without one, the first product as a big tile) on the right, the products as horizontal offer
+      // cards in two columns to its left. On a phone the banner is on top and the cards form one column.
+      const banner = config.banner;
+      const listed = banner ? products : rest;
+      const reserveTop = listed.some((item) => item.discountEndsAt);
+      return <Shell>
+        {offerHeader}
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-stretch">
+          {banner
+            ? (
+              <BuilderPart {...part("banner")} className="contents">
+                <div className="relative aspect-[3/2] shrink-0 overflow-hidden rounded-2xl bg-black/5 sm:aspect-auto sm:min-h-[260px] sm:w-[36%]">
+                  {banner.href && <Link href={banner.href} aria-label={banner.alt ?? config.title} className="absolute inset-0 z-10" />}
+                  <Image src={banner.url} alt={banner.alt ?? config.title} fill sizes="(min-width: 640px) 36vw, 100vw" className="object-cover" />
+                </div>
+              </BuilderPart>
+            )
+            : <ProductFeatureTile product={first} builder={builder} className="min-h-[220px] sm:w-[36%] sm:shrink-0" />}
+          <div className="grid min-w-0 flex-1 content-start gap-x-4 gap-y-4 md:grid-cols-2">
+            {listed.map((product) => <ProductOfferCard key={product.id} product={product} builder={builder} reserveTop={reserveTop} horizontal />)}
+          </div>
         </div>{refresh}
       </Shell>;
+    }
 
     case "PANEL_SLIDER":
       // A colored panel: the title (with its icon and description) on the right of its header, the timer and the "view
