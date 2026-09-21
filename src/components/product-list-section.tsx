@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { ChevronLeft, Sparkles } from "lucide-react";
@@ -6,6 +5,7 @@ import { BuilderPart } from "@/components/builder-part";
 import { DiscountExpiryRefresh } from "@/components/discount-expiry-refresh";
 import { DragScrollRow } from "@/components/drag-scroll-row";
 import { ProductListSliderShell } from "@/components/product-list-slider-shell";
+import { SquareBanner } from "@/components/square-banner";
 import { FlashSaleCountdown } from "@/components/flash-sale-countdown";
 import { ProductCard, type ProductCardBuilder } from "@/components/product-card";
 import { ProductFeatureTile, ProductRankedItem, ProductThumbItem } from "@/components/product-list-items";
@@ -87,11 +87,6 @@ export function ProductListSection({ sectionId, config, descriptionHtml, data, d
       // "view all" button sits opposite the title.
       const banner = config.banner;
       const listed = banner ? products : rest;
-      const bannerPicture = banner && (
-        <span className="relative block aspect-square w-full overflow-hidden rounded-2xl bg-black/5">
-          <Image src={banner.url} alt={banner.alt ?? config.title} fill sizes="(min-width: 1024px) 430px, 300px" className="object-cover" />
-        </span>
-      );
       return <Shell>
         <div className="mb-5 flex items-start justify-between gap-4">
           <div className="min-w-0">
@@ -102,7 +97,7 @@ export function ProductListSection({ sectionId, config, descriptionHtml, data, d
         </div>
         <DragScrollRow ariaLabel={config.title} showNavigation navigationPart={arrows} className="flex w-full min-w-0 max-w-full gap-3 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {banner
-            ? <BuilderPart {...part("banner")} className="contents"><div className="flex w-[300px] min-w-[300px] snap-start items-start sm:w-[380px] sm:min-w-[380px] lg:w-[430px] lg:min-w-[430px]">{banner.href ? <Link href={banner.href} className="block w-full" aria-label={banner.alt ?? config.title}>{bannerPicture}</Link> : bannerPicture}</div></BuilderPart>
+            ? <BuilderPart {...part("banner")} className="contents"><SquareBanner src={banner.url} alt={banner.alt ?? config.title} href={banner.href || undefined} /></BuilderPart>
             : <div className="flex w-[240px] min-w-[240px] snap-start sm:w-[300px] sm:min-w-[300px]"><ProductFeatureTile product={first} builder={builder} className="min-h-[200px] w-full" /></div>}
           {cards(listed, cardWidth, banner ? 0 : 1)}{viewAll(cardWidth)}
         </DragScrollRow>{refresh}
