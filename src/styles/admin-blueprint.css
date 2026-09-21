@@ -548,10 +548,13 @@ textarea.bp-input { min-height: 90px; resize: vertical; }
    always outranks a layered one regardless of specificity or source order. */
 .bp-input.bp-input-sm { font-size: 13px; }
 
-/* Dropdowns keep the same hairline border as every other `.bp-input` at rest, hover and focus
-   (previously transparent until hover/focus) — chevron spacing is the only thing still
-   special-cased here. */
-select.bp-input { appearance: none; padding-inline-end: 28px; }
+/* A select (BpSelect): the visible control is a `.bp-input` button, so it has the same hairline at
+   rest, hover and focus as every other field, with room kept for the chevron. The real `<select>`
+   underneath is invisible and inert — it only carries the value, name and change event. */
+button.bp-select-trigger { display: flex; align-items: center; gap: 8px; padding-inline-end: 28px; text-align: start; cursor: pointer; }
+button.bp-select-trigger:disabled { cursor: not-allowed; }
+.bp-select-placeholder { color: var(--bp-muted); }
+.bp-select-native { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; pointer-events: none; }
 /* Room for the leading search glyph and the trailing clear button. Tailwind padding
    utilities cannot do this: `.bp-input` is unlayered and always wins over them. */
 .bp-input-search { padding-inline-start: 34px; padding-inline-end: 36px; }
@@ -1076,7 +1079,8 @@ select.bp-input { appearance: none; padding-inline-end: 28px; }
   cursor: pointer;
   transition: background-color 0.12s ease;
 }
-.bp-option:hover:not(:disabled) { background: var(--bp-hover); }
+.bp-option:hover:not(:disabled),
+.bp-option[data-active="true"]:not(:disabled) { background: var(--bp-hover); }
 .bp-option:disabled { opacity: 0.5; cursor: default; }
 .bp-option[aria-selected="true"] { padding-inline-start: 16px; background: color-mix(in srgb, var(--bp-accent) 9%, transparent); font-weight: 700; }
 .bp-option[aria-selected="true"]::before {
@@ -1088,6 +1092,9 @@ select.bp-input { appearance: none; padding-inline-end: 28px; }
   border-radius: 2px;
   background: var(--bp-accent);
 }
+.bp-option[aria-selected="true"]:hover:not(:disabled),
+.bp-option[aria-selected="true"][data-active="true"]:not(:disabled) { background: color-mix(in srgb, var(--bp-accent) 15%, transparent); }
+.bp-option-muted { color: var(--bp-muted); }
 .bp-option-create { color: var(--bp-accent); font-weight: 700; }
 .bp-option-check { flex: none; color: var(--bp-accent); }
 .bp-option-swatch {
