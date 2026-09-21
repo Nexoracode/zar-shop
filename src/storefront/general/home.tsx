@@ -9,7 +9,7 @@ import { HomepageBrands } from "@/components/homepage-brands";
 import { HomepageLatestArticles } from "@/components/homepage-latest-articles";
 import { HomepageProductFeed } from "@/components/homepage-product-feed";
 import { HomepageBestSellers } from "@/components/homepage-best-sellers";
-import { ProductCard } from "@/components/product-card";
+import { ProductCard, type ProductCardBuilder } from "@/components/product-card";
 import { StorefrontHeroSlider } from "@/components/storefront-hero-slider";
 import { StorefrontImageTiles } from "@/components/storefront-image-tiles";
 import { ViewAllProductCard } from "@/components/view-all-product-card";
@@ -20,7 +20,7 @@ import { getStorefrontFlashDeals, getStorefrontProductFeed } from "@/modules/pro
 import type { StorefrontProductCardItem } from "@/modules/products/storefront-feed-contract";
 import { builderSectionProps } from "@/modules/page-builder/sections";
 import { BuilderPart } from "@/components/builder-part";
-import { isPartHidden } from "@/modules/page-builder/display-parts";
+import { isPartHidden, sectionDisplay } from "@/modules/page-builder/display-parts";
 import { arrangeCategories } from "@/modules/page-builder/section-settings";
 import { getPageSectionSettings } from "@/modules/page-builder/section-settings-store";
 import { pageSectionLimits } from "@/modules/settings/settings-limits";
@@ -43,22 +43,23 @@ function resolveCategoryIcon(value: string): LucideIcon {
   return ShoppingBag;
 }
 
-function ProductRail({ title, description, products, href }: { title: string; description: string; products: StorefrontProductCardItem[]; href: string }) {
+function ProductRail({ title, description, products, href, cardBuilder }: { title: string; description: string; products: StorefrontProductCardItem[]; href: string; cardBuilder: ProductCardBuilder }) {
   if (!products.length) return null;
   return <section className="min-w-0 overflow-hidden rounded-2xl border border-[#e6e8ec] bg-white px-4 py-5 sm:px-6 lg:px-7 lg:py-7">
     <div className="mb-5 flex items-end justify-between gap-4"><div><h2 className="m-0 text-xl font-bold text-[#232934] sm:text-2xl">{title}</h2><p className="mb-0 mt-1 text-xs text-[#858b95] sm:text-sm">{description}</p></div><Link href={href} className="inline-flex shrink-0 items-center gap-1 text-xs font-bold text-[#232934] transition hover:text-black">مشاهده همه<ChevronLeft size={15} /></Link></div>
     <DragScrollRow ariaLabel={title} showNavigation className="flex w-full min-w-0 max-w-full gap-3 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-      {products.map((product, index) => <div key={product.id} className="w-[164px] min-w-[164px] snap-start sm:w-[206px] sm:min-w-[206px] lg:w-[218px] lg:min-w-[218px]"><ProductCard {...product} storefrontVariant="gallery" imageTone={index % 4} /></div>)}
+      {products.map((product, index) => <div key={product.id} className="w-[164px] min-w-[164px] snap-start sm:w-[206px] sm:min-w-[206px] lg:w-[218px] lg:min-w-[218px]"><ProductCard {...product} storefrontVariant="gallery" imageTone={index % 4} builder={cardBuilder} /></div>)}
     </DragScrollRow>
   </section>;
 }
 
 export async function GeneralHome({ editable = false }: { /** The viewer can edit the page (the page builder is mounted): disabled sections and switched-off parts are rendered so it can show them. */ editable?: boolean }) {
-  const [homepage, latestFeed, popularFeed, flashDeals, allCategories, brands, latestArticles, pageDisplay, sectionSettings] = await Promise.all([
+  const sectionSettings = await getPageSectionSettings();
+  const [homepage, latestFeed, popularFeed, flashDeals, allCategories, brands, latestArticles, pageDisplay] = await Promise.all([
     getHomepageSettings(),
     getStorefrontProductFeed({ sort: "LATEST", page: 1 }),
     getStorefrontProductFeed({ sort: "POPULAR", page: 1, pageSize: 12 }),
-    getStorefrontFlashDeals(),
+    getStorefrontFlashDeals(sectionSettings.FEATURED_PRODUCTS.limit),
     db.category.findMany({
       where: { parentId: null, isActive: true, products: { some: { status: "ACTIVE", storeIndustry: "GENERAL" } } },
       include: { image: true, _count: { select: { products: { where: { status: "ACTIVE", storeIndustry: "GENERAL" } } } } },
@@ -73,10 +74,11 @@ export async function GeneralHome({ editable = false }: { /** The viewer can edi
     }),
     getLatestPublishedArticles(4),
     getPageDisplaySettings(),
-    getPageSectionSettings(),
   ]);
 
-  const categories = arrangeCategories(allCategories, sectionSettings.categories);
+  const categories = arrangeCategories(allCategories, sectionSettings.CATEGORIES);
+  const cardBuilder = (section: string): ProductCardBuilder => ({ section, hiddenParts: sectionDisplay(pageDisplay, section).hiddenParts, editable });
+  const featuredPart = (id: string) => ({ section: "FEATURED_PRODUCTS", id, hidden: isPartHidden(pageDisplay, "FEATURED_PRODUCTS", id), editable });
   const categoriesPart = (id: string) => ({ section: "CATEGORIES", id, hidden: isPartHidden(pageDisplay, "CATEGORIES", id), editable });
   const heroSlides = buildStorefrontHeroSlides(homepage, "/images/zar-hero-campaign.png");
   const sectionById = new Map(homepage.sections.map((section) => [section.id, section]));
@@ -92,7 +94,7 @@ export async function GeneralHome({ editable = false }: { /** The viewer can edi
     {homepage.tileGroups.map((group) => group.tiles.some((tile) => tile.media) && <section key={group.id} {...sectionProps(`TILE_GROUP:${group.id}`)} className={container} aria-label="پیشنهادهای تصویری"><StorefrontImageTiles groups={[group]} /></section>)}
 
     {categories.length > 0 && <section {...sectionProps("CATEGORIES")} className={`${container} rounded-2xl bg-white px-3 py-6 sm:px-6 lg:py-8`} aria-label="دسته‌بندی محصولات">
-      <div className="mb-6 flex items-center justify-between"><BuilderPart {...categoriesPart("title")}><h2 className="m-0 text-lg font-bold text-[#232934] sm:text-xl">{sectionSettings.categories.title}</h2></BuilderPart><BuilderPart {...categoriesPart("more")}><Link href="/products" className="inline-flex items-center gap-1 text-xs font-bold text-[var(--brand-primary)]">همه کالاها<ChevronLeft size={15} /></Link></BuilderPart></div>
+      <div className="mb-6 flex items-center justify-between"><BuilderPart {...categoriesPart("title")}><h2 className="m-0 text-lg font-bold text-[#232934] sm:text-xl">{sectionSettings.CATEGORIES.title}</h2></BuilderPart><BuilderPart {...categoriesPart("more")}><Link href="/products" className="inline-flex items-center gap-1 text-xs font-bold text-[var(--brand-primary)]">همه کالاها<ChevronLeft size={15} /></Link></BuilderPart></div>
       <DragScrollRow ariaLabel="دسته‌بندی محصولات" showNavigation className="flex w-full min-w-0 max-w-full gap-3 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">{categories.map((category, index) => {
         const Icon = resolveCategoryIcon(`${category.name} ${category.slug}`);
         return <Link key={category.id} href={`/products?category=${category.slug}`} className="group grid w-[84px] min-w-[84px] shrink-0 snap-start justify-items-center gap-2.5 text-center sm:w-[100px] sm:min-w-[100px] lg:w-[112px] lg:min-w-[112px]"><BuilderPart {...categoriesPart("categoryImage")} className="contents"><span className={`relative grid aspect-square w-full place-items-center overflow-hidden rounded-full ${categoryTones[index % categoryTones.length]} transition duration-300 group-hover:-translate-y-1 group-hover:shadow-md`}>{category.image?.type === "IMAGE" ? <Image src={category.image.url} alt={category.image.alt ?? category.name} fill sizes="112px" className="object-cover transition duration-500 group-hover:scale-105" /> : <><span className="absolute -left-4 -top-4 size-14 rounded-full bg-white/50" /><Icon size={38} strokeWidth={1.4} /></>}</span></BuilderPart><BuilderPart {...categoriesPart("categoryTitle")}><span className="w-full truncate text-xs font-bold text-[#3d4450]">{category.name}</span></BuilderPart><BuilderPart {...categoriesPart("categoryCount")}><small className="-mt-1 text-[10px] text-[#9298a2]">{category._count.products.toLocaleString("fa-IR")} کالا</small></BuilderPart></Link>;
@@ -105,17 +107,17 @@ export async function GeneralHome({ editable = false }: { /** The viewer can edi
       <div className="overflow-hidden rounded-2xl" style={{ background: "linear-gradient(225deg, var(--brand-primary) 0%, color-mix(in srgb, var(--brand-primary) 80%, black) 100%)" }}>
         <div className="flex flex-col lg:flex-row lg:items-stretch">
           <div className="flex shrink-0 items-center gap-3 px-4 pb-3 pt-5 lg:flex-col lg:justify-center lg:gap-6 lg:self-stretch lg:px-5 lg:pb-5 lg:pt-3">
-            <Sparkles size={24} className="shrink-0 text-[var(--brand-primary-foreground)] lg:size-16" />
-            <strong className="shrink-0 text-lg font-extrabold leading-6 text-[var(--brand-primary-foreground)] lg:text-center lg:text-2xl lg:leading-8">شگفت‌انگیز</strong>
-            {flashDealsExpiry && <FlashSaleCountdown endsAt={flashDealsExpiry} className="shrink-0" />}
-            <Link href="/products" className="mr-auto inline-flex shrink-0 items-center gap-1 text-xs font-bold text-[var(--brand-primary-foreground)] lg:mr-0 lg:mt-1 lg:rounded-lg lg:px-3 lg:py-2 lg:text-sm lg:transition lg:hover:bg-black/5">
+            <BuilderPart {...featuredPart("icon")}><Sparkles size={24} className="shrink-0 text-[var(--brand-primary-foreground)] lg:size-16" /></BuilderPart>
+            <BuilderPart {...featuredPart("title")}><strong className="shrink-0 text-lg font-extrabold leading-6 text-[var(--brand-primary-foreground)] lg:text-center lg:text-2xl lg:leading-8">{sectionSettings.FEATURED_PRODUCTS.title}</strong></BuilderPart>
+            {flashDealsExpiry && <BuilderPart {...featuredPart("countdown")}><FlashSaleCountdown endsAt={flashDealsExpiry} className="shrink-0" /></BuilderPart>}
+            <BuilderPart {...featuredPart("more")} className="contents"><Link href="/products" className="mr-auto inline-flex shrink-0 items-center gap-1 text-xs font-bold text-[var(--brand-primary-foreground)] lg:mr-0 lg:mt-1 lg:rounded-lg lg:px-3 lg:py-2 lg:text-sm lg:transition lg:hover:bg-black/5">
               <span className="lg:hidden">همه</span><span className="hidden lg:inline">مشاهده همه</span><ChevronLeft size={15} />
-            </Link>
+            </Link></BuilderPart>
           </div>
           <div className="min-w-0 flex-1 overflow-hidden p-3 sm:p-4 lg:p-5">
-            <DragScrollRow ariaLabel="پیشنهادهای شگفت‌انگیز" showNavigation className="flex w-full min-w-0 max-w-full gap-1 overflow-x-auto pb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-              {flashDeals.map((product, index) => <div key={product.id} className="w-[calc(50%-2px)] min-w-[calc(50%-2px)] snap-start sm:w-[220px] sm:min-w-[220px] lg:w-[224px] lg:min-w-[224px]"><ProductCard {...product} storefrontVariant="gallery" imageTone={index % 4} /></div>)}
-              <div className="w-[calc(50%-2px)] min-w-[calc(50%-2px)] snap-start sm:w-[220px] sm:min-w-[220px] lg:w-[224px] lg:min-w-[224px]"><ViewAllProductCard href="/products" /></div>
+            <DragScrollRow ariaLabel="پیشنهادهای شگفت‌انگیز" showNavigation navigationPart={{ section: "FEATURED_PRODUCTS", hidden: isPartHidden(pageDisplay, "FEATURED_PRODUCTS", "arrows"), editable }} className="flex w-full min-w-0 max-w-full gap-1 overflow-x-auto pb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              {flashDeals.map((product, index) => <div key={product.id} className="w-[calc(50%-2px)] min-w-[calc(50%-2px)] snap-start sm:w-[220px] sm:min-w-[220px] lg:w-[224px] lg:min-w-[224px]"><ProductCard {...product} storefrontVariant="gallery" imageTone={index % 4} builder={cardBuilder("FEATURED_PRODUCTS")} /></div>)}
+              <BuilderPart {...featuredPart("viewAll")} className="w-[calc(50%-2px)] min-w-[calc(50%-2px)] snap-start sm:w-[220px] sm:min-w-[220px] lg:w-[224px] lg:min-w-[224px]"><ViewAllProductCard href="/products" /></BuilderPart>
             </DragScrollRow>
           </div>
         </div>
@@ -123,11 +125,11 @@ export async function GeneralHome({ editable = false }: { /** The viewer can edi
       <DiscountExpiryRefresh at={flashDealsExpiry} />
     </section>}
 
-    {popularFeed.items.length > 0 && <div {...sectionProps("POPULAR_PRODUCTS")} className={container}><ProductRail title="محبوب‌ترین کالاها" description="محصولاتی که بیشتر مورد توجه مشتریان قرار گرفته‌اند" products={popularFeed.items} href="/products?sortby=popular" /></div>}
+    {popularFeed.items.length > 0 && <div {...sectionProps("POPULAR_PRODUCTS")} className={container}><ProductRail title="محبوب‌ترین کالاها" description="محصولاتی که بیشتر مورد توجه مشتریان قرار گرفته‌اند" products={popularFeed.items} href="/products?sortby=popular" cardBuilder={cardBuilder("POPULAR_PRODUCTS")} /></div>}
 
     {popularFeed.items.length > 0 && <div {...sectionProps("BEST_SELLING_PRODUCTS")} className={container}><HomepageBestSellers products={popularFeed.items} /></div>}
 
-    <section {...sectionProps("LATEST_PRODUCTS")} className={`${container} min-w-0 overflow-hidden rounded-2xl border border-[#e6e8ec] bg-white px-4 py-6 sm:px-6 lg:px-7 lg:py-8`}><div className="mb-5 flex items-end justify-between gap-4"><div><h2 className="m-0 text-xl font-bold text-[#232934] sm:text-2xl">جدیدترین محصولات</h2><p className="mb-0 mt-1 text-xs text-[#858b95] sm:text-sm">تازه‌ترین کالاهای اضافه‌شده به فروشگاه</p></div><Link href="/products?sortby=newest" className="inline-flex shrink-0 items-center gap-1 text-xs font-bold text-[#232934] transition hover:text-black">مشاهده همه<ChevronLeft size={15} /></Link></div><HomepageProductFeed initialFeed={latestFeed} industry="GENERAL" /></section>
+    <section {...sectionProps("LATEST_PRODUCTS")} className={`${container} min-w-0 overflow-hidden rounded-2xl border border-[#e6e8ec] bg-white px-4 py-6 sm:px-6 lg:px-7 lg:py-8`}><div className="mb-5 flex items-end justify-between gap-4"><div><h2 className="m-0 text-xl font-bold text-[#232934] sm:text-2xl">جدیدترین محصولات</h2><p className="mb-0 mt-1 text-xs text-[#858b95] sm:text-sm">تازه‌ترین کالاهای اضافه‌شده به فروشگاه</p></div><Link href="/products?sortby=newest" className="inline-flex shrink-0 items-center gap-1 text-xs font-bold text-[#232934] transition hover:text-black">مشاهده همه<ChevronLeft size={15} /></Link></div><HomepageProductFeed initialFeed={latestFeed} industry="GENERAL" cardBuilder={cardBuilder("LATEST_PRODUCTS")} /></section>
 
     {latestArticles.length > 0 && <div {...sectionProps("ARTICLES")} className={`${container} min-w-0 overflow-hidden rounded-2xl border border-[#e6e8ec] bg-white px-4 py-6 sm:px-6 lg:px-7 lg:py-8`}><HomepageLatestArticles articles={latestArticles} /></div>}
 

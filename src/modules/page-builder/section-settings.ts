@@ -5,6 +5,16 @@ import { pageSectionLimits } from "@/modules/settings/settings-limits";
 // says and how many/which items it lists, as opposed to the display switches in `display-parts.ts`. Each section that
 // has some has its own schema and defaults here; only values that differ from the defaults are stored.
 
+const titleSchema = (max: number) => z.string().trim()
+  .min(2, "عنوان بخش باید حداقل ۲ نویسه باشد.")
+  .max(max, `عنوان بخش نباید بیشتر از ${max.toLocaleString("fa-IR")} نویسه باشد.`);
+
+const countSchema = (min: number, max: number) => z.number({ error: "تعداد نمایش را به‌صورت عدد وارد کنید." })
+  .int("تعداد نمایش باید عدد صحیح باشد.")
+  .min(min, `تعداد نمایش باید حداقل ${min.toLocaleString("fa-IR")} باشد.`)
+  .max(max, `تعداد نمایش نباید بیشتر از ${max.toLocaleString("fa-IR")} باشد.`);
+
+// ---- the homepage category strip
 export const categoriesSortValues = ["MANUAL", "NAME", "MOST_PRODUCTS"] as const;
 export type CategoriesSort = (typeof categoriesSortValues)[number];
 export const categoriesSortLabels: Record<CategoriesSort, string> = {
@@ -14,13 +24,8 @@ export const categoriesSortLabels: Record<CategoriesSort, string> = {
 };
 
 export const categoriesSectionSettingsSchema = z.object({
-  title: z.string().trim()
-    .min(2, "عنوان بخش باید حداقل ۲ نویسه باشد.")
-    .max(pageSectionLimits.categoriesTitle, `عنوان بخش نباید بیشتر از ${pageSectionLimits.categoriesTitle.toLocaleString("fa-IR")} نویسه باشد.`),
-  limit: z.number({ error: "تعداد نمایش را به‌صورت عدد وارد کنید." })
-    .int("تعداد نمایش باید عدد صحیح باشد.")
-    .min(pageSectionLimits.categoriesMin, `تعداد نمایش باید حداقل ${pageSectionLimits.categoriesMin.toLocaleString("fa-IR")} باشد.`)
-    .max(pageSectionLimits.categoriesMax, `تعداد نمایش نباید بیشتر از ${pageSectionLimits.categoriesMax.toLocaleString("fa-IR")} باشد.`),
+  title: titleSchema(pageSectionLimits.title),
+  limit: countSchema(pageSectionLimits.categoriesMin, pageSectionLimits.categoriesMax),
   sort: z.enum(categoriesSortValues, { error: "ترتیب نمایش را انتخاب کنید." }),
 });
 export type CategoriesSectionSettings = z.infer<typeof categoriesSectionSettingsSchema>;
@@ -28,20 +33,54 @@ export type CategoriesSectionSettings = z.infer<typeof categoriesSectionSettings
 // The homepage's category strip as it was before it became editable (a fixed title and the first ten categories).
 export const categoriesSectionDefaults: CategoriesSectionSettings = { title: "خرید بر اساس دسته‌بندی", limit: 10, sort: "MANUAL" };
 
+// ---- the flash-deals ("شگفت‌انگیز") section
+export const featuredSectionSettingsSchema = z.object({
+  title: titleSchema(pageSectionLimits.title),
+  limit: countSchema(pageSectionLimits.featuredMin, pageSectionLimits.featuredMax),
+});
+export type FeaturedSectionSettings = z.infer<typeof featuredSectionSettingsSchema>;
+
+// The flash-deals section as it was before it became editable (a fixed title and up to twelve products).
+export const featuredSectionDefaults: FeaturedSectionSettings = { title: "شگفت‌انگیز", limit: 12 };
+
 /** The sections that have content settings, by the id the builder and the storage use. */
-export const sectionSettingsSchemas = { CATEGORIES: categoriesSectionSettingsSchema } as const;
+export const sectionSettingsSchemas = { CATEGORIES: categoriesSectionSettingsSchema, FEATURED_PRODUCTS: featuredSectionSettingsSchema } as const;
 export type SectionSettingsId = keyof typeof sectionSettingsSchemas;
 export function isSectionSettingsId(id: string): id is SectionSettingsId {
   return id in sectionSettingsSchemas;
 }
 
-export type PageSectionSettings = { categories: CategoriesSectionSettings };
+export type PageSectionSettings = { CATEGORIES: CategoriesSectionSettings; FEATURED_PRODUCTS: FeaturedSectionSettings };
+export const sectionSettingsDefaults: PageSectionSettings = { CATEGORIES: categoriesSectionDefaults, FEATURED_PRODUCTS: featuredSectionDefaults };
+
+/** The form fields of a section's edit dialog, in order (text ones full width, the others two to a row). */
+export type ContentField =
+  | { name: string; kind: "text"; label: string; maxLength: number }
+  | { name: string; kind: "number"; label: string; max: number; hint?: string }
+  | { name: string; kind: "select"; label: string; options: { value: string; label: string }[] };
+
+export const sectionContentFields: Record<SectionSettingsId, ContentField[]> = {
+  CATEGORIES: [
+    { name: "title", kind: "text", label: "عنوان بخش", maxLength: pageSectionLimits.title },
+    { name: "limit", kind: "number", label: "تعداد نمایش", max: pageSectionLimits.categoriesMax, hint: `حداکثر ${pageSectionLimits.categoriesMax.toLocaleString("fa-IR")} دسته` },
+    { name: "sort", kind: "select", label: "ترتیب نمایش", options: categoriesSortValues.map((value) => ({ value, label: categoriesSortLabels[value] })) },
+  ],
+  FEATURED_PRODUCTS: [
+    { name: "title", kind: "text", label: "عنوان بخش", maxLength: pageSectionLimits.title },
+    { name: "limit", kind: "number", label: "تعداد نمایش", max: pageSectionLimits.featuredMax, hint: `حداکثر ${pageSectionLimits.featuredMax.toLocaleString("fa-IR")} محصول` },
+  ],
+};
 
 /** Lenient read of the stored document: whatever is missing or malformed falls back to the section's defaults. */
 export function parseStoredSectionSettings(value: unknown): PageSectionSettings {
   const stored = value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : {};
-  const categories = categoriesSectionSettingsSchema.safeParse({ ...categoriesSectionDefaults, ...(stored.CATEGORIES && typeof stored.CATEGORIES === "object" ? stored.CATEGORIES : {}) });
-  return { categories: categories.success ? categories.data : categoriesSectionDefaults };
+  const result = { ...sectionSettingsDefaults } as Record<SectionSettingsId, unknown>;
+  for (const id of Object.keys(sectionSettingsSchemas) as SectionSettingsId[]) {
+    const own = stored[id] && typeof stored[id] === "object" ? (stored[id] as object) : {};
+    const parsed = sectionSettingsSchemas[id].safeParse({ ...sectionSettingsDefaults[id], ...own });
+    if (parsed.success) result[id] = parsed.data;
+  }
+  return result as PageSectionSettings;
 }
 
 /**

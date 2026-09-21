@@ -1,6 +1,8 @@
 import Image from "next/image";
 import Link from "next/link";
+import type { ReactNode } from "react";
 import { Star } from "lucide-react";
+import { BuilderPart } from "@/components/builder-part";
 import { ProductFavoriteButton } from "@/components/product-favorite-button";
 
 const galleryImageBackgrounds = [
@@ -35,6 +37,13 @@ export function ProductCardSkeleton() {
   );
 }
 
+/**
+ * How a homepage section configures the cards it lists (the page builder's "product card" switches, see
+ * `productCardParts` in `display-parts.ts`): the section they belong to and which of their parts are switched off.
+ * `editable` renders the switched-off parts anyway so the builder can bring them back live.
+ */
+export type ProductCardBuilder = { section: string; hiddenParts: string[]; editable: boolean };
+
 type ProductCardProps = {
   id?: string;
   isFavorite?: boolean;
@@ -54,9 +63,10 @@ type ProductCardProps = {
   stock?: number;
   rating?: number;
   colors?: Array<{ id: string; name: string; hex: string }>;
+  builder?: ProductCardBuilder;
 };
 
-export function ProductCard({ id, isFavorite, href, name, category, industry, weight, makingFee, discountPercent, price, originalPrice, image, storefrontVariant = "default", imageTone = 0, stock, rating, colors = [] }: ProductCardProps) {
+export function ProductCard({ id, isFavorite, href, name, category, industry, weight, makingFee, discountPercent, price, originalPrice, image, storefrontVariant = "default", imageTone = 0, stock, rating, colors = [], builder }: ProductCardProps) {
   if (storefrontVariant === "catalog") {
     return <Link href={href} className="group relative flex min-h-[390px] min-w-0 flex-col border-b border-l border-slate-200 bg-white p-4 transition duration-200 hover:z-10 hover:shadow-[0_6px_24px_rgba(0,0,0,.09)] focus-visible:z-10 focus-visible:outline-2 focus-visible:outline-[var(--brand-primary)]">
       {colors.length > 0 && <span className="absolute right-2 top-5 z-10 flex flex-col gap-0.5" aria-label={`${colors.length.toLocaleString("fa-IR")} رنگ موجود`}>
@@ -82,6 +92,10 @@ export function ProductCard({ id, isFavorite, href, name, category, industry, we
     </Link>;
   }
   const isGallery = storefrontVariant === "gallery";
+  // A part of the card the page builder can switch off; outside a builder-aware section the card is drawn whole.
+  const part = (id: string, node: ReactNode) => builder
+    ? <BuilderPart section={builder.section} id={`card.${id}`} hidden={builder.hiddenParts.includes(`card.${id}`)} editable={builder.editable}>{node}</BuilderPart>
+    : node;
   const imageBackground = industry === "GENERAL" ? generalImageBackgrounds[Math.abs(imageTone) % generalImageBackgrounds.length] : galleryImageBackgrounds[Math.abs(imageTone) % galleryImageBackgrounds.length];
   return (
     <Link
@@ -90,7 +104,7 @@ export function ProductCard({ id, isFavorite, href, name, category, industry, we
     >
       {/* Media */}
       <div className={`relative overflow-hidden ${isGallery ? "aspect-square rounded-[7px]" : "aspect-[1/1.08] bg-[var(--surface-tertiary)]"}`} style={isGallery ? { background: imageBackground } : undefined}>
-        {image ? (
+        {part("image", image ? (
           <Image
             src={image.src}
             alt={image.alt}
@@ -104,18 +118,18 @@ export function ProductCard({ id, isFavorite, href, name, category, industry, we
             <span className="block w-[36%] aspect-square border-[clamp(9px,1.5vw,17px)] border-[#c49a4d] rounded-full -rotate-[18deg] shadow-[inset_0_0_0_4px_#f8dda1,0_18px_32px_rgba(75,52,19,0.2)]" />
             <span className="absolute top-[27%] right-[29%] text-white text-2xl drop-shadow-[0_0_14px_#fff]">✦</span>
           </div>
-        )}
-        {isGallery && id && <ProductFavoriteButton productId={id} initialFavorite={isFavorite} className="absolute right-2.5 top-2.5 z-10 shadow-sm" />}
-        {isGallery && makingFee ? <span className="absolute bottom-2.5 right-2.5 rounded-[4px] bg-slate-100 px-2 py-1 text-[0.6rem] font-bold text-slate-600 shadow-sm">{makingFee.type === "PERCENT" ? <>اجرت {makingFee.value.toLocaleString("fa-IR")}٪{makingFee.value < 5 && " | کم‌اجرت"}</> : "اجرت ثابت"}</span> : isGallery && discountPercent !== undefined && discountPercent > 0 ? <span className="absolute bottom-2.5 right-2.5 rounded-[4px] bg-[var(--danger)] px-2 py-1 text-[0.6rem] font-bold text-[var(--danger-foreground)]">٪{discountPercent.toLocaleString("fa-IR")}</span> : null}
+        ))}
+        {isGallery && id && part("favorite", <ProductFavoriteButton productId={id} initialFavorite={isFavorite} className="absolute right-2.5 top-2.5 z-10 shadow-sm" />)}
+        {part("badge", isGallery && makingFee ? <span className="absolute bottom-2.5 right-2.5 rounded-[4px] bg-slate-100 px-2 py-1 text-[0.6rem] font-bold text-slate-600 shadow-sm">{makingFee.type === "PERCENT" ? <>اجرت {makingFee.value.toLocaleString("fa-IR")}٪{makingFee.value < 5 && " | کم‌اجرت"}</> : "اجرت ثابت"}</span> : isGallery && discountPercent !== undefined && discountPercent > 0 ? <span className="absolute bottom-2.5 right-2.5 rounded-[4px] bg-[var(--danger)] px-2 py-1 text-[0.6rem] font-bold text-[var(--danger-foreground)]">٪{discountPercent.toLocaleString("fa-IR")}</span> : null)}
       </div>
 
       {/* Content */}
       <div className={`px-1 pb-4 sm:pb-5 ${isGallery ? "pt-2 text-right" : "px-2.5 pt-2.5 text-center sm:px-[15px] sm:pt-[17px]"}`}>
         {!isGallery && <span className="text-[0.7rem] text-[var(--muted)]">{industry === "GOLD" ? `${category} · ${weight} گرم` : category}</span>}
-        <h3 className={`font-medium ${isGallery ? `mb-1 mt-0 line-clamp-2 h-9 overflow-hidden text-[0.76rem] leading-[1.15rem] sm:text-[0.82rem] ${industry === "GENERAL" ? "text-slate-700" : ""}` : "mb-[7px] mt-[5px] min-h-8 text-[0.82rem] sm:text-[0.95rem]"}`}>{name}</h3>
+        {part("name", <h3 className={`font-medium ${isGallery ? `mb-1 mt-0 line-clamp-2 h-9 overflow-hidden text-[0.76rem] leading-[1.15rem] sm:text-[0.82rem] ${industry === "GENERAL" ? "text-slate-700" : ""}` : "mb-[7px] mt-[5px] min-h-8 text-[0.82rem] sm:text-[0.95rem]"}`}>{name}</h3>)}
         <div className={isGallery ? "grid min-h-9 grid-rows-[1rem_1.125rem] content-start justify-items-start gap-0.5" : ""}>
-          {originalPrice ? <span className={`${isGallery ? "block" : "ml-2"} text-[0.7rem] text-slate-400 line-through`}>{originalPrice}</span> : isGallery ? <span aria-hidden="true" className="invisible block text-[0.7rem]">بدون تخفیف</span> : null}
-          <strong className={`${isGallery ? "block text-[0.72rem]" : "text-[0.76rem] sm:text-[0.92rem]"} text-[var(--brand-primary)]`}>{price}</strong>
+          {part("originalPrice", originalPrice ? <span className={`${isGallery ? "block" : "ml-2"} text-[0.7rem] text-slate-400 line-through`}>{originalPrice}</span> : isGallery ? <span aria-hidden="true" className="invisible block text-[0.7rem]">بدون تخفیف</span> : null)}
+          {part("price", <strong className={`${isGallery ? "block text-[0.72rem]" : "text-[0.76rem] sm:text-[0.92rem]"} text-[var(--brand-primary)]`}>{price}</strong>)}
         </div>
       </div>
     </Link>

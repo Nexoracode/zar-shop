@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { displayCss, isPartHidden, isSectionEnabled, normalizeDisplay, pageDisplaySchema, parseStoredDisplay, sameDisplay, sectionDisplayConfig, setSectionDisplay } from "./display-parts";
+import { PRODUCT_CARD_GROUP, displayCss, productCardParts, isPartHidden, isSectionEnabled, normalizeDisplay, pageDisplaySchema, parseStoredDisplay, sameDisplay, sectionDisplayConfig, setSectionDisplay } from "./display-parts";
 
 test("the header has different switchable parts per industry", () => {
   assert.ok(sectionDisplayConfig("HEADER", "GENERAL")?.parts.some((part) => part.id === "categories"));
@@ -56,4 +56,17 @@ test("the save schema accepts known parts only", () => {
 test("stored garbage counts as nothing customised", () => {
   assert.deepEqual(parseStoredDisplay("nope"), {});
   assert.deepEqual(parseStoredDisplay(null), {});
+});
+
+test("sections that list product cards can switch the card's parts, gold and general worded differently", () => {
+  const featured = sectionDisplayConfig("FEATURED_PRODUCTS", "GENERAL")?.parts ?? [];
+  assert.ok(featured.some((part) => part.id === "countdown"));
+  assert.deepEqual(featured.filter((part) => part.group === PRODUCT_CARD_GROUP).map((part) => part.id), productCardParts("GENERAL").map((part) => part.id));
+  assert.equal(productCardParts("GOLD").find((part) => part.id === "card.badge")?.label, "برچسب اجرت / تخفیف");
+  assert.equal(productCardParts("GENERAL").find((part) => part.id === "card.badge")?.label, "درصد تخفیف");
+  const schema = pageDisplaySchema("GENERAL");
+  assert.equal(schema.safeParse({ FEATURED_PRODUCTS: { enabled: true, hiddenParts: ["card.price", "countdown"] } }).success, true);
+  assert.equal(schema.safeParse({ POPULAR_PRODUCTS: { enabled: true, hiddenParts: ["countdown"] } }).success, false);
+  // The gold template has no flash-deals section.
+  assert.equal(pageDisplaySchema("GOLD").safeParse({ FEATURED_PRODUCTS: { enabled: true, hiddenParts: ["card.price"] } }).success, false);
 });

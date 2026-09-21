@@ -27,6 +27,11 @@ export function SectionDisplayDialog({ sectionLabel, masterLabel, parts, value, 
   const [enabled, setEnabled] = useState(value.enabled);
   const [hidden, setHidden] = useState(() => new Set(value.hiddenParts));
 
+  // The parts without a group first, then each group under its own heading.
+  const groups = [undefined, ...new Set(parts.map((part) => part.group).filter(Boolean))]
+    .map((name) => ({ name, parts: parts.filter((part) => part.group === name) }))
+    .filter((group) => group.parts.length > 0);
+
   function togglePart(id: string, shown: boolean) {
     setHidden((current) => {
       const next = new Set(current);
@@ -46,14 +51,17 @@ export function SectionDisplayDialog({ sectionLabel, masterLabel, parts, value, 
             <Modal.CloseTrigger aria-label="بستن" className="grid size-9 place-items-center rounded-lg text-[var(--muted)]"><X size={20} /></Modal.CloseTrigger>
           </Modal.Header>
           <Modal.Body className="grid gap-4 p-5">
-            {parts.length > 0 && <>
-              <div className="grid gap-3 sm:grid-cols-2">
-                {parts.map((part) => (
-                  <CheckboxCard key={part.id} isSelected={!hidden.has(part.id)} isDisabled={!enabled} onChange={(shown) => togglePart(part.id, shown)}>{part.label}</CheckboxCard>
-                ))}
+            {groups.map((group) => (
+              <div key={group.name ?? "main"} className="grid gap-3">
+                {group.name && <h3 className="m-0 text-sm font-bold text-[var(--foreground)]">{group.name}</h3>}
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {group.parts.map((part) => (
+                    <CheckboxCard key={part.id} isSelected={!hidden.has(part.id)} isDisabled={!enabled} onChange={(shown) => togglePart(part.id, shown)}>{part.label}</CheckboxCard>
+                  ))}
+                </div>
+                <hr className="m-0 border-0 border-t border-[var(--border)]" />
               </div>
-              <hr className="m-0 border-0 border-t border-[var(--border)]" />
-            </>}
+            ))}
             <CheckboxCard icon={<Eye size={18} />} isSelected={enabled} onChange={setEnabled}>{masterLabel ?? `کل بخش «${sectionLabel}» فعال باشد`}</CheckboxCard>
           </Modal.Body>
           <Modal.Footer className="gap-3 border-t border-[var(--border)] p-5">

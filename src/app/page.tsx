@@ -46,7 +46,7 @@ export default async function HomePage() {
           industry={industry}
           identity={{ storeName: general.storeName, tagline: general.tagline, logo: brand.mainLogoMedia ? { id: brand.mainLogoMedia.id, title: brand.mainLogoMedia.title || brand.mainLogoMedia.alt || "لوگو", alt: brand.mainLogoMedia.alt, url: brand.mainLogoMedia.url, type: "IMAGE", mimeType: brand.mainLogoMedia.mimeType } : null }}
           menu={{ items: homepage.menuItems, linkOptions: menuLinkOptions }}
-          categories={sectionSettings.categories}
+          sectionSettings={sectionSettings}
           hero={{
             contentMode: homepage.heroContentMode,
             title: homepage.heroTitle,

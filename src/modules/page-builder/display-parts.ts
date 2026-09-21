@@ -8,7 +8,7 @@ import { BUILDER_SECTION_ATTRIBUTE } from "@/modules/page-builder/sections";
 export const BUILDER_PART_ATTRIBUTE = "data-builder-part";
 
 export type PageBuilderIndustry = "GOLD" | "GENERAL";
-export type DisplayPart = { id: string; label: string };
+export type DisplayPart = { id: string; label: string; /** Parts sharing a group are listed together under its heading. */ group?: string };
 export type SectionDisplay = { enabled: boolean; hiddenParts: string[] };
 export type PageDisplay = Record<string, SectionDisplay>;
 
@@ -19,6 +19,21 @@ export type SectionDisplayConfig = {
   /** The whole-section switch's wording; a default is used when a section doesn't need its own. */
   masterLabel?: string;
 };
+
+// The switches of a product card, for every section that lists cards (`ProductCard`'s `builder` prop). They are
+// stored as parts of the section itself under the `card.` prefix, so each section configures its own cards.
+export const PRODUCT_CARD_GROUP = "کارت محصول";
+export function productCardParts(industry: PageBuilderIndustry): DisplayPart[] {
+  return [
+    { id: "card.image", label: "تصویر", group: PRODUCT_CARD_GROUP },
+    { id: "card.favorite", label: "دکمه علاقه‌مندی", group: PRODUCT_CARD_GROUP },
+    // The cost badge on a gold card is the making fee; on a general one it is the discount percent.
+    { id: "card.badge", label: industry === "GOLD" ? "برچسب اجرت / تخفیف" : "درصد تخفیف", group: PRODUCT_CARD_GROUP },
+    { id: "card.name", label: "نام محصول", group: PRODUCT_CARD_GROUP },
+    { id: "card.originalPrice", label: "قیمت قبل از تخفیف", group: PRODUCT_CARD_GROUP },
+    { id: "card.price", label: "قیمت", group: PRODUCT_CARD_GROUP },
+  ];
+}
 
 // The parts a section can toggle. This must list exactly what the section's template wraps in
 // `<BuilderPart>` (see `src/components/builder-part.tsx`); sections without an entry have no display settings yet.
@@ -71,6 +86,25 @@ const displaySections: Record<string, { master: "display" | "layout"; masterLabe
       GOLD: [],
     },
   },
+  // The flash-deals section exists in the general template only.
+  FEATURED_PRODUCTS: {
+    master: "layout",
+    parts: {
+      GENERAL: [
+        { id: "icon", label: "آیکون" },
+        { id: "title", label: "عنوان بخش" },
+        { id: "countdown", label: "شمارنده زمان" },
+        { id: "more", label: "نمایش بیشتر" },
+        { id: "arrows", label: "نمایش فلش‌ها" },
+        { id: "viewAll", label: "کارت «مشاهده همه»" },
+        ...productCardParts("GENERAL"),
+      ],
+      GOLD: [],
+    },
+  },
+  // For now these list only their cards' switches; the rest of their parts comes with their own dialogs.
+  POPULAR_PRODUCTS: { master: "layout", parts: { GENERAL: productCardParts("GENERAL"), GOLD: [] } },
+  LATEST_PRODUCTS: { master: "layout", parts: { GENERAL: productCardParts("GENERAL"), GOLD: productCardParts("GOLD") } },
   // Sections with nothing to toggle inside them still get the whole-section switch.
   PROMO_BANNER: { master: "display", parts: { GENERAL: [], GOLD: [] } },
   FOOTER: { master: "display", parts: { GENERAL: [], GOLD: [] } },

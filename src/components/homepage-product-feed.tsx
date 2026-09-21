@@ -6,7 +6,7 @@ import { Button, Spinner } from "@heroui/react";
 import { RotateCw } from "lucide-react";
 import { DragScrollRow } from "@/components/drag-scroll-row";
 import { InlineAlert } from "@/components/inline-alert";
-import { ProductCard } from "@/components/product-card";
+import { ProductCard, type ProductCardBuilder } from "@/components/product-card";
 import { ViewAllProductCard } from "@/components/view-all-product-card";
 import { DiscountExpiryRefresh } from "@/components/discount-expiry-refresh";
 import { discountEndMoments } from "@/modules/products/discount-window";
@@ -18,9 +18,9 @@ const filters: Array<{ id: StorefrontProductSort; label: string; mobile: boolean
   { id: "LOW_FEE", label: "کم‌اجرت‌ها", mobile: false },
 ];
 
-type Props = { initialFeed: StorefrontProductFeed; industry?: "GOLD" | "GENERAL" };
+type Props = { initialFeed: StorefrontProductFeed; industry?: "GOLD" | "GENERAL"; /** The page builder's switches for this section's cards. */ cardBuilder?: ProductCardBuilder };
 
-export function HomepageProductFeed({ initialFeed, industry = "GOLD" }: Props) {
+export function HomepageProductFeed({ initialFeed, industry = "GOLD", cardBuilder }: Props) {
   const [feed, setFeed] = useState(initialFeed);
   const [loading, setLoading] = useState(false);
   const [pendingSort, setPendingSort] = useState<StorefrontProductSort | null>(null);
@@ -76,7 +76,7 @@ export function HomepageProductFeed({ initialFeed, industry = "GOLD" }: Props) {
           </InlineAlert>
         ) : feed.items.length ? (
           <DragScrollRow key={`${feed.sort}-${feed.pagination.page}`} ariaLabel="محصولات فروشگاه" showNavigation={industry === "GENERAL"} className="flex w-full min-w-0 max-w-full gap-4 overflow-x-auto pb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            {feed.items.map((product, index) => <div key={product.id} className="w-[calc(50%-8px)] min-w-[calc(50%-8px)] snap-start sm:w-[220px] sm:min-w-[220px] lg:w-[224px] lg:min-w-[224px]"><ProductCard {...product} storefrontVariant="gallery" imageTone={index % 4} /></div>)}
+            {feed.items.map((product, index) => <div key={product.id} className="w-[calc(50%-8px)] min-w-[calc(50%-8px)] snap-start sm:w-[220px] sm:min-w-[220px] lg:w-[224px] lg:min-w-[224px]"><ProductCard {...product} storefrontVariant="gallery" imageTone={index % 4} builder={cardBuilder} /></div>)}
             {industry === "GENERAL" && <div className="w-[calc(50%-8px)] min-w-[calc(50%-8px)] snap-start sm:w-[220px] sm:min-w-[220px] lg:w-[224px] lg:min-w-[224px]"><ViewAllProductCard href="/products" /></div>}
             <DiscountExpiryRefresh moments={discountEndMoments(feed.items)} />
           </DragScrollRow>

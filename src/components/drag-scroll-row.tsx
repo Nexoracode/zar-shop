@@ -3,15 +3,18 @@
 import { useCallback, useEffect, useRef, useState, type MouseEvent, type PointerEvent, type ReactNode } from "react";
 import { Button } from "@heroui/react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { BuilderPart } from "@/components/builder-part";
 
 type Props = {
   children: ReactNode;
   className?: string;
   ariaLabel: string;
   showNavigation?: boolean;
+  /** Makes the prev/next arrows a switchable part of a section (the page builder's "show arrows"). */
+  navigationPart?: { section: string; hidden: boolean; editable: boolean };
 };
 
-export function DragScrollRow({ children, className = "", ariaLabel, showNavigation = false }: Props) {
+export function DragScrollRow({ children, className = "", ariaLabel, showNavigation = false, navigationPart }: Props) {
   const rowRef = useRef<HTMLDivElement>(null);
   const drag = useRef({ active: false, moved: false, pointerId: -1, startX: 0, startScrollLeft: 0, lastX: 0, lastTime: 0, velocity: 0, targetScrollLeft: 0 });
   const dragFrame = useRef<number | null>(null);
@@ -153,9 +156,13 @@ export function DragScrollRow({ children, className = "", ariaLabel, showNavigat
     drag.current.moved = false;
   }
 
+  const arrows = <>
+    {canGoBack && <Button type="button" isIconOnly variant="secondary" aria-label={`${ariaLabel}، موارد قبلی`} onPress={() => scrollCards(false)} className="absolute right-2 top-1/2 z-20 hidden size-11 min-h-11 min-w-11 -translate-y-1/2 rounded-full border border-[#d8dce2] bg-white text-[#3f4652] shadow-md hover:bg-[#f7f8fa] sm:inline-flex"><ChevronRight size={21} /></Button>}
+    {canGoForward && <Button type="button" isIconOnly variant="secondary" aria-label={`${ariaLabel}، موارد بعدی`} onPress={() => scrollCards(true)} className="absolute left-2 top-1/2 z-20 hidden size-11 min-h-11 min-w-11 -translate-y-1/2 rounded-full border border-[#d8dce2] bg-white text-[#3f4652] shadow-md hover:bg-[#f7f8fa] sm:inline-flex"><ChevronLeft size={21} /></Button>}
+  </>;
+
   return <div className="relative min-w-0">
     <div ref={rowRef} dir="rtl" tabIndex={0} aria-label={ariaLabel} className={`${className} select-none ${isDragging ? "cursor-grabbing" : "cursor-grab"}`} onPointerDown={pointerDown} onPointerMove={pointerMove} onPointerUp={finishDrag} onPointerCancel={finishDrag} onClickCapture={captureClick} onDragStart={(event) => event.preventDefault()}>{children}</div>
-    {showNavigation && canGoBack && <Button type="button" isIconOnly variant="secondary" aria-label={`${ariaLabel}، موارد قبلی`} onPress={() => scrollCards(false)} className="absolute right-2 top-1/2 z-20 hidden size-11 min-h-11 min-w-11 -translate-y-1/2 rounded-full border border-[#d8dce2] bg-white text-[#3f4652] shadow-md hover:bg-[#f7f8fa] sm:inline-flex"><ChevronRight size={21} /></Button>}
-    {showNavigation && canGoForward && <Button type="button" isIconOnly variant="secondary" aria-label={`${ariaLabel}، موارد بعدی`} onPress={() => scrollCards(true)} className="absolute left-2 top-1/2 z-20 hidden size-11 min-h-11 min-w-11 -translate-y-1/2 rounded-full border border-[#d8dce2] bg-white text-[#3f4652] shadow-md hover:bg-[#f7f8fa] sm:inline-flex"><ChevronLeft size={21} /></Button>}
+    {showNavigation && (navigationPart ? <BuilderPart section={navigationPart.section} id="arrows" hidden={navigationPart.hidden} editable={navigationPart.editable}>{arrows}</BuilderPart> : arrows)}
   </div>;
 }

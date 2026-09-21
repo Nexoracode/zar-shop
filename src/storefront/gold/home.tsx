@@ -13,7 +13,7 @@ import { getLatestPublishedArticles } from "@/modules/articles/service";
 import { getStorefrontProductFeed } from "@/modules/products/storefront-feed";
 import { getGeneralStoreSettings } from "@/modules/settings/general-settings";
 import { builderSectionProps } from "@/modules/page-builder/sections";
-import { isPartHidden } from "@/modules/page-builder/display-parts";
+import { isPartHidden, sectionDisplay } from "@/modules/page-builder/display-parts";
 import { getPageDisplaySettings } from "@/modules/page-builder/display-settings";
 import { isSectionHiddenAtRender } from "@/modules/page-builder/layout-draft";
 import { getHomepageSettings, type HomepageLayoutItemId, type HomepageTreasureCardId } from "@/modules/settings/homepage-settings";
@@ -70,7 +70,7 @@ export async function GoldHome({ editable = false }: { /** The viewer can edit t
 
     <section {...sectionProps("LATEST_PRODUCTS")} className="bg-white py-[30px] lg:py-[60px]" aria-labelledby="latest-products">
       <div className={container}>
-        <HomepageProductFeed initialFeed={productFeed} />
+        <HomepageProductFeed initialFeed={productFeed} cardBuilder={{ section: "LATEST_PRODUCTS", hiddenParts: sectionDisplay(pageDisplay, "LATEST_PRODUCTS").hiddenParts, editable }} />
       </div>
     </section>
 
