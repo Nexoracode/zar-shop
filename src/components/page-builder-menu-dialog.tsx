@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Button, Modal, Spinner, toast } from "@heroui/react";
+import { Button, I18nProvider, Modal, Spinner, toast } from "@heroui/react";
 import { ArrowDown, ArrowUp, Plus, Trash2, X } from "lucide-react";
 import { HeroSelectField } from "@/components/hero-select-field";
 import { InlineAlert } from "@/components/inline-alert";
@@ -79,6 +79,9 @@ export function PageBuilderMenuDialog({ initialItems, linkOptions, onSaved, onCl
   }
 
   return (
+    // react-aria places a select's list by the locale's direction, not the page's `dir`: without a Persian locale it opens
+    // from the left edge of the field. The provider sits outside the modal so the portaled list inherits it.
+    <I18nProvider locale="fa-IR">
     <Modal.Backdrop isOpen onOpenChange={(next) => { if (!next && !saving) onClose(); }} variant="blur" className="z-[150]">
       <Modal.Container size="lg" placement="center">
         <Modal.Dialog data-page-builder-ui aria-label="ویرایش منو" dir="rtl" className="mx-4 max-w-[640px] bg-[var(--surface)] text-right">
@@ -118,5 +121,6 @@ export function PageBuilderMenuDialog({ initialItems, linkOptions, onSaved, onCl
         </Modal.Dialog>
       </Modal.Container>
     </Modal.Backdrop>
+    </I18nProvider>
   );
 }
