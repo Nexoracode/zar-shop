@@ -144,7 +144,7 @@ export function ProductListSection({ sectionId, config, descriptionHtml, data, d
               </BuilderPart>
             )
             : <ProductFeatureTile product={first} builder={builder} className="min-h-[220px] sm:w-[36%] sm:shrink-0" />}
-          <div className="grid min-w-0 flex-1 content-start gap-x-4 gap-y-4 md:grid-cols-2">
+          <div className="grid min-w-0 flex-1 auto-rows-fr content-start gap-x-4 gap-y-4 md:grid-cols-2 xl:grid-cols-3">
             {listed.map((product) => <ProductOfferCard key={product.id} product={product} builder={builder} reserveTop={reserveTop} horizontal />)}
           </div>
         </div>{refresh}

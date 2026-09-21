@@ -16,16 +16,16 @@ export function ProductOfferCard({ product, builder, reserveTop, horizontal = fa
   if (horizontal) {
     return (
       <div className="flex min-w-0 gap-3 text-right">
-        <Link href={product.href} className="shrink-0 self-start">
+        <Link href={product.href} className="w-[84px] shrink-0 self-stretch">
           {cardPart(builder, "image", (
-            <span className="relative block h-[124px] w-[92px] overflow-hidden rounded-lg border border-slate-200 bg-[var(--surface-tertiary)]">
-              {product.image && <Image src={product.image.src} alt={product.image.alt} fill sizes="92px" className="object-cover" />}
+            <span className="relative block h-full min-h-[116px] w-full overflow-hidden rounded-lg border border-slate-200 bg-[var(--surface-tertiary)]">
+              {product.image && <Image src={product.image.src} alt={product.image.alt} fill sizes="84px" className="object-cover" />}
             </span>
           ))}
         </Link>
         <div className="flex min-w-0 flex-1 flex-col">
           {reserveTop && (
-            <div className="mb-1.5 min-h-8">
+            <div className="mb-1.5 min-h-7">
               {product.discountEndsAt && cardPart(builder, "countdown", (
                 <div className="flex items-center justify-between gap-2 border-b-2 border-[var(--danger)] pb-1">
                   <span className="shrink-0 whitespace-nowrap text-[0.7rem] font-bold text-[var(--danger)]">پیشنهاد شگفت‌انگیز</span>
