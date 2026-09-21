@@ -14,6 +14,8 @@ import type { ProductListData } from "@/modules/page-builder/product-list-data";
 import { productListDefaultMoreLabel, type ProductListConfig } from "@/modules/page-builder/product-lists";
 import { discountEndMoments } from "@/modules/products/discount-window";
 
+// The small cards of the looks that show a row of compact products (picture, name and price only).
+const compactWidth = "w-[128px] min-w-[128px] snap-start sm:w-[142px] sm:min-w-[142px]";
 const cardWidth = "w-[164px] min-w-[164px] snap-start sm:w-[206px] sm:min-w-[206px] lg:w-[218px] lg:min-w-[218px]";
 
 function Shell({ children, roomy = false }: { children: ReactNode; /** The roomier padding of the ranked list. */ roomy?: boolean }) {
@@ -59,7 +61,8 @@ export function ProductListSection({ sectionId, config, descriptionHtml, data, d
   );
   const header = headerFor(false);
   const arrows = { section: sectionId, hidden: isPartHidden(display, sectionId, "arrows"), editable };
-  const viewAll = (className: string) => <BuilderPart {...part("viewAll")} className={className}><ViewAllProductCard href={moreHref} label={config.moreLabel} /></BuilderPart>;
+  const viewAll = (className: string, compact = false) => <BuilderPart {...part("viewAll")} className={className}><ViewAllProductCard href={moreHref} label={config.moreLabel} compact={compact} /></BuilderPart>;
+  const compactCards = (items: typeof products) => items.map((product) => <div key={product.id} className={compactWidth}><ProductThumbItem product={product} builder={builder} vertical /></div>);
   const cards = (items: typeof products, className: string, toneOffset = 0) => items.map((product, index) => (
     <div key={product.id} className={className}><ProductCard {...product} storefrontVariant="gallery" imageTone={(index + toneOffset) % 4} builder={builder} /></div>
   ));
@@ -81,8 +84,8 @@ export function ProductListSection({ sectionId, config, descriptionHtml, data, d
     case "FEATURE_SLIDER":
       return <Shell>{header}
         <DragScrollRow ariaLabel={config.title} showNavigation navigationPart={arrows} className="flex w-full min-w-0 max-w-full gap-3 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          <div className="flex w-[170px] min-w-[170px] snap-start sm:w-[220px] sm:min-w-[220px]"><ProductFeatureTile product={first} builder={builder} className="w-full" /></div>
-          {cards(rest, cardWidth, 1)}{viewAll(cardWidth)}
+          <div className="flex w-[150px] min-w-[150px] snap-start sm:w-[190px] sm:min-w-[190px]"><ProductFeatureTile product={first} builder={builder} className="min-h-[190px] w-full" /></div>
+          {compactCards(rest)}{viewAll(compactWidth, true)}
         </DragScrollRow>{refresh}
       </Shell>;
 
@@ -90,8 +93,8 @@ export function ProductListSection({ sectionId, config, descriptionHtml, data, d
       // One row: the banner (the first product) on the right, the other products as small cards to its left.
       return <Shell>{header}
         <div className="flex flex-col gap-4 lg:flex-row lg:items-stretch">
-          <ProductFeatureTile product={first} builder={builder} className="min-h-[200px] lg:min-h-0 lg:w-[230px] lg:shrink-0" />
-          {rest.length > 0 && <div className="grid min-w-0 flex-1 grid-cols-2 content-start gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">{rest.map((product, index) => <ProductCard key={product.id} {...product} storefrontVariant="gallery" imageTone={(index + 1) % 4} builder={builder} />)}</div>}
+          <ProductFeatureTile product={first} builder={builder} className="min-h-[170px] lg:min-h-0 lg:w-[38%] lg:shrink-0" />
+          {rest.length > 0 && <div className="grid min-w-0 flex-1 grid-cols-3 content-start gap-2 sm:grid-cols-4 lg:grid-cols-3 xl:grid-cols-4">{rest.map((product) => <ProductThumbItem key={product.id} product={product} builder={builder} vertical />)}</div>}
         </div>
         {refresh}
       </Shell>;
@@ -124,7 +127,7 @@ export function ProductListSection({ sectionId, config, descriptionHtml, data, d
           </div>
           <div className="min-w-0 overflow-hidden rounded-xl bg-white p-3 sm:p-4">
             <DragScrollRow ariaLabel={config.title} showNavigation navigationPart={arrows} className="flex w-full min-w-0 max-w-full gap-3 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-              {cards(products, cardWidth)}{viewAll(cardWidth)}
+              {compactCards(products)}{viewAll(compactWidth, true)}
             </DragScrollRow>
           </div>
           {refresh}
