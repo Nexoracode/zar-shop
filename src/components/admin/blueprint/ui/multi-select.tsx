@@ -135,7 +135,7 @@ export function BpMultiSelect({
         <ChevronDown size={15} aria-hidden />
       </div>
 
-      <BpPopover open={open} anchorRef={boxRef} onClose={close} label={label ?? ariaLabel ?? "انتخاب"} width={320}>
+      <BpPopover open={open} anchorRef={boxRef} onClose={close} label={label ?? ariaLabel ?? "انتخاب"} width={320} className="bp-listbox-panel">
         <div className="relative mb-2">
           <Search size={15} aria-hidden className="pointer-events-none absolute start-2.5 top-1/2 z-10 -translate-y-1/2 text-[var(--bp-muted)]" />
           <input
@@ -155,10 +155,10 @@ export function BpMultiSelect({
           />
         </div>
         {createHint && onCreate ? <p className="bp-muted m-0 mb-2 text-[11px]">{createHint}</p> : null}
-        <ul id={`${fieldId}-list`} role="listbox" aria-multiselectable className="bp-scroll m-0 max-h-56 list-none overflow-y-auto p-0">
+        <ul id={`${fieldId}-list`} role="listbox" aria-multiselectable className="bp-listbox">
           {canCreate ? (
             <li>
-              <button type="button" onClick={commitCreate} className="flex w-full items-center gap-2 border border-transparent px-3 py-2 text-start text-[13px] text-[var(--bp-accent)] hover:bg-[var(--bp-hover)]">
+              <button type="button" onClick={commitCreate} className="bp-option bp-option-create">
                 <Plus size={14} aria-hidden />
                 {createLabels.length > 1 ? `افزودن ${createLabels.length.toLocaleString("fa-IR")} مقدار` : `افزودن «${createLabels[0]}»`}
               </button>
@@ -166,14 +166,14 @@ export function BpMultiSelect({
           ) : null}
           {matches.map((option) => (
             <li key={option.value}>
-              <button type="button" onClick={() => { onAdd(option.value); setQuery(""); }} className="flex w-full items-center gap-2 border border-transparent px-3 py-2 text-start text-[13px] hover:bg-[var(--bp-hover)]">
-                {option.color ? <span aria-hidden className="h-3.5 w-3.5 shrink-0 rounded-full border border-[var(--bp-divider)]" style={{ background: option.color }} /> : null}
-                {option.label}
+              <button type="button" onClick={() => { onAdd(option.value); setQuery(""); }} className="bp-option">
+                {option.color ? <span aria-hidden className="bp-option-swatch" style={{ background: option.color }} /> : null}
+                <span className="min-w-0 flex-1 truncate">{option.label}</span>
               </button>
             </li>
           ))}
           {matches.length === 0 && !canCreate ? (
-            <li><span className="bp-muted block px-3 py-4 text-center text-[12px]">{onCreate && !trimmed ? "برای افزودن، نام مقدار را بنویسید." : emptyLabel}</span></li>
+            <li><span className="bp-option-empty">{onCreate && !trimmed ? "برای افزودن، نام مقدار را بنویسید." : emptyLabel}</span></li>
           ) : null}
         </ul>
       </BpPopover>

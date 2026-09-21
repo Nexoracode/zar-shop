@@ -123,7 +123,7 @@ export function BpAsyncMultiSelect<Hit extends BpAsyncMultiSelectHit>({
         <ChevronDown size={15} aria-hidden />
       </div>
 
-      <BpPopover open={open} anchorRef={boxRef} onClose={close} label={label ?? ariaLabel ?? "انتخاب"} width={340}>
+      <BpPopover open={open} anchorRef={boxRef} onClose={close} label={label ?? ariaLabel ?? "انتخاب"} width={340} className="bp-listbox-panel">
         <div className="relative mb-2">
           <Search size={15} aria-hidden className="pointer-events-none absolute start-2.5 top-1/2 z-10 -translate-y-1/2 text-[var(--bp-muted)]" />
           <input
@@ -136,7 +136,7 @@ export function BpAsyncMultiSelect<Hit extends BpAsyncMultiSelectHit>({
           />
           {loading && <span className="absolute end-2.5 top-1/2 -translate-y-1/2 text-[var(--bp-accent)]"><BpSpinner size={14} /></span>}
         </div>
-        <ul id={`${fieldId}-list`} role="listbox" aria-multiselectable className="bp-scroll m-0 max-h-56 list-none overflow-y-auto p-0">
+        <ul id={`${fieldId}-list`} role="listbox" aria-multiselectable className="bp-listbox">
           {matches.map((hit) => {
             const view = renderHit(hit);
             return (
@@ -144,7 +144,7 @@ export function BpAsyncMultiSelect<Hit extends BpAsyncMultiSelectHit>({
                 <button
                   type="button"
                   onClick={() => { onAdd(hit); setQuery(""); }}
-                  className="flex w-full items-center justify-between gap-2 border border-transparent px-3 py-2 text-start text-[13px] hover:bg-[var(--bp-hover)]"
+                  className="bp-option justify-between"
                 >
                   <span className="min-w-0 truncate">{view.label}</span>
                   {view.hint ? <span dir="ltr" className="bp-muted shrink-0 text-[11px]">{view.hint}</span> : null}
@@ -153,10 +153,10 @@ export function BpAsyncMultiSelect<Hit extends BpAsyncMultiSelectHit>({
             );
           })}
           {settled && matches.length === 0 ? (
-            <li><span className="bp-muted block px-3 py-4 text-center text-[12px]">{emptyLabel}</span></li>
+            <li><span className="bp-option-empty">{emptyLabel}</span></li>
           ) : null}
           {!ready ? (
-            <li><span className="bp-muted block px-3 py-4 text-center text-[12px]">برای جستجو دست‌کم {minChars.toLocaleString("fa-IR")} نویسه بنویسید.</span></li>
+            <li><span className="bp-option-empty">برای جستجو دست‌کم {minChars.toLocaleString("fa-IR")} نویسه بنویسید.</span></li>
           ) : null}
         </ul>
       </BpPopover>

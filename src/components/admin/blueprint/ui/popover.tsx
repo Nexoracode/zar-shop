@@ -11,7 +11,7 @@ import { createPortal } from "react-dom";
  * soon as it reaches past the bottom of the page, which stretches the page downwards. Fixed
  * positioning in a portal cannot do that.
  */
-export function BpPopover({ open, anchorRef, onClose, label, width = 300, placement: side = "below", children }: {
+export function BpPopover({ open, anchorRef, onClose, label, width = 300, placement: side = "below", className = "", children }: {
   open: boolean;
   anchorRef: RefObject<HTMLElement | null>;
   onClose: () => void;
@@ -23,6 +23,8 @@ export function BpPopover({ open, anchorRef, onClose, label, width = 300, placem
    * on top of the next icon.
    */
   placement?: "below" | "beside";
+  /** Extra class on the panel, for a popover with a look of its own (the option lists). */
+  className?: string;
   children: ReactNode;
 }) {
   const panelRef = useRef<HTMLDivElement>(null);
@@ -80,7 +82,7 @@ export function BpPopover({ open, anchorRef, onClose, label, width = 300, placem
       // `position` is set inline: `.bp-frame` declares `position: relative` from an unlayered
       // stylesheet, which outranks Tailwind's layered `fixed` utility.
       style={{ position: "fixed", top: placement?.top ?? 0, left: placement?.left ?? 0, visibility: placement ? undefined : "hidden", width: Math.min(width, typeof window === "undefined" ? width : window.innerWidth - 16), zIndex: 140 }}
-      className="bp-root bp-frame bg-[var(--bp-bg)] p-4 shadow-[var(--bp-shadow-lg)]"
+      className={`bp-root bp-frame bg-[var(--bp-bg)] p-4 shadow-[var(--bp-shadow-lg)] ${className}`.trim()}
     >
       {children}
     </div>,

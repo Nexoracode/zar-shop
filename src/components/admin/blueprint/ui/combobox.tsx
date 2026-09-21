@@ -1,7 +1,7 @@
 "use client";
 
 import { useId, useMemo, useRef, useState } from "react";
-import { ChevronDown, Plus, Search } from "lucide-react";
+import { Check, ChevronDown, Plus, Search } from "lucide-react";
 import { includesNormalizedText } from "@/lib/text-search";
 import { BpFieldMessage, BpRequiredMark, describedBy } from "./field-message";
 import { BpPopover } from "./popover";
@@ -129,8 +129,8 @@ export function BpCombobox({ label, "aria-label": ariaLabel, value, onChange, op
         ) : open ? <Search size={15} aria-hidden /> : <ChevronDown size={15} aria-hidden />}
       </div>
 
-      <BpPopover open={open} anchorRef={inputRef} onClose={() => { setQuery(""); setOpen(false); }} label={label ?? ariaLabel ?? "انتخاب گزینه"} width={320}>
-        <ul id={`${fieldId}-list`} role="listbox" className="bp-scroll m-0 max-h-64 list-none overflow-y-auto p-0">
+      <BpPopover open={open} anchorRef={inputRef} onClose={() => { setQuery(""); setOpen(false); }} label={label ?? ariaLabel ?? "انتخاب گزینه"} width={320} className="bp-listbox-panel">
+        <ul id={`${fieldId}-list`} role="listbox" className="bp-listbox">
           {matches.length ? matches.map((option) => (
             <li key={option.value}>
               <button
@@ -139,19 +139,20 @@ export function BpCombobox({ label, "aria-label": ariaLabel, value, onChange, op
                 aria-selected={option.value === value}
                 disabled={pending}
                 onClick={() => choose(option)}
-                className={`flex w-full items-center gap-2 border border-transparent px-3 py-2 text-start text-[13px] hover:bg-[var(--bp-hover)] disabled:opacity-50 ${option.value === value ? "bg-[var(--bp-accent-100)] text-[var(--bp-accent-800)]" : ""}`}
+                className="bp-option"
               >
-                {option.color && <span aria-hidden className="h-3.5 w-3.5 shrink-0 rounded-full border border-[var(--bp-divider)]" style={{ background: option.color }} />}
-                {option.label}
+                {option.color && <span aria-hidden className="bp-option-swatch" style={{ background: option.color }} />}
+                <span className="min-w-0 flex-1 truncate">{option.label}</span>
+                {option.value === value && <Check size={14} aria-hidden className="bp-option-check" />}
               </button>
             </li>
           )) : (
             <li>
               {canCreate ? (
-                <button type="button" disabled={pending} onClick={create} className="flex w-full items-center gap-2 border border-transparent px-3 py-2 text-start text-[13px] text-[var(--bp-accent)] hover:bg-[var(--bp-hover)] disabled:opacity-50">
+                <button type="button" disabled={pending} onClick={create} className="bp-option bp-option-create">
                   <Plus size={14} aria-hidden />افزودن «{trimmedQuery}»
                 </button>
-              ) : <span className="bp-muted block px-3 py-4 text-center text-[12px]">{emptyLabel}</span>}
+              ) : <span className="bp-option-empty">{emptyLabel}</span>}
             </li>
           )}
         </ul>

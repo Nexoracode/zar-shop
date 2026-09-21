@@ -1031,6 +1031,77 @@ select.bp-input { appearance: none; padding-inline-end: 28px; }
 .bp-scroll::-webkit-scrollbar-thumb { background: var(--bp-neutral-400); }
 .bp-scroll::-webkit-scrollbar-track { background: transparent; }
 
+/* — option lists — the drop-down under a combobox or a multi-select, drawn like the tooltip: the
+   same card-coloured plate with a hairline and soft shadow, rows with rounded corners, and the
+   tooltip's short accent rail (plus a tick) marking the chosen row. Scoped to the classes below, so
+   the other popovers (menus, pickers) keep their own look. — */
+.bp-root.bp-listbox-panel {
+  padding: 6px;
+  background: var(--bp-card);
+  border: 1px solid var(--bp-divider);
+  border-radius: var(--bp-radius);
+  box-shadow: var(--bp-shadow-lg);
+  transform-origin: 50% 0;
+  animation: bp-listbox-in 0.16s cubic-bezier(0.34, 1.4, 0.64, 1);
+}
+@keyframes bp-listbox-in { from { opacity: 0; transform: translateY(-4px) scale(0.97); } }
+.bp-listbox {
+  display: grid;
+  gap: 2px;
+  max-height: 16rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--bp-neutral-400) transparent;
+}
+.bp-listbox::-webkit-scrollbar { width: 6px; }
+.bp-listbox::-webkit-scrollbar-thumb { background: var(--bp-neutral-400); border-radius: 3px; }
+.bp-listbox::-webkit-scrollbar-track { background: transparent; }
+.bp-option {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 7px 12px;
+  border: 0;
+  border-radius: var(--bp-radius-sm);
+  background: transparent;
+  color: var(--bp-text);
+  font: inherit;
+  font-size: 13px;
+  text-align: start;
+  cursor: pointer;
+  transition: background-color 0.12s ease;
+}
+.bp-option:hover:not(:disabled) { background: var(--bp-hover); }
+.bp-option:disabled { opacity: 0.5; cursor: default; }
+.bp-option[aria-selected="true"] { padding-inline-start: 16px; background: color-mix(in srgb, var(--bp-accent) 9%, transparent); font-weight: 700; }
+.bp-option[aria-selected="true"]::before {
+  content: "";
+  position: absolute;
+  inset-block: 8px;
+  inset-inline-start: 6px;
+  width: 2px;
+  border-radius: 2px;
+  background: var(--bp-accent);
+}
+.bp-option-create { color: var(--bp-accent); font-weight: 700; }
+.bp-option-check { flex: none; color: var(--bp-accent); }
+.bp-option-swatch {
+  display: block;
+  width: 14px;
+  height: 14px;
+  flex: none;
+  border-radius: 50%;
+  /* A hairline keeps white and other very light colours visible against the plate. */
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--bp-text) 24%, transparent);
+}
+.bp-option-empty { display: block; padding: 16px 12px; color: var(--bp-muted); font-size: 12px; text-align: center; }
+@media (prefers-reduced-motion: reduce) { .bp-root.bp-listbox-panel { animation: none; } }
+
 .bp-nav-item {
   display: flex;
   align-items: center;
