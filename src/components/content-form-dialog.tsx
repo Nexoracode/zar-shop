@@ -107,17 +107,17 @@ export function ContentFormDialog({ title, ariaLabel, idPrefix, fields, initial,
     <I18nProvider locale="fa-IR">
       <Modal.Backdrop isOpen onOpenChange={(next) => { if (!next && !saving) onClose(); }} variant="blur" className="z-[150]">
         <Modal.Container size="sm" placement="center">
-          <Modal.Dialog data-page-builder-ui aria-label={ariaLabel} dir="rtl" className="mx-4 max-w-[520px] bg-[var(--surface)] text-right">
+          <Modal.Dialog data-page-builder-ui aria-label={ariaLabel} dir="rtl" className="p-0 mx-4 max-w-[520px] bg-[var(--surface)] text-right">
             <Modal.Header className="flex-row items-center justify-between border-b border-[var(--border)] p-5">
               <Modal.Heading className="text-base font-bold">{title}</Modal.Heading>
-              <Modal.CloseTrigger aria-label="بستن" className="grid size-9 place-items-center rounded-lg text-[var(--muted)]"><X size={20} /></Modal.CloseTrigger>
+              <Modal.CloseTrigger aria-label="بستن" className="static grid size-9 place-items-center rounded-lg text-[var(--muted)]"><X size={20} /></Modal.CloseTrigger>
             </Modal.Header>
-            <Modal.Body className="grid gap-1 p-5">
+            <Modal.Body className="m-0 grid gap-1 p-5">
               {textFields.map(renderField)}
               {rowFields.length > 0 && <div className="grid gap-x-3 sm:grid-cols-2">{rowFields.map(renderField)}</div>}
               {formError && <InlineAlert status="danger" compact className="mt-2">{formError}</InlineAlert>}
             </Modal.Body>
-            <Modal.Footer className="justify-start gap-3 border-t border-[var(--border)] p-5">
+            <Modal.Footer className="m-0 justify-start gap-3 border-t border-[var(--border)] p-5">
               <Button type="button" variant="primary" isPending={saving} onPress={() => void submit()} className="min-h-11 min-w-24 rounded-xl px-6 text-sm font-bold" style={brandPrimaryButtonStyle}>
                 {({ isPending }) => <>{isPending && <Spinner color="current" size="sm" />}تأیید</>}
               </Button>

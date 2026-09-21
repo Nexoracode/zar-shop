@@ -28,12 +28,12 @@ export function SectionEditDialog({ title, items, emptyMessage, footerAction, on
     // The dialog is portaled to <body>, so `data-page-builder-ui` on it keeps it clickable while the page is in edit mode.
     <Modal.Backdrop isOpen onOpenChange={(next) => { if (!next) onClose(); }} variant="blur" className="z-[150]">
       <Modal.Container size="sm" placement="center">
-        <Modal.Dialog data-page-builder-ui aria-label={title} dir="rtl" className="mx-4 max-w-[440px] bg-[var(--surface)] text-right">
+        <Modal.Dialog data-page-builder-ui aria-label={title} dir="rtl" className="p-0 mx-4 max-w-[440px] bg-[var(--surface)] text-right">
           <Modal.Header className="flex-row items-center justify-between border-b border-[var(--border)] p-5">
             <Modal.Heading className="text-base font-bold">{title}</Modal.Heading>
-            <Modal.CloseTrigger aria-label="بستن" className="grid size-9 place-items-center rounded-lg text-[var(--muted)]"><X size={20} /></Modal.CloseTrigger>
+            <Modal.CloseTrigger aria-label="بستن" className="static grid size-9 place-items-center rounded-lg text-[var(--muted)]"><X size={20} /></Modal.CloseTrigger>
           </Modal.Header>
-          <Modal.Body className="grid max-h-[60vh] gap-1 overflow-y-auto p-3">
+          <Modal.Body className="m-0 grid max-h-[60vh] gap-1 overflow-y-auto p-3">
             {items.length === 0 && emptyMessage && <p className="m-0 p-5 text-center text-sm leading-7 text-[var(--muted)]">{emptyMessage}</p>}
             {items.map((item, index) => {
               const Icon = itemIcons[item.icon];
@@ -52,7 +52,7 @@ export function SectionEditDialog({ title, items, emptyMessage, footerAction, on
             })}
           </Modal.Body>
           {footerAction && (
-            <Modal.Footer className="justify-start border-t border-[var(--border)] p-3">
+            <Modal.Footer className="m-0 justify-start border-t border-[var(--border)] p-3">
               <Button type="button" variant="ghost" isDisabled={footerAction.disabled} onPress={footerAction.onPress} className="min-h-11 gap-2 rounded-xl px-4 text-sm font-bold text-[var(--brand-primary)]"><Plus size={18} />{footerAction.label}</Button>
             </Modal.Footer>
           )}

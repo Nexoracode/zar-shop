@@ -84,12 +84,12 @@ export function PageBuilderMenuDialog({ initialItems, linkOptions, onSaved, onCl
     <I18nProvider locale="fa-IR">
     <Modal.Backdrop isOpen onOpenChange={(next) => { if (!next && !saving) onClose(); }} variant="blur" className="z-[150]">
       <Modal.Container size="lg" placement="center">
-        <Modal.Dialog data-page-builder-ui aria-label="ویرایش منو" dir="rtl" className="mx-4 max-w-[640px] bg-[var(--surface)] text-right">
+        <Modal.Dialog data-page-builder-ui aria-label="ویرایش منو" dir="rtl" className="p-0 mx-4 max-w-[640px] bg-[var(--surface)] text-right">
           <Modal.Header className="flex-row items-center justify-between border-b border-[var(--border)] p-5">
             <Modal.Heading className="text-base font-bold">منو</Modal.Heading>
-            <Modal.CloseTrigger aria-label="بستن" className="grid size-9 place-items-center rounded-lg text-[var(--muted)]"><X size={20} /></Modal.CloseTrigger>
+            <Modal.CloseTrigger aria-label="بستن" className="static grid size-9 place-items-center rounded-lg text-[var(--muted)]"><X size={20} /></Modal.CloseTrigger>
           </Modal.Header>
-          <Modal.Body className="grid max-h-[60vh] gap-4 overflow-y-auto p-5">
+          <Modal.Body className="m-0 grid max-h-[60vh] gap-4 overflow-y-auto p-5">
             <div className="grid items-end gap-3 sm:grid-cols-[minmax(0,1fr)_auto]">
               <HeroSelectField name="builder-menu-ready-link" label="افزودن لینک آماده" ariaLabel="افزودن لینک آماده" placeholder="صفحه یا دسته‌بندی" value="" disabled={full || saving} searchable options={linkOptions.map((option) => ({ value: option.id, label: `${option.group} — ${option.label}` }))} onValueChange={(id) => { const option = linkOptions.find((item) => item.id === id); if (option) addItem(option.label, option.href); }} />
               <Button type="button" variant="outline" isDisabled={full || saving} onPress={() => addItem("", "")} className="min-h-10 gap-1.5 rounded-lg px-4 text-sm font-bold"><Plus size={16} />آیتم دلخواه</Button>
@@ -112,7 +112,7 @@ export function PageBuilderMenuDialog({ initialItems, linkOptions, onSaved, onCl
             </ul>
             {formError && <InlineAlert status="danger" compact>{formError}</InlineAlert>}
           </Modal.Body>
-          <Modal.Footer className="gap-3 border-t border-[var(--border)] p-5">
+          <Modal.Footer className="m-0 gap-3 border-t border-[var(--border)] p-5">
             <Button type="button" variant="primary" isPending={saving} onPress={() => void submit()} className="min-h-11 flex-[1.4] rounded-xl text-sm font-bold" style={brandPrimaryButtonStyle}>
               {({ isPending }) => <>{isPending && <Spinner color="current" size="sm" />}ذخیره منو</>}
             </Button>
