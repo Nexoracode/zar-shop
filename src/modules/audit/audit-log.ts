@@ -59,6 +59,7 @@ const actionLabels: Record<string, string> = {
   PRODUCT_LIST_UPDATE: "ویرایش لیست محصولات صفحه اصلی",
   BANNER_SLIDER_CREATE: "افزودن اسلایدر بنر به صفحه اصلی",
   BANNER_SLIDER_UPDATE: "ویرایش اسلایدر بنر صفحه اصلی",
+  PAGE_SECTION_DRAFT_DISCARD: "رها کردن بخش‌های افزوده‌شده و ذخیره‌نشده صفحه",
   CONTENT_SETTINGS_UPDATE: "ویرایش محتوا و FAQ",
   COMMUNICATION_SETTINGS_UPDATE: "ویرایش تنظیمات پیامک",
   PAYMENT_GATEWAY_CONFIG_UPSERT: "ثبت یا ویرایش درگاه پرداخت",

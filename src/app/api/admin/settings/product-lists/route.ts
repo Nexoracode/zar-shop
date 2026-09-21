@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import type { Prisma } from "@generated/prisma/client";
 import { revalidateTag } from "next/cache";
 import { z } from "zod";
 import { db } from "@/lib/db";
@@ -7,11 +8,12 @@ import { auditRequestContext } from "@/modules/audit/request-context";
 import { getPermittedActor } from "@/modules/auth/session";
 import { sanitizeSectionDescription } from "@/modules/page-builder/rich-text-sanitize";
 import { parseStoredDisplay } from "@/modules/page-builder/display-parts";
+import { addDraftSectionId } from "@/modules/page-builder/draft-sections";
 import { isBuiltInProductListId, isProductListId, newProductListId, productListConfigSchema, pruneDisplayForList, resolveProductLists, type ProductListConfig } from "@/modules/page-builder/product-lists";
 import { getStoreIndustry, STORE_SETTING_ID } from "@/modules/settings/store-settings";
 
-// The product lists of the homepage (see modules/page-builder/product-lists.ts): POST adds one, PATCH edits one. A list
-// is stored in `StoreSetting.pageSectionSettings.PRODUCT_LISTS` under its section id; the other sections' stored
+// The product lists of the homepage (see modules/page-builder/product-lists.ts): POST adds one (as a draft, see
+// modules/page-builder/draft-sections.ts), PATCH edits one. A list is stored in `StoreSetting.pageSectionSettings.PRODUCT_LISTS` under its section id; the other sections' stored
 // settings are kept as they are.
 
 // The description is HTML from the browser: only what the editor can produce is kept.
@@ -31,7 +33,9 @@ async function storeList(id: string, config: ProductListConfig, actor: { id: str
     const current = await transaction.storeSetting.findUnique({ where: { id: STORE_SETTING_ID }, select: { pageSectionSettings: true, pageDisplaySettings: true } });
     const stored = current?.pageSectionSettings && typeof current.pageSectionSettings === "object" && !Array.isArray(current.pageSectionSettings) ? current.pageSectionSettings : {};
     const lists = "PRODUCT_LISTS" in stored && stored.PRODUCT_LISTS && typeof stored.PRODUCT_LISTS === "object" && !Array.isArray(stored.PRODUCT_LISTS) ? stored.PRODUCT_LISTS : {};
-    const next = { ...stored, PRODUCT_LISTS: { ...lists, [id]: config } };
+    const updated = { ...stored, PRODUCT_LISTS: { ...lists, [id]: config } };
+    // A new list is a draft until a layout that contains it is saved; the visitors don't see it before that.
+    const next = action === "PRODUCT_LIST_CREATE" ? (addDraftSectionId(updated, id) as Prisma.InputJsonObject) : updated;
     // A new layout may not have the parts an earlier one had switched off; drop those switches with it.
     const display = parseStoredDisplay(current?.pageDisplaySettings);
     const prunedDisplay = pruneDisplayForList(display, id, config, industry);

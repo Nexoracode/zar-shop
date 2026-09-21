@@ -46,7 +46,7 @@ export type PageSectionSettings = { CATEGORIES: CategoriesSectionSettings };
 export const sectionSettingsDefaults: PageSectionSettings = { CATEGORIES: categoriesSectionDefaults };
 
 /** The fixed sections' settings plus every product list of the store (by section id). */
-export type PageSectionSettingsBundle = PageSectionSettings & { productLists: Record<string, ProductListConfig>; /** The banner sliders added from the page builder, by section id. */ bannerSliders: Record<string, BannerSliderConfig> };
+export type PageSectionSettingsBundle = PageSectionSettings & { productLists: Record<string, ProductListConfig>; /** The banner sets added from the page builder (sliders and tile looks), by section id. */ bannerSliders: Record<string, BannerSliderConfig>; /** Added sections that are still drafts: not part of the page until a layout containing them is saved. */ draftSectionIds: string[] };
 
 /** The form fields of a section's edit dialog, in order (text ones full width, the others two to a row). */
 export type ContentField = { /** Hide the field while this says so (e.g. the category picker unless the source is a category). */ visibleWhen?: (values: Record<string, string>) => boolean } & (

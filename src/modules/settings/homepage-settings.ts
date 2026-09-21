@@ -5,6 +5,7 @@ import { STORE_SETTING_ID } from "@/modules/settings/store-settings";
 import { homepageFieldLimits } from "@/modules/settings/settings-limits";
 import { safeHrefSchema } from "@/modules/settings/safe-href";
 import { bannerSliderIdPattern, isBannerSliderId, resolveBannerSliders } from "@/modules/page-builder/banner-sliders";
+import { readDraftSectionIds } from "@/modules/page-builder/draft-sections";
 import { bannerTileLayouts } from "@/modules/page-builder/banners";
 import { isProductListId, productListIdPattern, resolveProductLists } from "@/modules/page-builder/product-lists";
 
@@ -126,7 +127,9 @@ function homepageBaseSectionIds(industry: "GOLD" | "GENERAL"): HomepageSectionId
 
 /** The ids of the sections the page builder added — product lists and banner sliders (the built-in lists are base sections already). */
 function addedProductListIds(pageSectionSettings: unknown, industry: "GOLD" | "GENERAL") {
-  return [...Object.keys(resolveProductLists(pageSectionSettings, industry)).filter(isProductListId), ...Object.keys(resolveBannerSliders(pageSectionSettings)).filter(isBannerSliderId)];
+  // A section still being made in the page builder is a draft: it joins the layout only when a layout containing it is saved.
+  const drafts = readDraftSectionIds(pageSectionSettings);
+  return [...Object.keys(resolveProductLists(pageSectionSettings, industry)).filter(isProductListId), ...Object.keys(resolveBannerSliders(pageSectionSettings)).filter(isBannerSliderId)].filter((id) => !drafts.includes(id));
 }
 
 function normalizeStoredSections(value: unknown, industry: "GOLD" | "GENERAL", tileGroups: z.infer<typeof homepageTileGroupsSchema>, productListIds: string[]) {

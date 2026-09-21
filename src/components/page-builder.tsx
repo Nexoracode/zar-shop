@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "@heroui/react";
 import { PageBuilderBar } from "@/components/page-builder-bar";
@@ -82,6 +82,8 @@ export function PageBuilder({ initialSections, initialDisplay, industry, identit
   // The section whose "add" button was pressed; the new one goes right below it.
   const [addAfter, setAddAfter] = useState<string | null>(null);
   const [addingList, setAddingList] = useState(false);
+  // Sections added during this edit: they exist on the server as drafts until "save" (see modules/page-builder/draft-sections.ts).
+  const [createdIds, setCreatedIds] = useState<string[]>([]);
   const productLists = { ...sectionSettings.productLists, ...localLists };
   const { layout, display } = draft.current;
 
@@ -104,15 +106,21 @@ export function PageBuilder({ initialSections, initialDisplay, industry, identit
     else toast.warning("این بخش قابل حذف نیست");
   }
 
+  // A section added during this edit was never part of the page, so removing it just takes it out of the draft (the
+  // server-side draft is thrown away with the next "save" or "cancel").
   function confirmRemove() {
-    const next = pendingRemoval ? removeSection(layout, pendingRemoval) : null;
+    const next = pendingRemoval ? (createdIds.includes(pendingRemoval) ? layout.filter((section) => section.id !== pendingRemoval) : removeSection(layout, pendingRemoval)) : null;
     if (next) commit({ layout: next, display });
     setPendingRemoval(null);
   }
 
   // Every section has display settings: the registry lists the switchable parts of the ones that have any, and a
   // layout section without an entry still gets the whole-section switch.
-  const productListConfig: DynamicDisplayConfig = (id) => (productLists[id] ? productListDisplayConfig(productLists[id], industry) : sectionSettings.bannerSliders[id] ? bannerSliderDisplayConfig(sectionSettings.bannerSliders[id]) : null);
+  const productListConfig: DynamicDisplayConfig = (id) => {
+    if (productLists[id]) return productListDisplayConfig(productLists[id], industry);
+    const bannerSet = sectionSettings.bannerSliders[id] ?? bannerSliders[id];
+    return bannerSet ? bannerSliderDisplayConfig(bannerSet) : null;
+  };
 
   function displayConfig(id: string): SectionDisplayConfig | null {
     return sectionDisplayConfig(id, industry, productListConfig) ?? (isLayoutSection(layout, id) ? { parts: [], master: "layout" } : null);
@@ -143,20 +151,36 @@ export function PageBuilder({ initialSections, initialDisplay, industry, identit
     finishEdit();
   }
 
-  // Where a section added from `sectionId`'s toolbar goes: right below it. The header and the promo banner sit above
-  // the whole layout, so below them is the top of it; the footer is below everything, so the end is right above it.
-  function positionBelow(sectionId: string | null): "start" | "end" | { after: string } {
-    if (sectionId === "HEADER" || sectionId === "PROMO_BANNER") return "start";
-    return sectionId && isLayoutSection(saved.layout, sectionId) ? { after: sectionId } : "end";
+  // The server-side drafts are thrown away: after "cancel", and for sections added and then removed again before "save".
+  // If it fails they simply stay hidden drafts, which the next visit to the page cleans up.
+  async function discardDrafts(ids: string[]) {
+    if (!ids.length) return;
+    try {
+      await fetch("/api/admin/settings/page-drafts", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ids }) });
+    } catch {
+      // nothing to do: see above
+    }
   }
 
-  // A section that now exists on the server (a new list) joins the layout of the saved state and of every state of the
-  // draft — each at its own spot below `position`'s section — so an unsaved draft survives and the next save keeps it.
-  function addSectionToLayout(id: string, savedPosition: "start" | "end" | { after: string }, draftPosition: "start" | "end" | { after: string }) {
-    const section = { id, enabled: true };
-    setSaved((snapshot) => ({ ...snapshot, layout: insertSection(snapshot.layout, section, savedPosition) }));
-    const inDraft = (snapshot: Snapshot): Snapshot => ({ ...snapshot, layout: insertSection(snapshot.layout, section, draftPosition) });
-    setDraft((state) => ({ current: inDraft(state.current), past: state.past.map(inDraft), future: state.future.map(inDraft) }));
+  // Drafts from an earlier visit (a reload, a closed tab) were never saved; nothing of this visit is in them yet.
+  useEffect(() => {
+    if (!sectionSettings.draftSectionIds.length) return;
+    void discardDrafts(sectionSettings.draftSectionIds).then(() => router.refresh());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Where a section added from `sectionId`'s toolbar goes: right below it in the draft. The header and the promo banner
+  // sit above the whole layout, so below them is the top of it; the footer is below everything, so the end is right above it.
+  function positionBelow(sectionId: string | null): "start" | "end" | { after: string } {
+    if (sectionId === "HEADER" || sectionId === "PROMO_BANNER") return "start";
+    return sectionId && isLayoutSection(layout, sectionId) ? { after: sectionId } : "end";
+  }
+
+  // A section created on the server as a draft joins the page's draft — one undoable step, saved with everything else.
+  function addSectionToDraft(id: string) {
+    const position = positionBelow(addAfter);
+    setCreatedIds((current) => [...current, id]);
+    setDraft((state) => ({ current: { ...state.current, layout: insertSection(state.current.layout, { id, enabled: true }, position) }, past: [...state.past, state.current], future: [] }));
   }
 
   async function createList(layoutChoice: ProductListLayout) {
@@ -167,19 +191,10 @@ export function PageBuilder({ initialSections, initialDisplay, industry, identit
       const result = await response.json().catch(() => null);
       if (!response.ok || typeof result?.id !== "string") throw new Error(result?.message ?? "افزودن لیست محصولات انجام نشد.");
       setLocalLists((current) => ({ ...current, [result.id]: config }));
-      // The new list is stored below the section it was added from. The saved order is stored right away (from the
-      // saved layout, so an unsaved draft is not swept along); if that fails the list stays where the server put it,
-      // at the end, and the draft alone carries the position until "save".
-      const position = positionBelow(addAfter);
-      let placed = true;
-      try {
-        await patchJson("/api/admin/settings/homepage/layout", { sections: insertSection(saved.layout, { id: result.id, enabled: true }, position) }, "ذخیره جایگاه لیست انجام نشد.");
-      } catch {
-        placed = false;
-      }
-      addSectionToLayout(result.id, placed ? position : "end", position);
-      if (placed) toast.success("لیست محصولات زیر بخش انتخاب‌شده اضافه شد");
-      else toast.warning("لیست اضافه شد، ولی جایگاهش هنوز ذخیره نشده", { description: "برای ثبت جایگاه، «ذخیره» را بزنید." });
+      // The list is a draft on the server; it sits below the section it was added from in the page's draft and only
+      // becomes part of the page with "save".
+      addSectionToDraft(result.id);
+      toast.success("لیست محصولات زیر بخش انتخاب‌شده اضافه شد", { description: "برای ثبت در صفحه، «ذخیره» را بزنید." });
       setAddStep(null);
       // Its details come next: the edit form opens straight away.
       setEditSection(result.id);
@@ -191,13 +206,11 @@ export function PageBuilder({ initialSections, initialDisplay, industry, identit
     }
   }
 
-  // A new banner section (a tile row or a slider) exists on the server: it takes its place in the layout, its own
-  // form opens, and the page is refreshed to show it.
-  function bannerCreated(id: string, placed: boolean) {
-    const position = positionBelow(addAfter);
-    addSectionToLayout(id, placed ? position : "end", position);
-    if (placed) toast.success("بنر زیر بخش انتخاب‌شده اضافه شد");
-    else toast.warning("بنر اضافه شد، ولی جایگاهش هنوز ذخیره نشده", { description: "برای ثبت جایگاه، «ذخیره» را بزنید." });
+  // A new banner section (a slider or tiles) exists on the server as a draft: it takes its place in the page's draft, its
+  // own form opens, and the page is refreshed to show it.
+  function bannerCreated(id: string) {
+    addSectionToDraft(id);
+    toast.success("بنر زیر بخش انتخاب‌شده اضافه شد", { description: "برای ثبت در صفحه، «ذخیره» را بزنید." });
     setAddStep(null);
     setEditSection(id);
     router.refresh();
@@ -222,10 +235,14 @@ export function PageBuilder({ initialSections, initialDisplay, industry, identit
     setSettingsSection(null);
   }
 
+  // Cancelling puts the page back as it was — including the sections added during this edit, which are thrown away.
   function cancel() {
+    const added = createdIds;
+    setCreatedIds([]);
     setDraft({ current: saved, past: [], future: [] });
     setEditing(false);
     setOpen(false);
+    if (added.length) void discardDrafts(added).then(() => router.refresh());
   }
 
   async function save() {
@@ -241,6 +258,10 @@ export function PageBuilder({ initialSections, initialDisplay, industry, identit
         await patchJson("/api/admin/settings/page-display", { display }, "ذخیره تنظیمات نمایش انجام نشد.");
         persisted = { ...persisted, display };
       }
+      // The layout that was just saved made the added sections it contains part of the page; the ones taken out of it
+      // again (removed, or undone) are thrown away.
+      await discardDrafts(createdIds.filter((id) => !layout.some((section) => section.id === id)));
+      setCreatedIds([]);
       setSaved(persisted);
       setDraft({ current: persisted, past: [], future: [] });
       setEditing(false);
@@ -291,7 +312,6 @@ export function PageBuilder({ initialSections, initialDisplay, industry, identit
         sections={saved.layout}
         editSectionId={editSection && isBannerSectionId(editSection) ? editSection : null}
         adding={addStep === "banner"}
-        position={positionBelow(addAfter)}
         onEditClose={() => setEditSection(null)}
         onAddBack={() => setAddStep("type")}
         onAddClose={() => setAddStep(null)}

@@ -15,7 +15,8 @@ import { builderSectionProps } from "@/modules/page-builder/sections";
 import { BuilderPart } from "@/components/builder-part";
 import { isPartHidden } from "@/modules/page-builder/display-parts";
 import { BannerSlider } from "@/components/banner-slider";
-import { getBannerSlidesById } from "@/modules/page-builder/banner-slider-data";
+import { getBannerSetData } from "@/modules/page-builder/banner-slider-data";
+import { isTileLayout } from "@/modules/page-builder/banners";
 import { getProductListData } from "@/modules/page-builder/product-list-data";
 import { getStorefrontProductFeed } from "@/modules/products/storefront-feed";
 import { arrangeCategories } from "@/modules/page-builder/section-settings";
@@ -43,7 +44,7 @@ function resolveCategoryIcon(value: string): LucideIcon {
 export async function GeneralHome({ editable = false }: { /** The viewer can edit the page (the page builder is mounted): disabled sections and switched-off parts are rendered so it can show them. */ editable?: boolean }) {
   const sectionSettings = await getPageSectionSettings();
   const productLists = Object.entries(sectionSettings.productLists);
-  const [homepage, popularFeed, listsData, allCategories, brands, latestArticles, pageDisplay, bannerSlides] = await Promise.all([
+  const [homepage, popularFeed, listsData, allCategories, brands, latestArticles, pageDisplay, bannerSets] = await Promise.all([
     getHomepageSettings(),
     getStorefrontProductFeed({ sort: "POPULAR", page: 1, pageSize: 12 }),
     Promise.all(productLists.map(([, config]) => getProductListData(config))),
@@ -61,7 +62,7 @@ export async function GeneralHome({ editable = false }: { /** The viewer can edi
     }),
     getLatestPublishedArticles(4),
     getPageDisplaySettings(),
-    getBannerSlidesById(sectionSettings.bannerSliders),
+    getBannerSetData(sectionSettings.bannerSliders),
   ]);
 
   const categories = arrangeCategories(allCategories, sectionSettings.CATEGORIES);
@@ -69,6 +70,8 @@ export async function GeneralHome({ editable = false }: { /** The viewer can edi
   const heroSlides = buildStorefrontHeroSlides(homepage, "/images/zar-hero-campaign.png");
   const sectionById = new Map(homepage.sections.map((section) => [section.id, section]));
   const sectionOrder = new Map(homepage.sections.map((section, index) => [section.id, index]));
+  // A section still being made in the page builder is a draft: only the people editing the page see it.
+  const isShown = (id: string) => editable || !sectionSettings.draftSectionIds.includes(id);
   const sectionProps = (id: HomepageLayoutItemId) => ({ ...builderSectionProps(id), hidden: isSectionHiddenAtRender(sectionById.get(id), editable), style: { order: sectionOrder.get(id) ?? homepage.sections.length } });
 
   return <main className="flex flex-col gap-4 overflow-hidden bg-[#f4f5f7] pb-[78px] pt-3 lg:gap-6 lg:pb-8">
@@ -86,9 +89,11 @@ export async function GeneralHome({ editable = false }: { /** The viewer can edi
 
     {brands.length > 0 && <div {...sectionProps("BRANDS")} className={container}><HomepageBrands brands={brands} /></div>}
 
-    {Object.entries(sectionSettings.bannerSliders).map(([id, slider]) => (bannerSlides[id].length > 0 || editable) && <div key={id} {...sectionProps(id as HomepageLayoutItemId)} className={container}><BannerSlider sectionId={id} layout={slider.layout} slides={bannerSlides[id]} arrowsHidden={isPartHidden(pageDisplay, id, "arrows")} dotsHidden={isPartHidden(pageDisplay, id, "dots")} editable={editable} /></div>)}
+    {Object.entries(sectionSettings.bannerSliders).map(([id, slider]) => isShown(id) && (isTileLayout(slider.layout)
+      ? (editable || bannerSets.tileGroups[id].tiles.some((tile) => tile.media)) && <section key={id} {...sectionProps(id as HomepageLayoutItemId)} className={container} aria-label="پیشنهادهای تصویری"><StorefrontImageTiles groups={[bannerSets.tileGroups[id]]} editable={editable} /></section>
+      : (bannerSets.slides[id].length > 0 || editable) && <div key={id} {...sectionProps(id as HomepageLayoutItemId)} className={container}><BannerSlider sectionId={id} layout={slider.layout} slides={bannerSets.slides[id]} arrowsHidden={isPartHidden(pageDisplay, id, "arrows")} dotsHidden={isPartHidden(pageDisplay, id, "dots")} editable={editable} /></div>))}
 
-    {productLists.map(([id, config], index) => (listsData[index].products.length > 0 || editable) && <div key={id} {...sectionProps(id as HomepageLayoutItemId)} className={container}><ProductListSection sectionId={id} config={config} data={listsData[index]} display={pageDisplay} editable={editable} /></div>)}
+    {productLists.map(([id, config], index) => isShown(id) && (listsData[index].products.length > 0 || editable) && <div key={id} {...sectionProps(id as HomepageLayoutItemId)} className={container}><ProductListSection sectionId={id} config={config} data={listsData[index]} display={pageDisplay} editable={editable} /></div>)}
 
     {popularFeed.items.length > 0 && <div {...sectionProps("BEST_SELLING_PRODUCTS")} className={container}><HomepageBestSellers products={popularFeed.items} /></div>}
 

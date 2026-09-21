@@ -16,7 +16,8 @@ import { getGeneralStoreSettings } from "@/modules/settings/general-settings";
 import { builderSectionProps } from "@/modules/page-builder/sections";
 import { isPartHidden, sectionDisplay } from "@/modules/page-builder/display-parts";
 import { BannerSlider } from "@/components/banner-slider";
-import { getBannerSlidesById } from "@/modules/page-builder/banner-slider-data";
+import { getBannerSetData } from "@/modules/page-builder/banner-slider-data";
+import { isTileLayout } from "@/modules/page-builder/banners";
 import { getProductListData } from "@/modules/page-builder/product-list-data";
 import { getPageSectionSettings } from "@/modules/page-builder/section-settings-store";
 import { getPageDisplaySettings } from "@/modules/page-builder/display-settings";
@@ -32,7 +33,7 @@ export async function GoldHome({ editable = false }: { /** The viewer can edit t
   const settings = await getGeneralStoreSettings();
   const sectionSettings = await getPageSectionSettings();
   const productLists = Object.entries(sectionSettings.productLists);
-  const [productFeed, homepageCategories, homepage, brands, latestArticles, pageDisplay, listsData, bannerSlides] = await Promise.all([
+  const [productFeed, homepageCategories, homepage, brands, latestArticles, pageDisplay, listsData, bannerSets] = await Promise.all([
     getStorefrontProductFeed({ sort: "LATEST", page: 1 }),
     db.category.findMany({
       where: { isActive: true, featured: true, products: { some: { status: "ACTIVE", storeIndustry: "GOLD" } } },
@@ -49,13 +50,15 @@ export async function GoldHome({ editable = false }: { /** The viewer can edit t
     getLatestPublishedArticles(4),
     getPageDisplaySettings(),
     Promise.all(productLists.map(([, config]) => getProductListData(config))),
-    getBannerSlidesById(sectionSettings.bannerSliders),
+    getBannerSetData(sectionSettings.bannerSliders),
   ]);
 
   const categories = homepageCategories;
   const heroSlides = buildStorefrontHeroSlides(homepage, "/images/zar-hero-campaign.png");
   const sectionById = new Map(homepage.sections.map((section) => [section.id, section]));
   const sectionOrder = new Map(homepage.sections.map((section, index) => [section.id, index]));
+  // A section still being made in the page builder is a draft: only the people editing the page see it.
+  const isShown = (id: string) => editable || !sectionSettings.draftSectionIds.includes(id);
   const sectionProps = (id: HomepageLayoutItemId) => ({ ...builderSectionProps(id), hidden: isSectionHiddenAtRender(sectionById.get(id), editable), style: { order: sectionOrder.get(id) ?? homepage.sections.length } });
   const categoryImage = (category: HomeCategory | undefined) => category?.image?.type === "IMAGE" ? category.image.url : "/images/zar-hero-campaign.png";
   const treasureItems: Array<{ id: HomepageTreasureCardId; title: string; subtitle: string; query: string }> = [
@@ -83,9 +86,11 @@ export async function GoldHome({ editable = false }: { /** The viewer can edit t
       </div>
     </section>
 
-    {Object.entries(sectionSettings.bannerSliders).map(([id, slider]) => (bannerSlides[id].length > 0 || editable) && <section key={id} {...sectionProps(id as HomepageLayoutItemId)} className="bg-white py-5 lg:py-10"><div className={container}><BannerSlider sectionId={id} layout={slider.layout} slides={bannerSlides[id]} arrowsHidden={isPartHidden(pageDisplay, id, "arrows")} dotsHidden={isPartHidden(pageDisplay, id, "dots")} editable={editable} /></div></section>)}
+    {Object.entries(sectionSettings.bannerSliders).map(([id, slider]) => isShown(id) && (isTileLayout(slider.layout)
+      ? (editable || bannerSets.tileGroups[id].tiles.some((tile) => tile.media)) && <section key={id} {...sectionProps(id as HomepageLayoutItemId)} className="bg-white py-5 lg:py-10" aria-label="پیشنهادهای تصویری"><div className={container}><StorefrontImageTiles groups={[bannerSets.tileGroups[id]]} editable={editable} /></div></section>
+      : (bannerSets.slides[id].length > 0 || editable) && <section key={id} {...sectionProps(id as HomepageLayoutItemId)} className="bg-white py-5 lg:py-10"><div className={container}><BannerSlider sectionId={id} layout={slider.layout} slides={bannerSets.slides[id]} arrowsHidden={isPartHidden(pageDisplay, id, "arrows")} dotsHidden={isPartHidden(pageDisplay, id, "dots")} editable={editable} /></div></section>))}
 
-    {productLists.map(([id, config], index) => (listsData[index].products.length > 0 || editable) && <section key={id} {...sectionProps(id as HomepageLayoutItemId)} className="bg-white py-5 lg:py-10"><div className={container}><ProductListSection sectionId={id} config={config} data={listsData[index]} display={pageDisplay} editable={editable} /></div></section>)}
+    {productLists.map(([id, config], index) => isShown(id) && (listsData[index].products.length > 0 || editable) && <section key={id} {...sectionProps(id as HomepageLayoutItemId)} className="bg-white py-5 lg:py-10"><div className={container}><ProductListSection sectionId={id} config={config} data={listsData[index]} display={pageDisplay} editable={editable} /></div></section>)}
 
     <section {...sectionProps("ABOUT")} className="bg-white py-5 lg:py-[60px]">
       <div className={`${container} grid min-h-[340px] items-center gap-8 lg:grid-cols-[1.15fr_.85fr]`}>
