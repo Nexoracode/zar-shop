@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { hostSections, pendingInLayout, replacedSectionsCss, type ContentEdits, type PendingSections } from "./pending-sections";
 
-const listConfig = { layout: "SLIDER", title: "محصولات", description: "", moreLabel: "مشاهده همه", source: "LATEST", categoryId: null, limit: 12 } as const;
+const listConfig = { layout: "SLIDER", title: "محصولات", description: "", moreLabel: "مشاهده همه", banner: null, source: "LATEST", categoryId: null, limit: 12 } as const;
 const pending: PendingSections = {
   "BANNER_SLIDER:a": { kind: "banner", layout: "SLIDER_WIDE", items: [] },
   "PRODUCT_LIST:b": { kind: "list", config: listConfig },

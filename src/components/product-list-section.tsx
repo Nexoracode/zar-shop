@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { ChevronLeft, Sparkles } from "lucide-react";
@@ -81,13 +82,32 @@ export function ProductListSection({ sectionId, config, descriptionHtml, data, d
         </ProductListSliderShell>{refresh}
       </Shell>;
 
-    case "FEATURE_SLIDER":
-      return <Shell>{header}
+    case "FEATURE_SLIDER": {
+      // The banner picture (or, without one, the first product as a big tile) opens the row of full product cards; the
+      // "view all" button sits opposite the title.
+      const banner = config.banner;
+      const listed = banner ? products : rest;
+      const bannerPicture = banner && (
+        <span className="relative block h-full min-h-[200px] w-full overflow-hidden rounded-2xl bg-black/5">
+          <Image src={banner.url} alt={banner.alt ?? config.title} fill sizes="(min-width: 1024px) 470px, 300px" className="object-cover" />
+        </span>
+      );
+      return <Shell>
+        <div className="mb-5 flex items-start justify-between gap-4">
+          <div className="min-w-0">
+            <BuilderPart {...part("title")}><h2 className="m-0 text-xl font-bold text-[#232934] sm:text-2xl">{config.title}</h2></BuilderPart>
+            {description && <BuilderPart {...part("description")}><div className={`mb-0 mt-1 text-xs leading-6 text-[#858b95] sm:text-sm ${richStyle}`} dangerouslySetInnerHTML={{ __html: description }} /></BuilderPart>}
+          </div>
+          <BuilderPart {...part("more")}><Link href={moreHref} className="inline-flex h-10 shrink-0 items-center rounded-xl border border-[#d5d9e0] bg-white px-4 text-sm font-bold text-[#232934] transition hover:bg-[#f6f7f9]">{config.moreLabel}</Link></BuilderPart>
+        </div>
         <DragScrollRow ariaLabel={config.title} showNavigation navigationPart={arrows} className="flex w-full min-w-0 max-w-full gap-3 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          <div className="flex w-[150px] min-w-[150px] snap-start sm:w-[190px] sm:min-w-[190px]"><ProductFeatureTile product={first} builder={builder} className="min-h-[190px] w-full" /></div>
-          {compactCards(rest)}{viewAll(compactWidth, true)}
+          {banner
+            ? <BuilderPart {...part("banner")} className="contents"><div className="flex w-[280px] min-w-[280px] snap-start sm:w-[400px] sm:min-w-[400px] lg:w-[470px] lg:min-w-[470px]">{banner.href ? <Link href={banner.href} className="block w-full" aria-label={banner.alt ?? config.title}>{bannerPicture}</Link> : bannerPicture}</div></BuilderPart>
+            : <div className="flex w-[240px] min-w-[240px] snap-start sm:w-[300px] sm:min-w-[300px]"><ProductFeatureTile product={first} builder={builder} className="min-h-[200px] w-full" /></div>}
+          {cards(listed, cardWidth, banner ? 0 : 1)}{viewAll(cardWidth)}
         </DragScrollRow>{refresh}
       </Shell>;
+    }
 
     case "BANNER_ROW":
       // One row: the banner (the first product) on the right, the other products as small cards to its left.

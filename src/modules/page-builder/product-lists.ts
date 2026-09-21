@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { richTextPlainLength } from "@/modules/page-builder/rich-text";
 import { normalizeDisplay, productCardParts, type DisplayPart, type PageBuilderIndustry, type PageDisplay, type SectionDisplayConfig } from "@/modules/page-builder/display-parts";
+import { safeHrefSchema } from "@/modules/settings/safe-href";
 import { pageSectionLimits } from "@/modules/settings/settings-limits";
 
 // "Product list" is one kind of homepage section with several looks (its layout), a source of products and a few
@@ -37,6 +38,19 @@ export const productListSourceLabels: Record<ProductListSource, string> = {
 /** What a product list's "view all" link says unless the store owner words it otherwise. */
 export const productListDefaultMoreLabel = "مشاهده همه";
 
+/**
+ * The banner picture of the feature-slider look: an image from the homepage media library and where it links to (an
+ * empty link makes it a plain picture). `url` and `alt` are copied from the library entry when the list is saved, so the
+ * section can draw it without another lookup; the server sets them, whatever the browser sent.
+ */
+export const productListBannerSchema = z.object({
+  mediaId: z.string().trim().min(1).max(191),
+  url: z.string().trim().min(1).max(500),
+  alt: z.string().trim().max(200).nullable(),
+  href: z.union([z.literal(""), safeHrefSchema]),
+});
+export type ProductListBanner = z.infer<typeof productListBannerSchema>;
+
 export const productListConfigSchema = z.object({
   layout: z.enum(productListLayouts, { error: "ظاهر لیست را انتخاب کنید." }),
   title: z.string().trim()
@@ -52,6 +66,8 @@ export const productListConfigSchema = z.object({
     .min(2, "متن دکمه باید حداقل ۲ نویسه باشد.")
     .max(pageSectionLimits.moreLabel, `متن دکمه نباید بیشتر از ${pageSectionLimits.moreLabel.toLocaleString("fa-IR")} نویسه باشد.`)
     .default(productListDefaultMoreLabel),
+  // Only the feature-slider look uses it; without one that look shows its first product as the big tile.
+  banner: productListBannerSchema.nullable().default(null),
   source: z.enum(productListSources, { error: "منبع محصولات را انتخاب کنید." }),
   categoryId: z.string().trim().min(1).max(191).nullable(),
   limit: z.number({ error: "تعداد نمایش را به‌صورت عدد وارد کنید." })
@@ -75,9 +91,9 @@ export function newProductListId(uuid: string) {
 
 // The general template's three fixed product sections, as they looked before they became product lists.
 export const builtInProductLists = {
-  FEATURED_PRODUCTS: { layout: "PANEL_SLIDER", title: "شگفت‌انگیز", description: "", moreLabel: productListDefaultMoreLabel, source: "DISCOUNTED", categoryId: null, limit: 12 },
-  POPULAR_PRODUCTS: { layout: "SLIDER", title: "محبوب‌ترین کالاها", description: "محصولاتی که بیشتر مورد توجه مشتریان قرار گرفته‌اند", moreLabel: productListDefaultMoreLabel, source: "POPULAR", categoryId: null, limit: 12 },
-  LATEST_PRODUCTS: { layout: "SLIDER", title: "جدیدترین محصولات", description: "تازه‌ترین کالاهای اضافه‌شده به فروشگاه", moreLabel: productListDefaultMoreLabel, source: "LATEST", categoryId: null, limit: 12 },
+  FEATURED_PRODUCTS: { layout: "PANEL_SLIDER", title: "شگفت‌انگیز", description: "", moreLabel: productListDefaultMoreLabel, banner: null, source: "DISCOUNTED", categoryId: null, limit: 12 },
+  POPULAR_PRODUCTS: { layout: "SLIDER", title: "محبوب‌ترین کالاها", description: "محصولاتی که بیشتر مورد توجه مشتریان قرار گرفته‌اند", moreLabel: productListDefaultMoreLabel, banner: null, source: "POPULAR", categoryId: null, limit: 12 },
+  LATEST_PRODUCTS: { layout: "SLIDER", title: "جدیدترین محصولات", description: "تازه‌ترین کالاهای اضافه‌شده به فروشگاه", moreLabel: productListDefaultMoreLabel, banner: null, source: "LATEST", categoryId: null, limit: 12 },
 } as const satisfies Record<string, ProductListConfig>;
 export type BuiltInProductListId = keyof typeof builtInProductLists;
 export function isBuiltInProductListId(id: string): id is BuiltInProductListId {
@@ -86,7 +102,7 @@ export function isBuiltInProductListId(id: string): id is BuiltInProductListId {
 
 /** A default configuration for a freshly added list of the chosen layout. */
 export function newProductListConfig(layout: ProductListLayout): ProductListConfig {
-  return { layout, title: "محصولات", description: "", moreLabel: productListDefaultMoreLabel, source: "LATEST", categoryId: null, limit: productListLayoutMeta[layout].defaultLimit };
+  return { layout, title: "محصولات", description: "", moreLabel: productListDefaultMoreLabel, banner: null, source: "LATEST", categoryId: null, limit: productListLayoutMeta[layout].defaultLimit };
 }
 
 /**
@@ -128,6 +144,7 @@ export function productListDisplayConfig(config: ProductListConfig, industry: Pa
   }
   // The two ranked layouts: the compact grid and the list mode.
   if (config.layout === "LIST_TWO_COLUMNS" || config.layout === "GRID_COMPACT") parts.push({ id: "rank", label: "شماره رتبه" });
+  if (config.layout === "FEATURE_SLIDER") parts.push({ id: "banner", label: "بنر" });
   if (productListLayoutMeta[config.layout].slider) parts.push({ id: "arrows", label: "نمایش فلش‌ها" }, { id: "viewAll", label: "کارت «مشاهده همه»" });
   return { parts: [...parts, ...productCardParts(industry)], master: "layout" };
 }

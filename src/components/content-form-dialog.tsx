@@ -7,6 +7,9 @@ import { X } from "lucide-react";
 import { HeroSelectField } from "@/components/hero-select-field";
 import { InlineAlert } from "@/components/inline-alert";
 import { TextField } from "@/components/form-field";
+import type { MediaChoice } from "@/components/media-library";
+import { MediaPickerDialog } from "@/components/media-picker-dialog";
+import { BuilderImagePreview } from "@/components/page-builder-image-preview";
 import { RichTextField } from "@/components/rich-text-field";
 import { brandPrimaryButtonStyle } from "@/components/page-builder-styles";
 import { normalizeNumericValue } from "@/lib/persian-numbers";
@@ -31,22 +34,27 @@ function defaultInput(fields: ContentField[], values: Values) {
  * described by `ContentField`s and validated with the caller's schema — the very one the server uses, so the limits
  * live in one place — before `save` is called. It saves on its own; the page is refreshed by the caller afterwards.
  */
-export function ContentFormDialog({ title, ariaLabel, idPrefix, fields, initial, schema, toInput, save, onSaved, onClose }: {
+export function ContentFormDialog({ title, ariaLabel, idPrefix, fields, initial, initialImages = {}, schema, toInput, save, onSaved, onClose }: {
   title: string;
   ariaLabel: string;
   /** Makes the field element ids unique per form, so an error can focus its field. */
   idPrefix: string;
   fields: ContentField[];
   initial: Values;
+  /** The pictures of the form's `image` fields, by field name. */
+  initialImages?: Record<string, MediaChoice | null>;
   schema: ZodType;
   /** Turns the form values into what `schema` expects; defaults to numbers-as-numbers, the rest as typed. */
-  toInput?: (values: Values) => unknown;
+  toInput?: (values: Values, images: Record<string, MediaChoice | null>) => unknown;
   save: (data: unknown) => Promise<void>;
   /** Called after a successful save with the validated data that was saved. */
   onSaved: (data: unknown) => void;
   onClose: () => void;
 }) {
   const [values, setValues] = useState(initial);
+  const [images, setImages] = useState(initialImages);
+  // The image field whose media library is open (the form is hidden meanwhile, so what was typed survives).
+  const [pickerField, setPickerField] = useState<string | null>(null);
   const [errors, setErrors] = useState<Record<string, string | undefined>>({});
   const [formError, setFormError] = useState("");
   const [saving, setSaving] = useState(false);
@@ -66,7 +74,7 @@ export function ContentFormDialog({ title, ariaLabel, idPrefix, fields, initial,
 
   async function submit() {
     setFormError("");
-    const parsed = schema.safeParse(toInput ? toInput(values) : defaultInput(visible, values));
+    const parsed = schema.safeParse(toInput ? toInput(values, images) : defaultInput(visible, values));
     if (!parsed.success) {
       const fieldErrors = parsed.error.flatten().fieldErrors as Record<string, string[] | undefined>;
       showFieldErrors(Object.fromEntries(fields.map((field) => [field.name, fieldErrors[field.name]?.[0]])));
@@ -89,6 +97,7 @@ export function ContentFormDialog({ title, ariaLabel, idPrefix, fields, initial,
     const id = idOf(field.name);
     if (field.kind === "richtext") return <RichTextField key={field.name} id={id} label={field.label} value={values[field.name]} maxLength={field.maxLength} hint={field.hint} error={errors[field.name]} disabled={saving} onChange={(html) => change(field.name, html)} />;
     if (field.kind === "text") return <TextField key={field.name} id={id} label={field.label} required={!field.optional} value={values[field.name]} maxLength={field.maxLength} error={errors[field.name]} disabled={saving} onChange={(event) => change(field.name, event.target.value)} />;
+    if (field.kind === "image") return <BuilderImagePreview key={field.name} id={id} label={field.label} media={images[field.name] ?? null} heightClass="h-32" hint={field.hint} error={errors[field.name]} disabled={saving} onPick={() => setPickerField(field.name)} onClear={() => setImages((current) => ({ ...current, [field.name]: null }))} />;
     if (field.kind === "number") return <TextField key={field.name} id={id} label={field.label} required inputMode="numeric" dir="ltr" value={values[field.name]} maxLength={String(field.max).length} hint={field.hint} error={errors[field.name]} disabled={saving} onChange={(event) => change(field.name, normalizeNumericValue(event.target.value, false))} />;
     return (
       <div key={field.name}>
@@ -98,14 +107,15 @@ export function ContentFormDialog({ title, ariaLabel, idPrefix, fields, initial,
     );
   }
 
-  const textFields = visible.filter((field) => field.kind === "text" || field.kind === "richtext");
-  const rowFields = visible.filter((field) => field.kind !== "text" && field.kind !== "richtext");
+  const isFullWidth = (field: ContentField) => field.kind === "text" || field.kind === "richtext" || field.kind === "image";
+  const textFields = visible.filter(isFullWidth);
+  const rowFields = visible.filter((field) => !isFullWidth(field));
 
   return (
     // react-aria places a select's list by the locale's direction, not the page's `dir`: without a Persian locale it opens
     // from the left edge of the field. The provider sits outside the modal so the portaled list inherits it.
     <I18nProvider locale="fa-IR">
-      <Modal.Backdrop isOpen onOpenChange={(next) => { if (!next && !saving) onClose(); }} variant="blur" className="z-[150]">
+      <Modal.Backdrop isOpen={pickerField === null} onOpenChange={(next) => { if (!next && !saving) onClose(); }} variant="blur" className="z-[150]">
         <Modal.Container size="sm" placement="center">
           <Modal.Dialog data-page-builder-ui aria-label={ariaLabel} dir="rtl" className="p-0 mx-4 max-w-[520px] bg-[var(--surface)] text-right">
             <Modal.Header className="flex-row items-center justify-between border-b border-[var(--border)] py-3 ps-5 pe-3">
@@ -126,6 +136,7 @@ export function ContentFormDialog({ title, ariaLabel, idPrefix, fields, initial,
           </Modal.Dialog>
         </Modal.Container>
       </Modal.Backdrop>
+      <MediaPickerDialog open={pickerField !== null} scope="HOMEPAGE" allowedTypes={["IMAGE"]} selected={pickerField && images[pickerField] ? [images[pickerField] as MediaChoice] : []} onClose={() => setPickerField(null)} onConfirm={(chosen) => { if (pickerField) setImages((current) => ({ ...current, [pickerField]: chosen[0] ?? null })); setPickerField(null); }} />
     </I18nProvider>
   );
 }

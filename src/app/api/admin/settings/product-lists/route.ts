@@ -21,6 +21,14 @@ function clean(config: ProductListConfig): ProductListConfig {
   return { ...config, description: sanitizeSectionDescription(config.description) };
 }
 
+// The banner's picture must be an image of the homepage library; its address and alt text are taken from there.
+async function withBanner(config: ProductListConfig): Promise<{ config: ProductListConfig } | { problem: NextResponse }> {
+  if (!config.banner) return { config: { ...config, banner: null } };
+  const media = await db.mediaAsset.findFirst({ where: { id: config.banner.mediaId, scope: "HOMEPAGE", type: "IMAGE" }, select: { id: true, url: true, alt: true, title: true } });
+  if (!media) return { problem: NextResponse.json({ message: "تصویر انتخاب‌شده برای بنر معتبر نیست.", issues: { banner: ["تصویر انتخاب‌شده برای بنر معتبر نیست."] } }, { status: 422 }) };
+  return { config: { ...config, banner: { ...config.banner, mediaId: media.id, url: media.url, alt: media.alt ?? media.title ?? null } } };
+}
+
 async function categoryProblem(config: ProductListConfig) {
   if (config.source !== "CATEGORY" || !config.categoryId) return null;
   const category = await db.category.findFirst({ where: { id: config.categoryId, isActive: true }, select: { id: true } });
@@ -60,7 +68,9 @@ export async function POST(request: Request) {
     const actor = await getPermittedActor("settings:manage");
     if (!actor) return NextResponse.json({ message: "دسترسی غیرمجاز است." }, { status: 403 });
     const body = await request.json();
-    const config = clean(productListConfigSchema.parse(body));
+    const prepared = await withBanner(clean(productListConfigSchema.parse(body)));
+    if ("problem" in prepared) return prepared.problem;
+    const config = prepared.config;
     const problem = await categoryProblem(config);
     if (problem) return problem;
     // The page builder creates a list under the id it already gave it in its draft; saving again after a failed
@@ -86,7 +96,9 @@ export async function PATCH(request: Request) {
     const actor = await getPermittedActor("settings:manage");
     if (!actor) return NextResponse.json({ message: "دسترسی غیرمجاز است." }, { status: 403 });
     const { id, config: submitted } = z.object({ id: z.string().min(1).max(100), config: productListConfigSchema }).parse(await request.json());
-    const config = clean(submitted);
+    const prepared = await withBanner(clean(submitted));
+    if ("problem" in prepared) return prepared.problem;
+    const config = prepared.config;
     // Only a list that exists can be edited: one of this store's built-in ones or one that was added.
     const current = await db.storeSetting.findUnique({ where: { id: STORE_SETTING_ID }, select: { pageSectionSettings: true } });
     const known = resolveProductLists(current?.pageSectionSettings, await getStoreIndustry());
