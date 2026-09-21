@@ -48,9 +48,9 @@ export function BpFilterBarSkeleton({ selects = 0 }: { selects?: number }) {
 }
 
 /** Placeholder for the filter panel that sits above a server list (`AdminListFilters` in its own frame). */
-export function BpFilterPanelSkeleton({ selects = 0, className = "p-4" }: { selects?: number; className?: string }) {
+export function BpFilterPanelSkeleton({ selects = 0, className = "p-4", framed = true }: { selects?: number; className?: string; /** False when the bar sits inside a card that already has the frame. */ framed?: boolean }) {
   return (
-    <div className={`bp-frame relative ${className}`.trim()}>
+    <div className={`${framed ? "bp-frame relative" : ""} ${className}`.trim()}>
       <div className="flex flex-wrap items-center gap-2">
         <BpBar className="h-9 w-full min-w-[180px] sm:w-auto sm:min-w-[220px] sm:flex-1" />
         {selects > 0 && <span aria-hidden className="mx-1 hidden h-6 w-px shrink-0 bg-[var(--bp-divider)] sm:block" />}
@@ -260,6 +260,7 @@ export function BpListPageSkeleton({
   metrics,
   paginated = true,
   cardBreak = "md",
+  searchInCard = false,
 }: {
   columns?: number;
   rows?: number;
@@ -279,14 +280,17 @@ export function BpListPageSkeleton({
   paginated?: boolean;
   /** The breakpoint where the table replaces the phone cards. */
   cardBreak?: "md" | "lg" | "xl";
+  /** The search field sits at the top of the table card, divided from it by a line, instead of in a card of its own. */
+  searchInCard?: boolean;
 }) {
   const tableWrapper = { md: "hidden md:block", lg: "hidden lg:block", xl: "hidden xl:block" }[cardBreak];
   return (
     <div className={`animate-pulse ${spaced ? "" : "flex flex-col gap-2"}`.trim()} aria-hidden>
       <BpPageHeaderSkeleton flush={!spaced} withAction={withAction} />
       {metrics && <BpMetricCardsSkeleton preset={metrics} />}
-      <BpFilterPanelSkeleton selects={filterSelects} className={spaced ? "mb-5 p-4 sm:p-5" : "p-4"} />
+      {!searchInCard && <BpFilterPanelSkeleton selects={filterSelects} className={spaced ? "mb-5 p-4 sm:p-5" : "p-4"} />}
       <Frame>
+        {searchInCard && <BpFilterPanelSkeleton selects={filterSelects} framed={false} className="border-b border-[var(--bp-divider)] p-4" />}
         {toolbar === "readonly" && <BpReadOnlyToolbarSkeleton />}
         <MobileCardsSkeleton rows={4} hideFrom={cardBreak} />
         <div className={tableWrapper}>

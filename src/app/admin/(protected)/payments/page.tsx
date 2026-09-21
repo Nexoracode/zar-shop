@@ -46,17 +46,17 @@ export default async function PaymentsPage({ searchParams }: { searchParams: Sea
         description="تراکنش‌های درگاه‌های پرداخت و پرداخت‌های دستی سفارش‌ها را یک‌جا پیگیری کنید."
       />
 
-      <section className="bp-frame relative p-4">
-        <AdminListFilters
-          path="/admin/payments"
-          query={query}
-          queryLabel="جستجوی پرداخت"
-          queryPlaceholder="شماره سفارش یا شناسه تراکنش"
-          filters={[]}
-        />
-      </section>
-
       <section className="bp-frame relative">
+        <div className="border-b border-[var(--bp-divider)] p-4">
+          <AdminListFilters
+            path="/admin/payments"
+            query={query}
+            queryLabel="جستجوی پرداخت"
+            queryPlaceholder="شماره سفارش یا شناسه تراکنش"
+            filters={[]}
+          />
+        </div>
+
         {!rows.length ? (
           <AdminEmptyState
             title="پرداختی پیدا نشد"
