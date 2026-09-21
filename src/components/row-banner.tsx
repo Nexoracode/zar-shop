@@ -5,23 +5,23 @@ import Image from "next/image";
 import Link from "next/link";
 
 /**
- * A square picture that is exactly as tall as the row it sits in: it stretches to the row's height (set by its
- * neighbours — the product cards) and takes that height as its own width. CSS can't derive a width from a stretched
- * height, so the height is measured. Before it is measured it has a fixed width, so nothing jumps by much.
+ * A picture that is exactly as tall as the row it sits in: it stretches to the row's height (set by its neighbours — the
+ * product cards) and is `ratio` times that wide (1 = a square). CSS can't derive a width from a stretched height, so the
+ * height is measured. Before it is measured it has a fixed width, so nothing jumps by much.
  */
-export function SquareBanner({ src, alt, href, sizes = "430px" }: { src: string; alt: string; href?: string; sizes?: string }) {
+export function RowBanner({ src, alt, href, ratio = 1, sizes = "600px" }: { src: string; alt: string; href?: string; /** Width as a multiple of the height. */ ratio?: number; sizes?: string }) {
   const ref = useRef<HTMLDivElement>(null);
   const [side, setSide] = useState<number | null>(null);
 
   useEffect(() => {
     const node = ref.current;
     if (!node) return;
-    const measure = () => setSide(Math.round(node.getBoundingClientRect().height));
+    const measure = () => setSide(Math.round(node.getBoundingClientRect().height * ratio));
     measure();
     const observer = new ResizeObserver(measure);
     observer.observe(node);
     return () => observer.disconnect();
-  }, []);
+  }, [ratio]);
 
   const picture = (
     <span className="absolute inset-0 block overflow-hidden rounded-2xl bg-black/5">
@@ -29,7 +29,7 @@ export function SquareBanner({ src, alt, href, sizes = "430px" }: { src: string;
     </span>
   );
   return (
-    <div ref={ref} className="relative min-h-[200px] shrink-0 snap-start self-stretch" style={{ width: side ?? 260 }}>
+    <div ref={ref} className="relative min-h-[200px] shrink-0 snap-start self-stretch" style={{ width: side ?? Math.round(260 * ratio) }}>
       {href ? <Link href={href} aria-label={alt} className="block size-full">{picture}</Link> : picture}
     </div>
   );

@@ -16,7 +16,7 @@ export const productListLayoutMeta: Record<ProductListLayout, { label: string; d
   GRID_COMPACT: { label: "شبکه فشرده", defaultLimit: 9, slider: false },
   SLIDER: { label: "اسلایدر کارت‌ها", defaultLimit: 12, slider: true },
   FEATURE_SLIDER: { label: "محصول شاخص و اسلایدر", defaultLimit: 12, slider: true },
-  BANNER_ROW: { label: "بنر و ردیف محصولات", defaultLimit: 6, slider: false },
+  BANNER_ROW: { label: "بنر و ردیف محصولات", defaultLimit: 6, slider: true },
   FEATURE_LIST: { label: "محصول شاخص و فهرست", defaultLimit: 4, slider: false },
   PANEL_SLIDER: { label: "قاب رنگی و اسلایدر", defaultLimit: 12, slider: true },
   // "List mode": ranked columns of three, like the best-selling products. (The id predates the redesign and is kept so
@@ -34,6 +34,11 @@ export const productListSourceLabels: Record<ProductListSource, string> = {
   DISCOUNTED: "شگفت‌انگیز (تخفیف‌دار)",
   CATEGORY: "یک دسته‌بندی",
 };
+
+/** The looks that open with a banner picture and show the offer card. */
+export function hasBanner(layout: ProductListLayout) {
+  return layout === "FEATURE_SLIDER" || layout === "BANNER_ROW";
+}
 
 /** What a product list's "view all" link says unless the store owner words it otherwise. */
 export const productListDefaultMoreLabel = "مشاهده همه";
@@ -144,10 +149,10 @@ export function productListDisplayConfig(config: ProductListConfig, industry: Pa
   }
   // The two ranked layouts: the compact grid and the list mode.
   if (config.layout === "LIST_TWO_COLUMNS" || config.layout === "GRID_COMPACT") parts.push({ id: "rank", label: "شماره رتبه" });
-  if (config.layout === "FEATURE_SLIDER") parts.push({ id: "banner", label: "بنر" });
+  if (hasBanner(config.layout)) parts.push({ id: "banner", label: "بنر" });
   if (productListLayoutMeta[config.layout].slider) parts.push({ id: "arrows", label: "نمایش فلش‌ها" }, { id: "viewAll", label: "کارت «مشاهده همه»" });
   // The offer card of the feature slider has three pieces of its own.
-  const offerCardParts: DisplayPart[] = config.layout === "FEATURE_SLIDER"
+  const offerCardParts: DisplayPart[] = hasBanner(config.layout)
     ? [
       { id: "card.countdown", label: "پیشنهاد شگفت‌انگیز و شمارنده", group: PRODUCT_CARD_GROUP },
       { id: "card.category", label: "نام دسته و برند", group: PRODUCT_CARD_GROUP },

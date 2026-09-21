@@ -6,7 +6,7 @@ import { DiscountExpiryRefresh } from "@/components/discount-expiry-refresh";
 import { DragScrollRow } from "@/components/drag-scroll-row";
 import { ProductOfferCard } from "@/components/product-offer-card";
 import { ProductListSliderShell } from "@/components/product-list-slider-shell";
-import { SquareBanner } from "@/components/square-banner";
+import { RowBanner } from "@/components/row-banner";
 import { FlashSaleCountdown } from "@/components/flash-sale-countdown";
 import { ProductCard, type ProductCardBuilder } from "@/components/product-card";
 import { ProductFeatureTile, ProductRankedItem, ProductThumbItem } from "@/components/product-list-items";
@@ -84,11 +84,14 @@ export function ProductListSection({ sectionId, config, descriptionHtml, data, d
         </ProductListSliderShell>{refresh}
       </Shell>;
 
-    case "FEATURE_SLIDER": {
-      // The square banner picture (or, without one, the first product as a big tile) opens the row of full product cards; the
-      // "view all" button sits opposite the title.
+    case "FEATURE_SLIDER":
+    case "BANNER_ROW": {
+      // The banner picture (or, without one, the first product as a big tile) opens the row of offer cards; the "view all"
+      // button sits opposite the title. The feature slider's banner is square, the banner row's a wider rectangle of the
+      // same height.
       const banner = config.banner;
       const listed = banner ? products : rest;
+      const bannerRatio = config.layout === "BANNER_ROW" ? 1.5 : 1;
       return <Shell>
         <div className="mb-5 flex items-start justify-between gap-4">
           <div className="min-w-0">
@@ -99,22 +102,12 @@ export function ProductListSection({ sectionId, config, descriptionHtml, data, d
         </div>
         <DragScrollRow ariaLabel={config.title} showNavigation navigationPart={arrows} className="flex w-full min-w-0 max-w-full gap-3 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {banner
-            ? <BuilderPart {...part("banner")} className="contents"><SquareBanner src={banner.url} alt={banner.alt ?? config.title} href={banner.href || undefined} /></BuilderPart>
+            ? <BuilderPart {...part("banner")} className="contents"><RowBanner src={banner.url} alt={banner.alt ?? config.title} href={banner.href || undefined} ratio={bannerRatio} /></BuilderPart>
             : <div className="flex w-[240px] min-w-[240px] snap-start sm:w-[300px] sm:min-w-[300px]"><ProductFeatureTile product={first} builder={builder} className="min-h-[200px] w-full" /></div>}
           {offerCards(listed, cardWidth)}{viewAll(cardWidth)}
         </DragScrollRow>{refresh}
       </Shell>;
     }
-
-    case "BANNER_ROW":
-      // One row: the banner (the first product) on the right, the other products as small cards to its left.
-      return <Shell>{header}
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-stretch">
-          <ProductFeatureTile product={first} builder={builder} className="min-h-[170px] lg:min-h-0 lg:w-[38%] lg:shrink-0" />
-          {rest.length > 0 && <div className="grid min-w-0 flex-1 grid-cols-3 content-start gap-2 sm:grid-cols-4 lg:grid-cols-3 xl:grid-cols-4">{rest.map((product) => <ProductThumbItem key={product.id} product={product} builder={builder} vertical />)}</div>}
-        </div>
-        {refresh}
-      </Shell>;
 
     case "FEATURE_LIST":
       return <Shell>{header}
