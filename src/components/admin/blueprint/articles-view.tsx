@@ -4,6 +4,7 @@ import { ImageOff, Plus, SquarePen } from "lucide-react";
 import { AdminEmptyState, AdminPageHeader, AdminPrimaryLink } from "@/components/admin-ui";
 import { AdminListFilters } from "@/components/admin-list-filters";
 import { AdminPagination } from "@/components/admin-pagination";
+import { AdminClearFilters } from "@/components/admin-clear-filters";
 import { AdminBulkCheckbox, AdminBulkEditor, AdminBulkTr } from "@/components/admin-bulk-editor";
 import { AdminColumn, AdminColumnSettingsButton, AdminColumnVisibility } from "@/components/admin-column-visibility";
 import { AdminColumnFilter } from "@/components/admin-column-filter";
@@ -164,7 +165,7 @@ export function BlueprintArticlesView({ articles, categories, counts, filters, p
             <AdminPagination page={pagination.page} pageSize={pagination.pageSize} totalItems={pagination.totalItems} totalPages={pagination.totalPages} />
           </>
         ) : (
-          <AdminEmptyState title="مقاله‌ای پیدا نشد" description="فیلترها را تغییر دهید یا اولین مقاله را بنویسید." />
+          <AdminEmptyState title="مقاله‌ای پیدا نشد" description={filters.query || filters.status || filters.category ? "فیلترها را تغییر دهید و دوباره جستجو کنید." : "هنوز مقاله‌ای ثبت نشده است؛ اولین مقاله را بنویسید."} action={filters.query || filters.status || filters.category ? <AdminClearFilters href="/admin/articles" /> : undefined} />
         )}
       </Panel>
     </div>

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { SquarePen } from "lucide-react";
 import { AdminEmptyState, AdminPanel, AdminStatusBadge } from "@/components/admin-ui";
+import { AdminClearFilters } from "@/components/admin-clear-filters";
 import { AdminBulkCheckbox, AdminBulkEditor, AdminBulkTr } from "@/components/admin-bulk-editor";
 import { AdminColumn, AdminColumnSettingsButton, AdminColumnVisibility } from "@/components/admin-column-visibility";
 import { AdminColumnFilter } from "@/components/admin-column-filter";
@@ -149,7 +150,7 @@ export function BlueprintPackagingView({ boxes, initialHiddenColumns }: { boxes:
                 </AdminBulkEditor>
               </AdminColumnVisibility>
             </>
-          ) : <div className="p-6"><AdminEmptyState title="جعبه‌ای پیدا نشد" description="هیچ جعبه‌ای با جستجو و فیلترهای انتخابی مطابقت ندارد." /></div>}
+          ) : <div className="p-6"><AdminEmptyState title="جعبه‌ای پیدا نشد" description="هیچ جعبه‌ای با جستجو و فیلترهای انتخابی مطابقت ندارد." action={<AdminClearFilters onClick={() => { setQuery(""); setStatusFilter(""); setDefaultFilter(""); }} />} /></div>}
         </>
       ) : <AdminEmptyState title="هنوز جعبه‌ای تعریف نشده" description="برای دقت در محاسبه هزینه ارسال، حداقل یک جعبه اضافه کنید." />}
     </AdminPanel>

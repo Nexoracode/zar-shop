@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "@heroui/react";
 import { GripVertical, Info, SquarePen, Trash2 } from "lucide-react";
 import { AdminEmptyState, AdminPageHeader, AdminStatusBadge } from "@/components/admin-ui";
+import { AdminClearFilters } from "@/components/admin-clear-filters";
 import { AdminBulkCheckbox, AdminBulkEditor, AdminBulkTr } from "@/components/admin-bulk-editor";
 import { AdminColumn, AdminColumnSettingsButton, AdminColumnVisibility } from "@/components/admin-column-visibility";
 import { AdminColumnFilter } from "@/components/admin-column-filter";
@@ -440,7 +441,7 @@ export function BlueprintOptionTypesView({ types, colors, initialHiddenColumns }
                 </AdminBulkEditor>
               </AdminColumnVisibility>
               </>
-              ) : <div className="p-6"><AdminEmptyState title="نوع تنوعی پیدا نشد" description="هیچ نوع تنوعی با جستجو و فیلترهای انتخابی مطابقت ندارد." /></div>}
+              ) : <div className="p-6"><AdminEmptyState title="نوع تنوعی پیدا نشد" description="هیچ نوع تنوعی با جستجو و فیلترهای انتخابی مطابقت ندارد." action={<AdminClearFilters onClick={() => { setQuery(""); setKindFilter(""); setStatusFilter(""); }} />} /></div>}
             </>
           ) : <AdminEmptyState title="نوع تنوعی ثبت نشده" description="اولین نوع تنوع مانند رنگ یا سایز را از فرم کنار جدول با مقادیرش تعریف کنید." />}
         </Panel>

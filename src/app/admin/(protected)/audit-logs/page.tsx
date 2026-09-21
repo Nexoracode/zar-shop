@@ -1,6 +1,7 @@
 import type { Prisma } from "@generated/prisma/client";
 import { AdminEmptyState, AdminPageHeader, AdminPanel } from "@/components/admin-ui";
 import { AdminListFilters } from "@/components/admin-list-filters";
+import { AdminClearFilters } from "@/components/admin-clear-filters";
 import { db } from "@/lib/db";
 import { resolveAdminPagination } from "@/lib/admin-pagination";
 import { parseAdminPaginationRequest } from "@/lib/admin-pagination-server";
@@ -50,7 +51,7 @@ export default async function AuditLogsPage({ searchParams }: { searchParams: Se
     <AdminPanel className="mb-5 p-4 sm:p-5"><AdminListFilters path="/admin/audit-logs" query={query} queryLabel="جستجوی فعالیت" queryPlaceholder="نام مدیر، عملیات، موجودیت یا شناسه" filters={[]} /></AdminPanel>
     <AdminPanel>
       {!logs.length
-        ? <AdminEmptyState title="فعالیتی پیدا نشد" description={query || action ? "فیلترها را تغییر دهید و دوباره جستجو کنید." : "هنوز فعالیت مدیریتی ثبت نشده است."} />
+        ? <AdminEmptyState title="فعالیتی پیدا نشد" description={query || action ? "فیلترها را تغییر دهید و دوباره جستجو کنید." : "هنوز فعالیت مدیریتی ثبت نشده است."} action={query || action ? <AdminClearFilters href="/admin/audit-logs" /> : undefined} />
         : <BlueprintAuditLogsView logs={logs} pagination={pagination} initialHiddenColumns={initialHiddenColumns} action={action} actionOptions={actionRows.map((item) => ({ value: item.action, label: auditActionLabel(item.action) }))} />}
     </AdminPanel>
   </>;

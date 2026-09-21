@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Eye } from "lucide-react";
 import { AdminEmptyState, AdminPageHeader } from "@/components/admin-ui";
 import { AdminListFilters } from "@/components/admin-list-filters";
+import { AdminClearFilters } from "@/components/admin-clear-filters";
 import { AdminColumn, AdminColumnSettingsButton, AdminColumnVisibility } from "@/components/admin-column-visibility";
 import { AdminColumnFilter } from "@/components/admin-column-filter";
 import { AdminPagination } from "@/components/admin-pagination";
@@ -62,6 +63,7 @@ export default async function PaymentsPage({ searchParams }: { searchParams: Sea
           <AdminEmptyState
             title="پرداختی پیدا نشد"
             description={filtered ? "فیلترها را تغییر دهید و دوباره جستجو کنید." : "هنوز پرداختی در فروشگاه ثبت نشده است."}
+            action={filtered ? <AdminClearFilters href="/admin/payments" /> : undefined}
           />
         ) : (
           <AdminColumnVisibility tableId={PAYMENTS_TABLE_ID} columns={paymentColumns} initialHidden={initialHiddenColumns}>

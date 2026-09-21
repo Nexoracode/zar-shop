@@ -7,6 +7,7 @@ import { Check, CheckCircle2, Copy, CreditCard, ExternalLink, Plus, Save, Shield
 import { AdminActiveToggle } from "@/components/admin-active-toggle";
 import { AdminBulkCheckbox, AdminBulkEditor, AdminBulkTr } from "@/components/admin-bulk-editor";
 import { AdminColumn, AdminColumnSettingsButton, AdminColumnVisibility } from "@/components/admin-column-visibility";
+import { AdminClearFilters } from "@/components/admin-clear-filters";
 import { AdminColumnFilter } from "@/components/admin-column-filter";
 import { AdminGenericBulkEditButton } from "@/components/admin-generic-bulk-edit";
 import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
@@ -211,7 +212,7 @@ export function BlueprintPaymentGatewayManager({ mode, initialConfigs, appUrl, o
                         </BpTd>
                       </AdminBulkTr>
                     ))}
-                    {!visible.length && <tr><BpTd colSpan={99} className="bp-muted py-8 text-center">چیزی پیدا نشد.</BpTd></tr>}
+                    {!visible.length && <tr><BpTd colSpan={99} className="py-8 text-center"><p className="bp-muted m-0 mb-3 text-[13px]">چیزی پیدا نشد.</p><AdminClearFilters onClick={() => { setStatusFilter(""); setEnvironmentFilter(""); }} /></BpTd></tr>}
                   </tbody>
                 </BpTable>
               </AdminBulkEditor>

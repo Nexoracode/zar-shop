@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "@heroui/react";
 import { GripVertical, SquarePen } from "lucide-react";
 import { AdminEmptyState, AdminPanel, AdminStatusBadge } from "@/components/admin-ui";
+import { AdminClearFilters } from "@/components/admin-clear-filters";
 import { AdminBulkCheckbox, AdminBulkEditor, AdminBulkTr } from "@/components/admin-bulk-editor";
 import { AdminColumn, AdminColumnSettingsButton, AdminColumnVisibility } from "@/components/admin-column-visibility";
 import { AdminColumnFilter } from "@/components/admin-column-filter";
@@ -236,7 +237,7 @@ export function BlueprintShippingMethodsView({ methods, initialHiddenColumns }: 
                 </AdminBulkEditor>
               </AdminColumnVisibility>
             </>
-          ) : <div className="p-6"><AdminEmptyState title="روشی پیدا نشد" description="هیچ روش ارسالی با جستجو و فیلترهای انتخابی مطابقت ندارد." /></div>}
+          ) : <div className="p-6"><AdminEmptyState title="روشی پیدا نشد" description="هیچ روش ارسالی با جستجو و فیلترهای انتخابی مطابقت ندارد." action={<AdminClearFilters onClick={() => { setQuery(""); setStatusFilter(""); setSourceFilter(""); }} />} /></div>}
         </>
       ) : <AdminEmptyState title="روش ارسالی ثبت نشده" description="تا وقتی هیچ روشی تعریف نشده باشد، تسویه حساب همان هزینه ثابت تنظیمات را اعمال می‌کند." />}
     </AdminPanel>

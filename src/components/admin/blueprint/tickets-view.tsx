@@ -5,6 +5,7 @@ import { Eye, Paperclip } from "lucide-react";
 import { AdminEmptyState, AdminPageHeader, AdminStatusBadge } from "@/components/admin-ui";
 import { AdminListFilters } from "@/components/admin-list-filters";
 import { AdminPagination } from "@/components/admin-pagination";
+import { AdminClearFilters } from "@/components/admin-clear-filters";
 import { AdminBulkCheckbox, AdminBulkEditor, AdminBulkTr } from "@/components/admin-bulk-editor";
 import { AdminColumn, AdminColumnSettingsButton, AdminColumnVisibility } from "@/components/admin-column-visibility";
 import { AdminColumnFilter } from "@/components/admin-column-filter";
@@ -90,7 +91,7 @@ export function BlueprintTicketsView({ tickets, categories, query, status, categ
 
       <section className="bp-frame relative">
         {!tickets.length ? (
-          <AdminEmptyState title="تیکتی پیدا نشد" description={query || status || categoryId || mine ? "فیلترها را تغییر دهید و دوباره جستجو کنید." : "هنوز تیکتی از سمت کاربران ثبت نشده است."} />
+          <AdminEmptyState title="تیکتی پیدا نشد" description={query || status || categoryId || mine ? "فیلترها را تغییر دهید و دوباره جستجو کنید." : "هنوز تیکتی از سمت کاربران ثبت نشده است."} action={query || status || categoryId || mine ? <AdminClearFilters href="/admin/tickets" /> : undefined} />
         ) : (
           <>
             <div className="md:hidden">

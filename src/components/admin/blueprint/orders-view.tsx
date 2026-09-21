@@ -4,6 +4,7 @@ import { Eye, X } from "lucide-react";
 import { AdminEmptyState, AdminPageHeader, AdminPrimaryLink } from "@/components/admin-ui";
 import { AdminListFilters } from "@/components/admin-list-filters";
 import { AdminPagination } from "@/components/admin-pagination";
+import { AdminClearFilters } from "@/components/admin-clear-filters";
 import { AdminOrderStatusSelect } from "@/components/admin-order-status-select";
 import { formatDate, formatMoney } from "@/lib/format";
 import { OrdersTable } from "./orders-table";
@@ -69,7 +70,7 @@ export function BlueprintOrdersView({ orders, query, status, statuses, filteredP
 
       <Panel>
         {!orders.length ? (
-          <AdminEmptyState title="سفارشی پیدا نشد" description={query || status || filteredProduct ? "فیلترها را تغییر دهید و دوباره جستجو کنید." : "هنوز سفارشی در فروشگاه ثبت نشده است."} />
+          <AdminEmptyState title="سفارشی پیدا نشد" description={query || status || filteredProduct ? "فیلترها را تغییر دهید و دوباره جستجو کنید." : "هنوز سفارشی در فروشگاه ثبت نشده است."} action={query || status || filteredProduct ? <AdminClearFilters href="/admin/orders" /> : undefined} />
         ) : (
           <>
             <div className="md:hidden">

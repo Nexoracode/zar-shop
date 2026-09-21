@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "@heroui/react";
 import { GripVertical, Images, SquarePen, Tag, Trash2 } from "lucide-react";
 import { AdminEmptyState, AdminPageHeader, AdminStatusBadge } from "@/components/admin-ui";
+import { AdminClearFilters } from "@/components/admin-clear-filters";
 import { AdminBulkCheckbox, AdminBulkEditor, AdminBulkTr } from "@/components/admin-bulk-editor";
 import { AdminColumn, AdminColumnSettingsButton, AdminColumnVisibility } from "@/components/admin-column-visibility";
 import { AdminColumnFilter } from "@/components/admin-column-filter";
@@ -375,7 +376,7 @@ export function BlueprintBrandsView({ brands, initialHiddenColumns }: { brands: 
                 </AdminBulkEditor>
               </AdminColumnVisibility>
               </>
-              ) : <div className="p-6"><AdminEmptyState title="برندی پیدا نشد" description="هیچ برندی با جستجو و فیلترهای انتخابی مطابقت ندارد." /></div>}
+              ) : <div className="p-6"><AdminEmptyState title="برندی پیدا نشد" description="هیچ برندی با جستجو و فیلترهای انتخابی مطابقت ندارد." action={<AdminClearFilters onClick={() => { setQuery(""); setStatusFilter(""); setFeaturedFilter(""); setProductsFilter(""); }} />} /></div>}
             </>
           ) : <AdminEmptyState title="برندی ثبت نشده" description="اولین برند فروشگاه را از فرم کنار جدول ثبت کنید." />}
         </Panel>

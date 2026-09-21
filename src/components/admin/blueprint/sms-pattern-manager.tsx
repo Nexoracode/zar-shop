@@ -6,6 +6,7 @@ import { toast } from "@heroui/react";
 import { FileText, RefreshCw, SquarePen, Trash2 } from "lucide-react";
 import { AdminEmptyState, AdminPanel } from "@/components/admin-ui";
 import { AdminColumn, AdminColumnSettingsButton, AdminColumnVisibility } from "@/components/admin-column-visibility";
+import { AdminClearFilters } from "@/components/admin-clear-filters";
 import { AdminColumnFilter } from "@/components/admin-column-filter";
 import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
 import { smsPatternCategories, type SmsPattern } from "@/modules/communications/sms-pattern-schemas";
@@ -392,7 +393,7 @@ export function BlueprintSmsPatternList({ initialPatterns, initialHiddenColumns 
                       </BpTd>
                     </tr>
                   ))}
-                  {!visible.length && <tr><BpTd colSpan={99} className="bp-muted py-8 text-center">چیزی پیدا نشد.</BpTd></tr>}
+                  {!visible.length && <tr><BpTd colSpan={99} className="py-8 text-center"><p className="bp-muted m-0 mb-3 text-[13px]">چیزی پیدا نشد.</p><AdminClearFilters onClick={() => { setStatusFilter(""); setCategoryFilter(""); }} /></BpTd></tr>}
                 </tbody>
               </BpTable>
             </div>

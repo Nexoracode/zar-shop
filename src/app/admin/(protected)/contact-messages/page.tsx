@@ -1,6 +1,7 @@
 import type { Prisma } from "@generated/prisma/client";
 import { AdminEmptyState, AdminPageHeader, AdminPanel } from "@/components/admin-ui";
 import { AdminListFilters } from "@/components/admin-list-filters";
+import { AdminClearFilters } from "@/components/admin-clear-filters";
 import { resolveAdminPagination } from "@/lib/admin-pagination";
 import { parseAdminPaginationRequest } from "@/lib/admin-pagination-server";
 import { readHiddenColumns } from "@/lib/admin-column-visibility-server";
@@ -45,7 +46,7 @@ export default async function AdminContactMessagesPage({ searchParams }: { searc
 
       <AdminPanel>
         {!messages.length
-          ? <AdminEmptyState title="پیامی پیدا نشد" description="هنوز پیامی از فرم تماس با ما ثبت نشده یا فیلترهای انتخاب‌شده نتیجه‌ای ندارند." />
+          ? <AdminEmptyState title="پیامی پیدا نشد" description={q || status ? "فیلترها را تغییر دهید و دوباره جستجو کنید." : "هنوز پیامی از فرم تماس با ما ثبت نشده است."} action={q || status ? <AdminClearFilters href="/admin/contact-messages" /> : undefined} />
           : <BlueprintContactMessagesView messages={messages} pagination={pagination} initialHiddenColumns={initialHiddenColumns} status={status ?? ""} />}
       </AdminPanel>
     </>

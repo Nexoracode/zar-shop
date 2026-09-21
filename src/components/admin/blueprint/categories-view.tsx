@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "@heroui/react";
 import { FolderTree, GripVertical, Images, SlidersHorizontal, SquarePen, Star, Trash2 } from "lucide-react";
 import { AdminEmptyState, AdminPageHeader, AdminStatusBadge } from "@/components/admin-ui";
+import { AdminClearFilters } from "@/components/admin-clear-filters";
 import { AdminBulkCheckbox, AdminBulkEditor, AdminBulkTr } from "@/components/admin-bulk-editor";
 import { AdminColumn, AdminColumnSettingsButton, AdminColumnVisibility } from "@/components/admin-column-visibility";
 import { AdminColumnFilter } from "@/components/admin-column-filter";
@@ -420,7 +421,7 @@ export function BlueprintCategoriesView({ categories, initialHiddenColumns }: { 
                 </AdminBulkEditor>
               </AdminColumnVisibility>
               </>
-              ) : <div className="p-6"><AdminEmptyState title="دسته‌بندی‌ای پیدا نشد" description="هیچ دسته‌بندی‌ای با جستجو و فیلترهای انتخابی مطابقت ندارد." /></div>}
+              ) : <div className="p-6"><AdminEmptyState title="دسته‌بندی‌ای پیدا نشد" description="هیچ دسته‌بندی‌ای با جستجو و فیلترهای انتخابی مطابقت ندارد." action={<AdminClearFilters onClick={() => { setQuery(""); setStatusFilter(""); setFeaturedFilter(""); setTypeFilter(""); setProductsFilter(""); }} />} /></div>}
             </>
           ) : <AdminEmptyState title="دسته‌بندی‌ای ثبت نشده" description="اولین دسته فروشگاه را از فرم کنار جدول ثبت کنید." />}
         </Panel>

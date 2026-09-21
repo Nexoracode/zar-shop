@@ -4,6 +4,7 @@ import { Plus } from "lucide-react";
 import { AdminEmptyState, AdminPageHeader, AdminPanel, AdminPrimaryLink } from "@/components/admin-ui";
 import { db } from "@/lib/db";
 import { AdminListFilters } from "@/components/admin-list-filters";
+import { AdminClearFilters } from "@/components/admin-clear-filters";
 import { resolveAdminPagination } from "@/lib/admin-pagination";
 import { parseAdminPaginationRequest } from "@/lib/admin-pagination-server";
 import { readHiddenColumns } from "@/lib/admin-column-visibility-server";
@@ -65,7 +66,7 @@ export default async function UsersPage({ searchParams }: { searchParams: Search
 
       <AdminPanel>
         {!users.length
-          ? <AdminEmptyState title="کاربری پیدا نشد" description={query || role || status ? "فیلترها را تغییر دهید و دوباره جستجو کنید." : "هنوز کاربری در فروشگاه ثبت نشده است."} />
+          ? <AdminEmptyState title="کاربری پیدا نشد" description={query || role || status ? "فیلترها را تغییر دهید و دوباره جستجو کنید." : "هنوز کاربری در فروشگاه ثبت نشده است."} action={query || role || status ? <AdminClearFilters href="/admin/users" /> : undefined} />
           : <BlueprintUsersView users={users} pagination={pagination} actorId={actor.id} actorRole={actor.role} assignableRoles={assignableRoles} walletEnabled={walletSettings.walletEnabled} initialHiddenColumns={initialHiddenColumns} role={role ?? ""} status={status ?? ""} />}
       </AdminPanel>
     </>

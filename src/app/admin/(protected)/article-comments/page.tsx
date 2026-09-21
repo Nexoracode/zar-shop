@@ -2,6 +2,7 @@ import type { Prisma } from "@generated/prisma/client";
 import { Flag, MessageSquareText, ThumbsUp } from "lucide-react";
 import { AdminEmptyState, AdminPageHeader, AdminPanel } from "@/components/admin-ui";
 import { AdminListFilters } from "@/components/admin-list-filters";
+import { AdminClearFilters } from "@/components/admin-clear-filters";
 import { resolveAdminPagination } from "@/lib/admin-pagination";
 import { parseAdminPaginationRequest } from "@/lib/admin-pagination-server";
 import { db } from "@/lib/db";
@@ -61,7 +62,7 @@ export default async function AdminArticleCommentsPage({ searchParams }: { searc
 
       <AdminPanel>
         {!comments.length
-          ? <AdminEmptyState title="دیدگاهی پیدا نشد" description="هنوز دیدگاهی ثبت نشده یا فیلترهای انتخاب‌شده نتیجه‌ای ندارند." />
+          ? <AdminEmptyState title="دیدگاهی پیدا نشد" description={q || status ? "فیلترها را تغییر دهید و دوباره جستجو کنید." : "هنوز دیدگاهی ثبت نشده است."} action={q || status ? <AdminClearFilters href="/admin/article-comments" /> : undefined} />
           : <BlueprintArticleCommentsView comments={comments} pagination={pagination} initialHiddenColumns={initialHiddenColumns} status={status ?? ""} />}
       </AdminPanel>
     </>

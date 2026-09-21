@@ -7,6 +7,7 @@ import Link from "next/link";
 import { AlertTriangle, ExternalLink, MessageSquareText, Power, ShieldCheck, SquarePen, ToggleLeft, ToggleRight, Trash2 } from "lucide-react";
 import { AdminBulkCheckbox, AdminBulkEditor, AdminBulkTr } from "@/components/admin-bulk-editor";
 import { AdminColumn, AdminColumnSettingsButton, AdminColumnVisibility } from "@/components/admin-column-visibility";
+import { AdminClearFilters } from "@/components/admin-clear-filters";
 import { AdminColumnFilter } from "@/components/admin-column-filter";
 import { AdminGenericBulkEditButton } from "@/components/admin-generic-bulk-edit";
 import { ConfirmDialog } from "@/components/confirm-dialog";
@@ -187,7 +188,7 @@ export function BlueprintSmsProviderManager({ mode, initialConfigs, smsEnabled, 
                         </BpTd>
                       </AdminBulkTr>
                     ))}
-                    {!visible.length && <tr><BpTd colSpan={99} className="bp-muted py-8 text-center">چیزی پیدا نشد.</BpTd></tr>}
+                    {!visible.length && <tr><BpTd colSpan={99} className="py-8 text-center"><p className="bp-muted m-0 mb-3 text-[13px]">چیزی پیدا نشد.</p><AdminClearFilters onClick={() => { setStatusFilter(""); }} /></BpTd></tr>}
                   </tbody>
                 </BpTable>
               </AdminBulkEditor>

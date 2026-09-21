@@ -8,6 +8,7 @@ import { BadgePercent, Gift, ShoppingBag, SquarePen, ToggleLeft, ToggleRight, Tr
 import { AdminEmptyState, AdminPageHeader, AdminPrimaryLink, AdminStatusBadge } from "@/components/admin-ui";
 import { AdminListFilters } from "@/components/admin-list-filters";
 import { AdminPagination } from "@/components/admin-pagination";
+import { AdminClearFilters } from "@/components/admin-clear-filters";
 import { AdminBulkCheckbox, AdminBulkEditor, AdminBulkTr } from "@/components/admin-bulk-editor";
 import { AdminColumn, AdminColumnSettingsButton, AdminColumnVisibility } from "@/components/admin-column-visibility";
 import { AdminColumnFilter } from "@/components/admin-column-filter";
@@ -120,7 +121,7 @@ export function BlueprintPromotionsView({ initialItems, query, status, type, pag
 
       <Panel>
         {!items.length ? (
-          <AdminEmptyState title="پروموشنی پیدا نشد" description={query || status || type ? "فیلترها را تغییر دهید و دوباره جستجو کنید." : "برای ساخت اولین کمپین از دکمهٔ «پروموشن جدید» استفاده کنید."} />
+          <AdminEmptyState title="پروموشنی پیدا نشد" description={query || status || type ? "فیلترها را تغییر دهید و دوباره جستجو کنید." : "برای ساخت اولین کمپین از دکمهٔ «پروموشن جدید» استفاده کنید."} action={query || status || type ? <AdminClearFilters href="/admin/promotions" /> : undefined} />
         ) : (
           <>
             <div className="md:hidden">

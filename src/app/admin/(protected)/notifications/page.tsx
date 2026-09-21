@@ -1,6 +1,7 @@
 import type { Prisma } from "@generated/prisma/client";
 import { AdminEmptyState, AdminPageHeader } from "@/components/admin-ui";
 import { AdminListFilters } from "@/components/admin-list-filters";
+import { AdminClearFilters } from "@/components/admin-clear-filters";
 import { AdminColumn, AdminColumnSettingsButton, AdminColumnVisibility } from "@/components/admin-column-visibility";
 import { AdminColumnFilter } from "@/components/admin-column-filter";
 import { AdminPagination } from "@/components/admin-pagination";
@@ -90,6 +91,7 @@ export default async function AdminNotificationsPage({ searchParams }: { searchP
           <AdminEmptyState
             title="اعلانی پیدا نشد"
             description={filtered ? "فیلترها را تغییر دهید و دوباره جستجو کنید." : "هنوز اعلانی برای کاربران ارسال نشده است."}
+            action={filtered ? <AdminClearFilters href="/admin/notifications" /> : undefined}
           />
         ) : (
           <AdminColumnVisibility tableId={NOTIFICATIONS_TABLE_ID} columns={notificationColumns} initialHidden={initialHiddenColumns}>

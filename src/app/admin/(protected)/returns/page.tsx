@@ -3,6 +3,7 @@ import { ReturnStatus } from "@generated/prisma/enums";
 import { CheckCircle2, Clock, PackageX, XCircle } from "lucide-react";
 import { AdminEmptyState, AdminPageHeader } from "@/components/admin-ui";
 import { AdminListFilters } from "@/components/admin-list-filters";
+import { AdminClearFilters } from "@/components/admin-clear-filters";
 import { resolveAdminPagination } from "@/lib/admin-pagination";
 import { parseAdminPaginationRequest } from "@/lib/admin-pagination-server";
 import { readHiddenColumns } from "@/lib/admin-column-visibility-server";
@@ -93,6 +94,7 @@ export default async function AdminReturnsPage({ searchParams }: { searchParams:
           <AdminEmptyState
             title="درخواستی پیدا نشد"
             description={query || status ? "فیلترها را تغییر دهید و دوباره جستجو کنید." : "هنوز درخواست مرجوعی ثبت نشده است."}
+            action={query || status ? <AdminClearFilters href="/admin/returns" /> : undefined}
           />
         ) : (
           <BlueprintReturnsView returns={returns.map(serializeAdminReturnRow)} pagination={pagination} initialHiddenColumns={initialHiddenColumns} status={status ?? ""} />

@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "@heroui/react";
 import { Images, SquarePen, Trash2, UserRound } from "lucide-react";
 import { AdminEmptyState, AdminPageHeader } from "@/components/admin-ui";
+import { AdminClearFilters } from "@/components/admin-clear-filters";
 import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
 import { MediaPickerDialog } from "@/components/media-picker-dialog";
 import { AdminColumn, AdminColumnSettingsButton, AdminColumnVisibility } from "@/components/admin-column-visibility";
@@ -196,7 +197,7 @@ export function BlueprintAuthorsView({ authors, initialHiddenColumns }: { author
                     ))}
                   </tbody>
                 </BpTable>
-              ) : <div className="p-6"><AdminEmptyState title="نویسنده‌ای پیدا نشد" description="هیچ نویسنده‌ای با جستجوی انتخابی مطابقت ندارد." /></div>}
+              ) : <div className="p-6"><AdminEmptyState title="نویسنده‌ای پیدا نشد" description="هیچ نویسنده‌ای با جستجوی انتخابی مطابقت ندارد." action={<AdminClearFilters onClick={() => { setQuery(""); setArticlesFilter(""); }} />} /></div>}
             </AdminColumnVisibility>
           ) : <AdminEmptyState title="نویسنده‌ای ثبت نشده" description="اولین نویسندهٔ وبلاگ را از فرم کنار جدول ثبت کنید." />}
         </Panel>

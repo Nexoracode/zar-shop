@@ -4,6 +4,7 @@ import { AdminEmptyState, AdminPageHeader } from "@/components/admin-ui";
 import { AdminColumn, AdminColumnSettingsButton, AdminColumnVisibility } from "@/components/admin-column-visibility";
 import { AdminColumnFilter } from "@/components/admin-column-filter";
 import { AdminReadOnlyTableToolbar } from "@/components/admin-table-refresh";
+import { AdminClearFilters } from "@/components/admin-clear-filters";
 import { BpKicker } from "@/components/admin/blueprint/ui/card";
 import { BpTable, BpTd, BpTh } from "@/components/admin/blueprint/ui/table";
 import { BpTag } from "@/components/admin/blueprint/ui/tag";
@@ -116,7 +117,7 @@ export default async function AdminUserWalletPage({ params, searchParams }: Cont
               </tbody>
             </BpTable>
           ) : (
-            <AdminEmptyState title="تراکنشی پیدا نشد" description={type ? "فیلتر را تغییر دهید و دوباره جستجو کنید." : "هنوز هیچ اعتباری به کیف پول این کاربر افزوده یا از آن کسر نشده است."} />
+            <AdminEmptyState title="تراکنشی پیدا نشد" description={type ? "فیلتر را تغییر دهید و دوباره جستجو کنید." : "هنوز هیچ اعتباری به کیف پول این کاربر افزوده یا از آن کسر نشده است."} action={type ? <AdminClearFilters href={`/admin/users/${user.id}/wallet`} /> : undefined} />
           )}
           </AdminColumnVisibility>
         </section>

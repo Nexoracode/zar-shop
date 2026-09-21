@@ -7,6 +7,7 @@ import { Send, Trash2, UserRound, Users } from "lucide-react";
 import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
 import { AdminBulkCheckbox, AdminBulkEditor, AdminBulkTr } from "@/components/admin-bulk-editor";
 import { AdminColumn, AdminColumnSettingsButton, AdminColumnVisibility } from "@/components/admin-column-visibility";
+import { AdminClearFilters } from "@/components/admin-clear-filters";
 import { AdminColumnFilter } from "@/components/admin-column-filter";
 import { AdminGenericBulkEditButton } from "@/components/admin-generic-bulk-edit";
 import { AdminEmptyState, AdminPanel } from "@/components/admin-ui";
@@ -215,7 +216,7 @@ export function BlueprintSmsCampaignList({ items, initialHiddenColumns }: { item
                         <BpTd><BpButton type="button" variant="ghost" className="bp-btn-danger-icon" isIconOnly size="sm" aria-label="حذف پیام از تاریخچه" onClick={() => { setDeleteError(""); setPendingDelete(item); }}><Trash2 size={15} strokeWidth={1.5} /></BpButton></BpTd>
                       </AdminBulkTr>
                     ))}
-                    {!visible.length && <tr><BpTd colSpan={99} className="bp-muted py-8 text-center">چیزی پیدا نشد.</BpTd></tr>}
+                    {!visible.length && <tr><BpTd colSpan={99} className="py-8 text-center"><p className="bp-muted m-0 mb-3 text-[13px]">چیزی پیدا نشد.</p><AdminClearFilters onClick={() => { setStatusFilter(""); }} /></BpTd></tr>}
                   </tbody>
                 </BpTable>
               </AdminBulkEditor>
