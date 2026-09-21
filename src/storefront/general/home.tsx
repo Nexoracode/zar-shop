@@ -80,7 +80,7 @@ export async function GeneralHome({ editable = false }: { /** The viewer can edi
   const flashDealsExpiry = earliestDiscountEnd(flashDeals);
 
   return <main className="flex flex-col gap-4 overflow-hidden bg-[#f4f5f7] pb-[78px] pt-3 lg:gap-6 lg:pb-8">
-    <section {...sectionProps("HERO")} className="bg-white"><StorefrontHeroSlider slides={heroSlides} contentMode={homepage.heroContentMode} title={homepage.heroTitle} description={homepage.heroDescription} buttonLabel={homepage.heroButtonLabel} arrowsHidden={isPartHidden(pageDisplay, "HERO", "arrows")} editable={editable} /></section>
+    <section {...sectionProps("HERO")} className="bg-white"><StorefrontHeroSlider slides={heroSlides} contentMode={homepage.heroContentMode} title={homepage.heroTitle} description={homepage.heroDescription} buttonLabel={homepage.heroButtonLabel} arrowsHidden={isPartHidden(pageDisplay, "HERO", "arrows")} dotsHidden={isPartHidden(pageDisplay, "HERO", "dots")} editable={editable} /></section>
 
     {homepage.tileGroups.map((group) => group.tiles.some((tile) => tile.media) && <section key={group.id} {...sectionProps(`TILE_GROUP:${group.id}`)} className={container} aria-label="پیشنهادهای تصویری"><StorefrontImageTiles groups={[group]} /></section>)}
 

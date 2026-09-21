@@ -11,7 +11,7 @@ import { getHomepageSettings } from "@/modules/settings/homepage-settings";
 import { brandCssVariables, getBrandSettings } from "@/modules/settings/brand-settings";
 import { getSeoSettings } from "@/modules/settings/seo-settings";
 import { getPageDisplaySettings } from "@/modules/page-builder/display-settings";
-import { adminRoles } from "@/modules/auth/permissions";
+import { adminRoles, hasPermission } from "@/modules/auth/permissions";
 import { StorefrontFooter, StorefrontHeader } from "@/storefront/resolve-chrome";
 import { env } from "@/lib/env";
 import "./globals.css";
@@ -53,14 +53,16 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   const [settings, homepageSettings, brandSettings, user, pageDisplay] = await Promise.all([getGeneralStoreSettings(), getHomepageSettings(), getBrandSettings(), getCurrentUser(), getPageDisplaySettings()]);
   const viewerIsAdmin = Boolean(user && adminRoles.includes(user.role));
+  // Whether the page builder is available to this viewer (see `src/app/page.tsx`): switched-off parts are then still rendered.
+  const canEditPage = Boolean(user && hasPermission(user.role, "settings:manage"));
   return (
     <html lang="fa" dir="rtl" data-theme="zar" data-scroll-behavior="smooth">
       <body style={brandCssVariables(brandSettings)}>
         <RouteProgressBar />
         <SiteTracker />
         <AppChrome
-          header={<><SitePromoBanner settings={homepageSettings} /><StorefrontHeader settings={settings} brand={brandSettings} user={user} menuItems={homepageSettings.menuItems} display={pageDisplay} /></>}
-          footer={<StorefrontFooter settings={settings} brand={brandSettings} />}
+          header={<><SitePromoBanner settings={homepageSettings} display={pageDisplay} editable={canEditPage} /><StorefrontHeader settings={settings} brand={brandSettings} user={user} menuItems={homepageSettings.menuItems} display={pageDisplay} /></>}
+          footer={<StorefrontFooter settings={settings} brand={brandSettings} display={pageDisplay} editable={canEditPage} />}
           storefrontAvailable={isStorefrontAvailable(settings, user?.role)}
           maintenanceMode={settings.maintenanceMode}
           setupIncomplete={!settings.setupComplete}

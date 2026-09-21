@@ -3,7 +3,8 @@ import { BUILDER_SECTION_ATTRIBUTE } from "@/modules/page-builder/sections";
 
 // "Display settings" of a storefront section: the section as a whole can be switched off, and so can each of
 // the parts it is made of (search box, cart button, slider arrows…). Only what differs from "everything shown"
-// is stored.
+// is stored. Every section has the whole-section switch, so a section without an entry here but in the homepage
+// layout is handled by the builder as "a layout section with no parts".
 export const BUILDER_PART_ATTRIBUTE = "data-builder-part";
 
 export type PageBuilderIndustry = "GOLD" | "GENERAL";
@@ -51,12 +52,14 @@ const displaySections: Record<string, { master: "display" | "layout"; masterLabe
   },
   HERO: {
     master: "layout",
-    masterLabel: "نمایش اسلایدر",
     parts: {
-      GENERAL: [{ id: "arrows", label: "نمایش فلش‌ها" }],
-      GOLD: [{ id: "arrows", label: "نمایش فلش‌ها" }],
+      GENERAL: [{ id: "arrows", label: "نمایش فلش‌ها" }, { id: "dots", label: "نمایش اسلایدر (نقطه‌ها)" }],
+      GOLD: [{ id: "arrows", label: "نمایش فلش‌ها" }, { id: "dots", label: "نمایش اسلایدر (نقطه‌ها)" }],
     },
   },
+  // Sections with nothing to toggle inside them still get the whole-section switch.
+  PROMO_BANNER: { master: "display", parts: { GENERAL: [], GOLD: [] } },
+  FOOTER: { master: "display", parts: { GENERAL: [], GOLD: [] } },
 };
 
 export function sectionDisplayConfig(sectionId: string, industry: PageBuilderIndustry): SectionDisplayConfig | null {

@@ -15,11 +15,11 @@ export async function StorefrontHeader(props: HeaderProps) {
   return <GoldHeader {...props} />;
 }
 
-export async function StorefrontFooter({ settings, brand }: Pick<HeaderProps, "settings" | "brand">) {
+export async function StorefrontFooter({ settings, brand, display, editable }: Pick<HeaderProps, "settings" | "brand" | "display"> & { editable: boolean }) {
   if (settings.industry === "GENERAL") {
     const { GeneralFooter } = await import("@/storefront/general/footer");
-    return <GeneralFooter settings={settings} brand={brand} />;
+    return <GeneralFooter settings={settings} brand={brand} display={display} editable={editable} />;
   }
   const { GoldFooter } = await import("@/storefront/gold/footer");
-  return <GoldFooter settings={settings} brand={brand} />;
+  return <GoldFooter settings={settings} brand={brand} display={display} editable={editable} />;
 }

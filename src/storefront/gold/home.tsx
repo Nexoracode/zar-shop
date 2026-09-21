@@ -59,7 +59,7 @@ export async function GoldHome({ editable = false }: { /** The viewer can edit t
 
   return <main className="flex flex-col overflow-hidden bg-[#f7f4f2] pb-[66px] lg:pb-0">
     <section {...sectionProps("HERO")} className="bg-white">
-      <StorefrontHeroSlider slides={heroSlides} contentMode={homepage.heroContentMode} title={homepage.heroTitle} description={homepage.heroDescription} buttonLabel={homepage.heroButtonLabel} arrowsHidden={isPartHidden(pageDisplay, "HERO", "arrows")} editable={editable} />
+      <StorefrontHeroSlider slides={heroSlides} contentMode={homepage.heroContentMode} title={homepage.heroTitle} description={homepage.heroDescription} buttonLabel={homepage.heroButtonLabel} arrowsHidden={isPartHidden(pageDisplay, "HERO", "arrows")} dotsHidden={isPartHidden(pageDisplay, "HERO", "dots")} editable={editable} />
     </section>
 
     {homepage.tileGroups.map((group) => group.tiles.some((tile) => tile.media) && <section key={group.id} {...sectionProps(`TILE_GROUP:${group.id}`)} className="bg-white py-5 lg:py-10" aria-label="پیشنهادهای تصویری">

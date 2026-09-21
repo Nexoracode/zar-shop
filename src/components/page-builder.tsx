@@ -11,7 +11,7 @@ import { PageBuilderMenuDialog } from "@/components/page-builder-menu-dialog";
 import { PageBuilderOverlay } from "@/components/page-builder-overlay";
 import { SectionDisplayDialog } from "@/components/section-display-dialog";
 import { SectionEditDialog } from "@/components/section-edit-dialog";
-import { displayCss, sameDisplay, sectionDisplay, sectionDisplayConfig, setSectionDisplay, type PageBuilderIndustry, type PageDisplay, type SectionDisplay } from "@/modules/page-builder/display-parts";
+import { displayCss, sameDisplay, sectionDisplay, sectionDisplayConfig, setSectionDisplay, type PageBuilderIndustry, type PageDisplay, type SectionDisplay, type SectionDisplayConfig } from "@/modules/page-builder/display-parts";
 import { sectionEditItems } from "@/modules/page-builder/edit-items";
 import type { HeroValues } from "@/modules/page-builder/hero-payload";
 import { isLayoutSection, layoutCss, moveSection, removeSection, sameLayout, sectionSelector, type LayoutSection } from "@/modules/page-builder/layout-draft";
@@ -87,8 +87,14 @@ export function PageBuilder({ initialSections, initialDisplay, industry, identit
     setPendingRemoval(null);
   }
 
+  // Every section has display settings: the registry lists the switchable parts of the ones that have any, and a
+  // layout section without an entry still gets the whole-section switch.
+  function displayConfig(id: string): SectionDisplayConfig | null {
+    return sectionDisplayConfig(id, industry) ?? (isLayoutSection(layout, id) ? { parts: [], master: "layout" } : null);
+  }
+
   function requestSettings(id: string) {
-    if (sectionDisplayConfig(id, industry)) setSettingsSection(id);
+    if (displayConfig(id)) setSettingsSection(id);
     else toast.info("تنظیمات نمایش این بخش هنوز اضافه نشده است");
   }
 
@@ -107,12 +113,12 @@ export function PageBuilder({ initialSections, initialDisplay, industry, identit
   // the display settings for the rest (the header…); the part switches are always display settings.
   function settingsValue(id: string): SectionDisplay {
     const stored = sectionDisplay(display, id);
-    if (sectionDisplayConfig(id, industry)?.master !== "layout") return stored;
+    if (displayConfig(id)?.master !== "layout") return stored;
     return { enabled: layout.find((section) => section.id === id)?.enabled ?? true, hiddenParts: stored.hiddenParts };
   }
 
   function confirmSettings(id: string, next: SectionDisplay) {
-    const inLayout = sectionDisplayConfig(id, industry)?.master === "layout";
+    const inLayout = displayConfig(id)?.master === "layout";
     const nextDisplay = setSectionDisplay(display, id, inLayout ? { enabled: true, hiddenParts: next.hiddenParts } : next);
     const nextLayout = inLayout ? layout.map((section) => (section.id === id && !section.removed ? { ...section, enabled: next.enabled } : section)) : layout;
     if (!sameDisplay(nextDisplay, display) || !sameLayout(nextLayout, layout)) commit({ layout: nextLayout, display: nextDisplay });
@@ -190,8 +196,8 @@ export function PageBuilder({ initialSections, initialDisplay, industry, identit
         <SectionDisplayDialog
           key={settingsSection}
           sectionLabel={builderSectionLabel(settingsSection)}
-          parts={sectionDisplayConfig(settingsSection, industry)?.parts ?? []}
-          masterLabel={sectionDisplayConfig(settingsSection, industry)?.masterLabel}
+          parts={displayConfig(settingsSection)?.parts ?? []}
+          masterLabel={displayConfig(settingsSection)?.masterLabel}
           value={settingsValue(settingsSection)}
           onConfirm={(next) => confirmSettings(settingsSection, next)}
           onClose={() => setSettingsSection(null)}

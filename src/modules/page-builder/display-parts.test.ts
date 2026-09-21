@@ -7,7 +7,12 @@ test("the header has different switchable parts per industry", () => {
   assert.ok(sectionDisplayConfig("HEADER", "GOLD")?.parts.some((part) => part.id === "goldPrice"));
   assert.equal(sectionDisplayConfig("HEADER", "GENERAL")?.parts.some((part) => part.id === "goldPrice"), false);
   assert.equal(sectionDisplayConfig("CATEGORIES", "GENERAL"), null);
+  assert.deepEqual(sectionDisplayConfig("HERO", "GOLD")?.parts.map((part) => part.id), ["arrows", "dots"]);
 });
+
+test("the footer and the promo banner only have the whole-section switch", () => {
+  assert.deepEqual(sectionDisplayConfig("FOOTER", "GENERAL"), { parts: [], master: "display", masterLabel: undefined });
+  assert.equal(sectionDisplayConfig("PROMO_BANNER", "GOLD")?.master, "display");
 
 test("the slider's on/off switch lives in the layout, the header's here", () => {
   assert.equal(sectionDisplayConfig("HERO", "GENERAL")?.master, "layout");

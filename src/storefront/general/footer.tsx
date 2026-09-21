@@ -5,6 +5,7 @@ import type { BrandSettings } from "@/modules/settings/brand-settings";
 import { contentPageMeta, getContentSettings } from "@/modules/settings/content-settings";
 import type { GeneralStoreSettingsInput } from "@/modules/settings/general-settings";
 import { builderSectionProps } from "@/modules/page-builder/sections";
+import { isSectionEnabled, type PageDisplay } from "@/modules/page-builder/display-parts";
 
 function phoneHref(phone: string) {
   const persian = "۰۱۲۳۴۵۶۷۸۹";
@@ -12,7 +13,8 @@ function phoneHref(phone: string) {
   return `tel:${normalized.replace(/[^+\d]/g, "")}`;
 }
 
-export async function GeneralFooter({ settings, brand }: { settings: GeneralStoreSettingsInput; brand: BrandSettings }) {
+export async function GeneralFooter({ settings, brand, display, editable }: { settings: GeneralStoreSettingsInput; brand: BrandSettings; display: PageDisplay; /** The viewer can edit the page: a switched-off footer is still rendered so the builder can bring it back. */ editable: boolean }) {
+  if (!isSectionEnabled(display, "FOOTER") && !editable) return null;
   const content = await getContentSettings();
   const pages = content.pages.filter((page) => page.published);
   const logo = brand.darkLogoMedia ?? brand.mainLogoMedia;

@@ -2,9 +2,11 @@ import Image from "next/image";
 import Link from "next/link";
 import type { HomepageSettings } from "@/modules/settings/homepage-settings";
 import { builderSectionProps } from "@/modules/page-builder/sections";
+import { isSectionEnabled, type PageDisplay } from "@/modules/page-builder/display-parts";
 
-export function SitePromoBanner({ settings }: { settings: HomepageSettings }) {
+export function SitePromoBanner({ settings, display, editable }: { settings: HomepageSettings; display: PageDisplay; /** The viewer can edit the page: a switched-off banner is still rendered so the builder can bring it back. */ editable: boolean }) {
   if (!settings.promoBannerEnabled) return null;
+  if (!isSectionEnabled(display, "PROMO_BANNER") && !editable) return null;
   const desktop = settings.promoDesktopMedia;
   const mobile = settings.promoMobileMedia;
   if (!desktop && !mobile) return null;

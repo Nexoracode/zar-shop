@@ -46,12 +46,14 @@ export function SectionDisplayDialog({ sectionLabel, masterLabel, parts, value, 
             <Modal.CloseTrigger aria-label="بستن" className="grid size-9 place-items-center rounded-lg text-[var(--muted)]"><X size={20} /></Modal.CloseTrigger>
           </Modal.Header>
           <Modal.Body className="grid gap-4 p-5">
-            <div className="grid gap-3 sm:grid-cols-2">
-              {parts.map((part) => (
-                <CheckboxCard key={part.id} isSelected={!hidden.has(part.id)} isDisabled={!enabled} onChange={(shown) => togglePart(part.id, shown)}>{part.label}</CheckboxCard>
-              ))}
-            </div>
-            <hr className="m-0 border-0 border-t border-[var(--border)]" />
+            {parts.length > 0 && <>
+              <div className="grid gap-3 sm:grid-cols-2">
+                {parts.map((part) => (
+                  <CheckboxCard key={part.id} isSelected={!hidden.has(part.id)} isDisabled={!enabled} onChange={(shown) => togglePart(part.id, shown)}>{part.label}</CheckboxCard>
+                ))}
+              </div>
+              <hr className="m-0 border-0 border-t border-[var(--border)]" />
+            </>}
             <CheckboxCard icon={<Eye size={18} />} isSelected={enabled} onChange={setEnabled}>{masterLabel ?? `کل بخش «${sectionLabel}» فعال باشد`}</CheckboxCard>
           </Modal.Body>
           <Modal.Footer className="gap-3 border-t border-[var(--border)] p-5">
