@@ -83,13 +83,13 @@ export function ProductListSection({ sectionId, config, descriptionHtml, data, d
       </Shell>;
 
     case "FEATURE_SLIDER": {
-      // The banner picture (or, without one, the first product as a big tile) opens the row of full product cards; the
+      // The square banner picture (or, without one, the first product as a big tile) opens the row of full product cards; the
       // "view all" button sits opposite the title.
       const banner = config.banner;
       const listed = banner ? products : rest;
       const bannerPicture = banner && (
-        <span className="relative block h-full min-h-[200px] w-full overflow-hidden rounded-2xl bg-black/5">
-          <Image src={banner.url} alt={banner.alt ?? config.title} fill sizes="(min-width: 1024px) 470px, 300px" className="object-cover" />
+        <span className="relative block aspect-square w-full overflow-hidden rounded-2xl bg-black/5">
+          <Image src={banner.url} alt={banner.alt ?? config.title} fill sizes="(min-width: 1024px) 430px, 300px" className="object-cover" />
         </span>
       );
       return <Shell>
@@ -102,7 +102,7 @@ export function ProductListSection({ sectionId, config, descriptionHtml, data, d
         </div>
         <DragScrollRow ariaLabel={config.title} showNavigation navigationPart={arrows} className="flex w-full min-w-0 max-w-full gap-3 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {banner
-            ? <BuilderPart {...part("banner")} className="contents"><div className="flex w-[280px] min-w-[280px] snap-start sm:w-[400px] sm:min-w-[400px] lg:w-[470px] lg:min-w-[470px]">{banner.href ? <Link href={banner.href} className="block w-full" aria-label={banner.alt ?? config.title}>{bannerPicture}</Link> : bannerPicture}</div></BuilderPart>
+            ? <BuilderPart {...part("banner")} className="contents"><div className="flex w-[300px] min-w-[300px] snap-start items-start sm:w-[380px] sm:min-w-[380px] lg:w-[430px] lg:min-w-[430px]">{banner.href ? <Link href={banner.href} className="block w-full" aria-label={banner.alt ?? config.title}>{bannerPicture}</Link> : bannerPicture}</div></BuilderPart>
             : <div className="flex w-[240px] min-w-[240px] snap-start sm:w-[300px] sm:min-w-[300px]"><ProductFeatureTile product={first} builder={builder} className="min-h-[200px] w-full" /></div>}
           {cards(listed, cardWidth, banner ? 0 : 1)}{viewAll(cardWidth)}
         </DragScrollRow>{refresh}
