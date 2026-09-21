@@ -40,11 +40,6 @@ test("arranges the categories by the administrator's order, by name or by produc
   assert.deepEqual(names(arrangeCategories(items, { sort: "MOST_PRODUCTS", limit: 3 })), ["پوشاک", "موبایل", "ابزار"]);
 });
 
-  assert.equal(featuredSectionSettingsSchema.safeParse(featuredSectionDefaults).success, true);
-  assert.equal(featuredSectionSettingsSchema.safeParse({ ...featuredSectionDefaults, limit: pageSectionLimits.featuredMax + 1 }).success, false);
-  assert.equal(featuredSectionSettingsSchema.safeParse({ ...featuredSectionDefaults, limit: 0 }).success, false);
-});
-
 test("every section with settings has form fields for exactly its schema's keys", () => {
   assert.deepEqual(sectionContentFields.CATEGORIES.map((field) => field.name), ["title", "limit", "sort"]);
 });

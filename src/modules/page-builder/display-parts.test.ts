@@ -13,6 +13,7 @@ test("the header has different switchable parts per industry", () => {
 test("the footer and the promo banner only have the whole-section switch", () => {
   assert.deepEqual(sectionDisplayConfig("FOOTER", "GENERAL"), { parts: [], master: "display", masterLabel: undefined });
   assert.equal(sectionDisplayConfig("PROMO_BANNER", "GOLD")?.master, "display");
+});
 
 test("the slider's on/off switch lives in the layout, the header's here", () => {
   assert.equal(sectionDisplayConfig("HERO", "GENERAL")?.master, "layout");
