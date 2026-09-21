@@ -64,12 +64,13 @@ const toolbarSeparatorClass = "mx-1 h-5 w-px bg-white/25";
 
 /**
  * Edit-mode layer of the page builder. While `active` it (a) puts the page into the non-working state
- * that `src/styles/page-builder.css` describes, (b) outlines the section under the pointer, and
- * (c) lets the viewer select one section, drawing its frame, name tag and action toolbar.
+ * that `src/styles/page-builder.css` describes, (b) marks the section under the pointer with a pale pair of lines above and below it, and
+ * (c) lets the viewer select one section, drawing its frame (the same lines, in the strong blue), name tag and action
+ * toolbar. The frames are lines across the whole page width, not a box around the section.
  *
  * The frames are fixed-position boxes positioned from the section's live bounding rect rather than
- * styles on the section itself: the storefront's `overflow-hidden` wrappers would clip an outer glow,
- * and this way nothing in the templates has to know about the builder beyond the section attribute.
+ * styles on the section itself: the storefront's `overflow-hidden` wrappers would clip them, and this
+ * way nothing in the templates has to know about the builder beyond the section attribute.
  * Positions are written straight to the DOM in a rAF loop so scrolling never re-renders React.
  */
 export function PageBuilderOverlay({ active, layoutKey, onMove, onRemove, onOpenSettings, onEdit, onAdd }: {
