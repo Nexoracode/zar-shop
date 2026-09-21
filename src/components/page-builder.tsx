@@ -26,7 +26,7 @@ import { resizeBannerItems, sliderConfigPayload, tileGroupsPayload, type TileGro
 import { hostSections, identityEditKey, menuEditKey, replacedSectionsCss, type ContentEdit, type ContentEdits, type PendingSection, type PendingSections } from "@/modules/page-builder/pending-sections";
 import { newProductListConfig, newProductListId, productListDisplayConfig, pruneDisplayForList, type ProductListConfig, type ProductListLayout } from "@/modules/page-builder/product-lists";
 import { isSectionSettingsId, type CategoriesSectionSettings, type PageSectionSettingsBundle } from "@/modules/page-builder/section-settings";
-import { insertSection, isLayoutSection, layoutCss, moveSection, removeSection, sameLayout, sectionSelector, type LayoutSection } from "@/modules/page-builder/layout-draft";
+import { insertSection, isLayoutSection, layoutCss, moveSection, pruneDisplayToLayout, removeSection, sameLayout, sectionSelector, type LayoutSection } from "@/modules/page-builder/layout-draft";
 import { builderSectionLabel } from "@/modules/page-builder/sections";
 import type { HomepageMenuItem, HomepageMenuLinkOption } from "@/modules/settings/homepage-settings";
 
@@ -39,7 +39,11 @@ const isRendered = (id: string) => document.querySelector(sectionSelector(id)) !
 async function sendJson(method: "POST" | "PATCH", url: string, body: unknown, fallbackMessage: string) {
   const response = await fetch(url, { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
   const result = await response.json().catch(() => null);
-  if (!response.ok) throw new Error(result?.message ?? fallbackMessage);
+  if (!response.ok) {
+    // A refused request says which field was wrong; that is shown too, so the message isn't just "invalid".
+    const issues = result?.issues && typeof result.issues === "object" ? Object.entries(result.issues as Record<string, string[] | undefined>).flatMap(([field, messages]) => (messages?.[0] ? [`${field}: ${messages[0]}`] : [])) : [];
+    throw new Error([result?.message ?? fallbackMessage, ...issues.slice(0, 3)].join(" — "));
+  }
 }
 
 const patchJson = (url: string, body: unknown, fallbackMessage: string) => sendJson("PATCH", url, body, fallbackMessage);
@@ -380,9 +384,12 @@ export function PageBuilder({ initialSections, initialDisplay, industry, identit
         await patchJson("/api/admin/settings/homepage/layout", { sections: layout }, "ذخیره چینش صفحه انجام نشد.");
         persisted = { ...persisted, layout };
       }
-      if (!sameDisplay(display, persisted.display)) {
-        await patchJson("/api/admin/settings/page-display", { display }, "ذخیره تنظیمات نمایش انجام نشد.");
-        persisted = { ...persisted, display };
+      // The switches of added sections that were removed (or never got into the layout) don't go along: their settings
+      // no longer exist.
+      const displayToSave = pruneDisplayToLayout(display, layout);
+      if (!sameDisplay(displayToSave, persisted.display)) {
+        await patchJson("/api/admin/settings/page-display", { display: displayToSave }, "ذخیره تنظیمات نمایش انجام نشد.");
+        persisted = { ...persisted, display: displayToSave };
       }
       setSaved(persisted);
       setDraft({ current: persisted, past: [], future: [] });

@@ -1,3 +1,5 @@
+import type { PageDisplay } from "@/modules/page-builder/display-parts";
+import { isSectionInstanceId } from "@/modules/page-builder/draft-sections";
 import { BUILDER_SECTION_ATTRIBUTE } from "@/modules/page-builder/sections";
 
 // The page builder edits the homepage's existing layout model: an ordered list of sections, each
@@ -75,4 +77,14 @@ export function layoutCss(sections: LayoutSection[], { editing }: { editing: boo
  */
 export function isSectionHiddenAtRender(section: LayoutSection | undefined, editable: boolean) {
   return Boolean(section?.removed) || (section?.enabled === false && !editable);
+}
+
+/**
+ * The display switches without those of added sections that aren't on the page: one that was removed (its settings are
+ * deleted when the layout is saved) or never made it into the layout. The store would refuse switches for a section it
+ * doesn't have.
+ */
+export function pruneDisplayToLayout(display: PageDisplay, sections: LayoutSection[]): PageDisplay {
+  const onPage = new Set(sections.filter((section) => !section.removed).map((section) => section.id));
+  return Object.fromEntries(Object.entries(display).filter(([id]) => !isSectionInstanceId(id) || onPage.has(id)));
 }

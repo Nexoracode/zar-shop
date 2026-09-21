@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { insertSection, isLayoutSection, isSectionHiddenAtRender, layoutCss, moveSection, removeSection, sameLayout, type LayoutSection } from "./layout-draft";
+import { insertSection, isLayoutSection, isSectionHiddenAtRender, layoutCss, moveSection, pruneDisplayToLayout, removeSection, sameLayout, type LayoutSection } from "./layout-draft";
 
 const sections: LayoutSection[] = [
   { id: "HERO", enabled: true },
@@ -74,4 +74,15 @@ test("inserts a new section after the given one, at the start or at the end", ()
   assert.deepEqual(ids(insertSection(sections, added, "end")), ["HERO", "CATEGORIES", "BRANDS", "LATEST_PRODUCTS", "PRODUCT_LIST:a"]);
   assert.deepEqual(ids(insertSection(sections, added, { after: "FOOTER" })), ["HERO", "CATEGORIES", "BRANDS", "LATEST_PRODUCTS", "PRODUCT_LIST:a"]);
   assert.equal(insertSection(sections, { id: "HERO", enabled: true }, "end"), sections);
+});
+
+test("switches of added sections that are removed or not in the layout are dropped before saving", () => {
+  const display = {
+    "PRODUCT_LIST:a": { enabled: true, hiddenParts: ["more"] },
+    "PRODUCT_LIST:b": { enabled: true, hiddenParts: ["more"] },
+    "PRODUCT_LIST:c": { enabled: true, hiddenParts: ["more"] },
+    HEADER: { enabled: false, hiddenParts: [] },
+  };
+  const layout = [{ id: "PRODUCT_LIST:a", enabled: true }, { id: "PRODUCT_LIST:b", enabled: false, removed: true }, { id: "HEADER", enabled: true }];
+  assert.deepEqual(Object.keys(pruneDisplayToLayout(display, layout)).sort(), ["HEADER", "PRODUCT_LIST:a"]);
 });
