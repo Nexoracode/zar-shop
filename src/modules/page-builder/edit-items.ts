@@ -1,17 +1,13 @@
 // What can be edited inside a storefront section: the list the section's "edit" dialog shows. Each item groups
 // the settings that belong together (for the header: name/tagline/logo, and the menu). Sections without an entry
-// have no edit dialog yet.
-export type EditItemIcon = "identity" | "menu" | "images" | "plus";
+// have no edit dialog yet. (The slider's list is not here: it has one row per banner, built from the banners.)
+export type EditItemIcon = "identity" | "menu" | "image";
 export type EditItem = { id: string; title: string; description: string; icon: EditItemIcon };
 
 const editItems: Record<string, EditItem[]> = {
   HEADER: [
     { id: "identity", title: "نام، شعار و لوگو", description: "برای ویرایش نام، شعار و لوگو کلیک کنید.", icon: "identity" },
     { id: "menu", title: "منو", description: "برای ویرایش منو کلیک کنید.", icon: "menu" },
-  ],
-  HERO: [
-    { id: "images", title: "ویرایش عکس‌های هر بنر", description: "برای ویرایش تصویر و لینک بنرها کلیک کنید.", icon: "images" },
-    { id: "add", title: "افزودن بنر اسلایدر", description: "برای افزودن بنر جدید به اسلایدر کلیک کنید.", icon: "plus" },
   ],
 };
 

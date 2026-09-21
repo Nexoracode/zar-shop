@@ -1,18 +1,16 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useState } from "react";
 import { Button, Modal, Spinner, toast } from "@heroui/react";
-import { Trash2, X } from "lucide-react";
+import { ArrowRight, Trash2, X } from "lucide-react";
 import { InlineAlert } from "@/components/inline-alert";
 import { TextField } from "@/components/form-field";
-import type { MediaChoice } from "@/components/media-library";
 import { MediaPickerDialog } from "@/components/media-picker-dialog";
-import { BuilderMediaField } from "@/components/page-builder-media-field";
+import { PageBuilderConfirmDialog } from "@/components/page-builder-confirm-dialog";
+import { BuilderImagePreview } from "@/components/page-builder-image-preview";
 import { brandPrimaryButtonStyle } from "@/components/page-builder-styles";
-import { heroSettingsPayload, validateHeroSlide, type HeroSlideDraft, type HeroSlideErrors, type HeroValues } from "@/modules/page-builder/hero-payload";
+import { heroImageSizeHints, heroSettingsPayload, heroSlideLabel, validateHeroSlide, type HeroSlideDraft, type HeroSlideErrors, type HeroValues } from "@/modules/page-builder/hero-payload";
 import { homepageFieldLimits } from "@/modules/settings/settings-limits";
-
-type PickerTarget = { slideId: string; kind: "desktop" | "mobile" };
 
 async function saveHero(hero: HeroValues, slides: HeroSlideDraft[]) {
   const response = await fetch("/api/admin/settings/homepage/hero", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(heroSettingsPayload(hero, slides)) });
@@ -21,151 +19,87 @@ async function saveHero(hero: HeroValues, slides: HeroSlideDraft[]) {
 }
 
 /**
- * The shell the two slider forms share: a builder dialog that hides itself (staying mounted, so nothing typed is
- * lost) while the media library is open, because the library stacks below the builder's dialogs.
+ * The form for one slider banner — edit an existing one (`slideId`) or add a new one (`slideId` null): its desktop
+ * image, an optional mobile image and the link it goes to; an existing banner can also be deleted. It saves on its
+ * own through the hero settings API (the whole slider is sent, since the API takes it at once) and the page is
+ * refreshed afterwards. The back arrow returns to the banner list, the X closes the builder's dialogs.
  */
-function HeroDialogShell({ title, hidden, saving, saveLabel, canSave = true, onSave, onClose, children }: { title: string; hidden: boolean; saving: boolean; saveLabel: string; canSave?: boolean; onSave: () => void; onClose: () => void; children: ReactNode }) {
-  return (
-    <Modal.Backdrop isOpen={!hidden} onOpenChange={(next) => { if (!next && !saving) onClose(); }} variant="blur" className="z-[150]">
-      <Modal.Container size="lg" placement="center">
-        <Modal.Dialog data-page-builder-ui aria-label={title} dir="rtl" className="mx-4 max-w-[640px] bg-[var(--surface)] text-right">
-          <Modal.Header className="flex-row items-center justify-between border-b border-[var(--border)] p-5">
-            <Modal.Heading className="text-base font-bold">{title}</Modal.Heading>
-            <Modal.CloseTrigger aria-label="بستن" className="grid size-9 place-items-center rounded-lg text-[var(--muted)]"><X size={20} /></Modal.CloseTrigger>
-          </Modal.Header>
-          <Modal.Body className="grid max-h-[60vh] gap-4 overflow-y-auto p-5">{children}</Modal.Body>
-          <Modal.Footer className="gap-3 border-t border-[var(--border)] p-5">
-            <Button type="button" variant="primary" isPending={saving} isDisabled={!canSave} onPress={onSave} className="min-h-11 flex-[1.4] rounded-xl text-sm font-bold" style={brandPrimaryButtonStyle}>
-              {({ isPending }) => <>{isPending && <Spinner color="current" size="sm" />}{saveLabel}</>}
-            </Button>
-            <Button type="button" variant="outline" isDisabled={saving} onPress={onClose} className="min-h-11 flex-1 rounded-xl text-sm font-bold">انصراف</Button>
-          </Modal.Footer>
-        </Modal.Dialog>
-      </Modal.Container>
-    </Modal.Backdrop>
-  );
-}
-
-/** One banner's editable fields: its two images and its link. */
-function SlideFields({ slide, errors, saving, onPick, onClear, onHrefChange }: { slide: HeroSlideDraft; errors: HeroSlideErrors | undefined; saving: boolean; onPick: (kind: PickerTarget["kind"]) => void; onClear: (kind: PickerTarget["kind"]) => void; onHrefChange: (href: string) => void }) {
-  return (
-    <div className="grid gap-3">
-      <div className="grid gap-3 sm:grid-cols-2">
-        <BuilderMediaField id={`builder-hero-${slide.id}-desktop`} label="تصویر دسکتاپ" required media={slide.desktopMedia} error={errors?.desktop} disabled={saving} onPick={() => onPick("desktop")} onClear={() => onClear("desktop")} />
-        <BuilderMediaField id={`builder-hero-${slide.id}-mobile`} label="تصویر موبایل" media={slide.mobileMedia} hint="اختیاری؛ بدون آن تصویر دسکتاپ نمایش داده می‌شود." disabled={saving} onPick={() => onPick("mobile")} onClear={() => onClear("mobile")} />
-      </div>
-      <TextField id={`builder-hero-${slide.id}-href`} label="لینک بنر" dir="ltr" value={slide.href} maxLength={homepageFieldLimits.href} error={errors?.href} disabled={saving} onChange={(event) => onHrefChange(event.target.value)} />
-    </div>
-  );
-}
-
-/** Applies a library choice to one image of one banner. */
-function withMedia(slides: HeroSlideDraft[], target: PickerTarget, media: MediaChoice | null) {
-  return slides.map((slide) => (slide.id === target.slideId ? { ...slide, [target.kind === "desktop" ? "desktopMedia" : "mobileMedia"]: media } : slide));
-}
-
-/**
- * "Edit the images of each banner": every banner of the slider with its desktop image, mobile image and link,
- * and a way to remove it. Saves on its own through the hero settings API and the page is refreshed afterwards.
- */
-export function PageBuilderHeroImagesDialog({ hero, onSaved, onClose }: { hero: HeroValues; onSaved: () => void; onClose: () => void }) {
-  const [slides, setSlides] = useState(hero.slides);
-  const [errors, setErrors] = useState<Record<string, HeroSlideErrors>>({});
-  const [formError, setFormError] = useState("");
-  const [saving, setSaving] = useState(false);
-  const [picker, setPicker] = useState<PickerTarget | null>(null);
-  const pickedMedia = picker ? slides.find((slide) => slide.id === picker.slideId)?.[picker.kind === "desktop" ? "desktopMedia" : "mobileMedia"] ?? null : null;
-
-  function changeSlide(id: string, patch: Partial<HeroSlideDraft>) {
-    setSlides((current) => current.map((slide) => (slide.id === id ? { ...slide, ...patch } : slide)));
-    setErrors((current) => (current[id] ? { ...current, [id]: {} } : current));
-  }
-
-  async function submit() {
-    setFormError("");
-    const next: Record<string, HeroSlideErrors> = {};
-    for (const slide of slides) {
-      const slideErrors = validateHeroSlide(slide);
-      if (slideErrors.desktop || slideErrors.href) next[slide.id] = slideErrors;
-    }
-    setErrors(next);
-    const invalid = slides.find((slide) => next[slide.id]);
-    if (invalid) {
-      document.getElementById(`builder-hero-${invalid.id}-${next[invalid.id].desktop ? "desktop" : "href"}`)?.focus();
-      return;
-    }
-    setSaving(true);
-    try {
-      await saveHero(hero, slides);
-      toast.success("بنرهای اسلایدر ذخیره شد");
-      onSaved();
-    } catch (reason) {
-      setFormError(reason instanceof Error ? reason.message : "ذخیره بنرهای اسلایدر انجام نشد.");
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  return (
-    <>
-      <HeroDialogShell title="عکس‌های بنرها" hidden={picker !== null} saving={saving} saveLabel="ذخیره" onSave={() => void submit()} onClose={onClose}>
-        {slides.length === 0 && <p className="m-0 rounded-xl border border-dashed border-[var(--border)] p-5 text-center text-sm leading-7 text-[var(--muted)]">هنوز بنری برای اسلایدر ثبت نشده است. از «افزودن بنر اسلایدر» استفاده کنید.</p>}
-        {slides.map((slide, index) => (
-          <section key={slide.id} className="grid gap-3 rounded-xl border border-[var(--border)] p-4" aria-label={`بنر ${(index + 1).toLocaleString("fa-IR")}`}>
-            <div className="flex items-center justify-between gap-3">
-              <strong className="text-sm font-bold">بنر {(index + 1).toLocaleString("fa-IR")}</strong>
-              <Button type="button" isIconOnly variant="ghost" isDisabled={saving} aria-label={`حذف بنر ${(index + 1).toLocaleString("fa-IR")}`} onPress={() => setSlides((current) => current.filter((item) => item.id !== slide.id))} className="size-9 min-h-9 min-w-9 text-[var(--danger)]"><Trash2 size={16} /></Button>
-            </div>
-            <SlideFields slide={slide} errors={errors[slide.id]} saving={saving} onPick={(kind) => setPicker({ slideId: slide.id, kind })} onClear={(kind) => setSlides((current) => withMedia(current, { slideId: slide.id, kind }, null))} onHrefChange={(href) => changeSlide(slide.id, { href })} />
-          </section>
-        ))}
-        {formError && <InlineAlert status="danger" compact>{formError}</InlineAlert>}
-      </HeroDialogShell>
-      <MediaPickerDialog open={picker !== null} scope="HOMEPAGE" allowedTypes={["IMAGE"]} selected={pickedMedia ? [pickedMedia] : []} onClose={() => setPicker(null)} onConfirm={(items) => { if (picker) { setSlides((current) => withMedia(current, picker, items[0] ?? null)); setErrors((current) => (current[picker.slideId] ? { ...current, [picker.slideId]: {} } : current)); } setPicker(null); }} />
-    </>
-  );
-}
-
-/**
- * "Add a slider banner": one new banner (desktop image, optional mobile image, link) appended to the slider.
- * Saves on its own through the hero settings API and the page is refreshed afterwards.
- */
-export function PageBuilderHeroAddDialog({ hero, onSaved, onClose }: { hero: HeroValues; onSaved: () => void; onClose: () => void }) {
-  const [slide, setSlide] = useState<HeroSlideDraft>(() => ({ id: crypto.randomUUID(), href: hero.buttonHref, desktopMedia: null, mobileMedia: null }));
+export function PageBuilderHeroSlideDialog({ hero, slideId, onSaved, onBack, onClose }: { hero: HeroValues; slideId: string | null; onSaved: () => void; onBack: () => void; onClose: () => void }) {
+  const existingIndex = slideId ? hero.slides.findIndex((slide) => slide.id === slideId) : -1;
+  const isNew = existingIndex < 0;
+  const [slide, setSlide] = useState<HeroSlideDraft>(() => (isNew ? { id: crypto.randomUUID(), href: hero.buttonHref, desktopMedia: null, mobileMedia: null } : hero.slides[existingIndex]));
   const [errors, setErrors] = useState<HeroSlideErrors>({});
   const [formError, setFormError] = useState("");
   const [saving, setSaving] = useState(false);
-  const [picker, setPicker] = useState<PickerTarget["kind"] | null>(null);
-  const full = hero.slides.length >= homepageFieldLimits.heroSlides;
+  const [picker, setPicker] = useState<"desktop" | "mobile" | null>(null);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const full = isNew && hero.slides.length >= homepageFieldLimits.heroSlides;
+  const title = isNew ? "افزودن بنر اسلایدر" : `ویرایش ${heroSlideLabel(existingIndex)}`;
   const pickedMedia = picker ? slide[picker === "desktop" ? "desktopMedia" : "mobileMedia"] : null;
 
-  async function submit() {
-    setFormError("");
-    const slideErrors = validateHeroSlide(slide);
-    setErrors(slideErrors);
-    if (slideErrors.desktop || slideErrors.href) {
-      document.getElementById(`builder-hero-${slide.id}-${slideErrors.desktop ? "desktop" : "href"}`)?.focus();
-      return;
-    }
+  async function persist(slides: HeroSlideDraft[], successMessage: string) {
     setSaving(true);
+    setFormError("");
     try {
-      await saveHero(hero, [...hero.slides, slide]);
-      toast.success("بنر به اسلایدر اضافه شد");
+      await saveHero(hero, slides);
+      toast.success(successMessage);
       onSaved();
     } catch (reason) {
-      setFormError(reason instanceof Error ? reason.message : "افزودن بنر انجام نشد.");
+      setFormError(reason instanceof Error ? reason.message : "ذخیره بنر انجام نشد.");
     } finally {
       setSaving(false);
     }
   }
 
+  async function submit() {
+    const slideErrors = validateHeroSlide(slide);
+    setErrors(slideErrors);
+    if (slideErrors.desktop || slideErrors.href) {
+      document.getElementById(slideErrors.desktop ? "builder-hero-desktop" : "builder-hero-href")?.focus();
+      return;
+    }
+    await persist(isNew ? [...hero.slides, slide] : hero.slides.map((item) => (item.id === slide.id ? slide : item)), isNew ? "بنر به اسلایدر اضافه شد" : "بنر ذخیره شد");
+  }
+
+  async function confirmDelete() {
+    setConfirmingDelete(false);
+    await persist(hero.slides.filter((item) => item.id !== slide.id), "بنر حذف شد");
+  }
+
   return (
     <>
-      <HeroDialogShell title="افزودن بنر اسلایدر" hidden={picker !== null} saving={saving} saveLabel="افزودن بنر" canSave={!full} onSave={() => void submit()} onClose={onClose}>
-        {full && <InlineAlert status="warning" compact>اسلایدر به سقف {homepageFieldLimits.heroSlides.toLocaleString("fa-IR")} بنر رسیده است؛ برای افزودن، ابتدا یکی از بنرها را حذف کنید.</InlineAlert>}
-        <SlideFields slide={slide} errors={errors} saving={saving} onPick={setPicker} onClear={(kind) => setSlide((current) => ({ ...current, [kind === "desktop" ? "desktopMedia" : "mobileMedia"]: null }))} onHrefChange={(href) => { setSlide((current) => ({ ...current, href })); setErrors((current) => ({ ...current, href: undefined })); }} />
-        {formError && <InlineAlert status="danger" compact>{formError}</InlineAlert>}
-      </HeroDialogShell>
+      <Modal.Backdrop isOpen={picker === null && !confirmingDelete} onOpenChange={(next) => { if (!next && !saving) onClose(); }} variant="blur" className="z-[150]">
+        <Modal.Container size="md" placement="center">
+          <Modal.Dialog data-page-builder-ui aria-label={title} dir="rtl" className="mx-4 max-w-[560px] bg-[var(--surface)] text-right">
+            <Modal.Header className="flex-row items-center justify-between border-b border-[var(--border)] p-5">
+              <div className="flex min-w-0 items-center gap-3">
+                <Button type="button" isIconOnly variant="ghost" isDisabled={saving} aria-label="بازگشت به فهرست بنرها" onPress={onBack} className="size-9 min-h-9 min-w-9 text-[var(--muted)]"><ArrowRight size={20} /></Button>
+                <Modal.Heading className="text-base font-bold">{title}</Modal.Heading>
+              </div>
+              <Modal.CloseTrigger aria-label="بستن" className="grid size-9 place-items-center rounded-lg text-[var(--muted)]"><X size={20} /></Modal.CloseTrigger>
+            </Modal.Header>
+            <Modal.Body className="grid max-h-[62vh] gap-5 overflow-y-auto p-5">
+              {full && <InlineAlert status="warning" compact>اسلایدر به سقف {homepageFieldLimits.heroSlides.toLocaleString("fa-IR")} بنر رسیده است؛ برای افزودن، ابتدا یکی از بنرها را حذف کنید.</InlineAlert>}
+              <BuilderImagePreview id="builder-hero-desktop" label="تصویر دسکتاپ" required media={slide.desktopMedia} hint={<>اندازهٔ پیشنهادی: <span dir="ltr">{heroImageSizeHints.desktop}</span> پیکسل</>} error={errors.desktop} disabled={saving} onPick={() => setPicker("desktop")} />
+              <BuilderImagePreview id="builder-hero-mobile" label="تصویر موبایل" media={slide.mobileMedia} heightClass="h-32" hint={<>اختیاری؛ بدون آن تصویر دسکتاپ نمایش داده می‌شود. اندازهٔ پیشنهادی: <span dir="ltr">{heroImageSizeHints.mobile}</span> پیکسل</>} disabled={saving} onPick={() => setPicker("mobile")} onClear={() => setSlide((current) => ({ ...current, mobileMedia: null }))} />
+              <TextField id="builder-hero-href" label="لینک مقصد (URL)" dir="ltr" value={slide.href} maxLength={homepageFieldLimits.href} error={errors.href} disabled={saving} onChange={(event) => { setSlide((current) => ({ ...current, href: event.target.value })); setErrors((current) => ({ ...current, href: undefined })); }} />
+              {formError && <InlineAlert status="danger" compact>{formError}</InlineAlert>}
+            </Modal.Body>
+            <Modal.Footer className="justify-start gap-3 border-t border-[var(--border)] p-5">
+              <Button type="button" variant="primary" isPending={saving} isDisabled={full} onPress={() => void submit()} className="min-h-11 min-w-24 rounded-xl px-6 text-sm font-bold" style={brandPrimaryButtonStyle}>
+                {({ isPending }) => <>{isPending && <Spinner color="current" size="sm" />}{isNew ? "افزودن" : "تأیید"}</>}
+              </Button>
+              <Button type="button" variant="outline" isDisabled={saving} onPress={onBack} className="min-h-11 rounded-xl px-6 text-sm font-bold">انصراف</Button>
+              {!isNew && <Button type="button" variant="ghost" isDisabled={saving} onPress={() => setConfirmingDelete(true)} className="mr-auto min-h-11 gap-1.5 rounded-xl px-3 text-sm font-bold text-[var(--danger)]"><Trash2 size={16} />حذف</Button>}
+            </Modal.Footer>
+          </Modal.Dialog>
+        </Modal.Container>
+      </Modal.Backdrop>
+      {confirmingDelete && (
+        <PageBuilderConfirmDialog title={`حذف ${heroSlideLabel(existingIndex)}`} confirmLabel="حذف بنر" onConfirm={() => void confirmDelete()} onClose={() => setConfirmingDelete(false)}>
+          این بنر از اسلایدر حذف می‌شود و <b className="text-[var(--foreground)]">امکان بازگرداندن آن وجود ندارد.</b> آیا از حذف آن مطمئن هستید؟
+        </PageBuilderConfirmDialog>
+      )}
       <MediaPickerDialog open={picker !== null} scope="HOMEPAGE" allowedTypes={["IMAGE"]} selected={pickedMedia ? [pickedMedia] : []} onClose={() => setPicker(null)} onConfirm={(items) => { if (picker) { setSlide((current) => ({ ...current, [picker === "desktop" ? "desktopMedia" : "mobileMedia"]: items[0] ?? null })); if (picker === "desktop") setErrors((current) => ({ ...current, desktop: undefined })); } setPicker(null); }} />
     </>
   );

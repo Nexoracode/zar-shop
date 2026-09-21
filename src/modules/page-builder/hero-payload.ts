@@ -41,3 +41,14 @@ export function validateHeroSlide(slide: HeroSlideDraft): HeroSlideErrors {
   if (!href.success) errors.href = slide.href.trim() ? href.error.issues[0].message : "لینک بنر را وارد کنید.";
   return errors;
 }
+
+const ordinalWords = ["یک", "دو", "سه", "چهار", "پنج", "شش", "هفت", "هشت", "نه", "ده"];
+
+/** "بنر شماره یک"… — how a banner is named in the builder's list (the slider holds at most ten). */
+export function heroSlideLabel(index: number) {
+  return `بنر شماره ${ordinalWords[index] ?? (index + 1).toLocaleString("fa-IR")}`;
+}
+
+// Sizes recommended for the banner images, derived from how the slider draws them: the desktop slider is full
+// width and 440px tall, a mobile card is 180px tall and about as wide as two of them (2:1).
+export const heroImageSizeHints = { desktop: "۱۹۲۰ × ۴۴۰", mobile: "۷۲۰ × ۳۶۰" } as const;

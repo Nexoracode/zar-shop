@@ -1,33 +1,40 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { Button, Modal } from "@heroui/react";
-import { ChevronLeft, Images, Menu, Plus, Store, X } from "lucide-react";
+import { ChevronLeft, ImageIcon, Menu, Plus, Store, X } from "lucide-react";
 import type { EditItem, EditItemIcon } from "@/modules/page-builder/edit-items";
 
-const itemIcons: Record<EditItemIcon, typeof Store> = { identity: Store, menu: Menu, images: Images, plus: Plus };
+const itemIcons: Record<EditItemIcon, typeof Store> = { identity: Store, menu: Menu, image: ImageIcon };
 
 type Props = {
-  sectionLabel: string;
+  title: string;
   items: EditItem[];
+  /** Shown instead of the list while there are no items. */
+  emptyMessage?: ReactNode;
+  /** An action under the list (e.g. "add a banner"). */
+  footerAction?: { label: string; disabled?: boolean; onPress: () => void };
   onSelect: (item: EditItem) => void;
   onClose: () => void;
 };
 
 /**
- * The page builder's "edit section" dialog: one row per group of settings the section has (name/logo, menu…).
- * Mount it when it should open; picking a row hands the item to `onSelect`.
+ * The page builder's "edit section" dialog: one row per thing the section has to edit (name/logo, menu, each
+ * banner…), plus an optional action under the list. Mount it when it should open; picking a row hands the item to
+ * `onSelect`.
  */
-export function SectionEditDialog({ sectionLabel, items, onSelect, onClose }: Props) {
+export function SectionEditDialog({ title, items, emptyMessage, footerAction, onSelect, onClose }: Props) {
   return (
     // The dialog is portaled to <body>, so `data-page-builder-ui` on it keeps it clickable while the page is in edit mode.
     <Modal.Backdrop isOpen onOpenChange={(next) => { if (!next) onClose(); }} variant="blur" className="z-[150]">
       <Modal.Container size="sm" placement="center">
-        <Modal.Dialog data-page-builder-ui aria-label={`ویرایش ${sectionLabel}`} dir="rtl" className="mx-4 max-w-[440px] bg-[var(--surface)] text-right">
+        <Modal.Dialog data-page-builder-ui aria-label={title} dir="rtl" className="mx-4 max-w-[440px] bg-[var(--surface)] text-right">
           <Modal.Header className="flex-row items-center justify-between border-b border-[var(--border)] p-5">
-            <Modal.Heading className="text-base font-bold">ویرایش {sectionLabel}</Modal.Heading>
+            <Modal.Heading className="text-base font-bold">{title}</Modal.Heading>
             <Modal.CloseTrigger aria-label="بستن" className="grid size-9 place-items-center rounded-lg text-[var(--muted)]"><X size={20} /></Modal.CloseTrigger>
           </Modal.Header>
-          <Modal.Body className="grid gap-1 p-3">
+          <Modal.Body className="grid max-h-[60vh] gap-1 overflow-y-auto p-3">
+            {items.length === 0 && emptyMessage && <p className="m-0 p-5 text-center text-sm leading-7 text-[var(--muted)]">{emptyMessage}</p>}
             {items.map((item, index) => {
               const Icon = itemIcons[item.icon];
               return (
@@ -44,6 +51,11 @@ export function SectionEditDialog({ sectionLabel, items, onSelect, onClose }: Pr
               );
             })}
           </Modal.Body>
+          {footerAction && (
+            <Modal.Footer className="justify-start border-t border-[var(--border)] p-3">
+              <Button type="button" variant="ghost" isDisabled={footerAction.disabled} onPress={footerAction.onPress} className="min-h-11 gap-2 rounded-xl px-4 text-sm font-bold text-[var(--brand-primary)]"><Plus size={18} />{footerAction.label}</Button>
+            </Modal.Footer>
+          )}
         </Modal.Dialog>
       </Modal.Container>
     </Modal.Backdrop>

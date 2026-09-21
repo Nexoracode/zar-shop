@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { heroSettingsPayload, validateHeroSlide, type HeroSlideDraft } from "./hero-payload";
+import { heroSettingsPayload, heroSlideLabel, validateHeroSlide, type HeroSlideDraft } from "./hero-payload";
 
 const media = (id: string) => ({ id, title: id, url: `/${id}.png`, type: "IMAGE" as const });
 const base = { contentMode: "WITH_CONTENT" as const, title: "عنوان", description: "توضیحات بنر اصلی", buttonLabel: "مشاهده", buttonHref: "/products" };
@@ -28,4 +28,10 @@ test("a banner needs a desktop image and a safe link", () => {
   assert.ok(validateHeroSlide(slide("a", { href: "" })).href);
   assert.ok(validateHeroSlide(slide("a", { href: "javascript:alert(1)" })).href);
   assert.equal(validateHeroSlide(slide("a", { href: "https://example.com/x" })).href, undefined);
+});
+
+test("names banners by their position", () => {
+  assert.equal(heroSlideLabel(0), "بنر شماره یک");
+  assert.equal(heroSlideLabel(9), "بنر شماره ده");
+  assert.equal(heroSlideLabel(10), "بنر شماره ۱۱");
 });

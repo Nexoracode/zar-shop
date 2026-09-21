@@ -2,21 +2,22 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Button, Modal, toast } from "@heroui/react";
-import { TriangleAlert, X } from "lucide-react";
+import { toast } from "@heroui/react";
 import { PageBuilderBar } from "@/components/page-builder-bar";
-import { PageBuilderHeroAddDialog, PageBuilderHeroImagesDialog } from "@/components/page-builder-hero-dialogs";
+import { PageBuilderConfirmDialog } from "@/components/page-builder-confirm-dialog";
+import { PageBuilderHeroSlideDialog } from "@/components/page-builder-hero-dialogs";
 import { PageBuilderIdentityDialog, type IdentityValues } from "@/components/page-builder-identity-dialog";
 import { PageBuilderMenuDialog } from "@/components/page-builder-menu-dialog";
 import { PageBuilderOverlay } from "@/components/page-builder-overlay";
 import { SectionDisplayDialog } from "@/components/section-display-dialog";
 import { SectionEditDialog } from "@/components/section-edit-dialog";
 import { displayCss, sameDisplay, sectionDisplay, sectionDisplayConfig, setSectionDisplay, type PageBuilderIndustry, type PageDisplay, type SectionDisplay, type SectionDisplayConfig } from "@/modules/page-builder/display-parts";
-import { sectionEditItems } from "@/modules/page-builder/edit-items";
-import type { HeroValues } from "@/modules/page-builder/hero-payload";
+import { sectionEditItems, type EditItem } from "@/modules/page-builder/edit-items";
+import { heroSlideLabel, type HeroValues } from "@/modules/page-builder/hero-payload";
 import { isLayoutSection, layoutCss, moveSection, removeSection, sameLayout, sectionSelector, type LayoutSection } from "@/modules/page-builder/layout-draft";
 import { builderSectionLabel } from "@/modules/page-builder/sections";
 import type { HomepageMenuItem, HomepageMenuLinkOption } from "@/modules/settings/homepage-settings";
+import { homepageFieldLimits } from "@/modules/settings/settings-limits";
 
 // Everything the builder can change, kept as one value so undo/redo step through layout and display edits alike.
 type Snapshot = { layout: LayoutSection[]; display: PageDisplay };
@@ -99,7 +100,7 @@ export function PageBuilder({ initialSections, initialDisplay, industry, identit
   }
 
   function requestEdit(id: string) {
-    if (sectionEditItems(id)) setEditSection(id);
+    if (id === "HERO" || sectionEditItems(id)) setEditSection(id);
     else toast.info("ویرایش این بخش هنوز اضافه نشده است");
   }
 
@@ -108,6 +109,17 @@ export function PageBuilder({ initialSections, initialDisplay, industry, identit
     setEditSection(null);
     router.refresh();
   }
+
+  // Saving a banner goes back to the banner list, which then shows the refreshed slider.
+  function backToList() {
+    setEditItem(null);
+    router.refresh();
+  }
+
+  // The rows of the edit dialog's list: fixed for most sections, one per banner for the slider.
+  const editRows: EditItem[] = editSection === "HERO"
+    ? hero.slides.map((slide, index) => ({ id: `slide:${slide.id}`, title: heroSlideLabel(index), description: "برای ویرایش بنر کلیک کنید.", icon: "image" }))
+    : editSection ? sectionEditItems(editSection) ?? [] : [];
 
   // The dialog's whole-section switch is `enabled` in the homepage layout for layout sections (the slider…) and in
   // the display settings for the rest (the header…); the part switches are always display settings.
@@ -181,16 +193,19 @@ export function PageBuilder({ initialSections, initialDisplay, industry, identit
       {editSection && !editItem && (
         <SectionEditDialog
           key={editSection}
-          sectionLabel={builderSectionLabel(editSection)}
-          items={sectionEditItems(editSection) ?? []}
+          title={editSection === "HERO" ? "ویرایش بنر اسلایدر" : `ویرایش ${builderSectionLabel(editSection)}`}
+          items={editRows}
+          emptyMessage="هنوز بنری برای اسلایدر ثبت نشده است."
+          footerAction={editSection === "HERO" ? { label: "افزودن بنر اسلایدر", disabled: hero.slides.length >= homepageFieldLimits.heroSlides, onPress: () => setEditItem("add") } : undefined}
           onSelect={(item) => setEditItem(item.id)}
           onClose={() => setEditSection(null)}
         />
       )}
       {/* These forms save on their own (the data lives in other settings, not in the page draft), then the page is refreshed. */}
       {editSection === "HEADER" && editItem === "identity" && <PageBuilderIdentityDialog initial={identity} onSaved={finishEdit} onClose={() => setEditItem(null)} />}
-      {editSection === "HERO" && editItem === "images" && <PageBuilderHeroImagesDialog hero={hero} onSaved={finishEdit} onClose={() => setEditItem(null)} />}
-      {editSection === "HERO" && editItem === "add" && <PageBuilderHeroAddDialog hero={hero} onSaved={finishEdit} onClose={() => setEditItem(null)} />}
+      {editSection === "HERO" && editItem && (editItem === "add" || editItem.startsWith("slide:")) && (
+        <PageBuilderHeroSlideDialog key={editItem} hero={hero} slideId={editItem === "add" ? null : editItem.slice("slide:".length)} onSaved={backToList} onBack={() => setEditItem(null)} onClose={() => { setEditItem(null); setEditSection(null); }} />
+      )}
       {editSection === "HEADER" && editItem === "menu" && <PageBuilderMenuDialog initialItems={menu.items} linkOptions={menu.linkOptions} onSaved={finishEdit} onClose={() => setEditItem(null)} />}
       {settingsSection && (
         <SectionDisplayDialog
@@ -203,24 +218,11 @@ export function PageBuilder({ initialSections, initialDisplay, industry, identit
           onClose={() => setSettingsSection(null)}
         />
       )}
-      {/* The dialog is portaled to <body>, so `data-page-builder-ui` on it keeps it clickable while the page is in edit mode. */}
-      <Modal.Backdrop isOpen={pendingRemoval !== null} onOpenChange={(next) => { if (!next) setPendingRemoval(null); }} variant="blur" className="z-[150]">
-        <Modal.Container size="sm" placement="center">
-          <Modal.Dialog data-page-builder-ui aria-label="تأیید حذف بخش" dir="rtl" className="mx-4 max-w-md bg-[var(--surface)] text-right">
-            <Modal.Header className="flex-row items-center justify-between border-b border-[var(--border)] p-5">
-              <Modal.Heading className="flex items-center gap-2 text-base font-bold"><TriangleAlert size={20} className="text-[var(--danger)]" />حذف بخش «{builderSectionLabel(pendingRemoval ?? undefined)}»</Modal.Heading>
-              <Modal.CloseTrigger aria-label="بستن" className="grid size-9 place-items-center rounded-lg"><X size={18} /></Modal.CloseTrigger>
-            </Modal.Header>
-            <Modal.Body className="p-5 text-sm leading-7 text-[var(--muted)]">
-              این بخش از صفحه حذف می‌شود و پس از ذخیره‌ی تغییرات، <b className="text-[var(--foreground)]">امکان بازگرداندن آن وجود ندارد.</b> آیا از حذف آن مطمئن هستید؟
-            </Modal.Body>
-            <Modal.Footer className="justify-start gap-2 border-t border-[var(--border)] p-4">
-              <Button type="button" variant="danger" onPress={confirmRemove}>حذف بخش</Button>
-              <Button type="button" variant="secondary" onPress={() => setPendingRemoval(null)}>انصراف</Button>
-            </Modal.Footer>
-          </Modal.Dialog>
-        </Modal.Container>
-      </Modal.Backdrop>
+      {pendingRemoval && (
+        <PageBuilderConfirmDialog title={`حذف بخش «${builderSectionLabel(pendingRemoval)}»`} confirmLabel="حذف بخش" onConfirm={confirmRemove} onClose={() => setPendingRemoval(null)}>
+          این بخش از صفحه حذف می‌شود و پس از ذخیره‌ی تغییرات، <b className="text-[var(--foreground)]">امکان بازگرداندن آن وجود ندارد.</b> آیا از حذف آن مطمئن هستید؟
+        </PageBuilderConfirmDialog>
+      )}
     </>
   );
 }
