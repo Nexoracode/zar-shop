@@ -48,8 +48,9 @@ function move<T>(list: T[], from: number, to: number): T[] {
   return next;
 }
 
-function Panel({ children }: { children: ReactNode }) {
-  return <section className="bp-frame relative p-[18px]">{children}</section>;
+/** `flush` is for the list card: its search bar, toolbar and table run edge to edge, like every other table. */
+function Panel({ children, flush = false }: { children: ReactNode; flush?: boolean }) {
+  return <section className={`bp-frame relative ${flush ? "" : "p-[18px]"}`.trim()}>{children}</section>;
 }
 
 function CategoryThumb({ image, name }: { image: CategoryRow["image"]; name: string }) {
@@ -301,7 +302,7 @@ export function BlueprintCategoriesView({ categories, initialHiddenColumns }: { 
           </form>
         </aside>
 
-        <Panel>
+        <Panel flush>
           {items.length ? (
             <>
               <BpListFilters

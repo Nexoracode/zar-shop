@@ -387,9 +387,9 @@ export function BpFormBesideTableSkeleton({ columns = 7, rows = 6, form = ["fiel
           </Frame>
         </aside>
         <Frame>
-          <div className="flex flex-wrap items-center gap-2 border-b border-[var(--bp-divider)] p-3">
+          <div className="flex flex-wrap items-center gap-2 border-b border-[var(--bp-divider)] p-4">
             {filterLeading && <BpBar className="size-9 shrink-0" />}
-            <BpBar className="h-9 w-full min-w-[180px] sm:w-auto sm:min-w-[220px] sm:flex-1" />
+            <BpBar className="h-11 w-full min-w-[180px] sm:w-auto sm:min-w-[220px] sm:flex-1" />
           </div>
           <MobileCardsSkeleton rows={3} hideFrom="md" />
           <div className="hidden md:block">

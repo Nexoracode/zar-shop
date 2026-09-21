@@ -29,8 +29,9 @@ type FieldErrors = Record<string, string>;
 
 const emptyForm = { name: "", bio: "" };
 
-function Panel({ children }: { children: ReactNode }) {
-  return <section className="bp-frame relative p-[18px]">{children}</section>;
+/** `flush` is for the list card: its search bar, toolbar and table run edge to edge, like every other table. */
+function Panel({ children, flush = false }: { children: ReactNode; flush?: boolean }) {
+  return <section className={`bp-frame relative ${flush ? "" : "p-[18px]"}`.trim()}>{children}</section>;
 }
 
 function AuthorThumb({ avatar, name }: { avatar: AuthorRow["avatar"]; name: string }) {
@@ -167,7 +168,7 @@ export function BlueprintAuthorsView({ authors, initialHiddenColumns }: { author
           </form>
         </aside>
 
-        <Panel>
+        <Panel flush>
           {authors.length ? (
             <AdminColumnVisibility tableId={AUTHORS_TABLE_ID} columns={authorColumns} initialHidden={initialHiddenColumns}>
               <BpListFilters query={query} onQueryChange={setQuery} searchLabel="جستجوی نویسنده" searchPlaceholder="جستجو بر اساس نام نویسنده" filters={[]} leading={<AdminColumnSettingsButton />} />
