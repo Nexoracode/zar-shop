@@ -81,7 +81,7 @@ export function ProductListSection({ sectionId, config, descriptionHtml, data, d
     case "FEATURE_SLIDER":
       return <Shell>{header}
         <DragScrollRow ariaLabel={config.title} showNavigation navigationPart={arrows} className="flex w-full min-w-0 max-w-full gap-3 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          <div className="flex w-[240px] min-w-[240px] snap-start sm:w-[300px] sm:min-w-[300px]"><ProductFeatureTile product={first} builder={builder} className="w-full" /></div>
+          <div className="flex w-[170px] min-w-[170px] snap-start sm:w-[220px] sm:min-w-[220px]"><ProductFeatureTile product={first} builder={builder} className="w-full" /></div>
           {cards(rest, cardWidth, 1)}{viewAll(cardWidth)}
         </DragScrollRow>{refresh}
       </Shell>;
@@ -89,9 +89,9 @@ export function ProductListSection({ sectionId, config, descriptionHtml, data, d
     case "BANNER_ROW":
       // One row: the banner (the first product) on the right, the other products as small cards to its left.
       return <Shell>{header}
-        <div className="grid gap-4 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] lg:items-stretch">
-          <ProductFeatureTile product={first} builder={builder} className="min-h-[220px] lg:h-full" />
-          {rest.length > 0 && <div className="grid grid-cols-2 content-center gap-3 sm:grid-cols-3">{rest.map((product, index) => <ProductCard key={product.id} {...product} storefrontVariant="gallery" imageTone={(index + 1) % 4} builder={builder} />)}</div>}
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-stretch">
+          <ProductFeatureTile product={first} builder={builder} className="min-h-[200px] lg:min-h-0 lg:w-[230px] lg:shrink-0" />
+          {rest.length > 0 && <div className="grid min-w-0 flex-1 grid-cols-2 content-start gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">{rest.map((product, index) => <ProductCard key={product.id} {...product} storefrontVariant="gallery" imageTone={(index + 1) % 4} builder={builder} />)}</div>}
         </div>
         {refresh}
       </Shell>;
