@@ -61,7 +61,7 @@ function PendingCategories({ id, settings, categories, className }: { id: string
   const items = arrangeCategories(categories, settings);
   return (
     <section {...builderSectionProps(id as HomepageLayoutItemId)} data-builder-draft="" className={`${className} ${categoriesSectionClass}`} aria-label="دسته‌بندی محصولات">
-      <CategoriesContent title={settings.title} descriptionHtml={description} items={items} display={{}} editable />
+      <CategoriesContent sectionId={id} title={settings.title} descriptionHtml={description} items={items} display={{}} editable />
     </section>
   );
 }
@@ -98,7 +98,7 @@ export function PendingSectionsHost({ industry, categories = [] }: { industry: "
   return <>{Object.entries(pending).map(([id, section]) => {
     // The main slider is a full-bleed section of its own in both templates.
     if (section.kind === "hero") return <section key={id} {...marks(id)} className="bg-white"><StorefrontHeroSlider slides={bannerSlides(section.items)} contentMode={section.content.contentMode} title={section.content.title} description={section.content.description} buttonLabel={section.content.buttonLabel} editable /></section>;
-    if (section.kind === "categories") return <PendingCategories key={id} id={id} settings={section.settings} categories={categories} className={container} />;
+    if (section.kind === "categories" || section.kind === "strip") return <PendingCategories key={id} id={id} settings={section.settings} categories={categories} className={container} />;
     if (section.kind === "list") return wrap(id, <PendingProductList id={id} config={section.config} />, false);
     return wrap(id, <PendingBanner id={id} layout={section.layout} items={section.items} />, section.kind === "banner" && isFullWidthLayout(section.layout));
   })}</>;

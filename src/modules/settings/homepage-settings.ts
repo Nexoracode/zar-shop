@@ -5,13 +5,14 @@ import { STORE_SETTING_ID } from "@/modules/settings/store-settings";
 import { homepageFieldLimits } from "@/modules/settings/settings-limits";
 import { safeHrefSchema } from "@/modules/settings/safe-href";
 import { bannerSliderIdPattern, isBannerSliderId, resolveBannerSliders } from "@/modules/page-builder/banner-sliders";
+import { categoryStripIdPattern, resolveCategoryStrips } from "@/modules/page-builder/category-strips";
 import { readDraftSectionIds } from "@/modules/page-builder/draft-sections";
 import { bannerTileLayouts } from "@/modules/page-builder/banners";
 import { isProductListId, productListIdPattern, resolveProductLists } from "@/modules/page-builder/product-lists";
 
 export const homepageSectionIds = ["HERO", "CATEGORIES", "BRANDS", "FEATURED_PRODUCTS", "POPULAR_PRODUCTS", "BEST_SELLING_PRODUCTS", "LATEST_PRODUCTS", "ABOUT", "PROMISES", "CONCIERGE", "ARTICLES"] as const;
 export type HomepageSectionId = (typeof homepageSectionIds)[number];
-export type HomepageLayoutItemId = HomepageSectionId | `TILE_GROUP:${string}` | `PRODUCT_LIST:${string}` | `BANNER_SLIDER:${string}`;
+export type HomepageLayoutItemId = HomepageSectionId | `TILE_GROUP:${string}` | `PRODUCT_LIST:${string}` | `BANNER_SLIDER:${string}` | `CATEGORY_STRIP:${string}`;
 export const homepageTileLayouts = bannerTileLayouts;
 export type HomepageTileLayout = (typeof homepageTileLayouts)[number];
 export const homepageTreasureCardIds = ["UNDER_20", "FROM_20_TO_60", "FROM_60_TO_100", "OVER_100"] as const;
@@ -29,6 +30,11 @@ const bannerSliderSectionIdSchema = z.custom<`BANNER_SLIDER:${string}`>(
   "شناسه اسلایدر بنر معتبر نیست.",
 );
 
+const categoryStripSectionIdSchema = z.custom<`CATEGORY_STRIP:${string}`>(
+  (value) => typeof value === "string" && categoryStripIdPattern.test(value),
+  "شناسه بخش دسته‌بندی معتبر نیست.",
+);
+
 const tileGroupSectionIdSchema = z.custom<`TILE_GROUP:${string}`>(
   (value) => typeof value === "string" && /^TILE_GROUP:[^:]{1,80}$/.test(value),
   "شناسه ردیف تایل معتبر نیست.",
@@ -38,7 +44,7 @@ const tileGroupSectionIdSchema = z.custom<`TILE_GROUP:${string}`>(
 // defaults in `normalizeStoredSections` don't bring it back) but is never shown, and the admin layout
 // page doesn't list it.
 const sectionSchema = z.object({
-  id: z.union([z.enum(homepageSectionIds), tileGroupSectionIdSchema, productListSectionIdSchema, bannerSliderSectionIdSchema]),
+  id: z.union([z.enum(homepageSectionIds), tileGroupSectionIdSchema, productListSectionIdSchema, bannerSliderSectionIdSchema, categoryStripSectionIdSchema]),
   enabled: z.boolean(),
   removed: z.boolean().optional(),
 });
@@ -129,7 +135,7 @@ function homepageBaseSectionIds(industry: "GOLD" | "GENERAL"): HomepageSectionId
 function addedProductListIds(pageSectionSettings: unknown, industry: "GOLD" | "GENERAL") {
   // A section still being made in the page builder is a draft: it joins the layout only when a layout containing it is saved.
   const drafts = readDraftSectionIds(pageSectionSettings);
-  return [...Object.keys(resolveProductLists(pageSectionSettings, industry)).filter(isProductListId), ...Object.keys(resolveBannerSliders(pageSectionSettings)).filter(isBannerSliderId)].filter((id) => !drafts.includes(id));
+  return [...Object.keys(resolveProductLists(pageSectionSettings, industry)).filter(isProductListId), ...Object.keys(resolveBannerSliders(pageSectionSettings)).filter(isBannerSliderId), ...Object.keys(resolveCategoryStrips(pageSectionSettings))].filter((id) => !drafts.includes(id));
 }
 
 function normalizeStoredSections(value: unknown, industry: "GOLD" | "GENERAL", tileGroups: z.infer<typeof homepageTileGroupsSchema>, productListIds: string[]) {

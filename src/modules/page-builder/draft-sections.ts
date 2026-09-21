@@ -4,7 +4,7 @@
 // and "cancel" (or an abandoned session) throws it away. Saving a layout that contains a draft's id commits it.
 
 const DRAFTS_KEY = "DRAFT_SECTIONS";
-const INSTANCE_KEYS = ["PRODUCT_LISTS", "BANNER_SLIDERS"] as const;
+const INSTANCE_KEYS = ["PRODUCT_LISTS", "BANNER_SLIDERS", "CATEGORY_STRIPS"] as const;
 
 function asDocument(stored: unknown): Record<string, unknown> {
   return stored && typeof stored === "object" && !Array.isArray(stored) ? (stored as Record<string, unknown>) : {};

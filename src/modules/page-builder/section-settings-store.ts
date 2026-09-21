@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { STORE_SETTING_ID, getStoreIndustry } from "@/modules/settings/store-settings";
 import { parseStoredSectionSettings, type PageSectionSettingsBundle } from "@/modules/page-builder/section-settings";
 import { resolveBannerSliders } from "@/modules/page-builder/banner-sliders";
+import { resolveCategoryStrips } from "@/modules/page-builder/category-strips";
 import { readDraftSectionIds } from "@/modules/page-builder/draft-sections";
 import { resolveProductLists } from "@/modules/page-builder/product-lists";
 
@@ -16,5 +17,5 @@ export async function getPageSectionSettings(): Promise<PageSectionSettingsBundl
     db.storeSetting.findUnique({ where: { id: STORE_SETTING_ID }, select: { pageSectionSettings: true } }),
     getStoreIndustry(),
   ]);
-  return { ...parseStoredSectionSettings(setting?.pageSectionSettings), productLists: resolveProductLists(setting?.pageSectionSettings, industry), bannerSliders: resolveBannerSliders(setting?.pageSectionSettings), draftSectionIds: readDraftSectionIds(setting?.pageSectionSettings) };
+  return { ...parseStoredSectionSettings(setting?.pageSectionSettings), productLists: resolveProductLists(setting?.pageSectionSettings, industry), bannerSliders: resolveBannerSliders(setting?.pageSectionSettings), categoryStrips: resolveCategoryStrips(setting?.pageSectionSettings), draftSectionIds: readDraftSectionIds(setting?.pageSectionSettings) };
 }

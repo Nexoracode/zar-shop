@@ -33,10 +33,10 @@ function resolveCategoryIcon(value: string): LucideIcon {
 /**
  * The inside of the homepage's category strip: its title and description, a link to all products, and a scrolling row of
  * the categories. Used by the homepage itself and by the page builder's draft copy of the strip, so both look the same.
- * `descriptionHtml` has to be cleaned by the caller. Every switchable piece is a `BuilderPart` of the CATEGORIES section.
+ * `descriptionHtml` has to be cleaned by the caller. Every switchable piece is a `BuilderPart` of the strip's section.
  */
-export function CategoriesContent({ title, descriptionHtml, items, display, editable }: { title: string; descriptionHtml: string; items: CategoryStripItem[]; display: PageDisplay; editable: boolean }) {
-  const part = (id: string) => ({ section: "CATEGORIES", id, hidden: isPartHidden(display, "CATEGORIES", id), editable });
+export function CategoriesContent({ sectionId = "CATEGORIES", title, descriptionHtml, items, display, editable }: { /** The section the strip belongs to (its switches are stored under this id). */ sectionId?: string; title: string; descriptionHtml: string; items: CategoryStripItem[]; display: PageDisplay; editable: boolean }) {
+  const part = (id: string) => ({ section: sectionId, id, hidden: isPartHidden(display, sectionId, id), editable });
   return (
     <>
       <div className="mb-6 flex items-end justify-between gap-4">

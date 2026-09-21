@@ -33,5 +33,6 @@ export function builderSectionLabel(id: string | undefined) {
   if (id.startsWith("TILE_GROUP:")) return "بنر";
   if (id.startsWith("BANNER_SLIDER:")) return "بنر";
   if (id.startsWith("PRODUCT_LIST:")) return "لیست محصولات";
+  if (id.startsWith("CATEGORY_STRIP:")) return "دسته‌بندی‌ها";
   return (homepageSectionLabels as Record<string, string>)[id] ?? (chromeSectionLabels as Record<string, string>)[id] ?? "بخش";
 }

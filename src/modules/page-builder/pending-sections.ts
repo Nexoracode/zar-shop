@@ -13,7 +13,8 @@ import type { HomepageMenuItem } from "@/modules/settings/homepage-settings";
 
 export type PendingSection =
   | { kind: "list"; config: ProductListConfig }
-  | { kind: "banner"; layout: BannerLayout; items: BannerItem[] };
+  | { kind: "banner"; layout: BannerLayout; items: BannerItem[] }
+  | { kind: "strip"; settings: CategoriesSectionSettings };
 
 export type PendingSections = Record<string, PendingSection>;
 

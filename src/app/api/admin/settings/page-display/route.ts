@@ -8,6 +8,7 @@ import { getPermittedActor } from "@/modules/auth/session";
 import { pageDisplaySchema } from "@/modules/page-builder/display-parts";
 import { getPageDisplaySettings } from "@/modules/page-builder/display-settings";
 import { bannerSliderDisplayConfig } from "@/modules/page-builder/banner-sliders";
+import { categoryStripDisplayConfig, isCategoryStripId } from "@/modules/page-builder/category-strips";
 import { productListDisplayConfig } from "@/modules/page-builder/product-lists";
 import { getPageSectionSettings } from "@/modules/page-builder/section-settings-store";
 import { getStoreIndustry, STORE_SETTING_ID } from "@/modules/settings/store-settings";
@@ -24,8 +25,8 @@ export async function PATCH(request: Request) {
     if (!actor) return NextResponse.json({ message: "دسترسی غیرمجاز است." }, { status: 403 });
     const industry = await getStoreIndustry();
     // Product lists have the switches their layout offers, so their configuration decides which parts are valid.
-    const { productLists, bannerSliders } = await getPageSectionSettings();
-    const dynamic = (id: string) => (productLists[id] ? productListDisplayConfig(productLists[id], industry) : bannerSliders[id] ? bannerSliderDisplayConfig(bannerSliders[id]) : null);
+    const { productLists, bannerSliders, categoryStrips } = await getPageSectionSettings();
+    const dynamic = (id: string) => (productLists[id] ? productListDisplayConfig(productLists[id], industry) : bannerSliders[id] ? bannerSliderDisplayConfig(bannerSliders[id]) : isCategoryStripId(id) && categoryStrips[id] ? categoryStripDisplayConfig(industry) : null);
     const { display } = z.object({ display: pageDisplaySchema(industry, dynamic) }).parse(await request.json());
 
     await db.$transaction(async (transaction) => {

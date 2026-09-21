@@ -67,6 +67,11 @@ export async function GeneralHome({ editable = false }: { /** The viewer can edi
 
     {categories.length > 0 && <section {...sectionProps("CATEGORIES")} className={`${container} ${categoriesSectionClass}`} aria-label="دسته‌بندی محصولات"><CategoriesContent title={sectionSettings.CATEGORIES.title} descriptionHtml={categoriesDescription} items={categories.map(toCategoryStripItem)} display={pageDisplay} editable={editable} /></section>}
 
+    {Object.entries(sectionSettings.categoryStrips).map(([id, settings]) => {
+      const items = arrangeCategories(allCategories, settings);
+      return isShown(id) && (items.length > 0 || editable) && <section key={id} {...sectionProps(id as HomepageLayoutItemId)} className={`${container} ${categoriesSectionClass}`} aria-label="دسته‌بندی محصولات"><CategoriesContent sectionId={id} title={settings.title} descriptionHtml={sanitizeSectionDescription(settings.description)} items={items.map(toCategoryStripItem)} display={pageDisplay} editable={editable} /></section>;
+    })}
+
     {brands.length > 0 && <div {...sectionProps("BRANDS")} className={container}><HomepageBrands brands={brands} /></div>}
 
     {Object.entries(sectionSettings.bannerSliders).map(([id, slider]) => isShown(id) && (isTileLayout(slider.layout)

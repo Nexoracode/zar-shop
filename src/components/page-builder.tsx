@@ -20,6 +20,7 @@ import { displayCss, sameDisplay, sectionDisplay, sectionDisplayConfig, setSecti
 import { sectionEditItems, type EditItem } from "@/modules/page-builder/edit-items";
 import { heroSettingsPayload, type HeroValues } from "@/modules/page-builder/hero-payload";
 import { bannerSliderDisplayConfig, newBannerSliderId, pruneDisplayForBanner } from "@/modules/page-builder/banner-sliders";
+import { categoryStripDisplayConfig, isCategoryStripId, newCategoryStripId, newCategoryStripSettings } from "@/modules/page-builder/category-strips";
 import { bannerTileCount, isBannerSectionId, isTileLayout, type BannerLayout } from "@/modules/page-builder/banners";
 import { resizeBannerItems, sliderConfigPayload, tileGroupsPayload, type TileGroupView } from "@/modules/page-builder/banner-items";
 import { hostSections, identityEditKey, menuEditKey, replacedSectionsCss, type ContentEdit, type ContentEdits, type PendingSection, type PendingSections } from "@/modules/page-builder/pending-sections";
@@ -49,7 +50,9 @@ function saveEdit(key: string, edit: ContentEdit, hero: HeroValues) {
     case "hero": return patchJson("/api/admin/settings/homepage/hero", heroSettingsPayload(hero, edit.items), "ذخیره اسلایدر اصلی انجام نشد.");
     case "list": return patchJson("/api/admin/settings/product-lists", { id: key, config: edit.config }, "ذخیره لیست محصولات انجام نشد.");
     case "banner": return patchJson("/api/admin/settings/banner-sliders", { id: key, config: sliderConfigPayload(edit.layout, edit.items) }, "ذخیره بنر انجام نشد.");
-    case "categories": return patchJson("/api/admin/settings/page-sections", { sectionId: "CATEGORIES", settings: edit.settings }, "ذخیره تنظیمات دسته‌بندی‌ها انجام نشد.");
+    case "categories": return key === "CATEGORIES"
+      ? patchJson("/api/admin/settings/page-sections", { sectionId: "CATEGORIES", settings: edit.settings }, "ذخیره تنظیمات دسته‌بندی‌ها انجام نشد.")
+      : patchJson("/api/admin/settings/category-strips", { id: key, settings: edit.settings }, "ذخیره بخش دسته‌بندی انجام نشد.");
     case "identity": return patchJson("/api/admin/settings/storefront-identity", { storeName: edit.values.storeName, tagline: edit.values.tagline, mainLogoMediaId: edit.values.logo?.id ?? null }, "ذخیره نام، شعار و لوگو انجام نشد.");
     case "menu": return patchJson("/api/admin/settings/homepage/menu", { menuItems: edit.items.map((item) => ({ id: item.id, label: item.label, href: item.href })) }, "ذخیره منو انجام نشد.");
     default: return Promise.resolve();
@@ -59,9 +62,9 @@ function saveEdit(key: string, edit: ContentEdit, hero: HeroValues) {
 // A section added in this edit is created on the server, under the id it has had in the draft all along, just before
 // the layout that contains it is saved (the server keeps it a hidden draft until then).
 function createPendingSection(id: string, section: PendingSection) {
-  return section.kind === "list"
-    ? sendJson("POST", "/api/admin/settings/product-lists", { ...section.config, id }, "ثبت لیست محصولات انجام نشد.")
-    : sendJson("POST", "/api/admin/settings/banner-sliders", { ...sliderConfigPayload(section.layout, section.items), id }, "ثبت بنر انجام نشد.");
+  if (section.kind === "list") return sendJson("POST", "/api/admin/settings/product-lists", { ...section.config, id }, "ثبت لیست محصولات انجام نشد.");
+  if (section.kind === "strip") return sendJson("POST", "/api/admin/settings/category-strips", { ...section.settings, id }, "ثبت بخش دسته‌بندی انجام نشد.");
+  return sendJson("POST", "/api/admin/settings/banner-sliders", { ...sliderConfigPayload(section.layout, section.items), id }, "ثبت بنر انجام نشد.");
 }
 
 /**
@@ -135,7 +138,7 @@ export function PageBuilder({ initialSections, initialDisplay, industry, identit
   }
   for (const [id, section] of Object.entries(pending)) {
     if (section.kind === "banner") effectiveSliders[id] = { layout: section.layout, items: section.items };
-    else productLists[id] = section.config;
+    else if (section.kind === "list") productLists[id] = section.config;
   }
   const categoriesEdit = edits.CATEGORIES?.kind === "categories" ? edits.CATEGORIES.settings : null;
   const identityEdit = edits[identityEditKey]?.kind === "identity" ? edits[identityEditKey].values : null;
@@ -189,7 +192,8 @@ export function PageBuilder({ initialSections, initialDisplay, industry, identit
   const productListConfig: DynamicDisplayConfig = (id) => {
     if (productLists[id]) return productListDisplayConfig(productLists[id], industry);
     const bannerSet = effectiveSliders[id] ?? sectionSettings.bannerSliders[id];
-    return bannerSet ? bannerSliderDisplayConfig(bannerSet) : null;
+    if (bannerSet) return bannerSliderDisplayConfig(bannerSet);
+    return isCategoryStripId(id) ? categoryStripDisplayConfig(industry) : null;
   };
 
   function displayConfig(id: string): SectionDisplayConfig | null {
@@ -202,7 +206,7 @@ export function PageBuilder({ initialSections, initialDisplay, industry, identit
   }
 
   function requestEdit(id: string) {
-    if (isBannerSectionId(id) || isSectionSettingsId(id) || productLists[id] || sectionEditItems(id)) setEditSection(id);
+    if (isBannerSectionId(id) || isCategoryStripId(id) || isSectionSettingsId(id) || productLists[id] || sectionEditItems(id)) setEditSection(id);
     else toast.info("ویرایش این بخش هنوز اضافه نشده است");
   }
 
@@ -278,6 +282,27 @@ export function PageBuilder({ initialSections, initialDisplay, industry, identit
     addSectionToDraft(id, { kind: "list", config: newProductListConfig(layoutChoice) });
     setAddStep(null);
     setEditSection(id);
+  }
+
+  function createStrip() {
+    const id = newCategoryStripId(crypto.randomUUID());
+    addSectionToDraft(id, { kind: "strip", settings: newCategoryStripSettings() });
+    setAddStep(null);
+    setEditSection(id);
+  }
+
+  // The settings of an added strip: the draft's if it has any, otherwise the server's.
+  function stripSettings(id: string): CategoriesSectionSettings {
+    const added = pending[id];
+    if (added?.kind === "strip") return added.settings;
+    const edit = edits[id];
+    return edit?.kind === "categories" ? edit.settings : sectionSettings.categoryStrips[id] ?? newCategoryStripSettings();
+  }
+
+  function stripSaved(id: string, settings: CategoriesSectionSettings) {
+    if (pending[id]) setPending((current) => ({ ...current, [id]: { kind: "strip", settings } }));
+    else setEdit(id, { kind: "categories", settings });
+    setEditSection(null);
   }
 
   function createBanner(layoutChoice: BannerLayout) {
@@ -389,7 +414,7 @@ export function PageBuilder({ initialSections, initialDisplay, industry, identit
         canRedo={draft.future.length > 0}
         saving={saving}
       />
-      {editSection && !isSectionSettingsId(editSection) && !productLists[editSection] && !isBannerSectionId(editSection) && !editItem && (
+      {editSection && !isSectionSettingsId(editSection) && !productLists[editSection] && !isBannerSectionId(editSection) && !isCategoryStripId(editSection) && !editItem && (
         <SectionEditDialog
           key={editSection}
           title={`ویرایش ${builderSectionLabel(editSection)}`}
@@ -411,8 +436,9 @@ export function PageBuilder({ initialSections, initialDisplay, industry, identit
         onChange={changeBanner}
       />
       {editSection && productLists[editSection] && <ProductListDialog key={editSection} listId={editSection} initial={productLists[editSection]} categoryOptions={categoryOptions} onSaved={(config) => listSaved(editSection, config)} onClose={() => setEditSection(null)} />}
-      {addStep === "type" && <SectionEditDialog title="افزودن بخش" items={[{ id: "product-list", title: "لیست محصولات", description: "نمایش محصولات با ظاهرهای گوناگون", icon: "list" }, { id: "banner", title: "بنر", description: "اسلایدر یا ردیف‌های تصویری با ظاهرهای گوناگون", icon: "image" }]} onSelect={(item) => setAddStep(item.id === "banner" ? "banner" : "layout")} onClose={() => setAddStep(null)} />}
+      {addStep === "type" && <SectionEditDialog title="افزودن بخش" items={[{ id: "product-list", title: "لیست محصولات", description: "نمایش محصولات با ظاهرهای گوناگون", icon: "list" }, { id: "banner", title: "بنر", description: "اسلایدر یا ردیف‌های تصویری با ظاهرهای گوناگون", icon: "image" }, ...(industry === "GENERAL" ? [{ id: "categories", title: "دسته‌بندی", description: "ردیفی از دسته‌بندی‌های فروشگاه", icon: "list" as const }] : [])]} onSelect={(item) => { if (item.id === "categories") createStrip(); else setAddStep(item.id === "banner" ? "banner" : "layout"); }} onClose={() => setAddStep(null)} />}
       {addStep === "layout" && <ProductListLayoutPicker saving={false} onConfirm={createList} onBack={() => setAddStep("type")} onClose={() => setAddStep(null)} />}
+      {editSection && isCategoryStripId(editSection) && <SectionContentDialog key={editSection} sectionId="CATEGORIES" sectionLabel={builderSectionLabel(editSection)} initial={stripSettings(editSection)} onSaved={(settings) => stripSaved(editSection, settings as CategoriesSectionSettings)} onClose={() => setEditSection(null)} />}
       {editSection && isSectionSettingsId(editSection) && <SectionContentDialog key={editSection} sectionId={editSection} sectionLabel={builderSectionLabel(editSection)} initial={categoriesEdit ?? sectionSettings[editSection]} onSaved={(settings) => { setEdit(editSection, { kind: "categories", settings: settings as CategoriesSectionSettings }); closeEdit(); }} onClose={() => setEditSection(null)} />}
       {/* Their values go into the draft like everything else and are saved with "save" (the header can't show them before that). */}
       {editSection === "HEADER" && editItem === "identity" && <PageBuilderIdentityDialog initial={identityEdit ?? identity} onConfirm={(values) => { setEdit(identityEditKey, { kind: "identity", values }); closeEdit(); }} onClose={() => setEditItem(null)} />}
