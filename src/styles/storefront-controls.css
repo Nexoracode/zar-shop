@@ -53,6 +53,17 @@
     color: var(--brand-primary);
   }
 
+  /* Checkboxes stay blue — the page builder's blue — whatever the store's brand colors are. The components pick their
+     checked color from the brand variables, so those are redefined for everything inside a checkbox. */
+  .checkbox {
+    --brand-primary: #1b6bf2;
+    --brand-primary-foreground: #ffffff;
+    --accent: #1b6bf2;
+    --color-accent: #1b6bf2;
+    --accent-foreground: #ffffff;
+    --color-accent-foreground: #ffffff;
+  }
+
   /* Small floating things */
   .tooltip,
   .toast {
