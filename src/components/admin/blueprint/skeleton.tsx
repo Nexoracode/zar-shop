@@ -43,6 +43,7 @@ export function BpFilterBarSkeleton({ selects = 0 }: { selects?: number }) {
       {Array.from({ length: selects }).map((_, index) => (
         <BpBar key={index} className="h-11 w-full sm:w-44" />
       ))}
+      <BpBar className="bp-refresh-bar size-11 shrink-0" />
     </div>
   );
 }
@@ -57,6 +58,7 @@ export function BpFilterPanelSkeleton({ selects = 0, className = "p-4", framed =
         {Array.from({ length: selects }).map((_, index) => (
           <BpBar key={index} className="h-9 w-full sm:w-44" />
         ))}
+        {tall && <BpBar className="bp-refresh-bar size-11 shrink-0" />}
       </div>
     </div>
   );
@@ -72,7 +74,7 @@ export function BpBulkToolbarSkeleton({ settings = true, extra = true, showFrom 
         <BpBar className="h-3 w-48" />
       </div>
       {extra && <BpBar className="h-9 w-28" />}
-      <BpBar className="size-9 shrink-0" />
+      <BpBar className="bp-refresh-toolbar size-9 shrink-0" />
     </div>
   );
 }
@@ -88,7 +90,7 @@ export function BpReadOnlyToolbarSkeleton({ settings = true }: { settings?: bool
         <BpBar className="h-2.5 w-72 max-w-full" />
       </div>
       <div className="ms-auto flex items-center gap-2">
-        <BpBar className="size-9 shrink-0" />
+        <BpBar className="bp-refresh-toolbar size-9 shrink-0" />
       </div>
     </div>
   );
@@ -390,6 +392,7 @@ export function BpFormBesideTableSkeleton({ columns = 7, rows = 6, form = ["fiel
           <div className="flex flex-wrap items-center gap-2 border-b border-[var(--bp-divider)] p-4">
             {filterLeading && <BpBar className="size-9 shrink-0" />}
             <BpBar className="h-11 w-full min-w-[180px] sm:w-auto sm:min-w-[220px] sm:flex-1" />
+            <BpBar className="bp-refresh-bar size-11 shrink-0" />
           </div>
           <MobileCardsSkeleton rows={3} hideFrom="md" />
           <div className="hidden md:block">

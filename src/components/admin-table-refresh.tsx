@@ -5,7 +5,12 @@ import { useRouter } from "next/navigation";
 import { LockKeyhole, RefreshCw } from "lucide-react";
 import { BpButton } from "@/components/admin/blueprint/ui/button";
 
-export function AdminTableRefreshButton({ className = "" }: { className?: string }) {
+/**
+ * Reloads the table's data. It sits beside the search field at the top of the table card; a table with
+ * no search field keeps it in its toolbar. When a card has both, the toolbar's copy is hidden by CSS
+ * (`.bp-refresh-bar` / `.bp-refresh-toolbar`), so no table ever shows it twice.
+ */
+export function AdminTableRefreshButton({ className = "", inBar = false }: { className?: string; /** Rendered in the search bar rather than the toolbar. */ inBar?: boolean }) {
   const router = useRouter();
   const [isRefreshing, startRefresh] = useTransition();
 
@@ -15,7 +20,7 @@ export function AdminTableRefreshButton({ className = "" }: { className?: string
     isPending={isRefreshing}
     aria-label="بروزرسانی اطلاعات جدول"
     onClick={() => startRefresh(() => router.refresh())}
-    className={`shrink-0 ${className}`}
+    className={`shrink-0 ${inBar ? "bp-refresh-bar" : "bp-refresh-toolbar"} ${className}`.trim()}
   >
     {!isRefreshing && <RefreshCw size={15} />}
   </BpButton>;

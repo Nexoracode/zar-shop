@@ -563,6 +563,10 @@ button.bp-select-trigger:disabled { cursor: not-allowed; }
 .bp-input.bp-input-search-lg { min-height: 44px; }
 /* The same height for a select beside such a search field, so the bar reads as one row. */
 .bp-input.bp-input-lg { min-height: 44px; }
+/* The refresh button beside a table's search field is as tall as the field. A card that has it there
+   drops the toolbar's copy, so it is never shown twice. */
+.bp-btn.bp-refresh-bar { width: 44px; min-width: 44px; height: 44px; min-height: 44px; }
+.bp-frame:has(.bp-refresh-bar) .bp-refresh-toolbar { display: none; }
 /* Every search field draws its own clear button (the accent-coloured one), so the browser's native ×
    on `type="search"` would be a second one. */
 .bp-root input[type="search"]::-webkit-search-cancel-button,

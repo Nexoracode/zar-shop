@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react";
 import { Search, X } from "lucide-react";
+import { AdminTableRefreshButton } from "@/components/admin-table-refresh";
 import { BpButton } from "./button";
 import { BpSelect, type BpSelectOption } from "./select";
 
@@ -59,6 +60,7 @@ export function BpListFilters({ query, onQueryChange, searchLabel, searchPlaceho
           options={filter.options}
         />
       ))}
+      <AdminTableRefreshButton inBar />
     </div>
   );
 }

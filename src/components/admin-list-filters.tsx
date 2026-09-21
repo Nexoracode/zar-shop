@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Search, X } from "lucide-react";
 import { type HeroSelectOption } from "@/components/hero-select-field";
 import { BpButton } from "@/components/admin/blueprint/ui/button";
+import { AdminTableRefreshButton } from "@/components/admin-table-refresh";
 import { BpSelect } from "@/components/admin/blueprint/ui/select";
 
 type Filter = {
@@ -58,6 +59,7 @@ export function AdminListFilters({ path, query, queryLabel, queryPlaceholder, fi
           className={`w-full sm:w-44 ${large ? "bp-input-lg" : ""}`.trim()}
         />
       ))}
+      <AdminTableRefreshButton inBar />
     </div>
   );
 }
