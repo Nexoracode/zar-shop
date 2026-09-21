@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@heroui/react";
@@ -62,6 +62,50 @@ export function BannerSlider({ sectionId, layout, slides, arrowsHidden = false, 
     setActive(best);
   }, [offsetOf, slides.length]);
 
+  // Dragging with the mouse moves the row like a swipe does on a touch screen (touch already scrolls it natively): the
+  // row follows the pointer, and on release it settles on the nearest slide. A drag doesn't count as a click on a link.
+  const dragRef = useRef({ active: false, moved: false, pointerId: -1, startX: 0, startScroll: 0 });
+  const suppressClickRef = useRef(false);
+  const [dragging, setDragging] = useState(false);
+
+  function pointerDown(event: ReactPointerEvent<HTMLDivElement>) {
+    if (!multiple || event.pointerType !== "mouse" || event.button !== 0) return;
+    if (event.target instanceof Element && event.target.closest("button")) return;
+    dragRef.current = { active: true, moved: false, pointerId: event.pointerId, startX: event.clientX, startScroll: event.currentTarget.scrollLeft };
+  }
+
+  function pointerMove(event: ReactPointerEvent<HTMLDivElement>) {
+    const drag = dragRef.current;
+    if (!drag.active || event.pointerId !== drag.pointerId) return;
+    const deltaX = event.clientX - drag.startX;
+    if (!drag.moved) {
+      if (Math.abs(deltaX) < 6) return;
+      drag.moved = true;
+      event.currentTarget.setPointerCapture(event.pointerId);
+      setDragging(true);
+    }
+    event.currentTarget.scrollLeft = drag.startScroll - deltaX;
+  }
+
+  function finishDrag(event: ReactPointerEvent<HTMLDivElement>) {
+    const drag = dragRef.current;
+    if (!drag.active || event.pointerId !== drag.pointerId) return;
+    drag.active = false;
+    if (!drag.moved) return;
+    drag.moved = false;
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
+    suppressClickRef.current = true;
+    window.setTimeout(() => { suppressClickRef.current = false; }, 0);
+    setDragging(false);
+    let nearest = 0;
+    let distance = Infinity;
+    for (let index = 0; index < slides.length; index += 1) {
+      const gap = Math.abs(offsetOf(index));
+      if (gap < distance) { distance = gap; nearest = index; }
+    }
+    goTo(nearest);
+  }
+
   useEffect(() => {
     if (!multiple) return;
     const timer = window.setInterval(() => { if (!pausedRef.current) goTo(active + 1); }, autoplayMs);
@@ -84,12 +128,12 @@ export function BannerSlider({ sectionId, layout, slides, arrowsHidden = false, 
   return (
     <div className="min-w-0" onMouseEnter={() => { pausedRef.current = true; }} onMouseLeave={() => { pausedRef.current = false; }} onTouchStart={() => { pausedRef.current = true; }} onTouchEnd={() => { pausedRef.current = false; }}>
       <div className="relative">
-        <div ref={rowRef} dir="rtl" onScroll={onScroll} className={`flex snap-x snap-mandatory overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${layout === "SLIDER_FULL" ? "" : "gap-4"}`}>
+        <div ref={rowRef} dir="rtl" onScroll={onScroll} onPointerDown={pointerDown} onPointerMove={pointerMove} onPointerUp={finishDrag} onPointerCancel={finishDrag} onDragStart={(event) => event.preventDefault()} onClickCapture={(event) => { if (suppressClickRef.current) { event.preventDefault(); event.stopPropagation(); } }} className={`flex select-none overflow-x-auto ${dragging ? "cursor-grabbing" : multiple ? "cursor-grab snap-x snap-mandatory" : "snap-x snap-mandatory"} [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${layout === "SLIDER_FULL" ? "" : "gap-4"}`}>
           {empty && <div className={`relative grid shrink-0 place-items-center overflow-hidden border border-dashed border-[#c9ced6] bg-[#eceef1] text-[#5ea6ff] ${layout === "SLIDER_FULL" ? "" : "rounded-xl"} ${slideClass[layout]}`}><span className="grid justify-items-center gap-1"><ImageIcon size={34} strokeWidth={1.4} /><span className="text-xs font-bold text-[#858b95]">هنوز بنری برای این اسلایدر ثبت نشده است</span></span></div>}
           {slides.map((slide, index) => (
             <Link key={slide.id} href={slide.href} aria-label={slide.desktop.alt} className={`relative block shrink-0 overflow-hidden bg-black/5 ${layout === "SLIDER_FULL" ? "" : "rounded-xl"} ${slideClass[layout]}`}>
-              {slide.mobile && <Image src={slide.mobile.src} alt={slide.mobile.alt} fill priority={index === 0} sizes="100vw" className="object-cover sm:hidden" />}
-              <Image src={slide.desktop.src} alt={slide.desktop.alt} fill priority={index === 0} sizes={layout === "SLIDER_TWO_UP" ? "(max-width: 640px) 100vw, 50vw" : "100vw"} className={`object-cover ${slide.mobile ? "hidden sm:block" : ""}`} />
+              {slide.mobile && <Image src={slide.mobile.src} alt={slide.mobile.alt} fill draggable={false} priority={index === 0} sizes="100vw" className="object-cover sm:hidden" />}
+              <Image src={slide.desktop.src} alt={slide.desktop.alt} fill draggable={false} priority={index === 0} sizes={layout === "SLIDER_TWO_UP" ? "(max-width: 640px) 100vw, 50vw" : "100vw"} className={`object-cover ${slide.mobile ? "hidden sm:block" : ""}`} />
             </Link>
           ))}
         </div>
