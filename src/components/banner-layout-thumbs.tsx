@@ -20,22 +20,37 @@ function Picture({ x, y, w, h, rx = 4 }: { x: number; y: number; w: number; h: n
   );
 }
 
-function Arrow({ x, y }: { x: number; y: number }) {
-  return <circle cx={x} cy={y} r={5} fill="#fff" stroke={line} />;
+// The arrows and dots of the main slider: dark translucent round buttons with a white chevron, and the dots in a small
+// translucent pill over the bottom of the picture.
+function Arrow({ x, y, side }: { x: number; y: number; side: "right" | "left" }) {
+  const d = side === "right" ? "M-1.3 -2.2 1.3 0 -1.3 2.2" : "M1.3 -2.2 -1.3 0 1.3 2.2";
+  return (
+    <g>
+      <circle cx={x} cy={y} r={5.5} fill="#000" fillOpacity={0.3} stroke="#fff" strokeOpacity={0.6} />
+      <path d={d} transform={`translate(${x} ${y})`} fill="none" stroke="#fff" strokeWidth={1.3} strokeLinecap="round" strokeLinejoin="round" />
+    </g>
+  );
 }
 
-function Dots({ y = 96, active = 1 }: { y?: number; active?: number }) {
-  return <g>{[0, 1, 2].map((index) => <circle key={index} cx={72 + index * 8} cy={y} r={index === active ? 2 : 1.4} fill={index === active ? "#8a919c" : line} />)}</g>;
+function Dots({ y = 78, active = 1 }: { y?: number; active?: number }) {
+  return (
+    <g>
+      <rect x={62} y={y - 5} width={36} height={10} rx={5} fill="#000" fillOpacity={0.22} />
+      {[0, 1, 2].map((index) => index === active
+        ? <rect key={index} x={73} y={y - 1.5} width={7} height={3} rx={1.5} fill="#fff" />
+        : <circle key={index} cx={index < active ? 68 : 90} cy={y} r={1.6} fill="#fff" fillOpacity={0.6} />)}
+    </g>
+  );
 }
 
 // The full-width look touches both edges of the box (the others keep a margin, like the store's content width), with
 // guides at the margins so the difference reads at a glance.
 const drawings: Record<BannerLayout, ReactNode> = {
-  SLIDER_FULL: <><line x1={8} y1={14} x2={8} y2={106} stroke={line} strokeDasharray="2 3" /><line x1={152} y1={14} x2={152} y2={106} stroke={line} strokeDasharray="2 3" /><Picture x={0} y={28} w={160} h={58} rx={0} /><Arrow x={14} y={57} /><Arrow x={146} y={57} /><Dots /></>,
-  SLIDER_WIDE: <><Picture x={12} y={28} w={136} h={58} /><Arrow x={20} y={57} /><Arrow x={140} y={57} /><Dots /></>,
-  SLIDER_CORNER: <><Picture x={12} y={26} w={136} h={62} /><Arrow x={128} y={76} /><Arrow x={116} y={76} /><Dots y={98} /></>,
-  SLIDER_TWO_UP: <><Picture x={22} y={34} w={56} h={44} /><Picture x={84} y={34} w={56} h={44} /><Arrow x={16} y={56} /><Arrow x={146} y={56} /><Dots y={90} /></>,
-  SLIDER_PEEK: <><Picture x={-24} y={34} w={44} h={48} /><Picture x={30} y={30} w={100} h={56} /><Picture x={140} y={34} w={44} h={48} /><Dots y={96} /></>,
+  SLIDER_FULL: <><line x1={8} y1={14} x2={8} y2={106} stroke={line} strokeDasharray="2 3" /><line x1={152} y1={14} x2={152} y2={106} stroke={line} strokeDasharray="2 3" /><Picture x={0} y={28} w={160} h={58} rx={0} /><Arrow x={12} y={57} side="right" /><Arrow x={148} y={57} side="left" /><Dots /></>,
+  SLIDER_WIDE: <><Picture x={12} y={28} w={136} h={58} /><Arrow x={23} y={57} side="right" /><Arrow x={137} y={57} side="left" /><Dots /></>,
+  SLIDER_CORNER: <><Picture x={12} y={26} w={136} h={62} /><Arrow x={137} y={77} side="right" /><Arrow x={124} y={77} side="left" /><Dots y={79} /></>,
+  SLIDER_TWO_UP: <><Picture x={22} y={34} w={56} h={44} /><Picture x={84} y={34} w={56} h={44} /><Arrow x={31} y={56} side="right" /><Arrow x={131} y={56} side="left" /><Dots y={70} /></>,
+  SLIDER_PEEK: <><Picture x={-24} y={34} w={44} h={48} /><Picture x={30} y={30} w={100} h={56} /><Picture x={140} y={34} w={44} h={48} /><Dots /></>,
   SINGLE: <Picture x={12} y={44} w={136} h={32} />,
   TWO_COLUMNS: <><Picture x={12} y={38} w={68} h={44} /><Picture x={84} y={38} w={68} h={44} /></>,
   BIG_AND_TWO: <><Picture x={64} y={28} w={88} h={64} /><Picture x={8} y={28} w={50} h={30} /><Picture x={8} y={62} w={50} h={30} /></>,

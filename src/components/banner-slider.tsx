@@ -75,15 +75,17 @@ export function BannerSlider({ sectionId, layout, slides, arrowsHidden = false, 
   const showControls = multiple || editable;
   const dotKeys = empty ? ["a", "b", "c"] : slides.map((slide) => slide.id);
 
-  const arrowClass = "size-9 min-h-9 min-w-9 rounded-full border border-[#c9ced6] bg-white text-[#232934] shadow-sm hover:bg-[#f4f5f7]";
-  const prev = <Button type="button" isIconOnly variant="secondary" aria-label="بنر قبلی" onPress={() => goTo(active - 1)} className={arrowClass}><ChevronRight size={18} /></Button>;
-  const next = <Button type="button" isIconOnly variant="secondary" aria-label="بنر بعدی" onPress={() => goTo(active + 1)} className={arrowClass}><ChevronLeft size={18} /></Button>;
+  // The same arrows and dots as the main slider (`StorefrontHeroSlider`): dark translucent round buttons, and the dots in a
+  // small translucent pill over the bottom of the picture.
+  const arrowClass = "grid size-10 min-h-10 min-w-10 rounded-full border border-white/40 bg-black/25 text-white backdrop-blur hover:bg-black/40";
+  const prev = <Button type="button" isIconOnly variant="secondary" aria-label="بنر قبلی" onPress={() => goTo(active - 1)} className={arrowClass}><ChevronRight size={19} /></Button>;
+  const next = <Button type="button" isIconOnly variant="secondary" aria-label="بنر بعدی" onPress={() => goTo(active + 1)} className={arrowClass}><ChevronLeft size={19} /></Button>;
 
   return (
     <div className="min-w-0" onMouseEnter={() => { pausedRef.current = true; }} onMouseLeave={() => { pausedRef.current = false; }} onTouchStart={() => { pausedRef.current = true; }} onTouchEnd={() => { pausedRef.current = false; }}>
       <div className="relative">
         <div ref={rowRef} dir="rtl" onScroll={onScroll} className={`flex snap-x snap-mandatory overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${layout === "SLIDER_FULL" ? "" : "gap-4"}`}>
-          {empty && <div className={`relative grid shrink-0 place-items-center overflow-hidden border border-dashed border-[#c9ced6] bg-white text-[#5ea6ff] ${layout === "SLIDER_FULL" ? "" : "rounded-xl"} ${slideClass[layout]}`}><span className="grid justify-items-center gap-1"><ImageIcon size={34} strokeWidth={1.4} /><span className="text-xs font-bold text-[#858b95]">هنوز بنری برای این اسلایدر ثبت نشده است</span></span></div>}
+          {empty && <div className={`relative grid shrink-0 place-items-center overflow-hidden border border-dashed border-[#c9ced6] bg-[#eceef1] text-[#5ea6ff] ${layout === "SLIDER_FULL" ? "" : "rounded-xl"} ${slideClass[layout]}`}><span className="grid justify-items-center gap-1"><ImageIcon size={34} strokeWidth={1.4} /><span className="text-xs font-bold text-[#858b95]">هنوز بنری برای این اسلایدر ثبت نشده است</span></span></div>}
           {slides.map((slide, index) => (
             <Link key={slide.id} href={slide.href} aria-label={slide.desktop.alt} className={`relative block shrink-0 overflow-hidden bg-black/5 ${layout === "SLIDER_FULL" ? "" : "rounded-xl"} ${slideClass[layout]}`}>
               {slide.mobile && <Image src={slide.mobile.src} alt={slide.mobile.alt} fill priority={index === 0} sizes="100vw" className="object-cover sm:hidden" />}
@@ -94,21 +96,21 @@ export function BannerSlider({ sectionId, layout, slides, arrowsHidden = false, 
         {showControls && showsArrows && (
           <BuilderPart section={sectionId} id="arrows" hidden={arrowsHidden} editable={editable}>
             {layout === "SLIDER_CORNER"
-              ? <div className="absolute bottom-3 right-3 z-10 flex items-center gap-1.5">{prev}{next}</div>
+              ? <div className="absolute bottom-4 right-4 z-10 flex items-center gap-2">{prev}{next}</div>
               : <>
-                <div className="absolute right-3 top-1/2 z-10 -translate-y-1/2">{prev}</div>
-                <div className="absolute left-3 top-1/2 z-10 -translate-y-1/2">{next}</div>
+                <div className="absolute right-4 top-1/2 z-10 -translate-y-1/2">{prev}</div>
+                <div className="absolute left-4 top-1/2 z-10 -translate-y-1/2">{next}</div>
               </>}
           </BuilderPart>
         )}
+        {showControls && (
+          <BuilderPart section={sectionId} id="dots" hidden={dotsHidden} editable={editable}>
+            <div className="absolute bottom-4 left-1/2 z-10 flex -translate-x-1/2 items-center gap-2 rounded-full bg-black/20 px-3 py-2 backdrop-blur" dir="rtl">
+              {dotKeys.map((key, index) => <Button key={key} type="button" isIconOnly variant="ghost" aria-label={`نمایش بنر ${(index + 1).toLocaleString("fa-IR")}`} aria-pressed={index === active} onPress={() => goTo(index)} className={`h-2 min-h-2 min-w-2 rounded-full p-0 transition-all ${index === active ? "w-6 bg-white" : "w-2 bg-white/55 hover:bg-white/80"}`} />)}
+            </div>
+          </BuilderPart>
+        )}
       </div>
-      {showControls && (
-        <BuilderPart section={sectionId} id="dots" hidden={dotsHidden} editable={editable}>
-          <div className="mt-3 flex items-center justify-center gap-1.5" dir="rtl">
-            {dotKeys.map((key, index) => <Button key={key} type="button" isIconOnly variant="ghost" aria-label={`نمایش بنر ${(index + 1).toLocaleString("fa-IR")}`} aria-pressed={index === active} onPress={() => goTo(index)} className={`h-2 min-h-2 min-w-2 rounded-full p-0 transition-all ${index === active ? "w-6 bg-[var(--brand-primary)]" : "w-2 bg-[#c9ced6] hover:bg-[#aab1bc]"}`} />)}
-          </div>
-        </BuilderPart>
-      )}
     </div>
   );
 }
