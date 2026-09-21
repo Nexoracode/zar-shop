@@ -30,9 +30,22 @@ function Row({ x, y, w }: { x: number; y: number; w: number }) {
   return <g><Picture x={x + w - 14} y={y} w={14} h={14} /><Lines x={x} y={y + 2} w={w - 20} dark /></g>;
 }
 
-/** A card: picture over two lines of text. */
-function Card({ x, y, w, h }: { x: number; y: number; w: number; h: number }) {
-  return <g><Picture x={x} y={y} w={w} h={h - 14} /><Lines x={x + 2} y={y + h - 11} w={w - 4} /></g>;
+/** A product card: the picture, the words "product title" and two lines (the price) under it. */
+function Card({ x, y, w, h, label = true }: { x: number; y: number; w: number; h: number; label?: boolean }) {
+  const pictureHeight = label ? h - 20 : h - 14;
+  return (
+    <g>
+      <Picture x={x} y={y} w={w} h={pictureHeight} />
+      {label && <text x={x + w / 2} y={y + pictureHeight + 6} fontSize={4.2} textAnchor="middle" fill="#6b7280" direction="rtl">عنوان محصول</text>}
+      <Lines x={x + 2} y={y + h - (label ? 8 : 11)} w={w - 4} />
+    </g>
+  );
+}
+
+/** A round arrow button with a chevron. */
+function RoundArrow({ x, y, side }: { x: number; y: number; side: "right" | "left" }) {
+  const d = side === "right" ? "M-1 -2 1.2 0 -1 2" : "M1 -2 -1.2 0 1 2";
+  return <g><circle cx={x} cy={y} r={4.6} fill="#fff" stroke={line} /><path d={d} transform={`translate(${x} ${y})`} fill="none" stroke="#6b7280" strokeWidth={1.1} strokeLinecap="round" strokeLinejoin="round" /></g>;
 }
 
 const drawings: Record<ProductListLayout, ReactNode> = {
@@ -46,24 +59,29 @@ const drawings: Record<ProductListLayout, ReactNode> = {
     <circle cx="20" cy="18" r="4.5" fill="#fff" /><circle cx="32" cy="18" r="4.5" fill="#fff" />
     {[0, 1, 2].map((index) => <Card key={index} x={10 + index * 48} y={32} w={42} h={70} />)}
   </>,
+  // The big picture on the right, the cards continuing to its left (the last one is cut by the edge, like a slider).
   FEATURE_SLIDER: <>
-    <Picture x={100} y={28} w={52} h={64} />
-    {[0, 1, 2].map((index) => <Card key={index} x={-16 + index * 40} y={28} w={36} h={64} />)}
+    <Picture x={104} y={26} w={50} h={70} />
+    {[0, 1, 2].map((index) => <Card key={index} x={66 - index * 37} y={26} w={33} h={70} />)}
   </>,
+  // One row: the banner on the right, small product cards to its left.
   BANNER_ROW: <>
-    <Picture x={10} y={12} w={140} h={54} />
-    {[0, 1, 2, 3].map((index) => <g key={index}><Picture x={116 - index * 36} y={74} w={26} h={26} /><Lines x={116 - index * 36} y={104} w={26} count={1} /></g>)}
+    <Picture x={72} y={32} w={82} h={56} />
+    {[0, 1, 2].map((index) => <Card key={index} x={50 - index * 23} y={44} w={20} h={44} />)}
   </>,
   FEATURE_LIST: <>
     <Picture x={92} y={22} w={58} h={76} />
     {[0, 1, 2].map((index) => <Row key={index} x={10} y={26 + index * 24} w={74} />)}
   </>,
+  // A colored panel: the title and a line of description on the right, the cards in a light strip with arrows at its edges.
   PANEL_SLIDER: <>
-    <rect x={6} y={14} width={148} height={88} rx={6} fill="#ffffff55" />
-    <Lines x={112} y={22} w={34} dark />
-    <rect x={14} y={38} width={132} height={56} rx={5} fill="#fff" />
-    {[0, 1, 2, 3].map((index) => <Card key={index} x={20 + index * 32} y={42} w={28} h={48} />)}
-    <circle cx="14" cy="66" r="4" fill="#fff" stroke={line} /><circle cx="146" cy="66" r="4" fill="#fff" stroke={line} />
+    <rect x={6} y={12} width={148} height={98} rx={6} fill="#d8dbe0" />
+    <text x={148} y={27} fontSize={8.5} fontWeight={700} textAnchor="end" fill="#3f4652" direction="rtl">عنوان</text>
+    <rect x={116} y={32} width={32} height={2.6} rx={1.3} fill="#9aa1ac" />
+    <rect x={12} y={42} width={136} height={62} rx={5} fill="#f3f4f6" />
+    {[0, 1, 2, 3].map((index) => <Card key={index} x={119 - index * 32} y={47} w={27} h={52} />)}
+    <RoundArrow x={12} y={73} side="left" />
+    <RoundArrow x={148} y={73} side="right" />
   </>,
   // Four ranked columns of three rows, as the best-selling products are laid out.
   LIST_TWO_COLUMNS: <>{[0, 1, 2, 3].flatMap((col) => [0, 1, 2].map((row) => (

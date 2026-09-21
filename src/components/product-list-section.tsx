@@ -88,9 +88,12 @@ export function ProductListSection({ sectionId, config, descriptionHtml, data, d
       </Shell>;
 
     case "BANNER_ROW":
+      // One row: the banner (the first product) on the right, the other products as small cards to its left.
       return <Shell>{header}
-        <ProductFeatureTile product={first} builder={builder} className="min-h-[200px] sm:aspect-[21/8]" />
-        {rest.length > 0 && <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">{rest.map((product, index) => <ProductCard key={product.id} {...product} storefrontVariant="gallery" imageTone={(index + 1) % 4} builder={builder} />)}</div>}
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] lg:items-stretch">
+          <ProductFeatureTile product={first} builder={builder} className="min-h-[220px] lg:h-full" />
+          {rest.length > 0 && <div className="grid grid-cols-2 content-center gap-3 sm:grid-cols-3">{rest.map((product, index) => <ProductCard key={product.id} {...product} storefrontVariant="gallery" imageTone={(index + 1) % 4} builder={builder} />)}</div>}
+        </div>
         {refresh}
       </Shell>;
 
@@ -103,23 +106,27 @@ export function ProductListSection({ sectionId, config, descriptionHtml, data, d
       </Shell>;
 
     case "PANEL_SLIDER":
+      // A colored panel: the title (with its icon and description) on the right of its header, the timer and the "view
+      // all" link on the left, and the cards in a white strip below with the arrows at its edges.
       return (
-        <div className="overflow-hidden rounded-2xl" style={{ background: "linear-gradient(225deg, var(--brand-primary) 0%, color-mix(in srgb, var(--brand-primary) 80%, black) 100%)" }}>
-          <div className="flex flex-col lg:flex-row lg:items-stretch">
-            <div className="flex shrink-0 items-center gap-3 px-4 pb-3 pt-5 lg:flex-col lg:justify-center lg:gap-6 lg:self-stretch lg:px-5 lg:pb-5 lg:pt-3">
-              <BuilderPart {...part("icon")}><Sparkles size={24} className="shrink-0 text-[var(--brand-primary-foreground)] lg:size-16" /></BuilderPart>
-              <BuilderPart {...part("title")}><strong className="shrink-0 text-lg font-extrabold leading-6 text-[var(--brand-primary-foreground)] lg:text-center lg:text-2xl lg:leading-8">{config.title}</strong></BuilderPart>
-              {description && <BuilderPart {...part("description")}><div className={`m-0 hidden max-w-[11rem] text-center text-xs leading-5 text-[var(--brand-primary-foreground)]/80 lg:block ${richStyle}`} dangerouslySetInnerHTML={{ __html: description }} /></BuilderPart>}
+        <div className="overflow-hidden rounded-2xl p-3 sm:p-4 lg:p-5" style={{ background: "linear-gradient(225deg, var(--brand-primary) 0%, color-mix(in srgb, var(--brand-primary) 80%, black) 100%)" }}>
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-x-4 gap-y-2 sm:mb-4">
+            <div className="flex min-w-0 items-center gap-3">
+              <BuilderPart {...part("icon")}><Sparkles size={28} className="shrink-0 text-[var(--brand-primary-foreground)]" /></BuilderPart>
+              <div className="min-w-0">
+                <BuilderPart {...part("title")}><strong className="block text-lg font-extrabold leading-7 text-[var(--brand-primary-foreground)] sm:text-2xl sm:leading-8">{config.title}</strong></BuilderPart>
+                {description && <BuilderPart {...part("description")}><div className={`m-0 text-xs leading-5 text-[var(--brand-primary-foreground)]/80 sm:text-sm ${richStyle}`} dangerouslySetInnerHTML={{ __html: description }} /></BuilderPart>}
+              </div>
+            </div>
+            <div className="flex shrink-0 items-center gap-4">
               {config.source === "DISCOUNTED" && expiry && <BuilderPart {...part("countdown")}><FlashSaleCountdown endsAt={expiry} className="shrink-0" /></BuilderPart>}
-              <BuilderPart {...part("more")} className="contents"><Link href={moreHref} className="mr-auto inline-flex shrink-0 items-center gap-1 text-xs font-bold text-[var(--brand-primary-foreground)] lg:mr-0 lg:mt-1 lg:rounded-lg lg:px-3 lg:py-2 lg:text-sm lg:transition lg:hover:bg-black/5">
-                <span className="lg:hidden">{config.moreLabel === productListDefaultMoreLabel ? "همه" : config.moreLabel}</span><span className="hidden lg:inline">{config.moreLabel}</span><ChevronLeft size={15} />
-              </Link></BuilderPart>
+              <BuilderPart {...part("more")}><Link href={moreHref} className="inline-flex items-center gap-1 text-xs font-bold text-[var(--brand-primary-foreground)] transition hover:opacity-80 sm:text-sm">{config.moreLabel}<ChevronLeft size={15} /></Link></BuilderPart>
             </div>
-            <div className="min-w-0 flex-1 overflow-hidden p-3 sm:p-4 lg:p-5">
-              <DragScrollRow ariaLabel={config.title} showNavigation navigationPart={arrows} className="flex w-full min-w-0 max-w-full gap-1 overflow-x-auto pb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                {cards(products, panelCardWidth)}{viewAll(panelCardWidth)}
-              </DragScrollRow>
-            </div>
+          </div>
+          <div className="min-w-0 overflow-hidden rounded-xl bg-white p-3 sm:p-4">
+            <DragScrollRow ariaLabel={config.title} showNavigation navigationPart={arrows} className="flex w-full min-w-0 max-w-full gap-3 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              {cards(products, cardWidth)}{viewAll(cardWidth)}
+            </DragScrollRow>
           </div>
           {refresh}
         </div>
