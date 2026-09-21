@@ -1,9 +1,9 @@
 import { BUILDER_SECTION_ATTRIBUTE } from "@/modules/page-builder/sections";
 
 // The page builder edits the homepage's existing layout model: an ordered list of sections, each
-// enabled or not (see `homepageLayoutSettingsInputSchema`). "Removing" a section therefore disables it
-// — the same thing the admin layout page does — and it stays restorable there.
-export type LayoutSection = { id: string; enabled: boolean };
+// enabled or not (see `homepageLayoutSettingsInputSchema`). Removing a section flags it `removed` (and
+// disables it): it leaves the page for good and the admin layout page no longer lists it.
+export type LayoutSection = { id: string; enabled: boolean; removed?: boolean };
 
 export function sectionSelector(id: string) {
   return `[${BUILDER_SECTION_ATTRIBUTE}="${id.replace(/["\\]/g, "\\$&")}"]`;
@@ -31,14 +31,14 @@ export function moveSection(sections: LayoutSection[], id: string, direction: -1
   return next;
 }
 
-/** Disables a section. Returns null when the id is unknown or already disabled. */
+/** Removes a section from the page. Returns null when the id is unknown or already removed. */
 export function removeSection(sections: LayoutSection[], id: string) {
-  if (!sections.some((section) => section.id === id && section.enabled)) return null;
-  return sections.map((section) => (section.id === id ? { ...section, enabled: false } : section));
+  if (!sections.some((section) => section.id === id && !section.removed)) return null;
+  return sections.map((section) => (section.id === id ? { ...section, enabled: false, removed: true } : section));
 }
 
 export function sameLayout(a: LayoutSection[], b: LayoutSection[]) {
-  return a.length === b.length && a.every((section, index) => section.id === b[index].id && section.enabled === b[index].enabled);
+  return a.length === b.length && a.every((section, index) => section.id === b[index].id && section.enabled === b[index].enabled && Boolean(section.removed) === Boolean(b[index].removed));
 }
 
 /**

@@ -29,10 +29,17 @@ test("returns null at the edges and for unknown ids", () => {
   assert.equal(moveSection(sections, "HEADER", 1, allRendered), null);
 });
 
-test("removing disables the section in place", () => {
-  assert.deepEqual(removeSection(sections, "CATEGORIES")?.map((section) => section.enabled), [true, false, false, true]);
-  assert.equal(removeSection(sections, "BRANDS"), null);
+test("removing flags the section as removed and disabled, in place", () => {
+  const removed = removeSection(sections, "CATEGORIES");
+  assert.deepEqual(removed?.map((section) => section.enabled), [true, false, false, true]);
+  assert.deepEqual(removed?.map((section) => Boolean(section.removed)), [false, true, false, false]);
+  assert.equal(removeSection(removed!, "CATEGORIES"), null);
   assert.equal(removeSection(sections, "FOOTER"), null);
+});
+
+test("a removed section is skipped when moving neighbours", () => {
+  const removed = removeSection(sections, "CATEGORIES")!;
+  assert.deepEqual(ids(moveSection(removed, "LATEST_PRODUCTS", -1, allRendered)), ["LATEST_PRODUCTS", "HERO", "CATEGORIES", "BRANDS"]);
 });
 
 test("knows which ids belong to the layout", () => {

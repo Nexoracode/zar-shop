@@ -2,10 +2,12 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { toast } from "@heroui/react";
+import { Button, Modal, toast } from "@heroui/react";
+import { TriangleAlert, X } from "lucide-react";
 import { PageBuilderBar } from "@/components/page-builder-bar";
 import { PageBuilderOverlay } from "@/components/page-builder-overlay";
 import { isLayoutSection, layoutCss, moveSection, removeSection, sameLayout, sectionSelector, type LayoutSection } from "@/modules/page-builder/layout-draft";
+import { builderSectionLabel } from "@/modules/page-builder/sections";
 
 type Draft = { layout: LayoutSection[]; past: LayoutSection[][]; future: LayoutSection[][] };
 
@@ -16,7 +18,8 @@ const isRendered = (id: string) => document.querySelector(sectionSelector(id)) !
  * the page goes into edit mode (and the overlay turns on) once "edit page appearance" is pressed.
  *
  * Edits (remove, move up/down) are a draft over the homepage layout: they show on the page at once through
- * an injected stylesheet, can be undone and redone, and only reach the store on "save".
+ * an injected stylesheet, can be undone and redone, and only reach the store on "save". Removing a section
+ * asks for confirmation first, because once the change is saved there is no way back.
  */
 export function PageBuilder({ initialSections }: { initialSections: LayoutSection[] }) {
   const router = useRouter();
@@ -25,6 +28,7 @@ export function PageBuilder({ initialSections }: { initialSections: LayoutSectio
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(initialSections);
   const [draft, setDraft] = useState<Draft>({ layout: initialSections, past: [], future: [] });
+  const [pendingRemoval, setPendingRemoval] = useState<string | null>(null);
 
   const commit = (layout: LayoutSection[]) => setDraft((current) => ({ layout, past: [...current.past, current.layout], future: [] }));
   const undo = () => setDraft((current) => (current.past.length ? { layout: current.past[current.past.length - 1], past: current.past.slice(0, -1), future: [current.layout, ...current.future] } : current));
@@ -40,11 +44,15 @@ export function PageBuilder({ initialSections }: { initialSections: LayoutSectio
     else toast.info(direction < 0 ? "این بخش در بالاترین جایگاه صفحه است" : "این بخش در پایین‌ترین جایگاه صفحه است");
   }
 
-  function handleRemove(id: string) {
-    const next = isLayoutSection(draft.layout, id) ? removeSection(draft.layout, id) : null;
-    if (next) commit(next);
+  function requestRemove(id: string) {
+    if (isLayoutSection(draft.layout, id) && removeSection(draft.layout, id)) setPendingRemoval(id);
     else toast.warning("این بخش قابل حذف نیست");
-    return Boolean(next);
+  }
+
+  function confirmRemove() {
+    const next = pendingRemoval ? removeSection(draft.layout, pendingRemoval) : null;
+    if (next) commit(next);
+    setPendingRemoval(null);
   }
 
   function cancel() {
@@ -77,7 +85,7 @@ export function PageBuilder({ initialSections }: { initialSections: LayoutSectio
   return (
     <>
       <style>{css}</style>
-      <PageBuilderOverlay active={editing} layoutKey={css} onMove={handleMove} onRemove={handleRemove} />
+      <PageBuilderOverlay active={editing} layoutKey={css} onMove={handleMove} onRemove={requestRemove} />
       <PageBuilderBar
         open={open}
         onOpenChange={setOpen}
@@ -92,6 +100,24 @@ export function PageBuilder({ initialSections }: { initialSections: LayoutSectio
         canRedo={draft.future.length > 0}
         saving={saving}
       />
+      {/* The dialog is portaled to <body>, so `data-page-builder-ui` on it keeps it clickable while the page is in edit mode. */}
+      <Modal.Backdrop isOpen={pendingRemoval !== null} onOpenChange={(next) => { if (!next) setPendingRemoval(null); }} variant="blur" className="z-[200]">
+        <Modal.Container size="sm" placement="center">
+          <Modal.Dialog data-page-builder-ui aria-label="تأیید حذف بخش" dir="rtl" className="mx-4 max-w-md bg-[var(--surface)] text-right">
+            <Modal.Header className="flex-row items-center justify-between border-b border-[var(--border)] p-5">
+              <Modal.Heading className="flex items-center gap-2 text-base font-bold"><TriangleAlert size={20} className="text-[var(--danger)]" />حذف بخش «{builderSectionLabel(pendingRemoval ?? undefined)}»</Modal.Heading>
+              <Modal.CloseTrigger aria-label="بستن" className="grid size-9 place-items-center rounded-lg"><X size={18} /></Modal.CloseTrigger>
+            </Modal.Header>
+            <Modal.Body className="p-5 text-sm leading-7 text-[var(--muted)]">
+              این بخش از صفحه حذف می‌شود و پس از ذخیره‌ی تغییرات، <b className="text-[var(--foreground)]">امکان بازگرداندن آن وجود ندارد.</b> آیا از حذف آن مطمئن هستید؟
+            </Modal.Body>
+            <Modal.Footer className="gap-2 border-t border-[var(--border)] p-4">
+              <Button type="button" variant="danger" onPress={confirmRemove}>حذف بخش</Button>
+              <Button type="button" variant="secondary" onPress={() => setPendingRemoval(null)}>انصراف</Button>
+            </Modal.Footer>
+          </Modal.Dialog>
+        </Modal.Container>
+      </Modal.Backdrop>
     </>
   );
 }

@@ -19,9 +19,13 @@ const tileGroupSectionIdSchema = z.custom<`TILE_GROUP:${string}`>(
   "شناسه ردیف تایل معتبر نیست.",
 );
 
+// `removed` marks a section the page builder deleted from the page. It stays in the list (so the
+// defaults in `normalizeStoredSections` don't bring it back) but is never shown, and the admin layout
+// page doesn't list it.
 const sectionSchema = z.object({
   id: z.union([z.enum(homepageSectionIds), tileGroupSectionIdSchema]),
   enabled: z.boolean(),
+  removed: z.boolean().optional(),
 });
 
 const treasureCardSchema = z.object({
@@ -111,8 +115,8 @@ function homepageBaseSectionIds(industry: "GOLD" | "GENERAL"): HomepageSectionId
 }
 
 function normalizeStoredSections(value: unknown, industry: "GOLD" | "GENERAL", tileGroups: z.infer<typeof homepageTileGroupsSchema>) {
-  const parsed = z.array(z.object({ id: z.string(), enabled: z.boolean() })).max(40).safeParse(value);
-  const stored = parsed.success ? parsed.data : [];
+  const parsed = z.array(z.object({ id: z.string(), enabled: z.boolean(), removed: z.boolean().optional() })).max(40).safeParse(value);
+  const stored = parsed.success ? parsed.data.map((section) => (section.removed ? { ...section, enabled: false } : section)) : [];
   const tileIds = tileGroups.map((group) => `TILE_GROUP:${group.id}` as const);
   const allowed = new Set<string>([...homepageBaseSectionIds(industry), ...tileIds]);
   const expanded = stored.flatMap((section) => {
@@ -136,6 +140,9 @@ const homepageOverviewSettingsObjectSchema = z.object({
     const ids = new Set(sections.map((section) => section.id));
     if (ids.size !== sections.length) {
       context.addIssue({ code: "custom", message: "آیتم‌های چینش صفحه اصلی نباید تکراری باشند." });
+    }
+    if (sections.some((section) => section.removed && section.enabled)) {
+      context.addIssue({ code: "custom", message: "بخش حذف‌شده نمی‌تواند فعال باشد." });
     }
   }),
   menuItems: homepageMenuItemsSchema,

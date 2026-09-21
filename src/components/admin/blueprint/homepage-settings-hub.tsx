@@ -41,7 +41,7 @@ function LinkCard({ icon, title, description, href }: { icon: ReactNode; title: 
 
 export function BlueprintHomepageSettingsHub({ initialSettings, industry }: { initialSettings: HomepageSettingsData; industry: "GOLD" | "GENERAL" }) {
   const [saving, setSaving] = useState(false);
-  const sections = initialSettings.sections;
+  const sections = initialSettings.sections.filter((section) => !section.removed);
   const tileGroups = initialSettings.tileGroups;
   const [treasureCards, setTreasureCards] = useState(() => initialSettings.treasureCards.map((card) => ({ id: card.id, mediaId: card.mediaId, media: toMediaChoice(card.media) })));
   const [licenses, setLicenses] = useState(() => initialSettings.licenses.map((license) => ({ id: license.id, href: license.href ?? "", media: toMediaChoice(license.media) })));

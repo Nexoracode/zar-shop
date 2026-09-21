@@ -23,7 +23,10 @@ const sectionMeta: Record<HomepageSectionId, { title: string; description: strin
 
 export function BlueprintHomepageLayoutSettings({ initialSettings }: { initialSettings: HomepageSettings }) {
   const [saving, setSaving] = useState(false);
-  const [sections, setSections] = useState(initialSettings.sections);
+  // Sections the page builder deleted aren't part of the layout anymore: they are neither listed nor
+  // restorable here, but they must go back with every save or the defaults would re-add them.
+  const removedSections = initialSettings.sections.filter((section) => section.removed);
+  const [sections, setSections] = useState(() => initialSettings.sections.filter((section) => !section.removed));
   const [draggedId, setDraggedId] = useState<HomepageLayoutItemId | null>(null);
   const [dropTarget, setDropTarget] = useState<{ id: HomepageLayoutItemId; after: boolean } | null>(null);
 
@@ -60,7 +63,7 @@ export function BlueprintHomepageLayoutSettings({ initialSettings }: { initialSe
     event.preventDefault();
     setSaving(true);
     try {
-      const response = await fetch("/api/admin/settings/homepage/layout", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ sections }) });
+      const response = await fetch("/api/admin/settings/homepage/layout", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ sections: [...sections, ...removedSections] }) });
       const result = await response.json().catch(() => null);
       if (!response.ok) throw new Error(result?.message ?? "ذخیره چینش صفحه اصلی انجام نشد.");
       toast.success("چینش صفحه اصلی ذخیره شد", { description: "ترتیب و وضعیت بخش‌ها در سایت اعمال شدند." });

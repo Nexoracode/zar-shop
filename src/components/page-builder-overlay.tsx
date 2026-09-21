@@ -74,8 +74,7 @@ export function PageBuilderOverlay({ active, layoutKey, onMove, onRemove }: {
   /** Changes whenever the draft layout does, so the frame re-measures and follows a section that moved. */
   layoutKey: string;
   onMove: (sectionId: string, direction: -1 | 1) => void;
-  /** Returns whether the section was actually removed. */
-  onRemove: (sectionId: string) => boolean;
+  onRemove: (sectionId: string) => void;
 }) {
   const [selected, setSelected] = useState<HTMLElement | null>(null);
   const hoveredRef = useRef<HTMLElement | null>(null);
@@ -209,7 +208,7 @@ export function PageBuilderOverlay({ active, layoutKey, onMove, onRemove }: {
             <ToolbarButton label="بردن به بالا" onPress={() => selectedId && onMove(selectedId, -1)}><ArrowUp size={20} /></ToolbarButton>
             <ToolbarButton label="بردن به پایین" onPress={() => selectedId && onMove(selectedId, 1)}><ArrowDown size={20} /></ToolbarButton>
             <span className={toolbarSeparatorClass} />
-            <ToolbarButton label="حذف" onPress={() => { if (selectedId && onRemove(selectedId)) select(null); }}><Trash2 size={20} /></ToolbarButton>
+            <ToolbarButton label="حذف" onPress={() => selectedId && onRemove(selectedId)}><Trash2 size={20} /></ToolbarButton>
           </div>
           <div className={toolbarPillClass}>
             <ToolbarButton label="افزودن بخش"><Plus size={20} /></ToolbarButton>
