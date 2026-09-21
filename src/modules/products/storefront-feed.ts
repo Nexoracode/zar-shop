@@ -26,6 +26,7 @@ const productSelect = {
   discountStartsAt: true,
   discountEndsAt: true,
   category: { select: { name: true } },
+  brand: { select: { name: true } },
   media: {
     orderBy: { position: "asc" as const },
     take: 1,
@@ -60,6 +61,7 @@ function serializeProductCard(product: SelectedProduct, goldPrice: Prisma.Decima
     href: `/products/${product.slug}`,
     name: product.name,
     category: product.category?.name ?? (product.storeIndustry === "GOLD" ? "طلا" : "محصول"),
+    brand: product.brand?.name,
     industry: product.storeIndustry,
     weight: Number(product.weightGrams),
     purity: product.purity,

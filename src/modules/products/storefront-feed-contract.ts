@@ -13,6 +13,8 @@ export type StorefrontProductCardItem = {
   href: string;
   name: string;
   category: string;
+  /** The product's brand, when it has one. */
+  brand?: string;
   industry: "GOLD" | "GENERAL";
   weight: number;
   purity: number;

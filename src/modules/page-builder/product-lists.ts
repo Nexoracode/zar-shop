@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { richTextPlainLength } from "@/modules/page-builder/rich-text";
-import { normalizeDisplay, productCardParts, type DisplayPart, type PageBuilderIndustry, type PageDisplay, type SectionDisplayConfig } from "@/modules/page-builder/display-parts";
+import { normalizeDisplay, PRODUCT_CARD_GROUP, productCardParts, type DisplayPart, type PageBuilderIndustry, type PageDisplay, type SectionDisplayConfig } from "@/modules/page-builder/display-parts";
 import { safeHrefSchema } from "@/modules/settings/safe-href";
 import { pageSectionLimits } from "@/modules/settings/settings-limits";
 
@@ -146,7 +146,15 @@ export function productListDisplayConfig(config: ProductListConfig, industry: Pa
   if (config.layout === "LIST_TWO_COLUMNS" || config.layout === "GRID_COMPACT") parts.push({ id: "rank", label: "شماره رتبه" });
   if (config.layout === "FEATURE_SLIDER") parts.push({ id: "banner", label: "بنر" });
   if (productListLayoutMeta[config.layout].slider) parts.push({ id: "arrows", label: "نمایش فلش‌ها" }, { id: "viewAll", label: "کارت «مشاهده همه»" });
-  return { parts: [...parts, ...productCardParts(industry)], master: "layout" };
+  // The offer card of the feature slider has three pieces of its own.
+  const offerCardParts: DisplayPart[] = config.layout === "FEATURE_SLIDER"
+    ? [
+      { id: "card.countdown", label: "پیشنهاد شگفت‌انگیز و شمارنده", group: PRODUCT_CARD_GROUP },
+      { id: "card.category", label: "نام دسته و برند", group: PRODUCT_CARD_GROUP },
+      { id: "card.cart", label: "دکمه افزودن به سبد", group: PRODUCT_CARD_GROUP },
+    ]
+    : [];
+  return { parts: [...parts, ...productCardParts(industry), ...offerCardParts], master: "layout" };
 }
 
 /** Where a product list's "view more" link goes; `categorySlug` is the chosen category's slug when the source is one. */
