@@ -12,9 +12,14 @@ type Props = {
   showNavigation?: boolean;
   /** Makes the prev/next arrows a switchable part of a section (the page builder's "show arrows"). */
   navigationPart?: { section: string; hidden: boolean; editable: boolean };
+  /**
+   * A bar drawn above the row that gets the row's navigation (whether it can go back or forward, and a way to scroll),
+   * for a section that keeps its arrows in its own header instead of over the row.
+   */
+  topSlot?: (navigation: { canGoBack: boolean; canGoForward: boolean; scroll: (forward: boolean) => void }) => ReactNode;
 };
 
-export function DragScrollRow({ children, className = "", ariaLabel, showNavigation = false, navigationPart }: Props) {
+export function DragScrollRow({ children, className = "", ariaLabel, showNavigation = false, navigationPart, topSlot }: Props) {
   const rowRef = useRef<HTMLDivElement>(null);
   const drag = useRef({ active: false, moved: false, pointerId: -1, startX: 0, startScrollLeft: 0, lastX: 0, lastTime: 0, velocity: 0, targetScrollLeft: 0 });
   const dragFrame = useRef<number | null>(null);
@@ -36,7 +41,7 @@ export function DragScrollRow({ children, className = "", ariaLabel, showNavigat
 
   useEffect(() => {
     const row = rowRef.current;
-    if (!row || !showNavigation) return;
+    if (!row || !(showNavigation || topSlot)) return;
     updateNavigation();
     row.addEventListener("scroll", updateNavigation, { passive: true });
     const observer = new ResizeObserver(updateNavigation);
@@ -45,7 +50,7 @@ export function DragScrollRow({ children, className = "", ariaLabel, showNavigat
       row.removeEventListener("scroll", updateNavigation);
       observer.disconnect();
     };
-  }, [showNavigation, updateNavigation]);
+  }, [showNavigation, topSlot, updateNavigation]);
 
   useEffect(() => () => {
     if (dragFrame.current !== null) cancelAnimationFrame(dragFrame.current);
@@ -162,6 +167,7 @@ export function DragScrollRow({ children, className = "", ariaLabel, showNavigat
   </>;
 
   return <div className="relative min-w-0">
+    {topSlot?.({ canGoBack, canGoForward, scroll: scrollCards })}
     <div ref={rowRef} dir="rtl" tabIndex={0} aria-label={ariaLabel} className={`${className} select-none ${isDragging ? "cursor-grabbing" : "cursor-grab"}`} onPointerDown={pointerDown} onPointerMove={pointerMove} onPointerUp={finishDrag} onPointerCancel={finishDrag} onClickCapture={captureClick} onDragStart={(event) => event.preventDefault()}>{children}</div>
     {showNavigation && (navigationPart ? <BuilderPart section={navigationPart.section} id="arrows" hidden={navigationPart.hidden} editable={navigationPart.editable}>{arrows}</BuilderPart> : arrows)}
   </div>;

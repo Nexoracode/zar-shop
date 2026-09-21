@@ -3,9 +3,11 @@ import { ArrowLeft } from "lucide-react";
 
 type Props = {
   href: string;
+  /** What the card says (the list's "view all" wording). */
+  label?: string;
 };
 
-export function ViewAllProductCard({ href }: Props) {
+export function ViewAllProductCard({ href, label = "مشاهده همه" }: Props) {
   return (
     <Link
       href={href}
@@ -15,7 +17,7 @@ export function ViewAllProductCard({ href }: Props) {
         <span className="grid size-12 place-items-center rounded-full border-2 border-[#4b5563] text-[#4b5563] transition group-hover:-translate-x-1">
           <ArrowLeft size={22} />
         </span>
-        مشاهده همه
+        {label}
       </span>
     </Link>
   );

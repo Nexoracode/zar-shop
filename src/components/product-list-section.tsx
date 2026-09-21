@@ -4,6 +4,7 @@ import { ChevronLeft, Sparkles } from "lucide-react";
 import { BuilderPart } from "@/components/builder-part";
 import { DiscountExpiryRefresh } from "@/components/discount-expiry-refresh";
 import { DragScrollRow } from "@/components/drag-scroll-row";
+import { ProductListSliderShell } from "@/components/product-list-slider-shell";
 import { FlashSaleCountdown } from "@/components/flash-sale-countdown";
 import { ProductCard, type ProductCardBuilder } from "@/components/product-card";
 import { ProductFeatureTile, ProductRankedItem, ProductThumbItem } from "@/components/product-list-items";
@@ -59,7 +60,7 @@ export function ProductListSection({ sectionId, config, descriptionHtml, data, d
   );
   const header = headerFor(false);
   const arrows = { section: sectionId, hidden: isPartHidden(display, sectionId, "arrows"), editable };
-  const viewAll = (className: string) => <BuilderPart {...part("viewAll")} className={className}><ViewAllProductCard href={moreHref} /></BuilderPart>;
+  const viewAll = (className: string) => <BuilderPart {...part("viewAll")} className={className}><ViewAllProductCard href={moreHref} label={config.moreLabel} /></BuilderPart>;
   const cards = (items: typeof products, className: string, toneOffset = 0) => items.map((product, index) => (
     <div key={product.id} className={className}><ProductCard {...product} storefrontVariant="gallery" imageTone={(index + toneOffset) % 4} builder={builder} /></div>
   ));
@@ -71,10 +72,11 @@ export function ProductListSection({ sectionId, config, descriptionHtml, data, d
       return <Shell>{header}<div className="grid gap-x-6 gap-y-1 sm:grid-cols-2 lg:grid-cols-3">{products.map((product, index) => <ProductThumbItem key={product.id} product={product} rank={index + 1} builder={builder} />)}</div>{refresh}</Shell>;
 
     case "SLIDER":
-      return <Shell>{header}
-        <DragScrollRow ariaLabel={config.title} showNavigation navigationPart={arrows} className="flex w-full min-w-0 max-w-full gap-3 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      // Title and description on the right, the arrows on the left of the same header; the "view all" card ends the row.
+      return <Shell>
+        <ProductListSliderShell sectionId={sectionId} title={config.title} descriptionHtml={description} moreHref={moreHref} moreLabel={config.moreLabel} hidden={{ title: part("title").hidden, description: part("description").hidden, more: part("more").hidden, arrows: arrows.hidden }} editable={editable} className="flex w-full min-w-0 max-w-full gap-3 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {cards(products, cardWidth)}{viewAll(cardWidth)}
-        </DragScrollRow>{refresh}
+        </ProductListSliderShell>{refresh}
       </Shell>;
 
     case "FEATURE_SLIDER":

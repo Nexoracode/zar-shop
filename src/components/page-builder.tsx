@@ -277,16 +277,21 @@ export function PageBuilder({ initialSections, initialDisplay, industry, identit
   }
 
   // A new section joins the page's draft — one undoable step, kept in the browser and saved with everything else.
-  function addSectionToDraft(id: string, section: PendingSection) {
+  function addSectionToDraft(id: string, section: PendingSection, hiddenParts: string[] = []) {
     const position = positionBelow(addAfter);
     setPending((current) => ({ ...current, [id]: section }));
-    setDraft((state) => ({ current: { ...state.current, layout: insertSection(state.current.layout, { id, enabled: true }, position) }, past: [...state.past, state.current], future: [] }));
+    setDraft((state) => ({
+      current: { layout: insertSection(state.current.layout, { id, enabled: true }, position), display: hiddenParts.length ? setSectionDisplay(state.current.display, id, { enabled: true, hiddenParts }) : state.current.display },
+      past: [...state.past, state.current],
+      future: [],
+    }));
   }
 
   // Adding is instant: the new section joins the draft (nothing is sent to the server) and its form opens.
   function createList(layoutChoice: ProductListLayout) {
     const id = newProductListId(crypto.randomUUID());
-    addSectionToDraft(id, { kind: "list", config: newProductListConfig(layoutChoice) });
+    // The card slider ends in a "view all" card, so it starts without the text link too (it can be switched on).
+    addSectionToDraft(id, { kind: "list", config: newProductListConfig(layoutChoice) }, layoutChoice === "SLIDER" ? ["more"] : []);
     setAddStep(null);
     setEditSection(id);
   }
