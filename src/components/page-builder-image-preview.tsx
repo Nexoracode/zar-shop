@@ -40,7 +40,7 @@ export function BuilderImagePreview({ id, label, required, media, hint, error, d
         <Button id={id} type="button" isIconOnly variant="secondary" isDisabled={disabled} aria-label={media ? "تغییر تصویر" : "انتخاب تصویر"} aria-invalid={error ? true : undefined} aria-describedby={error || hint ? messageId : undefined} onPress={onPick} className="absolute left-2 top-2 size-9 min-h-9 min-w-9 rounded-lg bg-white shadow-sm"><CloudUpload size={18} /></Button>
       </div>
       <span id={messageId} className={`field-message mt-2 flex items-start gap-1.5 ${error ? "field-message-error" : "field-message-hint"}`}>
-        {!error && hint && <Info size={14} className="mt-0.5 shrink-0" />}
+        {!error && hint && <span aria-hidden className="flex h-lh shrink-0 items-center"><Info size={14} /></span>}
         <span>{error ?? hint ?? ""}</span>
       </span>
     </div>
