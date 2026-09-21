@@ -10,7 +10,7 @@ import { ProductFeatureTile, ProductRankedItem, ProductThumbItem } from "@/compo
 import { ViewAllProductCard } from "@/components/view-all-product-card";
 import { isPartHidden, sectionDisplay, type PageDisplay } from "@/modules/page-builder/display-parts";
 import type { ProductListData } from "@/modules/page-builder/product-list-data";
-import type { ProductListConfig } from "@/modules/page-builder/product-lists";
+import { productListDefaultMoreLabel, type ProductListConfig } from "@/modules/page-builder/product-lists";
 import { discountEndMoments } from "@/modules/products/discount-window";
 
 const cardWidth = "w-[164px] min-w-[164px] snap-start sm:w-[206px] sm:min-w-[206px] lg:w-[218px] lg:min-w-[218px]";
@@ -49,12 +49,12 @@ export function ProductListSection({ sectionId, config, descriptionHtml, data, d
   const description = descriptionHtml;
   const richStyle = "[&_a]:underline [&_p]:m-0 [&_mark]:rounded-sm [&_mark]:px-0.5";
   const headerFor = (divided: boolean) => (
-    <div className={`flex items-end justify-between gap-4 ${divided ? "mb-6 border-b border-slate-100 pb-5" : "mb-5"}`}>
-      <div className="min-w-0">
-        <BuilderPart {...part("title")}><h2 className="m-0 text-xl font-bold text-[#232934] sm:text-2xl">{config.title}</h2></BuilderPart>
-        {description && <BuilderPart {...part("description")}><div className={`mb-0 mt-1 text-xs leading-6 text-[#858b95] sm:text-sm ${richStyle}`} dangerouslySetInnerHTML={{ __html: description }} /></BuilderPart>}
+    <div className={divided ? "mb-6 border-b border-slate-100 pb-5" : "mb-5"}>
+      <div className="flex items-center justify-between gap-4">
+        <BuilderPart {...part("title")}><h2 className="m-0 min-w-0 text-xl font-bold text-[#232934] sm:text-2xl">{config.title}</h2></BuilderPart>
+        <BuilderPart {...part("more")}><Link href={moreHref} className="ms-auto inline-flex shrink-0 items-center gap-1 text-xs font-bold text-[#232934] transition hover:text-black">{config.moreLabel}<ChevronLeft size={15} /></Link></BuilderPart>
       </div>
-      <BuilderPart {...part("more")}><Link href={moreHref} className="inline-flex shrink-0 items-center gap-1 text-xs font-bold text-[#232934] transition hover:text-black">مشاهده همه<ChevronLeft size={15} /></Link></BuilderPart>
+      {description && <BuilderPart {...part("description")}><div className={`mb-0 mt-1 text-xs leading-6 text-[#858b95] sm:text-sm ${richStyle}`} dangerouslySetInnerHTML={{ __html: description }} /></BuilderPart>}
     </div>
   );
   const header = headerFor(false);
@@ -110,7 +110,7 @@ export function ProductListSection({ sectionId, config, descriptionHtml, data, d
               {description && <BuilderPart {...part("description")}><div className={`m-0 hidden max-w-[11rem] text-center text-xs leading-5 text-[var(--brand-primary-foreground)]/80 lg:block ${richStyle}`} dangerouslySetInnerHTML={{ __html: description }} /></BuilderPart>}
               {config.source === "DISCOUNTED" && expiry && <BuilderPart {...part("countdown")}><FlashSaleCountdown endsAt={expiry} className="shrink-0" /></BuilderPart>}
               <BuilderPart {...part("more")} className="contents"><Link href={moreHref} className="mr-auto inline-flex shrink-0 items-center gap-1 text-xs font-bold text-[var(--brand-primary-foreground)] lg:mr-0 lg:mt-1 lg:rounded-lg lg:px-3 lg:py-2 lg:text-sm lg:transition lg:hover:bg-black/5">
-                <span className="lg:hidden">همه</span><span className="hidden lg:inline">مشاهده همه</span><ChevronLeft size={15} />
+                <span className="lg:hidden">{config.moreLabel === productListDefaultMoreLabel ? "همه" : config.moreLabel}</span><span className="hidden lg:inline">{config.moreLabel}</span><ChevronLeft size={15} />
               </Link></BuilderPart>
             </div>
             <div className="min-w-0 flex-1 overflow-hidden p-3 sm:p-4 lg:p-5">

@@ -34,6 +34,9 @@ export const productListSourceLabels: Record<ProductListSource, string> = {
   CATEGORY: "یک دسته‌بندی",
 };
 
+/** What a product list's "view all" link says unless the store owner words it otherwise. */
+export const productListDefaultMoreLabel = "مشاهده همه";
+
 export const productListConfigSchema = z.object({
   layout: z.enum(productListLayouts, { error: "ظاهر لیست را انتخاب کنید." }),
   title: z.string().trim()
@@ -44,6 +47,11 @@ export const productListConfigSchema = z.object({
     .max(pageSectionLimits.descriptionHtml, "توضیحات بیش از حد طولانی است.")
     .refine((html) => richTextPlainLength(html) <= pageSectionLimits.description, `توضیحات نباید بیشتر از ${pageSectionLimits.description.toLocaleString("fa-IR")} کاراکتر باشد.`)
     .default(""),
+  // The wording of the "view all" link; lists stored before it existed keep the old one.
+  moreLabel: z.string().trim()
+    .min(2, "متن دکمه باید حداقل ۲ نویسه باشد.")
+    .max(pageSectionLimits.moreLabel, `متن دکمه نباید بیشتر از ${pageSectionLimits.moreLabel.toLocaleString("fa-IR")} نویسه باشد.`)
+    .default(productListDefaultMoreLabel),
   source: z.enum(productListSources, { error: "منبع محصولات را انتخاب کنید." }),
   categoryId: z.string().trim().min(1).max(191).nullable(),
   limit: z.number({ error: "تعداد نمایش را به‌صورت عدد وارد کنید." })
@@ -67,9 +75,9 @@ export function newProductListId(uuid: string) {
 
 // The general template's three fixed product sections, as they looked before they became product lists.
 export const builtInProductLists = {
-  FEATURED_PRODUCTS: { layout: "PANEL_SLIDER", title: "شگفت‌انگیز", description: "", source: "DISCOUNTED", categoryId: null, limit: 12 },
-  POPULAR_PRODUCTS: { layout: "SLIDER", title: "محبوب‌ترین کالاها", description: "محصولاتی که بیشتر مورد توجه مشتریان قرار گرفته‌اند", source: "POPULAR", categoryId: null, limit: 12 },
-  LATEST_PRODUCTS: { layout: "SLIDER", title: "جدیدترین محصولات", description: "تازه‌ترین کالاهای اضافه‌شده به فروشگاه", source: "LATEST", categoryId: null, limit: 12 },
+  FEATURED_PRODUCTS: { layout: "PANEL_SLIDER", title: "شگفت‌انگیز", description: "", moreLabel: productListDefaultMoreLabel, source: "DISCOUNTED", categoryId: null, limit: 12 },
+  POPULAR_PRODUCTS: { layout: "SLIDER", title: "محبوب‌ترین کالاها", description: "محصولاتی که بیشتر مورد توجه مشتریان قرار گرفته‌اند", moreLabel: productListDefaultMoreLabel, source: "POPULAR", categoryId: null, limit: 12 },
+  LATEST_PRODUCTS: { layout: "SLIDER", title: "جدیدترین محصولات", description: "تازه‌ترین کالاهای اضافه‌شده به فروشگاه", moreLabel: productListDefaultMoreLabel, source: "LATEST", categoryId: null, limit: 12 },
 } as const satisfies Record<string, ProductListConfig>;
 export type BuiltInProductListId = keyof typeof builtInProductLists;
 export function isBuiltInProductListId(id: string): id is BuiltInProductListId {
@@ -78,7 +86,7 @@ export function isBuiltInProductListId(id: string): id is BuiltInProductListId {
 
 /** A default configuration for a freshly added list of the chosen layout. */
 export function newProductListConfig(layout: ProductListLayout): ProductListConfig {
-  return { layout, title: "محصولات", description: "", source: "LATEST", categoryId: null, limit: productListLayoutMeta[layout].defaultLimit };
+  return { layout, title: "محصولات", description: "", moreLabel: productListDefaultMoreLabel, source: "LATEST", categoryId: null, limit: productListLayoutMeta[layout].defaultLimit };
 }
 
 /**

@@ -61,7 +61,7 @@ function PendingCategories({ id, settings, categories, className }: { id: string
   const items = arrangeCategories(categories, settings);
   return (
     <section {...builderSectionProps(id as HomepageLayoutItemId)} data-builder-draft="" className={`${className} ${categoriesSectionClass}`} aria-label="دسته‌بندی محصولات">
-      <CategoriesContent sectionId={id} title={settings.title} descriptionHtml={description} items={items} display={{}} editable />
+      <CategoriesContent sectionId={id} title={settings.title} descriptionHtml={description} moreLabel={settings.moreLabel} items={items} display={{}} editable />
     </section>
   );
 }

@@ -36,6 +36,8 @@ export const pageSectionLimits = {
   // The optional rich-text description under a section's title: visible characters, and the markup they come in.
   description: 300,
   descriptionHtml: 3000,
+  // The text of a section's "view all" link.
+  moreLabel: 30,
   // How many categories the homepage's category strip may list.
   categoriesMin: 1,
   categoriesMax: 20,

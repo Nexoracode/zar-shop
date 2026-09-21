@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { hostSections, pendingInLayout, replacedSectionsCss, type ContentEdits, type PendingSections } from "./pending-sections";
 
-const listConfig = { layout: "SLIDER", title: "محصولات", description: "", source: "LATEST", categoryId: null, limit: 12 } as const;
+const listConfig = { layout: "SLIDER", title: "محصولات", description: "", moreLabel: "مشاهده همه", source: "LATEST", categoryId: null, limit: 12 } as const;
 const pending: PendingSections = {
   "BANNER_SLIDER:a": { kind: "banner", layout: "SLIDER_WIDE", items: [] },
   "PRODUCT_LIST:b": { kind: "list", config: listConfig },
@@ -24,7 +24,7 @@ test("new sections and edited existing ones are drawn by the homepage; the edite
     HERO: { kind: "hero", items: [] },
     "TILE_GROUP:t": { kind: "tiles", layout: "TWO_COLUMNS", items: [] },
     "PRODUCT_LIST:c": { kind: "list", config: listConfig },
-    CATEGORIES: { kind: "categories", settings: { title: "دسته‌ها", description: "", limit: 10, sort: "MANUAL" } },
+    CATEGORIES: { kind: "categories", settings: { title: "دسته‌ها", description: "", moreLabel: "همه کالاها", limit: 10, sort: "MANUAL" } },
     "HEADER:menu": { kind: "menu", items: [] },
   };
   const layout = ["HERO", "TILE_GROUP:t", "PRODUCT_LIST:c", "BANNER_SLIDER:a", "CATEGORIES"].map((id) => ({ id, enabled: true }));

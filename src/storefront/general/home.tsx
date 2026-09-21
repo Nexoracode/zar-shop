@@ -65,11 +65,11 @@ export async function GeneralHome({ editable = false }: { /** The viewer can edi
 
     {homepage.tileGroups.map((group) => (editable || group.tiles.some((tile) => tile.media)) && <section key={group.id} {...sectionProps(`TILE_GROUP:${group.id}`)} className={container} aria-label="پیشنهادهای تصویری"><StorefrontImageTiles groups={[group]} editable={editable} /></section>)}
 
-    {categories.length > 0 && <section {...sectionProps("CATEGORIES")} className={`${container} ${categoriesSectionClass}`} aria-label="دسته‌بندی محصولات"><CategoriesContent title={sectionSettings.CATEGORIES.title} descriptionHtml={categoriesDescription} items={categories.map(toCategoryStripItem)} display={pageDisplay} editable={editable} /></section>}
+    {categories.length > 0 && <section {...sectionProps("CATEGORIES")} className={`${container} ${categoriesSectionClass}`} aria-label="دسته‌بندی محصولات"><CategoriesContent title={sectionSettings.CATEGORIES.title} descriptionHtml={categoriesDescription} moreLabel={sectionSettings.CATEGORIES.moreLabel} items={categories.map(toCategoryStripItem)} display={pageDisplay} editable={editable} /></section>}
 
     {Object.entries(sectionSettings.categoryStrips).map(([id, settings]) => {
       const items = arrangeCategories(allCategories, settings);
-      return isShown(id) && (items.length > 0 || editable) && <section key={id} {...sectionProps(id as HomepageLayoutItemId)} className={`${container} ${categoriesSectionClass}`} aria-label="دسته‌بندی محصولات"><CategoriesContent sectionId={id} title={settings.title} descriptionHtml={sanitizeSectionDescription(settings.description)} items={items.map(toCategoryStripItem)} display={pageDisplay} editable={editable} /></section>;
+      return isShown(id) && (items.length > 0 || editable) && <section key={id} {...sectionProps(id as HomepageLayoutItemId)} className={`${container} ${categoriesSectionClass}`} aria-label="دسته‌بندی محصولات"><CategoriesContent sectionId={id} title={settings.title} descriptionHtml={sanitizeSectionDescription(settings.description)} moreLabel={settings.moreLabel} items={items.map(toCategoryStripItem)} display={pageDisplay} editable={editable} /></section>;
     })}
 
     {brands.length > 0 && <div {...sectionProps("BRANDS")} className={container}><HomepageBrands brands={brands} /></div>}

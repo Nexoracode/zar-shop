@@ -35,16 +35,16 @@ function resolveCategoryIcon(value: string): LucideIcon {
  * the categories. Used by the homepage itself and by the page builder's draft copy of the strip, so both look the same.
  * `descriptionHtml` has to be cleaned by the caller. Every switchable piece is a `BuilderPart` of the strip's section.
  */
-export function CategoriesContent({ sectionId = "CATEGORIES", title, descriptionHtml, items, display, editable }: { /** The section the strip belongs to (its switches are stored under this id). */ sectionId?: string; title: string; descriptionHtml: string; items: CategoryStripItem[]; display: PageDisplay; editable: boolean }) {
+export function CategoriesContent({ sectionId = "CATEGORIES", title, descriptionHtml, moreLabel, items, display, editable }: { /** The section the strip belongs to (its switches are stored under this id). */ sectionId?: string; title: string; descriptionHtml: string; moreLabel: string; items: CategoryStripItem[]; display: PageDisplay; editable: boolean }) {
   const part = (id: string) => ({ section: sectionId, id, hidden: isPartHidden(display, sectionId, id), editable });
   return (
     <>
-      <div className="mb-6 flex items-end justify-between gap-4">
-        <div className="min-w-0">
-          <BuilderPart {...part("title")}><h2 className="m-0 text-lg font-bold text-[#232934] sm:text-xl">{title}</h2></BuilderPart>
-          {descriptionHtml && <BuilderPart {...part("description")}><div className="mb-0 mt-1 text-xs leading-6 text-[#858b95] sm:text-sm [&_a]:underline [&_p]:m-0 [&_mark]:rounded-sm [&_mark]:px-0.5" dangerouslySetInnerHTML={{ __html: descriptionHtml }} /></BuilderPart>}
+      <div className="mb-6">
+        <div className="flex items-center justify-between gap-4">
+          <BuilderPart {...part("title")}><h2 className="m-0 min-w-0 text-lg font-bold text-[#232934] sm:text-xl">{title}</h2></BuilderPart>
+          <BuilderPart {...part("more")}><Link href="/products" className="ms-auto inline-flex shrink-0 items-center gap-1 text-xs font-bold text-[var(--brand-primary)]">{moreLabel}<ChevronLeft size={15} /></Link></BuilderPart>
         </div>
-        <BuilderPart {...part("more")}><Link href="/products" className="inline-flex items-center gap-1 text-xs font-bold text-[var(--brand-primary)]">همه کالاها<ChevronLeft size={15} /></Link></BuilderPart>
+        {descriptionHtml && <BuilderPart {...part("description")}><div className="mb-0 mt-1 text-xs leading-6 text-[#858b95] sm:text-sm [&_a]:underline [&_p]:m-0 [&_mark]:rounded-sm [&_mark]:px-0.5" dangerouslySetInnerHTML={{ __html: descriptionHtml }} /></BuilderPart>}
       </div>
       <DragScrollRow ariaLabel="دسته‌بندی محصولات" showNavigation className="flex w-full min-w-0 max-w-full gap-3 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {items.map((category, index) => {
