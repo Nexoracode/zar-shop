@@ -23,7 +23,19 @@ function SectionSettingsIcon() {
   );
 }
 
-function placeBox(node: HTMLElement | null, target: HTMLElement | null) {
+/**
+ * How far down the page the store's header covers the top of the window: its bottom edge when it is stuck to the top
+ * (the store's "sticky header" setting), otherwise nothing — a header that scrolls away with the page never covers a section.
+ */
+function stickyHeaderBottom() {
+  const header = document.querySelector<HTMLElement>(`[${BUILDER_SECTION_ATTRIBUTE}="HEADER"]`);
+  if (!header) return 0;
+  const position = getComputedStyle(header).position;
+  return position === "sticky" || position === "fixed" ? Math.max(0, header.getBoundingClientRect().bottom) : 0;
+}
+
+/** Puts a frame over `target`; the part of it that lies under the sticky header (`coverBottom`) is cut off, so the lines never draw over the header. */
+function placeBox(node: HTMLElement | null, target: HTMLElement | null, coverBottom = 0) {
   if (!node) return null;
   if (!target || !target.isConnected) {
     node.style.display = "none";
@@ -40,6 +52,8 @@ function placeBox(node: HTMLElement | null, target: HTMLElement | null) {
   node.style.transform = `translate(0px, ${rect.top}px)`;
   node.style.width = `${document.documentElement.clientWidth}px`;
   node.style.height = `${rect.height}px`;
+  const covered = target.getAttribute(BUILDER_SECTION_ATTRIBUTE) === "HEADER" ? 0 : Math.min(rect.height, Math.max(0, coverBottom - rect.top));
+  node.style.clipPath = covered > 0 ? `inset(${covered}px 0 0 0)` : "none";
   return rect;
 }
 
@@ -94,15 +108,17 @@ export function PageBuilderOverlay({ active, layoutKey, onMove, onRemove, onOpen
 
   const sync = useCallback(() => {
     frameRef.current = 0;
-    placeBox(hoverBoxRef.current, hoveredRef.current === selectedRef.current ? null : hoveredRef.current);
-    const rect = placeBox(selectedBoxRef.current, selectedRef.current);
+    const coverBottom = stickyHeaderBottom();
+    placeBox(hoverBoxRef.current, hoveredRef.current === selectedRef.current ? null : hoveredRef.current, coverBottom);
+    const rect = placeBox(selectedBoxRef.current, selectedRef.current, coverBottom);
     const toolbar = toolbarRef.current;
     if (!rect || !toolbar) return;
     // Sit at the bottom of the section, but never below the dock: a tall section whose bottom is off
     // screen would otherwise hide its own controls.
     const dockTop = document.querySelector(DOCK_SELECTOR)?.getBoundingClientRect().top ?? window.innerHeight;
     const bottom = Math.min(rect.bottom, dockTop) - TOOLBAR_MARGIN;
-    const top = Math.max(bottom - toolbar.offsetHeight, rect.top + TOOLBAR_MARGIN);
+    // ...and never under a sticky header either.
+    const top = Math.max(bottom - toolbar.offsetHeight, rect.top + TOOLBAR_MARGIN, selectedRef.current?.getAttribute(BUILDER_SECTION_ATTRIBUTE) === "HEADER" ? 0 : coverBottom + TOOLBAR_MARGIN);
     toolbar.style.top = `${top - rect.top}px`;
   }, []);
 
