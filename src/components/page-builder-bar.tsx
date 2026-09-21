@@ -1,6 +1,6 @@
 "use client";
 
-import { useId } from "react";
+import { useId, useState } from "react";
 import type { CSSProperties } from "react";
 import Link from "next/link";
 import { Button } from "@heroui/react";
@@ -31,6 +31,11 @@ type PageBuilderBarProps = {
  */
 export function PageBuilderBar({ open, onOpenChange, editing, onEditingChange }: PageBuilderBarProps) {
   const panelId = useId();
+  // Which face is drawn. It follows `editing` at once, except when leaving edit mode while the panel is
+  // sliding down (cancel): then the working face stays until the slide ends, so the buttons don't swap
+  // in front of the viewer mid-animation.
+  const [editingFace, setEditingFace] = useState(editing);
+  if (editing !== editingFace && (editing || open)) setEditingFace(editing);
 
   return (
     // Below lg the storefront's bottom tab bar (66px) owns the screen edge, so the dock sits on top of it.
@@ -48,16 +53,16 @@ export function PageBuilderBar({ open, onOpenChange, editing, onEditingChange }:
         {open ? <ChevronDown size={16} /> : <ChevronUp size={16} />}
       </Button>
 
-      <div id={panelId} inert={!open} className={`grid w-full transition-[grid-template-rows] duration-300 ease-out motion-reduce:transition-none ${open ? "grid-rows-[1fr]" : "grid-rows-[0fr]"}`}>
+      <div id={panelId} inert={!open} className={`grid w-full transition-[grid-template-rows] duration-300 ease-out motion-reduce:transition-none ${open ? "grid-rows-[1fr]" : "grid-rows-[0fr]"}`} onTransitionEnd={(event) => { if (event.target === event.currentTarget && !open) setEditingFace(editing); }}>
         <div className="overflow-hidden">
           <div className="px-3 pb-3 pt-1">
             <div data-page-builder-ui className="pointer-events-auto mx-auto flex max-w-[400px] items-center gap-2 rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-3 shadow-[0_12px_40px_rgba(15,23,42,.18)]">
-              {editing ? (
+              {editingFace ? (
                 <>
                   <Button type="button" variant="primary" style={primaryButtonStyle} className="min-h-10 rounded-lg px-6 text-sm font-bold">
                     ذخیره
                   </Button>
-                  <Button type="button" variant="outline" onPress={() => onEditingChange(false)} className="min-h-10 rounded-lg px-5 text-sm font-bold">
+                  <Button type="button" variant="outline" onPress={() => { onEditingChange(false); onOpenChange(false); }} className="min-h-10 rounded-lg px-5 text-sm font-bold">
                     انصراف
                   </Button>
                   <div className="mr-auto flex items-center gap-1">
