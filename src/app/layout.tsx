@@ -10,6 +10,7 @@ import { getGeneralStoreSettings, isStorefrontAvailable } from "@/modules/settin
 import { getHomepageSettings } from "@/modules/settings/homepage-settings";
 import { brandCssVariables, getBrandSettings } from "@/modules/settings/brand-settings";
 import { getSeoSettings } from "@/modules/settings/seo-settings";
+import { getPageDisplaySettings } from "@/modules/page-builder/display-settings";
 import { adminRoles } from "@/modules/auth/permissions";
 import { StorefrontFooter, StorefrontHeader } from "@/storefront/resolve-chrome";
 import { env } from "@/lib/env";
@@ -50,7 +51,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  const [settings, homepageSettings, brandSettings, user] = await Promise.all([getGeneralStoreSettings(), getHomepageSettings(), getBrandSettings(), getCurrentUser()]);
+  const [settings, homepageSettings, brandSettings, user, pageDisplay] = await Promise.all([getGeneralStoreSettings(), getHomepageSettings(), getBrandSettings(), getCurrentUser(), getPageDisplaySettings()]);
   const viewerIsAdmin = Boolean(user && adminRoles.includes(user.role));
   return (
     <html lang="fa" dir="rtl" data-theme="zar" data-scroll-behavior="smooth">
@@ -58,7 +59,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
         <RouteProgressBar />
         <SiteTracker />
         <AppChrome
-          header={<><SitePromoBanner settings={homepageSettings} /><StorefrontHeader settings={settings} brand={brandSettings} user={user} menuItems={homepageSettings.menuItems} /></>}
+          header={<><SitePromoBanner settings={homepageSettings} /><StorefrontHeader settings={settings} brand={brandSettings} user={user} menuItems={homepageSettings.menuItems} display={pageDisplay} /></>}
           footer={<StorefrontFooter settings={settings} brand={brandSettings} />}
           storefrontAvailable={isStorefrontAvailable(settings, user?.role)}
           maintenanceMode={settings.maintenanceMode}

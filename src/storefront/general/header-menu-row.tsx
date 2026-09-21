@@ -4,8 +4,9 @@ import Link from "next/link";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { GeneralCategoryMegaMenu, type MenuCategory } from "@/storefront/general/category-mega-menu";
 import type { HomepageMenuItem } from "@/modules/settings/homepage-settings";
+import { BuilderPart } from "@/components/builder-part";
 
-export function GeneralHeaderMenuRow({ categories, menuItems, deliveryPicker }: { categories: MenuCategory[]; menuItems: HomepageMenuItem[]; deliveryPicker: ReactNode }) {
+export function GeneralHeaderMenuRow({ categories, menuItems, deliveryPicker, hiddenParts, editable }: { categories: MenuCategory[]; menuItems: HomepageMenuItem[]; deliveryPicker: ReactNode; /** Header parts the store owner switched off (see `display-parts.ts`). */ hiddenParts: string[]; editable: boolean }) {
   const [visible, setVisible] = useState(true);
   const lastScrollY = useRef(0);
   const direction = useRef<"up" | "down">("up");
@@ -68,12 +69,12 @@ export function GeneralHeaderMenuRow({ categories, menuItems, deliveryPicker }: 
     <div className={`relative hidden border-t border-slate-100 bg-white transition-[max-height,opacity,transform,border-color] duration-300 ease-out lg:block ${visible ? "max-h-12 translate-y-0 overflow-visible opacity-100" : "pointer-events-none max-h-0 -translate-y-3 overflow-hidden border-transparent opacity-0"}`} aria-hidden={!visible}>
       <div className="flex h-12 items-stretch px-10">
         <nav className="flex h-full min-w-0 items-stretch gap-8 text-xs" aria-label="دسته‌بندی محصولات">
-          <GeneralCategoryMegaMenu key={visible ? "visible" : "hidden"} categories={categories} enabled={visible} />
-          {menuItems.map((item) => (
+          <BuilderPart section="HEADER" id="categories" hidden={hiddenParts.includes("categories")} editable={editable}><GeneralCategoryMegaMenu key={visible ? "visible" : "hidden"} categories={categories} enabled={visible} /></BuilderPart>
+          <BuilderPart section="HEADER" id="menu" hidden={hiddenParts.includes("menu")} editable={editable}>{menuItems.map((item) => (
             <Link key={item.id} href={item.href} className="relative flex h-full shrink-0 items-center transition after:absolute after:-bottom-px after:left-0 after:h-0.5 after:w-full after:origin-left after:scale-x-0 after:bg-[var(--brand-primary)] after:content-[''] after:transition-transform after:duration-300 after:ease-out hover:text-[var(--brand-primary)] hover:after:scale-x-100 focus-visible:text-[var(--brand-primary)] focus-visible:after:scale-x-100">
               {item.label}
             </Link>
-          ))}
+          ))}</BuilderPart>
         </nav>
         <div className="mr-auto flex shrink-0 items-center pr-6">{deliveryPicker}</div>
       </div>

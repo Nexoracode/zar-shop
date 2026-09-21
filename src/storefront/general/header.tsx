@@ -21,10 +21,13 @@ import { unreadCount } from "@/modules/notifications/service";
 import { getWalletSettings } from "@/modules/settings/wallet-settings";
 import { ensureWallet } from "@/modules/wallet/wallet";
 import { builderSectionProps } from "@/modules/page-builder/sections";
+import { BuilderPart } from "@/components/builder-part";
+import { hasPermission } from "@/modules/auth/permissions";
+import { isPartHidden, isSectionEnabled, type PageDisplay } from "@/modules/page-builder/display-parts";
 
-type Props = { settings: GeneralStoreSettingsInput; brand: BrandSettings; user: User | null; menuItems: HomepageMenuItem[] };
+type Props = { settings: GeneralStoreSettingsInput; brand: BrandSettings; user: User | null; menuItems: HomepageMenuItem[]; display: PageDisplay };
 
-export async function GeneralHeader({ settings, brand, user, menuItems }: Props) {
+export async function GeneralHeader({ settings, brand, user, menuItems, display }: Props) {
   const [categories, cartCount, addresses, notifUnread, walletSettings] = await Promise.all([
     getCategoryTree(),
     user ? getCartProductCount(user.id, settings.industry) : Promise.resolve(0),
@@ -44,32 +47,36 @@ export async function GeneralHeader({ settings, brand, user, menuItems }: Props)
     ? <span className="relative block h-10 w-28"><Image src={brand.mainLogoMedia.url} alt={brand.mainLogoMedia.alt ?? settings.storeName} fill sizes="112px" className="object-contain" /></span>
     : <strong className="text-base font-bold text-[var(--brand-primary)]">{settings.storeName}</strong>;
 
+  // Viewers who can edit the page get every part rendered (the page builder hides/shows them live); everyone else only the enabled ones.
+  const editable = Boolean(user && hasPermission(user.role, "settings:manage"));
+  const part = (id: string) => ({ section: "HEADER", id, hidden: isPartHidden(display, "HEADER", id), editable });
+  const deliveryPicker = <DeliveryAddressPicker initialAddresses={addresses} authenticated={Boolean(user)} user={{ firstName: user?.firstName ?? null, lastName: user?.lastName ?? null, phone: user?.phone ?? null }} compact />;
+  const bellButton = user && !user.isGuest
+    ? <StorefrontNotificationBell initialUnread={notifUnread} />
+    : <Link href="/login" aria-label="اعلان‌ها" className="grid size-10 shrink-0 place-items-center rounded-lg text-[#323741] transition hover:bg-slate-100"><Bell size={20} strokeWidth={1.7} /></Link>;
+
   return <>
-    <header {...builderSectionProps("HEADER")} className={`relative z-50 border-b border-[#e7e9ed] bg-white shadow-[0_2px_10px_rgba(0,0,0,.035)] ${brand.stickyStoreHeader ? "sticky top-0" : ""}`}>
+    {(isSectionEnabled(display, "HEADER") || editable) && <header {...builderSectionProps("HEADER")} className={`relative z-50 border-b border-[#e7e9ed] bg-white shadow-[0_2px_10px_rgba(0,0,0,.035)] ${brand.stickyStoreHeader ? "sticky top-0" : ""}`}>
       {/* Below lg: no logo/hamburger row — Digikala's own mobile home has none either (category
           browsing lives in the bottom nav's "دسته‌بندی" tab, see /categories), just a bell next
           to a full-width search field, then the delivery-address row. */}
       <div className="flex items-center gap-3 px-4 py-3 lg:hidden">
-        {user && !user.isGuest
-          ? <StorefrontNotificationBell initialUnread={notifUnread} />
-          : <Link href="/login" aria-label="اعلان‌ها" className="grid size-10 shrink-0 place-items-center rounded-lg text-[#323741] transition hover:bg-slate-100"><Bell size={20} strokeWidth={1.7} /></Link>}
-        <StorefrontSearch variant="field" className="flex-1" />
+        <BuilderPart {...part("notifications")}>{bellButton}</BuilderPart>
+        <BuilderPart {...part("search")}><StorefrontSearch variant="field" className="flex-1" /></BuilderPart>
       </div>
-      <div className="flex min-h-10 items-center border-t border-slate-100 px-4 lg:hidden"><DeliveryAddressPicker initialAddresses={addresses} authenticated={Boolean(user)} user={{ firstName: user?.firstName ?? null, lastName: user?.lastName ?? null, phone: user?.phone ?? null }} compact /></div>
+      <BuilderPart {...part("delivery")}><div className="flex min-h-10 items-center border-t border-slate-100 px-4 lg:hidden">{deliveryPicker}</div></BuilderPart>
       <div className="hidden h-[72px] grid-cols-[auto_minmax(320px,500px)_1fr] items-center gap-8 px-10 lg:grid">
-        <Link href="/" aria-label={`${settings.storeName}، صفحه اصلی`}>{logo}</Link>
-        <StorefrontSearch variant="field" />
-        <div className="mr-auto flex items-center gap-1 text-[#323741]">
-          {user && !user.isGuest
-            ? <StorefrontNotificationBell initialUnread={notifUnread} />
-            : <Link href="/login" aria-label="اعلان‌ها" className="grid size-10 place-items-center rounded-lg transition hover:bg-slate-100"><Bell size={20} strokeWidth={1.7} /></Link>}
-          <StorefrontAccountMenu user={user ? { firstName: user.firstName, lastName: user.lastName, email: user.email, phone: user.phone, isGuest: user.isGuest } : null} walletBalance={walletBalance} />
+        <BuilderPart {...part("logo")} className="flex items-center lg:col-start-1"><Link href="/" aria-label={`${settings.storeName}، صفحه اصلی`}>{logo}</Link></BuilderPart>
+        <BuilderPart {...part("search")} className="lg:col-start-2"><StorefrontSearch variant="field" /></BuilderPart>
+        <div className="col-start-3 mr-auto flex items-center gap-1 text-[#323741]">
+          <BuilderPart {...part("notifications")}>{bellButton}</BuilderPart>
+          <BuilderPart {...part("account")}><StorefrontAccountMenu user={user ? { firstName: user.firstName, lastName: user.lastName, email: user.email, phone: user.phone, isGuest: user.isGuest } : null} walletBalance={walletBalance} /></BuilderPart>
           <span className="mx-2 h-6 w-px bg-slate-200" />
-          <StorefrontCartLink initialCount={cartCount} className="grid size-10 place-items-center rounded-lg transition hover:bg-[var(--brand-primary)]/8" />
+          <BuilderPart {...part("cart")}><StorefrontCartLink initialCount={cartCount} className="grid size-10 place-items-center rounded-lg transition hover:bg-[var(--brand-primary)]/8" /></BuilderPart>
         </div>
       </div>
-      <GeneralHeaderMenuRow categories={categories} menuItems={menuItems} deliveryPicker={<DeliveryAddressPicker initialAddresses={addresses} authenticated={Boolean(user)} user={{ firstName: user?.firstName ?? null, lastName: user?.lastName ?? null, phone: user?.phone ?? null }} compact />} />
-    </header>
+      <GeneralHeaderMenuRow categories={categories} menuItems={menuItems} deliveryPicker={<BuilderPart {...part("delivery")}>{deliveryPicker}</BuilderPart>} hiddenParts={["categories", "menu"].filter((id) => isPartHidden(display, "HEADER", id))} editable={editable} />
+    </header>}
     <StorefrontBottomNav cartCount={cartCount} accountHref={accountHref} ticketsHref={ticketsHref} />
   </>;
 }

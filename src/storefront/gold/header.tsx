@@ -25,8 +25,11 @@ import { unreadCount } from "@/modules/notifications/service";
 import { getWalletSettings } from "@/modules/settings/wallet-settings";
 import { ensureWallet } from "@/modules/wallet/wallet";
 import { builderSectionProps } from "@/modules/page-builder/sections";
+import { BuilderPart } from "@/components/builder-part";
+import { hasPermission } from "@/modules/auth/permissions";
+import { isPartHidden, isSectionEnabled, type PageDisplay } from "@/modules/page-builder/display-parts";
 
-export async function GoldHeader({ settings, brand, user, menuItems }: { settings: GeneralStoreSettingsInput; brand: BrandSettings; user: User | null; menuItems: HomepageMenuItem[] }) {
+export async function GoldHeader({ settings, brand, user, menuItems, display }: { settings: GeneralStoreSettingsInput; brand: BrandSettings; user: User | null; menuItems: HomepageMenuItem[]; display: PageDisplay }) {
   const [gold, catalogSettings, cartCount, addresses, notifUnread, walletSettings] = await Promise.all([
     settings.industry === "GOLD" ? getGoldPriceForDisplay() : Promise.resolve(null),
     getCatalogSettings(),
@@ -54,15 +57,23 @@ export async function GoldHeader({ settings, brand, user, menuItems }: { setting
     </span>
   );
 
+  // Viewers who can edit the page get every part rendered (the page builder hides/shows them live); everyone else only the enabled ones.
+  const editable = Boolean(user && hasPermission(user.role, "settings:manage"));
+  const part = (id: string) => ({ section: "HEADER", id, hidden: isPartHidden(display, "HEADER", id), editable });
+  const deliveryPicker = <DeliveryAddressPicker initialAddresses={addresses} authenticated={Boolean(user)} user={{ firstName: user?.firstName ?? null, lastName: user?.lastName ?? null, phone: user?.phone ?? null }} compact />;
+  const bellButton = user && !user.isGuest
+    ? <StorefrontNotificationBell initialUnread={notifUnread} />
+    : <Link href="/login" aria-label="اعلان‌ها" className="grid size-10 shrink-0 place-items-center rounded-lg text-[#4d4b47] transition hover:bg-slate-100"><Bell size={20} strokeWidth={1.7} /></Link>;
+
   return <>
-    <header {...builderSectionProps("HEADER")} className={`relative z-50 bg-white [--success:var(--brand-primary)] shadow-[0_2px_10px_rgba(0,0,0,.04)] ${brand.stickyStoreHeader ? "sticky top-0" : ""}`}>
+    {(isSectionEnabled(display, "HEADER") || editable) && <header {...builderSectionProps("HEADER")} className={`relative z-50 bg-white [--success:var(--brand-primary)] shadow-[0_2px_10px_rgba(0,0,0,.04)] ${brand.stickyStoreHeader ? "sticky top-0" : ""}`}>
       <div className="hidden h-10 bg-[#fdf9f2] lg:block">
         <div className="flex h-full w-full items-center justify-between px-10 text-[0.68rem] text-[#4d4b47]">
-          <strong className="font-normal">قیمت لحظه‌ای طلای ۱۸ عیار: <span className="font-bold text-[var(--brand-primary)]">{goldPrice}</span></strong>
-          <DeliveryAddressPicker initialAddresses={addresses} authenticated={Boolean(user)} user={{ firstName: user?.firstName ?? null, lastName: user?.lastName ?? null, phone: user?.phone ?? null }} compact />
-          <nav className="flex items-center gap-7" aria-label="دسترسی‌های اطلاعاتی">
+          <BuilderPart {...part("goldPrice")}><strong className="font-normal">قیمت لحظه‌ای طلای ۱۸ عیار: <span className="font-bold text-[var(--brand-primary)]">{goldPrice}</span></strong></BuilderPart>
+          <BuilderPart {...part("delivery")}>{deliveryPicker}</BuilderPart>
+          <BuilderPart {...part("infoLinks")}><nav className="flex items-center gap-7" aria-label="دسترسی‌های اطلاعاتی">
             <Link href="/blog">وبلاگ</Link><Link href="/#trust">مشتریان ما</Link><Link href="/pages/about">درباره ما</Link><Link href="/pages/contact">تماس با ما</Link>
-          </nav>
+          </nav></BuilderPart>
         </div>
       </div>
 
@@ -70,27 +81,32 @@ export async function GoldHeader({ settings, brand, user, menuItems }: { setting
           browsing lives in the bottom nav's "دسته‌بندی" tab, see /categories), just a bell next
           to a full-width search field. */}
       <div className="flex items-center gap-3 px-4 py-3 lg:hidden">
-        {user && !user.isGuest
-          ? <StorefrontNotificationBell initialUnread={notifUnread} />
-          : <Link href="/login" aria-label="اعلان‌ها" className="grid size-10 shrink-0 place-items-center rounded-lg text-[#4d4b47] transition hover:bg-slate-100"><Bell size={20} strokeWidth={1.7} /></Link>}
-        <StorefrontSearch variant="field" className="flex-1" />
+        <BuilderPart {...part("notifications")}>{bellButton}</BuilderPart>
+        <BuilderPart {...part("search")}><StorefrontSearch variant="field" className="flex-1" /></BuilderPart>
       </div>
 
       <div className="hidden h-14 w-full items-center px-10 lg:flex">
         <div className="flex items-center">
-          <Link href="/" aria-label={`${settings.storeName}، صفحه اصلی`}>{logo}</Link><span className="mx-8 h-7 w-px bg-[#ddd]" /><Link href="/products" className="inline-flex items-center gap-2 text-sm"><WalletCards size={20} /> فروشگاه زر گالری</Link>
+          <BuilderPart {...part("logo")}><Link href="/" aria-label={`${settings.storeName}، صفحه اصلی`}>{logo}</Link></BuilderPart>
+          <BuilderPart {...part("storeLink")}><span className="mx-8 h-7 w-px bg-[#ddd]" /><Link href="/products" className="inline-flex items-center gap-2 text-sm"><WalletCards size={20} /> فروشگاه زر گالری</Link></BuilderPart>
         </div>
-        <nav className="mr-10 flex h-full min-w-0 items-center gap-9 overflow-hidden text-sm" aria-label="منوی اصلی فروشگاه">
+        <BuilderPart {...part("menu")}><nav className="mr-10 flex h-full min-w-0 items-center gap-9 overflow-hidden text-sm" aria-label="منوی اصلی فروشگاه">
           {menuItems.map((item) => <Link key={item.id} href={item.href} className="flex h-full shrink-0 items-center border-b-2 border-transparent transition hover:border-[var(--success)] hover:text-[var(--success)]">{item.label}</Link>)}
-        </nav>
-        <div className="mr-auto flex items-center gap-5 text-[#555]"><StorefrontSearch /><span className="h-7 w-px bg-[#ddd]" />{user && !user.isGuest && <StorefrontNotificationBell initialUnread={notifUnread} />}<StorefrontAccountMenu user={user ? { firstName: user.firstName, lastName: user.lastName, email: user.email, phone: user.phone, isGuest: user.isGuest } : null} walletBalance={walletBalance} /><StorefrontCartLink initialCount={cartCount} iconSize={22} /></div>
+        </nav></BuilderPart>
+        <div className="mr-auto flex items-center gap-5 text-[#555]">
+          <BuilderPart {...part("search")}><StorefrontSearch /></BuilderPart>
+          <span className="h-7 w-px bg-[#ddd]" />
+          {user && !user.isGuest && <BuilderPart {...part("notifications")}><StorefrontNotificationBell initialUnread={notifUnread} /></BuilderPart>}
+          <BuilderPart {...part("account")}><StorefrontAccountMenu user={user ? { firstName: user.firstName, lastName: user.lastName, email: user.email, phone: user.phone, isGuest: user.isGuest } : null} walletBalance={walletBalance} /></BuilderPart>
+          <BuilderPart {...part("cart")}><StorefrontCartLink initialCount={cartCount} iconSize={22} /></BuilderPart>
+        </div>
       </div>
 
-      <div className="flex h-8 items-center justify-between bg-[#fdf9f2] px-4 text-[0.64rem] lg:hidden">
+      <BuilderPart {...part("goldPrice")}><div className="flex h-8 items-center justify-between bg-[#fdf9f2] px-4 text-[0.64rem] lg:hidden">
         <span>قیمت لحظه‌ای طلای ۱۸ عیار:</span><strong className="text-[var(--brand-primary)]">{goldPrice}</strong>
-      </div>
-      <div className="flex min-h-10 items-center border-t border-[#eee9e2] px-4 lg:hidden"><DeliveryAddressPicker initialAddresses={addresses} authenticated={Boolean(user)} user={{ firstName: user?.firstName ?? null, lastName: user?.lastName ?? null, phone: user?.phone ?? null }} compact /></div>
-    </header>
+      </div></BuilderPart>
+      <BuilderPart {...part("delivery")}><div className="flex min-h-10 items-center border-t border-[#eee9e2] px-4 lg:hidden">{deliveryPicker}</div></BuilderPart>
+    </header>}
 
     <StorefrontBottomNav cartCount={cartCount} accountHref={accountHref} ticketsHref={ticketsHref} />
   </>;

@@ -4,6 +4,8 @@ import { PageBuilder } from "@/components/page-builder";
 import { getCurrentUser } from "@/modules/auth/session";
 import { hasPermission } from "@/modules/auth/permissions";
 import { getHomepageSettings } from "@/modules/settings/homepage-settings";
+import { getPageDisplaySettings } from "@/modules/page-builder/display-settings";
+import { getStoreIndustry } from "@/modules/settings/store-settings";
 import { resolveStorefrontHome } from "@/storefront/resolve-storefront";
 import { env } from "@/lib/env";
 
@@ -24,10 +26,11 @@ export default async function HomePage() {
   // permission (ADMIN only) — the same gate as the admin homepage settings pages.
   const user = await getCurrentUser();
   const canEditPages = Boolean(user && hasPermission(user.role, "settings:manage"));
+  const [homepage, display, industry] = canEditPages ? await Promise.all([getHomepageSettings(), getPageDisplaySettings(), getStoreIndustry()]) : [];
   return (
     <>
       <StorefrontHome />
-      {canEditPages ? <PageBuilder initialSections={(await getHomepageSettings()).sections} /> : null}
+      {homepage && display && industry ? <PageBuilder initialSections={homepage.sections} initialDisplay={display} industry={industry} /> : null}
     </>
   );
 }
