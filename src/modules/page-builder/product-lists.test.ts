@@ -4,7 +4,7 @@ import { pageSectionLimits } from "../settings/settings-limits";
 import { normalizeDisplay } from "./display-parts";
 import {
   builtInProductLists, isProductListId, newProductListConfig, newProductListId, productListConfigSchema, productListDisplayConfig, productListLayoutMeta, productListLayouts, productListMoreHref,
-  pruneDisplayForList, resolveProductLists,
+  productListSourceLabels, productListSources, pruneDisplayForList, resolveProductLists,
 } from "./product-lists";
 
 test("there are eight layouts, each with a name and a sensible count", () => {
@@ -101,6 +101,7 @@ test("the view-more link follows the source", () => {
   assert.equal(productListMoreHref({ ...config, source: "LATEST" }, null), "/products?sortby=newest");
   assert.equal(productListMoreHref({ ...config, source: "CATEGORY", categoryId: "c" }, "phones"), "/products?category=phones");
   assert.equal(productListMoreHref({ ...config, source: "DISCOUNTED" }, null), "/products");
+  assert.equal(productListMoreHref({ ...config, source: "BEST_SELLING" }, null), "/products?sortby=popular");
 });
 
 test("the description is optional rich text, bounded by its visible characters, and lists stored without one still load", () => {
@@ -116,4 +117,11 @@ test("the description is optional rich text, bounded by its visible characters, 
   assert.equal(resolveProductLists({ PRODUCT_LISTS: { "PRODUCT_LIST:old": withoutDescription } }, "GENERAL")["PRODUCT_LIST:old"].description, "");
   // The popular products keep the sentence they always had under their title.
   assert.ok(resolveProductLists(null, "GENERAL").POPULAR_PRODUCTS.description.length > 0);
+});
+
+test("the best sellers are a source of their own, next to the popular products", () => {
+  assert.ok(productListSources.includes("BEST_SELLING"));
+  assert.equal(productListSourceLabels.BEST_SELLING, "پرفروش‌ترین محصولات");
+  assert.equal(productListConfigSchema.safeParse({ ...newProductListConfig("SLIDER"), source: "BEST_SELLING" }).success, true);
+  assert.equal(productListConfigSchema.safeParse({ ...newProductListConfig("SLIDER"), source: "BEST_SELLING", categoryId: "c" }).success, false);
 });

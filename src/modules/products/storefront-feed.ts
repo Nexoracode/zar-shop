@@ -151,6 +151,43 @@ export async function getStorefrontFlashDeals(limit = 12): Promise<StorefrontPro
   return markFavoriteCards(products.map((product) => serializeProductCard(product, goldPrice, settings.currency)).filter((card) => card.originalPrice));
 }
 
+// The order statuses whose lines count as sales: paid and beyond, not pending, expired, cancelled or refunded.
+const soldOrderStatuses = ["PAID", "PROCESSING", "SHIPPED", "DELIVERED"] as const;
+
+/**
+ * The best-selling products: active products of the store's industry ranked by the units sold in paid orders (the sum
+ * of the lines' quantities), best first. Products that never sold are not included, so a young store has a short list.
+ * Ranking happens over the sales table, then the surviving products are loaded and put back in that order.
+ */
+export async function getStorefrontBestSellers(input: { limit: number; categoryId?: string }): Promise<StorefrontProductFeed["items"]> {
+  const [settings, catalogSettings] = await Promise.all([getGeneralStoreSettings(), getCatalogSettings()]);
+  // More than asked for: some of the top sellers may be inactive, out of stock (when those are hidden) or of another industry.
+  const sold = await db.orderItem.groupBy({
+    by: ["productId"],
+    where: { productId: { not: null }, order: { status: { in: [...soldOrderStatuses] } } },
+    _sum: { quantity: true },
+    orderBy: { _sum: { quantity: "desc" } },
+    take: Math.max(input.limit * 4, 50),
+  });
+  const rank = new Map(sold.flatMap((row, index) => (row.productId ? [[row.productId, index] as const] : [])));
+  if (!rank.size) return [];
+
+  const where: Prisma.ProductWhereInput = {
+    id: { in: [...rank.keys()] },
+    status: "ACTIVE",
+    storeIndustry: settings.industry,
+    ...(input.categoryId ? { categoryId: input.categoryId } : {}),
+    ...(catalogSettings.hideOutOfStockProducts ? { stock: { gt: 0 } } : {}),
+  };
+  const [gold, products] = await Promise.all([
+    settings.industry === "GOLD" ? getGoldPriceForDisplay() : Promise.resolve(null),
+    db.product.findMany({ where, select: productSelect }),
+  ]);
+  const goldPrice = gold?.pricePerGram18 ?? null;
+  const ranked = products.sort((a, b) => (rank.get(a.id) ?? Number.MAX_SAFE_INTEGER) - (rank.get(b.id) ?? Number.MAX_SAFE_INTEGER)).slice(0, input.limit);
+  return markFavoriteCards(ranked.map((product) => serializeProductCard(product, goldPrice, settings.currency)));
+}
+
 /**
  * Products a signed-in customer looked at recently, newest visit first. Visits to
  * inactive/removed products or ones outside the store's current industry are skipped

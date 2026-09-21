@@ -24,11 +24,12 @@ export const productListLayoutMeta: Record<ProductListLayout, { label: string; d
   GROUPED_PANELS: { label: "قاب‌های گروهی", defaultLimit: 12, slider: false },
 };
 
-export const productListSources = ["LATEST", "POPULAR", "DISCOUNTED", "CATEGORY"] as const;
+export const productListSources = ["LATEST", "POPULAR", "BEST_SELLING", "DISCOUNTED", "CATEGORY"] as const;
 export type ProductListSource = (typeof productListSources)[number];
 export const productListSourceLabels: Record<ProductListSource, string> = {
   LATEST: "جدیدترین محصولات",
   POPULAR: "محبوب‌ترین محصولات",
+  BEST_SELLING: "پرفروش‌ترین محصولات",
   DISCOUNTED: "شگفت‌انگیز (تخفیف‌دار)",
   CATEGORY: "یک دسته‌بندی",
 };
@@ -124,7 +125,7 @@ export function productListDisplayConfig(config: ProductListConfig, industry: Pa
 
 /** Where a product list's "view more" link goes; `categorySlug` is the chosen category's slug when the source is one. */
 export function productListMoreHref(config: ProductListConfig, categorySlug: string | null) {
-  if (config.source === "POPULAR") return "/products?sortby=popular";
+  if (config.source === "POPULAR" || config.source === "BEST_SELLING") return "/products?sortby=popular";
   if (config.source === "LATEST") return "/products?sortby=newest";
   if (config.source === "CATEGORY" && categorySlug) return `/products?category=${categorySlug}`;
   return "/products";

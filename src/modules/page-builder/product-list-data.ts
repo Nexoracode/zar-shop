@@ -1,6 +1,6 @@
 import { db } from "@/lib/db";
 import { earliestDiscountEnd } from "@/modules/products/discount-window";
-import { getStorefrontFlashDeals, getStorefrontProductFeed } from "@/modules/products/storefront-feed";
+import { getStorefrontBestSellers, getStorefrontFlashDeals, getStorefrontProductFeed } from "@/modules/products/storefront-feed";
 import type { StorefrontProductCardItem } from "@/modules/products/storefront-feed-contract";
 import { productListMoreHref, type ProductListConfig } from "@/modules/page-builder/product-lists";
 
@@ -17,6 +17,7 @@ export async function getProductListData(config: ProductListConfig): Promise<Pro
     const products = await getStorefrontFlashDeals(config.limit);
     return { products, expiry: earliestDiscountEnd(products), moreHref: productListMoreHref(config, null) };
   }
+  if (config.source === "BEST_SELLING") return { products: await getStorefrontBestSellers({ limit: config.limit }), expiry: null, moreHref: productListMoreHref(config, null) };
   const category = config.source === "CATEGORY" && config.categoryId
     ? await db.category.findFirst({ where: { id: config.categoryId, isActive: true }, select: { slug: true } })
     : null;
