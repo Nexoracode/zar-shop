@@ -8,7 +8,7 @@ import { auditRequestContext } from "@/modules/audit/request-context";
 import { getPermittedActor } from "@/modules/auth/session";
 import { sanitizeSectionDescription } from "@/modules/page-builder/rich-text-sanitize";
 import { parseStoredDisplay } from "@/modules/page-builder/display-parts";
-import { addDraftSectionId } from "@/modules/page-builder/draft-sections";
+import { addDraftSectionId, readDraftSectionIds } from "@/modules/page-builder/draft-sections";
 import { isBuiltInProductListId, isProductListId, newProductListId, productListConfigSchema, pruneDisplayForList, resolveProductLists, type ProductListConfig } from "@/modules/page-builder/product-lists";
 import { getStoreIndustry, STORE_SETTING_ID } from "@/modules/settings/store-settings";
 
@@ -59,10 +59,21 @@ export async function POST(request: Request) {
   try {
     const actor = await getPermittedActor("settings:manage");
     if (!actor) return NextResponse.json({ message: "دسترسی غیرمجاز است." }, { status: 403 });
-    const config = clean(productListConfigSchema.parse(await request.json()));
+    const body = await request.json();
+    const config = clean(productListConfigSchema.parse(body));
     const problem = await categoryProblem(config);
     if (problem) return problem;
-    const id = newProductListId(crypto.randomUUID());
+    // The page builder creates a list under the id it already gave it in its draft; saving again after a failed
+    // attempt finds the draft it made and overwrites it.
+    const requestedId = typeof body?.id === "string" ? body.id : null;
+    if (requestedId) {
+      const current = await db.storeSetting.findUnique({ where: { id: STORE_SETTING_ID }, select: { pageSectionSettings: true } });
+      if (!isProductListId(requestedId)) return NextResponse.json({ message: "شناسه لیست محصولات معتبر نیست." }, { status: 422 });
+      if (requestedId in resolveProductLists(current?.pageSectionSettings, await getStoreIndustry()) && !readDraftSectionIds(current?.pageSectionSettings).includes(requestedId)) {
+        return NextResponse.json({ message: "این لیست محصولات قبلاً ثبت شده است." }, { status: 409 });
+      }
+    }
+    const id = requestedId ?? newProductListId(crypto.randomUUID());
     await storeList(id, config, actor, request, "PRODUCT_LIST_CREATE");
     return NextResponse.json({ id });
   } catch (error) {

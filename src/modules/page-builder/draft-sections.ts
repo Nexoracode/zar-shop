@@ -18,7 +18,8 @@ export function readDraftSectionIds(stored: unknown): string[] {
 
 /** The document with `ids` as its drafts (the key is dropped when there are none). */
 export function withDraftSectionIds(stored: unknown, ids: string[]): Record<string, unknown> {
-  const { [DRAFTS_KEY]: _previous, ...rest } = asDocument(stored);
+  const rest = { ...asDocument(stored) };
+  delete rest[DRAFTS_KEY];
   return ids.length ? { ...rest, [DRAFTS_KEY]: [...new Set(ids)] } : rest;
 }
 

@@ -6,6 +6,7 @@ import { DragScrollRow } from "@/components/drag-scroll-row";
 import { HomepageBrands } from "@/components/homepage-brands";
 import { HomepageLatestArticles } from "@/components/homepage-latest-articles";
 import { HomepageBestSellers } from "@/components/homepage-best-sellers";
+import { PendingSectionsHost } from "@/components/pending-sections-host";
 import { ProductListSection } from "@/components/product-list-section";
 import { StorefrontHeroSlider } from "@/components/storefront-hero-slider";
 import { StorefrontImageTiles } from "@/components/storefront-image-tiles";
@@ -18,6 +19,7 @@ import { BannerSlider } from "@/components/banner-slider";
 import { getBannerSetData } from "@/modules/page-builder/banner-slider-data";
 import { isTileLayout } from "@/modules/page-builder/banners";
 import { getProductListData } from "@/modules/page-builder/product-list-data";
+import { sanitizeSectionDescription } from "@/modules/page-builder/rich-text-sanitize";
 import { getStorefrontProductFeed } from "@/modules/products/storefront-feed";
 import { arrangeCategories } from "@/modules/page-builder/section-settings";
 import { getPageSectionSettings } from "@/modules/page-builder/section-settings-store";
@@ -93,11 +95,12 @@ export async function GeneralHome({ editable = false }: { /** The viewer can edi
       ? (editable || bannerSets.tileGroups[id].tiles.some((tile) => tile.media)) && <section key={id} {...sectionProps(id as HomepageLayoutItemId)} className={container} aria-label="پیشنهادهای تصویری"><StorefrontImageTiles groups={[bannerSets.tileGroups[id]]} editable={editable} /></section>
       : (bannerSets.slides[id].length > 0 || editable) && <div key={id} {...sectionProps(id as HomepageLayoutItemId)} className={container}><BannerSlider sectionId={id} layout={slider.layout} slides={bannerSets.slides[id]} arrowsHidden={isPartHidden(pageDisplay, id, "arrows")} dotsHidden={isPartHidden(pageDisplay, id, "dots")} editable={editable} /></div>))}
 
-    {productLists.map(([id, config], index) => isShown(id) && (listsData[index].products.length > 0 || editable) && <div key={id} {...sectionProps(id as HomepageLayoutItemId)} className={container}><ProductListSection sectionId={id} config={config} data={listsData[index]} display={pageDisplay} editable={editable} /></div>)}
+    {productLists.map(([id, config], index) => isShown(id) && (listsData[index].products.length > 0 || editable) && <div key={id} {...sectionProps(id as HomepageLayoutItemId)} className={container}><ProductListSection sectionId={id} config={config} descriptionHtml={sanitizeSectionDescription(config.description)} data={listsData[index]} display={pageDisplay} editable={editable} /></div>)}
 
     {popularFeed.items.length > 0 && <div {...sectionProps("BEST_SELLING_PRODUCTS")} className={container}><HomepageBestSellers products={popularFeed.items} /></div>}
 
     {latestArticles.length > 0 && <div {...sectionProps("ARTICLES")} className={`${container} min-w-0 overflow-hidden rounded-2xl border border-[#e6e8ec] bg-white px-4 py-6 sm:px-6 lg:px-7 lg:py-8`}><HomepageLatestArticles articles={latestArticles} /></div>}
 
+    {editable && <PendingSectionsHost industry="GENERAL" />}
   </main>;
 }

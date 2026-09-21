@@ -18,7 +18,7 @@ import { homepageFieldLimits } from "@/modules/settings/settings-limits";
  * know where banners are stored: `save` gets the whole new list and stores it. The back arrow returns to the banner
  * list, the X closes the builder's dialogs.
  */
-export function BannerItemDialog({ items, itemId, allowMobile, allowDelete, maxItems, sizeHints, save, onSaved, onBack, onClose }: {
+export function BannerItemDialog({ items, itemId, allowMobile, allowDelete, maxItems, sizeHints, quiet = false, save, onSaved, onBack, onClose }: {
   items: HeroSlideDraft[];
   itemId: string | null;
   allowMobile: boolean;
@@ -27,6 +27,8 @@ export function BannerItemDialog({ items, itemId, allowMobile, allowDelete, maxI
   maxItems: number | null;
   /** Recommended picture sizes, when there are any to recommend. */
   sizeHints?: { desktop: string; mobile: string };
+  /** No "saved" message: nothing was stored on the server (the banner belongs to the page builder's draft). */
+  quiet?: boolean;
   save: (next: HeroSlideDraft[]) => Promise<void>;
   onSaved: () => void;
   onBack: () => void;
@@ -49,7 +51,7 @@ export function BannerItemDialog({ items, itemId, allowMobile, allowDelete, maxI
     setFormError("");
     try {
       await save(next);
-      toast.success(successMessage);
+      if (!quiet) toast.success(successMessage);
       onSaved();
     } catch (reason) {
       setFormError(reason instanceof Error ? reason.message : "ذخیره بنر انجام نشد.");

@@ -8,7 +8,7 @@ import { auditRequestContext } from "@/modules/audit/request-context";
 import { getPermittedActor } from "@/modules/auth/session";
 import { bannerSliderConfigSchema, bannerSliderDisplayConfig, isBannerSliderId, newBannerSliderId, resolveBannerSliders, type BannerSliderConfig } from "@/modules/page-builder/banner-sliders";
 import { normalizeDisplay, parseStoredDisplay } from "@/modules/page-builder/display-parts";
-import { addDraftSectionId } from "@/modules/page-builder/draft-sections";
+import { addDraftSectionId, readDraftSectionIds } from "@/modules/page-builder/draft-sections";
 import { STORE_SETTING_ID } from "@/modules/settings/store-settings";
 
 // The banner sets added from the page builder — sliders and the tile looks: POST adds one (as a draft, see
@@ -53,10 +53,21 @@ export async function POST(request: Request) {
   try {
     const actor = await getPermittedActor("settings:manage");
     if (!actor) return NextResponse.json({ message: "دسترسی غیرمجاز است." }, { status: 403 });
-    const config = bannerSliderConfigSchema.parse(await request.json());
+    const body = await request.json();
+    const config = bannerSliderConfigSchema.parse(body);
     const problem = await mediaProblem(config);
     if (problem) return problem;
-    const id = newBannerSliderId(crypto.randomUUID());
+    // The page builder creates a banner under the id it already gave it in its draft; saving again after a failed
+    // attempt finds the draft it made and overwrites it.
+    const requestedId = typeof body?.id === "string" ? body.id : null;
+    if (requestedId) {
+      const current = await db.storeSetting.findUnique({ where: { id: STORE_SETTING_ID }, select: { pageSectionSettings: true } });
+      if (!isBannerSliderId(requestedId)) return NextResponse.json({ message: "شناسه بنر معتبر نیست." }, { status: 422 });
+      if (requestedId in resolveBannerSliders(current?.pageSectionSettings) && !readDraftSectionIds(current?.pageSectionSettings).includes(requestedId)) {
+        return NextResponse.json({ message: "این بنر قبلاً ثبت شده است." }, { status: 409 });
+      }
+    }
+    const id = requestedId ?? newBannerSliderId(crypto.randomUUID());
     await storeSlider(id, config, actor, request, "BANNER_SLIDER_CREATE");
     return NextResponse.json({ id });
   } catch (error) {

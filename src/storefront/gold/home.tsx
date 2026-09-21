@@ -5,6 +5,7 @@ import type { Prisma } from "@generated/prisma/client";
 import { HomepageBrands } from "@/components/homepage-brands";
 import { HomepageLatestArticles } from "@/components/homepage-latest-articles";
 import { HomepageProductFeed } from "@/components/homepage-product-feed";
+import { PendingSectionsHost } from "@/components/pending-sections-host";
 import { ProductListSection } from "@/components/product-list-section";
 import { StorefrontHeroSlider } from "@/components/storefront-hero-slider";
 import { StorefrontLicenses } from "@/components/storefront-licenses";
@@ -19,6 +20,7 @@ import { BannerSlider } from "@/components/banner-slider";
 import { getBannerSetData } from "@/modules/page-builder/banner-slider-data";
 import { isTileLayout } from "@/modules/page-builder/banners";
 import { getProductListData } from "@/modules/page-builder/product-list-data";
+import { sanitizeSectionDescription } from "@/modules/page-builder/rich-text-sanitize";
 import { getPageSectionSettings } from "@/modules/page-builder/section-settings-store";
 import { getPageDisplaySettings } from "@/modules/page-builder/display-settings";
 import { isSectionHiddenAtRender } from "@/modules/page-builder/layout-draft";
@@ -90,7 +92,7 @@ export async function GoldHome({ editable = false }: { /** The viewer can edit t
       ? (editable || bannerSets.tileGroups[id].tiles.some((tile) => tile.media)) && <section key={id} {...sectionProps(id as HomepageLayoutItemId)} className="bg-white py-5 lg:py-10" aria-label="پیشنهادهای تصویری"><div className={container}><StorefrontImageTiles groups={[bannerSets.tileGroups[id]]} editable={editable} /></div></section>
       : (bannerSets.slides[id].length > 0 || editable) && <section key={id} {...sectionProps(id as HomepageLayoutItemId)} className="bg-white py-5 lg:py-10"><div className={container}><BannerSlider sectionId={id} layout={slider.layout} slides={bannerSets.slides[id]} arrowsHidden={isPartHidden(pageDisplay, id, "arrows")} dotsHidden={isPartHidden(pageDisplay, id, "dots")} editable={editable} /></div></section>))}
 
-    {productLists.map(([id, config], index) => isShown(id) && (listsData[index].products.length > 0 || editable) && <section key={id} {...sectionProps(id as HomepageLayoutItemId)} className="bg-white py-5 lg:py-10"><div className={container}><ProductListSection sectionId={id} config={config} data={listsData[index]} display={pageDisplay} editable={editable} /></div></section>)}
+    {productLists.map(([id, config], index) => isShown(id) && (listsData[index].products.length > 0 || editable) && <section key={id} {...sectionProps(id as HomepageLayoutItemId)} className="bg-white py-5 lg:py-10"><div className={container}><ProductListSection sectionId={id} config={config} descriptionHtml={sanitizeSectionDescription(config.description)} data={listsData[index]} display={pageDisplay} editable={editable} /></div></section>)}
 
     <section {...sectionProps("ABOUT")} className="bg-white py-5 lg:py-[60px]">
       <div className={`${container} grid min-h-[340px] items-center gap-8 lg:grid-cols-[1.15fr_.85fr]`}>
@@ -128,5 +130,6 @@ export async function GoldHome({ editable = false }: { /** The viewer can edit t
 
       <StorefrontLicenses storeName={settings.storeName} settings={homepage.licenses} />
     </section>
+    {editable && <PendingSectionsHost industry="GOLD" />}
   </main>;
 }

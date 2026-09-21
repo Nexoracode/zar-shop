@@ -37,8 +37,10 @@ function BannerEditFlow({ set, onChanged, onClose }: { set: BannerSet; onChanged
     try {
       const items = isTileLayout(layout) ? resizeBannerItems(set.items, bannerTileCount[layout], () => crypto.randomUUID()) : set.items;
       await set.save(items, layout);
-      toast.success("ظاهر بنر ذخیره شد");
-      onChanged();
+      if (!set.local) {
+        toast.success("ظاهر بنر ذخیره شد");
+        onChanged();
+      }
       setStep("list");
     } catch (reason) {
       toast.danger("تغییر ظاهر بنر انجام نشد", { description: reason instanceof Error ? reason.message : "خطای ناشناخته" });
@@ -51,7 +53,7 @@ function BannerEditFlow({ set, onChanged, onClose }: { set: BannerSet; onChanged
     return <BannerLayoutPicker title="تغییر ظاهر بنر" layouts={set.kind === "tiles" ? bannerTileLayouts : bannerSliderLayouts} initial={set.layout} saving={changingLayout} onConfirm={(layout) => void changeLayout(layout)} onBack={() => setStep("list")} onClose={onClose} />;
   }
   if (typeof step === "object") {
-    return <BannerItemDialog key={step.itemId ?? "new"} items={set.items} itemId={step.itemId} allowMobile={set.kind !== "tiles"} allowDelete={!fixedSize} maxItems={fixedSize ? null : capacity} sizeHints={sizeHints} save={(items) => set.save(items, set.layout)} onSaved={() => { onChanged(); setStep("list"); }} onBack={() => setStep("list")} onClose={onClose} />;
+    return <BannerItemDialog key={step.itemId ?? "new"} items={set.items} itemId={step.itemId} allowMobile={set.kind !== "tiles"} allowDelete={!fixedSize} maxItems={fixedSize ? null : capacity} sizeHints={sizeHints} quiet={set.local} save={(items) => set.save(items, set.layout)} onSaved={() => { if (!set.local) onChanged(); setStep("list"); }} onBack={() => setStep("list")} onClose={onClose} />;
   }
   return (
     <SectionEditDialog
@@ -72,10 +74,12 @@ function BannerEditFlow({ set, onChanged, onClose }: { set: BannerSet; onChanged
  * section is created as a server-side draft and the parent is told, so it can place it and decide its fate — "save"
  * makes it part of the page, "cancel" throws it away.
  */
-export function PageBuilderBanners({ hero, tileGroups, sliders, sections, editSectionId, adding, onEditClose, onAddBack, onAddClose, onCreated, onChanged }: {
+export function PageBuilderBanners({ hero, tileGroups, sliders, pending, sections, editSectionId, adding, onEditClose, onAddBack, onAddClose, onCreate, onPendingChange, onChanged }: {
   hero: HeroValues;
   tileGroups: TileGroupView[];
   sliders: Record<string, SliderView>;
+  /** The banners added in this edit and not saved yet: they live in the builder's draft, so editing them sends nothing. */
+  pending: Record<string, SliderView>;
   /** The saved order of the page's sections — the tiles API takes it with the tile rows. */
   sections: LayoutSection[];
   editSectionId: string | null;
@@ -83,18 +87,19 @@ export function PageBuilderBanners({ hero, tileGroups, sliders, sections, editSe
   onEditClose: () => void;
   onAddBack: () => void;
   onAddClose: () => void;
-  /** A new banner section exists on the server (as a draft); the builder puts it into its draft of the layout. */
-  onCreated: (sectionId: string) => void;
+  /** A look was chosen for a new banner: the builder adds it to its draft (nothing is stored yet). */
+  onCreate: (layout: BannerLayout) => void;
+  /** A pending banner's look or banners changed. */
+  onPendingChange: (id: string, view: SliderView) => void;
   onChanged: () => void;
 }) {
   // What was saved during this visit wins over what the server sent until the page has caught up.
   const [localHero, setLocalHero] = useState<BannerItem[] | null>(null);
   const [localGroups, setLocalGroups] = useState<Record<string, TileGroupView>>({});
   const [localSliders, setLocalSliders] = useState<Record<string, SliderView>>({});
-  const [creating, setCreating] = useState(false);
 
   const groups = [...tileGroups.map((group) => localGroups[group.id] ?? group), ...Object.values(localGroups).filter((group) => !tileGroups.some((known) => known.id === group.id))];
-  const allSliders = { ...sliders, ...localSliders };
+  const allSliders = { ...sliders, ...localSliders, ...pending };
 
   async function saveTiles(nextGroups: TileGroupView[], nextSections: LayoutSection[]) {
     await request("/api/admin/settings/homepage/tiles", "PATCH", { sections: nextSections, tileGroups: tileGroupsPayload(nextGroups) }, "ذخیرهٔ بنر انجام نشد.");
@@ -117,7 +122,9 @@ export function PageBuilderBanners({ hero, tileGroups, sliders, sections, editSe
     if (id?.startsWith("BANNER_SLIDER:")) {
       const slider = allSliders[id];
       if (!slider) return null;
-      return { id, kind: isTileLayout(slider.layout) ? "tiles" : "slider", layout: slider.layout, items: slider.items, save: async (items, layout) => {
+      const kind = isTileLayout(slider.layout) ? "tiles" : "slider";
+      if (id in pending) return { id, kind, layout: slider.layout, items: slider.items, local: true, save: async (items, layout) => onPendingChange(id, { layout, items }) };
+      return { id, kind, layout: slider.layout, items: slider.items, save: async (items, layout) => {
         await request("/api/admin/settings/banner-sliders", "PATCH", { id, config: sliderConfigPayload(layout, items) }, "ذخیرهٔ بنر انجام نشد.");
         setLocalSliders((current) => ({ ...current, [id]: { layout, items } }));
       } };
@@ -125,27 +132,11 @@ export function PageBuilderBanners({ hero, tileGroups, sliders, sections, editSe
     return null;
   }
 
-  async function create(layout: BannerLayout) {
-    setCreating(true);
-    try {
-      // A tile look starts with its empty slots, a slider with no banners. The set is created as a draft on the server;
-      // it joins the page's layout (the builder's draft) and stays a draft until the builder's "save".
-      const items = isTileLayout(layout) ? resizeBannerItems([], bannerTileCount[layout], () => crypto.randomUUID()) : [];
-      const { id } = await request("/api/admin/settings/banner-sliders", "POST", sliderConfigPayload(layout, items), "افزودن بنر انجام نشد.");
-      setLocalSliders((current) => ({ ...current, [id]: { layout, items } }));
-      onCreated(id);
-    } catch (reason) {
-      toast.danger("افزودن بنر انجام نشد", { description: reason instanceof Error ? reason.message : "خطای ناشناخته" });
-    } finally {
-      setCreating(false);
-    }
-  }
-
   const editSet = setFor(editSectionId);
   return (
     <>
       {editSet && <BannerEditFlow key={editSet.id} set={editSet} onChanged={onChanged} onClose={onEditClose} />}
-      {adding && <BannerLayoutPicker title="افزودن بنر" layouts={bannerLayouts} saving={creating} onConfirm={(layout) => void create(layout)} onBack={onAddBack} onClose={onAddClose} />}
+      {adding && <BannerLayoutPicker title="افزودن بنر" layouts={bannerLayouts} saving={false} onConfirm={onCreate} onBack={onAddBack} onClose={onAddClose} />}
     </>
   );
 }

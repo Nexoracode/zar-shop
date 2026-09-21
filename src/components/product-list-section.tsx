@@ -11,7 +11,6 @@ import { ViewAllProductCard } from "@/components/view-all-product-card";
 import { isPartHidden, sectionDisplay, type PageDisplay } from "@/modules/page-builder/display-parts";
 import type { ProductListData } from "@/modules/page-builder/product-list-data";
 import type { ProductListConfig } from "@/modules/page-builder/product-lists";
-import { sanitizeSectionDescription } from "@/modules/page-builder/rich-text-sanitize";
 import { discountEndMoments } from "@/modules/products/discount-window";
 
 const cardWidth = "w-[164px] min-w-[164px] snap-start sm:w-[206px] sm:min-w-[206px] lg:w-[218px] lg:min-w-[218px]";
@@ -27,6 +26,8 @@ type Props = {
   /** The section's id in the layout — also the key its display switches are stored under. */
   sectionId: string;
   config: ProductListConfig;
+  /** The description's HTML, already cleaned by the caller — it is the one place that HTML reaches the page. */
+  descriptionHtml: string;
   data: ProductListData;
   display: PageDisplay;
   /** The viewer can edit the page: switched-off parts are still rendered so the builder can bring them back. */
@@ -38,15 +39,14 @@ type Props = {
  * piece (title, "view more", arrows, the cards' own parts…) is a `BuilderPart` of the section, so the page builder's
  * display settings work the same in all layouts. See `src/modules/page-builder/product-lists.ts` for the model.
  */
-export function ProductListSection({ sectionId, config, data, display, editable }: Props) {
+export function ProductListSection({ sectionId, config, descriptionHtml, data, display, editable }: Props) {
   const { products, moreHref, expiry } = data;
   const builder: ProductCardBuilder = { section: sectionId, hiddenParts: sectionDisplay(display, sectionId).hiddenParts, editable };
   const part = (id: string) => ({ section: sectionId, id, hidden: isPartHidden(display, sectionId, id), editable });
 
   if (products.length === 0) return <p className="m-0 rounded-2xl border border-dashed border-[#d5d9e0] bg-white p-6 text-center text-sm text-[#858b95]">«{config.title}» هنوز محصولی برای نمایش ندارد.</p>;
 
-  // Cleaned again here, however it was stored: this is the one place the description's HTML reaches the page.
-  const description = sanitizeSectionDescription(config.description);
+  const description = descriptionHtml;
   const richStyle = "[&_a]:underline [&_p]:m-0 [&_mark]:rounded-sm [&_mark]:px-0.5";
   const headerFor = (divided: boolean) => (
     <div className={`flex items-end justify-between gap-4 ${divided ? "mb-6 border-b border-slate-100 pb-5" : "mb-5"}`}>
