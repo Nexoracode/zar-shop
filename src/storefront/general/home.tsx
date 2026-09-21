@@ -18,6 +18,7 @@ import { getLatestPublishedArticles } from "@/modules/articles/service";
 import { earliestDiscountEnd } from "@/modules/products/discount-window";
 import { getStorefrontFlashDeals, getStorefrontProductFeed } from "@/modules/products/storefront-feed";
 import type { StorefrontProductCardItem } from "@/modules/products/storefront-feed-contract";
+import { builderSectionProps } from "@/modules/page-builder/sections";
 import { getHomepageSettings, type HomepageLayoutItemId } from "@/modules/settings/homepage-settings";
 import { buildStorefrontHeroSlides } from "@/storefront/shared/hero";
 
@@ -69,7 +70,7 @@ export async function GeneralHome() {
   const heroSlides = buildStorefrontHeroSlides(homepage, "/images/zar-hero-campaign.png");
   const sectionState = new Map(homepage.sections.map((section) => [section.id, section.enabled]));
   const sectionOrder = new Map(homepage.sections.map((section, index) => [section.id, index]));
-  const sectionProps = (id: HomepageLayoutItemId) => ({ hidden: sectionState.get(id) === false, style: { order: sectionOrder.get(id) ?? homepage.sections.length } });
+  const sectionProps = (id: HomepageLayoutItemId) => ({ ...builderSectionProps(id), hidden: sectionState.get(id) === false, style: { order: sectionOrder.get(id) ?? homepage.sections.length } });
   // `getStorefrontFlashDeals` only returns discounts still running, so the earliest end is ahead of
   // now — no clock needed here (a `Date.now()` while rendering can't be prerendered).
   const flashDealsExpiry = earliestDiscountEnd(flashDeals);

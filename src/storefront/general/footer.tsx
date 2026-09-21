@@ -4,6 +4,7 @@ import { Headphones, Mail, MapPin, Phone, RefreshCcw, ShieldCheck, Truck } from 
 import type { BrandSettings } from "@/modules/settings/brand-settings";
 import { contentPageMeta, getContentSettings } from "@/modules/settings/content-settings";
 import type { GeneralStoreSettingsInput } from "@/modules/settings/general-settings";
+import { builderSectionProps } from "@/modules/page-builder/sections";
 
 function phoneHref(phone: string) {
   const persian = "۰۱۲۳۴۵۶۷۸۹";
@@ -15,7 +16,7 @@ export async function GeneralFooter({ settings, brand }: { settings: GeneralStor
   const content = await getContentSettings();
   const pages = content.pages.filter((page) => page.published);
   const logo = brand.darkLogoMedia ?? brand.mainLogoMedia;
-  return <footer className="border-t border-[#e4e7ec] bg-[#20242c] pb-[66px] text-[#d9dce2] lg:pb-0">
+  return <footer {...builderSectionProps("FOOTER")} className="border-t border-[#e4e7ec] bg-[#20242c] pb-[66px] text-[#d9dce2] lg:pb-0">
     <section className="border-b border-white/10 bg-white/[0.035]" aria-label="مزیت‌های خرید از فروشگاه">
       <div className="mx-auto grid w-[min(var(--store-max-width),calc(100%-32px))] gap-3 py-6 sm:grid-cols-2 lg:w-[min(var(--store-max-width),calc(100%-80px))] lg:grid-cols-4">{[
         { icon: Truck, title: "ارسال قابل پیگیری", text: "وضعیت سفارش همیشه مشخص است" },

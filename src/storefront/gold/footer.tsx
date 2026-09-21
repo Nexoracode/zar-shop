@@ -4,6 +4,7 @@ import { Instagram, Mail, MapPin, Phone } from "lucide-react";
 import type { BrandSettings } from "@/modules/settings/brand-settings";
 import { contentPageMeta, getContentSettings } from "@/modules/settings/content-settings";
 import type { GeneralStoreSettingsInput } from "@/modules/settings/general-settings";
+import { builderSectionProps } from "@/modules/page-builder/sections";
 
 function phoneHref(phone: string) {
   const persian = "۰۱۲۳۴۵۶۷۸۹";
@@ -18,7 +19,7 @@ export async function GoldFooter({ settings, brand }: { settings: GeneralStoreSe
   const publishedPages = content.pages.filter((page) => page.published);
   const pageHref = (id: typeof publishedPages[number]["id"]) => `/pages/${contentPageMeta[id].slug}`;
 
-  return <footer className="border-t border-[#e7e1da] bg-[#f7f4f2] pb-[66px] pt-12 text-[#4b4a47] lg:pb-0 lg:pt-[60px]">
+  return <footer {...builderSectionProps("FOOTER")} className="border-t border-[#e7e1da] bg-[#f7f4f2] pb-[66px] pt-12 text-[#4b4a47] lg:pb-0 lg:pt-[60px]">
     <div className="mx-auto grid w-[min(var(--store-max-width),calc(100%-32px))] gap-10 sm:grid-cols-2 lg:w-[min(var(--store-max-width),calc(100%-80px))] lg:grid-cols-[1.4fr_repeat(3,1fr)]">
       <div>
         {footerLogo ? <span className="relative mb-5 block h-12 w-32"><Image src={footerLogo.url} alt={footerLogo.alt ?? settings.storeName} fill sizes="128px" className="object-contain object-right" /></span> : <h3 className="mb-4 mt-0 text-xl font-bold text-[var(--brand-primary)]">{settings.storeName}</h3>}

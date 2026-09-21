@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState } from "react";
+import { useId } from "react";
 import type { CSSProperties } from "react";
 import { Button } from "@heroui/react";
 import { ChevronDown, ChevronUp, Redo2, Undo2 } from "lucide-react";
@@ -14,23 +14,24 @@ const primaryButtonStyle = { "--button-bg": "var(--brand-primary)", "--button-bg
  * row, so its height is never measured and the tab rides on top of it in both states.
  *
  * Only mounted for viewers allowed to edit the storefront (see `src/app/page.tsx`); this component
- * itself does no permission check.
+ * itself does no permission check. `open` is controlled by the parent because it is also what switches
+ * the page into edit mode (see `PageBuilderOverlay`).
  */
-export function PageBuilderBar() {
-  const [open, setOpen] = useState(false);
+export function PageBuilderBar({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
   const panelId = useId();
 
   return (
     // Below lg the storefront's bottom tab bar (66px) owns the screen edge, so the dock sits on top of it.
-    <div dir="rtl" className="pointer-events-none fixed inset-x-0 bottom-[66px] z-[130] flex flex-col items-center lg:bottom-0">
+    <div dir="rtl" data-page-builder-dock className="pointer-events-none fixed inset-x-0 bottom-[66px] z-[130] flex flex-col items-center lg:bottom-0">
       <Button
         type="button"
         variant="ghost"
+        data-page-builder-ui
         aria-label={open ? "بستن نوار صفحه‌ساز" : "باز کردن نوار صفحه‌ساز"}
         aria-expanded={open}
         aria-controls={panelId}
-        onPress={() => setOpen((current) => !current)}
-        className="pointer-events-auto h-5 min-h-5 w-20 min-w-20 rounded-b-none rounded-t-lg bg-[#161b26] p-0 text-white hover:bg-[#232a3a]"
+        onPress={() => onOpenChange(!open)}
+        className="pointer-events-auto h-5 min-h-5 w-20 min-w-20 rounded-b-none rounded-t-lg bg-[var(--pb-tool-bg)] p-0 text-white hover:bg-[#232a3a]"
       >
         {open ? <ChevronDown size={16} /> : <ChevronUp size={16} />}
       </Button>
@@ -38,11 +39,11 @@ export function PageBuilderBar() {
       <div id={panelId} inert={!open} className={`grid w-full transition-[grid-template-rows] duration-300 ease-out motion-reduce:transition-none ${open ? "grid-rows-[1fr]" : "grid-rows-[0fr]"}`}>
         <div className="overflow-hidden">
           <div className="px-3 pb-3 pt-1 lg:px-6">
-            <div className="pointer-events-auto mx-auto flex max-w-[1100px] items-center gap-2 rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-3 shadow-[0_12px_40px_rgba(15,23,42,.18)]">
+            <div data-page-builder-ui className="pointer-events-auto mx-auto flex max-w-[1100px] items-center gap-2 rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-3 shadow-[0_12px_40px_rgba(15,23,42,.18)]">
               <Button type="button" variant="primary" style={primaryButtonStyle} className="min-h-10 rounded-lg px-6 text-sm font-bold">
                 ذخیره
               </Button>
-              <Button type="button" variant="outline" onPress={() => setOpen(false)} className="min-h-10 rounded-lg px-5 text-sm font-bold">
+              <Button type="button" variant="outline" onPress={() => onOpenChange(false)} className="min-h-10 rounded-lg px-5 text-sm font-bold">
                 انصراف
               </Button>
               <div className="mr-auto flex items-center gap-1">

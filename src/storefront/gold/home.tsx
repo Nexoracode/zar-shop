@@ -12,6 +12,7 @@ import { db } from "@/lib/db";
 import { getLatestPublishedArticles } from "@/modules/articles/service";
 import { getStorefrontProductFeed } from "@/modules/products/storefront-feed";
 import { getGeneralStoreSettings } from "@/modules/settings/general-settings";
+import { builderSectionProps } from "@/modules/page-builder/sections";
 import { getHomepageSettings, type HomepageLayoutItemId, type HomepageTreasureCardId } from "@/modules/settings/homepage-settings";
 import { buildStorefrontHeroSlides } from "@/storefront/shared/hero";
 
@@ -42,7 +43,7 @@ export async function GoldHome() {
   const heroSlides = buildStorefrontHeroSlides(homepage, "/images/zar-hero-campaign.png");
   const sectionState = new Map(homepage.sections.map((section) => [section.id, section.enabled]));
   const sectionOrder = new Map(homepage.sections.map((section, index) => [section.id, index]));
-  const sectionProps = (id: HomepageLayoutItemId) => ({ hidden: sectionState.get(id) === false, style: { order: sectionOrder.get(id) ?? homepage.sections.length } });
+  const sectionProps = (id: HomepageLayoutItemId) => ({ ...builderSectionProps(id), hidden: sectionState.get(id) === false, style: { order: sectionOrder.get(id) ?? homepage.sections.length } });
   const categoryImage = (category: HomeCategory | undefined) => category?.image?.type === "IMAGE" ? category.image.url : "/images/zar-hero-campaign.png";
   const treasureItems: Array<{ id: HomepageTreasureCardId; title: string; subtitle: string; query: string }> = [
     { id: "UNDER_20", title: "کمتر از ۲۰ میلیون تومان", subtitle: "محصولات مینیمال", query: "sortby=newest&MaxPrice=20000000" },

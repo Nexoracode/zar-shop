@@ -1,6 +1,7 @@
 @import "tailwindcss";
 @import "@heroui/styles";
 @import "../styles/admin-blueprint.css";
+@import "../styles/page-builder.css";
 
 /* How wide storefront pages may grow. `--store-max-width` is for the wide ones (home, listing, product,
    footer); `--store-content-max-width` for cart, checkout, account, blog and the like. Change them here. */

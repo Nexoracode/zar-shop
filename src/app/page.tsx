@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { connection } from "next/server";
-import { PageBuilderBar } from "@/components/page-builder-bar";
+import { PageBuilder } from "@/components/page-builder";
 import { getCurrentUser } from "@/modules/auth/session";
 import { hasPermission } from "@/modules/auth/permissions";
 import { resolveStorefrontHome } from "@/storefront/resolve-storefront";
@@ -26,7 +26,7 @@ export default async function HomePage() {
   return (
     <>
       <StorefrontHome />
-      {canEditPages ? <PageBuilderBar /> : null}
+      {canEditPages ? <PageBuilder /> : null}
     </>
   );
 }

@@ -20,6 +20,7 @@ import { getCategoryTree } from "@/modules/products/category-tree";
 import { unreadCount } from "@/modules/notifications/service";
 import { getWalletSettings } from "@/modules/settings/wallet-settings";
 import { ensureWallet } from "@/modules/wallet/wallet";
+import { builderSectionProps } from "@/modules/page-builder/sections";
 
 type Props = { settings: GeneralStoreSettingsInput; brand: BrandSettings; user: User | null; menuItems: HomepageMenuItem[] };
 
@@ -44,7 +45,7 @@ export async function GeneralHeader({ settings, brand, user, menuItems }: Props)
     : <strong className="text-base font-bold text-[var(--brand-primary)]">{settings.storeName}</strong>;
 
   return <>
-    <header className={`relative z-50 border-b border-[#e7e9ed] bg-white shadow-[0_2px_10px_rgba(0,0,0,.035)] ${brand.stickyStoreHeader ? "sticky top-0" : ""}`}>
+    <header {...builderSectionProps("HEADER")} className={`relative z-50 border-b border-[#e7e9ed] bg-white shadow-[0_2px_10px_rgba(0,0,0,.035)] ${brand.stickyStoreHeader ? "sticky top-0" : ""}`}>
       {/* Below lg: no logo/hamburger row — Digikala's own mobile home has none either (category
           browsing lives in the bottom nav's "دسته‌بندی" tab, see /categories), just a bell next
           to a full-width search field, then the delivery-address row. */}

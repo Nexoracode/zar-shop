@@ -1,0 +1,30 @@
+/* Page builder (storefront edit mode). The overlay tokens are deliberately fixed colors, not the brand
+   primary/secondary: the builder is an editing tool drawn over the store, and it has to stay readable
+   whatever brand colors the store is configured with. */
+:root {
+  --pb-accent: #1b6bf2;
+  --pb-accent-strong: #0b57c4;
+  --pb-frame: #b9d5f7;
+  --pb-glow: rgb(27 107 242 / 0.16);
+  --pb-shadow: rgb(27 107 242 / 0.3);
+  --pb-tool-bg: #161b26;
+}
+
+/* While the builder is open the page stops being a working page: nothing is clickable, hoverable or
+   focusable-by-mouse except the sections themselves (selectable) and the builder's own controls. Hit
+   testing falls through to the section element, which the builder's click handler then selects. */
+html[data-page-builder="editing"] body * {
+  pointer-events: none !important;
+}
+
+html[data-page-builder="editing"] [data-builder-section] {
+  pointer-events: auto !important;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+html[data-page-builder="editing"] [data-page-builder-ui],
+html[data-page-builder="editing"] [data-page-builder-ui] * {
+  pointer-events: auto !important;
+}
