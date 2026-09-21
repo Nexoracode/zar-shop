@@ -46,5 +46,10 @@ export function isTileLayout(layout: string): layout is BannerTileLayout {
   return (bannerTileLayouts as readonly string[]).includes(layout);
 }
 
+/** The sections that are banners: the main slider, the tile rows and the added sliders. */
+export function isBannerSectionId(id: string) {
+  return id === "HERO" || id.startsWith("TILE_GROUP:") || id.startsWith("BANNER_SLIDER:");
+}
+
 /** How many banners a slider may hold. */
 export const bannerSliderMaxSlides = 10;

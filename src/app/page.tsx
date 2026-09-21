@@ -7,6 +7,7 @@ import { getHomepageMenuLinkOptions, getHomepageSettings } from "@/modules/setti
 import { getBrandSettings } from "@/modules/settings/brand-settings";
 import { getGeneralStoreSettings } from "@/modules/settings/general-settings";
 import { getPageDisplaySettings } from "@/modules/page-builder/display-settings";
+import { getBannerSliderEditViews } from "@/modules/page-builder/banner-slider-data";
 import { getCategoryOptions } from "@/modules/page-builder/category-options";
 import { getPageSectionSettings } from "@/modules/page-builder/section-settings-store";
 import { getStoreIndustry } from "@/modules/settings/store-settings";
@@ -37,10 +38,11 @@ export default async function HomePage() {
   const user = await getCurrentUser();
   const canEditPages = Boolean(user && hasPermission(user.role, "settings:manage"));
   const [homepage, display, industry, general, brand, menuLinkOptions, sectionSettings, categoryOptions] = canEditPages ? await Promise.all([getHomepageSettings(), getPageDisplaySettings(), getStoreIndustry(), getGeneralStoreSettings(), getBrandSettings(), getHomepageMenuLinkOptions(), getPageSectionSettings(), getCategoryOptions()]) : [];
+  const bannerSliders = sectionSettings ? await getBannerSliderEditViews(sectionSettings.bannerSliders) : undefined;
   return (
     <>
       <StorefrontHome editable={canEditPages} />
-      {homepage && display && industry && general && brand && menuLinkOptions && sectionSettings && categoryOptions ? (
+      {homepage && display && industry && general && brand && menuLinkOptions && sectionSettings && categoryOptions && bannerSliders ? (
         <PageBuilder
           initialSections={homepage.sections}
           initialDisplay={display}
@@ -49,6 +51,8 @@ export default async function HomePage() {
           menu={{ items: homepage.menuItems, linkOptions: menuLinkOptions }}
           sectionSettings={sectionSettings}
           categoryOptions={categoryOptions}
+          tileGroups={homepage.tileGroups.map((group) => ({ id: group.id, layout: group.layout, items: group.tiles.map((tile) => ({ id: tile.id, href: tile.href, desktopMedia: toMediaChoice(tile.media), mobileMedia: null })) }))}
+          bannerSliders={bannerSliders}
           hero={{
             contentMode: homepage.heroContentMode,
             title: homepage.heroTitle,
