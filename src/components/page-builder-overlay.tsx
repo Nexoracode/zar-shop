@@ -35,8 +35,10 @@ function placeBox(node: HTMLElement | null, target: HTMLElement | null) {
     return null;
   }
   node.style.display = "block";
-  node.style.transform = `translate(${rect.left}px, ${rect.top}px)`;
-  node.style.width = `${rect.width}px`;
+  // The frame is a pair of lines across the whole page width (not a box around the section), so it starts at the
+  // window's left edge and is as wide as the page; only its height follows the section.
+  node.style.transform = `translate(0px, ${rect.top}px)`;
+  node.style.width = `${document.documentElement.clientWidth}px`;
   node.style.height = `${rect.height}px`;
   return rect;
 }
@@ -202,8 +204,8 @@ export function PageBuilderOverlay({ active, layoutKey, onMove, onRemove, onOpen
 
   return (
     <div dir="rtl">
-      <div ref={hoverBoxRef} className="pointer-events-none fixed left-0 top-0 z-[125] hidden rounded-[3px] border-2 border-solid border-[var(--pb-accent)] shadow-[0_0_0_4px_var(--pb-glow),0_10px_28px_var(--pb-shadow)]" />
-      <div ref={selectedBoxRef} className="pointer-events-none fixed left-0 top-0 z-[126] hidden border-[3px] border-solid border-[var(--pb-frame)] [border-top-color:var(--pb-accent-strong)] [border-top-style:dashed] [border-top-width:1px]">
+      <div ref={hoverBoxRef} className="pointer-events-none fixed left-0 top-0 z-[125] hidden border-x-0 border-y-2 border-solid border-[var(--pb-frame)]" />
+      <div ref={selectedBoxRef} className="pointer-events-none fixed left-0 top-0 z-[126] hidden border-x-0 border-y-[3px] border-solid border-[var(--pb-accent)]">
         <span className="absolute right-0 top-0 rounded-bl-lg bg-[var(--pb-accent-strong)] px-3.5 py-1 text-xs font-bold text-white">{builderSectionLabel(selectedId ?? undefined)}</span>
         <div ref={toolbarRef} data-page-builder-ui className="absolute left-1/2 flex -translate-x-1/2 items-center gap-2">
           <div className={toolbarPillClass}>
