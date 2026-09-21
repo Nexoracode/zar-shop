@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Button } from "@heroui/react";
+import type { ReactNode } from "react";
+import { Button, Tooltip } from "@heroui/react";
 import { ArrowDown, ArrowUp, Pencil, Plus, Trash2 } from "lucide-react";
 import { BUILDER_SECTION_ATTRIBUTE, BUILDER_SECTION_SELECTOR, builderSectionLabel } from "@/modules/page-builder/sections";
 
@@ -41,6 +42,21 @@ function placeBox(node: HTMLElement | null, target: HTMLElement | null) {
 
 const toolButtonClass = "size-10 min-h-10 min-w-10 rounded-lg text-white hover:bg-white/10";
 const toolbarPillClass = "flex items-center rounded-xl bg-[var(--pb-tool-bg)] p-1 shadow-[0_8px_24px_rgba(15,23,42,.28)]";
+// The tooltip is portaled to <body>, outside the builder's own subtree, so it sets `dir` itself and
+// sits above the frames (z-126) and the dock (z-130). Its arrow is recolored to match the dark fill.
+const tooltipClass = "z-[140] rounded-lg bg-[var(--pb-tool-bg)] px-3 py-1.5 text-center text-xs font-medium text-white [&_[data-slot='overlay-arrow']]:fill-[var(--pb-tool-bg)] [&_[data-slot='overlay-arrow']]:stroke-transparent";
+
+function ToolbarButton({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <Tooltip delay={200} closeDelay={0}>
+      <Tooltip.Trigger className="inline-flex">
+        <Button type="button" isIconOnly variant="ghost" aria-label={label} className={toolButtonClass}>{children}</Button>
+      </Tooltip.Trigger>
+      <Tooltip.Content showArrow dir="rtl" className={tooltipClass}>{label}</Tooltip.Content>
+    </Tooltip>
+  );
+}
+
 const toolbarSeparatorClass = "mx-1 h-5 w-px bg-white/25";
 
 /**
@@ -171,16 +187,16 @@ export function PageBuilderOverlay({ active }: { active: boolean }) {
         <span className="absolute right-0 top-0 rounded-bl-lg bg-[var(--pb-accent-strong)] px-3.5 py-1 text-xs font-bold text-white">{builderSectionLabel(selected?.getAttribute(BUILDER_SECTION_ATTRIBUTE) ?? undefined)}</span>
         <div ref={toolbarRef} data-page-builder-ui className="absolute left-1/2 flex -translate-x-1/2 items-center gap-2">
           <div className={toolbarPillClass}>
-            <Button type="button" isIconOnly variant="ghost" aria-label="ویرایش محتوای بخش" className={toolButtonClass}><Pencil size={20} /></Button>
-            <Button type="button" isIconOnly variant="ghost" aria-label="تنظیمات بخش" className={toolButtonClass}><SectionSettingsIcon /></Button>
+            <ToolbarButton label="ویرایش بخش"><Pencil size={20} /></ToolbarButton>
+            <ToolbarButton label="تنظیمات نمایش"><SectionSettingsIcon /></ToolbarButton>
             <span className={toolbarSeparatorClass} />
-            <Button type="button" isIconOnly variant="ghost" aria-label="انتقال بخش به بالا" className={toolButtonClass}><ArrowUp size={20} /></Button>
-            <Button type="button" isIconOnly variant="ghost" aria-label="انتقال بخش به پایین" className={toolButtonClass}><ArrowDown size={20} /></Button>
+            <ToolbarButton label="بردن به بالا"><ArrowUp size={20} /></ToolbarButton>
+            <ToolbarButton label="بردن به پایین"><ArrowDown size={20} /></ToolbarButton>
             <span className={toolbarSeparatorClass} />
-            <Button type="button" isIconOnly variant="ghost" aria-label="حذف بخش" className={toolButtonClass}><Trash2 size={20} /></Button>
+            <ToolbarButton label="حذف"><Trash2 size={20} /></ToolbarButton>
           </div>
           <div className={toolbarPillClass}>
-            <Button type="button" isIconOnly variant="ghost" aria-label="افزودن بخش" className={toolButtonClass}><Plus size={20} /></Button>
+            <ToolbarButton label="افزودن بخش"><Plus size={20} /></ToolbarButton>
           </div>
         </div>
       </div>
