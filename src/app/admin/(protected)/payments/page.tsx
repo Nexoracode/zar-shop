@@ -54,6 +54,7 @@ export default async function PaymentsPage({ searchParams }: { searchParams: Sea
             queryLabel="جستجوی پرداخت"
             queryPlaceholder="شماره سفارش یا شناسه تراکنش"
             filters={[]}
+            large
           />
         </div>
 

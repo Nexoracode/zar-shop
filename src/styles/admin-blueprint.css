@@ -555,6 +555,9 @@ select.bp-input { appearance: none; padding-inline-end: 28px; }
 /* Room for the leading search glyph and the trailing clear button. Tailwind padding
    utilities cannot do this: `.bp-input` is unlayered and always wins over them. */
 .bp-input-search { padding-inline-start: 34px; padding-inline-end: 36px; }
+/* A taller search field, for a list whose search sits alone at the top of its card. Same unlayered-rule reason
+   as above: a Tailwind `min-h-*` class would lose to `.bp-input`'s own min-height. */
+.bp-input.bp-input-search-lg { min-height: 44px; }
 /* Every search field draws its own clear button (the accent-coloured one), so the browser's native ×
    on `type="search"` would be a second one. */
 .bp-root input[type="search"]::-webkit-search-cancel-button,

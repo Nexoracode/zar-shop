@@ -20,9 +20,11 @@ type Props = {
   queryLabel: string;
   queryPlaceholder: string;
   filters: Filter[];
+  /** A taller search field — for a list whose search sits alone at the top of its card. */
+  large?: boolean;
 };
 
-export function AdminListFilters({ path, query, queryLabel, queryPlaceholder, filters }: Props) {
+export function AdminListFilters({ path, query, queryLabel, queryPlaceholder, filters, large = false }: Props) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
@@ -41,7 +43,7 @@ export function AdminListFilters({ path, query, queryLabel, queryPlaceholder, fi
   // four short controls has no reason to stack. It still wraps on a narrow screen.
   return (
     <div className={`flex flex-wrap items-center gap-2 ${isPending ? "opacity-70" : ""}`} aria-busy={isPending}>
-      <DebouncedSearch initialValue={query} label={queryLabel} placeholder={queryPlaceholder} onSearch={updateQuery} />
+      <DebouncedSearch initialValue={query} label={queryLabel} placeholder={queryPlaceholder} onSearch={updateQuery} large={large} />
       {/* Searching and filtering are two different acts; the rule says so without a label. */}
       {filters.length > 0 && <span aria-hidden className="mx-1 hidden h-6 w-px shrink-0 bg-[var(--bp-divider)] sm:block" />}
       {filters.map((filter) => (
@@ -60,7 +62,7 @@ export function AdminListFilters({ path, query, queryLabel, queryPlaceholder, fi
   );
 }
 
-function DebouncedSearch({ initialValue, label, placeholder, onSearch }: { initialValue: string; label: string; placeholder: string; onSearch: (value: string) => void }) {
+function DebouncedSearch({ initialValue, label, placeholder, onSearch, large }: { initialValue: string; label: string; placeholder: string; onSearch: (value: string) => void; large: boolean }) {
   const [value, setValue] = useState(initialValue);
 
   useEffect(() => {
@@ -83,7 +85,7 @@ function DebouncedSearch({ initialValue, label, placeholder, onSearch }: { initi
         onChange={(event) => setValue(event.target.value)}
         aria-label={label}
         placeholder={placeholder}
-        className="bp-input bp-input-search"
+        className={`bp-input bp-input-search ${large ? "bp-input-search-lg" : ""}`.trim()}
       />
       {value ? (
         <BpButton
