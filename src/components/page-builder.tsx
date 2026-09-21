@@ -111,7 +111,7 @@ export function PageBuilder({ initialSections }: { initialSections: LayoutSectio
             <Modal.Body className="p-5 text-sm leading-7 text-[var(--muted)]">
               این بخش از صفحه حذف می‌شود و پس از ذخیره‌ی تغییرات، <b className="text-[var(--foreground)]">امکان بازگرداندن آن وجود ندارد.</b> آیا از حذف آن مطمئن هستید؟
             </Modal.Body>
-            <Modal.Footer className="gap-2 border-t border-[var(--border)] p-4">
+            <Modal.Footer className="justify-start gap-2 border-t border-[var(--border)] p-4">
               <Button type="button" variant="danger" onPress={confirmRemove}>حذف بخش</Button>
               <Button type="button" variant="secondary" onPress={() => setPendingRemoval(null)}>انصراف</Button>
             </Modal.Footer>
