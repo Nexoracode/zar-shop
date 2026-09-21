@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@heroui/react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, ImageIcon } from "lucide-react";
 import { BuilderPart } from "@/components/builder-part";
 import type { BannerSliderLayout } from "@/modules/page-builder/banners";
 import type { BannerSlide } from "@/modules/page-builder/banner-sliders";
@@ -68,9 +68,14 @@ export function BannerSlider({ sectionId, layout, slides, arrowsHidden = false, 
     return () => window.clearInterval(timer);
   }, [active, goTo, multiple]);
 
-  if (!slides.length) return <p className="m-0 rounded-xl border border-dashed border-[#d5d9e0] bg-white p-6 text-center text-sm text-[#858b95]">این اسلایدر هنوز بنری ندارد.</p>;
+  const empty = slides.length === 0;
+  if (empty && !editable) return <p className="m-0 rounded-xl border border-dashed border-[#d5d9e0] bg-white p-6 text-center text-sm text-[#858b95]">این اسلایدر هنوز بنری ندارد.</p>;
+  // Whoever edits the page sees the controls of the chosen look even before it has two banners (or any), like the
+  // picker's preview shows them; visitors get them once there is something to move between.
+  const showControls = multiple || editable;
+  const dotKeys = empty ? ["a", "b", "c"] : slides.map((slide) => slide.id);
 
-  const arrowClass = "size-9 min-h-9 min-w-9 rounded-full border border-white/50 bg-white/85 text-[#232934] shadow-sm backdrop-blur hover:bg-white";
+  const arrowClass = "size-9 min-h-9 min-w-9 rounded-full border border-[#c9ced6] bg-white text-[#232934] shadow-sm hover:bg-[#f4f5f7]";
   const prev = <Button type="button" isIconOnly variant="secondary" aria-label="بنر قبلی" onPress={() => goTo(active - 1)} className={arrowClass}><ChevronRight size={18} /></Button>;
   const next = <Button type="button" isIconOnly variant="secondary" aria-label="بنر بعدی" onPress={() => goTo(active + 1)} className={arrowClass}><ChevronLeft size={18} /></Button>;
 
@@ -78,6 +83,7 @@ export function BannerSlider({ sectionId, layout, slides, arrowsHidden = false, 
     <div className="min-w-0" onMouseEnter={() => { pausedRef.current = true; }} onMouseLeave={() => { pausedRef.current = false; }} onTouchStart={() => { pausedRef.current = true; }} onTouchEnd={() => { pausedRef.current = false; }}>
       <div className="relative">
         <div ref={rowRef} dir="rtl" onScroll={onScroll} className={`flex snap-x snap-mandatory overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${layout === "SLIDER_FULL" ? "" : "gap-4"}`}>
+          {empty && <div className={`relative grid shrink-0 place-items-center overflow-hidden border border-dashed border-[#c9ced6] bg-white text-[#5ea6ff] ${layout === "SLIDER_FULL" ? "" : "rounded-xl"} ${slideClass[layout]}`}><span className="grid justify-items-center gap-1"><ImageIcon size={34} strokeWidth={1.4} /><span className="text-xs font-bold text-[#858b95]">هنوز بنری برای این اسلایدر ثبت نشده است</span></span></div>}
           {slides.map((slide, index) => (
             <Link key={slide.id} href={slide.href} aria-label={slide.desktop.alt} className={`relative block shrink-0 overflow-hidden bg-black/5 ${layout === "SLIDER_FULL" ? "" : "rounded-xl"} ${slideClass[layout]}`}>
               {slide.mobile && <Image src={slide.mobile.src} alt={slide.mobile.alt} fill priority={index === 0} sizes="100vw" className="object-cover sm:hidden" />}
@@ -85,7 +91,7 @@ export function BannerSlider({ sectionId, layout, slides, arrowsHidden = false, 
             </Link>
           ))}
         </div>
-        {multiple && showsArrows && (
+        {showControls && showsArrows && (
           <BuilderPart section={sectionId} id="arrows" hidden={arrowsHidden} editable={editable}>
             {layout === "SLIDER_CORNER"
               ? <div className="absolute bottom-3 right-3 z-10 flex items-center gap-1.5">{prev}{next}</div>
@@ -96,10 +102,10 @@ export function BannerSlider({ sectionId, layout, slides, arrowsHidden = false, 
           </BuilderPart>
         )}
       </div>
-      {multiple && (
+      {showControls && (
         <BuilderPart section={sectionId} id="dots" hidden={dotsHidden} editable={editable}>
           <div className="mt-3 flex items-center justify-center gap-1.5" dir="rtl">
-            {slides.map((slide, index) => <Button key={slide.id} type="button" isIconOnly variant="ghost" aria-label={`نمایش بنر ${(index + 1).toLocaleString("fa-IR")}`} aria-pressed={index === active} onPress={() => goTo(index)} className={`h-2 min-h-2 min-w-2 rounded-full p-0 transition-all ${index === active ? "w-6 bg-[var(--brand-primary)]" : "w-2 bg-[#c9ced6] hover:bg-[#aab1bc]"}`} />)}
+            {dotKeys.map((key, index) => <Button key={key} type="button" isIconOnly variant="ghost" aria-label={`نمایش بنر ${(index + 1).toLocaleString("fa-IR")}`} aria-pressed={index === active} onPress={() => goTo(index)} className={`h-2 min-h-2 min-w-2 rounded-full p-0 transition-all ${index === active ? "w-6 bg-[var(--brand-primary)]" : "w-2 bg-[#c9ced6] hover:bg-[#aab1bc]"}`} />)}
           </div>
         </BuilderPart>
       )}
